@@ -175,6 +175,11 @@ extension WalletViewModel {
 
     func onTap(wallet: Wallet) {
         queue.async {
+            if self.service.watchMode {
+                self.openCoinPageRelay.accept(wallet.coin)
+                return
+            }
+
             if self.expandedWallet == wallet {
                 self.expandedWallet = nil
                 self.syncViewItem(wallet: wallet)

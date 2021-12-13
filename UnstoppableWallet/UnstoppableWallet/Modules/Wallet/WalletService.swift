@@ -23,6 +23,8 @@ class WalletService {
     private let activeAccountRelay = PublishRelay<Account?>()
     private let accountsLostRelay = PublishRelay<()>()
 
+    private(set) var watchMode: Bool
+
     private let totalItemRelay = PublishRelay<TotalItem?>()
     private(set) var totalItem: TotalItem? {
         didSet {
@@ -58,7 +60,7 @@ class WalletService {
 
     private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.wallet-service", qos: .userInitiated)
 
-    init(adapterService: WalletAdapterService, coinPriceService: WalletCoinPriceService, cacheManager: EnabledWalletCacheManager, accountManager: IAccountManager, walletManager: WalletManager, localStorage: StorageKit.ILocalStorage, rateAppManager: IRateAppManager, appManager: IAppManager, feeCoinProvider: FeeCoinProvider) {
+    init(adapterService: WalletAdapterService, coinPriceService: WalletCoinPriceService, cacheManager: EnabledWalletCacheManager, accountManager: IAccountManager, walletManager: WalletManager, localStorage: StorageKit.ILocalStorage, rateAppManager: IRateAppManager, appManager: IAppManager, feeCoinProvider: FeeCoinProvider, watchMode: Bool) {
         self.adapterService = adapterService
         self.coinPriceService = coinPriceService
         self.cacheManager = cacheManager
@@ -67,6 +69,7 @@ class WalletService {
         self.localStorage = localStorage
         self.rateAppManager = rateAppManager
         self.feeCoinProvider = feeCoinProvider
+        self.watchMode = watchMode
 
         if let rawValue: String = localStorage.value(for: keySortType), let sortType = WalletModule.SortType(rawValue: rawValue) {
             self.sortType = sortType

@@ -22,7 +22,8 @@ struct WalletModule {
                 localStorage: StorageKit.LocalStorage.default,
                 rateAppManager: App.shared.rateAppManager,
                 appManager: App.shared.appManager,
-                feeCoinProvider: App.shared.feeCoinProvider
+                feeCoinProvider: App.shared.feeCoinProvider,
+                watchMode: true
         )
 
         adapterService.delegate = service
