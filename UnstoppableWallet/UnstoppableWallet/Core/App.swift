@@ -89,12 +89,17 @@ class App {
     let balancePrimaryValueManager: BalancePrimaryValueManager
     let balanceHiddenManager: BalanceHiddenManager
     let balanceConversionManager: BalanceConversionManager
+    
 
     let appIconManager = AppIconManager()
 
     let appManager: AppManager
     let contactManager: ContactBookManager?
-
+    let safeCoinPriceManager: SafeCoinPriceManager
+    let safeCoinStorage: SafeCoinStorage
+    lazy var SafeVPNManager: SafeVPNViewModel = {
+        return SafeVPNViewModel()
+    }()
     init() {
         appConfigProvider = AppConfigProvider()
 
@@ -120,9 +125,9 @@ class App {
                 minLogLevel: .error
         )
         marketKit.sync()
-
-        logger = Logger(minLogLevel: .error, storage: logRecordManager)
-        networkManager = NetworkManager(logger: logger)
+        // info
+        logger = Logger(minLogLevel: .warning, storage: logRecordManager)
+        networkManager = NetworkManager(logger: nil)
 
         keychainKit = KeychainKit(service: "io.horizontalsystems.bank.dev")
 
@@ -175,6 +180,13 @@ class App {
         let hsLabelProvider = HsLabelProvider(networkManager: networkManager, appConfigProvider: appConfigProvider)
         let evmLabelStorage = EvmLabelStorage(dbPool: dbPool)
         let syncerStateStorage = SyncerStateStorage(dbPool: dbPool)
+        let safeCoinPriceProvider = SafeCoinPriceProvider(networkManager: networkManager, appConfigProvider: appConfigProvider)
+
+        let safeCoinPriceStorage = try! SafeCoinPriceStorage(dbPool: dbPool)
+        safeCoinPriceManager = SafeCoinPriceManager(storage: safeCoinPriceStorage, hsProvider: safeCoinPriceProvider)
+        let coinHistoricalPriceStorage = CoinHistoricalPriceStorage(dbPool: dbPool)
+        safeCoinStorage = SafeCoinStorage(dbPool: dbPool)
+        
         evmLabelManager = EvmLabelManager(provider: hsLabelProvider, storage: evmLabelStorage, syncerStateStorage: syncerStateStorage)
 
         let adapterFactory = AdapterFactory(

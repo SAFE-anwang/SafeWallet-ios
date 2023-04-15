@@ -144,46 +144,47 @@ extension AboutViewController: SectionsDataSource {
                     ]
             ),
 
-            Section(
-                    id: "release-notes",
-                    headerState: .margin(height: .margin24),
-                    footerState: .margin(height: .margin32),
-                    rows: [
-                        row(
-                                id: "release-notes",
-                                image: "circle_information_24",
-                                title: "settings.about_app.whats_new".localized,
-                                isFirst: true,
-                                isLast: true,
-                                action: { [weak self] in
-                                    guard let url = self?.viewModel.releaseNotesUrl else {
-                                        return
-                                    }
-
-                                    self?.navigationController?.pushViewController(MarkdownModule.gitReleaseNotesMarkdownViewController(url: url, presented: false), animated: true)
-                                }
-                        )
-                    ]
-            ),
+//            Section(
+//                    id: "release-notes",
+//                    headerState: .margin(height: .margin24),
+//                    footerState: .margin(height: .margin32),
+//                    rows: [
+//                        row(
+//                                id: "release-notes",
+//                                image: "circle_information_24",
+//                                title: "settings.about_app.whats_new".localized,
+//                                isFirst: true,
+//                                isLast: true,
+//                                action: { [weak self] in
+//                                    guard let url = self?.viewModel.releaseNotesUrl else {
+//                                        return
+//                                    }
+//
+//                                    self?.navigationController?.pushViewController(MarkdownModule.gitReleaseNotesMarkdownViewController(url: url, presented: false), animated: true)
+//                                }
+//                        )
+//                    ]
+//            ),
 
             Section(
                     id: "main",
                     footerState: .margin(height: .margin32),
                     rows: [
-                        row(
-                                id: "app-status",
-                                image: "app_status_24",
-                                title: "app_status.title".localized,
-                                isFirst: true,
-                                action: { [weak self] in
-                                    self?.navigationController?.pushViewController(AppStatusRouter.module(), animated: true)
-                                }
-                        ),
+//                        row(
+//                                id: "app-status",
+//                                image: "app_status_24",
+//                                title: "app_status.title".localized,
+//                                isFirst: true,
+//                                action: { [weak self] in
+//                                    self?.navigationController?.pushViewController(AppStatusRouter.module(), animated: true)
+//                                }
+//                        ),
                         row(
                                 id: "terms",
                                 image: "unordered_24",
                                 title: "terms.title".localized,
                                 alert: showTermsAlert,
+                                isFirst: true,
                                 action: { [weak self] in
                                     self?.present(TermsModule.viewController(), animated: true)
                                 }
@@ -236,15 +237,15 @@ extension AboutViewController: SectionsDataSource {
                     id: "share",
                     footerState: .margin(height: .margin32),
                     rows: [
-                        row(
-                                id: "rate-us",
-                                image: "rate_24",
-                                title: "settings.about_app.rate_us".localized,
-                                isFirst: true,
-                                action: { [weak self] in
-                                    self?.viewModel.onTapRateApp()
-                                }
-                        ),
+//                        row(
+//                                id: "rate-us",
+//                                image: "rate_24",
+//                                title: "settings.about_app.rate_us".localized,
+//                                isFirst: true,
+//                                action: { [weak self] in
+//                                    self?.viewModel.onTapRateApp()
+//                                }
+//                        ),
                         row(
                                 id: "tell-friends",
                                 image: "share_1_24",

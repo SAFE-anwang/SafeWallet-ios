@@ -48,8 +48,7 @@ extension WalletStorage {
             if let coinName = enabledWallet.coinName, let coinCode = enabledWallet.coinCode, let tokenDecimals = enabledWallet.tokenDecimals,
                let blockchain = blockchains.first(where: { $0.uid == tokenQuery.blockchainType.uid }) {
                 let coinSettings = CoinSettings(id: enabledWallet.coinSettingsId)
-                let coinUid = tokenQuery.customCoinUid
-
+                let coinUid =  isSafeCoin(name: coinName, code: coinCode) ? "safe-anwang" : tokenQuery.customCoinUid
                 let token = Token(
                         coin: Coin(uid: coinUid, name: coinName, code: coinCode),
                         blockchain: blockchain,
@@ -79,4 +78,10 @@ extension WalletStorage {
         try? storage.clear()
     }
 
+}
+extension WalletStorage {
+    private func isSafeCoin(name: String, code: String) -> Bool {
+        name == "SAFE(AnWang)" || code == "SAFE"
+    }
+                    
 }

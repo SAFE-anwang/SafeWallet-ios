@@ -15,12 +15,16 @@ class MarketViewController: ThemeViewController {
     private let postViewController: MarketPostViewController
     private let watchlistViewController: MarketWatchlistViewController
 
+    private let twiitterViewController: CoinTweetsViewController
+    private let dappViewController: MarketDappViewController
+
     init(viewModel: MarketViewModel) {
         self.viewModel = viewModel
 
         postViewController = MarketPostModule.viewController()
         watchlistViewController = MarketWatchlistModule.viewController()
-
+        twiitterViewController = CoinTweetsModule.viewController(username: "safeanwang")
+        dappViewController = MarketDappModule.viewController()
         super.init()
 
         marketOverviewViewController = MarketOverviewModule.viewController(presentDelegate: self)
@@ -65,6 +69,8 @@ class MarketViewController: ThemeViewController {
 
         postViewController.parentNavigationController = navigationController
         watchlistViewController.parentNavigationController = navigationController
+        twiitterViewController.parentNavigationController = navigationController
+        dappViewController.parentNavigationController = navigationController
 
         subscribe(disposeBag, viewModel.currentTabDriver) { [weak self] in self?.sync(currentTab: $0) }
     }
@@ -91,6 +97,8 @@ class MarketViewController: ThemeViewController {
         case .overview: return marketOverviewViewController ?? UIViewController()
         case .posts: return postViewController
         case .watchlist: return watchlistViewController
+        case .twiitter: return twiitterViewController
+        case .Dapp: return dappViewController
         }
     }
 

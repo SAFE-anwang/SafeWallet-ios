@@ -6,8 +6,9 @@ class CoinTweetsService {
     private let disposeBag = DisposeBag()
     private let twitterProvider: TweetsProvider
     private let marketKit: MarketKit.Kit
-    private let coinUid: String
-
+    private var coinUid: String
+    private var userName: String? = nil
+    
     private var user: TwitterUser? = nil
     private let stateRelay = PublishRelay<DataStatus<[Tweet]>>()
 
@@ -19,6 +20,13 @@ class CoinTweetsService {
     
     init(coinUid: String, twitterProvider: TweetsProvider, marketKit: MarketKit.Kit) {
         self.coinUid = coinUid
+        self.twitterProvider = twitterProvider
+        self.marketKit = marketKit
+    }
+    
+    init(userName: String, twitterProvider: TweetsProvider, marketKit: MarketKit.Kit) {
+        self.userName = userName
+        self.coinUid = ""
         self.twitterProvider = twitterProvider
         self.marketKit = marketKit
     }
@@ -45,10 +53,12 @@ extension CoinTweetsService {
         }
 
         let single: Single<TwitterUser?>
-
+        
         if let user = user {
             single = Single.just(user)
-        } else {
+        }else if let username = userName, !username.isEmpty {
+            single = twitterProvider.userRequestSingle(username: username)
+        }else {
             single = marketKit
                     .twitterUsername(coinUid: coinUid)
                     .flatMap { [weak self] username in

@@ -51,7 +51,8 @@ class WalletViewController: ThemeViewController {
         if #available(iOS 15.0, *) {
             tableView.sectionHeaderTopPadding = 0
         }
-
+        
+        
         navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(named: "switch_wallet_24"), style: .plain, target: self, action: #selector(onTapSwitchWallet))
         navigationItem.leftBarButtonItem?.tintColor = .themeJacob
 
@@ -300,6 +301,7 @@ class WalletViewController: ThemeViewController {
             headerView.onTapConvertedAmount = { [weak self] in self?.viewModel.onTapConvertedTotalAmount() }
             headerView.onTapSortBy = { [weak self] in self?.openSortType() }
             headerView.onTapAddCoin = { [weak self] in self?.openManageWallets() }
+            headerView.onTapTransactions = {[weak self] in self?.openTransactions() }
         }
     }
 
@@ -369,6 +371,11 @@ class WalletViewController: ThemeViewController {
         if let module = ManageWalletsModule.viewController() {
             present(module, animated: true)
         }
+    }
+    
+    private func openTransactions() {
+       let module = TransactionsModule.viewController()
+        navigationController?.pushViewController(module, animated: true)
     }
 
     private func showAccountsLost() {

@@ -1,22 +1,30 @@
 import UIKit
 import RxSwift
 import ThemeKit
+import MarketKit
 import ComponentKit
 import SectionsTableView
 import PinKit
 
 class SecuritySettingsViewController: ThemeViewController {
     private let viewModel: SecuritySettingsViewModel
+    
+    private let blockchainSettingsViewModel: BlockchainSettingsViewModel
+    private var blockchainSettingsViewItem = BlockchainSettingsViewModel.ViewItem(btcViewItems: [], evmViewItems: [])
+
     private let disposeBag = DisposeBag()
 
     private let tableView = SectionsTableView(style: .grouped)
 
     private var pinViewItem = SecuritySettingsViewModel.PinViewItem(enabled: false, editVisible: false, biometryViewItem: nil)
     private var loaded = false
-
-    init(viewModel: SecuritySettingsViewModel) {
+    
+    private let vpnManager: SafeVPNViewModel
+    
+    init(viewModel: SecuritySettingsViewModel, blockchainSettingsViewModel: BlockchainSettingsViewModel) {
         self.viewModel = viewModel
-
+        self.blockchainSettingsViewModel = blockchainSettingsViewModel
+        vpnManager = App.shared.SafeVPNManager
         super.init()
 
         hidesBottomBarWhenPushed = true
@@ -46,12 +54,21 @@ class SecuritySettingsViewController: ThemeViewController {
         subscribe(disposeBag, viewModel.showErrorSignal) { [weak self] in self?.show(error: $0) }
         subscribe(disposeBag, viewModel.openSetPinSignal) { [weak self] in self?.openSetPin() }
         subscribe(disposeBag, viewModel.openUnlockSignal) { [weak self] in self?.openUnlock() }
+        
+        subscribe(disposeBag, blockchainSettingsViewModel.viewItemDriver) { [weak self] in self?.sync(viewItem: $0) }
+        subscribe(disposeBag, blockchainSettingsViewModel.openBtcBlockchainSignal) { [weak self] in self?.openBtc(blockchain: $0) }
+        subscribe(disposeBag, blockchainSettingsViewModel.openEvmBlockchainSignal) { [weak self] in self?.openEvm(blockchain: $0) }
 
         loaded = true
     }
 
     private func sync(pinViewItem: SecuritySettingsViewModel.PinViewItem) {
         self.pinViewItem = pinViewItem
+        reloadTable()
+    }
+    
+    private func sync(viewItem: BlockchainSettingsViewModel.ViewItem) {
+        self.blockchainSettingsViewItem = viewItem
         reloadTable()
     }
 
@@ -82,7 +99,7 @@ class SecuritySettingsViewController: ThemeViewController {
 }
 
 extension SecuritySettingsViewController: SectionsDataSource {
-
+    
     private func passcodeRows(viewItem: SecuritySettingsViewModel.PinViewItem) -> [RowProtocol] {
         var elements = tableView.universalImage24Elements(
                 image: .local(UIImage(named: "dialpad_alt_2_24")?.withTintColor(.themeGray)),
@@ -163,11 +180,128 @@ extension SecuritySettingsViewController: SectionsDataSource {
             sections.append(biometrySection)
         }
 
-        return sections
+        return sections + vpnSwitch() + safeBlockchainBack() +  buildBlockchainSettingsSections()
     }
 
 }
 
+extension SecuritySettingsViewController {
+    
+    private func vpnSwitch() -> [SectionProtocol] {
+        let cell = tableView.universalRow62(
+                id: "vpnSwitchCell",
+                image: .local(UIImage(named: "safelog")),
+                title: .body("VPN"),
+                description: .subhead2("已断开"),
+                accessoryType: .switch(
+                    isOn: false,
+                    onSwitch: { [weak self] isOn in
+//                        if isOn == false {
+//                            self?.vpnManager.closeService(nil)
+//                            return
+//                        }
+                        self?.vpnManager.openService(completion: { (error) in
+//                            cell.switchOn((error != nil) ? false : true)
+                        })
+                    }),
+                isFirst: true,
+                isLast: true
+        )
+        return [Section(
+                id: "vpnSwitch",
+                headerState: .text(text: "网络".localized, topMargin: .margin12, bottomMargin: .margin12),
+                footerState: .margin(height: .margin24),
+                rows:[cell]
+        )]
+    }
+}
+
+
+extension SecuritySettingsViewController {
+    
+    private func safeBlockchainBack() -> [SectionProtocol] {
+        let cell = tableView.universalRow62(
+                id: "safeBlockchain",
+                image: .local(UIImage(named: "safelog")),
+                title: .body("SAFE高度".localized),
+                accessoryType: .disclosure,
+                isFirst: true,
+                isLast: true,
+                action: { [weak self] in
+                    // self?.navigationController?.pushViewController(BlockchainSettingsModule.viewController(), animated: true)
+                }
+        )
+        return [Section(
+                id: "safeBlockchain",
+                headerState: .text(text: "SAFE区块回退".localized, topMargin: .margin12, bottomMargin: .margin12),
+                footerState: .margin(height: .margin24),
+                rows:[cell]
+        )]
+    }
+}
+extension SecuritySettingsViewController {
+    
+    private func blockchainRow(id: String, viewItem: BlockchainSettingsViewModel.BlockchainViewItem, isFirst: Bool, isLast: Bool, action: @escaping () -> ()) -> RowProtocol {
+        tableView.universalRow62(
+            id: id,
+            image: .url(viewItem.iconUrl),
+            title: .body(viewItem.name),
+            description: .subhead2(viewItem.value),
+            accessoryType: .disclosure,
+            hash: "\(viewItem.value)-\(isFirst)-\(isLast)",
+            autoDeselect: true,
+            isFirst: isFirst,
+            isLast: isLast,
+            action: action
+        )
+    }
+    
+    private func buildBlockchainSettingsSections() -> [SectionProtocol] {
+        
+        [
+            Section(
+                    id: "btc",
+                    headerState: .text(text: "区块链设置".localized, topMargin: .margin12, bottomMargin: .margin12),
+                    rows: blockchainSettingsViewItem.btcViewItems.enumerated().map { index, btcViewItem in
+                        blockchainRow(
+                                id: "btc-\(index)",
+                                viewItem: btcViewItem,
+                                isFirst: index == 0,
+                                isLast: false,
+                                action: { [weak self] in
+                                    self?.blockchainSettingsViewModel.onTapBtc(index: index)
+                                }
+                        )
+                    }
+            ),
+            Section(
+                    id: "evm",
+                    footerState: .margin(height: .margin32),
+                    rows: blockchainSettingsViewItem.evmViewItems.enumerated().map { index, evmViewItem in
+                        blockchainRow(
+                                id: "btc-\(index)",
+                                viewItem: evmViewItem,
+                                isFirst: false,
+                                isLast: index == blockchainSettingsViewItem.evmViewItems.count - 1,
+                                action: { [weak self] in
+                                    self?.blockchainSettingsViewModel.onTapEvm(index: index)
+                                }
+                        )
+                    }
+            )
+        ]
+    }
+    
+    
+    private func openBtc(blockchain: Blockchain) {
+        present(BtcBlockchainSettingsModule.viewController(blockchain: blockchain), animated: true)
+    }
+
+    private func openEvm(blockchain: Blockchain) {
+        present(EvmNetworkModule.viewController(blockchain: blockchain), animated: true)
+    }
+    
+}
 extension SecuritySettingsViewController: ISetPinDelegate {
 
     func didCancelSetPin() {

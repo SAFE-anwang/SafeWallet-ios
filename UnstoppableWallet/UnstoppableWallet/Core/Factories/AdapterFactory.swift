@@ -98,7 +98,11 @@ extension AdapterFactory {
 
         case (.eip20(let address), .ethereum), (.eip20(let address), .ethereumGoerli), (.eip20(let address), .binanceSmartChain), (.eip20(let address), .polygon), (.eip20(let address), .avalanche), (.eip20(let address), .optimism), (.eip20(let address), .arbitrumOne), (.eip20(let address), .gnosis), (.eip20(let address), .fantom):
             return eip20Adapter(address: address, wallet: wallet, coinManager: coinManager)
-
+        
+        case (.native, .unsupported(let uid)):
+            guard uid == safeCoinUid else { return nil }
+            let syncMode = btcBlockchainManager.syncMode(blockchainType: .unsupported(uid: uid), accountOrigin: wallet.account.origin)
+            return try? SafeCoinAdapter(wallet: wallet, syncMode: syncMode)
         default: ()
         }
 

@@ -30,6 +30,8 @@ class TransactionsViewController: ThemeViewController {
         headerView.viewController = self
         tabBarItem = UITabBarItem(title: "transactions.tab_bar_item".localized, image: UIImage(named: "filled_transaction_2n_24"), tag: 0)
         navigationItem.largeTitleDisplayMode = .never
+        hidesBottomBarWhenPushed = true
+
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -40,7 +42,7 @@ class TransactionsViewController: ThemeViewController {
         super.viewDidLoad()
 
         title = "transactions.title".localized
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "button.reset".localized, style: .plain, target: self, action: #selector(onTapReset))
+//        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "button.reset".localized, style: .plain, target: self, action: #selector(onTapReset))
 
         view.addSubview(tableView)
 
@@ -92,8 +94,9 @@ class TransactionsViewController: ThemeViewController {
 
         let holder = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 20))
         holder.addSubview(syncSpinner)
-
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: holder)
+        
+        let restItem = UIBarButtonItem(title: "button.reset".localized, style: .plain, target: self, action: #selector(onTapReset))
+        navigationItem.rightBarButtonItems = [restItem ,UIBarButtonItem(customView: holder)]
 
         tableView.snp.makeConstraints { maker in
             maker.top.equalTo(headerView.snp.bottom)

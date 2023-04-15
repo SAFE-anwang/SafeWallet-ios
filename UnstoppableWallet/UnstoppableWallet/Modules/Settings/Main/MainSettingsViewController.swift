@@ -27,7 +27,7 @@ class MainSettingsViewController: ThemeViewController {
     private let languageCell = BaseSelectableThemeCell()
     private let themeModeCell = BaseSelectableThemeCell()
     private let aboutCell = BaseSelectableThemeCell()
-    private let footerCell = MainSettingsFooterCell()
+//    private let footerCell = MainSettingsFooterCell()
 
     init(viewModel: MainSettingsViewModel, urlManager: UrlManager) {
         self.viewModel = viewModel
@@ -64,10 +64,10 @@ class MainSettingsViewController: ThemeViewController {
         walletConnectCell.set(backgroundStyle: .lawrence, isFirst: true, isLast: true)
         syncWalletConnectCell()
 
-        securityCell.set(backgroundStyle: .lawrence, isFirst: true)
+        securityCell.set(backgroundStyle: .lawrence, isLast: true)
         syncSecurityCell()
 
-        appearanceCell.set(backgroundStyle: .lawrence)
+        appearanceCell.set(backgroundStyle: .lawrence, isFirst: true)
         buildTitleValue(cell: appearanceCell, image: UIImage(named: "brush_24"), title: "appearance.title".localized)
 
         contactBookCell.set(backgroundStyle: .lawrence)
@@ -85,10 +85,10 @@ class MainSettingsViewController: ThemeViewController {
         aboutCell.set(backgroundStyle: .lawrence, isFirst: true, isLast: true)
         syncAboutCell()
 
-        footerCell.set(appVersion: viewModel.appVersion)
-        footerCell.onTapLogo = { [weak self] in
-            self?.viewModel.onTapCompanyLink()
-        }
+//        footerCell.set(appVersion: viewModel.appVersion)
+//        footerCell.onTapLogo = { [weak self] in
+//            self?.viewModel.onTapCompanyLink()
+//        }
 
         subscribe(disposeBag, viewModel.manageWalletsAlertDriver) { [weak self] in self?.syncManageAccountCell(alert: $0) }
         subscribe(disposeBag, viewModel.securityCenterAlertDriver) { [weak self] in self?.syncSecurityCell(alert: $0) }
@@ -141,11 +141,6 @@ class MainSettingsViewController: ThemeViewController {
                 component.font = .body
                 component.textColor = .themeLeah
                 component.text = title
-            },
-            .image20 { (component: ImageComponent) -> () in
-                component.isHidden = alertImage == nil
-                component.imageView.image = alertImage
-                component.imageView.tintColor = .themeLucian
             },
             .margin8,
             .image20 { (component: ImageComponent) -> () in
@@ -206,14 +201,22 @@ class MainSettingsViewController: ThemeViewController {
                         self?.navigationController?.pushViewController(ManageAccountsModule.viewController(mode: .manage), animated: true)
                     }
             ),
-            tableView.universalRow48(
-                    id: "blockchain-settings",
-                    image: .local(UIImage(named: "blocks_24")),
-                    title: .body("settings.blockchain_settings".localized),
-                    accessoryType: .disclosure,
-                    isLast: true,
+//            tableView.universalRow48(
+//                    id: "blockchain-settings",
+//                    image: .local(UIImage(named: "blocks_24")),
+//                    title: .body("settings.blockchain_settings".localized),
+//                    accessoryType: .disclosure,
+//                    isLast: true,
+//                    action: { [weak self] in
+//                        self?.navigationController?.pushViewController(BlockchainSettingsModule.viewController(), animated: true)
+//                    }
+//            )
+            StaticRow(
+                    cell: securityCell,
+                    id: "security",
+                    height: .heightCell48,
                     action: { [weak self] in
-                        self?.navigationController?.pushViewController(BlockchainSettingsModule.viewController(), animated: true)
+                        self?.navigationController?.pushViewController(SecuritySettingsModule.viewController(), animated: true)
                     }
             )
         ]
@@ -235,37 +238,37 @@ class MainSettingsViewController: ThemeViewController {
 
     private var appearanceRows: [RowProtocol] {
         [
-            StaticRow(
-                    cell: securityCell,
-                    id: "security",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        self?.navigationController?.pushViewController(SecuritySettingsModule.viewController(), animated: true)
-                    }
-            ),
-            StaticRow(
-                    cell: contactBookCell,
-                    id: "address-book",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        guard let viewController = ContactBookModule.viewController(mode: .edit) else {
-                            return
-                        }
-                        self?.navigationController?.pushViewController(viewController, animated: true)
-                    }
-            ),
-            StaticRow(
-                    cell: iCloudSyncCell,
-                    id: "icloud-sync",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        guard let viewController = ContactBookSyncSettingsModule.viewController else {
-                            return
-                        }
-
-                        self?.navigationController?.pushViewController(viewController, animated: true)
-                    }
-            ),
+//            StaticRow(
+//                    cell: securityCell,
+//                    id: "security",
+//                    height: .heightCell48,
+//                    action: { [weak self] in
+//                        self?.navigationController?.pushViewController(SecuritySettingsModule.viewController(), animated: true)
+//                    }
+//            ),
+//            StaticRow(
+//                    cell: contactBookCell,
+//                    id: "address-book",
+//                    height: .heightCell48,
+//                    action: { [weak self] in
+//                        guard let viewController = ContactBookModule.viewController(mode: .edit) else {
+//                            return
+//                        }
+//                        self?.navigationController?.pushViewController(viewController, animated: true)
+//                    }
+//            ),
+//            StaticRow(
+//                    cell: iCloudSyncCell,
+//                    id: "icloud-sync",
+//                    height: .heightCell48,
+//                    action: { [weak self] in
+//                        guard let viewController = ContactBookSyncSettingsModule.viewController else {
+//                            return
+//                        }
+//
+//                        self?.navigationController?.pushViewController(viewController, animated: true)
+//                    }
+//            ),
             StaticRow(
                     cell: appearanceCell,
                     id: "launch-screen",
@@ -348,15 +351,15 @@ class MainSettingsViewController: ThemeViewController {
         ]
     }
 
-    private var footerRows: [RowProtocol] {
-        [
-            StaticRow(
-                    cell: footerCell,
-                    id: "footer",
-                    height: footerCell.cellHeight
-            )
-        ]
-    }
+//    private var footerRows: [RowProtocol] {
+//        [
+//            StaticRow(
+//                    cell: footerCell,
+//                    id: "footer",
+//                    height: footerCell.cellHeight
+//            )
+//        ]
+//    }
 
     private func openWalletConnect(mode: MainSettingsViewModel.WalletConnectOpenMode) {
         switch mode {
@@ -376,10 +379,10 @@ extension MainSettingsViewController: SectionsDataSource {
             Section(id: "account", headerState: .margin(height: .margin12), rows: accountRows),
             Section(id: "wallet_connect", headerState: .margin(height: .margin32), rows: walletConnectRows),
             Section(id: "appearance_settings", headerState: .margin(height: .margin32), rows: appearanceRows),
-            Section(id: "experimental", headerState: .margin(height: .margin32), rows: experimentalRows),
-            Section(id: "knowledge", headerState: .margin(height: .margin32), rows: knowledgeRows),
+//            Section(id: "experimental", headerState: .margin(height: .margin32), rows: experimentalRows),
+//            Section(id: "knowledge", headerState: .margin(height: .margin32), rows: knowledgeRows),
             Section(id: "about", headerState: .margin(height: .margin32), rows: aboutRows),
-            Section(id: "footer", headerState: .margin(height: .margin32), footerState: .margin(height: .margin32), rows: footerRows)
+//            Section(id: "footer", headerState: .margin(height: .margin32), footerState: .margin(height: .margin32), rows: footerRows)
         ]
     }
 

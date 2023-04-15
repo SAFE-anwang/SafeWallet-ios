@@ -157,8 +157,8 @@ extension BlockchainType {
 
     var allowedProviders: [SwapModule.Dex.Provider] {
         switch self {
-        case .ethereum: return [.oneInch, .uniswap]
-        case .binanceSmartChain: return [.oneInch, .pancake]
+        case .ethereum: return [.oneInch, .uniswap, .safeSwap]
+        case .binanceSmartChain: return [.oneInch, .pancake, .safeSwap]
         case .polygon: return [.oneInch, .quickSwap]
         case .avalanche: return [.oneInch]
         case .optimism: return [.oneInch]
@@ -178,13 +178,15 @@ extension SwapModule.Dex {
         case oneInch = "1Inch"
         case pancake = "PancakeSwap"
         case quickSwap = "QuickSwap"
-
+        case safeSwap = "SafeSwap"
+        
         var allowedBlockchainTypes: [BlockchainType] {
             switch self {
             case .uniswap: return [.ethereum]
             case .oneInch: return [.ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom]
             case .pancake: return [.binanceSmartChain]
             case .quickSwap: return [.polygon]
+            case .safeSwap: return [.ethereum, .binanceSmartChain]
             }
         }
 
@@ -194,6 +196,7 @@ extension SwapModule.Dex {
             case .oneInch: return "https://app.1inch.io/"
             case .pancake: return "https://pancakeswap.finance/"
             case .quickSwap: return "https://quickswap.exchange/"
+            case .safeSwap: return "https://anwang.com"
             }
         }
 
@@ -203,6 +206,8 @@ extension SwapModule.Dex {
             case .oneInch: return "1Inch"
             case .pancake: return "PancakeSwap"
             case .quickSwap: return "QuickSwap"
+            case .safeSwap: return "SafeSwap"
+
             }
         }
 
@@ -212,6 +217,7 @@ extension SwapModule.Dex {
             case .oneInch: return "1inch_32"
             case .pancake: return "pancake_32"
             case .quickSwap: return "quick_32"
+            case .safeSwap: return "safelog"
             }
         }
 

@@ -6,6 +6,7 @@ import Eip20Kit
 import NftKit
 import UniswapKit
 import OneInchKit
+import SafeSwapKit
 import HdWalletKit
 import MarketKit
 
@@ -107,6 +108,8 @@ class EvmKitManager {
         UniswapKit.Kit.addDecorators(to: evmKit)
 
         OneInchKit.Kit.addDecorators(to: evmKit)
+        
+        SafeSwapKit.Kit.addDecorators(to: evmKit)
 
         evmKit.start()
 

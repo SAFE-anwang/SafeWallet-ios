@@ -5,7 +5,6 @@ extension Coin {
 
     var imageUrl: String {
         let scale = Int(UIScreen.main.scale)
-        return "https://cdn.blocksdecoded.com/coin-icons/32px/\(uid)@\(scale)x.png"
+        return uid == "safe-anwang" ? "https://anwang.com/img/logos/safe.png" : "https://cdn.blocksdecoded.com/coin-icons/32px/\(uid)@\(scale)x.png"
     }
-
 }

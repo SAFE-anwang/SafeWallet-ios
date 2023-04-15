@@ -77,8 +77,8 @@ class OneInchSendEvmTransactionService {
     }
 
     private func additionalInfo(parameters: OneInchSwapParameters) -> SendEvmData.AdditionInfo {
-        .oneInchSwap(info:
-            SendEvmData.OneInchSwapInfo(
+        .safeSwap(info:
+            SendEvmData.SafeSwapInfo(
                 tokenFrom: parameters.tokenFrom,
                 tokenTo: parameters.tokenTo,
                 amountFrom: parameters.amountFrom,

@@ -11,11 +11,20 @@ class TextDropDownAndSettingsView: UIView {
     private let stackView = UIStackView()
     private let selectorButton = SelectorButton()
     private let settingsButton = SecondaryCircleButton()
+    private let transactionsButton = SecondaryCircleButton()
 
     var onTapDropDown: (() -> ())?
     var onTapSettings: (() -> ())?
     var onTapSelector: ((Int) -> ())?
-
+    var onTapTransactions: (() -> ())?
+    
+    var isEnabledTransactions: Bool = true {
+        didSet {
+            transactionsButton.isHidden = !isEnabledTransactions
+            transactionsButton.isEnabled = isEnabledTransactions
+        }
+    }
+    
     init() {
         super.init(frame: .zero)
 
@@ -38,13 +47,18 @@ class TextDropDownAndSettingsView: UIView {
         stackView.spacing = .margin16
 
         stackView.addArrangedSubview(selectorButton)
+        stackView.addArrangedSubview(transactionsButton)
         stackView.addArrangedSubview(settingsButton)
 
         selectorButton.isHidden = true
         selectorButton.onSelect = { [weak self] in self?.onTapSelector?($0) }
+        
+        transactionsButton.set(image: UIImage(named: "filled_transaction_2n_24"))
+        transactionsButton.addTarget(self, action: #selector(onTapTransactionsButton), for: .touchUpInside)
 
         settingsButton.set(image: UIImage(named: "manage_2_20"))
         settingsButton.addTarget(self, action: #selector(onTapSettingsButton), for: .touchUpInside)
+        
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -57,6 +71,10 @@ class TextDropDownAndSettingsView: UIView {
 
     @objc private func onTapSettingsButton() {
         onTapSettings?()
+    }
+    
+    @objc private func onTapTransactionsButton() {
+        onTapTransactions?()
     }
 
     func bind(dropdownTitle: String?, settingsHidden: Bool = false) {

@@ -10,7 +10,6 @@ class MarketViewModel {
 
     init(service: MarketService) {
         self.service = service
-
         currentTabRelay = BehaviorRelay<MarketModule.Tab>(value: service.initialTab)
     }
 

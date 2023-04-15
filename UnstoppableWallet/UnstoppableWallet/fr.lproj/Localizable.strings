@@ -424,7 +424,9 @@
 "market.category.overview" = "Synthèse";
 "market.category.posts" = "Infos";
 "market.category.watchlist" = "Liste de suivi";
-"market.total_market_cap" = "Cap Totale";
+"market.total_market_cap" = "Cap totale";
+"market.category.twiitter" = "Twiitter";
+"market.category.dapp" = "Dapp";
 "market.24h_volume" = "Volume des dernières 24h";
 "market.defi_cap" = "Cap DeFi";
 "market.defi_tvl" = "TVL en DeFi";
@@ -827,7 +829,7 @@
 "settings.base_currency.title" = "Devise de Base";
 "settings.base_currency.other" = "Autre";
 "settings.base_currency.disclaimer" = "Avertissement";
-"settings.base_currency.disclaimer.description" = "Les données relatives aux taux de change fournies par un service tiers Coingecko.com\n\nUnstoppable wallet app ne garantit pas que ces valeurs sont toujours correctes et correspondent aux données du marché. Le risque de divergence est plus élevé si vous sélectionnez une devise de base autre que %@.";
+"settings.base_currency.disclaimer.description" = "Les données relatives aux taux de change fournies par un service tiers Coingecko.com\n\nSafeWallet app ne garantit pas que ces valeurs sont toujours correctes et correspondent aux données du marché. Le risque de divergence est plus élevé si vous sélectionnez une devise de base autre que %@.";
 "settings.base_currency.disclaimer.set" = "Appliquer";
 
 // Settings -> Manage Wallet
@@ -1211,7 +1213,7 @@
 
 "status_info.title" = "Statut";
 "status_info.pending.title" = "En attente";
-"status_info.pending.content" = "La transaction n'a pas encore été confirmée sur la blockchain. Les transactions envoyées avec un montant de frais recommandé ou supérieur sont généralement traitées en quelques minutes. Les transactions envoyées avec des frais peu élevés risquent de rester en attente pendant quelques heures, voire quelques jours, et peuvent même être rejetées. Notez que le statut d'une transaction individuelle dans l'interface du portefeuille Unstoppable Wallet est généralement mis à jour avec un léger délai.";
+"status_info.pending.content" = "La transaction n'a pas encore été confirmée sur la blockchain. Les transactions envoyées avec un montant de frais recommandé ou supérieur sont généralement traitées en quelques minutes. Les transactions envoyées avec des frais peu élevés risquent de rester en attente pendant quelques heures, voire quelques jours, et peuvent même être rejetées. Notez que le statut d'une transaction individuelle dans l'interface du portefeuille SafeWallet est généralement mis à jour avec un léger délai.";
 "status_info.processing.title" = "Traitement en cours";
 "status_info.processing.content" = "La transaction a déjà été incluse dans la blockchain mais n'a pas été finalisée. En ce qui concerne les petits paiements, il est prudent de considérer que la transaction est terminée. Pour les paiements plus importants, il est recommandé d'attendre que le statut de la transaction passe à terminé.";
 "status_info.completed.title" = "Terminé";
@@ -1427,3 +1429,17 @@
 "nft.activity.event_type.listCancel" = "Annuler la liste";
 "nft.activity.event_type.offer" = "Offre";
 "nft.activity.event_type.offerCancel" = "Offre annulée";
+
+// Safe zone
+"safe_zone.nav.title" = "SAFE ZONE";
+"safe_zone.section.cross_eth" = "Cross Chain(ETH)";
+"safe_zone.section.cross_bsc" = "Cross Chain(BSC)";
+"safe_zone.section.locked" = "Locked";
+"safe_zone.section.basic" = "Basic information";
+"safe_zone.row.contract" = "SAFE contract";
+"safe_zone.row.linear" = "Linear Locked";
+"safe_zone.row.lock" = "Lock up record";
+"safe_zone.row.homepage" = "SAFE Homepage";
+"safe_zone.row.blockExplorer" = "BlockExplorer";
+"safe_zone.row.acrossExplorer" = "Across Chain Explorer";
+"safe_dapp.input" = "Enter Link Access";

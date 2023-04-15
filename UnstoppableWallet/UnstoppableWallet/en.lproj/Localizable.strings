@@ -138,7 +138,7 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 // Recovery Phrase
 
 "recovery_phrase.title" = "Recovery Phrase";
-"recovery_phrase.warning" = "Never share this key with anyone. Unstoppable Wallet support team will never ask for it.";
+"recovery_phrase.warning" = "Never share this key with anyone. SafeWallet support team will never ask for it.";
 "recovery_phrase.tap_to_show" = "Tap to show recovery phrase";
 "recovery_phrase.passphrase" = "Passphrase";
 "recovery_phrase.copy_warning.title" = "Risk of Recovery Phrase copy";
@@ -276,14 +276,13 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 "send.hodler_locktime_off" = "Off";
 "send.hodler_error.unsupported_address" = "Time locking works only when sending to payment addresses starting with 1... (aka BIP44 addresses)";
 "send.fee_info.title" = "Fee Rate";
-"send.fee_info.description" = "Blockchains require users to pay network fees when sending transactions. The fees are higher when a lot of transactions are taking place on the network.\n\nThe Unstoppable wallet estimates fee based on the current blockchain activity and recommends the optimal value in order for the transaction to be processed within reasonable amount of time.\n\nThe recommended fee rate shown as the amount of satoshi user needs to pay for a single byte of the transaction. Thus, the total fee depends on the total size of the transaction which is measured in bytes.\n\nUsers may use provided controls to increase or decrease the fee rate value. The change in fee rate changes the total fee for the transaction the user will pay.\n\nSetting fee rate below recommended value may result in a transaction being held as pending for hours, or being rejected. The lower the value, the longer it will take for the transaction to confirm. For transactions where priority is important, we recommend setting higher fee rate.";
+"send.fee_info.description" = "Blockchains require users to pay network fees when sending transactions. The fees are higher when a lot of transactions are taking place on the network.\n\nThe SafeWallet estimates fee based on the current blockchain activity and recommends the optimal value in order for the transaction to be processed within reasonable amount of time.\n\nThe recommended fee rate shown as the amount of satoshi user needs to pay for a single byte of the transaction. Thus, the total fee depends on the total size of the transaction which is measured in bytes.\n\nUsers may use provided controls to increase or decrease the fee rate value. The change in fee rate changes the total fee for the transaction the user will pay.\n\nSetting fee rate below recommended value may result in a transaction being held as pending for hours, or being rejected. The lower the value, the longer it will take for the transaction to confirm. For transactions where priority is important, we recommend setting higher fee rate.";
 "send.transaction_inputs_outputs_info.title" = "Transaction Inputs / Outputs";
-"send.transaction_inputs_outputs_info.description" = "Most Bitcoin transactions, as well as transactions in alike cryptocurrencies including Bitcoin Cash, Dash, and Litecoin, generate two outputs. One output is the amount that goes to the receiver and the other is the change output that is returned to the sender. The way most wallets construct transactions makes it easy for a third party to understand which of the outputs went to the receiving party and which one was the change amount returned to the sender. As the output returned to the sender is later used in future transactions, a connection between these two transactions becomes apparent.\n\nThe Unstoppable wallet implements measures to make it harder for someone to figure out which output goes where.\n\nThere are two options available to Unstoppable users:";
+"send.transaction_inputs_outputs_info.description" = "Most Bitcoin transactions, as well as transactions in alike cryptocurrencies including Bitcoin Cash, Dash, and Litecoin, generate two outputs. One output is the amount that goes to the receiver and the other is the change output that is returned to the sender. The way most wallets construct transactions makes it easy for a third party to understand which of the outputs went to the receiving party and which one was the change amount returned to the sender. As the output returned to the sender is later used in future transactions, a connection between these two transactions becomes apparent.\n\nThe SafeWallet implements measures to make it harder for someone to figure out which output goes where.\n\nThere are two options available to Unstoppable users:";
 "send.transaction_inputs_outputs_info.shuffle.title" = "1. Shuffle";
 "send.transaction_inputs_outputs_info.shuffle.description" = "The order of transaction outputs is randomized on every transaction. Sometimes change can be the first output, sometimes it can be the second. If a user trusts the developer of the app, then consider this a recommended option.";
 "send.transaction_inputs_outputs_info.deterministic.title" = "2. Deterministic";
 "send.transaction_inputs_outputs_info.deterministic.description" = "There is a commonly agreed standard for ordering transaction outputs (known as BIP69). In open-source wallets, that standard ensures wallet users do not need to trust how developers of the app implement the ordering of the outputs. As this standard is new, not many wallets have implemented it yet. As a result, it's somewhat possible to see on the blockchain whether a transaction was sent from a wallet that uses that standard or not.";
-
 "send.confirmation.you_send" = "You Send";
 "send.confirmation.to" = "To";
 "send.confirmation.contact_name" = "Contact Name";
@@ -426,11 +425,12 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 "market.category.overview" = "Overview";
 "market.category.posts" = "News";
 "market.category.watchlist" = "Watchlist";
-"market.total_market_cap" = "Total M.Cap";
+"market.category.twiitter" = "Twiitter";
+"market.category.dapp" = "Dapp";
+"market.total_market_cap" = "Total Cap";
 "market.24h_volume" = "24h Volume";
 "market.defi_cap" = "DeFi Cap";
 "market.defi_tvl" = "TVL in DeFi";
-
 "market.project_has_no_coin" = "This project doesn’t have a coin";
 
 "market.top.section.header.see_all" = "See All";
@@ -595,7 +595,7 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 // Coin Page -> Analytics
 
 "coin_analytics.not_available" = "This project has no analytics data";
-"coin_analytics.locked" = "This page available only for Unstoppable Wallet premium users";
+"coin_analytics.locked" = "This page available only for SafeWallet premium users";
 
 "coin_analytics.cex_volume" = "CEX Volume";
 "coin_analytics.cex_volume_rank" = "CEX Volume Rank";
@@ -829,7 +829,7 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 "settings.base_currency.title" = "Base Currency";
 "settings.base_currency.other" = "Other";
 "settings.base_currency.disclaimer" = "Disclaimer";
-"settings.base_currency.disclaimer.description" = "The exchange rate data is provided by a third party service - Coingecko.com. \n\nThe Unstoppable wallet app doesn't guarantee these values are always correct and matches market data. The chance for inconsistency is higher if you select any base currency other than %@.";
+"settings.base_currency.disclaimer.description" = "The exchange rate data is provided by a third party service - Coingecko.com. \n\nThe SafeWallet app doesn't guarantee these values are always correct and matches market data. The chance for inconsistency is higher if you select any base currency other than %@.";
 "settings.base_currency.disclaimer.set" = "Set";
 
 // Settings -> Manage Wallet
@@ -838,8 +838,8 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 "manage_wallets.not_found" = "No results found. Try to add token manually.";
 "manage_wallets.search_placeholder" = "Name, code or contract address";
 "manage_wallets.contract_address" = "Contract Address";
-"manage_wallets.derivation_description" = "There are 3 common address formats %@ wallets can use to receive incoming payments:\n\n- BIP44 (older)\n- BIP49 (newer)\n- BIP84 (newest)\n\nWhile Unstoppable wallet supports all 3 of them it recommends to use a %@ wallet operating in BIP84 format. The wallets operating in this format get to pay lowest fees when sending %@ transactions.";
-"manage_wallets.bitcoin_cash_coin_type_description" = "There are 2 address formats Bitcoin Cash wallets can use to receive incoming payments:\n\n- TYPE 0 (older)\n- TYPE 145 (newer)\n\nWhile Unstoppable wallet supports both of them it recommends to use a Bitcoin Cash wallet operating in TYPE 145 format.";
+"manage_wallets.derivation_description" = "There are 3 common address formats %@ wallets can use to receive incoming payments:\n\n- BIP44 (older)\n- BIP49 (newer)\n- BIP84 (newest)\n\nWhile SafeWallet supports all 3 of them it recommends to use a %@ wallet operating in BIP84 format. The wallets operating in this format get to pay lowest fees when sending %@ transactions.";
+"manage_wallets.bitcoin_cash_coin_type_description" = "There are 2 address formats Bitcoin Cash wallets can use to receive incoming payments:\n\n- TYPE 0 (older)\n- TYPE 145 (newer)\n\nWhile SafeWallet supports both of them it recommends to use a Bitcoin Cash wallet operating in TYPE 145 format.";
 
 // Settings -> Experimental Features
 
@@ -851,7 +851,8 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 
 "settings.bitcoin_hodling.title" = "TimeLock";
 "settings.bitcoin_hodling.lock_time" = "Activate";
-"settings.bitcoin_hodling.description" = "This enables you to send Bitcoins that cannot be spent until a specified date. \n\nThe receiver of such transactions should use the Unstoppable wallet app version 0.10 or newer, with the BIP44 address format for Bitcoin. \n\nOnly the Unstoppable wallet can correctly identify such transactions on the Bitcoin network, as well as enable the receiver to spend those Bitcoins after the lock period expires. \n\nIf you’re a HODLer, you may use this feature to force yourself into hodling your Bitcoins by sending such transactions to yourself.";
+"settings.bitcoin_hodling.description" = "This enables you to send Bitcoins that cannot be spent until a specified date. \n\nThe receiver of such transactions should use the SafeWallet app version 0.10 or newer, with the BIP44 address format for Bitcoin. \n\nOnly the SafeWallet can correctly identify such transactions on the Bitcoin network, as well as enable the receiver to spend those Bitcoins after the lock period expires. \n\nIf you’re a HODLer, you may use this feature to force yourself into hodling your Bitcoins by sending such transactions to yourself.";
+
 
 // Settings -> Terms
 
@@ -896,6 +897,7 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 
 "blockchain_settings.info.restore_source" = "Restore Source";
 "blockchain_settings.info.restore_source.content" = "This setting is only relevant when restoring an existing wallet. It is a process of getting transaction history for a given cryptocurrency so the wallet app is able to display past transactions and calculate the user's balance. This needs to happen only once when the user restores previously created wallets.\n\nAt this point, there are two potential ways for a mobile wallet like Unstoppable to do this:\n\n1. from the API Server: There is a third-party predefined server that hosts the entire blockchain and has all the data processed and optimized to provide that data in a fast manner. This method is fast but potentially (not necessarily) less private. It's also a centralized method to restore a wallet as it depends on the availability of a 3rd party server. This option is recommended due to its speed of getting data (5-10 minutes).\n\n2. from Blockchain: The app tries to restore directly from a network of blockchain nodes. This is a decentralized way to restore wallet balance and past transactions. The app pings many of the network nodes and requests data from them without addressing some nodes specifically. This option is slow and can easily take 2-3 hours, the app needs to be open while restoring is happening. This restore method doesn't depend on any entity and should work in all conditions.";
+
 "blockchain_settings.info.rpc_source" = "RPC Source";
 "blockchain_settings.info.rpc_source.content" = "This setting controls how this app interacts with blockchains when sending or receiving transactions.\n\nIn the case of Bitcoin, Bitcoin Cash, Litecoin, and Dash, the communication with blockchain network nodes is fully peer-to-peer. Unstoppable pings many nodes and communicates with one of them. Each time the app connects to a different node.\n\nIn the case of Ethereum, Binance Smart Chain, and other EVM blockchains, there are no alternatives for mobile wallets to interact with respective blockchains other than via third-party RPC service providers (i.e. Infura.io) or personal nodes. That essentially means your communication with that blockchain is not decentralized. This doesn't impact your funds in any way, only the ability to connect to the blockchain network.\n\nRest assured, we are keeping this on the radar and will soon try to provide a decentralized way to sync. Patience.";
 
@@ -919,8 +921,8 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 // Settings -> About App
 
 "settings.about_app.title" = "About App";
-"settings.about_app.app_name" = "Unstoppable Wallet";
-"settings.about_app.description" =  "The Unstoppable wallet is built for those looking to invest and store cryptocurrencies in a private and independent manner.\n\nIt's a non-custodial, peer-to-peer wallet where only the user has control over the funds. It doesn't collect any data and keeps the user independent by not locking the user's funds to a specific wallet app.\n\nThe Unstoppable wallet is fully open-source and anyone can confirm the app works exactly as it claims to.";
+"settings.about_app.app_name" = "SafeWallet";
+"settings.about_app.description" =  "The SafeWallet is built for those looking to invest and store cryptocurrencies in a private and independent manner.\n\nIt's a non-custodial, peer-to-peer wallet where only the user has control over the funds. It doesn't collect any data and keeps the user independent by not locking the user's funds to a specific wallet app.\n\nThe SafeWallet is fully open-source and anyone can confirm the app works exactly as it claims to.";
 "settings.about_app.whats_new" = "What's New";
 "settings.about_app.website" = "Website";
 "settings.about_app.contact" = "Contact";
@@ -1213,7 +1215,7 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 
 "status_info.title" = "Status";
 "status_info.pending.title" = "Pending";
-"status_info.pending.content" = "The transaction has not been confirmed on the blockchain yet. Transactions sent with a recommended or higher fee setting are generally processed within a few minutes. Transactions sent with a low fee may remain pending for a few hours or even days, and can even be rejected. Note that status of an individual transaction in Unstoppable wallet interface typically updated with a short delay.";
+"status_info.pending.content" = "The transaction has not been confirmed on the blockchain yet. Transactions sent with a recommended or higher fee setting are generally processed within a few minutes. Transactions sent with a low fee may remain pending for a few hours or even days, and can even be rejected. Note that status of an individual transaction in SafeWallet interface typically updated with a short delay.";
 "status_info.processing.title" = "Processing";
 "status_info.processing.content" = "The transaction has been already included in the blockchain but has not reached permanent finality. At this point, it's safe to consider the transaction as completed for smaller payments. For larger payments, it's recommended to wait until the transaction status changes to completed.";
 "status_info.completed.title" = "Completed";
@@ -1428,3 +1430,17 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 "nft.activity.event_type.listCancel" = "List Cancel";
 "nft.activity.event_type.offer" = "Offer";
 "nft.activity.event_type.offerCancel" = "Offer Cancel";
+
+// Safe zone
+"safe_zone.nav.title" = "SAFE ZONE";
+"safe_zone.section.cross_eth" = "Cross Chain(ETH)";
+"safe_zone.section.cross_bsc" = "Cross Chain(BSC)";
+"safe_zone.section.locked" = "Locked";
+"safe_zone.section.basic" = "Basic information";
+"safe_zone.row.contract" = "SAFE contract";
+"safe_zone.row.linear" = "Linear Locked";
+"safe_zone.row.lock" = "Lock up record";
+"safe_zone.row.homepage" = "SAFE Homepage";
+"safe_zone.row.blockExplorer" = "BlockExplorer";
+"safe_zone.row.acrossExplorer" = "Across Chain Explorer";
+"safe_dapp.input" = "Enter Link Access";

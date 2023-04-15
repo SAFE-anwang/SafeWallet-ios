@@ -243,7 +243,7 @@ extension AppearanceViewController: SectionsDataSource {
         var sections: [SectionProtocol] = [
             Section(id: "top-margin", headerState: .margin(height: .margin12)),
             themeModeSection(viewItems: themeModeViewItems),
-            showMarketTabSection(),
+//            showMarketTabSection(),
         ]
         if let launchScreenSection = launchScreenSection(viewItems: launchScreenViewItems) {
             sections.append(launchScreenSection)
