@@ -424,7 +424,9 @@
 "market.category.overview" = "Overview";
 "market.category.posts" = "News";
 "market.category.watchlist" = "Watchlist";
-"market.total_market_cap" = "Total M.Cap";
+"market.category.twiitter" = "Twiitter";
+"market.category.dapp" = "Dapp";
+"market.total_market_cap" = "Total Cap";
 "market.24h_volume" = "24h Volume";
 "market.defi_cap" = "DeFi Cap";
 "market.defi_tvl" = "TVL in DeFi";
@@ -917,7 +919,7 @@
 // Settings -> About App
 
 "settings.about_app.title" = "앱 정보";
-"settings.about_app.app_name" = "Unstoppable Wallet";
+"settings.about_app.app_name" = "SafeWallet";
 "settings.about_app.description" = "Unstoppable 지갑은 개인적이고 독립적인 방식으로 암호화폐를 투자하고 저장하려는 사람들을 위해 만들어졌습니다.\n\n사용자만 자금을 제어할 수 있는 비 보관 P2P 지갑입니다. 데이터를 수집하지 않으며 사용자의 자금을 특정 지갑 앱에 잠그지 않음으로써 사용자를 독립적으로 유지합니다.\n\n언스톱퍼블 지갑은 완전히 오픈 소스이며 누구나 앱이 주장하는 대로 정확하게 작동하는지 확인할 수 있습니다.";
 "settings.about_app.whats_new" = "새로운 기능";
 "settings.about_app.website" = "Website";
@@ -1426,3 +1428,17 @@
 "nft.activity.event_type.listCancel" = "목록 취소";
 "nft.activity.event_type.offer" = "제안";
 "nft.activity.event_type.offerCancel" = "제안 취소";
+
+// Safe zone
+"safe_zone.nav.title" = "SAFE ZONE";
+"safe_zone.section.cross_eth" = "Cross Chain(ETH)";
+"safe_zone.section.cross_bsc" = "Cross Chain(BSC)";
+"safe_zone.section.locked" = "Locked";
+"safe_zone.section.basic" = "Basic information";
+"safe_zone.row.contract" = "SAFE contract";
+"safe_zone.row.linear" = "Linear Locked";
+"safe_zone.row.lock" = "Lock up record";
+"safe_zone.row.homepage" = "SAFE Homepage";
+"safe_zone.row.blockExplorer" = "BlockExplorer";
+"safe_zone.row.acrossExplorer" = "Across Chain Explorer";
+"safe_dapp.input" = "Enter Link Access";

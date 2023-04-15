@@ -12,7 +12,7 @@ struct BalanceViewItem {
 
 struct BalanceTopViewItem {
     let isMainNet: Bool
-    let iconUrlString: String?
+    var iconUrlString: String?
     let placeholderIconName: String
     let coinCode: String
     let blockchainBadge: String?
@@ -22,7 +22,7 @@ struct BalanceTopViewItem {
     let failedImageViewVisible: Bool
 
     let primaryValue: (text: String?, dimmed: Bool)?
-    let secondaryInfo: BalanceSecondaryInfoViewItem
+    let secondaryInfo: BalanceSecondaryInfoViewItem    
 }
 
 enum BalanceSecondaryInfoViewItem {

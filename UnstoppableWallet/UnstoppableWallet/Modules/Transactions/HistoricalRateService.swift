@@ -43,12 +43,21 @@ class HistoricalRateService {
     }
 
     private func _fetchRate(key: RateKey) {
-        marketKit.coinHistoricalPriceValueSingle(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
-            .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
-            .subscribe(onSuccess: { [weak self] decimal in
-                self?.handle(key: key, rate: decimal)
-            })
-            .disposed(by: ratesDisposeBag)
+        if key.token.coin.code == "SAFE" {
+//            App.shared.safeCoinHistoricalPriceManager.coinHistoricalPriceValueSingle(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
+//                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
+//                .subscribe(onSuccess: { [weak self] decimal in
+//                    self?.handle(key: key, rate: decimal)
+//                })
+//                .disposed(by: ratesDisposeBag)
+        }else {
+            marketKit.coinHistoricalPriceValueSingle(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
+                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
+                .subscribe(onSuccess: { [weak self] decimal in
+                    self?.handle(key: key, rate: decimal)
+                })
+                .disposed(by: ratesDisposeBag)
+        }
     }
 
 }

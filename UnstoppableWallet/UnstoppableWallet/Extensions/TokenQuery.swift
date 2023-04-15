@@ -24,6 +24,9 @@ extension TokenQuery {
         case (.polygon, .native), (.polygon, .eip20): return true
         case (.avalanche, .native), (.avalanche, .eip20): return true
         case (.binanceChain, .native), (.binanceChain, .bep2): return true
+        case (.unsupported(let uid), .native):  do {
+            return uid == "safe-anwang" ? true : false
+        }
         default: return false
         }
     }

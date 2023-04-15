@@ -13,7 +13,8 @@ class MainViewController: ThemeTabBarController {
     private var marketModule: UIViewController?
     private let balanceModule = ThemeNavigationController(rootViewController: WalletModule.viewController())
     private let onboardingModule = OnboardingBalanceViewController()
-    private let transactionsModule = ThemeNavigationController(rootViewController: TransactionsModule.viewController())
+//    private let transactionsModule = ThemeNavigationController(rootViewController: TransactionsModule.viewController())
+    private let safeZoneModule = ThemeNavigationController(rootViewController: MainSafeZoneModule.viewController())
     private let settingsModule = ThemeNavigationController(rootViewController: MainSettingsModule.viewController())
 
     private var showAlerts = [(() -> ())]()
@@ -97,7 +98,8 @@ class MainViewController: ThemeTabBarController {
 
         viewControllers.append(contentsOf: [
             balanceTabModule,
-            transactionsModule,
+//            transactionsModule,
+            safeZoneModule,
             settingsModule
         ])
 
@@ -105,7 +107,7 @@ class MainViewController: ThemeTabBarController {
     }
 
     private func syncTransactionsTab(enabled: Bool) {
-        transactionsModule.viewControllers.first?.tabBarItem.isEnabled = enabled
+//        transactionsModule.viewControllers.first?.tabBarItem.isEnabled = enabled
     }
 
     private func setSettingsBadge(visible: Bool, count: Int = 0) {

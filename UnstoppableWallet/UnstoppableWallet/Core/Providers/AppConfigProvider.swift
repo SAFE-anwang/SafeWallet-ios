@@ -1,11 +1,11 @@
 import Foundation
 
 class AppConfigProvider {
-    let companyWebPageLink = "https://horizontalsystems.io"
-    let appWebPageLink = "https://unstoppable.money"
-    let appGitHubLink = "https://github.com/horizontalsystems/unstoppable-wallet-ios"
-    let appTwitterAccount = "unstoppablebyhs"
-    let reportEmail = "support.unstoppable@protonmail.com"
+    let companyWebPageLink = "https://anwang.com"
+    let appWebPageLink = "https://anwang.com"
+    let appGitHubLink = "https://github.com/SAFE-anwang/SafeWallet-ios"
+    let appTwitterAccount = "safeanwang"
+    let reportEmail = "mailto:support@anwang.com"
     let btcCoreRpcUrl = "https://btc.blocksdecoded.com/rpc"
     let guidesIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/blockchain-crypto-guides/v1.2/index.json")!
     let faqIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/unstoppable-wallet-website/master/src/faq.json")!

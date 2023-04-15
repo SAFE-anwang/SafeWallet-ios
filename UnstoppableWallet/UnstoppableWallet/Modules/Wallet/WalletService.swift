@@ -317,7 +317,12 @@ extension WalletService: IWalletCoinPriceServiceDelegate {
 
     private func handleUpdated(priceItemMap: [String: WalletCoinPriceService.Item]) {
         for item in allItems {
-            item.priceItem = priceItemMap[item.wallet.coin.uid]
+            if  item.wallet.coin.code == safeCoinCode || item.wallet.coin.name == safeCoinName {
+                guard let priceItem = priceItemMap[safeCoinUid] else { return }
+                item.priceItem = priceItem
+            }else {
+                item.priceItem = priceItemMap[item.wallet.coin.uid]
+            }
         }
 
         allItems = sorter.sort(items: allItems, sortType: sortType)

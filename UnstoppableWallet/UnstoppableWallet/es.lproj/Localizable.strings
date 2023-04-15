@@ -424,7 +424,9 @@
 "market.category.overview" = "Información General";
 "market.category.posts" = "Noticias";
 "market.category.watchlist" = "Lista de Seguimiento";
-"market.total_market_cap" = "Total M.Cap";
+"market.category.twiitter" = "Twiitter";
+"market.category.dapp" = "Dapp";
+"market.total_market_cap" = "Total Cap";
 "market.24h_volume" = "Volumen de 24 horas";
 "market.defi_cap" = "DeFi Cap";
 "market.defi_tvl" = "TVL en DeFi";
@@ -827,7 +829,7 @@
 "settings.base_currency.title" = "Moneda principal";
 "settings.base_currency.other" = "Otro";
 "settings.base_currency.disclaimer" = "Descargo de responsabilidad";
-"settings.base_currency.disclaimer.description" = "Los datos del tipo de cambio proporcionados por un servicio de terceros Coingecko. om\n\nLa aplicación Unstoppable Walleta no garantiza que estos valores sean siempre correctos y coincidan con los datos del mercado. La probabilidad de una inconsistencia es mayor si usted selecciona cualquier moneda base que no sea %@.";
+"settings.base_currency.disclaimer.description" = "Los datos del tipo de cambio proporcionados por un servicio de terceros Coingecko. om\n\nLa aplicación SafeWalleta no garantiza que estos valores sean siempre correctos y coincidan con los datos del mercado. La probabilidad de una inconsistencia es mayor si usted selecciona cualquier moneda base que no sea %@.";
 "settings.base_currency.disclaimer.set" = "Fijar";
 
 // Settings -> Manage Wallet
@@ -894,6 +896,7 @@
 
 "blockchain_settings.info.restore_source" = "Restaurar Fuente";
 "blockchain_settings.info.restore_source.content" = "This setting is only relevant when restoring an existing wallet. It is a process of getting transaction history for a given cryptocurrency so the wallet app is able to display past transactions and calculate the user's balance. This needs to happen only once when the user restores previously created wallets.\n\nAt this point, there are two potential ways for a mobile wallet like Unstoppable to do this:\n\n1. from the API Server: There is a third-party predefined server that hosts the entire blockchain and has all the data processed and optimized to provide that data in a fast manner. This method is fast but potentially (not necessarily) less private. It's also a centralized method to restore a wallet as it depends on the availability of a 3rd party server. This option is recommended due to its speed of getting data (5-10 minutes).\n\n2. from Blockchain: The app tries to restore directly from a network of blockchain nodes. This is a decentralized way to restore wallet balance and past transactions. The app pings many of the network nodes and requests data from them without addressing some nodes specifically. This option is slow and can easily take 2-3 hours, the app needs to be open while restoring is happening. This restore method doesn't depend on any entity and should work in all conditions.";
+
 "blockchain_settings.info.rpc_source" = "Fuente RPC";
 "blockchain_settings.info.rpc_source.content" = "This setting controls how this app interacts with blockchains when sending or receiving transactions.\n\nIn the case of Bitcoin, Bitcoin Cash, Litecoin, and Dash, the communication with blockchain network nodes is fully peer-to-peer. Unstoppable pings many nodes and communicates with one of them. Each time the app connects to a different node.\n\nIn the case of Ethereum, Binance Smart Chain, and other EVM blockchains, there are no alternatives for mobile wallets to interact with respective blockchains other than via third-party RPC service providers (i.e. Infura.io) or personal nodes. That essentially means your communication with that blockchain is not decentralized. This doesn't impact your funds in any way, only the ability to connect to the blockchain network.\n\nRest assured, we are keeping this on the radar and will soon try to provide a decentralized way to sync. Patience.";
 
@@ -1211,7 +1214,7 @@
 
 "status_info.title" = "Estado";
 "status_info.pending.title" = "Pendiente";
-"status_info.pending.content" = "La transacción todavía no ha sido confirmada en la blockchain. Las transacciones enviadas con valores de comisión recomendados o más altos, generalmente se procesan dentro de  minutos. Las transacciones enviadas con una tarifa baja pueden permanecer pendientes por unas pocas horas o incluso días, y hasta pueden ser rechazadas por completo. Además, tenga en cuenta que el estado de una transacción individual que se muestra en la interfaz de Unstoppable wallet generalmente se actualiza con un breve retraso.";
+"status_info.pending.content" = "La transacción todavía no ha sido confirmada en la blockchain. Las transacciones enviadas con valores de comisión recomendados o más altos, generalmente se procesan dentro de  minutos. Las transacciones enviadas con una tarifa baja pueden permanecer pendientes por unas pocas horas o incluso días, y hasta pueden ser rechazadas por completo. Además, tenga en cuenta que el estado de una transacción individual que se muestra en la interfaz de SafeWallet generalmente se actualiza con un breve retraso.";
 "status_info.processing.title" = "Procesando";
 "status_info.processing.content" = "La transacción ha sido incluida en el blockchain pero todavía no ha alcanzado la finalidad permanente. En este punto, es posible considerar que la transacción fue completada para pagos más pequeños. Para pagos más grandes se recomienda esperar hasta que el estado cambie a completar.";
 "status_info.completed.title" = "Finalizado";
@@ -1426,3 +1429,17 @@
 "nft.activity.event_type.listCancel" = "Lista Cancelar";
 "nft.activity.event_type.offer" = "Oferta";
 "nft.activity.event_type.offerCancel" = "Cancelar oferta";
+
+// Safe zone
+"safe_zone.nav.title" = "SAFE ZONE";
+"safe_zone.section.cross_eth" = "Cross Chain(ETH)";
+"safe_zone.section.cross_bsc" = "Cross Chain(BSC)";
+"safe_zone.section.locked" = "Locked";
+"safe_zone.section.basic" = "Basic information";
+"safe_zone.row.contract" = "SAFE contract";
+"safe_zone.row.linear" = "Linear Locked";
+"safe_zone.row.lock" = "Lock up record";
+"safe_zone.row.homepage" = "SAFE Homepage";
+"safe_zone.row.blockExplorer" = "BlockExplorer";
+"safe_zone.row.acrossExplorer" = "Across Chain Explorer";
+"safe_dapp.input" = "Enter Link Access";

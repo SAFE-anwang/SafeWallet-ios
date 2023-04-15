@@ -52,6 +52,7 @@ enum AccountType {
             case (.arbitrumOne, .native), (.arbitrumOne, .eip20): return true
             case (.optimism, .native), (.optimism, .eip20): return true
             case (.ethereumGoerli, .native), (.ethereumGoerli, .eip20): return true
+            case (.unsupported(let uid), .native): return uid == safeCoinUid
             default: return false
             }
         case .hdExtendedKey(let key):
@@ -91,6 +92,7 @@ enum AccountType {
             case (.arbitrumOne, .native), (.arbitrumOne, .eip20): return true
             case (.optimism, .native), (.optimism, .eip20): return true
             case (.ethereumGoerli, .native), (.ethereumGoerli, .eip20): return true
+            case (.unsupported(let uid), .native): return uid == safeCoinUid
             default: return false
             }
         }

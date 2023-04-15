@@ -19,7 +19,7 @@ class ManageWalletsService {
 
     var items: [Item] = [] {
         didSet {
-            itemsRelay.accept(items)
+           itemsRelay.accept(items)
         }
     }
 
@@ -67,11 +67,14 @@ class ManageWalletsService {
 
     private func fetchConfiguredTokens() -> [ConfiguredToken] {
         do {
+            
             if filter.trimmingCharacters(in: .whitespaces).isEmpty {
+//<<<<<<< HEAD
                 let queries = [
                     TokenQuery(blockchainType: .bitcoin, tokenType: .native),
                     TokenQuery(blockchainType: .ethereum, tokenType: .native),
                     TokenQuery(blockchainType: .binanceSmartChain, tokenType: .native),
+                    TokenQuery(blockchainType: .unsupported(uid: safeCoinUid), tokenType: .native),
                 ]
 
                 let tokens = try marketKit.tokens(queries: queries)
@@ -84,6 +87,23 @@ class ManageWalletsService {
                 let enabledConfiguredTokens = wallets.map { $0.configuredToken }
 
                 return Array(Set(featuredConfiguredTokens + enabledConfiguredTokens))
+//=======
+//                var fullCoins = try marketKit.fullCoins(filter: "", limit: 1000)
+//                        .filter { !$0.eligibleTokens(accountType: account.type).isEmpty }
+//                        .prefix(100)
+//                let safeFullCoins = try marketKit.fullCoins(coinUids: [safeCoinUid])
+//                fullCoins += safeFullCoins
+//                if testNetManager.testNetEnabled {
+//                    fullCoins += testNetManager.baseTokens
+//                            .map { $0.fullCoin }
+//                            .filter { !$0.eligibleTokens(accountType: account.type).isEmpty }
+//                }
+//                let allCoins = fullCoins.map { $0.coin }
+//                let enabledFullCoins = try marketKit.fullCoins(coinUids: wallets.filter { !allCoins.contains($0.coin) }.map { $0.coin.uid })
+//                let customFullCoins = wallets.map { $0.token }.filter { $0.isCustom }.map { $0.fullCoin }
+//                return fullCoins + enabledFullCoins + customFullCoins
+                
+//>>>>>>> master
             } else if let ethAddress = try? EvmKit.Address(hex: filter) {
                 let address = ethAddress.hex
                 let tokens = try marketKit.tokens(reference: address)
@@ -96,10 +116,19 @@ class ManageWalletsService {
                 let allFullCoins = try marketKit.fullCoins(filter: filter, limit: 100)
                 let tokens = allFullCoins.map { $0.tokens }.flatMap { $0 }
 
+//<<<<<<< HEAD
                 return tokens
                         .map { $0.configuredTokens }
                         .flatMap { $0 }
                         .filter { account.type.supports(configuredToken: $0) }
+//=======
+//                if testNetManager.testNetEnabled {
+//                    fullCoins += testNetManager.baseTokens(filter: filter)
+//                            .map { $0.fullCoin }
+//                            .filter { !$0.eligibleTokens(accountType: account.type).isEmpty }
+//                }
+//                return Array(fullCoins)
+//>>>>>>> master
             }
         } catch {
             return []
@@ -275,6 +304,7 @@ extension ManageWalletsService {
             case .bitcoinCashCoinType: return InfoItem(token: token, type: .bitcoinCashCoinType)
             }
         }
+//<<<<<<< HEAD
 
         for restoreSettingType in blockchainType.restoreSettingTypes {
             switch restoreSettingType {
@@ -284,6 +314,16 @@ extension ManageWalletsService {
                     return InfoItem(token: token, type: .birthdayHeight(height: birthdayHeight))
                 }
             }
+//=======
+//
+//        let coinWallets = wallets.filter { $0.coin.uid == uid }
+//        enableCoinService.configure(fullCoin: fullCoin, accountType: account.type, configuredTokens: coinWallets.map { $0.configuredToken })
+//    }
+//
+//    func birthdayHeight(uid: String) -> (Blockchain, Int)? {
+//        guard let fullCoin = fullCoins.first(where: { $0.coin.uid == uid }) else {
+//            return nil
+//>>>>>>> master
         }
 
         switch token.type {
@@ -318,3 +358,4 @@ extension ManageWalletsService {
     }
 
 }
+

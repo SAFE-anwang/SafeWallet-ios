@@ -23,7 +23,9 @@ class MarketGlobalMetricService: IMarketSingleSortHeaderService {
         }
     }
     var metricsType: MarketGlobalModule.MetricsType
-
+    
+    private var currentMarketField: MarketModule.MarketField
+    
     let initialMarketFieldIndex: Int
 
     init(marketKit: MarketKit.Kit, currencyKit: CurrencyKit.Kit, metricsType: MarketGlobalModule.MetricsType) {
@@ -31,7 +33,7 @@ class MarketGlobalMetricService: IMarketSingleSortHeaderService {
         self.currencyKit = currencyKit
         self.metricsType = metricsType
         initialMarketFieldIndex = metricsType.marketField.rawValue
-
+        currentMarketField = metricsType.marketField
         syncMarketInfos()
     }
 
@@ -53,9 +55,18 @@ class MarketGlobalMetricService: IMarketSingleSortHeaderService {
     }
 
     private var sortingField: MarketModule.SortingField {
-        switch metricsType {
-        case .volume24h: return sortDirectionAscending ? .lowestVolume : .highestVolume
-        default: return sortDirectionAscending ? .lowestCap : .highestCap
+        if  metricsType == .totalMarketCap || metricsType == .volume24h || metricsType == .defiCap {
+            switch currentMarketField {
+            case .marketCap: return sortDirectionAscending ? .lowestCap : .highestCap
+            case .volume: return sortDirectionAscending ? .lowestVolume : .highestVolume
+            case .price: return sortDirectionAscending ? .topLosers : .topGainers
+                
+            }
+        }else {
+            switch metricsType {
+            case .volume24h: return sortDirectionAscending ? .lowestVolume : .highestVolume
+            default: return sortDirectionAscending ? .lowestCap : .highestCap
+            }
         }
     }
 
@@ -109,6 +120,11 @@ extension MarketGlobalMetricService: IMarketListDecoratorService {
 
     func onUpdate(marketFieldIndex: Int) {
         if case .loaded(let marketInfos, _, _) = state {
+            if let marketField = MarketModule.MarketField(rawValue: marketFieldIndex) {
+                currentMarketField = marketField
+                syncIfPossible()
+            }
+            
             stateRelay.accept(.loaded(items: marketInfos, softUpdate: false, reorder: false))
         }
     }

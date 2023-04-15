@@ -65,5 +65,37 @@ class SwapInputModule {
                 toAmountInputViewModel: toAmountInputViewModel
         )
     }
+    
+    static func cell(service: SafeSwapService, tradeService: SafeSwapTradeService, switchService: AmountTypeSwitchService) -> SwapInputCell {
+        let fromCoinCardService = SafeSwapFromCoinCardService(service: service, tradeService: tradeService)
+        let toCoinCardService = SafeSwapToCoinCardService(service: service, tradeService: tradeService)
+
+        let fromFiatService = FiatService(switchService: switchService, currencyKit: App.shared.currencyKit, marketKit: App.shared.marketKit)
+        let toFiatService = FiatService(switchService: switchService, currencyKit: App.shared.currencyKit, marketKit: App.shared.marketKit)
+        switchService.add(toggleAllowedObservable: fromFiatService.toggleAvailableObservable)
+        switchService.add(toggleAllowedObservable: toFiatService.toggleAvailableObservable)
+
+        let fromViewModel = SwapCoinCardViewModel(coinCardService: fromCoinCardService, fiatService: fromFiatService)
+        let toViewModel = SwapCoinCardViewModel(coinCardService: toCoinCardService, fiatService: toFiatService)
+
+        let fromAmountInputViewModel = AmountInputViewModel(
+                service: fromCoinCardService,
+                fiatService: fromFiatService,
+                switchService: switchService,
+                decimalParser: AmountDecimalParser()
+        )
+        let toAmountInputViewModel = AmountInputViewModel(
+                service: toCoinCardService,
+                fiatService: toFiatService,
+                switchService: switchService,
+                decimalParser: AmountDecimalParser()
+        )
+
+        return SwapInputCell(fromViewModel: fromViewModel,
+                fromAmountInputViewModel: fromAmountInputViewModel,
+                toViewModel: toViewModel,
+                toAmountInputViewModel: toAmountInputViewModel
+        )
+    }
 
 }

@@ -15,7 +15,8 @@ struct SendEvmData {
         case send(info: SendInfo)
         case uniswap(info: SwapInfo)
         case oneInchSwap(info: OneInchSwapInfo)
-
+        case safeSwap(info: SafeSwapInfo)
+        
         var dAppInfo: DAppInfo? {
             if case .otherDApp(let info) = self { return info } else { return nil }
         }
@@ -30,6 +31,10 @@ struct SendEvmData {
 
         var oneInchSwapInfo: OneInchSwapInfo? {
             if case .oneInchSwap(let info) = self { return info } else { return nil }
+        }
+        
+        var safeSwapInfo: SafeSwapInfo? {
+            if case .safeSwap(let info) = self { return info } else { return nil }
         }
     }
 
@@ -58,6 +63,15 @@ struct SendEvmData {
     }
 
     struct OneInchSwapInfo {
+        let tokenFrom: Token
+        let tokenTo: Token
+        let amountFrom: Decimal
+        let estimatedAmountTo: Decimal
+        let slippage: Decimal
+        let recipient: Address?
+    }
+    
+    struct SafeSwapInfo {
         let tokenFrom: Token
         let tokenTo: Token
         let amountFrom: Decimal
