@@ -3419,10 +3419,6 @@
 		ABC9AFE16BDDA2ECBE8729CA /* WalletConnectV2ListView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalletConnectV2ListView.swift; sourceTree = "<group>"; };
 		ABC9AFF7119B9AC0E32B2060 /* SendConfirmationModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendConfirmationModule.swift; sourceTree = "<group>"; };
 		ABC9AFF8093DEB7AFD7DBBCC /* WalletConnectV2MainPendingRequestService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalletConnectV2MainPendingRequestService.swift; sourceTree = "<group>"; };
-		BD1D4EDF29EF0B520035B7A4 /* BitcoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = BitcoinKit; sourceTree = "<group>"; };
-		BD1D4EE029EF0B530035B7A4 /* BitcoinCashKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = BitcoinCashKit; sourceTree = "<group>"; };
-		BD1D4EE529EF0C6C0035B7A4 /* DashKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = DashKit; sourceTree = "<group>"; };
-		BD1D4EE829EF130B0035B7A4 /* LitecoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = LitecoinKit; sourceTree = "<group>"; };
 		BD1D4EED29EFDFA30035B7A4 /* SafeCoinAddressParserItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeCoinAddressParserItem.swift; sourceTree = "<group>"; };
 		BD1D4EF129EFE3820035B7A4 /* SendSafeCoinService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafeCoinService.swift; sourceTree = "<group>"; };
 		BD1D4EF429EFE3A50035B7A4 /* SendSafeCoinAdapterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafeCoinAdapterService.swift; sourceTree = "<group>"; };
@@ -3472,10 +3468,14 @@
 		BD55E81329E5BD5F0081A85D /* MarketDappModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarketDappModule.swift; sourceTree = "<group>"; };
 		BD55E81429E5BD5F0081A85D /* MarketDappListViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarketDappListViewController.swift; sourceTree = "<group>"; };
 		BD55E81529E5BD5F0081A85D /* MarketDappProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarketDappProvider.swift; sourceTree = "<group>"; };
-		BD9273DC29EED74C00FB93FF /* SafeSwapKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SafeSwapKit; sourceTree = "<group>"; };
-		BD9273DD29EED74C00FB93FF /* SafeCoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SafeCoinKit; sourceTree = "<group>"; };
-		BD9273DE29EED74D00FB93FF /* MarketKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MarketKit; sourceTree = "<group>"; };
-		BD9273E329EED86900FB93FF /* Hodler */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Hodler; sourceTree = "<group>"; };
+		BDB4AE3D2A038B0A0029E63D /* LitecoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = LitecoinKit; path = Packages/LitecoinKit; sourceTree = "<group>"; };
+		BDB4AE3E2A038B0B0029E63D /* BitcoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BitcoinKit; path = Packages/BitcoinKit; sourceTree = "<group>"; };
+		BDB4AE3F2A038B0B0029E63D /* SafeSwapKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SafeSwapKit; path = Packages/SafeSwapKit; sourceTree = "<group>"; };
+		BDB4AE402A038B0C0029E63D /* BitcoinCashKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BitcoinCashKit; path = Packages/BitcoinCashKit; sourceTree = "<group>"; };
+		BDB4AE412A038B0C0029E63D /* Hodler */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Hodler; path = Packages/Hodler; sourceTree = "<group>"; };
+		BDB4AE422A038B0D0029E63D /* MarketKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = MarketKit; path = Packages/MarketKit; sourceTree = "<group>"; };
+		BDB4AE432A038B0D0029E63D /* DashKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DashKit; path = Packages/DashKit; sourceTree = "<group>"; };
+		BDB4AE442A038B0E0029E63D /* SafeCoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SafeCoinKit; path = Packages/SafeCoinKit; sourceTree = "<group>"; };
 		D003297526CD2C67002EC21D /* TransactionLockInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionLockInfo.swift; sourceTree = "<group>"; };
 		D003297926CD2E89002EC21D /* TransactionDateHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDateHeaderView.swift; sourceTree = "<group>"; };
 		D008CA59267C8DDF00001E0A /* EvmIncomingTransactionRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EvmIncomingTransactionRecord.swift; sourceTree = "<group>"; };
@@ -6471,14 +6471,14 @@
 		BD55E78E29E58B100081A85D /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				BD1D4EE829EF130B0035B7A4 /* LitecoinKit */,
-				BD1D4EE529EF0C6C0035B7A4 /* DashKit */,
-				BD1D4EE029EF0B530035B7A4 /* BitcoinCashKit */,
-				BD1D4EDF29EF0B520035B7A4 /* BitcoinKit */,
-				BD9273E329EED86900FB93FF /* Hodler */,
-				BD9273DE29EED74D00FB93FF /* MarketKit */,
-				BD9273DD29EED74C00FB93FF /* SafeCoinKit */,
-				BD9273DC29EED74C00FB93FF /* SafeSwapKit */,
+				BDB4AE402A038B0C0029E63D /* BitcoinCashKit */,
+				BDB4AE3E2A038B0B0029E63D /* BitcoinKit */,
+				BDB4AE432A038B0D0029E63D /* DashKit */,
+				BDB4AE412A038B0C0029E63D /* Hodler */,
+				BDB4AE3D2A038B0A0029E63D /* LitecoinKit */,
+				BDB4AE422A038B0D0029E63D /* MarketKit */,
+				BDB4AE442A038B0E0029E63D /* SafeCoinKit */,
+				BDB4AE3F2A038B0B0029E63D /* SafeSwapKit */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
