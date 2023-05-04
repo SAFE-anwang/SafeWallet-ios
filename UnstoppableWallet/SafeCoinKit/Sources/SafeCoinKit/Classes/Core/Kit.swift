@@ -41,7 +41,6 @@ public class Kit: AbstractKit {
             network = MainNet()
             initialSyncApiUrl = "https://chain.anwang.org/insight-api-safe"
 
-//            initialSyncApiUrl = "https://insight.dash.org/insight-api"
         case .testNet:
             network = TestNet()
             initialSyncApiUrl = "http://dash-testnet.horizontalsystems.xyz/apg"
@@ -86,7 +85,7 @@ public class Kit: AbstractKit {
 
         blockValidatorSet.add(blockValidator: blockValidatorChain)
 
-        let bitcoinCore = try BitcoinCoreBuilder(logger: logger)
+        let bitcoinCore = try BitcoinCoreBuilder(logger: logger, isSafe: true)
                 .set(network: network)
                 .set(extendedKey: extendedKey)
                 .set(initialSyncApi: initialSyncApi)
@@ -99,7 +98,6 @@ public class Kit: AbstractKit {
                 .set(blockHeaderHasher: x11Hasher)
                 .set(transactionInfoConverter: dashTransactionInfoConverter)
                 .set(blockValidator: blockValidatorSet)
-              //  .set(purpose: .bip44)
                 .build()
         super.init(bitcoinCore: bitcoinCore, network: network)
         bitcoinCore.delegate = self

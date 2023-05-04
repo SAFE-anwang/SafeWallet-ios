@@ -38,6 +38,10 @@ class FeeRateProvider {
     var dashFeeRate: Single<Int> {
         feeRateKit.dash
     }
+    
+    var safeFeeRate: Single<Int> {
+        Single.just(10)
+    }
 
     func bitcoinFeeRate(blockCount: Int) -> Single<Int> {
         feeRateKit.bitcoin(blockCount: blockCount)
@@ -90,6 +94,15 @@ class DashFeeRateProvider: IFeeRateProvider {
     }
 
     var recommendedFeeRate: Single<Int> { feeRateProvider.dashFeeRate }
+}
+
+class SafeFeeRateProvider: IFeeRateProvider {
+    private let feeRateProvider: FeeRateProvider
+
+    init(feeRateProvider: FeeRateProvider) {
+        self.feeRateProvider = feeRateProvider
+    }
+    var recommendedFeeRate: Single<Int> { feeRateProvider.safeFeeRate }
 }
 
 private func ceil(_ value: Int, multiply: Double?) -> Int {

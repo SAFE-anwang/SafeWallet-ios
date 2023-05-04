@@ -10,6 +10,7 @@ import MarketKit
 import BigInt
 import ZcashLightClientKit
 import HsToolKit
+import Hodler
 
 protocol IBaseAdapter {
     var isMainNet: Bool { get }
@@ -70,6 +71,17 @@ protocol ISendEthereumAdapter {
     var evmKitWrapper: EvmKitWrapper { get }
     var balanceData: BalanceData { get }
     func transactionData(amount: BigUInt, address: EvmKit.Address) -> TransactionData
+}
+
+protocol ISendSafeCoinAdapter {
+    var blockchainType: BlockchainType { get }
+   // var balanceData: BalanceData { get }
+    func availableBalanceSafe(address: String?) -> Decimal
+    func minimumSendAmountSafe(address: String?) -> Decimal
+    func validateSafe(address: String) throws
+    func feeSafe(amount: Decimal, address: String?) -> Decimal
+    func convertFeeSafe(amount: Decimal, address: String?) -> Decimal
+    func sendSingle(amount: Decimal, address: String, sortMode: TransactionDataSortMode,  logger: HsToolKit.Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> Single<Void>
 }
 
 protocol IErc20Adapter {

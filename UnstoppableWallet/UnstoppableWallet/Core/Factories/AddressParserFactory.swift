@@ -2,6 +2,7 @@ import MarketKit
 import BitcoinKit
 import BitcoinCore
 import DashKit
+import SafeCoinKit
 import LitecoinKit
 import BitcoinCashKit
 import BinanceChainKit
@@ -18,13 +19,14 @@ class AddressParserFactory {
         case .ethereum: return AddressUriParser(validScheme: "ethereum", removeScheme: true)
         case .binanceChain: return AddressUriParser(validScheme: "binance", removeScheme: true)
         case .zcash: return AddressUriParser(validScheme: "zcash", removeScheme: true)
+        case .unsupported(let uid): return uid == safeCoinUid ? AddressUriParser(validScheme: "safe-anwang", removeScheme: true) : AddressUriParser(validScheme: nil, removeScheme: false)
         default: return AddressUriParser(validScheme: nil, removeScheme: false)
         }
     }
 
     static func parserChain(blockchainType: BlockchainType) -> AddressParserChain {
         switch blockchainType {
-        case .bitcoin, .dash, .litecoin, .bitcoinCash:
+        case .bitcoin, .dash, .litecoin, .bitcoinCash, .unsupported(_):
             let scriptConverter = ScriptConverter()
 
             let specificAddressConverter: IAddressConverter?
@@ -39,6 +41,14 @@ class AddressParserFactory {
             case .bitcoinCash:
                 network = BitcoinCashKit.MainNet()
                 specificAddressConverter = CashBech32AddressConverter(prefix: network.bech32PrefixPattern)
+            case .unsupported(let uid):
+                if uid == safeCoinUid {
+                    network = SafeCoinKit.MainNet()
+                    specificAddressConverter = nil
+                }else {
+                    return AddressParserChain()
+                }
+                
             default:
                 network = BitcoinKit.MainNet()
                 specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
@@ -102,7 +112,7 @@ class AddressParserFactory {
 
             return addressParserChain
         case .solana: return AddressParserChain()
-        case .unsupported: return AddressParserChain()
+       // case .unsupported: return AddressParserChain()
         }
 
     }

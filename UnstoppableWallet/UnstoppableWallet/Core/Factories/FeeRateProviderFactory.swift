@@ -13,6 +13,7 @@ class FeeRateProviderFactory {
         case .litecoin: return LitecoinFeeRateProvider(feeRateProvider: feeRateProvider)
         case .bitcoinCash: return BitcoinCashFeeRateProvider(feeRateProvider: feeRateProvider)
         case .dash: return DashFeeRateProvider(feeRateProvider: feeRateProvider)
+        case .unsupported(let uid): return uid == safeCoinUid ? SafeFeeRateProvider(feeRateProvider: feeRateProvider) : nil
         default: return nil
         }
     }

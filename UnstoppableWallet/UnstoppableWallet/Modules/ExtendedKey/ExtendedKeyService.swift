@@ -6,6 +6,7 @@ import BitcoinKit
 import BitcoinCashKit
 import LitecoinKit
 import DashKit
+import SafeCoinKit
 
 class ExtendedKeyService {
     let mode: ExtendedKeyModule.Mode
@@ -246,19 +247,21 @@ extension ExtendedKeyService {
         case bitcoinCash
         case litecoin
         case dash
-
+        case safe
+        
         var title: String {
             switch self {
             case .bitcoin: return "Bitcoin"
             case .bitcoinCash: return "Bitcoin Cash"
             case .litecoin: return "Litecoin"
             case .dash: return "Dash"
+            case .safe: return "Safe"
             }
         }
 
         var extendedKeyCoinType: HDExtendedKeyVersion.ExtendedKeyCoinType {
             switch self {
-            case .bitcoin, .bitcoinCash, .dash: return .bitcoin
+            case .bitcoin, .bitcoinCash, .dash, .safe: return .bitcoin
             case .litecoin: return .litecoin
             }
         }
@@ -269,6 +272,7 @@ extension ExtendedKeyService {
             case .bitcoinCash: return BitcoinCashKit.MainNet().coinType
             case .litecoin: return LitecoinKit.MainNet().coinType
             case .dash: return DashKit.MainNet().coinType
+            case .safe: return SafeCoinKit.MainNet().coinType
             }
         }
     }

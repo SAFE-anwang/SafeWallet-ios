@@ -8,7 +8,8 @@ class BtcBlockchainManager {
         .bitcoin,
         .bitcoinCash,
         .litecoin,
-        .dash
+        .dash,
+        .unsupported(uid: safeCoinUid)
     ]
 
     private let marketKit: MarketKit.Kit

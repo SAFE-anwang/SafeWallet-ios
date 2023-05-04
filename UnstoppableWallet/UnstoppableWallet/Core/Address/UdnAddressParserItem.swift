@@ -103,7 +103,9 @@ extension UdnAddressParserItem {
         case .gnosis: return "ETH"
         case .fantom: return "ETH"
         case .solana: return "SOL"
+//        case .safe: return "SAFE"
         case .unsupported(let uid): return uid
+
         }
     }
 
@@ -113,6 +115,7 @@ extension UdnAddressParserItem {
         case (.binanceSmartChain, .native), (.binanceSmartChain, .eip20): return "BEP20"
         case (.polygon, .native), (.polygon, .eip20): return "MATIC"
         case (.avalanche, .native), (.avalanche, .eip20): return "AVAX"
+        case (.unsupported(let uid), .native): return uid == safeCoinUid ? "SAFE" : nil
         default: return nil
         }
     }

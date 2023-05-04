@@ -18,6 +18,8 @@ class SendModule {
         let token = wallet.token
 
         switch adapter {
+        case let adapter as ISendSafeCoinAdapter:
+            return SendModule.viewController(token: token, adapter: adapter)
         case let adapter as ISendBitcoinAdapter:
             return SendModule.viewController(token: token, adapter: adapter)
         case let adapter as ISendBinanceAdapter:
@@ -339,5 +341,133 @@ class SendModule {
 
         return ThemeNavigationController(rootViewController: viewController)
     }
+    
+    private static func viewController(token: Token, adapter: ISendSafeCoinAdapter) -> UIViewController? {
+        guard let feeRateProvider = App.shared.feeRateProviderFactory.provider(blockchainType: token.blockchainType) else {
+            return nil
+        }
 
+        let switchService = AmountTypeSwitchService(localStorage: StorageKit.LocalStorage.default)
+        let coinService = CoinService(token: token, currencyKit: App.shared.currencyKit, marketKit: App.shared.marketKit)
+        let fiatService = FiatService(switchService: switchService, currencyKit: App.shared.currencyKit, marketKit: App.shared.marketKit)
+
+        // Amount
+        let amountInputService = SendBitcoinAmountInputService(token: token)
+        let amountCautionService = SendAmountCautionService(amountInputService: amountInputService)
+
+        // Address
+        let bitcoinParserItem = SafeCoinAddressParserItem(adapter: adapter)
+        let udnAddressParserItem = UdnAddressParserItem.item(rawAddressParserItem: bitcoinParserItem, coinCode: token.coin.code, token: token)
+        let addressParserChain = AddressParserChain()
+                .append(handler: bitcoinParserItem)
+                .append(handler: udnAddressParserItem)
+
+        if let httpSyncSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .ethereum),
+           let ensAddressParserItem = EnsAddressParserItem(rpcSource: httpSyncSource.rpcSource, rawAddressParserItem: bitcoinParserItem) {
+            addressParserChain.append(handler: ensAddressParserItem)
+        }
+
+        let addressUriParser = AddressParserFactory.parser(blockchainType: token.blockchainType)
+        let addressService = AddressService(mode: .parsers(addressUriParser, addressParserChain), marketKit: App.shared.marketKit, contactBookManager: App.shared.contactManager, blockchainType: token.blockchainType)
+
+        // Fee
+        let feeRateService = FeeRateService(provider: feeRateProvider)
+        let feeFiatService = FiatService(switchService: switchService, currencyKit: App.shared.currencyKit, marketKit: App.shared.marketKit)
+        let feeService = SendFeeService(fiatService: feeFiatService, feeToken: token)
+        let inputOutputOrderService = InputOutputOrderService(blockchainType: adapter.blockchainType, blockchainManager: App.shared.btcBlockchainManager, itemsList: TransactionDataSortMode.allCases)
+
+        // TimeLock
+        var timeLockService: TimeLockService?
+        var timeLockErrorService: SendTimeLockErrorService?
+
+//        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .unsupported(uid: safeCoinUid) {
+//            let timeLockServiceInstance = TimeLockService()
+//            timeLockService = timeLockServiceInstance
+//            timeLockErrorService = SendTimeLockErrorService(timeLockService: timeLockServiceInstance, addressService: addressService, adapter: adapter)
+//        }
+
+        let bitcoinAdapterService = SendSafeCoinAdapterService(
+                feeRateService: feeRateService,
+                amountInputService: amountInputService,
+                addressService: addressService,
+                inputOutputOrderService: inputOutputOrderService,
+                timeLockService: timeLockService,
+                btcBlockchainManager: App.shared.btcBlockchainManager,
+                adapter: adapter
+        )
+        let service = SendSafeCoinService(
+                amountService: amountInputService,
+                amountCautionService: amountCautionService,
+                addressService: addressService,
+                adapterService: bitcoinAdapterService,
+                feeRateService: feeRateService,
+                timeLockErrorService: timeLockErrorService,
+                reachabilityManager: App.shared.reachabilityManager,
+                token: token
+        )
+
+        //Add dependencies
+        switchService.add(toggleAllowedObservable: fiatService.toggleAvailableObservable)
+
+        amountInputService.availableBalanceService = bitcoinAdapterService
+        amountCautionService.availableBalanceService = bitcoinAdapterService
+        amountCautionService.sendAmountBoundsService = bitcoinAdapterService
+
+        addressService.customErrorService = timeLockErrorService
+
+        feeService.feeValueService = bitcoinAdapterService
+
+        // ViewModels
+        let viewModel = SendViewModel(service: service)
+        let availableBalanceViewModel = SendAvailableBalanceViewModel(service: bitcoinAdapterService, coinService: coinService, switchService: switchService)
+        let amountInputViewModel = AmountInputViewModel(
+                service: amountInputService,
+                fiatService: fiatService,
+                switchService: switchService,
+                decimalParser: AmountDecimalParser()
+        )
+        addressService.amountPublishService = amountInputViewModel
+
+        let amountCautionViewModel = SendAmountCautionViewModel(
+                service: amountCautionService,
+                switchService: switchService,
+                coinService: coinService
+        )
+        let recipientViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
+
+        // Fee
+        let feeViewModel = SendFeeViewModel(service: feeService)
+        let feeWarningViewModel = SendFeeWarningViewModel(service: feeRateService)
+
+        // Confirmation and Settings
+        let customRangedFeeRateProvider = feeRateProvider as? ICustomRangedFeeRateProvider
+
+        let sendFactory = SendSafeCoinFactory(
+                fiatService: fiatService,
+                amountCautionService: amountCautionService,
+                addressService: addressService,
+                feeFiatService: feeFiatService,
+                feeService: feeService,
+                feeRateService: feeRateService,
+                timeLockService: timeLockService,
+                adapterService: bitcoinAdapterService,
+                customFeeRateProvider: customRangedFeeRateProvider,
+                logger: App.shared.logger,
+                token: token
+        )
+
+        let viewController = SendBitcoinViewController(
+                confirmationFactory: sendFactory,
+                feeSettingsFactory: sendFactory,
+                viewModel: viewModel,
+                availableBalanceViewModel: availableBalanceViewModel,
+                amountInputViewModel: amountInputViewModel,
+                amountCautionViewModel: amountCautionViewModel,
+                recipientViewModel: recipientViewModel,
+                feeViewModel: feeViewModel,
+                feeWarningViewModel: feeWarningViewModel
+        )
+
+        return ThemeNavigationController(rootViewController: viewController)
+    }
 }

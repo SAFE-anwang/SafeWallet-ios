@@ -3,6 +3,7 @@ public enum CoinType: Decodable {
     case bitcoinCash
     case litecoin
     case dash
+    case safe
     case zcash
     case ethereum
     case binanceSmartChain
@@ -27,7 +28,6 @@ public enum CoinType: Decodable {
     case tomochain(address: String)
     case xdai(address: String)
     case unsupported(type: String)
-
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let value = try container.decode(String.self)
@@ -41,6 +41,7 @@ public enum CoinType: Decodable {
         case "bitcoin-cash": self = .bitcoinCash
         case "litecoin": self = .litecoin
         case "dash": self = .dash
+        case "safe": self = .safe
         case "zcash": self = .zcash
         case "ethereum": self = .ethereum
         case "binance-smart-chain": self = .binanceSmartChain
@@ -74,6 +75,7 @@ public enum CoinType: Decodable {
         case .bitcoinCash: return (type: "bitcoin-cash", address: nil, symbol: nil)
         case .litecoin: return (type: "litecoin", address: nil, symbol: nil)
         case .dash: return (type: "dash", address: nil, symbol: nil)
+        case .safe: return (type: "safe", address: nil, symbol: nil)
         case .zcash: return (type: "zcash", address: nil, symbol: nil)
         case .ethereum: return (type: "ethereum", address: nil, symbol: nil)
         case .binanceSmartChain: return (type: "binance-smart-chain", address: nil, symbol: nil)
@@ -111,6 +113,7 @@ extension CoinType: Equatable {
         case (.bitcoinCash, .bitcoinCash): return true
         case (.litecoin, .litecoin): return true
         case (.dash, .dash): return true
+        case (.safe, .safe): return true
         case (.zcash, .zcash): return true
         case (.ethereum, .ethereum): return true
         case (.binanceSmartChain, .binanceSmartChain): return true
@@ -161,6 +164,7 @@ extension CoinType: Identifiable {
             case "bitcoinCash": self = .bitcoinCash
             case "litecoin": self = .litecoin
             case "dash": self = .dash
+            case "safe-anwang": self = .safe
             case "zcash": self = .zcash
             case "ethereum": self = .ethereum
             case "binanceSmartChain": self = .binanceSmartChain
@@ -200,6 +204,7 @@ extension CoinType: Identifiable {
         case .bitcoinCash: return "bitcoinCash"
         case .litecoin: return "litecoin"
         case .dash: return "dash"
+        case .safe: return "safe-anwang"
         case .zcash: return "zcash"
         case .ethereum: return "ethereum"
         case .binanceSmartChain: return "binanceSmartChain"
@@ -224,6 +229,7 @@ extension CoinType: Identifiable {
         case .tomochain(let address): return ["tomochain", address].joined(separator: "|")
         case .xdai(let address): return ["xdai", address].joined(separator: "|")
         case .unsupported(let type): return ["unsupported", type].joined(separator: "|")
+            
         }
     }
 
@@ -237,6 +243,7 @@ extension CoinType: CustomStringConvertible {
         case .bitcoinCash: return "bitcoinCash"
         case .litecoin: return "litecoin"
         case .dash: return "dash"
+        case .safe: return "safe-anwang"
         case .zcash: return "zcash"
         case .ethereum: return "ethereum"
         case .binanceSmartChain: return "binanceSmartChain"
