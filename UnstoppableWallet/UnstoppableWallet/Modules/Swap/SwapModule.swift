@@ -159,7 +159,7 @@ extension BlockchainType {
         switch self {
         case .ethereum: return [.oneInch, .uniswap, .safeSwap]
         case .binanceSmartChain: return [.oneInch, .pancake, .safeSwap]
-        case .polygon: return [.oneInch, .quickSwap]
+        case .polygon: return [.oneInch, .quickSwap, .safeSwap]
         case .avalanche: return [.oneInch]
         case .optimism: return [.oneInch]
         case .arbitrumOne: return [.oneInch]
@@ -186,7 +186,7 @@ extension SwapModule.Dex {
             case .oneInch: return [.ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom]
             case .pancake: return [.binanceSmartChain]
             case .quickSwap: return [.polygon]
-            case .safeSwap: return [.ethereum, .binanceSmartChain]
+            case .safeSwap: return [.ethereum, .binanceSmartChain, .polygon]
             }
         }
 

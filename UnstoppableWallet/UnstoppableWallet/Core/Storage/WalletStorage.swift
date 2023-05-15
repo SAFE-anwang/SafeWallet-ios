@@ -81,7 +81,7 @@ extension WalletStorage {
 }
 extension WalletStorage {
     private func isSafeCoin(name: String, code: String) -> Bool {
-        name == "SAFE(AnWang)" || code == "SAFE"
+        name == "SAFE" || code == "SAFE"
     }
                     
 }

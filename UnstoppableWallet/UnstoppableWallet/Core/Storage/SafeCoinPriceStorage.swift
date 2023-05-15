@@ -3,13 +3,7 @@ import GRDB
 import MarketKit
 
 class SafeCoinPriceStorage {
-//    private let dbPool: DatabasePool
-//
-//    init(dbPool: DatabasePool) throws {
-//        self.dbPool = dbPool
-//        try migrator.migrate(dbPool)
-//    }
-//
+
     private let dbPool: DatabasePool
 
     init(dbPool: DatabasePool) throws {

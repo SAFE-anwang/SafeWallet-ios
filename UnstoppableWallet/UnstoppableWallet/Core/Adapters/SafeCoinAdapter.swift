@@ -105,11 +105,11 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
     }
     
     func sendSingle(amount: Decimal, address: String, sortMode: TransactionDataSortMode, logger: HsToolKit.Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> RxSwift.Single<Void> {
-//        var unlockedHeight = 0
-//        if let lockedMonth = lockedTimeInterval?.valueInSeconds {
-//            var step = 86400 * lockedMonth
-//            unlockedHeight = (safeCoinKit.lastBlockInfo?.height ?? 0) * step
-//        }
+        var unlockedHeight = 0
+        if let lockedMonth = lockedTimeInterval?.valueInSeconds {
+            var step = 86400 * lockedMonth
+            unlockedHeight = (safeCoinKit.lastBlockInfo?.height ?? 0) * step
+        }
         
         let satoshiAmount = convertToSatoshi(value: amount)
         let sortType = convertToKitSortMode(sort: sortMode)
@@ -118,19 +118,19 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
             do {
                 // 增加兑换WSAFE流量手续费
                 var convertFeeRate = self!.feeRate
-//                var newReverseHex = reverseHex
-//                if let reverseHex = reverseHex, reverseHex.starts(with: "73616665") {
-//                    convertFeeRate += 50
-//                } else if let reverseHex = reverseHex, !reverseHex.starts(with: "73616665") {
-//                    convertFeeRate += 50
-//                    val lineLock = JsonUtils.stringToObj(reverseHex)
-//                    // 设置最新区块高度
-//                    lineLock.lastHeight = safeCoinKit.lastBlockInfo?.height ?? 0
-//                    lineLock.lockedValue = (BigDecimal(lineLock.lockedValue) * satoshisInBitcoin).toLong().toString()
-//                    newReverseHex = JsonUtils.objToString(lineLock)
-//                }
+                var newReverseHex = reverseHex
+                if let reverseHex = reverseHex, reverseHex.starts(with: "73616665") {
+                    convertFeeRate += 50
+                } else if let reverseHex = reverseHex, !reverseHex.starts(with: "73616665") {
+                    convertFeeRate += 50
+                   // let lineLock = reverseHex.stringToObj(LineLock.self)
+                    // 设置最新区块高度
+           //         lineLock?.lastHeight = self?.safeCoinKit.lastBlockInfo?.height ?? 0
+//                    lineLock.lockedValue = (Decimal(lineLock.lockedValue) * coinRate).hs.hex
+//                    newReverseHex = lineLock.reverseHex()
+                }
                 if let adapter = self {
-                    _ = try adapter.safeCoinKit.send(to: address, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, pluginData: [:])
+                    _ = try adapter.safeCoinKit.sendSafe(to: address, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, pluginData: [:], unlockedHeight: unlockedHeight, reverseHex: nil)
                 }
                 observer(.success(()))
             } catch {

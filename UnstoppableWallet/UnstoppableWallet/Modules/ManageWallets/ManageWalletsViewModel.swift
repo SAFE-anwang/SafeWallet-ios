@@ -8,34 +8,41 @@ class ManageWalletsViewModel {
     private let service: ManageWalletsService
     private let disposeBag = DisposeBag()
 
-    private let viewItemsRelay = BehaviorRelay<[ViewItem]>(value: [])
+    private let viewItemsRelay = BehaviorRelay<[CoinToggleViewModel.ViewItem]>(value: [])
     private let notFoundVisibleRelay = BehaviorRelay<Bool>(value: false)
-    private let disableItemRelay = PublishRelay<Int>()
-    private let showInfoRelay = PublishRelay<InfoViewItem>()
+    private let disableCoinRelay = PublishRelay<Coin>()
     private let showBirthdayHeightRelay = PublishRelay<BirthdayHeightViewItem>()
-    private let showContractRelay = PublishRelay<ContractViewItem>()
 
     init(service: ManageWalletsService) {
         self.service = service
 
         subscribe(disposeBag, service.itemsObservable) { [weak self] in self?.sync(items: $0) }
-        subscribe(disposeBag, service.cancelEnableObservable) { [weak self] in self?.disableItemRelay.accept($0) }
+        subscribe(disposeBag, service.cancelEnableCoinObservable) { [weak self] in self?.disableCoinRelay.accept($0) }
 
         sync(items: service.items)
     }
 
-    private func viewItem(item: ManageWalletsService.Item) -> ViewItem {
-        let token = item.configuredToken.token
+    private func viewItem(item: ManageWalletsService.Item) -> CoinToggleViewModel.ViewItem {
+        let viewItemState: CoinToggleViewModel.ViewItemState
 
-        return ViewItem(
-                uid: String(item.configuredToken.hashValue),
-                imageUrl: token.coin.imageUrl,
-                placeholderImageName: token.placeholderImageName,
-                title: token.coin.code,
-                subtitle: token.coin.name,
-                badge: item.configuredToken.badge,
-                enabled: item.enabled,
-                hasInfo: item.hasInfo
+        switch item.state {
+        case let .supported(enabled, hasSettings, hasInfo):
+            viewItemState = .toggleVisible(enabled: enabled, hasSettings: hasSettings, hasInfo: hasInfo)
+        case .unsupportedByApp:
+            viewItemState = .toggleHidden(notSupportedReason: "manage_wallets.not_supported.by_app.description".localized(item.fullCoin.coin.name))
+        case .unsupportedByWalletType:
+            let walletType = service.accountType.description
+            viewItemState = .toggleHidden(notSupportedReason: "manage_wallets.not_supported.description".localized(walletType, item.fullCoin.coin.name))
+        }
+
+        return CoinToggleViewModel.ViewItem(
+                uid: item.fullCoin.coin.uid,
+                imageUrl: item.fullCoin.coin.imageUrl,
+                placeholderImageName: "placeholder_circle_32",
+                title: item.fullCoin.coin.code,
+                subtitle: item.fullCoin.coin.name,
+                badge: nil,
+                state: viewItemState
         )
     }
 
@@ -46,68 +53,36 @@ class ManageWalletsViewModel {
 
 }
 
-extension ManageWalletsViewModel {
+extension ManageWalletsViewModel: ICoinToggleViewModel {
 
-    var viewItemsDriver: Driver<[ViewItem]> {
+    var viewItemsDriver: Driver<[CoinToggleViewModel.ViewItem]> {
         viewItemsRelay.asDriver()
     }
 
-    var notFoundVisibleDriver: Driver<Bool> {
-        notFoundVisibleRelay.asDriver()
+    func onEnable(uid: String) {
+        service.enable(uid: uid)
     }
 
-    var disableItemSignal: Signal<Int> {
-        disableItemRelay.asSignal()
+    func onDisable(uid: String) {
+        service.disable(uid: uid)
     }
 
-    var showInfoSignal: Signal<InfoViewItem> {
-        showInfoRelay.asSignal()
+    func onTapSettings(uid: String) {
+        service.configure(uid: uid)
     }
 
-    var showBirthdayHeightSignal: Signal<BirthdayHeightViewItem> {
-        showBirthdayHeightRelay.asSignal()
-    }
-
-    var showContractSignal: Signal<ContractViewItem> {
-        showContractRelay.asSignal()
-    }
-
-    var addTokenEnabled: Bool {
-        service.accountType.canAddTokens
-    }
-
-    func onEnable(index: Int) {
-        service.enable(index: index)
-    }
-
-    func onDisable(index: Int) {
-        service.disable(index: index)
-    }
-
-    func onTapInfo(index: Int) {
-        guard let infoItem = service.infoItem(index: index) else {
+    func onTapInfo(uid: String) {
+        guard let (blockchain, birthdayHeight) = service.birthdayHeight(uid: uid) else {
             return
         }
 
-        let coinViewItem = CoinViewItem(
-                coinImageUrl: infoItem.token.coin.imageUrl,
-                coinPlaceholderImageName: infoItem.token.placeholderImageName,
-                coinName: infoItem.token.coin.name,
-                coinCode: infoItem.token.coin.code
+        let viewItem = BirthdayHeightViewItem(
+                blockchainImageUrl: blockchain.type.imageUrl,
+                blockchainName: blockchain.name,
+                birthdayHeight: String(birthdayHeight)
         )
 
-
-        switch infoItem.type {
-        case .derivation:
-            let coinName = infoItem.token.coin.name
-            showInfoRelay.accept(InfoViewItem(coin: coinViewItem, text: "manage_wallets.derivation_description".localized(coinName, coinName, coinName)))
-        case .bitcoinCashCoinType:
-            showInfoRelay.accept(InfoViewItem(coin: coinViewItem, text: "manage_wallets.bitcoin_cash_coin_type_description".localized))
-        case .birthdayHeight(let height):
-            showBirthdayHeightRelay.accept(BirthdayHeightViewItem(coin: coinViewItem, height: String(height)))
-        case let .contractAddress(value, explorerUrl):
-            showContractRelay.accept(ContractViewItem(coin: coinViewItem, blockchainImageUrl: infoItem.token.blockchainType.imageUrl, value: value, explorerUrl: explorerUrl))
-        }
+        showBirthdayHeightRelay.accept(viewItem)
     }
 
     func onUpdate(filter: String) {
@@ -120,39 +95,34 @@ extension ManageWalletsViewModel {
 
 extension ManageWalletsViewModel {
 
-    struct ViewItem {
-        let uid: String
-        let imageUrl: String
-        let placeholderImageName: String?
-        let title: String
-        let subtitle: String
-        let badge: String?
-        let enabled: Bool
-        let hasInfo: Bool
+    var notFoundVisibleDriver: Driver<Bool> {
+        notFoundVisibleRelay.asDriver()
     }
 
-    struct CoinViewItem {
-        let coinImageUrl: String
-        let coinPlaceholderImageName: String
-        let coinName: String
-        let coinCode: String
+    var disableCoinSignal: Signal<Coin> {
+        disableCoinRelay.asSignal()
     }
 
-    struct InfoViewItem {
-        let coin: CoinViewItem
-        let text: String
+    var showBirthdayHeightSignal: Signal<BirthdayHeightViewItem> {
+        showBirthdayHeightRelay.asSignal()
     }
+
+    var accountTypeDescription: String {
+        service.accountType.description
+    }
+
+    var addTokenEnabled: Bool {
+        service.accountType.canAddTokens
+    }
+
+}
+
+extension ManageWalletsViewModel {
 
     struct BirthdayHeightViewItem {
-        let coin: CoinViewItem
-        let height: String
-    }
-
-    struct ContractViewItem {
-        let coin: CoinViewItem
         let blockchainImageUrl: String
-        let value: String
-        let explorerUrl: String?
+        let blockchainName: String
+        let birthdayHeight: String
     }
 
 }

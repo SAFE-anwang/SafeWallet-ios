@@ -19,6 +19,7 @@ extension BlockchainType {
         .fantom,
         .binanceSmartChain,
         .binanceChain,
+        .unsupported(uid: safeCoinUid)
     ]
 
     func placeholderImageName(tokenProtocol: TokenProtocol?) -> String {
@@ -30,8 +31,12 @@ extension BlockchainType {
     }
 
     var imageUrl: String {
-        let scale = Int(UIScreen.main.scale)
-        return "https://cdn.blocksdecoded.com/blockchain-icons/32px/\(uid)@\(scale)x.png"
+        if uid == safeCoinUid {
+            return "https://anwang.com/img/logos/safe.png"
+        }else {
+            let scale = Int(UIScreen.main.scale)
+            return "https://cdn.blocksdecoded.com/blockchain-icons/32px/\(uid)@\(scale)x.png"
+        }
     }
 
     var coinSettingType: CoinSettingType? {
@@ -149,7 +154,7 @@ extension BlockchainType {
     }
 
     var isUnsupported: Bool {
-        if case .unsupported = self { return true }
+        if case .unsupported = self { return self == .unsupported(uid: safeCoinUid) ? false : true }
         return false
     }
 

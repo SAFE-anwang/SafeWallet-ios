@@ -151,17 +151,28 @@ extension CoinManager {
     }
 
     func marketTickerSingle(coinUid: String) -> Single<[MarketTicker]> {
-        guard let coin = try? storage.coin(uid: coinUid), let coinGeckoId = coin.coinGeckoId else {
+        guard let coin = try? storage.coin(uid: coinUid) else {
             return Single.just([])
         }
+        if coinUid == "safe-anwang" {
+            return coinGeckoProvider.safeMarketTickersSingle(coinId: coinUid)
+                    .map { [weak self] response in
+                        let coinUids = (response.tickers.map { [$0.coinId, $0.targetCoinId] }).flatMap({ $0 }).compactMap { $0 }
+                        let coins = (try? self?.storage.coins(uids: coinUids)) ?? []
+                        return response.marketTickers(imageUrls: self?.exchangeManager.imageUrlsMap(ids: response.exchangeIds) ?? [:], coins: coins)
+                    }
+        }else {
+            guard let coinGeckoId = coin.coinGeckoId else {
+                return Single.just([])
+            }
+            return coinGeckoProvider.marketTickersSingle(coinId: coinGeckoId)
+                    .map { [weak self] response in
+                        let coinUids = (response.tickers.map { [$0.coinId, $0.targetCoinId] }).flatMap({ $0 }).compactMap { $0 }
+                        let coins = (try? self?.storage.coins(uids: coinUids)) ?? []
 
-        return coinGeckoProvider.marketTickersSingle(coinId: coinGeckoId)
-                .map { [weak self] response in
-                    let coinUids = (response.tickers.map { [$0.coinId, $0.targetCoinId] }).flatMap({ $0 }).compactMap { $0 }
-                    let coins = (try? self?.storage.coins(uids: coinUids)) ?? []
-
-                    return response.marketTickers(imageUrls: self?.exchangeManager.imageUrlsMap(ids: response.exchangeIds) ?? [:], coins: coins)
-                }
+                        return response.marketTickers(imageUrls: self?.exchangeManager.imageUrlsMap(ids: response.exchangeIds) ?? [:], coins: coins)
+                    }
+        }
     }
 
     func marketInfoDetailsSingle(coinUid: String, currencyCode: String) -> Single<MarketInfoDetails> {

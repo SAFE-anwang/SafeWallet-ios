@@ -43,28 +43,35 @@ class SafeCoinPriceManager {
 
 extension SafeCoinPriceManager {
     
-    func coinPriceValue(coinUid: String, currencyCode: String) -> Decimal? {
-        try? storage.coinPrice(coinUid: coinUid, currencyCode: currencyCode)?.value
-    }
+//    func coinPriceValue(coinUid: String, currencyCode: String) -> Decimal? {
+//        try? storage.coinPrice(coinUid: coinUid, currencyCode: currencyCode)?.value
+//    }
 
-    func coinPriceValueSingle(coinUids: [String], currencyCode: String) -> Single<[String: SafeCoinPrice]> {
-        hsProvider.coinCurrentPriceSingle(coinUids: coinUids, currencyCode: currencyCode)
-                .flatMap { [weak self] responses in
-                    var map = [String: SafeCoinPrice]()
-                    let coinPrices = responses.map { response in
-                        if response.name == safeCoinName {
-                            self?.safeIconUrlStr = response.image
-                        }
-
-                        let timestamp = SafeCoinPriceManager.utcDateFormatter.date(from: response.last_updated)!.timeIntervalSince1970
-                         let safeCoinPrice = SafeCoinPrice(coinUid:  response.id, currencyCode: currencyCode, value: Decimal(response.current_price), diff: Decimal(response.price_change_percentage_24h), timestamp: timestamp)
-                        map[response.id] = safeCoinPrice
-                        return safeCoinPrice
-                    }
-                    try? self?.storage.save(coinPrices: coinPrices)
-                    return Single.just(map)
-                }
-    }
+//    func coinPriceValueSingle(coinUids: [String], currencyCode: String) -> Single<[String: CoinPrice]> {
+//        /*
+//        hsProvider.coinCurrentPriceSingle(coinUids: coinUids, currencyCode: currencyCode)
+//                .flatMap { [weak self] responses in
+//                    var map = [String: SafeCoinPrice]()
+//                    let coinPrices = responses.map { response in
+//                        if response.name == safeCoinName {
+//                            self?.safeIconUrlStr = response.image
+//                        }
+//
+//                        let timestamp = SafeCoinPriceManager.utcDateFormatter.date(from: response.last_updated)!.timeIntervalSince1970
+//                         let safeCoinPrice = SafeCoinPrice(coinUid:  response.id, currencyCode: currencyCode, value: Decimal(response.current_price), diff: Decimal(response.price_change_percentage_24h), timestamp: timestamp)
+//                        map[response.id] = safeCoinPrice
+//                        return safeCoinPrice
+//                    }
+//                    try? self?.storage.save(coinPrices: coinPrices)
+//                    return Single.just(map)
+//                }
+//         */
+//        hsProvider.coinCurrentPriceSingle(coinUids: coinUids, currencyCode: currencyCode)
+//            .flatMap{ [weak self] coinPrices in
+//                try? self?.storage.save(coinPrices: coinPrices)
+//                return Single.just(map)
+//            }
+//    }
 }
 
 extension SafeCoinPriceManager {

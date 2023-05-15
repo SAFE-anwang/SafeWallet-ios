@@ -203,7 +203,7 @@
 "balance.title" = "余额";
 "balance.tab_bar_item" = "余额";
 "balance.send" = "发送​​";
-"balance.swap" = "掉期交易";
+"balance.swap" = "合约调用";
 "balance.deposit" = "接收";
 "balance.address" = "地址";
 "balance.rate_per_coin" = "%@ / %@";
@@ -338,7 +338,7 @@
 
 // Swap
 
-"swap.title" = "掉期交易";
+"swap.title" = "合约调用";
 "swap.you_pay" = "您支付";
 "swap.estimated" = "估计";
 "swap.balance" = "余额";
@@ -397,11 +397,11 @@
 
 // Swap Approving
 
-"swap.approve.subtitle" = "掉期交易";
+"swap.approve.subtitle" = "合约调用";
 
 // Swap Confirmation
 
-"swap.confirmation.swap_button" = "掉期交易";
+"swap.confirmation.swap_button" = "合约调用";
 "swap.confirmation.impact_too_high" = "市场价格与预期结算价格之间的差额太高。";
 "swap.confirmation.minimum_received" = "收到的最小金额";
 "swap.confirmation.maximum_sent" = "最大支出";
@@ -413,7 +413,7 @@
 "swap.dex_info.content_allowance" = "当执行令牌交换时，交易所可以代表用户花费的金额。 在进行实际互换交易之前，需要先确定足够的备抵。";
 "swap.dex_info.header_price_impact" = "价格影响";
 "swap.dex_info.content_price_impact" = "预期价格和显示价格的偏差通常会增加互兑金额。";
-"swap.dex_info.header_swap_fee" = "掉期交易费用";
+"swap.dex_info.header_swap_fee" = "合约调用费用";
 "swap.dex_info.content_swap_fee" = "以用户出售货币显示的去中心化代币兑换平台上互兑操作的服务费。对于大部分订单，这应为0.3%或0.6%。";
 "swap.dex_info.header_guaranteed_amount" = "最小获取金额";
 "swap.dex_info.content_guaranteed_amount" = "一名用户因为互兑操作将收到的最小金额。";
@@ -761,7 +761,7 @@
 "transactions.burn" = "燃烧";
 "transactions.mint" = "薄荷绿";
 "transactions.approve" = "批准";
-"transactions.swap" = "掉期交易";
+"transactions.swap" = "合约调用";
 "transactions.contract_call" = "合约调用";
 "transactions.contract_creation" = "合约创建";
 "transactions.external_call" = "外部呼叫";
@@ -779,7 +779,7 @@
 "transactions.types.all" = "所有";
 "transactions.types.incoming" = "已收到";
 "transactions.types.outgoing" = "已发送";
-"transactions.types.swap" = "掉期交易";
+"transactions.types.swap" = "合约调用";
 "transactions.types.approve" = "批准";
 
 "transactions.unknown_transaction.title" = "未知交易";

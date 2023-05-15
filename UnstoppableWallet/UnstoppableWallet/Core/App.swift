@@ -96,7 +96,8 @@ class App {
     let appManager: AppManager
     let contactManager: ContactBookManager?
     let safeCoinPriceManager: SafeCoinPriceManager
-    let safeCoinStorage: SafeCoinStorage
+    //let safeCoinStorage: SafeCoinStorage
+    let safeCoinHistoricalPriceManager: SafeCoinHistoricalPriceManager
     lazy var SafeVPNManager: SafeVPNViewModel = {
         return SafeVPNViewModel()
     }()
@@ -185,7 +186,8 @@ class App {
         let safeCoinPriceStorage = try! SafeCoinPriceStorage(dbPool: dbPool)
         safeCoinPriceManager = SafeCoinPriceManager(storage: safeCoinPriceStorage, hsProvider: safeCoinPriceProvider)
         let coinHistoricalPriceStorage = CoinHistoricalPriceStorage(dbPool: dbPool)
-        safeCoinStorage = SafeCoinStorage(dbPool: dbPool)
+        safeCoinHistoricalPriceManager = SafeCoinHistoricalPriceManager(storage: coinHistoricalPriceStorage, hsProvider: safeCoinPriceProvider)
+        //safeCoinStorage = SafeCoinStorage(dbPool: dbPool)
         
         evmLabelManager = EvmLabelManager(provider: hsLabelProvider, storage: evmLabelStorage, syncerStateStorage: syncerStateStorage)
 

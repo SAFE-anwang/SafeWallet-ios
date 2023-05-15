@@ -26,11 +26,12 @@ class CoinTokensViewModel {
                 description: tokens.count == 1 ? nil : "coin_platforms.description".localized,
                 allowEmpty: request.allowEmpty,
                 viewItems: tokens.map { token in
-                    SelectorModule.ViewItem(
-                            image: .url(token.blockchain.type.imageUrl, placeholder: "placeholder_rectangle_32"),
-                            title: token.tokenBlockchain,
-                            subtitle: token.typeInfo,
-                            selected: request.currentTokens.contains(token)
+                    let url = token.coin.uid == safeCoinUid ? "https://anwang.com/img/logos/safe.png" : token.blockchain.type.imageUrl
+                    return SelectorModule.ViewItem(
+                                image: .url(url, placeholder: "placeholder_rectangle_32"),
+                                title: token.tokenBlockchain,
+                                subtitle: token.typeInfo,
+                                selected: request.currentTokens.contains(token)
                     )
                 }
         )

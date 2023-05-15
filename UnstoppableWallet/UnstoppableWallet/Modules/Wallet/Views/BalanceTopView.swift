@@ -102,9 +102,8 @@ class BalanceTopView: UIView {
     }
 
     func bind(viewItem: BalanceTopViewItem, onTapError: (() -> ())?) {
-        let iconUrlString = viewItem.coinCode == safeCoinCode ? App.shared.safeCoinPriceManager.safeIconUrlStr : viewItem.iconUrlString
         coinIconView.bind(
-                iconUrlString: iconUrlString,
+                iconUrlString: viewItem.iconUrlString,
                 placeholderIconName: viewItem.placeholderIconName,
                 spinnerProgress: viewItem.syncSpinnerProgress,
                 indefiniteSearchCircle: viewItem.indefiniteSearchCircle,

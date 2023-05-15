@@ -20,7 +20,7 @@ struct CoinPageModule {
         let overviewController = CoinOverviewModule.viewController(coinUid: coinUid)
         let marketsController = CoinMarketsModule.viewController(coin: fullCoin.coin)
         let analyticsController = CoinAnalyticsModule.viewController(fullCoin: fullCoin)
-        let tweetsController = CoinTweetsModule.viewController(fullCoin: fullCoin)
+        let tweetsController = fullCoin.coin.uid == safeCoinUid ? CoinTweetsModule.viewController(username: "safeanwang") : CoinTweetsModule.viewController(fullCoin: fullCoin)
 
         let viewController = CoinPageViewController(
                 viewModel: viewModel,

@@ -63,7 +63,9 @@ class SendSafeCoinAdapterService {
         self.inputOutputOrderService = inputOutputOrderService
         self.btcBlockchainManager = btcBlockchainManager
         self.adapter = adapter
-
+        
+        sync(feeRate: .completed(10))
+        
         subscribe(disposeBag, amountInputService.amountObservable) { [weak self] _ in
             self?.sync(updatedFrom: .amount)
         }
@@ -170,7 +172,7 @@ extension SendSafeCoinAdapterService: ISendService {
             return Single.error(SendTransactionError.wrongAmount)
         }
 
-//        let sortMode = btcBlockchainManager.transactionSortMode(blockchainType: adapter.blockchainType)
+       // let sortMode = btcBlockchainManager.transactionSortMode(blockchainType: adapter.blockchainType)
         return adapter.sendSingle(amount: amountInputService.amount, address: address.raw, sortMode: .shuffle, logger: logger, lockedTimeInterval: nil, reverseHex: nil)
     }
 

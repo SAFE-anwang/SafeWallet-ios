@@ -46,8 +46,6 @@ class WalletCoinPriceService {
         
         subscribe(coinPriceDisposeBag, marketKit.coinPriceMapObservable(coinUids: Array(coinUids), currencyCode: currencyKit.baseCurrency.code)) { [weak self] in
             self?.onUpdate(coinPriceMap: $0)
-            guard (self?.safeCoinUids.count ?? 0) > 0 else { return }
-            self?.refershSafeCoinPrices()
         }
     }
 
@@ -91,11 +89,7 @@ extension WalletCoinPriceService {
     }
 
     func itemMap(tokens: [Token]) -> [String: Item] {
-
-        let items = marketKit.coinPriceMap(coinUids: Array(filteredIds(tokens: tokens)), currencyCode: currency.code).mapValues { item(coinPrice: $0) }
-        let safeItems = safeCoinPriceManager.coinPriceMap(coinUids: Array(filteredCustomIds(tokens: Array(tokens))), currencyCode: currency.code).mapValues { item(safeCoinPrice: $0) }
-        let temps = items.merging(safeItems){ (current, _) in current }
-        return temps
+        marketKit.coinPriceMap(coinUids: Array(filteredIds(tokens: tokens)), currencyCode: currency.code).mapValues { item(coinPrice: $0) }
     }
 
     func item(token: Token) -> Item? {
@@ -118,29 +112,6 @@ extension WalletCoinPriceService {
             }
         }
         return uids
-    }
-    
-    private func refershSafeCoinPrices() {
-        safeCoinPriceManager.coinPriceValueSingle(coinUids: Array(safeCoinUids), currencyCode: currency.code)
-            .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
-            .subscribe(onSuccess: { [weak self] prices in
-                if let self = self {
-                    let itemsMap = prices.mapValues{ self.item(safeCoinPrice: $0) }
-                    let items = self.marketKit.coinPriceMap(coinUids: Array(self.coinUids), currencyCode: self.currency.code).mapValues { self.item(coinPrice: $0) }
-                    let temps = itemsMap.merging(items){ (current, _) in current }
-                    self.delegate?.didUpdate(itemsMap: temps)
-                }
-            })
-            .disposed(by: disposeBag)
-    }
-
-    private func item(safeCoinPrice: SafeCoinPrice) -> Item {
-        let currency = currencyKit.baseCurrency
-        return Item(
-                price: CurrencyValue(currency: currency, value: safeCoinPrice.value),
-                diff: safeCoinPrice.diff,
-                expired: safeCoinPrice.expired
-        )
     }
 }
 extension WalletCoinPriceService {

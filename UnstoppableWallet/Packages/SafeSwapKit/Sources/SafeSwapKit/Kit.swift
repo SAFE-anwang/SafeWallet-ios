@@ -102,7 +102,7 @@ extension Kit {
     private static func routerAddress(chain: Chain) throws -> Address {
         switch chain.id {
             
-        case 1, 3, 4, 5, 42, 56: return try  Address(hex:"0x6476008C612dF9F8Db166844fFE39D24aEa12271")
+        case 1, 3, 4, 5, 42, 56, 137: return try  Address(hex:"0x6476008C612dF9F8Db166844fFE39D24aEa12271")
 
         default: throw UnsupportedChainError.noRouterAddress
         }

@@ -249,9 +249,9 @@ extension AppearanceViewController: SectionsDataSource {
             sections.append(launchScreenSection)
         }
         sections.append(contentsOf: [
-            appIconSection(viewItems: appIconViewItems),
+            //appIconSection(viewItems: appIconViewItems),
             conversionSection(viewItems: conversionViewItems),
-            balanceValueSection(viewItems: balanceValueViewItems)
+            //balanceValueSection(viewItems: balanceValueViewItems)
         ])
         return sections
     }

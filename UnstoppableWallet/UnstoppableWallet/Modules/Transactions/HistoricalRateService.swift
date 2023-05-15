@@ -43,13 +43,19 @@ class HistoricalRateService {
     }
 
     private func _fetchRate(key: RateKey) {
-        if key.token.coin.code == "SAFE" {
-//            App.shared.safeCoinHistoricalPriceManager.coinHistoricalPriceValueSingle(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
-//                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
-//                .subscribe(onSuccess: { [weak self] decimal in
-//                    self?.handle(key: key, rate: decimal)
-//                })
-//                .disposed(by: ratesDisposeBag)
+        if key.token.coin.code == safeCoinCode {
+            let decimal = App.shared.safeCoinHistoricalPriceManager.coinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
+            if let amount = decimal {
+                handle(key: key, rate: amount)
+            }else {
+                App.shared.safeCoinHistoricalPriceManager.coinHistoricalPriceValueSingle(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
+                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
+                    .subscribe(onSuccess: { [weak self] decimal in
+                        self?.handle(key: key, rate: decimal)
+                    })
+                    .disposed(by: ratesDisposeBag)
+            }
+            
         }else {
             marketKit.coinHistoricalPriceValueSingle(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))

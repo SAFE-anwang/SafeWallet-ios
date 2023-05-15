@@ -248,7 +248,7 @@ extension CoinStorage {
     
     func insetSafeCoin(coins: [Coin]) -> [Coin] {
         let coinsStr = """
-                        [{"uid":"safe-anwang","name":"SAFE(AnWang)", "code":"SAFE"}]
+                        [{"uid":"safe-anwang","name":"SAFE", "code":"SAFE"}]
                        """
         guard let safeCoins = [Coin](JSONString: coinsStr)
         else {
@@ -261,7 +261,7 @@ extension CoinStorage {
         let tokensStr = """
                         [{"coin_uid": "safe-anwang",
                          "blockchain_uid": "safe-anwang",
-                         "decimals": 18,
+                         "decimals": 8,
                          "type": "native"
                          },
                         {"coin_uid": "safe-anwang",
@@ -274,8 +274,14 @@ extension CoinStorage {
                          "blockchain_uid": "binance-smart-chain",
                          "address": "0x4d7fa587ec8e50bd0e9cd837cb4da796f47218a1",
                          "decimals": 18,
-                         "type": "eip20"}
-                        ]
+                         "type": "eip20"
+                        },
+                        {"coin_uid": "safe-anwang",
+                         "blockchain_uid": "polygon-pos",
+                         "address": "0xb7Dd19490951339fE65E341Df6eC5f7f93FF2779",
+                         "decimals": 18,
+                         "type": "eip20"
+                        }]
                         """
         guard let safeTokens = [TokenRecord](JSONString: tokensStr)
         else {
@@ -286,7 +292,7 @@ extension CoinStorage {
     
     func insetSafeBlockchain(blockchains: [BlockchainRecord]) -> [BlockchainRecord] {
         let blockchainStr = """
-                            [{"uid":"safe-anwang","name":"SAFE(AnWang)","explorerUrl":"https://anwang.com/img/logos/safe.png"}]
+                            [{"uid":"safe-anwang","name":"SAFE","explorerUrl":"https://anwang.com/img/logos/safe.png"}]
                             """
         guard let safeBlockchainRecords = [BlockchainRecord](JSONString: blockchainStr)
         else {

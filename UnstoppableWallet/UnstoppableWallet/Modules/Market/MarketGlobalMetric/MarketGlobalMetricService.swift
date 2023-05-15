@@ -122,10 +122,8 @@ extension MarketGlobalMetricService: IMarketListDecoratorService {
         if case .loaded(let marketInfos, _, _) = state {
             if let marketField = MarketModule.MarketField(rawValue: marketFieldIndex) {
                 currentMarketField = marketField
-                syncIfPossible()
-            }
-            
-            stateRelay.accept(.loaded(items: marketInfos, softUpdate: false, reorder: false))
+            }            
+            stateRelay.accept(.loaded(items: marketInfos.sorted(sortingField: sortingField, priceChangeType: priceChangeType), softUpdate: false, reorder: true))
         }
     }
 

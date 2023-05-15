@@ -11,20 +11,25 @@ class SafeCoinStorage {
 
         let coinsJsonStr = """
                             [
-                                {"uid":"safe-anwang","name":"SAFE(AnWang)", "code":"SAFE"},
+                                {"uid":"safe-anwang","name":"SAFE", "code":""},
                            ]
                            """
         
         let blockchainsJsonStr = """
                                 [
-                                    {"uid":"safe-anwang","name":"SAFE(AnWang)","explorerUrl":"https://anwang.com/img/logos/safe.png"},
+                                    {"uid":"safe-anwang","name":"SAFE","explorerUrl":"https://anwang.com/img/logos/safe.png"},
                                 ]
                                 """
         
         let tokensJsonStr = """
                             [   {"coin_uid":"safe-anwang","blockchain_uid":"safe-anwang","type":"native"},{"coin_uid":"safe-anwang","blockchain_uid":"ethereum","address":"0xee9c1ea4dcf0aaf4ff2d78b6ff83aa69797b65eb","decimals":8  ,"type":"eip20",},
-                                {"coin_uid":"safe-anwang","blockchain_uid":"binance-smart-chain""address":"0x4d7fa587ec8e50bd0e9cd837cb4da796f47218a1","decimals":8,"type":"eip20",}
-                            ]
+                                {"coin_uid":"safe-anwang","blockchain_uid":"binance-smart-chain""address":"0x4d7fa587ec8e50bd0e9cd837cb4da796f47218a1","decimals":8,"type":"eip20",},
+                            {"coin_uid": "safe-anwang",
+                             "blockchain_uid": "polygon-pos",
+                             "address": "0xb7Dd19490951339fE65E341Df6eC5f7f93FF2779",
+                             "decimals": 18,
+                             "type": "eip20"
+                            }]
                             """
         
         guard let coins = [Coin](JSONString: coinsJsonStr) else {

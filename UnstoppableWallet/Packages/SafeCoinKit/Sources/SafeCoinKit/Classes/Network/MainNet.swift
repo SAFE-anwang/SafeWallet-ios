@@ -2,26 +2,29 @@ import Foundation
 import BitcoinCore
 import HsExtensions
 import Checkpoints
+import RxSwift
+import RxRelay
 
 public class MainNet: INetwork {
     public let protocolVersion: Int32 = 70210
 
-    public let bundleName = "Safe"
+    public let bundleName = "safe"
 
     public let maxBlockSize: UInt32 = 2_000_000_000
     public let pubKeyHash: UInt8 = 0x4c
     public let privateKey: UInt8 = 0x80
     public let scriptHash: UInt8 = 0x10
     public let bech32PrefixPattern: String = "bc"
-    public let xPubKey: UInt32 = 0x0488b21e
-    public let xPrivKey: UInt32 = 0x0488ade4
+    // 与Android的配置有差异，需要高低位反转
+    public let xPubKey: UInt32 = 0x1eb28804
+    public let xPrivKey: UInt32 = 0xe4ad0004
     public let magic: UInt32 = 0x62696ecc
     public let port = 5555
     public let coinType: UInt32 = 5
     public let sigHash: SigHashType = .bitcoinAll
     public var syncableFromApi: Bool = true
-    public let dnsSeeds = 
-    ["39.104.90.76","47.89.208.160","120.78.227.96","47.96.254.235","106.14.66.206","47.88.247.232","114.215.31.37","47.75.17.223","47.52.9.168","47.74.13.245","39.104.200.133","192.53.112.232","172.105.209.98","139.162.10.148","172.104.64.127","172.104.175.215","139.162.19.251","139.162.108.93","194.195.213.226","192.46.217.199","23.239.22.221","172.105.112.33","172.104.110.221","139.162.24.250","172.104.28.167","172.105.235.94","172.105.6.192","172.105.24.28","139.162.196.118","212.111.40.32","139.162.142.45","192.46.232.91","45.79.122.221","192.46.213.88","194.195.120.218","45.79.239.211","172.105.194.112","172.104.40.33","172.105.216.132","139.162.98.168","172.104.50.182","139.162.20.107","172.104.41.183","172.104.53.213","172.105.112.125","172.105.196.229","139.162.123.100","139.162.103.9","172.105.201.79","172.104.85.174"]
+    public var dnsSeeds =
+                ["39.104.90.76","47.89.208.160","120.78.227.96","47.96.254.235","106.14.66.206","47.88.247.232","114.215.31.37","47.75.17.223","47.52.9.168","47.74.13.245","39.104.200.133","192.53.112.232","172.105.209.98","139.162.10.148","172.104.64.127","172.104.175.215","139.162.19.251","139.162.108.93","194.195.213.226","192.46.217.199","23.239.22.221","172.105.112.33","172.104.110.221","139.162.24.250","172.104.28.167","172.105.235.94","172.105.6.192","172.105.24.28","139.162.196.118","212.111.40.32","139.162.142.45","192.46.232.91","45.79.122.221","192.46.213.88","194.195.120.218","45.79.239.211","172.105.194.112","172.104.40.33","172.105.216.132","139.162.98.168","172.104.50.182","139.162.20.107","172.104.41.183","172.104.53.213","172.105.112.125","172.105.196.229","139.162.123.100","139.162.103.9","172.105.201.79","172.104.85.174"]
 
     public let dustRelayTxFee = 1000
     
@@ -33,8 +36,58 @@ public class MainNet: INetwork {
         try! getCheckpoint(bundleName: bundleName, network: .main, blockType: .last)
     }
 
-    public init() {}
+    private var connectFailedIp = [String]()
+    private let disposeBag = DisposeBag()
+    private let mainSafeNetService: MainSafeNetService
 
+    public init() {
+        mainSafeNetService = MainSafeNetService()
+        mainSafeNetService.load()
+        
+        mainSafeNetService.stateObservable
+                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                .subscribe{
+                    [weak self] in self?.sync(state: $0)
+                }
+                .disposed(by: disposeBag)
+
+    }
+    public func isMainNode(ip: String?) -> Bool {
+        if let ip = ip, ip.count > 0 {
+            return dnsSeeds.contains(ip)
+        }
+        return true
+    }
+
+    public func getMainNodeIp(list: [String]) -> String? {
+        if list.count == 0 {
+            return dnsSeeds.randomElement()
+        }
+        let unconnectIp = dnsSeeds.filter{ !list.contains($0) && !connectFailedIp.contains($0) }
+        return unconnectIp.count > 0 ? unconnectIp.randomElement() : nil
+    }
+    
+    public func markedFailed(ip: String?) {
+        
+    }
+    
+    public func isSafe() -> Bool {
+        return true
+    }
+    
+    private func sync(state: MainSafeNetService.State) {
+        switch state {
+        case .loading: break
+        case .completed(let datas):
+                dnsSeeds = datas
+        case .failed(_): break
+        }
+    }
+}
+
+extension MainNet {
+    
     // 参考 CheckpointData init 方法实现
     private func getCheckpoint(bundleName: String, network: CheckpointData.Network, blockType: CheckpointData.BlockType) throws -> Checkpoint {
         var checkpoint: String?

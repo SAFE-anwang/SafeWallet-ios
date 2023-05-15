@@ -64,8 +64,9 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
         super.viewDidLoad()
 
         title = "send.title".localized(viewModel.token.coin.code)
-
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: iconImageView)
+        
+        let closeButton = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onTapCloseButton))
+        navigationItem.leftBarButtonItems = [closeButton, UIBarButtonItem(customView: iconImageView)]
 
         if feeSettingsFactory == nil {
             navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.cancel".localized, style: .plain, target: self, action: #selector(didTapCancel))
@@ -135,7 +136,11 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
             _ = amountCell.becomeFirstResponder()
         }
     }
-
+    
+    @objc private func onTapCloseButton() {
+        dismiss(animated: true)
+    }
+    
     @objc private func didTapProceed() {
         viewModel.didTapProceed()
     }

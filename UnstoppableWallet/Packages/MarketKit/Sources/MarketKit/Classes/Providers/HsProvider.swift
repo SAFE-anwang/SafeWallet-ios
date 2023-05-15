@@ -8,6 +8,10 @@ class HsProvider {
     private let baseUrl: String
     private let networkManager: NetworkManager
     private let headers: HTTPHeaders?
+    
+    private let safeBaseUrl: String = "https://safewallet.anwang.com"
+    private let safeCoinUid: String = "safe-anwang"
+
 
     init(baseUrl: String, networkManager: NetworkManager, apiKey: String?) {
         self.baseUrl = baseUrl
@@ -95,7 +99,7 @@ extension HsProvider {
             "fields": "price,price_change_24h,market_cap,market_cap_rank,total_volume",
             "currency": currencyCode.lowercased()
         ]
-
+        let baseUrl = coinUids.contains(safeCoinUid) ? safeBaseUrl : baseUrl
         return networkManager.single(url: "\(baseUrl)/v1/coins", method: .get, parameters: parameters, headers: headers)
     }
 
@@ -112,7 +116,7 @@ extension HsProvider {
             "currency": currencyCode.lowercased(),
             "language": languageCode.lowercased()
         ]
-
+        let baseUrl = coinUid == safeCoinUid ? safeBaseUrl : baseUrl
         return networkManager.single(url: "\(baseUrl)/v1/coins/\(coinUid)", method: .get, parameters: parameters, headers: headers)
     }
 
@@ -187,21 +191,44 @@ extension HsProvider {
     // Coin Prices
 
     func coinPricesSingle(coinUids: [String], currencyCode: String) -> Single<[CoinPrice]> {
+
+        var safeParameters: Parameters? = nil
+        if coinUids.contains(safeCoinUid) {
+            safeParameters = [
+               "uids": safeCoinUid,
+               "currency": currencyCode.lowercased(),
+               "fields": "price,price_change_24h,last_updated"
+           ]
+        }
+        
         let parameters: Parameters = [
-            "uids": coinUids.joined(separator: ","),
+            "uids": coinUids.filter{ $0 != safeCoinUid }.joined(separator: ","),
             "currency": currencyCode.lowercased(),
             "fields": "price,price_change_24h,last_updated"
         ]
 
         let request = networkManager.session.request("\(baseUrl)/v1/coins", method: .get, parameters: parameters, headers: headers)
-
-        return networkManager
+         let single = networkManager
                 .single(request: request, mapper: CoinPriceMapper())
-                .map { (coinPriceResponses: [CoinPriceResponse]) -> [CoinPrice] in
-                    coinPriceResponses.map { coinPriceResponse in
-                        coinPriceResponse.coinPrice(currencyCode: currencyCode)
-                    }
+        
+        if let parameters = safeParameters {
+            let safeRequest = networkManager.session.request("\(safeBaseUrl)/v1/coins", method: .get, parameters: parameters, headers: headers)
+            let safeSingle = networkManager.single(request: safeRequest, mapper: CoinPriceMapper())
+
+            return Single.zip(single, safeSingle).map{
+                $0 + $1
+            }.map { (coinPriceResponses: [CoinPriceResponse]) -> [CoinPrice] in
+                coinPriceResponses.map { coinPriceResponse in
+                    coinPriceResponse.coinPrice(currencyCode: currencyCode)
                 }
+            }
+        }else {
+            return single.map { (coinPriceResponses: [CoinPriceResponse]) -> [CoinPrice] in
+                coinPriceResponses.map { coinPriceResponse in
+                    coinPriceResponse.coinPrice(currencyCode: currencyCode)
+                }
+            }
+        }
     }
 
     func historicalCoinPriceSingle(coinUid: String, currencyCode: String, timestamp: TimeInterval) -> Single<HistoricalCoinPriceResponse> {
@@ -226,7 +253,7 @@ extension HsProvider {
         if let fromTimestamp {
             parameters["from_timestamp"] = Int(fromTimestamp)
         }
-
+        let baseUrl = coinUid == safeCoinUid ? safeBaseUrl : baseUrl
         return networkManager.single(url: "\(baseUrl)/v1/coins/\(coinUid)/price_chart", method: .get, parameters: parameters, headers: headers)
     }
 
@@ -236,7 +263,7 @@ extension HsProvider {
         let parameters: Parameters = [
             "blockchain_uid": blockchainUid
         ]
-
+        let baseUrl = coinUid == safeCoinUid ? safeBaseUrl : baseUrl
         return networkManager.single(url: "\(baseUrl)/v1/analytics/\(coinUid)/holders", method: .get, parameters: parameters, headers: headers)
     }
 
@@ -359,7 +386,7 @@ extension HsProvider {
         let parameters: Parameters = [
             "currency": currencyCode.lowercased()
         ]
-
+        let baseUrl = coinUid == safeCoinUid ? safeBaseUrl : baseUrl
         return networkManager.single(url: "\(baseUrl)/v1/analytics/\(coinUid)", method: .get, parameters: parameters, headers: headers)
     }
 
@@ -451,3 +478,4 @@ extension HsProvider {
     }
 
 }
+

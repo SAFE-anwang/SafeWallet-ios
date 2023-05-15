@@ -85,7 +85,7 @@ public class Kit: AbstractKit {
 
         blockValidatorSet.add(blockValidator: blockValidatorChain)
 
-        let bitcoinCore = try BitcoinCoreBuilder(logger: logger, isSafe: true)
+        let bitcoinCore = try BitcoinCoreBuilder(logger: logger)
                 .set(network: network)
                 .set(extendedKey: extendedKey)
                 .set(initialSyncApi: initialSyncApi)
@@ -170,8 +170,8 @@ public class Kit: AbstractKit {
         transactionInfos.compactMap { $0 as? DashTransactionInfo }
     }
 
-    public override func send(to address: String, value: Int, feeRate: Int, sortType: TransactionDataSortType, pluginData: [UInt8: IPluginData]) throws -> FullTransaction {
-        try super.send(to: address, value: value, feeRate: feeRate, sortType: sortType)
+    public override func sendSafe(to address: String, value: Int, feeRate: Int, sortType: TransactionDataSortType, pluginData: [UInt8: IPluginData], unlockedHeight: Int?, reverseHex: String?) throws -> FullTransaction {
+        try super.sendSafe(to: address, value: value, feeRate: feeRate, sortType: sortType, unlockedHeight: unlockedHeight, reverseHex: reverseHex)
     }
 
     public func transactions(fromUid: String? = nil, type: TransactionFilterType?, limit: Int? = nil) -> Single<[DashTransactionInfo]> {
