@@ -8,7 +8,7 @@ import GRDB
 
 let safeCoinUid = "safe-anwang"
 let safeCoinName = "SAFE"
-let safeCoinCode = ""
+let safeCoinCode = "SAFE"
 
 class SafeCoinPriceProvider {
     private let baseUrl: String = "https://api.coingecko.com/api/v3"

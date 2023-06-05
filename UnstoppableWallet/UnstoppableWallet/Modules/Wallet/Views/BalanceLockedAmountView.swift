@@ -68,7 +68,7 @@ class BalanceLockedAmountView: UIView {
     }
 
     func bind(viewItem: BalanceLockedAmountViewItem) {
-        coinValueLabel.text = viewItem.coinValue.text
+        coinValueLabel.text = viewItem.coinValue.text?.appending("  \(viewItem.coinName ?? "")")
         coinValueLabel.textColor = viewItem.coinValue.dimmed ? .themeGray50 : .themeGray
 
         if let currencyValue = viewItem.currencyValue {

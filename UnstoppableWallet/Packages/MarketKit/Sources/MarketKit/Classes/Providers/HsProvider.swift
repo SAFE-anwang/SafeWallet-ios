@@ -196,7 +196,7 @@ extension HsProvider {
         if coinUids.contains(safeCoinUid) {
             safeParameters = [
                "uids": safeCoinUid,
-               "currency": currencyCode.lowercased(),
+               "currency": currencyCode,
                "fields": "price,price_change_24h,last_updated"
            ]
         }

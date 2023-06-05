@@ -8,6 +8,7 @@ protocol ISendConfirmationFactory {
 }
 
 protocol ISendFeeSettingsFactory {
+    func getTimeLockService() -> TimeLockService?
     func feeSettingsViewController() throws -> UIViewController
 }
 
@@ -128,7 +129,11 @@ extension SendBitcoinFactory: ISendConfirmationFactory {
 }
 
 extension SendBitcoinFactory: ISendFeeSettingsFactory {
-
+    
+    func getTimeLockService() -> TimeLockService? {
+        timeLockService
+    }
+    
     func feeSettingsViewController() throws -> UIViewController {
         var dataSources: [ISendSettingsDataSource] = []
 

@@ -11,7 +11,7 @@ class SafeCoinStorage {
 
         let coinsJsonStr = """
                             [
-                                {"uid":"safe-anwang","name":"SAFE", "code":""},
+                                {"uid":"safe-anwang","name":"SAFE", "code":"SAFE"},
                            ]
                            """
         

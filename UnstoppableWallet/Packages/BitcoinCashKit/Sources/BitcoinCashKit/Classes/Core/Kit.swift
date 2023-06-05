@@ -4,6 +4,7 @@ import HdWalletKit
 import BigInt
 import RxSwift
 import HsToolKit
+import Hodler
 
 public class Kit: AbstractKit {
     private static let name = "BitcoinCashKit"
@@ -103,8 +104,8 @@ public class Kit: AbstractKit {
         }
 
         blockValidatorSet.add(blockValidator: blockValidatorChain)
-
-        let bitcoinCore = try BitcoinCoreBuilder(logger: logger)
+        let bitcoinCoreBuilder = BitcoinCoreBuilder(logger: logger)
+        let bitcoinCore = try bitcoinCoreBuilder
                 .set(network: network)
                 .set(initialSyncApi: initialSyncApi)
                 .set(extendedKey: extendedKey)
@@ -115,6 +116,8 @@ public class Kit: AbstractKit {
                 .set(syncMode: syncMode)
                 .set(storage: storage)
                 .set(blockValidator: blockValidatorSet)
+                .add(plugin: HodlerPlugin(addressConverter: bitcoinCoreBuilder.addressConverter, blockMedianTimeHelper: BlockMedianTimeHelper(storage: storage), publicKeyStorage: storage))
+                .set(purpose: .bip44)
                 .build()
 
         super.init(bitcoinCore: bitcoinCore, network: network)

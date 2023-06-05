@@ -272,9 +272,15 @@
 "send.error.address" = "Адрес";
 "send.hodler_locktime" = "TimeLock";
 "send.hodler_locktime_hour" = "1 час";
-"send.hodler_locktime_month" = "1 месяц";
+"send.hodler_locktime_month" = "1 месяцев";
+"send.hodler_locktime_month_3" = "3 месяцев";
 "send.hodler_locktime_half_year" = "6 месяцев";
+"send.hodler_locktime_month_9" = "9 месяцев";
 "send.hodler_locktime_year" = "1 год";
+"send.hodler_locktime_year_3" = "3 год";
+"send.hodler_locktime_year_5" = "5 год";
+"send.hodler_locktime_year_10" = "10 год";
+
 "send.hodler_locktime_off" = "Выкл.";
 "send.hodler_error.unsupported_address" = "TimeLock работает только при отправке на платёжные адреса, начинающиеся с 1... (также известных как BIP44 адреса)";
 "send.fee_info.title" = "Комиссия";

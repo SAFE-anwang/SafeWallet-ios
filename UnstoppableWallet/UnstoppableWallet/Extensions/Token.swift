@@ -6,7 +6,7 @@ extension Token {
         switch type {
         case .native:
             switch blockchainType {
-            case .ethereum, .binanceSmartChain: return nil
+            case .ethereum, .binanceSmartChain, .unsupported(uid: safeCoinUid): return nil
             case .binanceChain: return "BEP2"
             default: return blockchain.name
             }
@@ -60,7 +60,7 @@ extension Token {
         switch blockchainType {
         case .ethereum: return true
         case .binanceSmartChain: return true
-        case .polygon: return true
+        case .polygon: return coin.uid == safeCoinUid ? false : true
         case .avalanche: return true
         case .optimism: return true
         case .arbitrumOne: return true

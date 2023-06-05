@@ -12,6 +12,9 @@ class SendBitcoinViewController: BaseSendViewController {
 
     private let feeCell: FeeCell
     private let feeCautionCell = TitledHighlightedDescriptionCell()
+    
+    private var safeLockTimeCell: SafeDropDownListCell?
+    private var timeLockViewModel: TimeLockViewModel?
 
     init(confirmationFactory: ISendConfirmationFactory,
          feeSettingsFactory: ISendFeeSettingsFactory,
@@ -25,8 +28,15 @@ class SendBitcoinViewController: BaseSendViewController {
     ) {
 
         self.feeWarningViewModel = feeWarningViewModel
-
+        
         feeCell = FeeCell(viewModel: feeViewModel, title: "fee_settings.fee".localized)
+        
+        // timeLock cell
+        if  let timeLockService = feeSettingsFactory.getTimeLockService() {
+            let timeLockViewModel = TimeLockViewModel(service: timeLockService)
+            self.timeLockViewModel = timeLockViewModel
+            safeLockTimeCell = SafeDropDownListCell(viewModel: timeLockViewModel, title: "fee_settings.time_lock".localized)
+        }
 
         super.init(
                 confirmationFactory: confirmationFactory,
@@ -37,6 +47,8 @@ class SendBitcoinViewController: BaseSendViewController {
                 amountCautionViewModel: amountCautionViewModel,
                 recipientViewModel: recipientViewModel
         )
+        
+
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -49,6 +61,8 @@ class SendBitcoinViewController: BaseSendViewController {
         feeCell.onOpenInfo = { [weak self] in
             self?.openInfo(title: "fee_settings.fee".localized, description: "fee_settings.fee.info".localized)
         }
+        
+        safeLockTimeCell?.showList = { [weak self] in self?.showList() }
 
         subscribe(disposeBag, feeWarningViewModel.cautionDriver) { [weak self] in
             self?.handle(caution: $0)
@@ -65,6 +79,16 @@ class SendBitcoinViewController: BaseSendViewController {
         }
 
         reloadTable()
+    }
+    
+    private func showList() {
+        let alertController: UIViewController = AlertRouter.module(
+                title: "fee_settings.time_lock".localized,
+                viewItems: timeLockViewModel?.itemsList ?? []
+        ) { [weak self] index in
+            self?.timeLockViewModel?.onSelect(index)
+        }
+        present(alertController, animated: true)
     }
 
     private func openInfo(title: String, description: String) {
@@ -101,12 +125,34 @@ class SendBitcoinViewController: BaseSendViewController {
                 ]
         )
     }
+    
+    var safeLockTimeSection: SectionProtocol? {
+        guard let safeLockTimeCell = safeLockTimeCell else { return nil }
+        return Section(
+                id: "safe-time-lock",
+                headerState: .margin(height: .margin12),
+                rows: [
+                    StaticRow(
+                            cell: safeLockTimeCell,
+                            id: "safe-time-lock-cell",
+                            height: .heightCell56
+                    )
+                ]
+        )
+    }
 
+    
     override func buildSections() -> [SectionProtocol] {
         var sections = [availableBalanceSection, amountSection, recipientSection, feeSection]
         sections.append(contentsOf: [feeWarningSection, buttonSection])
-
+        
+        if let lockTimeSection = safeLockTimeSection {
+            let index = sections.index(before: sections.endIndex)
+            sections.insert(lockTimeSection, at: index)
+        }
+        
         return sections
     }
 
 }
+

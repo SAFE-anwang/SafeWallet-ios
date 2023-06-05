@@ -40,7 +40,7 @@ class BitcoinBaseAdapter {
         var lockInfo: TransactionLockInfo?
         var anyNotMineFromAddress: String?
         var anyNotMineToAddress: String?
-
+                
         for input in transaction.inputs {
             if anyNotMineFromAddress == nil, let address = input.address {
                 anyNotMineFromAddress = address
@@ -51,14 +51,23 @@ class BitcoinBaseAdapter {
             guard output.value > 0 else {
                 continue
             }
-
-            if let pluginId = output.pluginId, pluginId == HodlerPlugin.id,
+            
+            if let unlockedHeight = output.unlockedHeight, unlockedHeight > 0 {
+                let approxUnlockTime = (abstractKit.lastBlockInfo?.timestamp ?? 0) + ((unlockedHeight - (abstractKit.lastBlockInfo?.height ?? 0))  * 30 )
+                lockInfo = TransactionLockInfo(
+                        lockedUntil: Date(timeIntervalSince1970: Double(approxUnlockTime)),
+                        originalAddress: output.address ?? "__",
+                        unlockedHeight: unlockedHeight
+                        )
+                
+            }else if let pluginId = output.pluginId, pluginId == HodlerPlugin.id,
                let hodlerOutputData = output.pluginData as? HodlerOutputData,
                let approximateUnlockTime = hodlerOutputData.approximateUnlockTime {
 
                 lockInfo = TransactionLockInfo(
                         lockedUntil: Date(timeIntervalSince1970: Double(approximateUnlockTime)),
-                        originalAddress: hodlerOutputData.addressString
+                        originalAddress: hodlerOutputData.addressString,
+                        unlockedHeight: nil
                 )
             }
             if anyNotMineToAddress == nil, let address = output.address, !output.mine {

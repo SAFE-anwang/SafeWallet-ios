@@ -106,9 +106,9 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
     
     func sendSingle(amount: Decimal, address: String, sortMode: TransactionDataSortMode, logger: HsToolKit.Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> RxSwift.Single<Void> {
         var unlockedHeight = 0
-        if let lockedMonth = lockedTimeInterval?.valueInSeconds {
-            var step = 86400 * lockedMonth
-            unlockedHeight = (safeCoinKit.lastBlockInfo?.height ?? 0) * step
+        if let lockedValueInSeconds = lockedTimeInterval?.valueInSeconds {
+            let step = 86400 * Int(lockedValueInSeconds/(30 * 24 * 60 * 60))
+            unlockedHeight = (safeCoinKit.lastBlockInfo?.height ?? 0) + step
         }
         
         let satoshiAmount = convertToSatoshi(value: amount)
@@ -123,14 +123,17 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
                     convertFeeRate += 50
                 } else if let reverseHex = reverseHex, !reverseHex.starts(with: "73616665") {
                     convertFeeRate += 50
-                   // let lineLock = reverseHex.stringToObj(LineLock.self)
-                    // 设置最新区块高度
-           //         lineLock?.lastHeight = self?.safeCoinKit.lastBlockInfo?.height ?? 0
-//                    lineLock.lockedValue = (Decimal(lineLock.lockedValue) * coinRate).hs.hex
-//                    newReverseHex = lineLock.reverseHex()
+                    if let lineLock = reverseHex.stringToObj(LineLock.self) {
+                        // 设置最新区块高度
+                        lineLock.lastHeight = self?.safeCoinKit.lastBlockInfo?.height ?? 0
+                        let value = self!.convertToSatoshi(value: Decimal(Double(lineLock.lockedValue)!) * self!.coinRate)
+                        lineLock.lockedValue = "\(value)"
+                        newReverseHex = lineLock.reverseHex()
+                    }
+
                 }
                 if let adapter = self {
-                    _ = try adapter.safeCoinKit.sendSafe(to: address, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, pluginData: [:], unlockedHeight: unlockedHeight, reverseHex: nil)
+                    _ = try adapter.safeCoinKit.sendSafe(to: address, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, pluginData: [:], unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
                 }
                 observer(.success(()))
             } catch {
@@ -165,4 +168,3 @@ extension SafeCoinAdapter {
     }
 
 }
-

@@ -49,6 +49,10 @@ class SendSafeCoinFactory: BaseSendFactory {
 
         return viewItems
     }
+    
+    func getTimeLockService() -> TimeLockService? {
+        timeLockService
+    }
 
 }
 
@@ -68,7 +72,7 @@ extension SendSafeCoinFactory: ISendConfirmationFactory {
 }
 
 extension SendSafeCoinFactory: ISendFeeSettingsFactory {
-
+        
     func feeSettingsViewController() throws -> UIViewController {
         var dataSources: [ISendSettingsDataSource] = []
 

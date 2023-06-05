@@ -41,9 +41,10 @@ class ChooseCoinService {
 
             switch token.blockchainType.coinSettingType {
                 case .derivation:
-                    let coinSettings: CoinSettings = [.derivation: key.info.purpose.mnemonicDerivation.rawValue]
-                    items.append(.coin(uid: "\(index)", token: token, coinSettings: coinSettings))
-
+                    for purpose in key.purposes {
+                        let coinSettings: CoinSettings = [.derivation: purpose.mnemonicDerivation.rawValue]
+                        items.append(.coin(uid: "\(index)_\(purpose.mnemonicDerivation.rawValue)", token: token, coinSettings: coinSettings))
+                    }
                 case .bitcoinCashCoinType:
                     BitcoinCashCoinType.allCases.forEach { coinType in
                         let coinSettings: CoinSettings = [.bitcoinCashCoinType: coinType.rawValue]

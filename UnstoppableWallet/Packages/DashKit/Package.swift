@@ -22,6 +22,8 @@ let package = Package(
         .package(url: "https://github.com/attaswift/BigInt.git", .upToNextMajor(from: "5.0.0")),
         .package(url: "https://github.com/ReactiveX/RxSwift.git", .upToNextMajor(from: "5.0.1")),
         .package(url: "https://github.com/groue/GRDB.swift.git", .upToNextMajor(from: "5.0.0")),
+        .package(url: "https://github.com/SAFE-anwang/Hodler.Swift.git", .branch("main")),
+
     ],
     targets: [
         .target(
@@ -34,7 +36,9 @@ let package = Package(
                 .product(name: "HsExtensions", package: "HsExtensions.Swift"),
                 .product(name: "HsToolKit", package: "HsToolKit.Swift"),
                 .product(name: "HdWalletKit", package: "HdWalletKit.Swift"),
-                .product(name: "GRDB", package: "GRDB.swift")
+                .product(name: "GRDB", package: "GRDB.swift"),
+                .product(name: "Hodler", package: "Hodler.Swift"),
+
             ]
         ),
     ]

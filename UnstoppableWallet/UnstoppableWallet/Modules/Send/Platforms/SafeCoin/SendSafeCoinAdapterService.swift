@@ -3,6 +3,7 @@ import RxSwift
 import RxCocoa
 import RxRelay
 import HsToolKit
+import Hodler
 
 class SendSafeCoinAdapterService {
     private let disposeBag = DisposeBag()
@@ -171,7 +172,10 @@ extension SendSafeCoinAdapterService: ISendService {
         guard !amountInputService.amount.isZero else {
             return Single.error(SendTransactionError.wrongAmount)
         }
+        if let data = pluginData[HodlerPlugin.id] as? HodlerData {
 
+            return adapter.sendSingle(amount: amountInputService.amount, address: address.raw, sortMode: .shuffle, logger: logger, lockedTimeInterval: data.lockTimeInterval, reverseHex: nil)
+        }
        // let sortMode = btcBlockchainManager.transactionSortMode(blockchainType: adapter.blockchainType)
         return adapter.sendSingle(amount: amountInputService.amount, address: address.raw, sortMode: .shuffle, logger: logger, lockedTimeInterval: nil, reverseHex: nil)
     }

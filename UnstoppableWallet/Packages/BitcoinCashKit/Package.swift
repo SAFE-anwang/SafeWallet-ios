@@ -14,12 +14,15 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/SAFE-anwang/BitcoinCore.Swift.git", .branch("main")),
+        .package(url: "https://github.com/SAFE-anwang/Hodler.Swift.git", .branch("main")),
+
     ],
     targets: [
         .target(
             name: "BitcoinCashKit",
             dependencies: [
                .product(name: "BitcoinCore", package: "BitcoinCore.Swift"),
+               .product(name: "Hodler", package: "Hodler.Swift"),
             ]
         ),
     ]

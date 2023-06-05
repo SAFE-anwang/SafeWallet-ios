@@ -14,7 +14,9 @@ class SendModule {
         guard let adapter = App.shared.adapterManager.adapter(for: wallet) else {
             return nil
         }
-
+        // 启用lockTime功能
+        App.shared.localStorage.lockTimeEnabled = true
+        
         let token = wallet.token
 
         switch adapter {
@@ -70,7 +72,7 @@ class SendModule {
         var timeLockService: TimeLockService?
         var timeLockErrorService: SendTimeLockErrorService?
 
-        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .bitcoin {
+        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .bitcoin || adapter.blockchainType == .bitcoinCash || adapter.blockchainType == .dash || adapter.blockchainType == .litecoin {
             let timeLockServiceInstance = TimeLockService()
             timeLockService = timeLockServiceInstance
             timeLockErrorService = SendTimeLockErrorService(timeLockService: timeLockServiceInstance, addressService: addressService, adapter: adapter)
@@ -378,13 +380,13 @@ class SendModule {
 
         // TimeLock
         var timeLockService: TimeLockService?
-        var timeLockErrorService: SendTimeLockErrorService?
+        var timeLockErrorService: SafeSendTimeLockErrorService?
 
-//        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .unsupported(uid: safeCoinUid) {
-//            let timeLockServiceInstance = TimeLockService()
-//            timeLockService = timeLockServiceInstance
-//            timeLockErrorService = SendTimeLockErrorService(timeLockService: timeLockServiceInstance, addressService: addressService, adapter: adapter)
-//        }
+        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .unsupported(uid: safeCoinUid) {
+            let timeLockServiceInstance = TimeLockService()
+            timeLockService = timeLockServiceInstance
+            timeLockErrorService = SafeSendTimeLockErrorService(timeLockService: timeLockServiceInstance, addressService: addressService, adapter: adapter)
+        }
 
         let bitcoinAdapterService = SendSafeCoinAdapterService(
                 feeRateService: feeRateService,

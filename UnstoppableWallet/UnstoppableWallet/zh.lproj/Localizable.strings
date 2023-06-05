@@ -268,11 +268,16 @@
 "send.next_button" = "下一步";
 "send.error.invalid" = "无效";
 "send.error.address" = "地址";
-"send.hodler_locktime" = "TimeLock";
+"send.hodler_locktime" = "时间锁定";
 "send.hodler_locktime_hour" = "1 小时";
 "send.hodler_locktime_month" = "1 个月";
+"send.hodler_locktime_month_3" = "3 个月";
 "send.hodler_locktime_half_year" = "6 个月";
+"send.hodler_locktime_month_9" = "9 个月";
 "send.hodler_locktime_year" = "1 年";
+"send.hodler_locktime_year_3" = "3 年";
+"send.hodler_locktime_year_5" = "5 年";
+"send.hodler_locktime_year_10" = "10 年";
 "send.hodler_locktime_off" = "关";
 "send.hodler_error.unsupported_address" = "时间锁定只能和P2PKH地址（以1开头）一起使用";
 "send.fee_info.title" = "费率";

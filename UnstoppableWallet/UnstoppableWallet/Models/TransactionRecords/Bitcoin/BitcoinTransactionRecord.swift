@@ -39,7 +39,7 @@ class BitcoinTransactionRecord: TransactionRecord {
             locked = Double(lastBlockTimestamp) < lockInfo.lockedUntil.timeIntervalSince1970
         }
 
-        return TransactionLockState(locked: locked, date: lockInfo.lockedUntil)
+        return TransactionLockState(locked: locked, date: lockInfo.lockedUntil, unlockedHeight: lockInfo.unlockedHeight)
     }
 
 }
@@ -47,6 +47,7 @@ class BitcoinTransactionRecord: TransactionRecord {
 struct TransactionLockState {
     let locked: Bool
     let date: Date
+    let unlockedHeight: Int?
 }
 
 extension TransactionLockState: Equatable {

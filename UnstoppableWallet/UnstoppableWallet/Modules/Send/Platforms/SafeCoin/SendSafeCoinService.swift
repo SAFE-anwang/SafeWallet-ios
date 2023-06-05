@@ -14,7 +14,7 @@ class SendSafeCoinService {
     private let addressService: AddressService
     private let adapterService: SendSafeCoinAdapterService
     private let feeRateService: FeeRateService
-    private let timeLockErrorService: SendTimeLockErrorService?
+    private let timeLockErrorService: SafeSendTimeLockErrorService?
 
     private let stateRelay = PublishRelay<SendBaseService.State>()
     private(set) var state: SendBaseService.State = .notReady {
@@ -23,7 +23,7 @@ class SendSafeCoinService {
         }
     }
 
-    init(amountService: IAmountInputService, amountCautionService: SendAmountCautionService, addressService: AddressService, adapterService: SendSafeCoinAdapterService, feeRateService: FeeRateService, timeLockErrorService: SendTimeLockErrorService?, reachabilityManager: IReachabilityManager, token: Token) {
+    init(amountService: IAmountInputService, amountCautionService: SendAmountCautionService, addressService: AddressService, adapterService: SendSafeCoinAdapterService, feeRateService: FeeRateService, timeLockErrorService: SafeSendTimeLockErrorService?, reachabilityManager: IReachabilityManager, token: Token) {
         self.amountService = amountService
         self.amountCautionService = amountCautionService
         self.addressService = addressService

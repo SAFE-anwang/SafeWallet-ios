@@ -3,6 +3,7 @@ import BitcoinCore
 import HdWalletKit
 import RxSwift
 import HsToolKit
+import Hodler
 
 public class Kit: AbstractKit {
     private static let heightInterval = 2016                                    // Default block count in difficulty change circle
@@ -25,10 +26,12 @@ public class Kit: AbstractKit {
         case .bip44: version = .Ltpv
         case .bip49: version = .Mtpv
         case .bip84: version = .zprv
+        case .bip86: version = .xprv
         }
         let masterPrivateKey = HDPrivateKey(seed: seed, xPrivKey: version.rawValue)
 
         try self.init(extendedKey: .private(key: masterPrivateKey),
+                purpose: purpose,
                 walletId: walletId,
                 syncMode: syncMode,
                 networkType: networkType,
@@ -36,7 +39,7 @@ public class Kit: AbstractKit {
                 logger: logger)
     }
 
-    public init(extendedKey: HDExtendedKey, walletId: String, syncMode: BitcoinCore.SyncMode = .api, networkType: NetworkType = .mainNet, confirmationsThreshold: Int = 6, logger: Logger?) throws {
+    public init(extendedKey: HDExtendedKey, purpose: Purpose, walletId: String, syncMode: BitcoinCore.SyncMode = .api, networkType: NetworkType = .mainNet, confirmationsThreshold: Int = 6, logger: Logger?) throws {
         let network: INetwork
         let initialSyncApiUrl: String
 
@@ -53,7 +56,6 @@ public class Kit: AbstractKit {
 
         let initialSyncApi = BCoinApi(url: initialSyncApiUrl, logger: logger)
 
-        let purpose = extendedKey.info.purpose
         let databaseFilePath = try DirectoryHelper.directoryURL(for: Kit.name).appendingPathComponent(Kit.databaseFileName(walletId: walletId, networkType: networkType, purpose: purpose, syncMode: syncMode)).path
         let storage = GrdbStorage(databaseFilePath: databaseFilePath)
 
@@ -90,7 +92,8 @@ public class Kit: AbstractKit {
 
         blockValidatorSet.add(blockValidator: blockValidatorChain)
 
-        let bitcoinCore = try BitcoinCoreBuilder(logger: logger)
+        let bitcoinCoreBuilder = BitcoinCoreBuilder(logger: logger)
+        let bitcoinCore = try bitcoinCoreBuilder
                 .set(network: network)
                 .set(initialSyncApi: initialSyncApi)
                 .set(extendedKey: extendedKey)
@@ -101,6 +104,8 @@ public class Kit: AbstractKit {
                 .set(syncMode: syncMode)
                 .set(storage: storage)
                 .set(blockValidator: blockValidatorSet)
+                .add(plugin: HodlerPlugin(addressConverter: bitcoinCoreBuilder.addressConverter, blockMedianTimeHelper: BlockMedianTimeHelper(storage: storage), publicKeyStorage: storage))
+                .set(purpose: purpose)
                 .build()
 
         super.init(bitcoinCore: bitcoinCore, network: network)
@@ -115,7 +120,9 @@ public class Kit: AbstractKit {
         case .bip49:
             bitcoinCore.add(restoreKeyConverter: Bip49RestoreKeyConverter(addressConverter: base58AddressConverter))
         case .bip84:
-            bitcoinCore.add(restoreKeyConverter: KeyHashRestoreKeyConverter())
+            bitcoinCore.add(restoreKeyConverter: KeyHashRestoreKeyConverter(scriptType: .p2wpkh))
+        case .bip86:
+            bitcoinCore.add(restoreKeyConverter: KeyHashRestoreKeyConverter(scriptType: .p2tr))
         }
     }
 

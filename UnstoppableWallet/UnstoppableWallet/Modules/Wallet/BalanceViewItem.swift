@@ -46,6 +46,7 @@ enum BalanceDiffType {
 struct BalanceLockedAmountViewItem {
     let coinValue: (text: String?, dimmed: Bool)
     let currencyValue: (text: String?, dimmed: Bool)?
+    let coinName: String?
 }
 
 struct BalanceButtonsViewItem {

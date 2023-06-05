@@ -56,20 +56,24 @@ extension TimeLockService {
 }
 
 extension TimeLockService {
-
+    
     enum Item: UInt16, CaseIterable {
         case none
-        case hour
+       // case hour
         case month
+        case month_3
         case halfYear
+        case month_9
         case year
 
         var lockTimeInterval: HodlerPlugin.LockTimeInterval? {
             switch self {
             case .none: return nil
-            case .hour: return .hour
+            //case .hour: return .hour
             case .month: return .month
+            case .month_3: return .month_3
             case .halfYear: return .halfYear
+            case .month_9: return .month_9
             case .year: return .year
             }
         }

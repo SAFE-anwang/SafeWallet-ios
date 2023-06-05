@@ -43,7 +43,7 @@ public class Kit: AbstractKit {
 
         case .testNet:
             network = TestNet()
-            initialSyncApiUrl = "http://dash-testnet.horizontalsystems.xyz/apg"
+            initialSyncApiUrl = ""
         }
 
         let logger = logger ?? Logger(minLogLevel: .verbose)
@@ -98,6 +98,7 @@ public class Kit: AbstractKit {
                 .set(blockHeaderHasher: x11Hasher)
                 .set(transactionInfoConverter: dashTransactionInfoConverter)
                 .set(blockValidator: blockValidatorSet)
+                .set(purpose: .bip44)
                 .build()
         super.init(bitcoinCore: bitcoinCore, network: network)
         bitcoinCore.delegate = self
@@ -171,7 +172,7 @@ public class Kit: AbstractKit {
     }
 
     public override func sendSafe(to address: String, value: Int, feeRate: Int, sortType: TransactionDataSortType, pluginData: [UInt8: IPluginData], unlockedHeight: Int?, reverseHex: String?) throws -> FullTransaction {
-        try super.sendSafe(to: address, value: value, feeRate: feeRate, sortType: sortType, unlockedHeight: unlockedHeight, reverseHex: reverseHex)
+        try super.sendSafe(to: address, value: value, feeRate: feeRate, sortType: sortType, pluginData: pluginData, unlockedHeight: unlockedHeight, reverseHex: reverseHex)
     }
 
     public func transactions(fromUid: String? = nil, type: TransactionFilterType?, limit: Int? = nil) -> Single<[DashTransactionInfo]> {

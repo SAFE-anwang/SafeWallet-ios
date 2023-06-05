@@ -270,8 +270,13 @@
 "send.hodler_locktime" = "TimeLock";
 "send.hodler_locktime_hour" = "1 Stunde";
 "send.hodler_locktime_month" = "1 Monat";
+"send.hodler_locktime_month_3" = "3 Monate";
 "send.hodler_locktime_half_year" = "6 Monate";
+"send.hodler_locktime_month_9" = "9 Monate";
 "send.hodler_locktime_year" = "1 Jahr";
+"send.hodler_locktime_year_3" = "3 Jahr";
+"send.hodler_locktime_year_5" = "5 Jahr";
+"send.hodler_locktime_year_10" = "10 Jahr";
 "send.hodler_locktime_off" = "Aus";
 "send.hodler_error.unsupported_address" = "Zeitsperre funktioniert nur mit P2PKH-Adressen (beginnend mit 1) ";
 "send.fee_info.title" = "Gebührenrate";

@@ -17,6 +17,8 @@ let package = Package(
         .package(url: "https://github.com/greymass/swift-scrypt.git", from: "1.0.0"),
         .package(url: "https://github.com/horizontalsystems/HsToolKit.Swift.git", .upToNextMajor(from: "1.0.0")),
         .package(url: "https://github.com/ReactiveX/RxSwift.git", .upToNextMajor(from: "5.0.1")),
+        .package(url: "https://github.com/SAFE-anwang/Hodler.Swift.git", .branch("main")),
+
     ],
     targets: [
         .target(
@@ -26,6 +28,7 @@ let package = Package(
                 .product(name: "Scrypt", package: "swift-scrypt"),
                 .product(name: "BitcoinCore", package: "BitcoinCore.Swift"),
                 .product(name: "HsToolKit", package: "HsToolKit.Swift"),
+                .product(name: "Hodler", package: "Hodler.Swift"),
             ]
         ),
     ]

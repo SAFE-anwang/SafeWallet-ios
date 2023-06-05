@@ -14,7 +14,7 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
     let tableView = SectionsTableView(style: .grouped)
 
     private let confirmationFactory: ISendConfirmationFactory
-    private let feeSettingsFactory: ISendFeeSettingsFactory?
+    let feeSettingsFactory: ISendFeeSettingsFactory?
 
     private let amountCautionViewModel: SendAmountCautionViewModel
 

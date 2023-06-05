@@ -49,7 +49,8 @@ class WalletViewItemFactory {
 
         return BalanceLockedAmountViewItem(
                 coinValue: coinValue(token: item.wallet.token, value: item.balanceData.balanceLocked, state: item.state, expanded: true),
-                currencyValue: currencyValue(value: item.balanceData.balanceLocked, state: item.state, priceItem: item.priceItem, expanded: true)
+                currencyValue: currencyValue(value: item.balanceData.balanceLocked, state: item.state, priceItem: item.priceItem, expanded: true),
+                coinName: item.wallet.token.coin.code
         )
     }
 
@@ -141,7 +142,7 @@ class WalletViewItemFactory {
 
     private func coinValue(token: Token, value: Decimal, state: AdapterState, expanded: Bool) -> (text: String?, dimmed: Bool) {
         (
-                text: expanded ? ValueFormatter.instance.formatFull(value: value, decimalCount: token.decimals) : ValueFormatter.instance.formatShort(value: value, decimalCount: token.decimals),
+            text: expanded ? ValueFormatter.instance.formatFull(value: value, decimalCount: token.decimals) : ValueFormatter.instance.formatShort(value: value, decimalCount: token.decimals),
                 dimmed: state != .synced
         )
     }
