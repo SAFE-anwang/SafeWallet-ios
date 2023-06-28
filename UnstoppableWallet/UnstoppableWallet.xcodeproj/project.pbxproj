@@ -2127,12 +2127,37 @@
 		BD55E82229E5BD600081A85D /* MarketDappProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E81529E5BD5F0081A85D /* MarketDappProvider.swift */; };
 		BD55E82329E5BD600081A85D /* MarketDappProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E81529E5BD5F0081A85D /* MarketDappProvider.swift */; };
 		BD9273E629EEDB6C00FB93FF /* BitcoinCore in Frameworks */ = {isa = PBXBuildFile; productRef = BD9273E529EEDB6C00FB93FF /* BitcoinCore */; };
+		BDAAF84C2A2DE78F00686111 /* Safe4Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF84B2A2DE78F00686111 /* Safe4Module.swift */; };
+		BDAAF84D2A2DE79B00686111 /* Safe4Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF84B2A2DE78F00686111 /* Safe4Module.swift */; };
+		BDAAF8522A2DEECA00686111 /* SafeInfoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8512A2DEECA00686111 /* SafeInfoManager.swift */; };
+		BDAAF8532A2DEECA00686111 /* SafeInfoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8512A2DEECA00686111 /* SafeInfoManager.swift */; };
+		BDAAF8552A2F0E5A00686111 /* WSafeKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8542A2F0E5A00686111 /* WSafeKit.swift */; };
+		BDAAF8562A2F0E5A00686111 /* WSafeKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8542A2F0E5A00686111 /* WSafeKit.swift */; };
+		BDAAF8582A31DB4100686111 /* SafeInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8572A31DB4000686111 /* SafeInfo.swift */; };
+		BDAAF8592A31DB4100686111 /* SafeInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8572A31DB4000686111 /* SafeInfo.swift */; };
+		BDAAF85B2A31DBFB00686111 /* SafeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF85A2A31DBFB00686111 /* SafeProvider.swift */; };
+		BDAAF85C2A31DBFB00686111 /* SafeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF85A2A31DBFB00686111 /* SafeProvider.swift */; };
+		BDAAF8612A342BEC00686111 /* SendWsafeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8602A342BEB00686111 /* SendWsafeViewModel.swift */; };
+		BDAAF8622A342BEC00686111 /* SendWsafeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8602A342BEB00686111 /* SendWsafeViewModel.swift */; };
+		BDAAF8642A342C1800686111 /* SendWsafeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8632A342C1800686111 /* SendWsafeService.swift */; };
+		BDAAF8652A342C1800686111 /* SendWsafeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF8632A342C1800686111 /* SendWsafeService.swift */; };
+		BDB79C972A42ED0A009F5800 /* web3swift in Frameworks */ = {isa = PBXBuildFile; productRef = BDB79C962A42ED0A009F5800 /* web3swift */; };
+		BDB79C9C2A43FCFC009F5800 /* SendSafe2wsafeAdapterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB79C9B2A43FCFB009F5800 /* SendSafe2wsafeAdapterService.swift */; };
+		BDB79C9D2A43FCFC009F5800 /* SendSafe2wsafeAdapterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB79C9B2A43FCFB009F5800 /* SendSafe2wsafeAdapterService.swift */; };
+		BDB79C9F2A4437EA009F5800 /* SendSafe2wsafeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB79C9E2A4437EA009F5800 /* SendSafe2wsafeService.swift */; };
+		BDB79CA02A4437EA009F5800 /* SendSafe2wsafeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB79C9E2A4437EA009F5800 /* SendSafe2wsafeService.swift */; };
+		BDB79CA22A44663F009F5800 /* SendSafe2wsafeFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB79CA12A44663F009F5800 /* SendSafe2wsafeFactory.swift */; };
+		BDB79CA32A44663F009F5800 /* SendSafe2wsafeFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB79CA12A44663F009F5800 /* SendSafe2wsafeFactory.swift */; };
+		BDB79CA82A482F8E009F5800 /* SendSafe2wsafeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB79CA72A482F8D009F5800 /* SendSafe2wsafeViewController.swift */; };
+		BDB79CA92A482F8E009F5800 /* SendSafe2wsafeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB79CA72A482F8D009F5800 /* SendSafe2wsafeViewController.swift */; };
 		BDB9B7CC2A1CB98C000383F2 /* SafeDropDownListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB9B7CB2A1CB98C000383F2 /* SafeDropDownListCell.swift */; };
 		BDB9B7CD2A1CB98C000383F2 /* SafeDropDownListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB9B7CB2A1CB98C000383F2 /* SafeDropDownListCell.swift */; };
 		BDB9B7CF2A1D465A000383F2 /* SafeTimeLockDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB9B7CE2A1D465A000383F2 /* SafeTimeLockDataSource.swift */; };
 		BDB9B7D02A1D465A000383F2 /* SafeTimeLockDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB9B7CE2A1D465A000383F2 /* SafeTimeLockDataSource.swift */; };
 		BDB9B7D22A1F1D16000383F2 /* SafeSendTimeLockErrorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB9B7D12A1F1D15000383F2 /* SafeSendTimeLockErrorService.swift */; };
 		BDB9B7D32A1F1D16000383F2 /* SafeSendTimeLockErrorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB9B7D12A1F1D15000383F2 /* SafeSendTimeLockErrorService.swift */; };
+		BDCAB8B02A36F9E5005F5A3D /* SendSafeEvmViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCAB8AF2A36F9E5005F5A3D /* SendSafeEvmViewController.swift */; };
+		BDCAB8B12A36F9E5005F5A3D /* SendSafeEvmViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCAB8AF2A36F9E5005F5A3D /* SendSafeEvmViewController.swift */; };
 		BDD1BFC52A2748CB009AE2AF /* LaunchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD1BFC42A2748CB009AE2AF /* LaunchService.swift */; };
 		BDD1BFC62A2748CB009AE2AF /* LaunchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD1BFC42A2748CB009AE2AF /* LaunchService.swift */; };
 		BDE6E2392A03A7880052790F /* SafeCoinHistoricalPriceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE6E2382A03A7880052790F /* SafeCoinHistoricalPriceManager.swift */; };
@@ -2944,7 +2969,6 @@
 		1A56408C8281C80FD365E5BE /* LaunchModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LaunchModule.swift; sourceTree = "<group>"; };
 		1A5640B4F6298D9F326C5EDE /* MarketOverviewTopCoinsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarketOverviewTopCoinsViewModel.swift; sourceTree = "<group>"; };
 		1A5641572B6E46E18B52A6A9 /* SecuritySettingsModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SecuritySettingsModule.swift; sourceTree = "<group>"; };
-		1A5641679DC88BE355F0F3A0 /* Development.template.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Development.template.xcconfig; sourceTree = "<group>"; };
 		1A56417C27A95B429D9F2912 /* MarkdownContentProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarkdownContentProvider.swift; sourceTree = "<group>"; };
 		1A5641A724199908970CFB54 /* MarketNftTopCollectionsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarketNftTopCollectionsViewController.swift; sourceTree = "<group>"; };
 		1A5641CDB00EF52E18BF70F3 /* AppVersionManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppVersionManager.swift; sourceTree = "<group>"; };
@@ -2959,7 +2983,6 @@
 		1A56432704A2E7A9BE78497B /* ReleaseNotesMarkdownConfig.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReleaseNotesMarkdownConfig.swift; sourceTree = "<group>"; };
 		1A56433D5D39CCA995F97777 /* Development.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Development.xcconfig; sourceTree = "<group>"; };
 		1A564342B778B822F3ED02E7 /* WalletConnectSignMessageRequestModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalletConnectSignMessageRequestModule.swift; sourceTree = "<group>"; };
-		1A564370A637B30D34776F2A /* Production.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = file.template; path = Production.template.xcconfig; sourceTree = "<group>"; };
 		1A5643A672A508BC4CBCABDD /* NftCollectionsMultiSortHeaderViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NftCollectionsMultiSortHeaderViewModel.swift; sourceTree = "<group>"; };
 		1A5644074A3ACB1DFB63FF92 /* ReleaseNotesService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReleaseNotesService.swift; sourceTree = "<group>"; };
 		1A56443BF752CB6537E45F5A /* BlockchainSettingsStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlockchainSettingsStorage.swift; sourceTree = "<group>"; };
@@ -3485,12 +3508,25 @@
 		BD55E81329E5BD5F0081A85D /* MarketDappModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarketDappModule.swift; sourceTree = "<group>"; };
 		BD55E81429E5BD5F0081A85D /* MarketDappListViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarketDappListViewController.swift; sourceTree = "<group>"; };
 		BD55E81529E5BD5F0081A85D /* MarketDappProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MarketDappProvider.swift; sourceTree = "<group>"; };
+		BDAAF84B2A2DE78F00686111 /* Safe4Module.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4Module.swift; sourceTree = "<group>"; };
+		BDAAF8512A2DEECA00686111 /* SafeInfoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeInfoManager.swift; sourceTree = "<group>"; };
+		BDAAF8542A2F0E5A00686111 /* WSafeKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSafeKit.swift; sourceTree = "<group>"; };
+		BDAAF8572A31DB4000686111 /* SafeInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeInfo.swift; sourceTree = "<group>"; };
+		BDAAF85A2A31DBFB00686111 /* SafeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeProvider.swift; sourceTree = "<group>"; };
+		BDAAF8602A342BEB00686111 /* SendWsafeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendWsafeViewModel.swift; sourceTree = "<group>"; };
+		BDAAF8632A342C1800686111 /* SendWsafeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendWsafeService.swift; sourceTree = "<group>"; };
 		BDB4AE3F2A038B0B0029E63D /* SafeSwapKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SafeSwapKit; path = Packages/SafeSwapKit; sourceTree = "<group>"; };
 		BDB4AE422A038B0D0029E63D /* MarketKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = MarketKit; path = Packages/MarketKit; sourceTree = "<group>"; };
 		BDB4AE442A038B0E0029E63D /* SafeCoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SafeCoinKit; path = Packages/SafeCoinKit; sourceTree = "<group>"; };
+		BDB79C952A42DD9D009F5800 /* web3swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = web3swift; path = Packages/web3swift; sourceTree = "<group>"; };
+		BDB79C9B2A43FCFB009F5800 /* SendSafe2wsafeAdapterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafe2wsafeAdapterService.swift; sourceTree = "<group>"; };
+		BDB79C9E2A4437EA009F5800 /* SendSafe2wsafeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafe2wsafeService.swift; sourceTree = "<group>"; };
+		BDB79CA12A44663F009F5800 /* SendSafe2wsafeFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafe2wsafeFactory.swift; sourceTree = "<group>"; };
+		BDB79CA72A482F8D009F5800 /* SendSafe2wsafeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafe2wsafeViewController.swift; sourceTree = "<group>"; };
 		BDB9B7CB2A1CB98C000383F2 /* SafeDropDownListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeDropDownListCell.swift; sourceTree = "<group>"; };
 		BDB9B7CE2A1D465A000383F2 /* SafeTimeLockDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeTimeLockDataSource.swift; sourceTree = "<group>"; };
 		BDB9B7D12A1F1D15000383F2 /* SafeSendTimeLockErrorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeSendTimeLockErrorService.swift; sourceTree = "<group>"; };
+		BDCAB8AF2A36F9E5005F5A3D /* SendSafeEvmViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafeEvmViewController.swift; sourceTree = "<group>"; };
 		BDD1BFC42A2748CB009AE2AF /* LaunchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchService.swift; sourceTree = "<group>"; };
 		BDE6E2382A03A7880052790F /* SafeCoinHistoricalPriceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeCoinHistoricalPriceManager.swift; sourceTree = "<group>"; };
 		BDE6E23B2A0938C70052790F /* LitecoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = LitecoinKit; path = Packages/LitecoinKit; sourceTree = "<group>"; };
@@ -3636,6 +3672,7 @@
 				D3604E4D28F02AB40066C366 /* NftKit in Frameworks */,
 				D3C187CF290FCF2D00FE1900 /* ThemeKit in Frameworks */,
 				D0DA740F272A6EFC0072BE86 /* UnicodeURL in Frameworks */,
+				BDB79C972A42ED0A009F5800 /* web3swift in Frameworks */,
 				D38406A721831B3D007D50AD /* LocalAuthentication.framework in Frameworks */,
 				D3993DBB28F4277E008720FB /* ActionSheet in Frameworks */,
 				D3BF1E5C274BC29D00229A00 /* Down in Frameworks */,
@@ -4247,6 +4284,7 @@
 				11B35BDC053E5406102E789C /* RecoveryPhrase */,
 				11B35FEAD9772F1E11F3D767 /* RestoreAccount */,
 				11B35A52DF53F381A5B84BD4 /* RestoreSettings */,
+				BDAAF8472A2DE07300686111 /* Safe4 */,
 				BD55E79F29E59B710081A85D /* SafeVPN */,
 				BD55E7AA29E59B740081A85D /* SafeZone */,
 				1A564853E1CD86F12B83F79E /* ScanQr */,
@@ -5542,8 +5580,6 @@
 				50A1DB5A24E407CF001D396C /* Unstoppable DT.entitlements */,
 				50D05F9B249A22950067D28F /* Unstoppable.entitlements */,
 				50D05F9A249A228C0067D28F /* Unstoppable D.entitlements */,
-				1A564370A637B30D34776F2A /* Production.template.xcconfig */,
-				1A5641679DC88BE355F0F3A0 /* Development.template.xcconfig */,
 				1A5648F3AB070B0ACB98C7EE /* Production.xcconfig */,
 				1A56433D5D39CCA995F97777 /* Development.xcconfig */,
 			);
@@ -6524,6 +6560,7 @@
 				BDB4AE422A038B0D0029E63D /* MarketKit */,
 				BDB4AE442A038B0E0029E63D /* SafeCoinKit */,
 				BDB4AE3F2A038B0B0029E63D /* SafeSwapKit */,
+				BDB79C952A42DD9D009F5800 /* web3swift */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -6625,6 +6662,49 @@
 				BD55E81529E5BD5F0081A85D /* MarketDappProvider.swift */,
 			);
 			path = MarketDapp;
+			sourceTree = "<group>";
+		};
+		BDAAF8472A2DE07300686111 /* Safe4 */ = {
+			isa = PBXGroup;
+			children = (
+				BDAAF8482A2DE09500686111 /* Safe2wSafe */,
+				BDAAF8492A2DE0B500686111 /* wSafe2Safe */,
+				BDAAF84A2A2DE0C600686111 /* SafeSend */,
+				BDAAF84B2A2DE78F00686111 /* Safe4Module.swift */,
+				BDAAF8512A2DEECA00686111 /* SafeInfoManager.swift */,
+				BDAAF8542A2F0E5A00686111 /* WSafeKit.swift */,
+				BDAAF8572A31DB4000686111 /* SafeInfo.swift */,
+				BDAAF85A2A31DBFB00686111 /* SafeProvider.swift */,
+			);
+			path = Safe4;
+			sourceTree = "<group>";
+		};
+		BDAAF8482A2DE09500686111 /* Safe2wSafe */ = {
+			isa = PBXGroup;
+			children = (
+				BDB79C9B2A43FCFB009F5800 /* SendSafe2wsafeAdapterService.swift */,
+				BDB79C9E2A4437EA009F5800 /* SendSafe2wsafeService.swift */,
+				BDB79CA12A44663F009F5800 /* SendSafe2wsafeFactory.swift */,
+			);
+			path = Safe2wSafe;
+			sourceTree = "<group>";
+		};
+		BDAAF8492A2DE0B500686111 /* wSafe2Safe */ = {
+			isa = PBXGroup;
+			children = (
+				BDAAF8632A342C1800686111 /* SendWsafeService.swift */,
+				BDAAF8602A342BEB00686111 /* SendWsafeViewModel.swift */,
+			);
+			path = wSafe2Safe;
+			sourceTree = "<group>";
+		};
+		BDAAF84A2A2DE0C600686111 /* SafeSend */ = {
+			isa = PBXGroup;
+			children = (
+				BDB79CA72A482F8D009F5800 /* SendSafe2wsafeViewController.swift */,
+				BDCAB8AF2A36F9E5005F5A3D /* SendSafeEvmViewController.swift */,
+			);
+			path = SafeSend;
 			sourceTree = "<group>";
 		};
 		D008CA58267C8DB300001E0A /* TransactionRecords */ = {
@@ -6965,6 +7045,7 @@
 				BD1D4EE929EF1B310035B7A4 /* LitecoinKit */,
 				BD1D4EEB29EF1B940035B7A4 /* SafeCoinKit */,
 				BD301CCC2A0CEAAE003F5811 /* BitcoinKit */,
+				BDB79C962A42ED0A009F5800 /* web3swift */,
 			);
 			productName = Wallet;
 			productReference = D38406BE21831B3D007D50AD /* Unstoppable.app */;
@@ -7179,6 +7260,7 @@
 				D36DE0D0272FD864000BC916 /* UniswapDataSource.swift in Sources */,
 				D003297726CD2C67002EC21D /* TransactionLockInfo.swift in Sources */,
 				2FA5DB3B49EF898B63DD0F94 /* KitCleaner.swift in Sources */,
+				BDB79CA92A482F8E009F5800 /* SendSafe2wsafeViewController.swift in Sources */,
 				2FA5D98D7EE8F90744430243 /* TimeInterval.swift in Sources */,
 				BD55E7E929E59E1B0081A85D /* SafeSwapViewModel.swift in Sources */,
 				3AB682BF25BADD97002197A5 /* MarketOverviewModule.swift in Sources */,
@@ -7477,6 +7559,7 @@
 				11B35E08C957B79CF373E9FB /* BackupVerifyWordsModule.swift in Sources */,
 				11B353521013A50A7029634D /* CoinSettingsView.swift in Sources */,
 				11B35E3B729B4492425FF4C3 /* CoinSettingsService.swift in Sources */,
+				BDAAF8532A2DEECA00686111 /* SafeInfoManager.swift in Sources */,
 				11B355BDB9EDD68DEC7237FC /* CoinSettingsViewModel.swift in Sources */,
 				11B35F79E8B3DED443D2825A /* BottomMultiSelectorViewController.swift in Sources */,
 				D02A67C0272A7460009B2C1C /* TweetsProvider.swift in Sources */,
@@ -7584,6 +7667,7 @@
 				D36DE0E2272FD887000BC916 /* OneInchProvider.swift in Sources */,
 				D36DE100272FD92F000BC916 /* SwapSelectProviderViewModel.swift in Sources */,
 				58AAAAEDC64AE5716BC07673 /* SwapSlippageViewModel.swift in Sources */,
+				BDB79C9D2A43FCFC009F5800 /* SendSafe2wsafeAdapterService.swift in Sources */,
 				58AAA56C780EF5C92C1D1A32 /* AddressResolutionProvider.swift in Sources */,
 				58AAA3762D78142A83A22F50 /* SwapViewModel.swift in Sources */,
 				58AAA8395FE1310712EAA82C /* OneInchFeeService.swift in Sources */,
@@ -7662,6 +7746,7 @@
 				11B351DC0A022B6290C381E7 /* EnableCoinModule.swift in Sources */,
 				11B358362F756E91646878D0 /* CoinValue.swift in Sources */,
 				2FA5D7CDF884D2655E066C3E /* TransactionValue.swift in Sources */,
+				BDAAF8592A31DB4100686111 /* SafeInfo.swift in Sources */,
 				58AAA3F0AFD0D0F5FCD24DEF /* SelectorButton.swift in Sources */,
 				58AAAF886ADA156E5559EE5B /* MarketOverviewViewController.swift in Sources */,
 				58AAA1B716FCD40947F4F95C /* MarketOverviewHeaderCell.swift in Sources */,
@@ -7699,6 +7784,7 @@
 				11B35F173689829256427A34 /* MarketAdvancedSearchViewModel.swift in Sources */,
 				D36DE0AC272FD612000BC916 /* SwapViewController.swift in Sources */,
 				11B3505A12674A5FF36D3CC8 /* MarketAdvancedSearchService.swift in Sources */,
+				BDAAF8562A2F0E5A00686111 /* WSafeKit.swift in Sources */,
 				11B359B11871F76B25426D58 /* MarketAdvancedSearchModule.swift in Sources */,
 				11B350F36947CF278CDB436B /* MarketListMarketFieldDecorator.swift in Sources */,
 				58AAACF322E073F1DDA1FBDC /* MarketTvlSortHeaderViewModel.swift in Sources */,
@@ -7733,6 +7819,7 @@
 				11B35F6092E0950714E277E4 /* PostCell.swift in Sources */,
 				58AAAEA69AA123E96665E2B7 /* MarketGlobalDefiMetricService.swift in Sources */,
 				58AAAB25F7EDB3EAE26E690C /* MarketGlobalTvlMetricViewController.swift in Sources */,
+				BDCAB8B12A36F9E5005F5A3D /* SendSafeEvmViewController.swift in Sources */,
 				58AAA4C8FEC03BAFB1B4863E /* MarketGlobalTvlMetricService.swift in Sources */,
 				58AAA60557D3A9E3AE7372E0 /* MarketListDefiDecorator.swift in Sources */,
 				58AAAA07DC05EF7F912EA184 /* MarketListTvlDecorator.swift in Sources */,
@@ -7944,6 +8031,7 @@
 				11B350F9E67A095998D9462C /* BalanceConversionManager.swift in Sources */,
 				11B35D11D00301F7B67B0340 /* AppIconManager.swift in Sources */,
 				11B35B0E1435737240D26C92 /* AppIcon.swift in Sources */,
+				BDAAF84D2A2DE79B00686111 /* Safe4Module.swift in Sources */,
 				11B35B49DF2315B25E42EC71 /* AppearanceAppIconsCell.swift in Sources */,
 				11B35E008ED355ADDA226751 /* AppearanceAppIconCell.swift in Sources */,
 				1A5643D323BAB0B8B45A9038 /* PrivacyPolicyViewController.swift in Sources */,
@@ -7963,6 +8051,7 @@
 				11B35516B09BF11EDC33482F /* TransactionsService.swift in Sources */,
 				11B3556B3FAAA6B1FA63C8B1 /* TransactionsViewModel.swift in Sources */,
 				11B35858954659DEE0C44618 /* TransactionsViewItemFactory.swift in Sources */,
+				BDAAF8622A342BEC00686111 /* SendWsafeViewModel.swift in Sources */,
 				11B35C4D4120D85CD32CAD0F /* TransactionsViewController.swift in Sources */,
 				11B3587DEC9342190880D3C3 /* TransactionsCoinSelectModule.swift in Sources */,
 				11B35E600B85B3D1F142D886 /* TransactionsCoinSelectService.swift in Sources */,
@@ -8001,6 +8090,7 @@
 				11B35F78F82224BE17D612AB /* RecoveryPhraseService.swift in Sources */,
 				11B35317F0BD30311142EA5D /* EvmPrivateKeyModule.swift in Sources */,
 				11B35EB226E9B03410E6E383 /* EvmPrivateKeyViewModel.swift in Sources */,
+				BDAAF85C2A31DBFB00686111 /* SafeProvider.swift in Sources */,
 				11B35653622A466CE9E6FA71 /* EvmPrivateKeyViewController.swift in Sources */,
 				11B3503F5875A29E6949B13C /* EvmPrivateKeyService.swift in Sources */,
 				11B35F4CF3289335EF9004F1 /* ExtendedKeyViewController.swift in Sources */,
@@ -8134,6 +8224,7 @@
 				11B354EB71E52DF79A003231 /* FaqUrlHelper.swift in Sources */,
 				11B3503456D10F362D8CC855 /* RestoreSettingsModule.swift in Sources */,
 				2FA5D68102F8CD6FB793A158 /* EvmSendSettingsModule.swift in Sources */,
+				BDB79CA32A44663F009F5800 /* SendSafe2wsafeFactory.swift in Sources */,
 				2FA5D4C40B723434DB9D2DBE /* EvmSendSettingsService.swift in Sources */,
 				2FA5D987AC6D91F7929DE933 /* EvmSendSettingsViewController.swift in Sources */,
 				BD55E7C229E59B750081A85D /* MainSafeZoneModule.swift in Sources */,
@@ -8153,6 +8244,7 @@
 				2FA5D5268D73DCC5651C09AF /* LegacyEvmFeeViewModel.swift in Sources */,
 				BD55E7C029E59B750081A85D /* MainSafeZoneViewModel.swift in Sources */,
 				2FA5D50BFA714AAF76AC536B /* Eip1559GasPriceService.swift in Sources */,
+				BDB79CA02A4437EA009F5800 /* SendSafe2wsafeService.swift in Sources */,
 				11B35963D09A27ACE74B3A52 /* PublicKeysModule.swift in Sources */,
 				11B35B1F63DBDEEF57043C97 /* PublicKeysService.swift in Sources */,
 				BD55E7C929E59C2D0081A85D /* SafeCoinPriceStorage.swift in Sources */,
@@ -8193,6 +8285,7 @@
 				ABC9ACE1EDEA27A054EDC2C4 /* ContactBookService.swift in Sources */,
 				ABC9A3510E5BE401AD04DA98 /* ContactBookViewModel.swift in Sources */,
 				ABC9AE042D6A3D70CA64F959 /* ContactBookModule.swift in Sources */,
+				BDAAF8652A342C1800686111 /* SendWsafeService.swift in Sources */,
 				ABC9AFFD730AC3274811DA61 /* ContactBookContactViewController.swift in Sources */,
 				ABC9ACDDAD1927EB799150D2 /* ContactBookContactViewModel.swift in Sources */,
 				ABC9ACC4CA8C9CBCA7C1A182 /* ContactBookContactService.swift in Sources */,
@@ -8269,7 +8362,9 @@
 				11B3541F6B5316F3B373D1EA /* ValueFormatter.swift in Sources */,
 				11B351C81028727569851233 /* EvmAdapter.swift in Sources */,
 				11B35A801504D47FBE31CF40 /* PasteboardManager.swift in Sources */,
+				BDB79CA82A482F8E009F5800 /* SendSafe2wsafeViewController.swift in Sources */,
 				58AAA4E1C32E0B48A4CFECCD /* PaymentRequestAddress.swift in Sources */,
+				BDB79CA22A44663F009F5800 /* SendSafe2wsafeFactory.swift in Sources */,
 				11B35D0542ACB56A31C61143 /* UIImage.swift in Sources */,
 				11B350E923A4E51AAF9D2828 /* BarsProgressView.swift in Sources */,
 				D31C4764238BF176008CB818 /* FeeRateState.swift in Sources */,
@@ -8408,6 +8503,7 @@
 				D36DE0DE272FD887000BC916 /* OneInchViewModel.swift in Sources */,
 				1A5649926B0064083045BEEB /* BalanceErrorService.swift in Sources */,
 				1A564001701A1E77AF7A651B /* BalanceErrorModule.swift in Sources */,
+				BDCAB8B02A36F9E5005F5A3D /* SendSafeEvmViewController.swift in Sources */,
 				11B35E8E0F5E5F43E65B8A98 /* GuidesModule.swift in Sources */,
 				11B353EDF27AB81FCF2A36EE /* GuidesViewModel.swift in Sources */,
 				11B35BAB21CC10FB5AE81F2C /* GuidesViewController.swift in Sources */,
@@ -8507,6 +8603,7 @@
 				3A73FC99258B1AF600FE4D34 /* MarketWatchlistViewController.swift in Sources */,
 				11B35959AAF414186CE39698 /* AddTokenViewModel.swift in Sources */,
 				11B35A90F19DE20ABE21F423 /* AddTokenService.swift in Sources */,
+				BDAAF8582A31DB4100686111 /* SafeInfo.swift in Sources */,
 				11B35FAB3263E489CB9017FC /* AddTokenViewController.swift in Sources */,
 				58AAA203CEB400A883379822 /* DownloadService.swift in Sources */,
 				11B35246E31C33624A929628 /* FormTextView.swift in Sources */,
@@ -8683,6 +8780,7 @@
 				58AAAAE64799E5DD40D4C54A /* MetricChartModule.swift in Sources */,
 				58AAA0CA81351C80C4F2E168 /* MetricChartViewController.swift in Sources */,
 				58AAA4109DE36F8934808DE0 /* MarketGlobalModule.swift in Sources */,
+				BDAAF85B2A31DBFB00686111 /* SafeProvider.swift in Sources */,
 				11B352840E06275F96EFFCDB /* BaseCurrencySettingsModule.swift in Sources */,
 				11B353C8EE86F13C1BBD601C /* BaseCurrencySettingsService.swift in Sources */,
 				11B3538F09621AE16E30E26A /* BaseCurrencySettingsViewController.swift in Sources */,
@@ -8698,6 +8796,7 @@
 				11B35804545D048C0EDB8089 /* EvmSyncSource.swift in Sources */,
 				11B352F14D96C26D946E3877 /* EvmSyncSourceManager.swift in Sources */,
 				11B35F73153DEE805DD539CE /* EvmNetworkViewController.swift in Sources */,
+				BDAAF84C2A2DE78F00686111 /* Safe4Module.swift in Sources */,
 				11B35B507F2F843A5B3E4C7C /* EvmNetworkViewModel.swift in Sources */,
 				11B35B81B3C6EDC01D0B3C1F /* EvmNetworkService.swift in Sources */,
 				11B35EA3CBC8B198C3A71382 /* EvmNetworkModule.swift in Sources */,
@@ -8754,6 +8853,7 @@
 				58AAAC9A4813120F3B786D18 /* SwapConfirmationAmountCell.swift in Sources */,
 				2FA5DEDEAF3C1D6251B47CB4 /* TransactionInfoModule.swift in Sources */,
 				2FA5DE68EF4783154A53CCEB /* TransactionInfoService.swift in Sources */,
+				BDB79C9F2A4437EA009F5800 /* SendSafe2wsafeService.swift in Sources */,
 				2FA5D5FCFC8A89956755FAA3 /* TransactionInfoViewController.swift in Sources */,
 				2FA5D5E5AD1073BFE7A027C8 /* TransactionInfoViewItemFactory.swift in Sources */,
 				2FA5D89EECB981FAA8B179C3 /* TransactionInfoViewModel.swift in Sources */,
@@ -8919,6 +9019,7 @@
 				1A564D02348C91416FD011FC /* TraitsCell.swift in Sources */,
 				1A5649CEE6EFCC06A10F69CF /* TraitCell.swift in Sources */,
 				ABC9A3C3FC55AB33A9896382 /* UIViewController.swift in Sources */,
+				BDAAF8612A342BEC00686111 /* SendWsafeViewModel.swift in Sources */,
 				ABC9A9AC7890BE4AAE7DDC84 /* WalletConnectV2SessionManager.swift in Sources */,
 				2FA5D18A57B386FD3A4384BA /* Eip1559EvmFeeViewModel.swift in Sources */,
 				2FA5DA30F665BF2C170210C8 /* Eip1559EvmFeeDataSource.swift in Sources */,
@@ -9003,6 +9104,7 @@
 				11B35EBDDAB95E919600AE72 /* NftActivityViewController.swift in Sources */,
 				11B35CCAC0A3C35C1B9BD918 /* NftActivityViewModel.swift in Sources */,
 				11B35AC60BE4DC210C3C2312 /* NftActivityService.swift in Sources */,
+				BDB79C9C2A43FCFC009F5800 /* SendSafe2wsafeAdapterService.swift in Sources */,
 				11B35DC513240DBF0C78ED92 /* NftAssetButtonCell.swift in Sources */,
 				11B351DDFD1A7BC393EFA6E1 /* CustomToken.swift in Sources */,
 				BD55E80329E5AA3E0081A85D /* SafeSwapConfirmationModule.swift in Sources */,
@@ -9052,6 +9154,7 @@
 				ABC9ADFC39CA9A563ED2774E /* ProFeaturesAuthorizationManager.swift in Sources */,
 				ABC9A0248195A85CA00D6A13 /* ImageCell.swift in Sources */,
 				11B352FF1C3FA152E2EEFE67 /* EvmMethodLabel.swift in Sources */,
+				BDAAF8522A2DEECA00686111 /* SafeInfoManager.swift in Sources */,
 				11B35FB7BEC8C0DA32C1F670 /* EvmAddressLabel.swift in Sources */,
 				11B3535C10D649F8CD1BCDAF /* HsLabelProvider.swift in Sources */,
 				11B35CADA5EE093B974C5A4A /* EvmLabelManager.swift in Sources */,
@@ -9087,6 +9190,7 @@
 				ABC9AE223619E13A296BED51 /* MarketCardCell.swift in Sources */,
 				11B353E7A2462E19D946E723 /* CellComponent.swift in Sources */,
 				11B350E04791F74A6EE26765 /* BalancePrimaryValue.swift in Sources */,
+				BDAAF8642A342C1800686111 /* SendWsafeService.swift in Sources */,
 				11B35E37D8831B262A58D0D3 /* BalancePrimaryValueManager.swift in Sources */,
 				11B35D71C5893D4B1F1332B5 /* BalanceConversionManager.swift in Sources */,
 				11B35A7DFBD8FB2E663C97FE /* AppIconManager.swift in Sources */,
@@ -9185,6 +9289,7 @@
 				11B35A378CD86AC6C55AE874 /* NftKey.swift in Sources */,
 				BD55E7BD29E59B750081A85D /* MainSafeZoneService.swift in Sources */,
 				11B3505A7E4B89E9A23C19F5 /* NftMetadataSyncRecord.swift in Sources */,
+				BDAAF8552A2F0E5A00686111 /* WSafeKit.swift in Sources */,
 				11B3554B34C3A01745AC473B /* NftCollectionMetadata.swift in Sources */,
 				11B35970257A865B76C0BBB9 /* NftEventMetadata.swift in Sources */,
 				ABC9AF4D82ACDFBFBDC2D23C /* MarketCardView.swift in Sources */,
@@ -9568,8 +9673,10 @@
 			baseConfigurationReference = 1A56433D5D39CCA995F97777 /* Development.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "UnstoppableWallet/Configuration/Unstoppable D.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				DEVELOPMENT_TEAM = HC4MCAXJ66;
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 53D32W835S;
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
+				MARKETING_VERSION = 0.31.0626;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = Unstoppable_Dev;
 				PRODUCT_NAME = "Unstoppable D";
@@ -9587,9 +9694,10 @@
 			baseConfigurationReference = 1A56433D5D39CCA995F97777 /* Development.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "UnstoppableWallet/Configuration/Unstoppable D.entitlements";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				DEVELOPMENT_TEAM = HC4MCAXJ66;
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 53D32W835S;
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
+				MARKETING_VERSION = 0.31.0626;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = Unstoppable_Dev;
 				PRODUCT_NAME = "Unstoppable D";
@@ -9607,9 +9715,11 @@
 			baseConfigurationReference = 1A5648F3AB070B0ACB98C7EE /* Production.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Unstoppable.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEVELOPMENT_TEAM = HC4MCAXJ66;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_KEY_CFBundleDisplayName = SafeWallet;
+				MARKETING_VERSION = 0.31.0.1.0628;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = Unstoppable;
 				PRODUCT_NAME = Unstoppable;
@@ -9626,15 +9736,16 @@
 			baseConfigurationReference = 1A5648F3AB070B0ACB98C7EE /* Production.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Unstoppable.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				DEVELOPMENT_TEAM = HC4MCAXJ66;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_KEY_CFBundleDisplayName = SafeWallet;
+				MARKETING_VERSION = 0.31.0.1.0628;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = Unstoppable;
 				PRODUCT_NAME = Unstoppable;
 				PROVISIONING_PROFILE_SPECIFIER = "match AppStore io.horizontalsystems.bank-wallet";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = SafeWalletDev;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = SafeWalletPro;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -10015,6 +10126,10 @@
 		BD9273E529EEDB6C00FB93FF /* BitcoinCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = BitcoinCore;
+		};
+		BDB79C962A42ED0A009F5800 /* web3swift */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = web3swift;
 		};
 		D0C87E65298D17D5000CA9BE /* libzcashlc */ = {
 			isa = XCSwiftPackageProductDependency;

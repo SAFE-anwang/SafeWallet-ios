@@ -96,7 +96,8 @@ class App {
     let appManager: AppManager
     let contactManager: ContactBookManager?
     let safeCoinPriceManager: SafeCoinPriceManager
-    //let safeCoinStorage: SafeCoinStorage
+    let safeInfoManager: SafeInfoManager
+    
     let safeCoinHistoricalPriceManager: SafeCoinHistoricalPriceManager
     lazy var SafeVPNManager: SafeVPNViewModel = {
         return SafeVPNViewModel()
@@ -187,7 +188,10 @@ class App {
         safeCoinPriceManager = SafeCoinPriceManager(storage: safeCoinPriceStorage, hsProvider: safeCoinPriceProvider)
         let coinHistoricalPriceStorage = CoinHistoricalPriceStorage(dbPool: dbPool)
         safeCoinHistoricalPriceManager = SafeCoinHistoricalPriceManager(storage: coinHistoricalPriceStorage, hsProvider: safeCoinPriceProvider)
-        //safeCoinStorage = SafeCoinStorage(dbPool: dbPool)
+        
+        let safeProvider = SafeProvider(networkManager: networkManager, appConfigProvider: appConfigProvider)
+        safeInfoManager = SafeInfoManager(evmBlockchainManager: evmBlockchainManager, safeProvider: safeProvider)
+        safeInfoManager.startNet()
         
         evmLabelManager = EvmLabelManager(provider: hsLabelProvider, storage: evmLabelStorage, syncerStateStorage: syncerStateStorage)
 

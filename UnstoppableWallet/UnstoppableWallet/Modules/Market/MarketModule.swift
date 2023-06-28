@@ -150,7 +150,7 @@ extension MarketModule {
 
     enum Tab: Int, CaseIterable {
         case overview
-        case posts
+//        case posts
         case watchlist
         case twiitter
         case Dapp
@@ -158,7 +158,7 @@ extension MarketModule {
         var title: String {
             switch self {
             case .overview: return "market.category.overview".localized
-            case .posts: return "market.category.posts".localized
+//            case .posts: return "market.category.posts".localized
             case .watchlist: return "market.category.watchlist".localized
             case .twiitter: return "market.category.twiitter".localized
             case .Dapp: return "market.category.dapp".localized

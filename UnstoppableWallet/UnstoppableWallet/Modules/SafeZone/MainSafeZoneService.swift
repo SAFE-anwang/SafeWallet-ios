@@ -5,8 +5,6 @@ import CurrencyKit
 import ThemeKit
 
 class MainSafeZoneService {
-
     init(){
-        
     }
 }

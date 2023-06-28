@@ -71,7 +71,7 @@ class TransactionsHeaderView: UIView {
                     AlertViewItem(text: viewItem.title, selected: viewItem.selected)
                 }
         ) { [weak self] index in
-            self?.viewModel.onSelectBlockchain(uid: viewItems[index].uid)
+            self?.viewModel.onSelectBlockchain(type: viewItems[index].selectedType)
         }
 
         viewController?.present(alertController, animated: true)

@@ -180,7 +180,7 @@ extension SecuritySettingsViewController: SectionsDataSource {
             sections.append(biometrySection)
         }
 
-        return sections + vpnSwitch() + safeBlockchainBack() +  buildBlockchainSettingsSections()
+        return sections + safeBlockchainBack() +  buildBlockchainSettingsSections()
     }
 
 }
@@ -223,17 +223,19 @@ extension SecuritySettingsViewController {
         let cell = tableView.universalRow62(
                 id: "safeBlockchain",
                 image: .local(UIImage(named: "safelog")),
-                title: .body("SAFE高度".localized),
+                title: .body("settings_security.safe_block_height".localized),
                 accessoryType: .disclosure,
                 isFirst: true,
                 isLast: true,
                 action: { [weak self] in
                     // self?.navigationController?.pushViewController(BlockchainSettingsModule.viewController(), animated: true)
+                    HudHelper.instance.show(banner: .attention(string: "safe_zone.Safe4_Coming_Soon".localized))
+                    self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
                 }
         )
         return [Section(
                 id: "safeBlockchain",
-                headerState: .text(text: "SAFE区块回退".localized, topMargin: .margin12, bottomMargin: .margin12),
+                headerState: .text(text: "settings_security.safe_fallback".localized, topMargin: .margin12, bottomMargin: .margin12),
                 footerState: .margin(height: .margin24),
                 rows:[cell]
         )]
@@ -261,7 +263,7 @@ extension SecuritySettingsViewController {
         [
             Section(
                     id: "btc",
-                    headerState: .text(text: "区块链设置".localized, topMargin: .margin12, bottomMargin: .margin12),
+                    headerState: .text(text: "coin_settings.title".localized, topMargin: .margin12, bottomMargin: .margin12),
                     rows: blockchainSettingsViewItem.btcViewItems.enumerated().map { index, btcViewItem in
                         blockchainRow(
                                 id: "btc-\(index)",

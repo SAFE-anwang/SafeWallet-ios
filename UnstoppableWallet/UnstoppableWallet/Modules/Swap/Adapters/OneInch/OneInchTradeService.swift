@@ -132,7 +132,10 @@ class OneInchTradeService {
                 }, onError: { [weak self] error in
                     var identifiedError = error.convertedError
 
-                    if let error = identifiedError as? AppError,
+                    if tokenIn.coin.uid == safeCoinUid || tokenOut.coin.uid == safeCoinUid {
+                       identifiedError = AppError.oneInch(reason: .cannotSwap)
+                       
+                   } else if let error = identifiedError as? AppError,
                         case .invalidResponse(let reason) = error {
 
                         if reason.contains("liquidity") {

@@ -96,5 +96,12 @@ extension PoolGroupFactory {
         let providers = providers(wallets: wallets, blockchainType: blockchainType, filter: filter, configuredToken: configuredToken)
         return PoolGroup(pools: providers.map { Pool(provider: NonSpamPoolProvider(poolProvider: $0)) })
     }
+    
+    func poolGroup(wallets: [Wallet], blockchainTypes: [BlockchainType], filter: TransactionTypeFilter, configuredToken: ConfiguredToken?) -> PoolGroup {
+        let  prviders = blockchainTypes.flatMap {
+             providers(wallets: wallets, blockchainType: $0, filter: filter, configuredToken: configuredToken)
+        }
+        return PoolGroup(pools: prviders.map { Pool(provider: NonSpamPoolProvider(poolProvider: $0)) })
+    }
 
 }

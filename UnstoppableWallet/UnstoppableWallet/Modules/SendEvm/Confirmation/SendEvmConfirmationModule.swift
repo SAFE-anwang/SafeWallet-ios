@@ -85,7 +85,7 @@ struct SendEvmData {
 struct SendEvmConfirmationModule {
     private static let forceMultiplier: Double = 1.2
 
-    static func viewController(evmKitWrapper: EvmKitWrapper, sendData: SendEvmData) -> UIViewController? {
+    static func viewController(evmKitWrapper: EvmKitWrapper, sendData: SendEvmData, isEth2safe: Bool = false) -> UIViewController? {
         let evmKit = evmKitWrapper.evmKit
 
         guard let coinServiceFactory = EvmCoinServiceFactory(
@@ -100,7 +100,7 @@ struct SendEvmConfirmationModule {
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
                 evmKit: evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory,
-                gasLimitSurchargePercent: sendData.transactionData.input.isEmpty ? 0 : 20
+                gasLimitSurchargePercent: sendData.transactionData.input.isEmpty ? 0 : 20, isEth2safe: isEth2safe
         ) else {
             return nil
         }

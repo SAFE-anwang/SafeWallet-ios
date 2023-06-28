@@ -20,7 +20,6 @@ class MainSafeZoneViewController: ThemeViewController {
     init(viewModel: MainSafeZoneViewModel, urlManager: UrlManager) {
         self.viewModel = viewModel
         self.urlManager = urlManager
-
         super.init()
 
         tabBarItem = UITabBarItem(title: "safe_zone.nav.title".localized, image: UIImage(named: "filled_settings_2_24"), tag: 0)
@@ -44,22 +43,26 @@ class MainSafeZoneViewController: ThemeViewController {
         tableView.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()
         }
-        
         tableView.buildSections()
-
     }
     
     override func viewWillAppear(_ animated: Bool) {
         tableView.deselectCell(withCoordinator: transitionCoordinator, animated: animated)
     }
     
+    private func openSendSafe2eth(chainType: ChainType) {
+        tableView.deselectCell(withCoordinator: transitionCoordinator, animated: true)
+        if let module = Safe4Module.handlerSafe2eth(chainType: chainType) {
+            present(module, animated: true)
+        }
+    }
+    
+    private func openSendEth2safe(chainType: ChainType) {
+        tableView.deselectCell(withCoordinator: transitionCoordinator, animated: true)
+        if let module = Safe4Module.handlerEth2safe(chainType: chainType) {
+            present(module, animated: true)
+        }
 
-    private func openSend() {
-//        let wallet =
-//
-//        if let module = SendModule.controller(wallet: wallet) {
-//            present(module, animated: true)
-//        }
     }
     
     private func openUrl(explorerUrl: String) {
@@ -73,7 +76,6 @@ class MainSafeZoneViewController: ThemeViewController {
         CellBuilderNew.buildStatic(cell: cell, rootElement: .hStack([
             .image24 { (component: ImageComponent) -> () in
                 component.imageView.image = UIImage(named: "safelog")
-
             },
             .text { (component: TextComponent) -> () in
                 component.font = .body
@@ -88,24 +90,108 @@ class MainSafeZoneViewController: ThemeViewController {
         return cell
     }
     
+    private func buildSafe2EthCell(title: String, chainName: String, backgroundStyle: BaseSelectableThemeCell.BackgroundStyle, isFirst: Bool = false, isLast: Bool = false) -> BaseSelectableThemeCell {
+        let cell = BaseSelectableThemeCell()
+        cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
+        CellBuilderNew.buildStatic(cell: cell, rootElement: .hStack([
+            .image24 { (component: ImageComponent) -> () in
+                component.imageView.image = UIImage(named: "safelog")
+            },
+            .text { (component: TextComponent) -> () in
+                component.font = .body
+                component.textColor = .themeLeah
+                component.setContentHuggingPriority(.required, for: .horizontal)
+                component.text = title
+            },
+            .margin8,
+            .text { (component: TextComponent) -> () in
+                component.font = .body
+                component.textColor = .themeLeah
+                component.setContentHuggingPriority(.required, for: .horizontal)
+                component.text = "=>"
+            },
+            .margin8,
+            .text { (component: TextComponent) -> () in
+                component.font = .body
+                component.textColor = .themeLeah
+                component.setContentHuggingPriority(.required, for: .horizontal)
+                component.text = title
+            },
+            .margin4,
+            .badge{ (component: BadgeComponent) -> () in
+                component.badgeView.set(style: .small)
+                component.badgeView.textColor = .themeBran
+                component.badgeView.font = .microSB
+                component.badgeView.text = chainName
+            },
+            .text { (component: TextComponent) -> () in
+            },
+            .margin8,
+            .image20 { (component: ImageComponent) -> () in
+                component.imageView.image = UIImage(named: "arrow_big_forward_20")
+            }
+        ]))
+        return cell
+    }
+    
+    private func buildEth2SafeCell(title: String, chainName: String, backgroundStyle: BaseSelectableThemeCell.BackgroundStyle, isFirst: Bool = false, isLast: Bool = false) -> BaseSelectableThemeCell {
+        let cell = BaseSelectableThemeCell()
+        cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
+        CellBuilderNew.buildStatic(cell: cell, rootElement: .hStack([
+            .image24 { (component: ImageComponent) -> () in
+                component.imageView.image = UIImage(named: "safelog")
+            },
+            .text { (component: TextComponent) -> () in
+                component.font = .body
+                component.textColor = .themeLeah
+                component.setContentHuggingPriority(.required, for: .horizontal)
+                component.text = title
+            },
+            .margin4,
+            .badge{ (component: BadgeComponent) -> () in
+                component.badgeView.set(style: .small)
+                component.badgeView.textColor = .themeBran
+                component.badgeView.font = .microSB
+                component.badgeView.text = chainName
+            },
+            .margin8,
+            .text { (component: TextComponent) -> () in
+                component.font = .body
+                component.textColor = .themeLeah
+                component.setContentHuggingPriority(.required, for: .horizontal)
+                component.text = "=>"
+            },
+            .margin8,
+            .text { (component: TextComponent) -> () in
+                component.font = .body
+                component.textColor = .themeLeah
+                component.setContentCompressionResistancePriority(.required, for: .horizontal)
+                component.text = title
+            },
+            .margin8,
+            .image20 { (component: ImageComponent) -> () in
+                component.imageView.image = UIImage(named: "arrow_big_forward_20")
+            }
+        ]))
+        return cell
+    }
+    
     private var crossChainETH_Rows: [RowProtocol] {
         [
             StaticRow(
-                cell: buildTitleImage(title: "SAFE => SAFE ERC20", backgroundStyle: .lawrence, isFirst: true),
+                cell: buildSafe2EthCell(title: "SAFE", chainName: "ERC20", backgroundStyle: .lawrence, isFirst: true),
                     id: "crossChainETH_Rows",
                     height: .heightCell48,
                     action: { [weak self] in
-                        // to do ..
-                        //self?.openSend()
+                        self?.openSendSafe2eth(chainType: .ETH)
                     }
             ),
             StaticRow(
-                cell: buildTitleImage(title: "SAFE ERC20 => SAFE ", backgroundStyle: .lawrence),
+                cell: buildEth2SafeCell(title: "SAFE", chainName: "ERC20", backgroundStyle: .lawrence),
                     id: "crossChainETH_Rows",
                     height: .heightCell48,
                     action: { [weak self] in
-                        // to do ..
-                        //self?.openSend()
+                        self?.openSendEth2safe(chainType: .ETH)
                     }
             ),
             StaticRow(
@@ -133,21 +219,19 @@ class MainSafeZoneViewController: ThemeViewController {
     private var crossChainBSC_Rows: [RowProtocol] {
         [
             StaticRow(
-                    cell: buildTitleImage(title: "SAFE => SAFE ERC20", backgroundStyle: .lawrence, isFirst: true),
+                    cell: buildSafe2EthCell(title: "SAFE", chainName: "BEP20", backgroundStyle: .lawrence, isFirst: true),
                     id: "crossChainBSC_Rows",
                     height: .heightCell48,
                     action: { [weak self] in
-                        // to do ..
-                        //self?.openSend()
+                        self?.openSendSafe2eth(chainType: .BSC)
                     }
             ),
             StaticRow(
-                cell: buildTitleImage(title: "SAFE ERC20 => SAFE", backgroundStyle: .lawrence),
+                cell: buildEth2SafeCell(title: "SAFE", chainName: "BEP20", backgroundStyle: .lawrence),
                     id: "crossChainBSC_Rows",
                     height: .heightCell48,
                     action: { [weak self] in
-                        // to do ..
-                        //self?.openSend()
+                        self?.openSendEth2safe(chainType: .BSC)
                     }
             ),
             StaticRow(
@@ -171,6 +255,36 @@ class MainSafeZoneViewController: ThemeViewController {
         ]
     }
     
+    private var crossChainMatic_Rows: [RowProtocol] {
+        [
+            StaticRow(
+                    cell: buildSafe2EthCell(title: "SAFE", chainName: "MATIC", backgroundStyle: .lawrence, isFirst: true),
+                    id: "crossChainBSC_Rows",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        self?.openSendSafe2eth(chainType: .MATIC)
+                    }
+            ),
+            StaticRow(
+                cell: buildEth2SafeCell(title: "SAFE", chainName: "MATIC", backgroundStyle: .lawrence),
+                    id: "crossChainBSC_Rows",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        self?.openSendEth2safe(chainType: .MATIC)
+                    }
+            ),
+            StaticRow(
+                cell: buildTitleImage(title: "safe_zone.row.contract".localized, backgroundStyle: .lawrence),
+                    id: "crossChainBSC_Rows",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        self?.openUrl(explorerUrl:"https://bscscan.com/token/0xb7Dd19490951339fE65E341Df6eC5f7f93FF2779")
+
+                    }
+            ),
+        ]
+    }
+    
     private var locked_Rows: [RowProtocol] {
         [
             StaticRow(
@@ -179,6 +293,8 @@ class MainSafeZoneViewController: ThemeViewController {
                     height: .heightCell48,
                     action: { [weak self] in
                         // to do ..
+                        HudHelper.instance.show(banner: .attention(string: "safe_zone.Safe4_Coming_Soon".localized))
+                        self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
                     }
             ),
             StaticRow(
@@ -187,6 +303,8 @@ class MainSafeZoneViewController: ThemeViewController {
                     height: .heightCell48,
                     action: { [weak self] in
                         // to do ..
+                        HudHelper.instance.show(banner: .attention(string: "safe_zone.Safe4_Coming_Soon".localized))
+                        self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
                     }
             ),
         ]
@@ -253,6 +371,7 @@ extension MainSafeZoneViewController: SectionsDataSource {
         [
             Section(id: "crossChainETH", headerState: .text(text: "safe_zone.section.cross_eth".localized, topMargin: 25, bottomMargin: 15), rows: crossChainETH_Rows),
             Section(id: "crossChainBSC", headerState: .text(text: "safe_zone.section.cross_bsc".localized, topMargin: 25, bottomMargin: 15), rows: crossChainBSC_Rows),
+            Section(id: "crossChainMatic", headerState: .text(text: "safe_zone.section.cross_matic".localized, topMargin: 25, bottomMargin: 15), rows: crossChainMatic_Rows),
             Section(id: "Locked", headerState: .text(text: "safe_zone.section.locked".localized, topMargin: 25, bottomMargin: 15), rows: locked_Rows),
             Section(id: "Basic", headerState: .text(text: "safe_zone.section.basic".localized, topMargin: 25, bottomMargin: 15), rows: basic_Rows),
         ]

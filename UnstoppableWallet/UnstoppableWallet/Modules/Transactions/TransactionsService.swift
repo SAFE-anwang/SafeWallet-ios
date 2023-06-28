@@ -37,13 +37,13 @@ class TransactionsService {
         }
     }
 
-    private let blockchainRelay = PublishRelay<Blockchain?>()
-    private(set) var blockchain: Blockchain? {
+    private let blockchainRelay = PublishRelay<SelectedBlockchain?>()
+    private(set) var blockchain: SelectedBlockchain? {
         didSet {
             blockchainRelay.accept(blockchain)
         }
     }
-
+    
     private let configuredTokenRelay = PublishRelay<ConfiguredToken?>()
     private(set) var configuredToken: ConfiguredToken? {
         didSet {
@@ -97,8 +97,17 @@ class TransactionsService {
     private func _syncWallets() {
         allBlockchains = Array(Set(walletManager.activeWallets.map { $0.token.blockchain }))
 
-        if let blockchain = blockchain, !allBlockchains.contains(blockchain) {
-            self.blockchain = nil
+        if let blockchain = blockchain {
+            
+            switch blockchain {
+            case .blockchain(let blockchain):
+                if !allBlockchains.contains(blockchain) { self.blockchain = nil }
+                
+            case .blockchainSeries(let series):
+                guard series.isContains(allBlockchains.map{$0.type}) else {
+                    return self.blockchain = nil
+                }
+            }
         }
 
         if let configuredToken = configuredToken, !walletManager.activeWallets.contains(where: { $0.configuredToken == configuredToken }) {
@@ -119,13 +128,31 @@ class TransactionsService {
     }
 
     private func _syncPoolGroup() {
-        poolGroup = poolGroupFactory.poolGroup(
-                wallets: walletManager.activeWallets,
-                blockchainType: blockchain?.type,
-                filter: typeFilter,
-                configuredToken: configuredToken
-        )
-
+        switch blockchain {
+        case .blockchain(let blockchain):
+            poolGroup = poolGroupFactory.poolGroup(
+                    wallets: walletManager.activeWallets,
+                    blockchainType: blockchain.type,
+                    filter: typeFilter,
+                    configuredToken: configuredToken
+            )
+            
+        case .blockchainSeries(let series):
+            poolGroup = poolGroupFactory.poolGroup(
+                    wallets: walletManager.activeWallets,
+                    blockchainTypes: series.types,
+                    filter: typeFilter,
+                    configuredToken: configuredToken
+            )
+        case .none:
+            poolGroup = poolGroupFactory.poolGroup(
+                    wallets: walletManager.activeWallets,
+                    blockchainType: nil,
+                    filter: typeFilter,
+                    configuredToken: configuredToken
+            )
+        }
+        
         _initPoolGroup()
     }
 
@@ -346,10 +373,10 @@ extension TransactionsService {
         typeFilterRelay.asObservable()
     }
 
-    var blockchainObservable: Observable<Blockchain?> {
+    var blockchainObservable: Observable<SelectedBlockchain?> {
         blockchainRelay.asObservable()
     }
-
+    
     var configuredTokenObservable: Observable<ConfiguredToken?> {
         configuredTokenRelay.asObservable()
     }
@@ -395,7 +422,7 @@ extension TransactionsService {
         }
     }
 
-    func set(blockchain: Blockchain?) {
+    func set(blockchain: SelectedBlockchain?) {
         queue.async {
             guard self.blockchain != blockchain else {
                 return
@@ -418,7 +445,12 @@ extension TransactionsService {
             }
 
             self.configuredToken = configuredToken
-            self.blockchain = configuredToken?.token.blockchain
+            if let blockchain = configuredToken?.token.blockchain {
+                self.blockchain = .blockchain(blockchain: blockchain)
+
+            }else {
+                self.blockchain =  nil
+            }
 
             self._syncCanReset()
 

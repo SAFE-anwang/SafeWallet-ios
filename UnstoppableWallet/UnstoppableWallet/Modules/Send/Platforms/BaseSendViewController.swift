@@ -52,8 +52,9 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
 
         recipientCell = RecipientAddressInputCell(viewModel: recipientViewModel)
         recipientCautionCell = RecipientAddressCautionCell(viewModel: recipientViewModel)
-
+        
         super.init()
+        title = "send.title".localized(viewModel.token.coin.code)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -63,7 +64,7 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = "send.title".localized(viewModel.token.coin.code)
+        //title = "send.title".localized(viewModel.token.coin.code)
         
         let closeButton = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onTapCloseButton))
         navigationItem.leftBarButtonItems = [closeButton, UIBarButtonItem(customView: iconImageView)]

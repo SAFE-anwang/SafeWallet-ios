@@ -95,7 +95,7 @@ class MarketViewController: ThemeViewController {
     private func viewController(tab: MarketModule.Tab) -> UIViewController {
         switch tab {
         case .overview: return marketOverviewViewController ?? UIViewController()
-        case .posts: return postViewController
+//        case .posts: return postViewController
         case .watchlist: return watchlistViewController
         case .twiitter: return twiitterViewController
         case .Dapp: return dappViewController

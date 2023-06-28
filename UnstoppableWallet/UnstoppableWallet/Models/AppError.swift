@@ -38,6 +38,7 @@ enum AppError: Error {
         case insufficientBalanceWithFee
         case cannotEstimate
         case insufficientLiquidity
+        case cannotSwap
     }
 
 }
@@ -74,6 +75,7 @@ extension AppError: LocalizedError {
             case .insufficientBalanceWithFee: return "" // localized in modules
             case .cannotEstimate: return "" // localized in modules
             case .insufficientLiquidity: return "swap.one_inch.error.insufficient_liquidity.info".localized
+            case .cannotSwap: return "swap.one_inch.error.cannotSwap".localized
             }
         case .invalidWords(let count):
             return "restore_error.mnemonic_word_count".localized("\(count)")

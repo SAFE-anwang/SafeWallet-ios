@@ -396,6 +396,7 @@
 "swap.one_inch.error.cannot_estimate.info" = "错误！检查余额并确保有足够的%@来支付费用。或者尝试增加价格下跌金额并重试。将在3秒后重试...";
 "swap.one_inch.error.insufficient_liquidity" = "流动性不足";
 "swap.one_inch.error.insufficient_liquidity.info" = "可能没有足够的流动资金来处理此交易。请尝试降低减少金额。";
+"swap.one_inch.error.cannotSwap" = "无法交换代币";
 
 "swap.service" = "服务";
 "swap.service.title" = "服务";
@@ -750,6 +751,7 @@
 "transactions.tab_bar_item" = "交易";
 "transactions.blockchain" = "Blockchain";
 "transactions.all_blockchains" = "所有Blockchains";
+"transactions.series" = "%@ 系列";
 "transactions.all_coins" = "所有硬币";
 "transactions.choose_coin" = "选择代币";
 "transactions.clear" = "清空";
@@ -764,7 +766,7 @@
 "transactions.receive" = "接收";
 "transactions.send" = "发送​​";
 "transactions.burn" = "燃烧";
-"transactions.mint" = "薄荷绿";
+"transactions.mint" = "发行";
 "transactions.approve" = "批准";
 "transactions.swap" = "合约调用";
 "transactions.contract_call" = "合约调用";
@@ -900,6 +902,8 @@
 "settings_security.touch_id" = "指纹识别";
 "settings_security.face_id" = "面部识别";
 "settings_security.blockchain_settings" = "区块链设置";
+"settings_security.safe_fallback" = "SAFE区块回退";
+"settings_security.safe_block_height" = "SAFE高度";
 "security_settings.delete_alert_button" = "从手机中删除";
 
 "btc_blockchain_settings.restore_source" = "恢复参数";
@@ -1446,7 +1450,7 @@
 "nft.activity.event_type.all" = "全部事件";
 "nft.activity.event_type.sale" = "出售";
 "nft.activity.event_type.transfer" = "转帐";
-"nft.activity.event_type.mint" = "薄荷绿";
+"nft.activity.event_type.mint" = "发行";
 "nft.activity.event_type.list" = "列表";
 "nft.activity.event_type.listCancel" = "取消列表";
 "nft.activity.event_type.offer" = "报价";
@@ -1456,6 +1460,7 @@
 "safe_zone.nav.title" = "SAFE专区";
 "safe_zone.section.cross_eth" = "跨链(ETH)";
 "safe_zone.section.cross_bsc" = "跨链(BSC)";
+"safe_zone.section.cross_matic" = "跨链(MATIC)";
 "safe_zone.section.locked" = "锁仓";
 "safe_zone.section.basic" = "基本信息";
 "safe_zone.row.contract" = "SAFE合约";
@@ -1465,3 +1470,8 @@
 "safe_zone.row.blockExplorer" = "区块浏览器";
 "safe_zone.row.acrossExplorer" = "跨链浏览器";
 "safe_dapp.input" = "输入链接访问";
+"safe_zone.send.receiver" = "跨链接收人";
+"safe_zone.send.openCoin" = "请在钱包管理打开 %@";
+"safe_zone.Safe4_Coming_Soon" = "敬请期待";
+"safe_zone.Safe4_Disabled" = "跨链转账业务暂停使用，请稍后再试";
+"safe_zone.Safe4_Min_Fee" = "跨链转账最小金额是 %@ SAFE";

@@ -59,11 +59,16 @@ class TransactionsViewModel {
         typeFilterIndexRelay.accept(index)
     }
 
-    private func syncBlockchainTitle(blockchain: Blockchain?) {
+    private func syncBlockchainTitle(blockchain: SelectedBlockchain?) {
         let title: String
-
+        
         if let blockchain = blockchain {
-            title = blockchain.name
+            switch blockchain {
+            case .blockchain(let chain):
+                title = chain.name
+            case .blockchainSeries(let series):
+                title = series.title
+            }
         } else {
             title = "transactions.all_blockchains".localized
         }
@@ -209,10 +214,25 @@ extension TransactionsViewModel {
     }
 
     var blockchainViewItems: [BlockchainViewItem] {
-        [BlockchainViewItem(uid: nil, title: "transactions.all_blockchains".localized, selected: service.blockchain == nil)] +
-                service.allBlockchains.sorted { $0.type.order < $1.type.order }.map { blockchain in
-                    BlockchainViewItem(uid: blockchain.uid, title: blockchain.name, selected: service.blockchain == blockchain)
+        var allBlockchains = service.allBlockchains.sorted { $0.type.order < $1.type.order }
+        
+        let item0 = [BlockchainViewItem(selectedType: nil, title: "transactions.all_blockchains".localized, selected: service.blockchain == nil)]
+        
+        let bitcoinSeries = buildSeriesBlockchainViewItem(chain: .Bitcoin, allBlockchains: &allBlockchains)
+        
+        let otherItems = allBlockchains.map { blockchain in
+                    BlockchainViewItem(selectedType: .blockchain(blockchain: blockchain), title: blockchain.name, selected: service.blockchain == .blockchain(blockchain: blockchain))
                 }
+        
+        return item0 + bitcoinSeries + otherItems
+    }
+        
+    func buildSeriesBlockchainViewItem(chain: BlockchainSeries, allBlockchains: inout [Blockchain]) -> [BlockchainViewItem] {
+        if chain.isContains(allBlockchains.map{$0.type}) {
+            chain.complement(blockchains: &allBlockchains)
+            return [BlockchainViewItem(selectedType: .blockchainSeries(series: chain), title: chain.title, selected: service.blockchain ==  .blockchainSeries(series: chain))]
+        }
+        return []
     }
 
     var configuredToken: ConfiguredToken? {
@@ -229,10 +249,10 @@ extension TransactionsViewModel {
         service.set(typeFilter: typeFilters[index])
     }
 
-    func onSelectBlockchain(uid: String?) {
-        service.set(blockchain: service.allBlockchains.first(where: { $0.uid == uid }))
+    func onSelectBlockchain(type: SelectedBlockchain?) {
+        service.set(blockchain: type)
     }
-
+    
     func onSelect(configuredToken: ConfiguredToken?) {
         service.set(configuredToken: configuredToken)
     }
@@ -310,7 +330,7 @@ extension TransactionsViewModel {
     }
 
     struct BlockchainViewItem {
-        let uid: String?
+        let selectedType: SelectedBlockchain?
         let title: String
         let selected: Bool
     }
@@ -336,4 +356,49 @@ extension TransactionsViewModel {
         case empty
     }
 
+}
+
+
+enum BlockchainSeries {
+    
+    case Bitcoin
+
+    var types: [BlockchainType] {
+        switch self {
+        case .Bitcoin: return [.bitcoin, .litecoin, .dash, .bitcoinCash]
+        }
+    }
+    
+    var title: String {
+        switch self {
+        case .Bitcoin: return "transactions.series".localized("Bitcoin")
+        }
+    }
+    
+    func isContains(_ blockchainTypes: [BlockchainType] ) -> Bool {
+        let set = Set(blockchainTypes).intersection(Set(types))
+        return set.count > 0
+    }
+    
+    func complement(blockchains: inout [Blockchain]) {
+        blockchains = blockchains.filter {  blockchain in
+            !types.contains(where: { $0 == blockchain.type })
+        }
+    }
+}
+
+enum SelectedBlockchain {
+    case blockchain(blockchain: Blockchain)
+    case blockchainSeries(series: BlockchainSeries)
+}
+
+extension SelectedBlockchain: Equatable {
+
+    static func == (lhs: SelectedBlockchain, rhs: SelectedBlockchain) -> Bool {
+        switch (lhs, rhs) {
+        case (.blockchain(let lhsBlockchain), .blockchain(let rhsBlockchain)): return lhsBlockchain == rhsBlockchain
+        case (.blockchainSeries(let lhsSeries), .blockchainSeries(let rhsSeries)): return lhsSeries == rhsSeries
+        default: return false
+        }
+    }
 }

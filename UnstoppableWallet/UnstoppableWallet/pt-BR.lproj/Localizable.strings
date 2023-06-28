@@ -1309,6 +1309,7 @@ Vá para Configurações → \"Unstoppable\" e permita o acesso à câmera.";
 "safe_zone.nav.title" = "SAFE ZONE";
 "safe_zone.section.cross_eth" = "Cross Chain(ETH)";
 "safe_zone.section.cross_bsc" = "Cross Chain(BSC)";
+"safe_zone.section.cross_matic" = "Cross Chain(MATIC)";
 "safe_zone.section.locked" = "Locked";
 "safe_zone.section.basic" = "Basic information";
 "safe_zone.row.contract" = "SAFE contract";

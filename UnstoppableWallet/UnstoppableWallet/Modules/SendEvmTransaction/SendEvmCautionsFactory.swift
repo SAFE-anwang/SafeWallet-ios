@@ -92,8 +92,11 @@ class SendEvmCautionsFactory {
                 title = "swap.one_inch.error.cannot_estimate".localized
                 text = "swap.one_inch.error.cannot_estimate.info".localized(baseCoinService.token.coin.code)
             case .insufficientLiquidity:
-                text = "swap.one_inch.error.insufficient_liquidity".localized()
-                text = "swap.one_inch.error.insufficient_liquidity.info".localized()
+                title = "swap.one_inch.error.insufficient_liquidity".localized
+                text = "swap.one_inch.error.insufficient_liquidity.info".localized
+            case .cannotSwap:
+                title = "swap.one_inch.error.cannotSwap".localized
+                text = "swap.one_inch.error.cannotSwap".localized
             }
         }
 
