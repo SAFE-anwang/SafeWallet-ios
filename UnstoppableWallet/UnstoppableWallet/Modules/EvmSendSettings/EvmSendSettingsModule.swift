@@ -8,9 +8,16 @@ struct EvmSendSettingsModule {
 
     static func instance(evmKit: EvmKit.Kit, blockchainType: BlockchainType, sendData: SendEvmData, coinServiceFactory: EvmCoinServiceFactory,
                          gasPrice: GasPrice? = nil, previousTransaction: EvmKit.Transaction? = nil,
-                         gasLimit: Int? = nil, gasLimitSurchargePercent: Int = 0, isEth2safe: Bool = false) -> (EvmSendSettingsService, EvmSendSettingsViewModel)? {
+                         predefinedGasLimit: Int? = nil, isEth2safe: Bool = false) -> (EvmSendSettingsService, EvmSendSettingsViewModel)? {
         let gasPriceService = EvmFeeModule.gasPriceService(evmKit: evmKit, gasPrice: gasPrice, previousTransaction: previousTransaction)
-        let gasDataService = EvmCommonGasDataService.instance(evmKit: evmKit, blockchainType: blockchainType, gasLimit: gasLimit, gasLimitSurchargePercent: gasLimitSurchargePercent, isEth2safe: isEth2safe)
+
+        let gasDataService = EvmCommonGasDataService.instance(
+                evmKit: evmKit,
+                blockchainType: blockchainType,
+                predefinedGasLimit: predefinedGasLimit,
+                isEth2safe: isEth2safe
+        )
+
         let coinService = coinServiceFactory.baseCoinService
         let feeViewItemFactory = FeeViewItemFactory(scale: coinService.token.blockchainType.feePriceScale)
         let feeService = EvmFeeService(evmKit: evmKit, gasPriceService: gasPriceService, gasDataService: gasDataService, coinService: coinService, transactionData: sendData.transactionData)

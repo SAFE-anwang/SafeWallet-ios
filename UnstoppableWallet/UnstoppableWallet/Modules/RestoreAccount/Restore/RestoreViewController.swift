@@ -61,9 +61,6 @@ class RestoreViewController: KeyboardAwareViewController {
         title = "restore.title".localized
 
         navigationItem.largeTitleDisplayMode = .never
-        if !advanced {
-            navigationItem.leftBarButtonItem = UIBarButtonItem(title: "button.cancel".localized, style: .plain, target: self, action: #selector(onTapCancel))
-        }
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.next".localized, style: .done, target: self, action: #selector(onTapNext))
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
@@ -211,10 +208,6 @@ class RestoreViewController: KeyboardAwareViewController {
 
     private func update(keyboardVisibility: CGFloat) {
         hintView.alpha = keyboardVisibility
-    }
-
-    @objc private func onTapCancel() {
-        dismiss(animated: true)
     }
 
     @objc private func onTapNext() {

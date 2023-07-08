@@ -1,6 +1,5 @@
 import Foundation
-import RxSwift
-import RxRelay
+import Combine
 import CurrencyKit
 import MarketKit
 
@@ -14,14 +13,11 @@ class WalletCoinPriceService {
 
     private let currencyKit: CurrencyKit.Kit
     private let marketKit: MarketKit.Kit
-    private let safeCoinPriceManager: SafeCoinPriceManager
-
-    private let disposeBag = DisposeBag()
-    private var coinPriceDisposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
+    private var coinPriceCancellables = Set<AnyCancellable>()
 
     private(set) var currency: Currency
     private var coinUids = Set<String>()
-    private var safeCoinUids = Set<String>()
 
 
     init(currencyKit: CurrencyKit.Kit, marketKit: MarketKit.Kit) {
@@ -29,10 +25,12 @@ class WalletCoinPriceService {
         self.marketKit = marketKit
 
         currency = currencyKit.baseCurrency
-        safeCoinPriceManager = App.shared.safeCoinPriceManager
-        subscribe(disposeBag, currencyKit.baseCurrencyUpdatedObservable) { [weak self] baseCurrency in
-            self?.onUpdate(baseCurrency: baseCurrency)
-        }
+
+        currencyKit.baseCurrencyUpdatedPublisher
+                .sink { [weak self] currency in
+                    self?.onUpdate(baseCurrency: currency)
+                }
+                .store(in: &cancellables)
     }
 
     private func onUpdate(baseCurrency: Currency) {
@@ -42,11 +40,13 @@ class WalletCoinPriceService {
     }
 
     private func subscribeToCoinPrices() {
-        coinPriceDisposeBag = DisposeBag()
-        
-        subscribe(coinPriceDisposeBag, marketKit.coinPriceMapObservable(coinUids: Array(coinUids), currencyCode: currencyKit.baseCurrency.code)) { [weak self] in
-            self?.onUpdate(coinPriceMap: $0)
-        }
+        coinPriceCancellables = Set()
+
+        marketKit.coinPriceMapPublisher(coinUids: Array(coinUids), currencyCode: currencyKit.baseCurrency.code)
+                .sink { [weak self] in
+                    self?.onUpdate(coinPriceMap: $0)
+                }
+                .store(in: &coinPriceCancellables)
     }
 
     private func onUpdate(coinPriceMap: [String: CoinPrice]) {
@@ -63,37 +63,26 @@ class WalletCoinPriceService {
                 expired: coinPrice.expired
         )
     }
-
-    private func filteredIds(tokens: [Token]) -> Set<String> {
-        var uids = Set<String>()
-
-        for token in tokens {
-            if !token.isCustom {
-                uids.insert(token.coin.uid)
-            }
-        }
-        return uids
-    }
 }
 
 extension WalletCoinPriceService {
 
-    func set(tokens: Set<Token>) {
-        let filteredIds = filteredIds(tokens: Array(tokens))
-        guard coinUids != filteredIds else {
+    func set(coinUids: Set<String>) {
+        guard self.coinUids != coinUids else {
             return
         }
-        coinUids = filteredIds
-        safeCoinUids = filteredCustomIds(tokens: Array(tokens))
+        self.coinUids = coinUids
         subscribeToCoinPrices()
     }
 
-    func itemMap(tokens: [Token]) -> [String: Item] {
-        marketKit.coinPriceMap(coinUids: Array(filteredIds(tokens: tokens)), currencyCode: currency.code).mapValues { item(coinPrice: $0) }
+    func itemMap(coinUids: [String]) -> [String: Item] {
+        marketKit.coinPriceMap(coinUids: coinUids, currencyCode: currency.code).mapValues {
+            item(coinPrice: $0)
+        }
     }
 
-    func item(token: Token) -> Item? {
-        marketKit.coinPrice(coinUid: token.coin.uid, currencyCode: currency.code).map { item(coinPrice: $0) }
+    func item(coinUid: String) -> Item? {
+        marketKit.coinPrice(coinUid: coinUid, currencyCode: currency.code).map { item(coinPrice: $0) }
     }
  
     func refresh() {

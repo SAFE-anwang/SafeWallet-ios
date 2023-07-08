@@ -11,15 +11,14 @@ class WalletViewItemFactory {
     }
 
     private func topViewItem(item: WalletService.Item, balancePrimaryValue: BalancePrimaryValue, balanceHidden: Bool, expanded: Bool) -> BalanceTopViewItem {
-        let coin = item.wallet.coin
         let state = item.state
 
         return BalanceTopViewItem(
                 isMainNet: item.isMainNet,
-                iconUrlString: iconUrlString(wallet: item.wallet, state: state),
-                placeholderIconName: item.wallet.token.placeholderImageName,
-                coinCode: coin.code,
-                blockchainBadge: item.wallet.badge,
+                iconUrlString: iconUrlString(coin: item.element.coin, state: state),
+                placeholderIconName: item.element.wallet?.token.placeholderImageName ?? "placeholder_circle_32",
+                name: item.element.name,
+                blockchainBadge: item.element.wallet?.badge,
                 syncSpinnerProgress: syncSpinnerProgress(state: state),
                 indefiniteSearchCircle: indefiniteSearchCircle(state: state),
                 failedImageViewVisible: failedImageViewVisible(state: state),
@@ -48,32 +47,15 @@ class WalletViewItemFactory {
         }
 
         return BalanceLockedAmountViewItem(
-                coinValue: coinValue(token: item.wallet.token, value: item.balanceData.balanceLocked, state: item.state, expanded: true),
-                currencyValue: currencyValue(value: item.balanceData.balanceLocked, state: item.state, priceItem: item.priceItem, expanded: true),
-                coinName: item.wallet.token.coin.code
+                coinValue: coinValue(value: item.balanceData.balanceLocked, decimalCount: item.element.decimals, state: item.state, expanded: true),
+                currencyValue: currencyValue(value: item.balanceData.balanceLocked, state: item.state, priceItem: item.priceItem, expanded: true), coinName: item.element.coin?.code
         )
     }
 
-    private func buttonsViewItem(item: WalletService.Item, watchAccount: Bool, expanded: Bool) -> BalanceButtonsViewItem? {
-        guard expanded else {
-            return nil
-        }
-
-        let sendButtonsState: ButtonState = watchAccount ? .hidden : (item.state == .synced ? .enabled : .disabled)
-
-        return BalanceButtonsViewItem(
-                sendButtonState: sendButtonsState,
-                receiveButtonState: watchAccount ? .hidden : .enabled,
-                addressButtonState: watchAccount ? .enabled : .hidden,
-                swapButtonState: watchAccount ? .hidden : (item.wallet.token.swappable ? sendButtonsState : .hidden),
-                chartButtonState: item.priceItem != nil ? .enabled : .disabled
-        )
-    }
-
-    private func iconUrlString(wallet: Wallet, state: AdapterState) -> String? {
+    private func iconUrlString(coin: Coin?, state: AdapterState) -> String? {
         switch state {
         case .notSynced: return nil
-        default: return wallet.coin.imageUrl
+        default: return coin?.imageUrl
         }
     }
 
@@ -128,7 +110,7 @@ class WalletViewItemFactory {
 
     private func primaryValue(item: WalletService.Item, balancePrimaryValue: BalancePrimaryValue, expanded: Bool) -> (text: String?, dimmed: Bool) {
         switch balancePrimaryValue {
-        case .coin: return coinValue(token: item.wallet.token, value: item.balanceData.balanceTotal, state: item.state, expanded: expanded)
+        case .coin: return coinValue(value: item.balanceData.balanceTotal, decimalCount: item.element.decimals, state: item.state, expanded: expanded)
         case .currency: return currencyValue(value: item.balanceData.balanceTotal, state: item.state, priceItem: item.priceItem, expanded: expanded)
         }
     }
@@ -136,13 +118,13 @@ class WalletViewItemFactory {
     private func secondaryValue(item: WalletService.Item, balancePrimaryValue: BalancePrimaryValue, expanded: Bool) -> (text: String?, dimmed: Bool) {
         switch balancePrimaryValue {
         case .coin: return currencyValue(value: item.balanceData.balanceTotal, state: item.state, priceItem: item.priceItem, expanded: expanded)
-        case .currency: return coinValue(token: item.wallet.token, value: item.balanceData.balanceTotal, state: item.state, expanded: expanded)
+        case .currency: return coinValue(value: item.balanceData.balanceTotal, decimalCount: item.element.decimals, state: item.state, expanded: expanded)
         }
     }
 
-    private func coinValue(token: Token, value: Decimal, state: AdapterState, expanded: Bool) -> (text: String?, dimmed: Bool) {
+    private func coinValue(value: Decimal, decimalCount: Int, state: AdapterState, expanded: Bool) -> (text: String?, dimmed: Bool) {
         (
-            text: expanded ? ValueFormatter.instance.formatFull(value: value, decimalCount: token.decimals) : ValueFormatter.instance.formatShort(value: value, decimalCount: token.decimals),
+                text: expanded ? ValueFormatter.instance.formatFull(value: value, decimalCount: decimalCount) : ValueFormatter.instance.formatShort(value: value, decimalCount: decimalCount),
                 dimmed: state != .synced
         )
     }
@@ -161,16 +143,42 @@ class WalletViewItemFactory {
         )
     }
 
+    private func buttons(item: WalletService.Item) -> [WalletModule.Button: ButtonState]? {
+        var buttons = [WalletModule.Button: ButtonState]()
+
+        switch item.element {
+        case .wallet(let wallet):
+            if item.watchAccount {
+                buttons[.address] = .enabled
+            } else {
+                let sendButtonState: ButtonState = item.state == .synced ? .enabled : .disabled
+
+                buttons[.send] = sendButtonState
+                buttons[.receive] = .enabled
+
+                if wallet.token.swappable {
+                    buttons[.swap] = sendButtonState
+                }
+            }
+
+            buttons[.chart] = item.priceItem != nil ? .enabled : .disabled
+        case .cexAsset:
+            () // todo
+        }
+
+        return buttons
+    }
+
 }
 
 extension WalletViewItemFactory {
 
-    func viewItem(item: WalletService.Item, balancePrimaryValue: BalancePrimaryValue, balanceHidden: Bool, watchAccount: Bool, expanded: Bool) -> BalanceViewItem {
+    func viewItem(item: WalletService.Item, balancePrimaryValue: BalancePrimaryValue, balanceHidden: Bool, expanded: Bool) -> BalanceViewItem {
         BalanceViewItem(
-                wallet: item.wallet,
+                element: item.element,
                 topViewItem: topViewItem(item: item, balancePrimaryValue: balancePrimaryValue, balanceHidden: balanceHidden, expanded: expanded),
                 lockedAmountViewItem: lockedAmountViewItem(item: item, balanceHidden: balanceHidden, expanded: expanded),
-                buttonsViewItem: buttonsViewItem(item: item, watchAccount: watchAccount, expanded: expanded)
+                buttons: expanded ? buttons(item: item) : nil
         )
     }
 

@@ -406,7 +406,7 @@ class SendEvmTransactionViewModel {
         return [SectionViewItem(viewItems: viewItems)]
     }
 
-    private func uniswapItems(amountIn: SwapDecoration.Amount, amountOut: SwapDecoration.Amount, tokenIn: SwapDecoration.Token, tokenOut: SwapDecoration.Token, recipient: EvmKit.Address?, deadline: BigUInt, swapInfo: SendEvmData.SwapInfo?, nonce: Int?) -> [SectionViewItem]? {
+    private func uniswapItems(amountIn: SwapDecoration.Amount, amountOut: SwapDecoration.Amount, tokenIn: SwapDecoration.Token, tokenOut: SwapDecoration.Token, recipient: EvmKit.Address?, deadline: BigUInt?, swapInfo: SendEvmData.SwapInfo?, nonce: Int?) -> [SectionViewItem]? {
         guard let coinServiceIn = coinService(token: tokenIn), let coinServiceOut = coinService(token: tokenOut) else {
             return nil
         }
@@ -475,8 +475,8 @@ class SendEvmTransactionViewModel {
         if let priceImpact = swapInfo?.priceImpact {
             var type: ValueType
             switch priceImpact.level {
-            case .forbidden: type = .alert
-            case .warning: type = .warning
+            case .normal: type = .warning
+            case .warning, .forbidden: type = .alert
             default: type = .regular
             }
 

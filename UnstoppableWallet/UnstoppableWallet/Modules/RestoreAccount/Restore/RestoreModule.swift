@@ -22,17 +22,7 @@ struct RestoreModule {
                 returnViewController: returnViewController
         )
 
-        if advanced {
-            return viewController
-        } else {
-            let module = ThemeNavigationController(rootViewController: viewController)
-
-            if App.shared.termsManager.termsAccepted {
-                return module
-            } else {
-                return TermsModule.viewController(sourceViewController: sourceViewController, moduleToOpen: module)
-            }
-        }
+        return viewController
     }
 
 }

@@ -20,37 +20,15 @@ class SwapViewItemHelper {
         return (first.formattedFull, second.formattedFull)
     }
 
-    func priceImpactViewItem(trade: UniswapTradeService.Trade, minLevel: UniswapTradeService.PriceImpactLevel = .warning) -> UniswapModule.PriceImpactViewItem? {
-        guard let priceImpact = trade.tradeData.priceImpact, let impactLevel = trade.impactLevel, impactLevel.rawValue >= minLevel.rawValue else {
+    func priceImpactViewItem(priceImpact: Decimal?, impactLevel: UniswapTradeService.PriceImpactLevel?, minLevel: UniswapTradeService.PriceImpactLevel = .normal) -> UniswapModule.PriceImpactViewItem? {
+        guard var priceImpact = priceImpact, let impactLevel, impactLevel.rawValue >= minLevel.rawValue else {
             return nil
         }
+        priceImpact.negate()
         return UniswapModule.PriceImpactViewItem(
-                value: "-" + priceImpact.description + "%",
+                value: priceImpact.description + "%",
                 level: impactLevel
         )
-    }
-
-    func guaranteedAmountViewItem(tradeData: TradeData, tokenIn: MarketKit.Token?, tokenOut: MarketKit.Token?) -> UniswapModule.GuaranteedAmountViewItem? {
-        switch tradeData.type {
-        case .exactIn:
-            guard let amount = tradeData.amountOutMin, let token = tokenOut else {
-                return nil
-            }
-
-            return UniswapModule.GuaranteedAmountViewItem(
-                    title: "swap.minimum_got".localized,
-                    value: ValueFormatter.instance.formatFull(coinValue: CoinValue(kind: .token(token: token), value: amount))
-            )
-        case .exactOut:
-            guard let amount = tradeData.amountInMax, let token = tokenIn else {
-                return nil
-            }
-
-            return UniswapModule.GuaranteedAmountViewItem(
-                    title: "swap.maximum_paid".localized,
-                    value: ValueFormatter.instance.formatFull(coinValue: CoinValue(kind: .token(token: token), value: amount))
-            )
-        }
     }
 
     func slippage(_ slippage: Decimal) -> String? {

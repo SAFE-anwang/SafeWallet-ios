@@ -13,7 +13,7 @@ let package = Package(
             targets: ["DashKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/SAFE-anwang/BitcoinCore.Swift.git", .branch("main")),
+        .package(url: "https://github.com/SAFE-anwang/BitcoinCore.Swift.git", .upToNextMajor(from: "2.0.0")),
         .package(url: "https://github.com/horizontalsystems/DashCrypto.Swift.git", .upToNextMajor(from: "1.0.0")),
         .package(url: "https://github.com/horizontalsystems/HdWalletKit.Swift.git", .upToNextMajor(from: "1.0.0")),
         .package(url: "https://github.com/horizontalsystems/HsToolKit.Swift.git", .upToNextMajor(from: "1.0.0")),

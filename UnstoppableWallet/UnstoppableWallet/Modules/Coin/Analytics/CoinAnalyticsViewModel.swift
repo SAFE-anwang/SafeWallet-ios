@@ -1,4 +1,5 @@
 import UIKit
+import Combine
 import RxSwift
 import RxRelay
 import RxCocoa
@@ -7,7 +8,7 @@ import Chart
 
 class CoinAnalyticsViewModel {
     private let service: CoinAnalyticsService
-    private let disposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
 
     private let viewItemRelay = BehaviorRelay<ViewItem?>(value: nil)
     private let loadingRelay = BehaviorRelay<Bool>(value: false)
@@ -35,7 +36,9 @@ class CoinAnalyticsViewModel {
     init(service: CoinAnalyticsService) {
         self.service = service
 
-        subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
+        service.$state
+                .sink { [weak self] in self?.sync(state: $0) }
+                .store(in: &cancellables)
 
         sync(state: service.state)
     }
@@ -52,8 +55,8 @@ class CoinAnalyticsViewModel {
             loadingRelay.accept(false)
             syncErrorRelay.accept(true)
             emptyViewRelay.accept(false)
-        case .preview(let analyticsPreview):
-            let viewItem = previewViewItem(analyticsPreview: analyticsPreview)
+        case .preview(let analyticsPreview, let subscriptionAddress):
+            let viewItem = previewViewItem(analyticsPreview: analyticsPreview, subscriptionAddress: subscriptionAddress)
 
             if viewItem.isEmpty {
                 viewItemRelay.accept(nil)
@@ -217,7 +220,7 @@ class CoinAnalyticsViewModel {
 
     private func viewItem(analytics: Analytics) -> ViewItem {
         ViewItem(
-                lockInfo: false,
+                lockInfo: nil,
                 cexVolume: rankCardViewItem(
                         points: analytics.cexVolume?.aggregatedChartPoints.points,
                         value: analytics.cexVolume?.aggregatedChartPoints.aggregatedValue,
@@ -249,6 +252,7 @@ class CoinAnalyticsViewModel {
                         rank: analytics.transactions?.rank30d
                 ),
                 holders: holdersViewItem(holderBlockchains: analytics.holders),
+                holdersRank: analytics.holdersRank.map { .regular(value: rankString(value: $0)) },
                 tvl: tvlViewItem(
                         points: analytics.tvl?.chartPoints,
                         rank: analytics.tvl?.rank,
@@ -271,15 +275,16 @@ class CoinAnalyticsViewModel {
         )
     }
 
-    private func previewViewItem(analyticsPreview data: AnalyticsPreview) -> ViewItem {
+    private func previewViewItem(analyticsPreview data: AnalyticsPreview, subscriptionAddress: String?) -> ViewItem {
         ViewItem(
-                lockInfo: true,
+                lockInfo: subscriptionAddress.map { .notActivated(address: $0) } ?? .notSubscribed,
                 cexVolume: data.cexVolume ? RankCardViewItem(chart: .preview, rank: data.cexVolumeRank30d ? .preview : nil) : nil,
                 dexVolume: data.dexVolume ? RankCardViewItem(chart: .preview, rank: data.dexVolumeRank30d ? .preview : nil) : nil,
                 dexLiquidity: data.dexLiquidity ? RankCardViewItem(chart: .preview, rank: data.dexLiquidityRank ? .preview : nil) : nil,
                 activeAddresses: data.addresses ? ActiveAddressesViewItem(chart: .preview, count30d: data.addressesCount30d ? .preview : nil, rank: data.addressesRank30d ? .preview : nil) : nil,
                 transactionCount: data.transactions ? TransactionCountViewItem(chart: .preview, volume: data.transactionsVolume30d ? .preview : nil, rank: data.transactionsRank30d ? .preview : nil) : nil,
                 holders: data.holders ? .preview : nil,
+                holdersRank: data.holdersRank ? .preview : nil,
                 tvl: data.tvl ? TvlViewItem(chart: .preview, rank: data.tvlRank ? .preview : nil, ratio: data.tvlRatio ? .preview : nil) : nil,
                 revenue: data.revenue ? RevenueViewItem(value: .preview, rank: data.revenueRank30d ? .preview : nil) : nil,
                 reports: data.reports ? .preview : nil,
@@ -313,6 +318,10 @@ extension CoinAnalyticsViewModel {
         service.coin
     }
 
+    var analyticsLink: String {
+        service.analyticsLink
+    }
+
     func onLoad() {
         service.sync()
     }
@@ -326,13 +335,14 @@ extension CoinAnalyticsViewModel {
 extension CoinAnalyticsViewModel {
 
     struct ViewItem {
-        let lockInfo: Bool
+        let lockInfo: LockInfo?
         let cexVolume: RankCardViewItem?
         let dexVolume: RankCardViewItem?
         let dexLiquidity: RankCardViewItem?
         let activeAddresses: ActiveAddressesViewItem?
         let transactionCount: TransactionCountViewItem?
         let holders: Previewable<HoldersViewItem>?
+        let holdersRank: Previewable<String>?
         let tvl: TvlViewItem?
         let revenue: RevenueViewItem?
         let reports: Previewable<String>?
@@ -344,6 +354,11 @@ extension CoinAnalyticsViewModel {
             let items: [Any?] = [cexVolume, dexVolume, dexLiquidity, activeAddresses, transactionCount, holders, tvl, revenue, reports, investors, treasuries]
             return items.compactMap { $0 }.isEmpty
         }
+    }
+
+    enum LockInfo {
+        case notSubscribed
+        case notActivated(address: String)
     }
 
     struct ChartViewItem {

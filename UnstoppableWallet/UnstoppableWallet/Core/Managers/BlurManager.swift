@@ -7,10 +7,10 @@ class BlurManager {
     private let coverView = UIView()
     private let logoImageView = UIImageView()
 
-    private let pinKit: IPinKit
+    private let pinKit: PinKit.Kit
     private var shown = false
 
-    init(pinKit: IPinKit) {
+    init(pinKit: PinKit.Kit) {
         self.pinKit = pinKit
 
         coverView.backgroundColor = .themeTyler
@@ -62,12 +62,16 @@ class BlurManager {
         shown = true
     }
 
+    private var unlockShown: Bool {
+        (UIViewController.visibleController as? PinViewController) != nil
+    }
+
 }
 
 extension BlurManager {
 
     func willResignActive() {
-        if !pinKit.isLocked {
+        if !pinKit.isLocked && !unlockShown {
             show()
         }
     }

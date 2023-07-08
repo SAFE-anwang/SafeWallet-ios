@@ -19,32 +19,28 @@ class FeeRateProvider {
 
     // Fee rates
 
-    var ethereumGasPrice: Single<Int> {
-        feeRateKit.ethereum
-    }
+//    var ethereumGasPrice: Single<Int> {
+//        feeRateKit.ethereum
+//    }
 
-    var binanceSmartChainGasPrice: Single<Int> {
-        feeRateKit.binanceSmartChain
-    }
+//    var binanceSmartChainGasPrice: Single<Int> {
+//        feeRateKit.binanceSmartChain
+//    }
 
-    var litecoinFeeRate: Single<Int> {
+    var litecoinFeeRate: Int {
         feeRateKit.litecoin
     }
 
-    var bitcoinCashFeeRate: Single<Int> {
+    var bitcoinCashFeeRate: Int {
         feeRateKit.bitcoinCash
     }
 
-    var dashFeeRate: Single<Int> {
+    var dashFeeRate: Int {
         feeRateKit.dash
     }
-    
-    var safeFeeRate: Single<Int> {
-        Single.just(10)
-    }
 
-    func bitcoinFeeRate(blockCount: Int) -> Single<Int> {
-        feeRateKit.bitcoin(blockCount: blockCount)
+    func bitcoinFeeRate(blockCount: Int) async throws -> Int {
+        try await feeRateKit.bitcoin(blockCount: blockCount)
     }
 
 }
@@ -60,7 +56,10 @@ class BitcoinFeeRateProvider: ICustomRangedFeeRateProvider {
     init(feeRateProvider: FeeRateProvider) {
         self.feeRateProvider = feeRateProvider
     }
-    var recommendedFeeRate: Single<Int> { feeRateProvider.bitcoinFeeRate(blockCount: recommendedBlockCount) }
+
+    func recommendedFeeRate() async throws -> Int {
+        try await feeRateProvider.bitcoinFeeRate(blockCount: recommendedBlockCount)
+    }
 
 }
 
@@ -71,7 +70,9 @@ class LitecoinFeeRateProvider: IFeeRateProvider {
         self.feeRateProvider = feeRateProvider
     }
 
-    var recommendedFeeRate: Single<Int> { feeRateProvider.litecoinFeeRate }
+    func recommendedFeeRate() async throws -> Int {
+        feeRateProvider.litecoinFeeRate
+    }
 
 }
 
@@ -82,7 +83,17 @@ class BitcoinCashFeeRateProvider: IFeeRateProvider {
         self.feeRateProvider = feeRateProvider
     }
 
-    var recommendedFeeRate: Single<Int> { feeRateProvider.bitcoinCashFeeRate }
+    func recommendedFeeRate() async throws -> Int {
+        feeRateProvider.bitcoinCashFeeRate
+    }
+
+}
+
+class ECashFeeRateProvider: IFeeRateProvider {
+
+    func recommendedFeeRate() async throws -> Int {
+        1
+    }
 
 }
 
@@ -93,16 +104,24 @@ class DashFeeRateProvider: IFeeRateProvider {
         self.feeRateProvider = feeRateProvider
     }
 
-    var recommendedFeeRate: Single<Int> { feeRateProvider.dashFeeRate }
+    func recommendedFeeRate() async throws -> Int {
+        feeRateProvider.dashFeeRate
+    }
+
 }
 
 class SafeFeeRateProvider: IFeeRateProvider {
+
+    
     private let feeRateProvider: FeeRateProvider
 
     init(feeRateProvider: FeeRateProvider) {
         self.feeRateProvider = feeRateProvider
     }
-    var recommendedFeeRate: Single<Int> { feeRateProvider.safeFeeRate }
+    
+    func recommendedFeeRate() async throws -> Int {
+        10
+    }
 }
 
 private func ceil(_ value: Int, multiply: Double?) -> Int {

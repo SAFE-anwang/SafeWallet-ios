@@ -51,8 +51,8 @@ class WalletViewController: ThemeViewController {
         if #available(iOS 15.0, *) {
             tableView.sectionHeaderTopPadding = 0
         }
-        
-        
+
+        navigationItem.largeTitleDisplayMode = .never
         navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(named: "switch_wallet_24"), style: .plain, target: self, action: #selector(onTapSwitchWallet))
         navigationItem.leftBarButtonItem?.tintColor = .themeJacob
 
@@ -276,19 +276,25 @@ class WalletViewController: ThemeViewController {
                 animated: animated,
                 duration: animationDuration,
                 onSend: { [weak self] in
-                    self?.openSend(wallet: viewItem.wallet)
+                    if let wallet = viewItem.element.wallet {
+                        self?.openSend(wallet: wallet)
+                    }
                 },
                 onReceive: { [weak self] in
-                    self?.viewModel.onTapReceive(wallet: viewItem.wallet)
+                    if let wallet = viewItem.element.wallet {
+                        self?.viewModel.onTapReceive(wallet: wallet)
+                    }
                 },
                 onSwap: { [weak self] in
-                    self?.openSwap(wallet: viewItem.wallet)
+                    if let wallet = viewItem.element.wallet {
+                        self?.openSwap(wallet: wallet)
+                    }
                 },
                 onChart: { [weak self] in
-                    self?.viewModel.onTapChart(wallet: viewItem.wallet)
+                    self?.viewModel.onTapChart(element: viewItem.element)
                 },
                 onTapError: { [weak self] in
-                    self?.viewModel.onTapFailedIcon(wallet: viewItem.wallet)
+                    self?.viewModel.onTapFailedIcon(element: viewItem.element)
                 }
         )
     }
@@ -348,11 +354,15 @@ class WalletViewController: ThemeViewController {
                     .highlightedDescription(text: "receive_alert.not_backed_up_description".localized(wallet.account.name, wallet.coin.name))
                 ],
                 buttons: [
-                    .init(style: .yellow, title: "settings_manage_keys.backup".localized, actionType: .afterClose) { [ weak self] in
-                        guard let viewController = BackupModule.viewController(account: wallet.account) else {
+                    .init(style: .yellow, title: "backup_prompt.backup_manual".localized, imageName: "edit_24", actionType: .afterClose) { [ weak self] in
+                        guard let viewController = BackupModule.manualViewController(account: wallet.account) else {
                             return
                         }
 
+                        self?.present(viewController, animated: true)
+                    },
+                    .init(style: .gray, title: "backup_prompt.backup_cloud".localized, imageName: "icloud_24", actionType: .afterClose) { [ weak self] in
+                        let viewController = BackupModule.cloudViewController(account: wallet.account)
                         self?.present(viewController, animated: true)
                     },
                     .init(style: .transparent, title: "button.cancel".localized)
@@ -399,7 +409,7 @@ class WalletViewController: ThemeViewController {
             return
         }
 
-        let wallet = viewItems[index].wallet
+        let element = viewItems[index].element
 
         viewItems.remove(at: index)
 
@@ -407,7 +417,7 @@ class WalletViewController: ThemeViewController {
         tableView.deleteRows(at: [indexPath], with: .fade)
         tableView.endUpdates()
 
-        viewModel.onDisable(wallet: wallet)
+        viewModel.onDisable(element: element)
     }
 
     private func showBackupPromptIfRequired() {
@@ -485,7 +495,7 @@ extension WalletViewController: UITableViewDelegate {
         if warningViewItem != nil, indexPath.row == 0 {
             return
         }
-        viewModel.onTap(wallet: viewItems[indexPath.item - viewItemsOffset].wallet)
+        viewModel.onTap(element: viewItems[indexPath.item - viewItemsOffset].element)
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {

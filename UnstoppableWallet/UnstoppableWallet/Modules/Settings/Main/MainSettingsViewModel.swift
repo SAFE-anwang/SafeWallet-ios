@@ -1,3 +1,4 @@
+import Combine
 import WalletConnectV1
 import RxSwift
 import RxRelay
@@ -7,6 +8,7 @@ import ThemeKit
 class MainSettingsViewModel {
     private let service: MainSettingsService
     private let disposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
 
     private let manageWalletsAlertRelay: BehaviorRelay<Bool>
     private let securityCenterAlertRelay: BehaviorRelay<Bool>
@@ -34,12 +36,11 @@ class MainSettingsViewModel {
                 })
                 .disposed(by: disposeBag)
 
-        service.isPinSetObservable
-                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                .subscribe(onNext: { [weak self] isPinSet in
+        service.isPinSetPublisher
+                .sink { [weak self] isPinSet in
                     self?.securityCenterAlertRelay.accept(!isPinSet)
-                })
-                .disposed(by: disposeBag)
+                }
+                .store(in: &cancellables)
 
         service.iCloudAvailableErrorObservable
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
@@ -62,12 +63,11 @@ class MainSettingsViewModel {
                 })
                 .disposed(by: disposeBag)
 
-        service.baseCurrencyObservable
-                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                .subscribe(onNext: { [weak self] currency in
+        service.baseCurrencyPublisher
+                .sink { [weak self] currency in
                     self?.baseCurrencyRelay.accept(currency.code)
-                })
-                .disposed(by: disposeBag)
+                }
+                .store(in: &cancellables)
 
         service.termsAcceptedObservable
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
@@ -129,17 +129,12 @@ extension MainSettingsViewModel {
     }
 
     func onTapWalletConnect() {
-        guard let activeAccount = service.activeAccount else {
-            openWalletConnectRelay.accept(.errorDialog(error: .noAccount))
-            return
+        switch service.walletConnectState {
+            case .noAccount: openWalletConnectRelay.accept(.errorDialog(error: .noAccount))
+            case .backedUp: openWalletConnectRelay.accept(.list)
+            case .nonSupportedAccountType(let accountType): openWalletConnectRelay.accept(.errorDialog(error: .nonSupportedAccountType(accountTypeDescription: accountType.description)))
+            case .unBackedUpAccount(let account):  openWalletConnectRelay.accept(.errorDialog(error: .unbackupedAccount(account: account)))
         }
-
-        if !activeAccount.type.supportsWalletConnect {
-            openWalletConnectRelay.accept(.errorDialog(error: .nonSupportedAccountType(accountTypeDescription: activeAccount.type.description)))
-            return
-        }
-
-        openWalletConnectRelay.accept(activeAccount.backedUp ? .list : .errorDialog(error: .unbackupedAccount(account: activeAccount)))
     }
 
     func onTapCompanyLink() {

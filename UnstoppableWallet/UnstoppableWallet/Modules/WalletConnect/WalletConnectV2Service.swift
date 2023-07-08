@@ -73,7 +73,7 @@ class WalletConnectV2Service {
         Sign.instance.sessionProposalPublisher
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] sessionProposal in
-                    self?.didReceive(sessionProposal: sessionProposal)
+                    self?.didReceive(sessionProposal: sessionProposal.proposal)
                 }.store(in: &publishers)
 
         Sign.instance.sessionSettlePublisher
@@ -85,7 +85,7 @@ class WalletConnectV2Service {
         Sign.instance.sessionRequestPublisher
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] sessionRequest in
-                    self?.didReceive(sessionRequest: sessionRequest)
+                    self?.didReceive(sessionRequest: sessionRequest.request)
                 }.store(in: &publishers)
 
         Sign.instance.sessionDeletePublisher
@@ -246,13 +246,12 @@ extension WalletConnectV2Service {
 
     public func approve(proposal: WalletConnectSign.Session.Proposal, accounts: Set<WalletConnectUtils.Account>, methods: Set<String>, events: Set<String>) async throws {
         logger?.debug("[WALLET] Approve Session: \(proposal.id)")
-        Task {
+        Task { [logger] in
             do {
                 let eip155 = WalletConnectSign.SessionNamespace(
                         accounts: accounts,
                         methods: methods,
-                        events: events,
-                        extensions: []
+                        events: events
                 )
                 try await Sign.instance.approve(proposalId: proposal.id, namespaces: ["eip155": eip155])
             } catch {
@@ -273,7 +272,7 @@ extension WalletConnectV2Service {
     }
 
     public func disconnect(topic: String, reason: WalletConnectSign.Reason) {
-        Task.init { [weak self] in
+        Task { [weak self, logger] in
             do {
                 try await Sign.instance.disconnect(topic: topic)
                 self?.updateSessions()
@@ -289,20 +288,20 @@ extension WalletConnectV2Service {
     }
 
     public func sign(request: WalletConnectSign.Request, result: Data) {
-        let result = AnyCodable(result)// Signer.signEth(request: request)
-        Task {
+        let result = AnyCodable(result.hs.hexString)// Signer.signEth(request: request)
+        Task { [weak self] in
             do {
                 try await Sign.instance.respond(topic: request.topic, requestId: request.id, response: .response(result))
-                pendingRequestsUpdatedRelay.accept(())
+                self?.pendingRequestsUpdatedRelay.accept(())
             }
         }
     }
 
     public func reject(request: WalletConnectSign.Request) {
-        Task {
+        Task { [weak self] in
             do {
                 try await Sign.instance.respond(topic: request.topic, requestId: request.id, response: .error(.init(code: 5000, message: "Reject by User")))
-                pendingRequestsUpdatedRelay.accept(())
+                self?.pendingRequestsUpdatedRelay.accept(())
             }
         }
     }

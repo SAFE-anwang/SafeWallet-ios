@@ -19,12 +19,12 @@ class SecuritySettingsViewController: ThemeViewController {
     private var pinViewItem = SecuritySettingsViewModel.PinViewItem(enabled: false, editVisible: false, biometryViewItem: nil)
     private var loaded = false
     
-    private let vpnManager: SafeVPNViewModel
+//    private let vpnManager: SafeVPNViewModel
     
     init(viewModel: SecuritySettingsViewModel, blockchainSettingsViewModel: BlockchainSettingsViewModel) {
         self.viewModel = viewModel
         self.blockchainSettingsViewModel = blockchainSettingsViewModel
-        vpnManager = App.shared.SafeVPNManager
+//        vpnManager = App.shared.SafeVPNManager
         super.init()
 
         hidesBottomBarWhenPushed = true
@@ -93,7 +93,26 @@ class SecuritySettingsViewController: ThemeViewController {
     }
 
     private func openUnlock() {
-        present(App.shared.pinKit.unlockPinModule(delegate: self, biometryUnlockMode: .disabled, insets: .zero, cancellable: true, autoDismiss: true), animated: true)
+        present(App.shared.pinKit.unlockPinModule(
+                biometryUnlockMode: .disabled,
+                insets: .zero,
+                cancellable: true,
+                autoDismiss: true,
+                onUnlock: { [weak self] in
+                    self?.handleUnlock()
+                },
+                onCancelUnlock: { [weak self] in
+                    self?.tableView.reloadData()
+                }
+        ), animated: true)
+    }
+
+    private func handleUnlock() {
+        let success = viewModel.onUnlock()
+
+        if !success {
+            tableView.reloadData()
+        }
     }
 
 }
@@ -200,9 +219,9 @@ extension SecuritySettingsViewController {
 //                            self?.vpnManager.closeService(nil)
 //                            return
 //                        }
-                        self?.vpnManager.openService(completion: { (error) in
-//                            cell.switchOn((error != nil) ? false : true)
-                        })
+//                        self?.vpnManager.openService(completion: { (error) in
+////                            cell.switchOn((error != nil) ? false : true)
+//                        })
                     }),
                 isFirst: true,
                 isLast: true
@@ -307,22 +326,6 @@ extension SecuritySettingsViewController {
 extension SecuritySettingsViewController: ISetPinDelegate {
 
     func didCancelSetPin() {
-        tableView.reloadData()
-    }
-
-}
-
-extension SecuritySettingsViewController: IUnlockDelegate {
-
-    func onUnlock() {
-        let success = viewModel.onUnlock()
-
-        if !success {
-            tableView.reloadData()
-        }
-    }
-
-    func onCancelUnlock() {
         tableView.reloadData()
     }
 

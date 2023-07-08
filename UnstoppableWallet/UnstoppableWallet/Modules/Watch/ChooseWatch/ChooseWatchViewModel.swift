@@ -58,6 +58,7 @@ extension ChooseWatchViewModel {
         switch watchType {
         case .evmAddress: return "watch_address.choose_blockchain".localized
         case .publicKey: return "watch_address.choose_coin".localized
+        case .tronAddress: return ""
         }
     }
 

@@ -22,7 +22,6 @@ struct WalletConnectSendEthereumTransactionRequestModule {
                 blockchainType: evmKitWrapper.blockchainType,
                 marketKit: App.shared.marketKit,
                 currencyKit: App.shared.currencyKit,
-                evmBlockchainManager: App.shared.evmBlockchainManager,
                 coinManager: App.shared.coinManager
         ) else {
             return nil
@@ -34,7 +33,7 @@ struct WalletConnectSendEthereumTransactionRequestModule {
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
                 evmKit: evmKitWrapper.evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendEvmData, coinServiceFactory: coinServiceFactory,
-                gasPrice: service.gasPrice, gasLimit: request.transaction.gasLimit, gasLimitSurchargePercent: 10
+                gasPrice: service.gasPrice, predefinedGasLimit: request.transaction.gasLimit
         ) else {
             return nil
         }

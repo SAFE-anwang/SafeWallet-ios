@@ -7,6 +7,7 @@ import LitecoinKit
 import BitcoinCashKit
 import BinanceChainKit
 import ZcashLightClientKit
+import ECashKit
 
 class AddressParserFactory {
 
@@ -15,6 +16,7 @@ class AddressParserFactory {
         case .bitcoin: return AddressUriParser(validScheme: "bitcoin", removeScheme: true)
         case .litecoin: return AddressUriParser(validScheme: "litecoin", removeScheme: true)
         case .bitcoinCash: return AddressUriParser(validScheme: "bitcoincash", removeScheme: false)
+        case .ecash: return AddressUriParser(validScheme: "ecash", removeScheme: false)
         case .dash: return AddressUriParser(validScheme: "dash", removeScheme: true)
         case .ethereum: return AddressUriParser(validScheme: "ethereum", removeScheme: true)
         case .binanceChain: return AddressUriParser(validScheme: "binance", removeScheme: true)
@@ -26,7 +28,8 @@ class AddressParserFactory {
 
     static func parserChain(blockchainType: BlockchainType) -> AddressParserChain {
         switch blockchainType {
-        case .bitcoin, .dash, .litecoin, .bitcoinCash, .unsupported(_):
+
+        case .bitcoin, .dash, .litecoin, .bitcoinCash, .ecash, .unsupported(_):
             let scriptConverter = ScriptConverter()
 
             let specificAddressConverter: IAddressConverter?
@@ -41,6 +44,9 @@ class AddressParserFactory {
             case .bitcoinCash:
                 network = BitcoinCashKit.MainNet()
                 specificAddressConverter = CashBech32AddressConverter(prefix: network.bech32PrefixPattern)
+            case .ecash:
+                network = ECashKit.MainNet()
+                specificAddressConverter = CashBech32AddressConverter(prefix: network.bech32PrefixPattern)
             case .unsupported(let uid):
                 if uid == safeCoinUid {
                     network = SafeCoinKit.MainNet()
@@ -48,7 +54,6 @@ class AddressParserFactory {
                 }else {
                     return AddressParserChain()
                 }
-                
             default:
                 network = BitcoinKit.MainNet()
                 specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
@@ -77,7 +82,7 @@ class AddressParserFactory {
             }
 
             return addressParserChain
-        case .ethereum, .gnosis, .fantom, .polygon, .arbitrumOne, .avalanche, .optimism, .binanceSmartChain, .ethereumGoerli:
+        case .ethereum, .gnosis, .fantom, .polygon, .arbitrumOne, .avalanche, .optimism, .binanceSmartChain:
             let evmAddressParserItem = EvmAddressParser()
 
             let udnAddressParserItem = UdnAddressParserItem.item(
@@ -94,6 +99,8 @@ class AddressParserFactory {
             }
 
             return addressParserChain
+        case .tron:
+            return AddressParserChain().append(handler: TronAddressParser())
         case .binanceChain:
             let network = BinanceChainKit.NetworkType.mainNet
             let validator = BinanceAddressValidator(prefix: network.addressPrefix)

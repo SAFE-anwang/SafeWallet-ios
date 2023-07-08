@@ -24,6 +24,7 @@ extension KitCleaner {
             try? BinanceAdapter.clear(except: accountIds)
             try? ZcashAdapter.clear(except: accountIds)
             try? SafeCoinAdapter.clear(except: accountIds)
+            try? TronAdapter.clear(except: accountIds)
         }
     }
 

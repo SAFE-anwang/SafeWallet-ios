@@ -4,8 +4,25 @@ import GRDB
 class CoinHistoricalPriceStorage {
     private let dbPool: DatabasePool
 
-    init(dbPool: DatabasePool) {
+    init(dbPool: DatabasePool) throws {
         self.dbPool = dbPool
+        try migrator.migrate(dbPool)
+    }
+    
+    private var migrator: DatabaseMigrator {
+        var migrator = DatabaseMigrator()
+
+        migrator.registerMigration("Create SafeCoinHistoricalPrice") { db in
+            try db.create(table: CoinHistoricalPrice.databaseTableName) { t in
+                t.column(CoinHistoricalPrice.Columns.coinUid.name, .text).notNull()
+                t.column(CoinHistoricalPrice.Columns.currencyCode.name, .text).notNull()
+                t.column(CoinHistoricalPrice.Columns.value.name, .text)
+                t.column(CoinHistoricalPrice.Columns.timestamp.name, .double)
+                t.primaryKey([CoinHistoricalPrice.Columns.coinUid.name, CoinHistoricalPrice.Columns.currencyCode.name], onConflict: .replace)
+            }
+        }
+
+        return migrator
     }
 }
 

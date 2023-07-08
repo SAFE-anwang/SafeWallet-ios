@@ -3,6 +3,7 @@ import ThemeKit
 import RxSwift
 import RxCocoa
 import StorageKit
+import HsToolKit
 
 class MainViewController: ThemeTabBarController {
     private let disposeBag = DisposeBag()

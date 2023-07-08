@@ -28,9 +28,9 @@ class SafeSwapDataSource {
     private let errorCell = TitledHighlightedDescriptionCell()
     private let buttonStackCell = StackViewCell()
     private let revokeButton = PrimaryButton()
-    private let approveButton = PrimaryButton()
+    private let approve1Button = PrimaryButton()
     private let proceedButton = PrimaryButton()
-    private let approvingView = ApprovingView(title: "swap.approving_button".localized)
+    private let proceed2Button = PrimaryButton()
 
     var onOpen: ((_ viewController: UIViewController, _ viaPush: Bool) -> ())? = nil
     var onOpenSelectProvider: (() -> ())? = nil
@@ -47,6 +47,7 @@ class SafeSwapDataSource {
     private var lastAvailableBalance: String?
     private var lastPriceImpact: String?
     private var error: String?
+
 
     init(viewModel: SafeSwapViewModel, allowanceViewModel: SwapAllowanceViewModel) {
         self.viewModel = viewModel
@@ -77,29 +78,22 @@ class SafeSwapDataSource {
         revokeButton.addTarget(self, action: #selector((onTapRevokeButton)), for: .touchUpInside)
         buttonStackCell.add(view: revokeButton)
 
-        approveButton.set(style: .gray)
-        approveButton.setImage(UIImage(named: "numbers_1_20"), for: .normal)
-        approveButton.setImage(UIImage(named: "numbers_1_disabled_20"), for: .disabled)
-        approveButton.syncInsets()
-
-        approveButton.addTarget(self, action: #selector((onTapApproveButton)), for: .touchUpInside)
-
-        approveButton.addSubview(approvingView)
-        approvingView.snp.makeConstraints { maker in
-            maker.centerX.equalToSuperview()
-            maker.centerY.equalToSuperview()
-        }
-        approvingView.isHidden = true
+        approve1Button.addTarget(self, action: #selector((onTapApproveButton)), for: .touchUpInside)
+        buttonStackCell.add(view: approve1Button)
 
         errorCell.set(backgroundStyle: .transparent, isFirst: true)
-        buttonStackCell.add(view: approveButton)
 
         proceedButton.set(style: .yellow)
         proceedButton.addTarget(self, action: #selector((onTapProceedButton)), for: .touchUpInside)
         buttonStackCell.add(view: proceedButton)
 
+        proceed2Button.set(style: .yellow, accessoryType: .icon(image: UIImage(named: "numbers_2_24")))
+        proceed2Button.addTarget(self, action: #selector((onTapProceedButton)), for: .touchUpInside)
+        buttonStackCell.add(view: proceed2Button)
+
         subscribeToViewModel()
     }
+    
 
     private func subscribeToViewModel() {
         subscribe(disposeBag, viewModel.availableBalanceDriver) { [weak self] in self?.handle(balance: $0) }
@@ -129,7 +123,11 @@ class SafeSwapDataSource {
 
     private func handle(balance: String?) {
         lastAvailableBalance = balance
-        build(staticCell: availableBalanceCell, id: "available-balance", title: "send.available_balance".localized, value: balance, valueColor: .themeLeah)
+
+        CellBuilderNew.buildStatic(cell: availableBalanceCell, rootElement: .hStack([
+            .textElement(text: .subhead2("send.available_balance".localized), parameters: .highHugging),
+            .textElement(text: .subhead2(balance, color: .themeLeah), parameters: .rightAlignment)
+        ]))
 
         onReload?()
     }
@@ -147,7 +145,17 @@ class SafeSwapDataSource {
 
     private func handle(allowance: String?) {
         lastAllowance = allowance
-        build(staticCell: allowanceCell, id: "allowance", title: "swap.allowance".localized, showInfo: true, value: allowance, valueColor: .themeLucian)
+
+        CellBuilderNew.buildStatic(cell: allowanceCell, rootElement: .hStack([
+            .secondaryButton { [weak self] component in
+                component.button.set(style: .transparent2, image: UIImage(named: "circle_information_20"))
+                component.button.setTitle("swap.allowance".localized, for: .normal)
+                component.onTap = {
+                    self?.showInfo(description: InfoDescription(title: "swap.allowance".localized, text: "swap.dex_info.content_allowance".localized))
+                }
+            },
+            .textElement(text: .subhead2(allowance, color: .themeLucian), parameters: .rightAlignment)
+        ]))
 
         onReload?()
     }
@@ -187,10 +195,11 @@ class SafeSwapDataSource {
 
     private func handle(proceedActionState: SafeSwapViewModel.ActionState) {
         handle(actionState: proceedActionState, button: proceedButton)
+        handle(actionState: proceedActionState, button: proceed2Button)
     }
 
     private func handle(approveActionState: SafeSwapViewModel.ActionState) {
-        handle(actionState: approveActionState, button: approveButton)
+        handle(actionState: approveActionState, button: approve1Button)
     }
 
     private func handle(actionState: SafeSwapViewModel.ActionState, button: PrimaryButton) {
@@ -210,22 +219,16 @@ class SafeSwapDataSource {
 
     private func handle(approveStepState: SwapModule.ApproveStepState) {
         let isApproving = approveStepState == .approving
-        approvingView.isHidden = !isApproving
-        approvingView.startAnimating(isApproving)
 
-        approveButton.setImage(isApproving ? nil : UIImage(named: "numbers_1_20"), for: .normal)
-        approveButton.setImage(isApproving ? nil : UIImage(named: "numbers_1_disabled_20"), for: .disabled)
-        approveButton.syncInsets()
+        approve1Button.set(style: .gray, accessoryType: isApproving ? .spinner : .icon(image: UIImage(named: "numbers_1_24")))
 
         switch approveStepState {
         case .notApproved, .revokeRequired, .revoking:
-            proceedButton.setImage(nil, for: .normal)
-            proceedButton.setImage(nil, for: .disabled)
-            proceedButton.syncInsets()
+            proceedButton.isHidden = false
+            proceed2Button.isHidden = true
         default:
-            proceedButton.setImage(UIImage(named: "numbers_2_20"), for: .normal)
-            proceedButton.setImage(UIImage(named: "numbers_2_disabled_20"), for: .disabled)
-            proceedButton.syncInsets()
+            proceedButton.isHidden = true
+            proceed2Button.isHidden = false
         }
 
         onReload?()
@@ -268,31 +271,6 @@ class SafeSwapDataSource {
 
     private func onChangeAmountType(index: Int) {
         viewModel.onChangeAmountType(index: index)
-    }
-
-    private func build(staticCell: BaseThemeCell, id: String, title: String, showInfo: Bool = false, value: String?, valueColor: UIColor, progress: CGFloat? = nil) {
-        var cellElements = [CellBuilderNew.CellElement]()
-        if showInfo {
-            cellElements.append(.image20 { component in
-                component.imageView.image = UIImage(named: "circle_information_20")?.withTintColor(.themeGray)
-            })
-        }
-        cellElements.append(contentsOf: [
-            .text { component in
-                component.font = .subhead2
-                component.textColor = .themeGray
-                component.text = title
-                component.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-            },
-            .text { component in
-                component.font = .subhead2
-                component.textColor = valueColor
-                component.text = value
-                component.textAlignment = .right
-            },
-        ])
-
-        CellBuilderNew.buildStatic(cell: staticCell, rootElement: .hStack(cellElements))
     }
 
     private var infoSection: SectionProtocol {
@@ -446,22 +424,12 @@ extension SafeSwapDataSource: IDynamicHeightCellDelegate {
 
 extension SafeSwapDataSource {
 
-    class InfoCellViewItem {
+    struct InfoCellViewItem {
         let id: String
         let cell: BaseThemeCell
-        let descriptionTitle: String?
-        let description: String?
         let isVisible: Bool
-
-        init(id: String, cell: BaseThemeCell, descriptionTitle: String? = nil, description: String? = nil, isVisible: Bool) {
-            self.id = id
-            self.cell = cell
-            self.descriptionTitle = descriptionTitle
-            self.description = description
-            self.isVisible = isVisible
-        }
     }
-    
+
     struct InfoDescription {
         let title: String
         let text: String

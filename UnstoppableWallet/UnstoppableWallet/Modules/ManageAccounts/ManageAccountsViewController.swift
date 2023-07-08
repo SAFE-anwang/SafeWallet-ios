@@ -78,16 +78,15 @@ class ManageAccountsViewController: ThemeViewController {
         ]))
 
         watchCell.set(backgroundStyle: .lawrence, isLast: true)
-        CellBuilderNew.buildStatic(cell: watchCell, rootElement: .hStack([
-            .image24 { (component: ImageComponent) -> () in
-                component.imageView.image = UIImage(named: "binocule_24")?.withTintColor(.themeJacob)
-            },
-            .text { (component: TextComponent) -> () in
-                component.font = .body
-                component.textColor = .themeJacob
-                component.text = "onboarding.balance.watch".localized
-            }
-        ]))
+        CellBuilder.build(cell: watchCell, elements: [.image20, .text])
+        watchCell.bind(index: 0, block: { (component: ImageComponent) in
+            component.imageView.image = UIImage(named: "eye_20")?.withTintColor(.themeJacob)
+        })
+        watchCell.bind(index: 1, block: { (component: TextComponent) in
+            component.font = .body
+            component.textColor = .themeJacob
+            component.text = "onboarding.balance.watch".localized
+        })
 
         subscribe(disposeBag, viewModel.viewStateDriver) { [weak self] in self?.sync(viewState: $0) }
         subscribe(disposeBag, viewModel.finishSignal) { [weak self] in self?.dismiss(animated: true) }
@@ -111,7 +110,7 @@ class ManageAccountsViewController: ThemeViewController {
     }
 
     private func onTapRestore() {
-        let viewController = RestoreModule.viewController(sourceViewController: self, returnViewController: createAccountListener)
+        let viewController = RestoreTypeModule.viewController(sourceViewController: self, returnViewController: createAccountListener)
         present(viewController, animated: true)
     }
 
@@ -205,7 +204,7 @@ extension ManageAccountsViewController: SectionsDataSource {
                 ]),
                 tableView: tableView,
                 id: viewItem.accountId,
-                hash: "\(viewItem.title)-\(viewItem.selected)-\(viewItem.alert)-\(viewItem.watchAccount)-\(isFirst)-\(isLast)",
+                hash: "\(viewItem.title)-\(viewItem.subtitle)-\(viewItem.selected)-\(viewItem.alert)-\(viewItem.watchAccount)-\(isFirst)-\(isLast)",
                 height: .heightDoubleLineCell,
                 autoDeselect: true,
                 bind: { cell in

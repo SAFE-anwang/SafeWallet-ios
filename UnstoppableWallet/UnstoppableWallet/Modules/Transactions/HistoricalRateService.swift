@@ -1,13 +1,15 @@
 import Foundation
+import Combine
 import RxSwift
 import RxRelay
 import MarketKit
 import CurrencyKit
+import HsExtensions
 
 class HistoricalRateService {
     private let marketKit: MarketKit.Kit
-    private let disposeBag = DisposeBag()
-    private var ratesDisposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
+    private var tasks = Set<AnyTask>()
 
     private var currency: Currency
     private var rates = [RateKey: CurrencyValue]()
@@ -21,11 +23,15 @@ class HistoricalRateService {
         self.marketKit = marketKit
         currency = currencyKit.baseCurrency
 
-        subscribe(disposeBag, currencyKit.baseCurrencyUpdatedObservable) { [weak self] in self?.handleUpdated(currency: $0) }
+        currencyKit.baseCurrencyUpdatedPublisher
+                .sink { [weak self] currency in
+                    self?.handleUpdated(currency: currency)
+                }
+                .store(in: &cancellables)
     }
 
     private func handleUpdated(currency: Currency) {
-        ratesDisposeBag = DisposeBag()
+        tasks = Set()
         ratesChangedRelay.accept(())
 
         queue.async {
@@ -42,28 +48,21 @@ class HistoricalRateService {
         }
     }
 
-    private func _fetchRate(key: RateKey) {
-        if key.token.coin.code == safeCoinCode {
-            let decimal = App.shared.safeCoinHistoricalPriceManager.coinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
-            if let amount = decimal {
-                handle(key: key, rate: amount)
+    private func fetch(key: RateKey) {
+
+        
+        Task { [weak self, marketKit, currency] in
+            if key.token.coin.code == safeCoinCode {
+                let decimal = try await App.shared.safeCoinHistoricalPriceManager.coinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
+                if let amount = decimal {
+                    handle(key: key, rate: amount)
+                }
             }else {
-                App.shared.safeCoinHistoricalPriceManager.coinHistoricalPriceValueSingle(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
-                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
-                    .subscribe(onSuccess: { [weak self] decimal in
-                        self?.handle(key: key, rate: decimal)
-                    })
-                    .disposed(by: ratesDisposeBag)
+                let rate = try await marketKit.coinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
+                self?.handle(key: key, rate: rate)
             }
-            
-        }else {
-            marketKit.coinHistoricalPriceValueSingle(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
-                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
-                .subscribe(onSuccess: { [weak self] decimal in
-                    self?.handle(key: key, rate: decimal)
-                })
-                .disposed(by: ratesDisposeBag)
-        }
+
+        }.store(in: &tasks)
     }
 
 }
@@ -88,7 +87,7 @@ extension HistoricalRateService {
                 return nil
             }
 
-            if let value = marketKit.coinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970) {
+            if let value = marketKit.cachedCoinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970) {
                 let currencyValue = CurrencyValue(currency: currency, value: value)
                 rates[key]  = currencyValue
                 return currencyValue
@@ -105,7 +104,7 @@ extension HistoricalRateService {
 
         queue.async {
             if self.rates[key] == nil {
-                self._fetchRate(key: key)
+                self.fetch(key: key)
             }
         }
     }

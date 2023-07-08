@@ -8,9 +8,9 @@ import HdWalletKit
 
 class BitcoinBaseAdapter {
     static let confirmationsThreshold = 3
-
     private let abstractKit: AbstractKit
-    private let coinRate: Decimal = pow(10, 8)
+
+    var coinRate: Decimal { 100_000_000 } //pow(10, 8)
 
     private let lastBlockUpdatedSubject = PublishSubject<Void>()
     private let balanceStateSubject = PublishSubject<AdapterState>()
@@ -372,12 +372,12 @@ extension BitcoinBaseAdapter: ITransactionsAdapter {
         default: return Single.just([])
         }
 
-        return abstractKit.transactions(fromUid: from?.uid, type: bitcoinFilter, limit: limit)
-                .map { [weak self] transactions -> [TransactionRecord] in
-                    transactions.compactMap {
-                        self?.transactionRecord(fromTransaction: $0)
-                    }
+        let transactions = abstractKit.transactions(fromUid: from?.uid, type: bitcoinFilter, limit: limit)
+                .map {
+                    transactionRecord(fromTransaction: $0)
                 }
+
+        return Single.just(transactions)
     }
 
     func rawTransaction(hash: String) -> String? {
@@ -388,8 +388,16 @@ extension BitcoinBaseAdapter: ITransactionsAdapter {
 
 extension BitcoinBaseAdapter: IDepositAdapter {
 
-    var receiveAddress: String {
-        abstractKit.receiveAddress()
+    var receiveAddress: DepositAddress {
+        DepositAddress(abstractKit.receiveAddress())
     }
 
+}
+
+class DepositAddress {
+    let address: String
+
+    init(_ receiveAddress: String) {
+        self.address = receiveAddress
+    }
 }

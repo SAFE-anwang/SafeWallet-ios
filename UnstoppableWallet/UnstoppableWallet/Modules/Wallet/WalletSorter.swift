@@ -2,19 +2,20 @@ import Foundation
 
 class WalletSorter {
 
-    private let descending: (WalletService.Item, WalletService.Item) -> Bool = { item, item2 in
-        let balance = item.balanceData.balance
-        let balance2 = item2.balanceData.balance
-        let hasPrice = item.priceItem != nil
-        let hasPrice2 = item2.priceItem != nil
+    private let descending: (WalletService.Item, WalletService.Item) -> Bool = { lhsItem, rhsItem in
+        let lhsBalance = lhsItem.balanceData.balance
+        let rhsBalance = rhsItem.balanceData.balance
+        let lhsHasPrice = lhsItem.priceItem != nil
+        let rhsHasPrice = rhsItem.priceItem != nil
 
-        if hasPrice == hasPrice2 {
-            guard let price = item.priceItem?.price.value, let price2 = item2.priceItem?.price.value else {
-                return balance > balance2
+        if lhsHasPrice == rhsHasPrice {
+            guard let lhsPrice = lhsItem.priceItem?.price.value, let rhsPrice = rhsItem.priceItem?.price.value else {
+                return lhsBalance > rhsBalance
             }
-            return balance * price > balance2 * price2
+            return lhsBalance * lhsPrice > rhsBalance * rhsPrice
         }
-        return hasPrice
+
+        return lhsHasPrice
     }
 
     func sort(items: [WalletService.Item], sortType: WalletModule.SortType) -> [WalletService.Item] {
@@ -25,16 +26,16 @@ class WalletSorter {
 
             return nonZeroItems.sorted(by: descending) + zeroItems.sorted(by: descending)
         case .name:
-            return items.sorted { item, item2 in
-                item.wallet.coin.code.caseInsensitiveCompare(item2.wallet.coin.code) == .orderedAscending
+            return items.sorted { lhsItem, rhsItem in
+                lhsItem.element.name.caseInsensitiveCompare(rhsItem.element.name) == .orderedAscending
             }
         case .percentGrowth:
-            return items.sorted { item, item2 in
-                guard let diff = item.priceItem?.diff, let diff2 = item2.priceItem?.diff else {
-                    return item.priceItem?.diff != nil
+            return items.sorted { lhsItem, rhsItem in
+                guard let lhsDiff = lhsItem.priceItem?.diff, let rhsDiff = rhsItem.priceItem?.diff else {
+                    return lhsItem.priceItem?.diff != nil
                 }
 
-                return diff > diff2
+                return lhsDiff > rhsDiff
             }
         }
     }

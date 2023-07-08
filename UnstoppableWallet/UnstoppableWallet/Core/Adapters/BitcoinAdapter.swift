@@ -34,7 +34,6 @@ class BitcoinAdapter: BitcoinBaseAdapter {
             guard let derivation = wallet.coinSettings.derivation else {
                 throw AdapterError.wrongParameters
             }
-            
             bitcoinKit = try BitcoinKit.Kit(
                     extendedKey: key,
                     purpose: derivation.purpose,

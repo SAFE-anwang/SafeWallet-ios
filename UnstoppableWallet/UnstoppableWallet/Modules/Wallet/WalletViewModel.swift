@@ -25,7 +25,7 @@ class WalletViewModel {
     private let scrollToTopRelay = PublishRelay<()>()
 
     private var viewItems = [BalanceViewItem]()
-    private var expandedWallet: Wallet?
+    private var expandedElement: WalletModule.Element?
 
     private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.wallet-view-model", qos: .userInitiated)
 
@@ -80,7 +80,7 @@ class WalletViewModel {
 
     private func syncUpdated(item: WalletService.Item) {
         queue.async {
-            guard let index = self.viewItems.firstIndex(where: { $0.wallet == item.wallet }) else {
+            guard let index = self.viewItems.firstIndex(where: { $0.element == item.element }) else {
                 return
             }
 
@@ -105,13 +105,12 @@ class WalletViewModel {
                 item: item,
                 balancePrimaryValue: service.balancePrimaryValue,
                 balanceHidden: service.balanceHidden,
-                watchAccount: service.watchAccount,
-                expanded: item.wallet == expandedWallet
+                expanded: item.element == expandedElement
         )
     }
 
-    private func syncViewItem(wallet: Wallet) {
-        guard let item = service.item(wallet: wallet), let index = viewItems.firstIndex(where: { $0.wallet == wallet }) else {
+    private func syncViewItem(element: WalletModule.Element) {
+        guard let item = service.item(element: element), let index = viewItems.firstIndex(where: { $0.element == element }) else {
             return
         }
 
@@ -217,19 +216,19 @@ extension WalletViewModel {
         playHapticRelay.accept(())
     }
 
-    func onTap(wallet: Wallet) {
+    func onTap(element: WalletModule.Element) {
         queue.async {
-            if self.expandedWallet == wallet {
-                self.expandedWallet = nil
-                self.syncViewItem(wallet: wallet)
+            if self.expandedElement == element {
+                self.expandedElement = nil
+                self.syncViewItem(element: element)
             } else {
-                let oldExpandedWallet = self.expandedWallet
-                self.expandedWallet = wallet
+                let oldExpandedElement = self.expandedElement
+                self.expandedElement = element
 
-                if let oldExpandedWallet = oldExpandedWallet {
-                    self.syncViewItem(wallet: oldExpandedWallet)
+                if let oldExpandedElement {
+                    self.syncViewItem(element: oldExpandedElement)
                 }
-                self.syncViewItem(wallet: wallet)
+                self.syncViewItem(element: element)
             }
 
             self.viewItemsRelay.accept(self.viewItems)
@@ -237,32 +236,36 @@ extension WalletViewModel {
     }
 
     func onTapReceive(wallet: Wallet) {
-        if wallet.account.backedUp {
+        if wallet.account.backedUp || service.isCloudBackedUp(account: wallet.account) {
             openReceiveRelay.accept(wallet)
         } else {
             openBackupRequiredRelay.accept(wallet)
         }
     }
 
-    func onTapChart(wallet: Wallet) {
-        guard service.item(wallet: wallet)?.priceItem != nil else {
+    func onTapChart(element: WalletModule.Element) {
+        guard let coin = element.coin, let item = service.item(element: element), item.priceItem != nil else {
             return
         }
 
-        openCoinPageRelay.accept(wallet.coin)
+        openCoinPageRelay.accept(coin)
     }
 
-    func onTapFailedIcon(wallet: Wallet) {
+    func onTapFailedIcon(element: WalletModule.Element) {
         guard service.isReachable else {
             noConnectionErrorRelay.accept(())
             return
         }
 
-        guard let item = service.item(wallet: wallet) else {
+        guard let item = service.item(element: element) else {
             return
         }
 
         guard case let .notSynced(error) = item.state else {
+            return
+        }
+
+        guard let wallet = element.wallet else {
             return
         }
 
@@ -281,12 +284,12 @@ extension WalletViewModel {
         service.refresh()
     }
 
-    func onDisable(wallet: Wallet) {
-        if expandedWallet == wallet {
-            expandedWallet = nil
+    func onDisable(element: WalletModule.Element) {
+        if expandedElement == element {
+            expandedElement = nil
         }
 
-        service.disable(wallet: wallet)
+        service.disable(element: element)
     }
 
     func onCloseWarning() {
