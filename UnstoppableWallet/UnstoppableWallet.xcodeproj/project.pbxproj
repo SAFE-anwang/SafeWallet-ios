@@ -2011,10 +2011,6 @@
 		ABC9AFAB4E58875090F60014 /* AmountData.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9AA52B8C4E6834843D552 /* AmountData.swift */; };
 		ABC9AFC2E1155B5C87DC9F0E /* WalletConnectV1MainRequestViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9A6CFF0208D48FE778028 /* WalletConnectV1MainRequestViewModel.swift */; };
 		ABC9AFFD730AC3274811DA61 /* ContactBookContactViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9A8A353E491AAD3EDA120 /* ContactBookContactViewController.swift */; };
-		BD1D4EE429EF0C210035B7A4 /* BitcoinCashKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD1D4EE329EF0C210035B7A4 /* BitcoinCashKit */; };
-		BD1D4EE729EF0D530035B7A4 /* DashKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD1D4EE629EF0D530035B7A4 /* DashKit */; };
-		BD1D4EEA29EF1B310035B7A4 /* LitecoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD1D4EE929EF1B310035B7A4 /* LitecoinKit */; };
-		BD1D4EEC29EF1B940035B7A4 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD1D4EEB29EF1B940035B7A4 /* SafeCoinKit */; };
 		BD1D4EEE29EFDFA30035B7A4 /* SafeCoinAddressParserItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1D4EED29EFDFA30035B7A4 /* SafeCoinAddressParserItem.swift */; };
 		BD1D4EEF29EFDFA30035B7A4 /* SafeCoinAddressParserItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1D4EED29EFDFA30035B7A4 /* SafeCoinAddressParserItem.swift */; };
 		BD1D4EF229EFE3820035B7A4 /* SendSafeCoinService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1D4EF129EFE3820035B7A4 /* SendSafeCoinService.swift */; };
@@ -2035,18 +2031,10 @@
 		BD301CB72A0BE8E7003F5811 /* ItemSelectorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD301CB22A0BE8E7003F5811 /* ItemSelectorViewController.swift */; };
 		BD301CB82A0BE8E7003F5811 /* BottomSheetItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD301CB32A0BE8E7003F5811 /* BottomSheetItem.swift */; };
 		BD301CB92A0BE8E7003F5811 /* BottomSheetItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD301CB32A0BE8E7003F5811 /* BottomSheetItem.swift */; };
-		BD301CC22A0CE6B2003F5811 /* BitcoinCashKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD301CC12A0CE6B2003F5811 /* BitcoinCashKit */; };
-		BD301CC42A0CE6BF003F5811 /* LitecoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD301CC32A0CE6BF003F5811 /* LitecoinKit */; };
-		BD301CC62A0CE6F1003F5811 /* DashKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD301CC52A0CE6F1003F5811 /* DashKit */; };
-		BD301CC82A0CE709003F5811 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD301CC72A0CE709003F5811 /* SafeCoinKit */; };
-		BD301CCA2A0CE720003F5811 /* SafeSwapKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD301CC92A0CE720003F5811 /* SafeSwapKit */; };
-		BD301CCD2A0CEAAE003F5811 /* BitcoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD301CCC2A0CEAAE003F5811 /* BitcoinKit */; };
 		BD55E78829E585D70081A85D /* TermsModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E78429E585D70081A85D /* TermsModule.swift */; };
 		BD55E78929E585D70081A85D /* TermsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E78529E585D70081A85D /* TermsViewController.swift */; };
 		BD55E78A29E585D70081A85D /* TermsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E78629E585D70081A85D /* TermsViewModel.swift */; };
 		BD55E78B29E585D70081A85D /* TermsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E78729E585D70081A85D /* TermsService.swift */; };
-		BD55E79929E590A00081A85D /* MarketKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD55E79829E590A00081A85D /* MarketKit */; };
-		BD55E79D29E590B00081A85D /* SafeSwapKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD55E79C29E590B00081A85D /* SafeSwapKit */; };
 		BD55E7AF29E59B740081A85D /* VPNHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E7A129E59B710081A85D /* VPNHelper.swift */; };
 		BD55E7B029E59B740081A85D /* VPNHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E7A129E59B710081A85D /* VPNHelper.swift */; };
 		BD55E7B129E59B750081A85D /* AirportTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E7A229E59B710081A85D /* AirportTool.swift */; };
@@ -2091,7 +2079,6 @@
 		BD55E7E729E59E1B0081A85D /* SafeSwapProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E7DA29E59E130081A85D /* SafeSwapProvider.swift */; };
 		BD55E7E829E59E1B0081A85D /* SafeSwapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E7DB29E59E130081A85D /* SafeSwapViewModel.swift */; };
 		BD55E7E929E59E1B0081A85D /* SafeSwapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E7DB29E59E130081A85D /* SafeSwapViewModel.swift */; };
-		BD55E7EB29E59FAE0081A85D /* MarketKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD55E7EA29E59FAE0081A85D /* MarketKit */; };
 		BD55E7F329E5A21A0081A85D /* SafeSwapSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E7ED29E5A21A0081A85D /* SafeSwapSettings.swift */; };
 		BD55E7F429E5A21A0081A85D /* SafeSwapSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E7ED29E5A21A0081A85D /* SafeSwapSettings.swift */; };
 		BD55E7F529E5A21A0081A85D /* SafeSwapDeadlineViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E7EE29E5A21A0081A85D /* SafeSwapDeadlineViewModel.swift */; };
@@ -2126,6 +2113,13 @@
 		BD55E82129E5BD600081A85D /* MarketDappListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E81429E5BD5F0081A85D /* MarketDappListViewController.swift */; };
 		BD55E82229E5BD600081A85D /* MarketDappProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E81529E5BD5F0081A85D /* MarketDappProvider.swift */; };
 		BD55E82329E5BD600081A85D /* MarketDappProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD55E81529E5BD5F0081A85D /* MarketDappProvider.swift */; };
+		BD7276CD2A56A9480061DA61 /* MarketKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD7276CC2A56A9480061DA61 /* MarketKit */; };
+		BD7276D02A56AB520061DA61 /* DashKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD7276CF2A56AB520061DA61 /* DashKit */; };
+		BD7276D32A56ABCC0061DA61 /* BitcoinCashKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD7276D22A56ABCC0061DA61 /* BitcoinCashKit */; };
+		BD7276D62A56AC4E0061DA61 /* LitecoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD7276D52A56AC4E0061DA61 /* LitecoinKit */; };
+		BD7276DB2A56BB4C0061DA61 /* BitcoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD7276DA2A56BB4C0061DA61 /* BitcoinKit */; };
+		BD7276E22A56D8510061DA61 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD7276E12A56D8510061DA61 /* SafeCoinKit */; };
+		BD7276E92A57125B0061DA61 /* SafeSwapKit in Frameworks */ = {isa = PBXBuildFile; productRef = BD7276E82A57125B0061DA61 /* SafeSwapKit */; };
 		BD9273E629EEDB6C00FB93FF /* BitcoinCore in Frameworks */ = {isa = PBXBuildFile; productRef = BD9273E529EEDB6C00FB93FF /* BitcoinCore */; };
 		BDAAF84C2A2DE78F00686111 /* Safe4Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF84B2A2DE78F00686111 /* Safe4Module.swift */; };
 		BDAAF84D2A2DE79B00686111 /* Safe4Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDAAF84B2A2DE78F00686111 /* Safe4Module.swift */; };
@@ -3515,9 +3509,6 @@
 		BDAAF85A2A31DBFB00686111 /* SafeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeProvider.swift; sourceTree = "<group>"; };
 		BDAAF8602A342BEB00686111 /* SendWsafeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendWsafeViewModel.swift; sourceTree = "<group>"; };
 		BDAAF8632A342C1800686111 /* SendWsafeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendWsafeService.swift; sourceTree = "<group>"; };
-		BDB4AE3F2A038B0B0029E63D /* SafeSwapKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SafeSwapKit; path = Packages/SafeSwapKit; sourceTree = "<group>"; };
-		BDB4AE422A038B0D0029E63D /* MarketKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = MarketKit; path = Packages/MarketKit; sourceTree = "<group>"; };
-		BDB4AE442A038B0E0029E63D /* SafeCoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SafeCoinKit; path = Packages/SafeCoinKit; sourceTree = "<group>"; };
 		BDB79C952A42DD9D009F5800 /* web3swift */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = web3swift; path = Packages/web3swift; sourceTree = "<group>"; };
 		BDB79C9B2A43FCFB009F5800 /* SendSafe2wsafeAdapterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafe2wsafeAdapterService.swift; sourceTree = "<group>"; };
 		BDB79C9E2A4437EA009F5800 /* SendSafe2wsafeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafe2wsafeService.swift; sourceTree = "<group>"; };
@@ -3529,9 +3520,6 @@
 		BDCAB8AF2A36F9E5005F5A3D /* SendSafeEvmViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSafeEvmViewController.swift; sourceTree = "<group>"; };
 		BDD1BFC42A2748CB009AE2AF /* LaunchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchService.swift; sourceTree = "<group>"; };
 		BDE6E2382A03A7880052790F /* SafeCoinHistoricalPriceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeCoinHistoricalPriceManager.swift; sourceTree = "<group>"; };
-		BDE6E23B2A0938C70052790F /* LitecoinKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = LitecoinKit; path = Packages/LitecoinKit; sourceTree = "<group>"; };
-		BDE6E23E2A0939840052790F /* DashKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DashKit; path = Packages/DashKit; sourceTree = "<group>"; };
-		BDE6E23F2A0939850052790F /* BitcoinCashKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BitcoinCashKit; path = Packages/BitcoinCashKit; sourceTree = "<group>"; };
 		D003297526CD2C67002EC21D /* TransactionLockInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionLockInfo.swift; sourceTree = "<group>"; };
 		D003297926CD2E89002EC21D /* TransactionDateHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDateHeaderView.swift; sourceTree = "<group>"; };
 		D008CA59267C8DDF00001E0A /* EvmIncomingTransactionRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EvmIncomingTransactionRecord.swift; sourceTree = "<group>"; };
@@ -3616,12 +3604,9 @@
 				D3993DB028F4256F008720FB /* WalletConnect in Frameworks */,
 				D3C187E8290FD00E00FE1900 /* SectionsTableView in Frameworks */,
 				D3993DAE28F4256F008720FB /* WalletConnectV1 in Frameworks */,
-				BD301CC22A0CE6B2003F5811 /* BitcoinCashKit in Frameworks */,
-				BD301CC42A0CE6BF003F5811 /* LitecoinKit in Frameworks */,
 				500F1D1327AA87D1002AA419 /* AlignedCollectionViewFlowLayout in Frameworks */,
 				D3993DC428F429AA008720FB /* UnstoppableDomainsResolution in Frameworks */,
 				D3604E9E28F03DC00066C366 /* BinanceChainKit in Frameworks */,
-				BD301CC82A0CE709003F5811 /* SafeCoinKit in Frameworks */,
 				D3C187BC2907CFC200FE1900 /* Checkpoints in Frameworks */,
 				D3604E5728F02B280066C366 /* NftKit in Frameworks */,
 				D3C187E0290FD00E00FE1900 /* ThemeKit in Frameworks */,
@@ -3641,12 +3626,9 @@
 				D3604E5928F02B280066C366 /* UniswapKit in Frameworks */,
 				D3604E9228F03DC00066C366 /* ScanQrKit in Frameworks */,
 				D3BF1E65274CBBE400229A00 /* DeepDiff in Frameworks */,
-				BD55E7EB29E59FAE0081A85D /* MarketKit in Frameworks */,
-				BD301CCA2A0CE720003F5811 /* SafeSwapKit in Frameworks */,
 				D3993DA728F422BD008720FB /* ZcashLightClientKit in Frameworks */,
 				D3604E9828F03DC00066C366 /* CurrencyKit in Frameworks */,
 				D0DA7411272A6F180072BE86 /* IDNSDK in Frameworks */,
-				BD301CC62A0CE6F1003F5811 /* DashKit in Frameworks */,
 				D3C187E4290FD00E00FE1900 /* HUD in Frameworks */,
 				D3604E9C28F03DC00066C366 /* FeeRateKit in Frameworks */,
 				D3C187E2290FD00E00FE1900 /* ComponentKit in Frameworks */,
@@ -3661,7 +3643,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BD1D4EE729EF0D530035B7A4 /* DashKit in Frameworks */,
 				D3993DB828F42595008720FB /* WalletConnect in Frameworks */,
 				D3C187DB290FCFBC00FE1900 /* SectionsTableView in Frameworks */,
 				D3993DB628F42595008720FB /* WalletConnectV1 in Frameworks */,
@@ -3681,30 +3662,31 @@
 				D3604E4328F02A020066C366 /* EvmKit in Frameworks */,
 				D36E0C2A28D084AB00B622B9 /* CollectionViewCenteredFlowLayout in Frameworks */,
 				BD9273E629EEDB6C00FB93FF /* BitcoinCore in Frameworks */,
+				BD7276D02A56AB520061DA61 /* DashKit in Frameworks */,
 				D3604E7F28F03C1D0066C366 /* Chart in Frameworks */,
+				BD7276D32A56ABCC0061DA61 /* BitcoinCashKit in Frameworks */,
 				D38406A821831B3D007D50AD /* AVFoundation.framework in Frameworks */,
+				BD7276E92A57125B0061DA61 /* SafeSwapKit in Frameworks */,
 				D3604E5328F02B150066C366 /* OneInchKit in Frameworks */,
 				D3C187B32907A60800FE1900 /* HdWalletKit in Frameworks */,
+				BD7276E22A56D8510061DA61 /* SafeCoinKit in Frameworks */,
 				D3604E5028F02AE70066C366 /* UniswapKit in Frameworks */,
+				BD7276CD2A56A9480061DA61 /* MarketKit in Frameworks */,
 				D0C87E66298D17D5000CA9BE /* libzcashlc in Frameworks */,
-				BD1D4EEC29EF1B940035B7A4 /* SafeCoinKit in Frameworks */,
 				D3604E7328F03B0A0066C366 /* ScanQrKit in Frameworks */,
 				D3BF1E63274CBBCE00229A00 /* DeepDiff in Frameworks */,
-				BD55E79D29E590B00081A85D /* SafeSwapKit in Frameworks */,
 				D3993DA528F4229F008720FB /* ZcashLightClientKit in Frameworks */,
-				BD301CCD2A0CEAAE003F5811 /* BitcoinKit in Frameworks */,
 				D3604E7C28F03BD20066C366 /* CurrencyKit in Frameworks */,
-				BD55E79929E590A00081A85D /* MarketKit in Frameworks */,
+				BD7276D62A56AC4E0061DA61 /* LitecoinKit in Frameworks */,
 				D0DA740D272A6EFC0072BE86 /* IDNSDK in Frameworks */,
 				D3C187D5290FCF7D00FE1900 /* HUD in Frameworks */,
-				BD1D4EEA29EF1B310035B7A4 /* LitecoinKit in Frameworks */,
 				D3604E8228F03C6B0066C366 /* FeeRateKit in Frameworks */,
 				D3C187D2290FCF3D00FE1900 /* ComponentKit in Frameworks */,
 				D3E1D00B2990D9BE00C68F00 /* Hodler in Frameworks */,
 				D3604E7628F03B5E0066C366 /* PinKit in Frameworks */,
-				BD1D4EE429EF0C210035B7A4 /* BitcoinCashKit in Frameworks */,
 				D339A93D29126D0F00B895BE /* HsCryptoKit in Frameworks */,
 				D3604E7928F03B9F0066C366 /* ModuleKit in Frameworks */,
+				BD7276DB2A56BB4C0061DA61 /* BitcoinKit in Frameworks */,
 				D3C187D8290FCF9C00FE1900 /* LanguageKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -6554,12 +6536,6 @@
 		BD55E78E29E58B100081A85D /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				BDE6E23F2A0939850052790F /* BitcoinCashKit */,
-				BDE6E23E2A0939840052790F /* DashKit */,
-				BDE6E23B2A0938C70052790F /* LitecoinKit */,
-				BDB4AE422A038B0D0029E63D /* MarketKit */,
-				BDB4AE442A038B0E0029E63D /* SafeCoinKit */,
-				BDB4AE3F2A038B0B0029E63D /* SafeSwapKit */,
 				BDB79C952A42DD9D009F5800 /* web3swift */,
 			);
 			name = Packages;
@@ -6979,12 +6955,6 @@
 				D3C187E9290FD00E00FE1900 /* StorageKit */,
 				D339A93E29126D2A00B895BE /* HsCryptoKit */,
 				D3E1D00C2990DA0400C68F00 /* Hodler */,
-				BD55E7EA29E59FAE0081A85D /* MarketKit */,
-				BD301CC12A0CE6B2003F5811 /* BitcoinCashKit */,
-				BD301CC32A0CE6BF003F5811 /* LitecoinKit */,
-				BD301CC52A0CE6F1003F5811 /* DashKit */,
-				BD301CC72A0CE709003F5811 /* SafeCoinKit */,
-				BD301CC92A0CE720003F5811 /* SafeSwapKit */,
 			);
 			productName = Wallet;
 			productReference = D38405CE218317DF007D50AD /* Unstoppable D.app */;
@@ -7037,15 +7007,15 @@
 				D3C187DD290FCFE400FE1900 /* StorageKit */,
 				D339A93C29126D0F00B895BE /* HsCryptoKit */,
 				D0C87E65298D17D5000CA9BE /* libzcashlc */,
-				BD55E79829E590A00081A85D /* MarketKit */,
-				BD55E79C29E590B00081A85D /* SafeSwapKit */,
 				BD9273E529EEDB6C00FB93FF /* BitcoinCore */,
-				BD1D4EE329EF0C210035B7A4 /* BitcoinCashKit */,
-				BD1D4EE629EF0D530035B7A4 /* DashKit */,
-				BD1D4EE929EF1B310035B7A4 /* LitecoinKit */,
-				BD1D4EEB29EF1B940035B7A4 /* SafeCoinKit */,
-				BD301CCC2A0CEAAE003F5811 /* BitcoinKit */,
 				BDB79C962A42ED0A009F5800 /* web3swift */,
+				BD7276CC2A56A9480061DA61 /* MarketKit */,
+				BD7276CF2A56AB520061DA61 /* DashKit */,
+				BD7276D22A56ABCC0061DA61 /* BitcoinCashKit */,
+				BD7276D52A56AC4E0061DA61 /* LitecoinKit */,
+				BD7276DA2A56BB4C0061DA61 /* BitcoinKit */,
+				BD7276E12A56D8510061DA61 /* SafeCoinKit */,
+				BD7276E82A57125B0061DA61 /* SafeSwapKit */,
 			);
 			productName = Wallet;
 			productReference = D38406BE21831B3D007D50AD /* Unstoppable.app */;
@@ -7120,7 +7090,13 @@
 				D3C187DC290FCFE400FE1900 /* XCRemoteSwiftPackageReference "StorageKit" */,
 				D339A93B29126D0E00B895BE /* XCRemoteSwiftPackageReference "HsCryptoKit" */,
 				D0C87E64298D17D5000CA9BE /* XCRemoteSwiftPackageReference "zcash-light-client-ffi" */,
-				BD301CCB2A0CEAAD003F5811 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */,
+				BD7276CB2A56A9480061DA61 /* XCRemoteSwiftPackageReference "MarketKit.Swift" */,
+				BD7276CE2A56AB510061DA61 /* XCRemoteSwiftPackageReference "DashKit.Swift" */,
+				BD7276D12A56ABCC0061DA61 /* XCRemoteSwiftPackageReference "BitcoinCashKit.Swift" */,
+				BD7276D42A56AC4E0061DA61 /* XCRemoteSwiftPackageReference "LitecoinKit.Swift" */,
+				BD7276D92A56BB4C0061DA61 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */,
+				BD7276E02A56D8510061DA61 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */,
+				BD7276E72A57125B0061DA61 /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */,
 			);
 			productRefGroup = D3285F4320BD158E00644076 /* Products */;
 			projectDirPath = "";
@@ -9793,12 +9769,60 @@
 				kind = branch;
 			};
 		};
-		BD301CCB2A0CEAAD003F5811 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */ = {
+		BD7276CB2A56A9480061DA61 /* XCRemoteSwiftPackageReference "MarketKit.Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SAFE-anwang/MarketKit.Swift.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.1.1;
+			};
+		};
+		BD7276CE2A56AB510061DA61 /* XCRemoteSwiftPackageReference "DashKit.Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SAFE-anwang/DashKit.Swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+		BD7276D12A56ABCC0061DA61 /* XCRemoteSwiftPackageReference "BitcoinCashKit.Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SAFE-anwang/BitcoinCashKit.Swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+		BD7276D42A56AC4E0061DA61 /* XCRemoteSwiftPackageReference "LitecoinKit.Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SAFE-anwang/LitecoinKit.Swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+		BD7276D92A56BB4C0061DA61 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SAFE-anwang/BitcoinKit.Swift.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
+		BD7276E02A56D8510061DA61 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SAFE-anwang/SafeCoinKit.Swift.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.0;
+			};
+		};
+		BD7276E72A57125B0061DA61 /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SAFE-anwang/SafeSwapKit.Swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
 			};
 		};
 		D0C87E64298D17D5000CA9BE /* XCRemoteSwiftPackageReference "zcash-light-client-ffi" */ = {
@@ -10070,58 +10094,40 @@
 			package = 500F1D0F27AA87BC002AA419 /* XCRemoteSwiftPackageReference "AlignedCollectionViewFlowLayout" */;
 			productName = AlignedCollectionViewFlowLayout;
 		};
-		BD1D4EE329EF0C210035B7A4 /* BitcoinCashKit */ = {
+		BD7276CC2A56A9480061DA61 /* MarketKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = BitcoinCashKit;
+			package = BD7276CB2A56A9480061DA61 /* XCRemoteSwiftPackageReference "MarketKit.Swift" */;
+			productName = MarketKit;
 		};
-		BD1D4EE629EF0D530035B7A4 /* DashKit */ = {
+		BD7276CF2A56AB520061DA61 /* DashKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = BD7276CE2A56AB510061DA61 /* XCRemoteSwiftPackageReference "DashKit.Swift" */;
 			productName = DashKit;
 		};
-		BD1D4EE929EF1B310035B7A4 /* LitecoinKit */ = {
+		BD7276D22A56ABCC0061DA61 /* BitcoinCashKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LitecoinKit;
-		};
-		BD1D4EEB29EF1B940035B7A4 /* SafeCoinKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SafeCoinKit;
-		};
-		BD301CC12A0CE6B2003F5811 /* BitcoinCashKit */ = {
-			isa = XCSwiftPackageProductDependency;
+			package = BD7276D12A56ABCC0061DA61 /* XCRemoteSwiftPackageReference "BitcoinCashKit.Swift" */;
 			productName = BitcoinCashKit;
 		};
-		BD301CC32A0CE6BF003F5811 /* LitecoinKit */ = {
+		BD7276D52A56AC4E0061DA61 /* LitecoinKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = BD7276D42A56AC4E0061DA61 /* XCRemoteSwiftPackageReference "LitecoinKit.Swift" */;
 			productName = LitecoinKit;
 		};
-		BD301CC52A0CE6F1003F5811 /* DashKit */ = {
+		BD7276DA2A56BB4C0061DA61 /* BitcoinKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = DashKit;
-		};
-		BD301CC72A0CE709003F5811 /* SafeCoinKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SafeCoinKit;
-		};
-		BD301CC92A0CE720003F5811 /* SafeSwapKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SafeSwapKit;
-		};
-		BD301CCC2A0CEAAE003F5811 /* BitcoinKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BD301CCB2A0CEAAD003F5811 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */;
+			package = BD7276D92A56BB4C0061DA61 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */;
 			productName = BitcoinKit;
 		};
-		BD55E79829E590A00081A85D /* MarketKit */ = {
+		BD7276E12A56D8510061DA61 /* SafeCoinKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = MarketKit;
+			package = BD7276E02A56D8510061DA61 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */;
+			productName = SafeCoinKit;
 		};
-		BD55E79C29E590B00081A85D /* SafeSwapKit */ = {
+		BD7276E82A57125B0061DA61 /* SafeSwapKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = BD7276E72A57125B0061DA61 /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */;
 			productName = SafeSwapKit;
-		};
-		BD55E7EA29E59FAE0081A85D /* MarketKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MarketKit;
 		};
 		BD9273E529EEDB6C00FB93FF /* BitcoinCore */ = {
 			isa = XCSwiftPackageProductDependency;
