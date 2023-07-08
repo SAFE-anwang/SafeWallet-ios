@@ -9,15 +9,18 @@ class AdapterFactory {
     private let evmSyncSourceManager: EvmSyncSourceManager
     private let binanceKitManager: BinanceKitManager
     private let btcBlockchainManager: BtcBlockchainManager
+    private let tronKitManager: TronKitManager
     private let restoreSettingsManager: RestoreSettingsManager
     private let coinManager: CoinManager
     private let evmLabelManager: EvmLabelManager
 
-    init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, binanceKitManager: BinanceKitManager, btcBlockchainManager: BtcBlockchainManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager, evmLabelManager: EvmLabelManager) {
+    init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, binanceKitManager: BinanceKitManager, btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager,
+         restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager, evmLabelManager: EvmLabelManager) {
         self.evmBlockchainManager = evmBlockchainManager
         self.evmSyncSourceManager = evmSyncSourceManager
         self.binanceKitManager = binanceKitManager
         self.btcBlockchainManager = btcBlockchainManager
+        self.tronKitManager = tronKitManager
         self.restoreSettingsManager = restoreSettingsManager
         self.coinManager = coinManager
         self.evmLabelManager = evmLabelManager
@@ -48,6 +51,22 @@ class AdapterFactory {
         return try? Eip20Adapter(evmKitWrapper: evmKitWrapper, contractAddress: address, wallet: wallet, baseToken: baseToken, coinManager: coinManager, evmLabelManager: evmLabelManager)
     }
 
+    private func tronAdapter(wallet: Wallet) -> IAdapter? {
+        guard let tronKitWrapper = try? tronKitManager.tronKitWrapper(account: wallet.account, blockchainType: .tron) else {
+            return nil
+        }
+
+        return TronAdapter(tronKitWrapper: tronKitWrapper)
+    }
+
+    private func trc20Adapter(address: String, wallet: Wallet) -> IAdapter? {
+        guard let tronKitWrapper = try? tronKitManager.tronKitWrapper(account: wallet.account, blockchainType: .tron) else {
+            return nil
+        }
+
+        return try? Trc20Adapter(tronKitWrapper: tronKitWrapper, contractAddress: address, wallet: wallet)
+    }
+
 }
 
 extension AdapterFactory {
@@ -64,6 +83,16 @@ extension AdapterFactory {
         return nil
     }
 
+    func tronTransactionsAdapter(transactionSource: TransactionSource) -> ITransactionsAdapter? {
+        let query = TokenQuery(blockchainType: .tron, tokenType: .native)
+
+        if let tronKitWrapper = tronKitManager.tronKitWrapper, let baseToken = try? coinManager.token(query: query) {
+            return TronTransactionsAdapter(tronKitWrapper: tronKitWrapper, source: transactionSource, baseToken: baseToken, coinManager: coinManager, evmLabelManager: evmLabelManager)
+        }
+
+        return nil
+    }
+
     func adapter(wallet: Wallet) -> IAdapter? {
         switch (wallet.token.type, wallet.token.blockchain.type) {
 
@@ -74,6 +103,10 @@ extension AdapterFactory {
         case (.native, .bitcoinCash):
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .bitcoinCash, accountOrigin: wallet.account.origin)
             return try? BitcoinCashAdapter(wallet: wallet, syncMode: syncMode)
+
+        case (.native, .ecash):
+            let syncMode = btcBlockchainManager.syncMode(blockchainType: .ecash, accountOrigin: wallet.account.origin)
+            return try? ECashAdapter(wallet: wallet, syncMode: syncMode)
 
         case (.native, .litecoin):
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .litecoin, accountOrigin: wallet.account.origin)
@@ -93,16 +126,23 @@ extension AdapterFactory {
                 return BinanceAdapter(binanceKit: binanceKit, feeToken: feeToken, wallet: wallet)
             }
 
-        case (.native, .ethereum), (.native, .ethereumGoerli), (.native, .binanceSmartChain), (.native, .polygon), (.native, .avalanche), (.native, .optimism), (.native, .arbitrumOne), (.native, .gnosis), (.native, .fantom):
+        case (.native, .ethereum), (.native, .binanceSmartChain), (.native, .polygon), (.native, .avalanche), (.native, .optimism), (.native, .arbitrumOne), (.native, .gnosis), (.native, .fantom):
             return evmAdapter(wallet: wallet)
 
-        case (.eip20(let address), .ethereum), (.eip20(let address), .ethereumGoerli), (.eip20(let address), .binanceSmartChain), (.eip20(let address), .polygon), (.eip20(let address), .avalanche), (.eip20(let address), .optimism), (.eip20(let address), .arbitrumOne), (.eip20(let address), .gnosis), (.eip20(let address), .fantom):
+        case (.eip20(let address), .ethereum), (.eip20(let address), .binanceSmartChain), (.eip20(let address), .polygon), (.eip20(let address), .avalanche), (.eip20(let address), .optimism), (.eip20(let address), .arbitrumOne), (.eip20(let address), .gnosis), (.eip20(let address), .fantom):
             return eip20Adapter(address: address, wallet: wallet, coinManager: coinManager)
         
         case (.native, .unsupported(let uid)):
             guard uid == safeCoinUid else { return nil }
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .unsupported(uid: uid), accountOrigin: wallet.account.origin)
             return try? SafeCoinAdapter(wallet: wallet, syncMode: syncMode)
+
+        case (.native, .tron):
+            return tronAdapter(wallet: wallet)
+
+        case (.eip20(let address), .tron):
+            return trc20Adapter(address: address, wallet: wallet)
+
         default: ()
         }
 

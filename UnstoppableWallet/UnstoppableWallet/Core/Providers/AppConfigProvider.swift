@@ -9,6 +9,7 @@ class AppConfigProvider {
     let btcCoreRpcUrl = "https://btc.blocksdecoded.com/rpc"
     let guidesIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/blockchain-crypto-guides/v1.2/index.json")!
     let faqIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/unstoppable-wallet-website/master/src/faq.json")!
+    let analyticsLink = "https://unstoppable.money/analytics"
 
     var marketApiUrl: String {
         (Bundle.main.object(forInfoDictionaryKey: "MarketApiUrl") as? String) ?? ""
@@ -72,12 +73,32 @@ class AppConfigProvider {
         (Bundle.main.object(forInfoDictionaryKey: "HsProviderApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 
+    var tronGridApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "TronGridApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
     var walletConnectV2ProjectKey: String? {
         (Bundle.main.object(forInfoDictionaryKey: "WallectConnectV2ProjectKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 
     var defaultWords: String {
         Bundle.main.object(forInfoDictionaryKey: "DefaultWords") as? String ?? ""
+    }
+
+    var defaultPassphrase: String {
+        Bundle.main.object(forInfoDictionaryKey: "DefaultPassphrase") as? String ?? ""
+    }
+
+    var sharedCloudContainer: String? {
+        Bundle.main.object(forInfoDictionaryKey: "SharedCloudContainerId") as? String
+    }
+
+    var privateCloudContainer: String? {
+        Bundle.main.object(forInfoDictionaryKey: "PrivateCloudContainerId") as? String
+    }
+
+    var openSeaApiKey: String {
+        (Bundle.main.object(forInfoDictionaryKey: "OpenSeaApiKey") as? String) ?? ""
     }
 
 }

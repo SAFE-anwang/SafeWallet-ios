@@ -17,7 +17,7 @@ class Account {
 
     var watchAccount: Bool {
         switch type {
-        case .evmAddress:
+        case .evmAddress, .tronAddress:
             return true
         case .hdExtendedKey(let key):
             switch key {
@@ -43,6 +43,13 @@ class Account {
         }
 
         return !(Mnemonic.language(words: words) == Mnemonic.Language.english && PassphraseValidator.validate(text: salt))
+    }
+
+    var canBeBackedUp: Bool {
+        switch type {
+        case .mnemonic: return true
+        case .hdExtendedKey, .evmAddress, .tronAddress, .evmPrivateKey: return false
+        }
     }
 
 }

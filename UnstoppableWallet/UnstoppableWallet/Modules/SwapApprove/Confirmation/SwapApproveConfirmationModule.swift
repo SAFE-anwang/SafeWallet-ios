@@ -15,15 +15,13 @@ struct SwapApproveConfirmationModule {
                 blockchainType: dex.blockchainType,
                 marketKit: App.shared.marketKit,
                 currencyKit: App.shared.currencyKit,
-                evmBlockchainManager: App.shared.evmBlockchainManager,
                 coinManager: App.shared.coinManager
         ) else {
             return nil
         }
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
-                evmKit: evmKitWrapper.evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory,
-                gasLimitSurchargePercent: 20
+                evmKit: evmKitWrapper.evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory
         ) else {
             return nil
         }

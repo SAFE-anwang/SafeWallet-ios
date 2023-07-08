@@ -46,6 +46,7 @@ class CoinChartViewModel {
         switch periodType {
         case .byStartTime: return service.validIntervals.count
         case .byPeriod(let interval): return service.validIntervals.firstIndex(of: interval) ?? 0
+        case .byCustomPoints(_, _): return 0
         }
     }
 

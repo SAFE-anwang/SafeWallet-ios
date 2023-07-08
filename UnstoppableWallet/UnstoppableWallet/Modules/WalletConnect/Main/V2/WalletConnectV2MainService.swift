@@ -160,8 +160,12 @@ class WalletConnectV2MainService {
             throw WalletConnectMainModule.SessionError.unsupportedChainId
         }
 
+        guard let chains = eip155.chains else {
+            throw WalletConnectMainModule.SessionError.unsupportedChainId
+        }
+
         // get chainIds
-        let chainIds = eip155.chains.compactMap { Int($0.reference) }
+        let chainIds = chains.compactMap { Int($0.reference) }
 
         // get addresses
         var blockchainItems = Set<WalletConnectMainModule.BlockchainItem>()
@@ -338,14 +342,13 @@ extension WalletConnectV2MainService: IWalletConnectMainService {
         }
 
         let set = Set(accounts)
-        Task {
+        Task { [weak self, service, blockchains] in
             do {
                 try await service.approve(proposal: proposal, accounts: set, methods: blockchains.methods, events: blockchains.events)
             } catch {
-                errorRelay.accept(error)
+                self?.errorRelay.accept(error)
             }
         }
-
     }
 
     func rejectSession() {
@@ -355,14 +358,14 @@ extension WalletConnectV2MainService: IWalletConnectMainService {
         }
 
         if let proposal = proposal {
-            Task {
+            Task { [weak self, service] in
                 defer {
-                    state = .killed(reason: .rejectProposal)
+                    self?.state = .killed(reason: .rejectProposal)
                 }
                 do {
                     try await service.reject(proposal: proposal)
                 } catch {
-                    errorRelay.accept(error)
+                    self?.errorRelay.accept(error)
                 }
             }
         }

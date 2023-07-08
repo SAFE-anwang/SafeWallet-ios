@@ -3,6 +3,7 @@ import RxSwift
 import GRDB
 import UniswapKit
 import EvmKit
+import TronKit
 import ThemeKit
 import Alamofire
 import HsToolKit
@@ -33,7 +34,7 @@ protocol IBalanceAdapter: IBaseAdapter {
 }
 
 protocol IDepositAdapter: IBaseAdapter {
-    var receiveAddress: String { get }
+    var receiveAddress: DepositAddress { get }
 }
 
 protocol ITransactionsAdapter {
@@ -75,13 +76,20 @@ protocol ISendEthereumAdapter {
 
 protocol ISendSafeCoinAdapter {
     var blockchainType: BlockchainType { get }
-   // var balanceData: BalanceData { get }
+    // var balanceData: BalanceData { get }
     func availableBalanceSafe(address: String?) -> Decimal
     func minimumSendAmountSafe(address: String?) -> Decimal
     func validateSafe(address: String) throws
     func feeSafe(amount: Decimal, address: String?) -> Decimal
     func convertFeeSafe(amount: Decimal, address: String?) -> Decimal
     func sendSingle(amount: Decimal, address: String, sortMode: TransactionDataSortMode,  logger: HsToolKit.Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> Single<Void>
+}
+
+protocol ISendTronAdapter {
+    var tronKitWrapper: TronKitWrapper { get }
+    var balanceData: BalanceData { get }
+    func contract(amount: BigUInt, address: TronKit.Address) -> TronKit.Contract
+    func accountActive(address: TronKit.Address) async -> Bool
 }
 
 protocol IErc20Adapter {
@@ -133,7 +141,7 @@ protocol INftEventProvider {
 }
 
 protocol IFeeRateProvider {
-    var recommendedFeeRate: Single<Int> { get }
+    func recommendedFeeRate() async throws -> Int
 }
 
 protocol ICustomRangedFeeRateProvider: IFeeRateProvider {

@@ -61,8 +61,13 @@ class BottomSheetViewController: ThemeActionSheetController {
 
             for button in buttons {
                 let component = PrimaryButtonComponent()
-                component.button.set(style: button.style)
+                var accessory = PrimaryButton.AccessoryType.none
+                if let imageName = button.imageName {
+                    accessory = .icon(image: UIImage(named: imageName))
+                }
+                component.button.set(style: button.style, accessoryType: accessory)
                 component.button.setTitle(button.title, for: .normal)
+
                 component.onTap = { [weak self] in
                     self?.didTapAnyButton = true
                     switch button.actionType {

@@ -1,10 +1,22 @@
 import RxSwift
+import RxRelay
+import Combine
+import HsExtensions
 
 class BackupManager {
     private let accountManager: AccountManager
 
+    private let disposeBag = DisposeBag()
+
+    private let allBackedUpRelay = PublishRelay<Bool>()
+
     init(accountManager: AccountManager) {
         self.accountManager = accountManager
+        subscribe(disposeBag, accountManager.accountsObservable) { [weak self] _ in self?.updateAllBackedUp() }
+    }
+
+    private func updateAllBackedUp() {
+        allBackedUpRelay.accept(allBackedUp)
     }
 
 }
@@ -16,7 +28,7 @@ extension BackupManager {
     }
 
     var allBackedUpObservable: Observable<Bool> {
-        accountManager.accountsObservable.map { $0.allSatisfy { $0.backedUp } }
+        allBackedUpRelay.asObservable()
     }
 
     func setAccountBackedUp(id: String) {

@@ -9,7 +9,6 @@ import HdWalletKit
 
 class SafeCoinAdapter: BitcoinBaseAdapter {
     private let feeRate = 10
-    private let coinRate: Decimal = pow(10, 8)
     private let safeCoinKit: SafeCoinKit.Kit
         
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {

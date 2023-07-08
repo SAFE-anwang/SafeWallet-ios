@@ -132,7 +132,7 @@ class UniswapViewModel {
             } else {
                 buyPriceRelay.accept(nil)
             }
-            priceImpactRelay.accept(viewItemHelper.priceImpactViewItem(trade: trade))
+            priceImpactRelay.accept(viewItemHelper.priceImpactViewItem(priceImpact: trade.tradeData.priceImpact, impactLevel: trade.impactLevel))
         case .notReady:
             buyPriceRelay.accept(nil)
             priceImpactRelay.accept(nil)
@@ -182,7 +182,7 @@ class UniswapViewModel {
         }
         if case .pending = pendingAllowanceService.state {
             revokeWarning = nil
-            approveAction = .disabled(title: "")    // UI will show custom approvingView
+            approveAction = .disabled(title: "swap.approving_button".localized)
             approveStep = .approving
         } else if case .revoking = pendingAllowanceService.state {
             revokeWarning = nil
@@ -362,12 +362,22 @@ extension UniswapViewModel {
                         invertedPrice: trade.tradeData.executionPriceInverted,
                         tokenIn: tradeService.tokenIn,
                         tokenOut: tradeService.tokenOut)?.0,
-                priceImpact: viewItemHelper.priceImpactViewItem(trade: trade)
+                priceImpact: viewItemHelper.priceImpactViewItem(priceImpact: trade.tradeData.priceImpact, impactLevel: trade.impactLevel)
         )
 
+        var impactWarnings = [Warning]()
+        var impactErrors = [Error]()
+
+        switch trade.impactLevel {
+        case .warning:  impactWarnings = [UniswapModule.UniswapWarning.highPriceImpact]
+        case .forbidden:  impactErrors = [UniswapModule.UniswapError.forbiddenPriceImpact(provider: "Uniswap")] // we can use url from dex
+        default: ()
+        }
         let sendEvmData = SendEvmData(
-                transactionData: transactionData, additionalInfo: .uniswap(info: swapInfo),
-                warnings: trade.impactLevel == .forbidden ? [UniswapModule.UniswapWarning.highPriceImpact] : []
+                transactionData: transactionData,
+                additionalInfo: .uniswap(info: swapInfo),
+                warnings: impactWarnings,
+                errors: impactErrors
         )
 
         openConfirmRelay.accept(sendEvmData)

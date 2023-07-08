@@ -22,7 +22,7 @@ class CoinChartFactory {
             points.append(point)
             lastPoint = point
 
-            if periodType == .day1, let rateDiff24 = item.rateDiff24h {
+            if periodType == .byPeriod(.day1), let rateDiff24 = item.rateDiff24h {
                 let timestamp = item.timestamp - 24 * 60 * 60
                 let value = 100 * item.rate / (100 + rateDiff24)
 
@@ -101,6 +101,7 @@ extension HsPeriodType {
         switch self {
         case .byPeriod(let interval): return intervals.contains(interval)
         case .byStartTime: return true
+        default: return false
         }
     }
 
@@ -110,6 +111,7 @@ extension HsPeriodType {
             return ChartIntervalConverter.convert(interval: interval)
         case .byStartTime(let startTime):
             return CoinChartFactory.gridInterval(fromTimestamp: startTime)
+        default: return 0
         }
     }
 

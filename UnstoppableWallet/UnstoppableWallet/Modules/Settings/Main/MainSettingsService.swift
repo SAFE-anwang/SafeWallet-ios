@@ -1,3 +1,4 @@
+import Combine
 import RxSwift
 import RxRelay
 import LanguageKit
@@ -11,10 +12,11 @@ class MainSettingsService {
     private let disposeBag = DisposeBag()
 
     private let backupManager: BackupManager
+    private let cloudAccountBackupManager: CloudAccountBackupManager
     private let accountRestoreWarningManager: AccountRestoreWarningManager
     private let accountManager: AccountManager
     private let contactBookManager: ContactBookManager?
-    private let pinKit: IPinKit
+    private let pinKit: PinKit.Kit
     private let termsManager: TermsManager
     private let systemInfoManager: SystemInfoManager
     private let currencyKit: CurrencyKit.Kit
@@ -23,10 +25,12 @@ class MainSettingsService {
     private let walletConnectV2SessionManager: WalletConnectV2SessionManager
 
     private let iCloudAvailableErrorRelay = BehaviorRelay<Bool>(value: false)
+    private let noWalletRequiredActionsRelay = BehaviorRelay<Bool>(value: false)
 
-    init(backupManager: BackupManager, accountRestoreWarningManager: AccountRestoreWarningManager, accountManager: AccountManager, contactBookManager: ContactBookManager?, pinKit: IPinKit, termsManager: TermsManager,
+    init(backupManager: BackupManager, cloudAccountBackupManager: CloudAccountBackupManager, accountRestoreWarningManager: AccountRestoreWarningManager, accountManager: AccountManager, contactBookManager: ContactBookManager?, pinKit: PinKit.Kit, termsManager: TermsManager,
          systemInfoManager: SystemInfoManager, currencyKit: CurrencyKit.Kit, appConfigProvider: AppConfigProvider,
          walletConnectSessionManager: WalletConnectSessionManager, walletConnectV2SessionManager: WalletConnectV2SessionManager) {
+        self.cloudAccountBackupManager = cloudAccountBackupManager
         self.backupManager = backupManager
         self.accountRestoreWarningManager = accountRestoreWarningManager
         self.accountManager = accountManager
@@ -48,6 +52,15 @@ class MainSettingsService {
                 }
             }
         }
+
+        subscribe(disposeBag, backupManager.allBackedUpObservable) { [weak self] _ in self?.syncWalletRequiredActions() }
+        subscribe(disposeBag, accountRestoreWarningManager.hasNonStandardObservable) { [weak self] _ in self?.syncWalletRequiredActions() }
+
+        syncWalletRequiredActions()
+    }
+
+    private func syncWalletRequiredActions() {
+        noWalletRequiredActionsRelay.accept(backupManager.allBackedUp && !accountRestoreWarningManager.hasNonStandard)
     }
 
 }
@@ -63,21 +76,22 @@ extension MainSettingsService {
     }
 
     var noWalletRequiredActionsObservable: Observable<Bool> {
-        Observable.combineLatest(backupManager.allBackedUpObservable, accountRestoreWarningManager.hasNonStandardObservable) { allBackedUp, hasNonStandard in
-            allBackedUp && !hasNonStandard
-        }
+        noWalletRequiredActionsRelay.asObservable()
     }
 
     var isPinSet: Bool {
         pinKit.isPinSet
     }
 
-    var isPinSetObservable: Observable<Bool> {
-        pinKit.isPinSetObservable
+    var isPinSetPublisher: AnyPublisher<Bool, Never> {
+        pinKit.isPinSetPublisher
     }
 
     var isCloudAvailableError: Bool {
-        (contactBookManager?.remoteSync ?? false) && (contactBookManager?.iCloudError != nil)
+        guard let contactBookManager else {
+            return false
+        }
+        return contactBookManager.remoteSync && contactBookManager.iCloudError != nil
     }
 
     var iCloudAvailableErrorObservable: Observable<Bool> {
@@ -119,8 +133,8 @@ extension MainSettingsService {
         currencyKit.baseCurrency
     }
 
-    var baseCurrencyObservable: Observable<Currency> {
-        currencyKit.baseCurrencyUpdatedObservable
+    var baseCurrencyPublisher: AnyPublisher<Currency, Never> {
+        currencyKit.baseCurrencyUpdatedPublisher
     }
 
     var appVersion: String {
@@ -129,6 +143,32 @@ extension MainSettingsService {
 
     var activeAccount: Account? {
         accountManager.activeAccount
+    }
+
+    var walletConnectState: WalletConnectState {
+        guard let activeAccount = activeAccount else {
+            return .noAccount
+        }
+
+        if !activeAccount.type.supportsWalletConnect {
+            return .nonSupportedAccountType(accountType: activeAccount.type)
+        }
+
+        if activeAccount.backedUp || cloudAccountBackupManager.backedUp(uniqueId: activeAccount.type.uniqueId()) {
+            return .backedUp
+        }
+        return .unBackedUpAccount(account: activeAccount)
+    }
+
+}
+
+extension MainSettingsService {
+
+    enum WalletConnectState {
+        case noAccount
+        case backedUp
+        case nonSupportedAccountType(accountType: AccountType)
+        case unBackedUpAccount(account: Account)
     }
 
 }

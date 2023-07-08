@@ -7,6 +7,7 @@ extension BlockchainType {
     static let supported: [BlockchainType] = [
         .bitcoin,
         .bitcoinCash,
+        .ecash,
         .litecoin,
         .dash,
         .zcash,
@@ -19,7 +20,9 @@ extension BlockchainType {
         .fantom,
         .binanceSmartChain,
         .binanceChain,
+        .tron,
         .unsupported(uid: safeCoinUid)
+
     ]
 
     func placeholderImageName(tokenProtocol: TokenProtocol?) -> String {
@@ -82,18 +85,19 @@ extension BlockchainType {
         case .ethereum: return 2
         case .unsupported(let uid): return uid == safeCoinUid ? 3 : Int.max
         case .binanceSmartChain: return 4
-        case .polygon: return 5
-        case .avalanche: return 6
-        case .zcash: return 7
-        case .bitcoinCash: return 8
-        case .litecoin: return 9
-        case .dash: return 10
-        case .binanceChain: return 11
-        case .gnosis: return 12
-        case .fantom: return 13
-        case .arbitrumOne: return 14
-        case .optimism: return 15
-        case .ethereumGoerli: return 16
+        case .tron: return 5
+        case .polygon: return 6
+        case .avalanche: return 7
+        case .zcash: return 8
+        case .bitcoinCash: return 9
+        case .ecash: return 10
+        case .litecoin: return 11
+        case .dash: return 12
+        case .binanceChain: return 13
+        case .gnosis: return 14
+        case .fantom: return 15
+        case .arbitrumOne: return 16
+        case .optimism: return 17
         default: return Int.max
         }
     }
@@ -137,14 +141,16 @@ extension BlockchainType {
             switch self {
             case .bitcoin: return key.coinTypes.contains(where: { $0 == .bitcoin })
             case .litecoin: return key.coinTypes.contains(where: { $0 == .litecoin })
-            case .bitcoinCash, .dash: return key.coinTypes.contains(where: { $0 == .bitcoin }) && key.purposes.contains(where: { $0 == .bip44 })
+            case .bitcoinCash, .ecash, .dash: return key.coinTypes.contains(where: { $0 == .bitcoin }) && key.purposes.contains(where: { $0 == .bip44 })
             default: return false
             }
         case .evmPrivateKey, .evmAddress:
             switch self {
-            case .ethereum, .ethereumGoerli, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom: return true
+            case .ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom: return true
             default: return false
             }
+        case .tronAddress:
+            return self == .tron
         }
     }
 
@@ -166,7 +172,7 @@ extension BlockchainType {
 
     var description: String {
         switch self {
-        case .bitcoin: return "BTC (BIP44, BIP49, BIP84)"
+        case .bitcoin: return "BTC (BIP44, BIP49, BIP84, BIP86)"
         case .ethereum: return "ETH, ERC20 tokens"
         case .binanceSmartChain: return "BNB, BEP20 tokens"
         case .polygon: return "MATIC, ERC20 tokens"
@@ -178,8 +184,10 @@ extension BlockchainType {
         case .zcash: return "ZEC"
         case .dash: return "DASH"
         case .bitcoinCash: return "BCH (Legacy, CashAddress)"
-        case .litecoin: return "LTC (BIP44, BIP49, BIP84)"
+        case .ecash: return "XEC"
+        case .litecoin: return "LTC (BIP44, BIP49, BIP84, BIP86)"
         case .binanceChain: return "BNB, BEP2 tokens"
+        case .tron: return "TRX, TRC20 tokens"
         default: return ""
         }
     }

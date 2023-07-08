@@ -74,7 +74,7 @@ class AppStatusManager {
             let blockchain = wallet.token.blockchain
 
             switch blockchain.type {
-            case .bitcoin, .bitcoinCash, .litecoin, .dash, .zcash:
+            case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dash, .zcash:
                 if let adapter = adapterManager.adapter(for: wallet) {
                     status.append((blockchain.name, adapter.statusInfo))
                 }
@@ -107,7 +107,7 @@ extension AppStatusManager {
                 ("App Version", systemInfoManager.appVersion.description),
                 ("Phone Model", systemInfoManager.deviceModel),
                 ("OS Version", systemInfoManager.osVersion)
-            ]),
+            ] as [Any]),
             ("App Log", logRecordManager.logsGroupedBy(context: "Send")),
             ("Version History", storage.appVersions.map { ($0.description, $0.date) }),
             ("Market Last Sync Timestamps", marketLastSyncTimestamps),

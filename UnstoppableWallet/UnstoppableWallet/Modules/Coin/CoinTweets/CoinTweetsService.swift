@@ -1,9 +1,10 @@
 import RxSwift
 import RxRelay
 import MarketKit
+import HsExtensions
 
 class CoinTweetsService {
-    private let disposeBag = DisposeBag()
+    private var tasks = Set<AnyTask>()
     private let twitterProvider: TweetsProvider
     private let marketKit: MarketKit.Kit
     private var coinUid: String
@@ -52,44 +53,32 @@ extension CoinTweetsService {
             state = .loading
         }
 
-        let single: Single<TwitterUser?>
-        
-        if let user = user {
-            single = Single.just(user)
-        }else if let username = userName, !username.isEmpty {
-            single = twitterProvider.userRequestSingle(username: username)
-        }else {
-            single = marketKit
-                    .twitterUsername(coinUid: coinUid)
-                    .flatMap { [weak self] username in
-                        guard let service = self, let username = username, !username.isEmpty else {
-                            return Single.just(nil)
-                        }
+        tasks = Set()
 
-                        return service.twitterProvider.userRequestSingle(username: username)
+        Task { [weak self, marketKit, coinUid, twitterProvider] in
+            do {
+                var twitterUser: TwitterUser?
+                if let user = self?.user {
+                    twitterUser = user
+                } else {
+                    let username = try await marketKit.twitterUsername(coinUid: coinUid)
+                    if let username, !username.isEmpty {
+                        twitterUser = try await twitterProvider.userRequest(username: username)
                     }
-        }
-
-        single
-                .flatMap { [weak self] (user: TwitterUser?) -> Single<TweetsProvider.TweetsPage> in
-                    guard let user = user, let service = self else {
-                        return Single.error(LoadError.tweeterUserNotFound)
-                    }
-
-                    service.user = user
-
-                    return service.twitterProvider.tweetsSingle(user: user)
                 }
-                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                .subscribe(
-                        onSuccess: { [weak self] tweetsPage in
-                            self?.handle(tweets: tweetsPage.tweets)
-                        },
-                        onError: { [weak self] error in
-                            self?.state = .failed(error)
-                        }
-                )
-                .disposed(by: disposeBag)
+
+                guard let twitterUser else {
+                    throw LoadError.tweeterUserNotFound
+                }
+
+                self?.user = twitterUser
+
+                let tweetsPage = try await twitterProvider.tweets(user: twitterUser)
+                self?.handle(tweets: tweetsPage.tweets)
+            } catch {
+                self?.state = .failed(error)
+            }
+        }.store(in: &tasks)
     }
 
 }

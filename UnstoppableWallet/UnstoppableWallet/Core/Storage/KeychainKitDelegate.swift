@@ -18,7 +18,6 @@ class KeychainKitDelegate {
 
 extension KeychainKitDelegate: IKeychainKitDelegate {
 
-
     func onSecureStorageInvalidation() {
         accountManager.clear()
         walletManager.clearWallets()

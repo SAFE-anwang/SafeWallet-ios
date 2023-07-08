@@ -1,13 +1,16 @@
 import Foundation
 import HdWalletKit
 import EvmKit
+import TronKit
 import BitcoinCore
 import MarketKit
+import Crypto
 
 enum AccountType {
     case mnemonic(words: [String], salt: String, bip39Compliant: Bool)
     case evmPrivateKey(data: Data)
     case evmAddress(address: EvmKit.Address)
+    case tronAddress(address: TronKit.Address)
     case hdExtendedKey(key: HDExtendedKey)
 
     var mnemonicSeed: Data? {
@@ -21,11 +24,41 @@ enum AccountType {
         }
     }
 
+    func uniqueId(hashed: Bool = true) -> Data {
+        let privateData: Data
+        switch self {
+        case let .mnemonic(words, salt, bip39Compliant):
+            var description = words.joined(separator: " ")
+            if !bip39Compliant {
+                description += "&nonBip39Compliant"
+            }
+            if !salt.isEmpty {
+                description += "@" + salt
+            }
+
+            privateData = description.data(using: .utf8) ?? Data() // always non-null
+        case let .evmPrivateKey(data):
+            privateData = data
+        case let .evmAddress(address):
+            privateData = address.raw
+        case let .tronAddress(address):
+            privateData = address.raw
+        case let .hdExtendedKey(key):
+            privateData = key.serialized
+        }
+
+        if hashed {
+            return Data(SHA512.hash(data: privateData))
+        } else {
+            return privateData
+        }
+    }
+
     // todo: remove this method
     var supportedDerivations: [MnemonicDerivation] {
         switch self {
         case .mnemonic:
-            return [.bip44, .bip49, .bip84]
+            return [.bip44, .bip49, .bip84, .bip86]
         case .hdExtendedKey(let key):
             return key.purposes.map { $0.mnemonicDerivation }
         default:
@@ -39,6 +72,7 @@ enum AccountType {
             switch (configuredToken.blockchainType, configuredToken.token.type) {
             case (.bitcoin, .native): return true
             case (.bitcoinCash, .native): return true
+            case (.ecash, .native): return true
             case (.litecoin, .native): return true
             case (.dash, .native): return true
             case (.zcash, .native): return true
@@ -51,7 +85,7 @@ enum AccountType {
             case (.fantom, .native), (.fantom, .eip20): return true
             case (.arbitrumOne, .native), (.arbitrumOne, .eip20): return true
             case (.optimism, .native), (.optimism, .eip20): return true
-            case (.ethereumGoerli, .native), (.ethereumGoerli, .eip20): return true
+            case (.tron, .native), (.tron, .eip20): return true
             case (.unsupported(let uid), .native): return uid == safeCoinUid
             default: return false
             }
@@ -67,7 +101,7 @@ enum AccountType {
                 }
 
                 return key.coinTypes.contains(where: { $0 == .litecoin })
-            case .bitcoinCash, .dash:
+            case .bitcoinCash, .ecash, .dash:
                 return key.purposes.contains(where: { $0 == .bip44 })
             default:
                 return false
@@ -82,8 +116,12 @@ enum AccountType {
             case (.fantom, .native), (.fantom, .eip20): return true
             case (.arbitrumOne, .native), (.arbitrumOne, .eip20): return true
             case (.optimism, .native), (.optimism, .eip20): return true
-            case (.ethereumGoerli, .native), (.ethereumGoerli, .eip20): return true
             case (.unsupported(let uid), .native): return uid == safeCoinUid
+            default: return false
+            }
+        case .tronAddress:
+            switch (configuredToken.blockchainType, configuredToken.token.type) {
+            case (.tron, .native), (.tron, .eip20): return true
             default: return false
             }
         }
@@ -119,6 +157,8 @@ enum AccountType {
             return "EVM Private Key"
         case .evmAddress:
             return "EVM Address"
+        case .tronAddress:
+            return "TRON Address"
         case .hdExtendedKey(let key):
             switch key {
             case .private:
@@ -140,7 +180,98 @@ enum AccountType {
         switch self {
         case .evmAddress(let address):
             return address.eip55.shortened
+        case .tronAddress(let address):
+            return address.base58.shortened
         default: return description
+        }
+    }
+
+    func evmAddress(chain: Chain) -> EvmKit.Address? {
+        switch self {
+        case .mnemonic:
+            guard let mnemonicSeed else {
+                return nil
+            }
+
+            return try? Signer.address(seed: mnemonicSeed, chain: chain)
+        case .evmPrivateKey(let data):
+            return Signer.address(privateKey: data)
+        default:
+            return nil
+        }
+    }
+
+    func sign(message: Data, isLegacy: Bool = false) -> Data? {
+        switch self {
+        case .mnemonic:
+            guard let mnemonicSeed else {
+                return nil
+            }
+
+            guard let privateKey = try? Signer.privateKey(seed: mnemonicSeed, chain: App.shared.evmBlockchainManager.chain(blockchainType: .ethereum)) else {
+                return nil
+            }
+
+            return try? EvmKit.Kit.sign(message: message, privateKey: privateKey, isLegacy: isLegacy)
+        case .evmPrivateKey(let data):
+            return try? EvmKit.Kit.sign(message: message, privateKey: data, isLegacy: isLegacy)
+        default:
+            return nil
+        }
+    }
+
+}
+
+extension AccountType {
+
+    private static func split(_ string: String, separator: String) -> (String, String) {
+        if let index = string.firstIndex(of: Character(separator)) {
+            let left = String(string.prefix(upTo: index))
+            let right = String(string.suffix(from: string.index(after: index)))
+            return (left, right)
+        }
+
+        return (string, "")
+    }
+
+    static func decode(uniqueId: Data, type: Abstract) -> AccountType? {
+        let string = String(decoding: uniqueId, as: UTF8.self)
+
+        switch type {
+        case .mnemonic:
+            let (wordsWithCompliant, salt) = split(string, separator: "@")
+            let (wordList, bip39CompliantString) = split(wordsWithCompliant, separator: "&")
+            let words = wordList.split(separator: " ").map(String.init)
+
+            let bip39Compliant = bip39CompliantString.isEmpty
+            return AccountType.mnemonic(words: words, salt: salt, bip39Compliant: bip39Compliant)
+        case .evmPrivateKey:
+            return AccountType.evmPrivateKey(data: uniqueId)
+        case .hdExtendedKey:
+            do {
+                return AccountType.hdExtendedKey(key: try HDExtendedKey(data: uniqueId))
+            } catch {
+                return nil
+            }
+        case .evmAddress, .tronAddress: return nil
+        }
+    }
+
+    enum Abstract: String, Codable {
+        case mnemonic = "mnemonic"
+        case evmPrivateKey = "private_key"
+        case evmAddress = "evm_address"
+        case tronAddress = "tron_address"
+        case hdExtendedKey = "hd_extended_key"
+
+        init(_ type: AccountType) {
+            switch type {
+            case .mnemonic: self = .mnemonic
+            case .evmPrivateKey: self = .evmPrivateKey
+            case .evmAddress: self = .evmAddress
+            case .tronAddress: self = .tronAddress
+            case .hdExtendedKey: self = .hdExtendedKey
+            }
         }
     }
 
@@ -155,6 +286,8 @@ extension AccountType: Hashable {
         case (let .evmPrivateKey(lhsData), let .evmPrivateKey(rhsData)):
             return lhsData == rhsData
         case (let .evmAddress(lhsAddress), let .evmAddress(rhsAddress)):
+            return lhsAddress == rhsAddress
+        case (let .tronAddress(lhsAddress), let .tronAddress(rhsAddress)):
             return lhsAddress == rhsAddress
         case (let .hdExtendedKey(lhsKey), let .hdExtendedKey(rhsKey)):
             return lhsKey == rhsKey
@@ -174,6 +307,9 @@ extension AccountType: Hashable {
             hasher.combine(data)
         case let .evmAddress(address):
             hasher.combine("evmAddress")
+            hasher.combine(address.raw)
+        case let .tronAddress(address):
+            hasher.combine("tronAddress")
             hasher.combine(address.raw)
         case let .hdExtendedKey(key):
             hasher.combine("hdExtendedKey")

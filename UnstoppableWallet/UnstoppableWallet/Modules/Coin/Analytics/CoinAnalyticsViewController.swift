@@ -112,6 +112,18 @@ class CoinAnalyticsViewController: ThemeViewController {
         tableView.reload()
     }
 
+    private func openSubscriptionInfo() {
+        UrlManager.open(url: viewModel.analyticsLink, inAppController: parentNavigationController)
+    }
+
+    private func openActivateSubscription(address: String) {
+        guard let viewController = ActivateSubscriptionModule.viewController(address: address) else {
+            return
+        }
+
+        parentNavigationController?.present(viewController, animated: true)
+    }
+
     private func openCexVolumeInfo() {
         let viewController = InfoModule.viewController(viewItems: [
             .header1(text: "coin_analytics.cex_volume".localized),
@@ -353,8 +365,27 @@ extension CoinAnalyticsViewController: SectionsDataSource {
         )
     }
 
-    private func lockInfoSection() -> SectionProtocol {
-        let text = "coin_analytics.locked".localized
+    private func lockInfoSection(lockInfo: CoinAnalyticsViewModel.LockInfo) -> SectionProtocol {
+        let icon: UIImage?
+        let text: String
+        let buttonTitle: String
+        let buttonStyle: PrimaryButton.Style
+        let onTapButton: () -> ()
+
+        switch lockInfo {
+        case .notSubscribed:
+            icon = UIImage(named: "lock_48")?.withTintColor(.themeJacob)
+            text = "coin_analytics.locked.not_subscribed".localized
+            buttonTitle = "coin_analytics.locked.learn_more".localized
+            buttonStyle = .gray
+            onTapButton = { [weak self] in self?.openSubscriptionInfo() }
+        case .notActivated(let address):
+            icon = UIImage(named: "unlock_48")?.withTintColor(.themeJacob)
+            text = "coin_analytics.locked.not_activated".localized
+            buttonTitle = "coin_analytics.locked.activate".localized
+            buttonStyle = .yellow
+            onTapButton = { [weak self] in self?.openActivateSubscription(address: address) }
+        }
 
         return Section(
                 id: "lock-info",
@@ -366,8 +397,11 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                             bind: { cell, _ in
                                 cell.set(backgroundStyle: .lawrence, isFirst: true, isLast: true)
                                 cell.bind(
-                                        icon: UIImage(named: "lock_48")?.withTintColor(.themeJacob),
-                                        text: text
+                                        icon: icon,
+                                        text: text,
+                                        buttonTitle: buttonTitle,
+                                        buttonStyle: buttonStyle,
+                                        onTapButton: onTapButton
                                 )
                             }
                     )
@@ -603,7 +637,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
         )
     }
 
-    private func holdersSection(viewItem: Previewable<CoinAnalyticsViewModel.HoldersViewItem>) -> SectionProtocol {
+    private func holdersSection(viewItem: Previewable<CoinAnalyticsViewModel.HoldersViewItem>, rank: Previewable<String>?) -> SectionProtocol {
         struct Blockchain {
             let imageUrl: String?
             let name: String
@@ -643,48 +677,65 @@ extension CoinAnalyticsViewController: SectionsDataSource {
             chartItems = viewItem.holderViewItems.map { ($0.percent, $0.blockchain.type.brandColor) }
         }
 
+        var rows: [RowProtocol] = [
+            Row<MarketWideCardCell>(
+                    id: "holders",
+                    height: MarketWideCardCell.height(hasChart: false, bottomMargin: .margin12),
+                    bind: { [weak self] cell, _ in
+                        cell.set(backgroundStyle: .lawrence, isFirst: true)
+                        cell.selectionStyle = .none
+
+                        cell.bind(
+                                title: "coin_analytics.holders".localized,
+                                value: value,
+                                valueInfo: viewItem.isPreview ? nil : "coin_analytics.current".localized,
+                                onTapInfo: {
+                                    self?.openHoldersInfo()
+                                }
+                        )
+                    }
+            ),
+            Row<CoinAnalyticsHoldersCell>(
+                    id: "holders-pie",
+                    height: CoinAnalyticsHoldersCell.chartHeight + .margin16,
+                    bind: { cell, _ in
+                        cell.set(backgroundStyle: .lawrence)
+                        cell.topSeparatorView.isHidden = true
+                        cell.bind(items: chartItems)
+                    }
+            )
+        ] + blockchains.enumerated().map { index, blockchain in
+            tableView.universalRow56(
+                    id: "holders-blockchain-\(index)",
+                    image: .url(blockchain.imageUrl, placeholder: "placeholder_rectangle_32"),
+                    title: .subhead2(blockchain.name),
+                    value: .subhead1(blockchain.value),
+                    accessoryType: .disclosure,
+                    autoDeselect: true,
+                    isLast: index == blockchains.count - 1 && rank == nil,
+                    action: blockchain.action
+            )
+        }
+
+        if let rank {
+            rows.append(
+                    previewableRow(
+                            id: "holders-rank",
+                            title: "coin_analytics.holders_rank".localized,
+                            value: rank,
+                            accessoryType: .disclosure,
+                            isLast: true,
+                            action: rank.previewableValue { _ in { [weak self] in
+                                self?.openRanks(type: .holders)
+                            }}
+                    )
+            )
+        }
+
         return Section(
                 id: "holders",
                 headerState: .margin(height: .margin12),
-                rows: [
-                    Row<MarketWideCardCell>(
-                            id: "holders",
-                            height: MarketWideCardCell.height(hasChart: false, bottomMargin: .margin12),
-                            bind: { cell, _ in
-                                cell.set(backgroundStyle: .lawrence, isFirst: true)
-                                cell.selectionStyle = .none
-
-                                cell.bind(
-                                        title: "coin_analytics.holders".localized,
-                                        value: value,
-                                        valueInfo: viewItem.isPreview ? nil : "coin_analytics.current".localized,
-                                        onTapInfo: { [weak self] in
-                                            self?.openHoldersInfo()
-                                        }
-                                )
-                            }
-                    ),
-                    Row<CoinAnalyticsHoldersCell>(
-                            id: "holders-pie",
-                            height: CoinAnalyticsHoldersCell.chartHeight + .margin16,
-                            bind: { cell, _ in
-                                cell.set(backgroundStyle: .lawrence)
-                                cell.topSeparatorView.isHidden = true
-                                cell.bind(items: chartItems)
-                            }
-                    )
-                ] + blockchains.enumerated().map { index, blockchain in
-                    tableView.universalRow56(
-                            id: "holders-blockchain-\(index)",
-                            image: .url(blockchain.imageUrl, placeholder: "placeholder_rectangle_32"),
-                            title: .subhead2(blockchain.name),
-                            value: .subhead1(blockchain.value),
-                            accessoryType: .disclosure,
-                            autoDeselect: true,
-                            isLast: index == blockchains.count - 1,
-                            action: blockchain.action
-                    )
-                }
+                rows: rows
         )
     }
 
@@ -756,7 +807,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
             Row<MarketWideCardCell>(
                     id: "revenue",
                     height: MarketWideCardCell.height(hasChart: false),
-                    bind: { cell, _ in
+                    bind: { [weak self] cell, _ in
                         cell.set(backgroundStyle: .lawrence, isFirst: true)
                         cell.selectionStyle = .none
 
@@ -764,7 +815,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                                 title: "coin_analytics.project_revenue".localized,
                                 value: value,
                                 valueInfo: valueInfo,
-                                onTapInfo: { [weak self] in
+                                onTapInfo: {
                                     self?.openRevenueInfo()
                                 }
                         )
@@ -880,8 +931,8 @@ extension CoinAnalyticsViewController: SectionsDataSource {
         var sections = [SectionProtocol]()
 
         if let viewItem {
-            if viewItem.lockInfo {
-                sections.append(lockInfoSection())
+            if let lockInfo = viewItem.lockInfo {
+                sections.append(lockInfoSection(lockInfo: lockInfo))
             }
 
             if let viewItem = viewItem.cexVolume {
@@ -904,8 +955,8 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                 sections.append(txCountSection(viewItem: viewItem))
             }
 
-            if let viewItem = viewItem.holders {
-                sections.append(holdersSection(viewItem: viewItem))
+            if let holdersViewItem = viewItem.holders {
+                sections.append(holdersSection(viewItem: holdersViewItem, rank: viewItem.holdersRank))
             }
 
             if let viewItem = viewItem.tvl {

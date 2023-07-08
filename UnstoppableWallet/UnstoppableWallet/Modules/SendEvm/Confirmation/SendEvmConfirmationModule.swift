@@ -9,6 +9,14 @@ struct SendEvmData {
     let transactionData: TransactionData
     let additionalInfo: AdditionInfo?
     let warnings: [Warning]
+    let errors: [Error]
+
+    init(transactionData: TransactionData, additionalInfo: AdditionInfo?, warnings: [Warning], errors: [Error] = []) {
+        self.transactionData = transactionData
+        self.additionalInfo = additionalInfo
+        self.warnings = warnings
+        self.errors = errors
+    }
 
     enum AdditionInfo {
         case otherDApp(info: DAppInfo)
@@ -92,7 +100,6 @@ struct SendEvmConfirmationModule {
                 blockchainType: evmKitWrapper.blockchainType,
                 marketKit: App.shared.marketKit,
                 currencyKit: App.shared.currencyKit,
-                evmBlockchainManager: App.shared.evmBlockchainManager,
                 coinManager: App.shared.coinManager
         ) else {
             return nil
@@ -100,7 +107,7 @@ struct SendEvmConfirmationModule {
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
                 evmKit: evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory,
-                gasLimitSurchargePercent: sendData.transactionData.input.isEmpty ? 0 : 20, isEth2safe: isEth2safe
+                 isEth2safe: isEth2safe
         ) else {
             return nil
         }
@@ -133,7 +140,6 @@ struct SendEvmConfirmationModule {
                 blockchainType: evmKitWrapper.blockchainType,
                 marketKit: App.shared.marketKit,
                 currencyKit: App.shared.currencyKit,
-                evmBlockchainManager: App.shared.evmBlockchainManager,
                 coinManager: App.shared.coinManager
         ) else {
             throw CreateModuleError.cantCreateFeeRateProvider
@@ -154,7 +160,7 @@ struct SendEvmConfirmationModule {
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
                 evmKit: evmKitWrapper.evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory,
-                previousTransaction: transaction, gasLimit: gasLimit
+                previousTransaction: transaction, predefinedGasLimit: gasLimit
         ) else {
             throw CreateModuleError.cantCreateFeeSettingsModule
         }

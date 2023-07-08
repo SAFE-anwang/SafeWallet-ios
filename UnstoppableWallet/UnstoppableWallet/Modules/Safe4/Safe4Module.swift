@@ -67,7 +67,7 @@ class Safe4Module {
             }catch {}
             
             if  let depositAdapter = App.shared.adapterManager.depositAdapter(for: wsafeWallet) {
-                reciverAddress = Address(raw: depositAdapter.receiveAddress)
+                reciverAddress = Address(raw: depositAdapter.receiveAddress.address)
             }
             
             switch (adapter, ethAdapter){
@@ -137,7 +137,7 @@ class Safe4Module {
             }catch {}
             
             if  let depositAdapter = App.shared.adapterManager.depositAdapter(for: safeWallet) {
-                reciverAddress = Address(raw: depositAdapter.receiveAddress)
+                reciverAddress = Address(raw: depositAdapter.receiveAddress.address)
             }
             
             let data = Safe4Data(wsafeWallet: wsafeWallet, safeWallet: safeWallet, isETH: chainType == .ETH, isMatic: chainType == .MATIC, contractAddress: contractAddress, reciverAddress: reciverAddress)

@@ -98,7 +98,7 @@ extension SendWsafeViewModel {
     ///   - address: 跨链接收人 address
     func onEnterAddress(wsafeWallet: Wallet, safeWallet: Wallet, address: Address?) {
         if let depositAdapter = App.shared.adapterManager.depositAdapter(for: wsafeWallet) {
-            let ethAddress = Address(raw: depositAdapter.receiveAddress, domain: nil)
+            let ethAddress = Address(raw: depositAdapter.receiveAddress.address, domain: nil)
             // 设置钱包的ETH地址为交易的接收地址
             service.setRecipientAddress(address: ethAddress, to: address)
         }

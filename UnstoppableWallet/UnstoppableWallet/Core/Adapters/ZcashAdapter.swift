@@ -2,48 +2,64 @@ import Foundation
 import UIKit
 import ZcashLightClientKit
 import RxSwift
+import RxRelay
 import HdWalletKit
 import HsToolKit
 import MarketKit
 import HsExtensions
-
+import Combine
 
 class ZcashAdapter {
-    private static let limitShowingDownloadBlockCount = 100
+    private static let endPoint = "lightwalletd.electriccoin.co" //"mainnet.lightwalletd.com"
+    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.zcash-adapter", qos: .userInitiated)
+
     private let disposeBag = DisposeBag()
+    private var cancellables: [AnyCancellable] = []
 
     private let token: Token
     private let transactionSource: TransactionSource
-    private let localStorage = App.shared.localStorage       //temporary decision. Will move to init
+
     private let saplingDownloader = DownloadService(queueLabel: "io.SaplingDownloader")
-    private let synchronizer: SDKSynchronizer
-    private var transactionPool: ZcashTransactionPool
-    private var address: UnifiedAddress
-    private var saplingAddress: SaplingAddress // This should be replaced by unified address.
+
+    private let synchronizer: Synchronizer
+
+    private var zAddress: String?
+    private var transactionPool: ZcashTransactionPool?
+
     private let uniqueId: String
-    private let spendingKey: UnifiedSpendingKey // this being a single account does not need to be an array
-    private let loggingProxy = ZcashLogger(logLevel: .error)
+    private let seedData: [UInt8]
+    private let birthday: BlockHeight
+    private var viewingKey: UnifiedFullViewingKey? // this being a single account does not need to be an array
+    private var spendingKey: UnifiedSpendingKey?
+    private var logger: HsToolKit.Logger?
+
     private(set) var network: ZcashNetwork
     private(set) var fee: Decimal
+
     private let lastBlockUpdatedSubject = PublishSubject<Void>()
     private let balanceStateSubject = PublishSubject<AdapterState>()
     private let balanceSubject = PublishSubject<BalanceData>()
     private let transactionRecordsSubject = PublishSubject<[TransactionRecord]>()
 
-    private let birthday: BlockHeight
-
+    private var preparing: Bool = false
     private var lastBlockHeight: Int = 0
-    private var synchronizerState: SDKSynchronizer.SynchronizerState? {
-        didSet {
-            let latestScannedBlock = synchronizerState?.latestScannedHeight ?? 0
-            lastBlockHeight = max(lastBlockHeight, latestScannedBlock)
-            lastBlockUpdatedSubject.onNext(())
 
+    private var waitForStart: Bool = false {
+        didSet {
+            if waitForStart && zAddress != nil {     // already prepared and has address
+                syncMain()
+            }
+        }
+    }
+
+    private var synchronizerState: SynchronizerState? {
+        didSet {
+            lastBlockUpdatedSubject.onNext(())
             balanceSubject.onNext(_balanceData)
         }
     }
 
-    private var state: ZCashAdapterState {
+    private var state: ZCashAdapterState = .idle {
         didSet {
             balanceStateSubject.onNext(balanceState)
             syncing = balanceState.syncing
@@ -56,18 +72,23 @@ class ZcashAdapter {
 
     private(set) var syncing: Bool = true
 
-    private func defaultFee(network: ZcashNetwork, height: Int? = nil) -> Decimal {
+    private func defaultFee(network: ZcashNetwork, height: Int? = nil) -> Zatoshi {
         let fee: Zatoshi
         if let lastBlockHeight = height {
             fee = network.constants.defaultFee(for: lastBlockHeight)
         } else {
             fee = network.constants.defaultFee()
         }
-        return fee.decimalValue.decimalValue
+        return fee
     }
 
+    private func defaultFeeDecimal(network: ZcashNetwork, height: Int? = nil) -> Decimal {
+        defaultFee(network: network, height: height).decimalValue.decimalValue
+    }
 
     init(wallet: Wallet, restoreSettings: RestoreSettings) throws {
+        logger = App.shared.logger.scoped(with: "ZCashKit") //HsToolKit.Logger(minLogLevel: .debug)
+
         guard let seed = wallet.account.type.mnemonicSeed else {
             throw AdapterError.unsupportedAccount
         }
@@ -75,12 +96,11 @@ class ZcashAdapter {
         network = ZcashNetworkBuilder.network(for: .mainnet)
         fee = network.constants.defaultFee().decimalValue.decimalValue
 
-//        let endPoint = "lightwalletd.testnet.electriccoin.co" // testnet
-        let endPoint = "mainnet.lightwalletd.com"
-
         token = wallet.token
         transactionSource = wallet.transactionSource
         uniqueId = wallet.account.id
+
+        let birthday: BlockHeight
         switch wallet.account.origin {
         case .created: birthday = Self.newBirthdayHeight(network: network)
         case .restored:
@@ -90,81 +110,106 @@ class ZcashAdapter {
                 birthday = network.constants.saplingActivationHeight
             }
         }
+        self.birthday = birthday
 
         let seedData = [UInt8](seed)
-        let derivationTool = DerivationTool(networkType: network.networkType)
+        self.seedData = seedData
 
-        guard let unifiedSpendingKey =  try? derivationTool.deriveUnifiedSpendingKey(seed: seedData, accountIndex: 0),
-              let unifiedViewingKey = try? unifiedSpendingKey.deriveFullViewingKey() else {
-            throw AppError.ZcashError.noReceiveAddress
-        }
+        let initializer = try ZcashAdapter.initializer(network: network, uniqueId: uniqueId)
+        synchronizer = SDKSynchronizer(initializer: initializer)
 
+        // subscribe on sync states
+        synchronizer
+                .stateStream
+                .throttle(for: .seconds(0.3), scheduler: DispatchQueue.main, latest: true)
+                .sink(receiveValue: { [weak self] state in self?.sync(state: state) })
+                .store(in: &cancellables)
 
+        // subscribe on new transactions
+        synchronizer
+                .eventStream
+                .receive(on: DispatchQueue.main)
+                .sink(receiveValue: { [weak self] event in self?.sync(event: event) })
+                .store(in: &cancellables)
 
-        let initializer = Initializer(cacheDbURL:try! ZcashAdapter.cacheDbURL(uniqueId: uniqueId, network: network),
-                dataDbURL: try! ZcashAdapter.dataDbURL(uniqueId: uniqueId, network: network),
-                pendingDbURL: try! ZcashAdapter.pendingDbURL(uniqueId: uniqueId, network: network),
-                endpoint: LightWalletEndpoint(address: endPoint, port: 9067, singleCallTimeoutInMillis: 1000000, streamingCallTimeoutInMillis: 1000000),
-                network: network,
-                spendParamsURL: try! ZcashAdapter.spendParamsURL(uniqueId: uniqueId),
-                outputParamsURL: try! ZcashAdapter.outputParamsURL(uniqueId: uniqueId),
-                viewingKeys: [unifiedViewingKey],
-                walletBirthday: birthday,
-                loggerProxy: loggingProxy)
-
-        spendingKey = unifiedSpendingKey
-
-        synchronizer = try SDKSynchronizer(initializer: initializer)
-
-        state = .downloadingBlocks(number: 0, lastBlock: lastBlockHeight)
-        _ = try synchronizer.prepare(with: seedData)
-
-        guard let unifiedAddress = synchronizer.getUnifiedAddress(accountIndex: 0),
-              let saplingAddress = unifiedAddress.saplingReceiver() else {
-            throw AppError.ZcashError.noReceiveAddress
-        }
-
-        address = unifiedAddress
-        self.saplingAddress = saplingAddress
-        transactionPool = ZcashTransactionPool(receiveAddress: saplingAddress)
-
-        subscribeSynchronizerNotifications()
-        subscribeDownloadService()
-
+        // subscribe on background and events from sapling downloader
         NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
-
-        transactionPool.store(confirmedTransactions: synchronizer.clearedTransactions, pendingTransactions: synchronizer.pendingTransactions)
-
-        let shielded = synchronizer.getShieldedBalance().decimalValue.decimalValue
-        let shieldedVerified = synchronizer.getShieldedVerifiedBalance().decimalValue.decimalValue
-        balanceSubject.onNext(BalanceData(
-                balance: shieldedVerified,
-                balanceLocked: shielded - shieldedVerified
-        ))
-    }
-
-    nonisolated private func subscribeSynchronizerNotifications() {
-        let center = NotificationCenter.default
-
-        // state changing
-        center.addObserver(self, selector: #selector(statusUpdated(_:)), name: Notification.Name.synchronizerDisconnected, object: synchronizer)
-        center.addObserver(self, selector: #selector(statusUpdated(_:)), name: Notification.Name.synchronizerStarted, object: synchronizer)
-        center.addObserver(self, selector: #selector(statusUpdated(_:)), name: Notification.Name.synchronizerSynced, object: synchronizer)
-        center.addObserver(self, selector: #selector(statusUpdated(_:)), name: Notification.Name.synchronizerDisconnected, object: synchronizer)
-        center.addObserver(self, selector: #selector(statusUpdated(_:)), name: Notification.Name.synchronizerFailed, object: synchronizer)
-
-        // sync progress changing
-        center.addObserver(self, selector: #selector(statusUpdated(_:)), name: Notification.Name.synchronizerProgressUpdated, object: synchronizer)
-
-        //found new transactions
-        center.addObserver(self, selector: #selector(transactionsUpdated(_:)), name: Notification.Name.synchronizerFoundTransactions, object: synchronizer)
-
-        //latestHeight
-        center.addObserver(self, selector: #selector(blockHeightUpdated(_:)), name: Notification.Name.blockProcessorUpdated, object: synchronizer.blockProcessor)
-    }
-
-    nonisolated private func subscribeDownloadService() {
         subscribe(disposeBag, saplingDownloader.stateObservable) { [weak self] in self?.downloaderStatusUpdated(state: $0) }
+
+        prepare(initializer: initializer, seedData: seedData, walletBirthday: birthday)
+    }
+
+    private func prepare(initializer: Initializer, seedData: [UInt8], walletBirthday: BlockHeight) {
+        preparing = true
+        state = .preparing
+
+        Task {
+            do {
+                let tool = initializer.makeDerivationTool()
+                guard let unifiedSpendingKey = try? await tool.deriveUnifiedSpendingKey(seed: seedData, accountIndex: 0),
+                      let unifiedViewingKey = try? await tool.deriveUnifiedFullViewingKey(from: unifiedSpendingKey) else {
+
+                    throw AppError.ZcashError.cantCreateKeys
+                }
+
+                spendingKey = unifiedSpendingKey
+                viewingKey = unifiedViewingKey
+
+
+                let result = try await synchronizer.prepare(with: seedData, viewingKeys: [unifiedViewingKey], walletBirthday: walletBirthday)
+                if case .seedRequired = result {
+                    throw AppError.ZcashError.seedRequired
+                }
+                logger?.log(level: .debug, message: "Successful prepared!")
+                guard let address = try? await synchronizer.getUnifiedAddress(accountIndex: 0),
+                        let saplingAddress = try? address.saplingReceiver() else {
+                    throw AppError.ZcashError.noReceiveAddress
+                }
+                zAddress = saplingAddress.stringEncoded
+                logger?.log(level: .debug, message: "Successful get address for 0 account! \(saplingAddress.stringEncoded)")
+
+                let transactionPool = ZcashTransactionPool(receiveAddress: saplingAddress, synchronizer: synchronizer)
+                self.transactionPool = transactionPool
+
+                logger?.log(level: .debug, message: "Starting fetch transactions.")
+                await transactionPool.initTransactions()
+                let wrapped = transactionPool.all
+
+                if !wrapped.isEmpty {
+                    logger?.log(level: .debug, message: "Send to pool all transactions \(wrapped.count)")
+                    transactionRecordsSubject.onNext(wrapped.map {
+                        transactionRecord(fromTransaction: $0)
+                    })
+                }
+
+                let shielded = await (try? synchronizer.getShieldedBalance(accountIndex: 0).decimalValue.decimalValue) ?? 0
+                let shieldedVerified = await (try? synchronizer.getShieldedVerifiedBalance(accountIndex: 0).decimalValue.decimalValue) ?? 0
+                balanceSubject.onNext(BalanceData(
+                        balance: shieldedVerified,
+                        balanceLocked: shielded - shieldedVerified
+                ))
+
+                finishPrepare()
+            } catch {
+                setPreparing(error: error)
+            }
+        }
+    }
+
+    private func setPreparing(error: Error) {
+        preparing = false
+        state = .notSynced(error: error)
+        logger?.log(level: .error, message: "Has preparing error! \(error)")
+    }
+
+    private func finishPrepare() {
+        preparing = false
+        state = .idle
+
+        if waitForStart {
+            logger?.log(level: .debug, message: "Start kit after finish preparing!")
+            start()
+        }
     }
 
     @objc private func didEnterBackground(_ notification: Notification) {
@@ -174,9 +219,7 @@ class ZcashAdapter {
     private func downloaderStatusUpdated(state: DownloadService.State) {
         switch state {
         case .idle:
-            Task {
-                await sync()
-            }
+            syncMain()
         case .inProgress(let progress):
             self.state = .downloadingSapling(progress: Int(progress * 100))
         }
@@ -188,85 +231,97 @@ class ZcashAdapter {
         return Double(overall > 0 ? Float((p.progressHeight - birthday)) / Float(overall) : 0)
     }
 
-    @objc private func statusUpdated(_ notification: Notification) {
-        var newState = state
-        var blockDate: Date? = nil
-        if let blockTime = notification.userInfo?[SDKSynchronizer.NotificationKeys.blockDate] as? Date {
-            blockDate = blockTime
-        }
-        switch synchronizer.status {
+    private func sync(state: SynchronizerState) {
+        synchronizerState = state
+
+        var syncStatus = self.state
+
+        switch state.syncStatus {
         case .disconnected:
-            newState = .syncing(progress: nil, lastBlockDate: nil)
+            logger?.log(level: .debug, message: "State: Disconnected")
+            syncStatus = .syncing(progress: nil, lastBlockDate: nil)
         case .stopped:
-            newState = .notSynced(error: AppError.unknownError)
+            logger?.log(level: .debug, message: "State: Stopped")
+            syncStatus = .notSynced(error: AppError.unknownError)
         case .synced:
-            newState = .synced
-            synchronizerState = notification.userInfo?[SDKSynchronizer.NotificationKeys.synchronizerState] as? SDKSynchronizer.SynchronizerState
-        case .downloading(let p):
-            let diff = p.targetHeight - p.progressHeight
-            if !state.isDownloading ||
-                       (diff < Self.limitShowingDownloadBlockCount) ||
-                       (diff % Self.limitShowingDownloadBlockCount) == 0 { // show first changing state, every 100 blocks and last 100 blocks
-                newState = .downloadingBlocks(number: p.progressHeight, lastBlock: p.targetHeight)
-            }
-        case .enhancing(let p):
-            newState = .enhancingTransactions(number: p.enhancedTransactions, count: p.totalTransactions)
-        case .unprepared:
-            newState = .notSynced(error: AppError.unknownError)
-        case .validating:
-            newState = .syncing(progress: 0, lastBlockDate: blockDate)
-        case .scanning(let p):
-            let diff = p.targetHeight - p.progressHeight
-            if !state.isScanning ||
-                       (diff < Self.limitShowingDownloadBlockCount) ||
-                       (diff % Self.limitShowingDownloadBlockCount) == 0 { // show first changing state, every 100 blocks and last 100 blocks
-                newState = .scanningBlocks(number: p.progressHeight, lastBlock: p.targetHeight)
-            }
-        case .fetching:
-            newState = .syncing(progress: 0, lastBlockDate: nil)
-        case .error:
-            newState = .notSynced(error: AppError.unknownError)
-        }
+            logger?.log(level: .debug, message: "State: Synced")
+            syncStatus = .synced
+            lastBlockHeight = max(state.latestScannedHeight, lastBlockHeight)
+            logger?.log(level: .debug, message: "Update BlockHeight = \(lastBlockHeight)")
+        case .syncing(let progress):
+            logger?.log(level: .debug, message: "State: Syncing")
+            logger?.log(level: .debug, message: "State progress: \(progress)")
+            lastBlockHeight = max(progress.progressHeight, lastBlockHeight)
+            logger?.log(level: .debug, message: "Update BlockHeight = \(lastBlockHeight)")
 
-        if newState != state {
-            state = newState
-        }
-    }
-
-    @objc private func transactionsUpdated(_ notification: Notification) {
-        if let userInfo = notification.userInfo,
-           let txs = userInfo[SDKSynchronizer.NotificationKeys.foundTransactions] as? [ConfirmedTransactionEntity] {
-            let newTxs = transactionPool.sync(transactions: txs)
-            transactionRecordsSubject.onNext(newTxs.map {
-                transactionRecord(fromTransaction: $0)
-            })
-        }
-    }
-
-    @objc private func blockHeightUpdated(_ notification: Notification) {
-        if let userInfo = notification.userInfo,
-           let progress = userInfo[CompactBlockProcessorNotificationKey.progress] as? CompactBlockProgress,
-           let targetHeight = progress.targetHeight {
-            lastBlockHeight = targetHeight
             lastBlockUpdatedSubject.onNext(())
+
+            syncStatus = .downloadingBlocks(number: progress.progressHeight, lastBlock: progress.targetHeight)
+        case .enhancing(let p):
+            logger?.log(level: .debug, message: "State: Enhancing")
+            logger?.log(level: .debug, message: "State: ==> \n\(p)")
+            syncStatus = .enhancingTransactions(number: p.enhancedTransactions, count: p.totalTransactions)
+        case .unprepared:
+            syncStatus = .notSynced(error: AppError.unknownError)
+        case .fetching:
+            logger?.log(level: .debug, message: "State: Fetching")
+            syncStatus = .syncing(progress: 0, lastBlockDate: nil)
+        case .error(let error):
+            logger?.log(level: .error, message: "State: Error: \(error)")
+            syncStatus = .notSynced(error: AppError.unknownError)
+        }
+
+        if syncStatus != self.state {
+            self.state = syncStatus
         }
     }
 
-    private func syncPending() async {
-        let newTxs = transactionPool.sync(transactions: synchronizer.pendingTransactions)
-
-        if !newTxs.isEmpty {
-            transactionRecordsSubject.onNext(newTxs.map {
-                transactionRecord(fromTransaction: $0)
-            })
+    private func sync(event: SynchronizerEvent) {
+        switch event {
+        case .foundTransactions(let transactions, let inRange):
+            logger?.log(level: .debug, message: "found \(transactions.count) mined txs in range: \(inRange)")
+            transactions.forEach { overview in
+                logger?.log(level: .debug, message: "tx: v =\(overview.value.decimalValue.decimalString) : fee = \(overview.fee?.decimalString() ?? "N/A") : height = \(overview.minedHeight?.description ?? "N/A")")
+            }
+            Task {
+                let newTxs = await transactionPool?.sync(transactions: transactions) ?? []
+                transactionRecordsSubject.onNext(newTxs.map {
+                    transactionRecord(fromTransaction: $0)
+                })
+            }
+        case .minedTransaction(let pendingEntity):
+            logger?.log(level: .debug, message: "found pending tx: v =\(pendingEntity.value.decimalValue.decimalString) : fee = \(pendingEntity.fee?.decimalString() ?? "N/A")")
+            update(transactions: [pendingEntity])
+        default:
+            logger?.log(level: .debug, message: "Event: \(event)")
         }
     }
 
-    func transactionRecord(fromTransaction transaction: ZcashTransaction) -> TransactionRecord {
+    private func reSyncPending() {
+        Task {
+            let pending = await synchronizer.pendingTransactions
+            logger?.log(level: .debug, message: "Resync pending txs: \(pending.count)")
+            pending.forEach { entity in
+                logger?.log(level: .debug, message: "TX: \(entity.createTime) : \(entity.value.decimalValue.description) : \(entity.recipient.asString ?? ""): \(entity.memo?.encodedString ?? "NoMemo")")
+            }
+            if !pending.isEmpty {
+                update(transactions: pending)
+            }
+        }
+    }
+
+    private func update(transactions: [PendingTransactionEntity]) {
+        let newTxs = transactionPool?.sync(transactions: transactions) ?? []
+        transactionRecordsSubject.onNext(newTxs.map {
+            transactionRecord(fromTransaction: $0)
+        })
+    }
+
+    func transactionRecord(fromTransaction transaction: ZcashTransactionWrapper) -> TransactionRecord {
         let showRawTransaction = transaction.minedHeight == nil || transaction.failed
 
         // TODO: Should have it's own transactions with memo
-        if transaction.sentTo(address: receiveAddress) {
+        if !transaction.isSentTransaction {
             return BitcoinIncomingTransactionRecord(
                     token: token,
                     source: transactionSource,
@@ -276,12 +331,12 @@ class ZcashAdapter {
                     blockHeight: transaction.minedHeight,
                     confirmationsThreshold: ZcashSDK.defaultRewindDistance,
                     date: Date(timeIntervalSince1970: Double(transaction.timestamp)),
-                    fee: defaultFee(network: self.network, height: transaction.minedHeight),
+                    fee: defaultFeeDecimal(network: network, height: transaction.minedHeight),
                     failed: transaction.failed,
                     lockInfo: nil,
                     conflictingHash: nil,
                     showRawTransaction: showRawTransaction,
-                    amount: transaction.value.decimalValue.decimalValue,
+                    amount: abs(transaction.value.decimalValue.decimalValue),
                     from: nil,
                     memo: transaction.memo
             )
@@ -295,12 +350,12 @@ class ZcashAdapter {
                     blockHeight: transaction.minedHeight,
                     confirmationsThreshold: ZcashSDK.defaultRewindDistance,
                     date: Date(timeIntervalSince1970: Double(transaction.timestamp)),
-                    fee: defaultFee(network: self.network, height: transaction.minedHeight),
+                    fee: defaultFeeDecimal(network: self.network, height: transaction.minedHeight),
                     failed: transaction.failed,
                     lockInfo: nil,
                     conflictingHash: nil,
                     showRawTransaction: showRawTransaction,
-                    amount: transaction.value.decimalValue.decimalValue,
+                    amount: abs(transaction.value.decimalValue.decimalValue),
                     to: transaction.toAddress,
                     sentToSelf: false,
                     memo: transaction.memo
@@ -336,34 +391,62 @@ class ZcashAdapter {
         return isExist
     }
 
-    func fixPendingTransactionsIfNeeded() async{
+    func fixPendingTransactionsIfNeeded(completion: (() -> ())? = nil) {
         // check if we need to perform the fix or leave
-        guard !localStorage.zcashAlwaysPendingRewind else {
+        // get all the pending transactions
+        guard !App.shared.localStorage.zcashAlwaysPendingRewind else {
+            completion?()
             return
         }
 
-        do {
-            // get all the pending transactions
-            let txs = try synchronizer.allPendingTransactions()
-
+        Task {
+            let txs = await synchronizer.pendingTransactions
             // fetch the first one that's reported to be unmined
-            guard let firstUnmined = txs.filter({ !$0.isMined }).first?.transactionEntity else {
-                localStorage.zcashAlwaysPendingRewind = true
+            guard let firstUnmined = txs.filter({ !$0.isMined }).first else {
+                App.shared.localStorage.zcashAlwaysPendingRewind = true
+                completion?()
                 return
             }
 
-            try await synchronizer.rewind(.transaction(firstUnmined))
-            localStorage.zcashAlwaysPendingRewind = true
-        } catch SynchronizerError.rewindErrorUnknownArchorHeight {
-            do {
-                try await synchronizer.rewind(.quick)
-                localStorage.zcashAlwaysPendingRewind = true
-            } catch {
-                loggingProxy.error("attempt to fix pending transactions failed with error: \(error)", file: #file, function: #function, line: 0)
-            }
-        } catch {
-            loggingProxy.error("attempt to fix pending transactions failed with error: \(error)", file: #file, function: #function, line: 0)
+            rewind(unmined: firstUnmined, completion: completion)
         }
+    }
+
+    private func rewind(unmined: PendingTransactionEntity, completion: (() -> ())? = nil) {
+        synchronizer
+                .rewind(.transaction(unmined.makeTransactionEntity(defaultFee: defaultFee(network: network))))
+                .sink(receiveCompletion: { result in
+                        switch result {
+                        case .finished:
+                            App.shared.localStorage.zcashAlwaysPendingRewind = true
+                            completion?()
+                        case .failure:
+                            self.rewindQuick()
+                        }
+                    },
+                    receiveValue: { _ in }
+                )
+                .store(in: &cancellables)
+    }
+
+    private func rewindQuick(completion: (() -> ())? = nil) {
+        synchronizer
+                .rewind(.quick)
+                .sink(receiveCompletion: { [weak self] result in
+                        switch result {
+                        case .finished:
+                            App.shared.localStorage.zcashAlwaysPendingRewind = true
+                            self?.logger?.log(level: .debug, message: "rewind Successful")
+                            completion?()
+                        case let .failure(error):
+                            self?.state = .notSynced(error: error)
+                            completion?()
+                            self?.logger?.log(level: .error, message: "attempt to fix pending transactions failed with error: \(error)")
+                        }
+                    },
+                    receiveValue: { _ in }
+                )
+                .store(in: &cancellables)
     }
 
     private var _balanceData: BalanceData {
@@ -383,7 +466,10 @@ class ZcashAdapter {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
-        synchronizer.stop()
+        Task { [weak self] in
+            await self?.synchronizer.stop()
+            self?.logger?.log(level: .debug, message: "Synchronizer Was Stopped")
+        }
     }
 
 }
@@ -391,6 +477,22 @@ class ZcashAdapter {
 extension ZcashAdapter {
     public static func newBirthdayHeight(network: ZcashNetwork) -> Int {
         BlockHeight.ofLatestCheckpoint(network: network)
+    }
+
+    static func initializer(network: ZcashNetwork, uniqueId: String) throws -> Initializer {
+        Initializer(
+                cacheDbURL: nil,
+                fsBlockDbRoot: try fsBlockDbRootURL(uniqueId: uniqueId, network: network),
+                dataDbURL: try dataDbURL(uniqueId: uniqueId, network: network),
+                pendingDbURL: try pendingDbURL(uniqueId: uniqueId, network: network),
+                endpoint: LightWalletEndpoint(address: endPoint, port: 9067, secure: true, streamingCallTimeoutInMillis: 10 * 60 * 60 * 1000),
+                network: network,
+                spendParamsURL: try spendParamsURL(uniqueId: uniqueId),
+                outputParamsURL: try outputParamsURL(uniqueId: uniqueId),
+                saplingParamsSourceURL: SaplingParamsSourceURL.default,
+                alias: .custom(uniqueId),
+                logLevel: .error
+        )
     }
 
     private static func dataDirectoryUrl() throws -> URL {
@@ -403,6 +505,10 @@ extension ZcashAdapter {
         try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
 
         return url
+    }
+
+    private static func fsBlockDbRootURL(uniqueId: String, network: ZcashNetwork) throws -> URL {
+        try dataDirectoryUrl().appendingPathComponent(network.networkType.chainName + uniqueId + ZcashSDK.defaultFsCacheName, isDirectory: true)
     }
 
     private static func cacheDbURL(uniqueId: String, network: ZcashNetwork) throws -> URL {
@@ -441,38 +547,64 @@ extension ZcashAdapter {
 extension ZcashAdapter: IAdapter {
 
     var isMainNet: Bool {
-        self.network.networkType == .mainnet
+        network.networkType == .mainnet
     }
 
     func start() {
-        Task {
-            if saplingDataExist() {
-                await sync()
+        guard !preparing else {             // postpone start library until preparing will finish
+            logger?.log(level: .debug, message: "Can't start because preparing!")
+            waitForStart = true
+            return
+        }
+
+        if zAddress == nil {         // else we need to try prepare library again
+            logger?.log(level: .debug, message: "No address, try to prepare kit again!")
+            do {
+                let initializer = try Self.initializer(network: network, uniqueId: uniqueId)
+                prepare(initializer: initializer, seedData: seedData, walletBirthday: birthday)
+            } catch {
+                logger?.log(level: .error, message: "Can't start adapter: \(error.localizedDescription)")
             }
+
+            return
+        }
+
+        waitForStart = false                // if we has address just start syncing library or downloading sapling data
+        if saplingDataExist() {
+            logger?.log(level: .debug, message: "Start syncing kit!")
+            syncMain(retry: true)
         }
     }
 
     func stop() {
-        synchronizer.stop()
-    }
-
-
-    func refresh() {
-        Task { @MainActor in
-            if saplingDataExist() {
-                await sync(retry: true)
-            }
+        Task {
+            await synchronizer.stop()
+            logger?.log(level: .debug, message: "Synchronizer will stop")
         }
     }
 
-    private func sync(retry: Bool = false) async {
-        do {
-            balanceSubject.onNext(_balanceData)
-            await fixPendingTransactionsIfNeeded()
-//            print("\(Date()) Try to start synchronizer : retry = \(retry), by Thread:\(Thread.current)")
-            try synchronizer.start(retry: retry)
-        } catch {
-            state = .notSynced(error: error)
+    func refresh() {
+        start()
+    }
+
+    private func syncMain(retry: Bool = false) {
+        DispatchQueue.main.async { [weak self] in
+            self?.sync(retry: true)
+        }
+    }
+
+    private func sync(retry: Bool = false) {
+        balanceSubject.onNext(_balanceData)
+        fixPendingTransactionsIfNeeded { [weak self] in
+            self?.logger?.log(level: .debug, message: "\(Date()) Try to start synchronizer : retry = \(retry), by Thread:\(Thread.current)")
+
+            Task { [weak self] in
+                do {
+                    try await self?.synchronizer.start(retry: true)
+                } catch {
+                    self?.state = .notSynced(error: error)
+                }
+            }
         }
     }
 
@@ -481,15 +613,14 @@ extension ZcashAdapter: IAdapter {
     }
 
     var debugInfo: String {
-        let tAddress = self.address.transparentReceiver()?.stringEncoded ?? "No Info"
-        let zAddress = self.address.saplingReceiver()?.stringEncoded ?? "No Info"
+        let zAddress = zAddress ?? "No Info"
         var balanceState = "No Balance Information yet"
 
         if let status = self.synchronizerState {
             balanceState = """
                            shielded balance
-                             total:  \(synchronizer.initializer.getBalance().decimalValue.decimalValue)
-                           verified:  \(synchronizer.initializer.getVerifiedBalance().decimalValue.decimalValue)
+                             total:  \(balanceData.balanceTotal.description)
+                           verified:  \(balanceData.balance)
                            transparent balance
                                 total: \(String(describing: status.transparentBalance.total))
                              verified: \(String(describing: status.transparentBalance.verified))
@@ -498,8 +629,7 @@ extension ZcashAdapter: IAdapter {
         return """
                ZcashAdapter
                z-address: \(String(describing: zAddress))
-               t-address: \(String(describing: tAddress))
-               spendingKeys: \(spendingKey.description)
+               spendingKeys: \(spendingKey?.description ?? "N/A")
                balanceState: \(balanceState)
                """
     }
@@ -544,13 +674,13 @@ extension ZcashAdapter: ITransactionsAdapter {
     }
 
     func transactionsSingle(from: TransactionRecord?, token: Token?, filter: TransactionTypeFilter, limit: Int) -> Single<[TransactionRecord]> {
-        transactionPool.transactionsSingle(from: from, filter: filter, limit: limit).map { [weak self] txs in
+        transactionPool?.transactionsSingle(from: from, filter: filter, limit: limit).map { [weak self] txs in
             txs.compactMap { self?.transactionRecord(fromTransaction: $0) }
-        }
+        } ?? .just([])
     }
 
     func rawTransaction(hash: String) -> String? {
-        transactionPool.transaction(by: hash)?.raw?.hs.hex
+        transactionPool?.transaction(by: hash)?.raw?.hs.hex
     }
 
 }
@@ -573,9 +703,9 @@ extension ZcashAdapter: IBalanceAdapter {
 
 extension ZcashAdapter: IDepositAdapter {
 
-    var receiveAddress: String {
+    var receiveAddress: DepositAddress {
         // only first account
-        saplingAddress.stringEncoded
+        DepositAddress(zAddress ?? "n/a".localized)
     }
 
 }
@@ -587,12 +717,11 @@ extension ZcashAdapter: ISendZcashAdapter {
     }
 
     var availableBalance: Decimal {
-        max(0, synchronizer.initializer.getVerifiedBalance().decimalValue.decimalValue - fee)
+        max(0, balanceData.balance - fee) //TODO: check
     }
 
     func validate(address: String) throws -> AddressType {
-
-        guard address != receiveAddress else {
+        guard address != receiveAddress.address else {
             throw AppError.addressInvalid
         }
 
@@ -609,28 +738,28 @@ extension ZcashAdapter: ISendZcashAdapter {
         }
     }
 
-    func sendSingle(
-            amount: Decimal,
-            address: Recipient, // changed to recipient. no point to getting this far without invalid address
-            memo: Memo? // changed to Memo type
-    ) -> Single<()> {
-        let zatoshi = Zatoshi.from(decimal: amount)
-        let synchronizer = synchronizer
-        let unifiedSpendingKey = self.spendingKey
+    func sendSingle(amount: Decimal, address: Recipient, memo: Memo?) -> Single<()> {
+        guard let spendingKey else {
+            return .error(AppError.ZcashError.noReceiveAddress)
+        }
 
-        return Single<()>.create { single in
-            Task(priority: .userInitiated) { @MainActor in
+        return Single.create { [weak self] observer in
+            guard let self else {
+                observer(.error(AppError.unknownError))
+                return Disposables.create()
+            }
+            Task {
                 do {
-                    _ = try await synchronizer.sendToAddress(
-                            spendingKey: unifiedSpendingKey,
-                            zatoshi: zatoshi,
+                    let pendingEntity = try await self.synchronizer.sendToAddress(
+                            spendingKey: spendingKey,
+                            zatoshi: Zatoshi.from(decimal: amount),
                             toAddress: address,
-                            memo: memo
-                    )
-                    await self.syncPending()
-                    single(.success(()))
+                            memo: memo)
+                    self.logger?.log(level: .debug, message: "Successful send TX: \(pendingEntity.createTime) : \(pendingEntity.value.decimalValue.description) : \(pendingEntity.recipient.asString ?? "") : \(pendingEntity.memo?.encodedString ?? "NoMemo")")
+                    self.reSyncPending()
+                    observer(.success(()))
                 } catch {
-                    single(.error(error))
+                    observer(.error(error))
                 }
             }
             return Disposables.create()
@@ -638,9 +767,8 @@ extension ZcashAdapter: ISendZcashAdapter {
     }
 
     func recipient(from stringEncodedAddress: String) -> ZcashLightClientKit.Recipient? {
-        try? Recipient(stringEncodedAddress, network: self.network.networkType)
+        try? Recipient(stringEncodedAddress, network: network.networkType)
     }
-
 
 }
 
@@ -662,46 +790,6 @@ class ZcashAddressValidator {
 
 }
 
-private class ZcashLogger: ZcashLightClientKit.Logger {
-
-    private let level: HsToolKit.Logger.Level
-    private let logger: HsToolKit.Logger
-
-    init(logLevel: HsToolKit.Logger.Level) {
-        level = logLevel
-
-        logger = Logger(minLogLevel: logLevel)
-    }
-
-    func debug(_ message: String, file: StaticString, function: StaticString, line: Int) {
-        log(level: .debug, message: message, file: file, function: function, line: line)
-    }
-
-    func info(_ message: String, file: StaticString, function: StaticString, line: Int) {
-        log(level: .info, message: message, file: file, function: function, line: line)
-    }
-
-    func event(_ message: String, file: StaticString, function: StaticString, line: Int) {
-        log(level: .verbose, message: message, file: file, function: function, line: line)
-    }
-
-    func warn(_ message: String, file: StaticString, function: StaticString, line: Int) {
-        log(level: .warning, message: message, file: file, function: function, line: line)
-    }
-
-    func error(_ message: String, file: StaticString, function: StaticString, line: Int) {
-        log(level: .error, message: message, file: file, function: function, line: line)
-    }
-
-    private func log(level: HsToolKit.Logger.Level, message: String, file: StaticString, function: StaticString, line: Int) {
-        let file = file.withUTF8Buffer { String(decoding: $0, as: UTF8.self) }
-        let function = function.withUTF8Buffer { String(decoding: $0, as: UTF8.self) }
-        logger.log(level: level, message: message, file: file, function: function, line: line)
-    }
-
-}
-
-
 extension EnhancementProgress {
     var progress: Int {
         guard totalTransactions <= 0 else {
@@ -712,6 +800,8 @@ extension EnhancementProgress {
 }
 
 enum ZCashAdapterState: Equatable {
+    case idle
+    case preparing
     case synced
     case syncing(progress: Int?, lastBlockDate: Date?)
     case downloadingSapling(progress: Int)
@@ -722,6 +812,8 @@ enum ZCashAdapterState: Equatable {
 
     public static func ==(lhs: ZCashAdapterState, rhs: ZCashAdapterState) -> Bool {
         switch (lhs, rhs) {
+        case (.idle, .idle): return true
+        case (.preparing, .preparing): return true
         case (.synced, .synced): return true
         case (.syncing(let lProgress, let lLastBlockDate), .syncing(let rProgress, let rLastBlockDate)): return lProgress == rProgress && lLastBlockDate == rLastBlockDate
         case (.downloadingSapling(let lProgress), .downloadingSapling(let rProgress)): return lProgress == rProgress
@@ -735,12 +827,14 @@ enum ZCashAdapterState: Equatable {
 
     var adapterState: AdapterState {
         switch self {
+        case .idle: return .customSyncing(main: "Stopped", secondary: nil, progress: nil)
+        case .preparing: return .customSyncing(main: "Preparing...", secondary: nil, progress: nil)
         case .synced: return .synced
         case .syncing(let progress, let lastDate): return .syncing(progress: progress, lastBlockDate: lastDate)
         case .downloadingSapling(let progress):
             return .customSyncing(main: "Downloading Sapling... \(progress)%", secondary: nil, progress: progress)
         case .downloadingBlocks(let number, let lastBlock):
-            return .customSyncing(main: "Downloading Blocks", secondary: "\(number)/\(lastBlock)", progress: nil)
+            return .customSyncing(main: "Downloading Blocks", secondary: lastBlock == 0 ? nil : "\(number)/\(lastBlock)", progress: nil)
         case .scanningBlocks(let number, let lastBlock):
             return .customSyncing(main: "Scanning Blocks", secondary: "\(number)/\(lastBlock)", progress: nil)
         case .enhancingTransactions(let number, let count):
@@ -761,6 +855,13 @@ enum ZCashAdapterState: Equatable {
         switch self {
         case .scanningBlocks: return true
         default: return false
+        }
+    }
+
+    var lastProcessedBlockHeight: Int? {
+        switch self {
+        case .downloadingBlocks(_, let last), .scanningBlocks(_, let last): return last
+        default: return nil
         }
     }
 

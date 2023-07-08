@@ -7,7 +7,7 @@ class AppManager {
     private let accountManager: AccountManager
     private let walletManager: WalletManager
     private let adapterManager: AdapterManager
-    private let pinKit: IPinKit
+    private let pinKit: PinKit.Kit
     private let keychainKit: IKeychainKit
     private let blurManager: BlurManager
     private let kitCleaner: KitCleaner
@@ -17,18 +17,19 @@ class AppManager {
     private let logRecordManager: LogRecordManager
     private let deepLinkManager: DeepLinkManager
     private let evmLabelManager: EvmLabelManager
+    private let balanceHiddenManager: BalanceHiddenManager
     private let walletConnectV2SocketConnectionService: WalletConnectV2SocketConnectionService
     private let nftMetadataSyncer: NftMetadataSyncer
 
     private let didBecomeActiveSubject = PublishSubject<()>()
     private let willEnterForegroundSubject = PublishSubject<()>()
 
-    init(accountManager: AccountManager, walletManager: WalletManager, adapterManager: AdapterManager, pinKit: IPinKit,
+    init(accountManager: AccountManager, walletManager: WalletManager, adapterManager: AdapterManager, pinKit: PinKit.Kit,
          keychainKit: IKeychainKit, blurManager: BlurManager,
          kitCleaner: KitCleaner, debugLogger: DebugLogger?,
          appVersionManager: AppVersionManager, rateAppManager: RateAppManager,
          logRecordManager: LogRecordManager,
-         deepLinkManager: DeepLinkManager, evmLabelManager: EvmLabelManager,
+         deepLinkManager: DeepLinkManager, evmLabelManager: EvmLabelManager, balanceHiddenManager: BalanceHiddenManager,
          walletConnectV2SocketConnectionService: WalletConnectV2SocketConnectionService, nftMetadataSyncer: NftMetadataSyncer
     ) {
         self.accountManager = accountManager
@@ -44,6 +45,7 @@ class AppManager {
         self.logRecordManager = logRecordManager
         self.deepLinkManager = deepLinkManager
         self.evmLabelManager = evmLabelManager
+        self.balanceHiddenManager = balanceHiddenManager
         self.walletConnectV2SocketConnectionService = walletConnectV2SocketConnectionService
         self.nftMetadataSyncer = nftMetadataSyncer
     }
@@ -84,6 +86,7 @@ extension AppManager {
 
         pinKit.didEnterBackground()
         walletConnectV2SocketConnectionService.didEnterBackground()
+        balanceHiddenManager.didEnterBackground()
     }
 
     func willEnterForeground() {

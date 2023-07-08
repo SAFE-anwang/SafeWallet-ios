@@ -25,14 +25,14 @@ class MarketTwiitterService {
             state = .loading
         }
 
-        marketKit.postsSingle()
-                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
-                .subscribe(onSuccess: { [weak self] posts in
-                    self?.state = .loaded(posts: posts)
-                }, onError: { [weak self] error in
-                    self?.state = .failed(error: error)
-                })
-                .disposed(by: disposeBag)
+//        marketKit.postsSingle()
+//                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
+//                .subscribe(onSuccess: { [weak self] posts in
+//                    self?.state = .loaded(posts: posts)
+//                }, onError: { [weak self] error in
+//                    self?.state = .failed(error: error)
+//                })
+//                .disposed(by: disposeBag)
     }
 
 }

@@ -26,7 +26,15 @@ class SendEvmCautionsFactory {
                         )
                     ]
                 }
-            } else {
+            } else if let error = error as? UniswapModule.UniswapError {
+                switch error {
+                case .forbiddenPriceImpact(let provider):
+                    return [
+                        TitledCaution(title: "swap.price_impact".localized, text: "swap.confirmation.impact_too_high".localized(provider), type: .error)
+                    ]
+                }
+            }
+            else {
                 return [convert(error: error, baseCoinService: baseCoinService)]
             }
         }
@@ -40,9 +48,11 @@ class SendEvmCautionsFactory {
                     warningCautions.append(TitledCaution(title: "fee_settings.warning.overpricing".localized, text: "fee_settings.warning.overpricing.info".localized, type: .warning))
                 }
             } else if let warning = warning as? UniswapModule.UniswapWarning {
-                switch warning{
+                switch warning {
                 case .highPriceImpact:
-                    warningCautions.append(TitledCaution(title: "swap.price_impact".localized, text: "swap.confirmation.impact_too_high".localized, type: .warning))
+                    warningCautions.append(TitledCaution(title: "swap.price_impact".localized, text: "swap.confirmation.impact_warning".localized, type: .error))
+                case .forbiddenPriceImpact:
+                    warningCautions.append(TitledCaution(title: "swap.price_impact".localized, text: "swap.confirmation.impact_too_high".localized, type: .error))
                 }
             }
         }
@@ -62,9 +72,12 @@ class SendEvmCautionsFactory {
 
         if case AppError.ethereum(let reason) = error.convertedError {
             switch reason {
-            case .insufficientBalanceWithFee, .executionReverted:
+            case .insufficientBalanceWithFee:
                 title = "fee_settings.errors.insufficient_balance".localized
                 text = "ethereum_transaction.error.insufficient_balance_with_fee".localized(baseCoinService.token.coin.code)
+            case .executionReverted(let message):
+                title = "fee_settings.errors.unexpected_error".localized
+                text = message
             case .lowerThanBaseGasLimit:
                 title = "fee_settings.errors.low_max_fee".localized
                 text = "fee_settings.errors.low_max_fee.info".localized

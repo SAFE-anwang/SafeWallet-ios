@@ -19,8 +19,10 @@ class WatchViewController: KeyboardAwareViewController {
     private let nextButton = PrimaryButton()
 
     private let nameCell = TextFieldCell()
-    private let addressCell: RecipientAddressInputCell
-    private let addressCautionCell: RecipientAddressCautionCell
+    private let evmAddressCell: RecipientAddressInputCell
+    private let evmAddressCautionCell: RecipientAddressCautionCell
+    private let tronAddressCell: RecipientAddressInputCell
+    private let tronAddressCautionCell: RecipientAddressCautionCell
 
     private let publicKeyInputCell = TextInputCell()
     private let publicKeyCautionCell = FormCautionCell()
@@ -30,13 +32,15 @@ class WatchViewController: KeyboardAwareViewController {
 
     private weak var sourceViewController: UIViewController?
 
-    init(viewModel: WatchViewModel, addressViewModel: RecipientAddressViewModel, publicKeyViewModel: WatchPublicKeyViewModel, sourceViewController: UIViewController?) {
+    init(viewModel: WatchViewModel, evmAddressViewModel: RecipientAddressViewModel, tronAddressViewModel: RecipientAddressViewModel, publicKeyViewModel: WatchPublicKeyViewModel, sourceViewController: UIViewController?) {
         self.viewModel = viewModel
         self.publicKeyViewModel = publicKeyViewModel
         self.sourceViewController = sourceViewController
 
-        addressCell = RecipientAddressInputCell(viewModel: addressViewModel)
-        addressCautionCell = RecipientAddressCautionCell(viewModel: addressViewModel)
+        evmAddressCell = RecipientAddressInputCell(viewModel: evmAddressViewModel)
+        evmAddressCautionCell = RecipientAddressCautionCell(viewModel: evmAddressViewModel)
+        tronAddressCell = RecipientAddressInputCell(viewModel: tronAddressViewModel)
+        tronAddressCautionCell = RecipientAddressCautionCell(viewModel: tronAddressViewModel)
 
         super.init(scrollViews: [tableView], accessoryView: gradientWrapperView)
     }
@@ -51,9 +55,7 @@ class WatchViewController: KeyboardAwareViewController {
         title = "watch_address.title".localized
 
         navigationItem.largeTitleDisplayMode = .never
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "button.cancel".localized, style: .plain, target: self, action: #selector(onTapCancel))
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.next".localized, style: .done, target: self, action: #selector(onTapNext))
-        navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
@@ -78,7 +80,7 @@ class WatchViewController: KeyboardAwareViewController {
         }
 
         nextButton.set(style: .yellow)
-        nextButton.setTitle("button.next".localized, for: .normal)
+        nextButton.setTitle(viewModel.hasNextPage ? "button.next".localized : "watch_address.watch".localized, for: .normal)
         nextButton.addTarget(self, action: #selector(onTapNext), for: .touchUpInside)
 
         let defaultName = viewModel.defaultName
@@ -87,10 +89,12 @@ class WatchViewController: KeyboardAwareViewController {
         nameCell.autocapitalizationType = .words
         nameCell.onChangeText = { [weak self] in self?.viewModel.onChange(name: $0 ?? "") }
 
-        addressCell.onChangeHeight = { [weak self] in self?.reloadTable() }
-        addressCell.onOpenViewController = { [weak self] in self?.present($0, animated: true) }
-
-        addressCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+        evmAddressCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+        evmAddressCell.onOpenViewController = { [weak self] in self?.present($0, animated: true) }
+        evmAddressCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+        tronAddressCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+        tronAddressCell.onOpenViewController = { [weak self] in self?.present($0, animated: true) }
+        tronAddressCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
 
         publicKeyInputCell.set(placeholderText: "watch_address.public_key.placeholder".localized)
         publicKeyInputCell.onChangeHeight = { [weak self] in self?.reloadTable() }
@@ -134,10 +138,6 @@ class WatchViewController: KeyboardAwareViewController {
         setInitialState(bottomPadding: gradientWrapperView.height)
     }
 
-    @objc private func onTapCancel() {
-        dismiss(animated: true)
-    }
-
     @objc private func onTapNext() {
         viewModel.onTapNext()
     }
@@ -169,7 +169,11 @@ class WatchViewController: KeyboardAwareViewController {
     }
 
     private func proceedToNextPage(watchType: WatchModule.WatchType, accountType: AccountType, name: String) {
-        let viewController = WatchModule.viewController(sourceViewController: sourceViewController, watchType: watchType, accountType: accountType, name: name)
+        guard let viewController = WatchModule.viewController(sourceViewController: sourceViewController, watchType: watchType, accountType: accountType, name: name) else {
+            HudHelper.instance.show(banner: .walletAdded)
+            sourceViewController?.dismiss(animated: true)
+            return
+        }
 
         navigationController?.pushViewController(viewController, animated: true)
     }
@@ -225,23 +229,46 @@ extension WatchViewController: SectionsDataSource {
                     footerState: .margin(height: .margin32),
                     rows: [
                         StaticRow(
-                                cell: addressCell,
+                                cell: evmAddressCell,
                                 id: "address-input",
                                 dynamicHeight: { [weak self] width in
-                                    self?.addressCell.height(containerWidth: width) ?? 0
+                                    self?.evmAddressCell.height(containerWidth: width) ?? 0
                                 }
                         ),
                         StaticRow(
-                                cell: addressCautionCell,
+                                cell: evmAddressCautionCell,
                                 id: "address-caution",
                                 dynamicHeight: { [weak self] width in
-                                    self?.addressCautionCell.height(containerWidth: width) ?? 0
+                                    self?.evmAddressCautionCell.height(containerWidth: width) ?? 0
                                 }
                         )
                     ]
             )
 
             sections.append(evmAddressSection)
+        case .tronAddress:
+            let tronAddressSection: SectionProtocol = Section(
+                    id: "address",
+                    footerState: .margin(height: .margin32),
+                    rows: [
+                        StaticRow(
+                                cell: tronAddressCell,
+                                id: "address-input",
+                                dynamicHeight: { [weak self] width in
+                                    self?.tronAddressCell.height(containerWidth: width) ?? 0
+                                }
+                        ),
+                        StaticRow(
+                                cell: tronAddressCautionCell,
+                                id: "address-caution",
+                                dynamicHeight: { [weak self] width in
+                                    self?.tronAddressCautionCell.height(containerWidth: width) ?? 0
+                                }
+                        )
+                    ]
+            )
+
+            sections.append(tronAddressSection)
         case .publicKey:
             let publicKeySection: SectionProtocol = Section(
                     id: "public-key-input",

@@ -24,13 +24,14 @@ class SafeCoinPriceProvider {
 extension SafeCoinPriceProvider {
 
     /// safe 历史价格获取
-    func coinHistoricalPriceSingle(coinUid: String, timestamp: TimeInterval) -> Single<SafeCoinHistoricalPriceResponse> {
+    func coinHistoricalPrice(coinUid: String, timestamp: TimeInterval) async throws -> SafeCoinHistoricalPriceResponse? {
         let dateStr = formatTransactionDate(from: timestamp)
         
         let parameters: Parameters = [
             "date": dateStr
         ]
-        return networkManager.single(url: "\(baseUrl)/coins/\(coinUid)/history", method: .get, parameters: parameters, headers: headers)
+        let usersResponse: SafeCoinHistoricalPriceResponse = try await networkManager.fetch(url: "\(baseUrl)/coins/\(coinUid)/history", method: .get, parameters: parameters, headers: headers)
+        return usersResponse
     }
 }
 

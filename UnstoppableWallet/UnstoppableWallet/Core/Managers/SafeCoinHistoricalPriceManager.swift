@@ -1,13 +1,14 @@
-//  SafeCoinHistoricalPriceManager.swift
 import Foundation
 import SQLite
 import MarketKit
-import RxSwift
 import GRDB
+import HsExtensions
 
 class SafeCoinHistoricalPriceManager {
     private let storage: CoinHistoricalPriceStorage
     private let hsProvider: SafeCoinPriceProvider
+    private var tasks = Set<AnyTask>()
+
 
     init(storage: CoinHistoricalPriceStorage, hsProvider: SafeCoinPriceProvider) {
         self.storage = storage
@@ -18,18 +19,15 @@ class SafeCoinHistoricalPriceManager {
 
 extension SafeCoinHistoricalPriceManager {
 
-    func coinHistoricalPriceValue(coinUid: String, currencyCode: String, timestamp: TimeInterval) -> Decimal? {
-        try? storage.coinHistoricalPrice(coinUid: coinUid, currencyCode: currencyCode, timestamp: timestamp)?.value
+    func coinHistoricalPriceValue(coinUid: String, currencyCode: String, timestamp: TimeInterval) async throws -> Decimal? {
+        if let price = try? storage.coinHistoricalPrice(coinUid: coinUid, currencyCode: currencyCode, timestamp: timestamp)?.value {
+            return price
+        }else {
+            guard let price = try await hsProvider.coinHistoricalPrice(coinUid: coinUid, timestamp: timestamp)?.price else { return nil }
+            try? storage.save(coinHistoricalPrice: CoinHistoricalPrice(coinUid: coinUid, currencyCode: currencyCode, value: Decimal(price), timestamp: timestamp))
+            return Decimal(price)
+        }
     }
-
-    func coinHistoricalPriceValueSingle(coinUid: String, currencyCode: String, timestamp: TimeInterval) -> Single<Decimal> {
-        hsProvider.coinHistoricalPriceSingle(coinUid: coinUid, timestamp: timestamp)
-                .flatMap { [weak self] response in
-                    try? self?.storage.save(coinHistoricalPrice: CoinHistoricalPrice(coinUid: coinUid, currencyCode: currencyCode, value: Decimal(response.price), timestamp: timestamp))
-                    return Single.just(Decimal(response.price))
-                }
-    }
-
 }
 
 extension SafeCoinHistoricalPriceManager {

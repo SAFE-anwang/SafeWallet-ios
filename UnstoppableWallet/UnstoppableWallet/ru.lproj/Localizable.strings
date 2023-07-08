@@ -7,6 +7,7 @@
 "button.reset" = "Сбросить";
 "button.import" = "Импорт";
 "button.next" = "Далее";
+"button.delete" = "Удалить";
 "button.share" = "Поделиться";
 "button.paste" = "Вставить";
 "button.backup" = "Резервная копия";
@@ -26,6 +27,7 @@
 "alert" = "Предупреждение";
 "alert.copied" = "Скопировано";
 "alert.saved" = "Сохранено";
+"alert.saved_to_icloud" = "Сохранено в iCloud";
 "alert.no_internet" = "Нет интернета";
 "alert.wrong_amount" = "Неправильная сумма";
 "alert.no_fee" = "Неправильная комиссия";
@@ -108,7 +110,7 @@
 "restore.checksum_error" = "Неверная контрольная сумма";
 "restore.passphrase" = "Кодовая фраза";
 "restore.input.passphrase" = "Кодовая фраза";
-"restore.passphrase_description" = "Введите свою кодовую фразу, которую вы использовали при создании этой мнемонической фразы.";
+"restore.passphrase_description" = "Этот пароль используется для шифрования файлов резервной копии вашего кошелька. Он не связан с вашим паролем Apple iCloud. Если вы потеряете или забудете этот пароль, его нельзя будет восстановить или сбросить.";
 "restore.error.empty_passphrase" = "Поле для кодовой фразы не может быть пустым";
 "restore.non_standard_import" = "Нестандартный импорт";
 "restore.non_standard_import.description" = "На этой странице представлен специальный механизм восстановления кошелька для пользователей Unstoppable с нестандартным кошельком. Как правило, такие кошельки могли быть созданы в версиях Unstoppable 0.27–0.28 с использованием неанглоязычного списка мнемонических слов и/или специального символа в парольной фразе кошелька (например, диакритического знака).
@@ -116,6 +118,27 @@
 "restore.warning.non_recommended.description" = "Похоже, этот кошелек использует нестандартный символ в списке мнемонических слов и/или парольной фразе. Если вы не видите баланс или транзакции, пожалуйста, прочтите подробности ниже.
 \n\nПОЖАЛУЙСТА НАЖМИТЕ, ЧТОБЫ ПОЛУЧИТЬ БОЛЬШЕ ИНФОРМАЦИИ.";
 "restore.error.non_standard.description" = "Это нестандартный кошелек.\n\nНАЖМИТЕ, ЧТОБЫ ПОЛУЧИТЬ БОЛЬШЕ ИНФОРМАЦИИ";
+
+// Restore Type
+
+"restore_type.title" = "Импорт кошелька";
+
+"restore_type.cloud.title" = "iCloud";
+"restore_type.recovery.title" = "Фраза восстановления";
+
+"restore_type.cloud.description" = "Импорт из файла резервной копии в вашем keychain.";
+"restore_type.recovery.description" = "Импорт с помощью фразы восстановления или приватного ключа.";
+
+// Restore Cloud
+
+"restore.cloud.title" = "Резерв. копия";
+"restore.cloud.description" = "Выберите резервную копию кошелька, который вы хотите восстановить.";
+"restore.cloud.empty" = "Резервные копии не найдены.";
+"restore.cloud.imported" = "Импортированные кошельки";
+
+"restore.cloud.password.title" = "Введите пароль";
+"restore.cloud.password.placeholder" = "Пароль резервной копии";
+"restore.cloud.password.description" = "Введите пароль резервной копии для импорта вашего кошелька из iCloud.";
 
 // Coin Settings
 
@@ -188,10 +211,44 @@
 
 // Backup Prompt
 
-"backup_prompt.title" = "Резервная копия";
-"backup_prompt.warning" = "Сделайте резервную копию этого кошелька, создав копию его фразы восстановления. Это будет необходимо для доступа к кошельку, если ваш телефон утерян, украден, повреждён и т.д.";
+"backup_prompt.title" = "Ручное резервное копирование";
+"backup_prompt.warning" = "Создайте резервную копию вашей фразы восстановления и пароля, которые позволят вам восстановить ваш кошелек, если телефон потерян, украден, сломал и т.д.";
 "backup_prompt.backup" = "Резервная копия";
+"backup_prompt.backup_manual" = "Ручное резервное копирование";
+"backup_prompt.backup_cloud" = "Резерв. копирование в iCloud";
 "backup_prompt.later" = "Позже";
+
+// Backup to iCloud
+
+"backup.cloud.title" = "Резерв. копирование в iCloud";
+"backup.cloud.description" = "Хранилище iCloud является облачным хранилищем, предоставляемым сторонней компанией и доступным через Apple. Важно знать, что ваши данные будут храниться на серверах Apple, а не на ваших личных устройствах. Это означает, что вы доверяете свои данные и передаете безопасность своей информации стороннему сервису.";
+
+"backup.cloud.terms.item.1" = "Я понимаю, что закрытие доступа к моему iCloud, приведет к потере доступа к резервной копии соответствующего кошелька.";
+
+"backup.cloud.name.title" = "Имя резервной копии";
+"backup.cloud.name.description" = "Введите имя файла резервной копии.";
+"backup.cloud.name.empty" = "Имя резервной копии не может быть пустым!";
+"backup.cloud.name.error.empty" = "Имя резервной копии не должно быть пустым";
+"backup.cloud.name.error.already_exist" = "Имя резервной копии уже существует!";
+"backup.cloud.name.placeholder" = "Название";
+
+"backup.cloud.password.title" = "Установить пароль";
+"backup.cloud.password.description" = "Установите пароль разблокировки для своей резервной копии. Пароль должен содержать не менее 8 символов и включать как минимум одну строчную букву, заглавную букву, цифру и специальный символ.";
+"backup.cloud.password.highlighted_description" = "Не забудьте этот пароль! Он отличается от вашего пароля для Apple iCloud и не может быть восстановлен или сброшен.";
+"backup.cloud.password.placeholder" = "Пароль";
+"backup.cloud.password.confirm.placeholder" = "Подтвердить";
+"backup.cloud.password.save" = "Сохранить и создать резервную копию";
+
+"backup.cloud.password.error.empty_passphrase" = "Поле для кодовой фразы не может быть пустым";
+"backup.cloud.password.error.forbidden_symbols" = "Пожалуйста, используйте только поддерживаемые символы: A-Z a-z 0-9 ' \" ` & / ! : ; . , ~ * $ = + - [ ] ( ) { } < > \\ _ # @ | %";
+"backup.cloud.password.error.minimum_requirement" = "Не менее 8 символов, включая одну заглавную букву, одну строчную букву, одну цифру и один символ";
+"backup.cloud.password.error.invalid_password" = "Неверный пароль";
+"backup.cloud.password.error.invalid_backup" = "Резервная копия повреждена";
+"backup.cloud.password.confirm.error.doesnt_match" = "Пароли не совпадают";
+"backup.cloud.not_available" = "iCloud недоступен";
+"backup.cloud.cant_create_file" = "Не удается сохранить файл в iCloud";
+"backup.cloud.cant_delete_file" = "Не удается удалить из iCloud";
+
 
 // Errors
 
@@ -251,6 +308,10 @@
 "deposit.address" = "Адрес";
 "deposit.your_address" = "Ваш адрес";
 "receive_alert.not_backed_up_description" = "Вам нужно сделать резервную копию %@ перед получением %@.";
+
+"deposit.not_active" = "не активен";
+"deposit.not_active.title" = "Неактивный адрес";
+"deposit.not_active.tron_description" = "Недавно созданные учетные записи в блокчейне TRON неактивны и не могут быть запрошены или изучены. Они должны быть активированы.\n\nАктивация новой учетной записи в цепочке Tron требует комиссию в размере 1 TRX. Для активации достаточно просто перевести токены TRX или TRC-10 на неактивный адрес аккаунта";
 
 // Send
 
@@ -401,7 +462,9 @@
 // Swap Confirmation
 
 "swap.confirmation.swap_button" = "Обменять";
-"swap.confirmation.impact_too_high" = "Разница между рыночной ценой и ожидаемой расчетной ценой слишком высока.";
+"swap.confirmation.impact_too_high" = "Unstoppable отключил действие \"swap\" для этой сделки, так как вы получаете чрезвычайно невыгодную цену. Это связано с крайне низкой ликвидностью. \nЕсли вы все еще хотите поменять валюту, используйте веб-сайт %@ вместо этого.";
+"swap.confirmation.impact_warning" = "Важно! Вы получаете чрезвычайно неблагоприятную цену. Это связано с крайне низкой ликвидностью.";
+
 "swap.confirmation.minimum_received" = "Получено минимум";
 "swap.confirmation.maximum_sent" = "Максимальная трата";
 
@@ -605,7 +668,10 @@
 // Coin Page -> Analytics
 
 "coin_analytics.not_available" = "В этом проекте нет аналитических данных";
-"coin_analytics.locked" = "Эта страница доступна только для премиум-пользователей Unstoppable Wallet";
+"coin_analytics.locked.not_subscribed" = "Эта страница доступна только для премиум-пользователей Unstoppable Wallet";
+"coin_analytics.locked.learn_more" = "Подробнее";
+"coin_analytics.locked.not_activated" = "Активируйте свою подписку, чтобы получить доступ к аналитике";
+"coin_analytics.locked.activate" = "Активировать";
 
 "coin_analytics.cex_volume" = "Объем CEX";
 "coin_analytics.cex_volume_rank" = "Рейтинг объема CEX";
@@ -656,6 +722,8 @@
 "coin_analytics.transaction_count.info5" = "Общее количество токенов, отправленных через блокчейн за 30-дневный период.";
 
 "coin_analytics.holders" = "Держатели";
+"coin_analytics.holders_rank" = "Рейтинг держателей";
+"coin_analytics.holders_rank.description" = "Рейтинг токенов по уникальным адресам, содержащим их в нескольких блокчейнах.";
 "coin_analytics.holders.info1" = "Общее количество уникальных адресов с токенами в различных блокчейнах.";
 "coin_analytics.holders.info2" = "Топ-10 кошельков с токенами в каждом блокчейне.";
 "coin_analytics.holders.tracked_blockchains" = "Отслеживаемые блокчейны: Ethereum, Binance Smart Chain, Optimism, Arbitrum, Celo, Cronos, Avalanche, Fantom, Polygon";
@@ -759,7 +827,7 @@
 "transactions.send" = "Отправлено";
 "transactions.burn" = "Сжечь";
 "transactions.mint" = "Минт";
-"transactions.approve" = "Разрешить";
+"transactions.approve" = "Разрешение";
 "transactions.swap" = "Обмен";
 "transactions.contract_call" = "Вызов контракта";
 "transactions.contract_creation" = "Создание контракта";
@@ -848,7 +916,7 @@
 "manage_wallets.not_found" = "Ничего не найдено. Попробуйте добавить токен вручную.";
 "manage_wallets.search_placeholder" = "Имя, код или адрес контракта";
 "manage_wallets.contract_address" = "Адрес контракта";
-"manage_wallets.derivation_description" = "Существует 3 распространенных формата адресов %@ кошельков для получения входящих платежей:\n\n- BIP44 (более старый)\n- BIP49 (более новый)\n- BIP84 (самый новый)\n\nХотя кошелек Unstoppable поддерживает все три формата, рекомендуется использовать %@ кошелек, работающий в формате BIP84. Кошельки, работающие в этом формате, платят наименьшую комиссию при отправке %@ транзакций.";
+"manage_wallets.derivation_description" = "Существует 4 распространенных формата адресов %@ кошельков для получения входящих платежей:\n\n- BIP44 (более старый)\n- BIP49\n- BIP84 (рекомендованный)\n- BIP86 (самый новый)\n\nХотя кошелек Unstoppable поддерживает все четыре формата, рекомендуется использовать %@ кошелек, работающий в формате BIP84.";
 "manage_wallets.bitcoin_cash_coin_type_description" = "Существует 2 формата адресов, которые кошельки Bitcoin Cash могут использовать для приема входящих платежей:\n\n- TYPE 0 (более старый)\n- TYPE 145 (более новый)\n\nХотя кошелек Unstoppable поддерживает оба формата, рекомендуется использовать кошелек Bitcoin Cash, работающий в формате TYPE 145.";
 
 // Settings -> Experimental Features
@@ -972,6 +1040,8 @@
 "appearance.balance_value.coin_value" = "Токен значение";
 "appearance.balance_value.fiat_value" = "Фиатное значение";
 
+"appearance.balance_auto_hide" = "Автоскрытие баланса";
+
 // Settings -> Contacts
 
 "contacts.title" = "Контакты";
@@ -983,7 +1053,7 @@
 "contacts.update_contact.replace" = "Заменить";
 "contacts.list.addresses_count" = "Адреса: %d";
 "contacts.contact.new.title" = "Новый контакт";
-"contacts.contact.name.placeholder" = "По названию";
+"contacts.contact.name.placeholder" = "Название";
 "contacts.contact.update.error.name_already_exist" = "Имя уже существует";
 "contacts.contact.add_address" = "Добавить адрес";
 "contacts.contact.delete" = "Удалить контакт";
@@ -991,11 +1061,11 @@
 "contacts.contact.address.blockchain" = "Blockchain";
 "contacts.contact.address.delete_address" = "Удалить адрес";
 
+"contacts.restore.restored" = "Восстановлено";
 "contacts.restore.parsing_error" = "Файл имеет неправильные данные!";
-"contacts.restore.storage_error" = "Не удается сохранить контакты!";
+"contacts.restore.restore_error" = "Не удалось восстановить контакты";
 "contacts.restore.overwrite_alert.description" = "Это действие перезапишет ваши локальные платежные контакты, а также их копии в iCloud (при наличии таковых).";
 "contacts.restore.overwrite_alert.replace" = "Заменить";
-
 
 "contacts.add_address.title" = "Добавить адрес";
 "contacts.add_address.create_new" = "Создать новый контакт";
@@ -1086,7 +1156,7 @@
 // Create Wallet
 
 "create_wallet.title" = "Новый кошелек";
-"create_wallet.name" = "По названию";
+"create_wallet.name" = "Название";
 "create_wallet.advanced_setup" = "Доп. настройки";
 "create_wallet.create" = "Создать";
 "create_wallet.advanced" = "Доп. настройки";
@@ -1185,7 +1255,6 @@
 "wallet_connect.sign.domain" = "Домен";
 "wallet_connect.sign.dapp_name" = "dApp";
 "wallet_connect.sign.message" = "Сообщение для подписи";
-"wallet_connect.sign.description" = "Пожалуйста, подпишите сообщение для аутентификации";
 
 "wallet_connect_list.title" = "WalletConnect";
 "wallet_connect.list.empty_view_text" = "Нет активных сессий";
@@ -1245,13 +1314,21 @@
 
 // Manage Account
 
-"manage_account.name" = "По названию";
+"manage_account.name" = "Название";
 "manage_account.recovery_phrase" = "Фраза восстановления";
 "manage_account.public_keys" = "Публичные ключи";
 "manage_account.private_keys" = "Приватные ключи";
-"manage_account.backup_recovery_phrase" = "Резервная копия";
-"manage_account.unlink" = "Отсоединить";
+"manage_account.backup_recovery_phrase" = "Ручное резерв.копирование";
+"manage_account.cloud_backup_recovery_phrase" = "Резерв. копирование в iCloud";
+"manage_account.cloud_delete_backup_recovery_phrase" = "Удалить резерв. копию из iCloud";
+"manage_account.manual_backup_required" = "Требуется резервное копирование вручную";
+"manage_account.manual_backup_required.description" = "Чтобы безопасно удалить резервную копию в iCloud, вам необходимо сначала сделать резервную копию фразы восстановления вручную.";
+"manage_account.manual_backup_required.button" = "Сделать резервную копию";
+"manage_account.unlink" = "Отключить кошелек";
+"manage_account.backup.no_backup_yet_description" = "Завершите одну из опций резервного копирования кошелька, чтобы начать использовать кошелек.";
+"manage_account.backup.has_backup_description" = "Рекомендуется создать ручную резервную копию для каждого кошелька.";
 
+"manage_account.cloud_delete_backup_recovery_phrase.description" = "Вы уверены, что хотите удалить резервную копию кошелька из iCloud?";
 // Manage Account -> Public Keys
 
 "public_keys.title" = "Публичные ключи";
@@ -1300,7 +1377,7 @@
 // Add RPC Source
 
 "add_evm_sync_source.title" = "Добавить источник RPC";
-"add_evm_sync_source.name" = "По названию";
+"add_evm_sync_source.name" = "Название";
 "add_evm_sync_source.rpc_url" = "RPC URL";
 "add_evm_sync_source.basic_auth" = "Базовая авторизация (опц.)";
 "add_evm_sync_source.warning.url_exists" = "RPC Источник с таким url уже существует";
@@ -1326,9 +1403,8 @@
 "fee_settings.time_lock.description" = "TimeLock работает только для отправки на адреса BIP44 (начинаются с 1)
 ";
 
-"fee_settings.max_fee" = "Макс. комиссия";
-"fee_settings.max_fee.info" = "Максимальная предполагаемая комиссия за транзакцию, которая будет уплачена за данную транзакцию, рассчитанная на основе значений лимита газа, максимальной ставки комиссии и максимальной приоритетной комиссии, указанных ниже. Фактический размер комиссии обычно ниже.
-";
+"fee_settings.network_fee" = "Комиссия сети";
+"fee_settings.network_fee.info" = "Ориентировочная стоимость отправки данной транзакции по сети.";
 "fee_settings.gas_limit" = "Gas Limit";
 "fee_settings.gas_limit.info" = "Единица сложности транзакций - газ, она варьирует в зависимости от выполняемого смарт-контракта. Лимит газа - это предполагаемый максимальный размер газа, необходимый для выполнения смарт-контракта. Обычно используется меньшее количество газа.";
 
@@ -1343,6 +1419,7 @@
 "fee_settings.tips.info" = "Пользователи платят приоритетную комиссию, в целях ускорения процесса подтверждения транзакции. Иногда эти тарифы называются чаевыми. Максимальный размер приоритетного сбора - это максимальная дополнительная цена за газ, которую пользователь готов оплатить поверх базовой ставки комиссии. Приведенная здесь стоимость определяется исходя из прогнозируемых сетевых условий. Фактический размер приоритетного тарифа будет меньше. Обнуление этого тарифа может привести к удлинению периода ожидания подтверждения транзакции ввиду её размещения в конце очереди незавершенных транзакций ото всех пользователей.";
 
 "fee_settings.errors.insufficient_balance" = "Недостаточный баланс";
+"fee_settings.errors.unexpected_error" = "Непредвиденная ошибка";
 "fee_settings.errors.insufficient_balance.info" = "Текущий баланс %@ ниже суммы, необходимой для обработки этой транзакции, включая комиссию за транзакцию.";
 "fee_settings.errors.low_max_fee" = "Низкая комиссия";
 "fee_settings.errors.low_max_fee.info" = "Установленная сумма комиссии недостаточно для обработки этой транзакции.";
@@ -1363,6 +1440,7 @@
 "watch_address.by" = "Из";
 "watch_address.watch_by" = "Смотреть из";
 "watch_address.evm_address" = "EVM адрес";
+"watch_address.tron_address" = "TRON адрес";
 "watch_address.public_key" = "Account xPubKey";
 "watch_address.public_key.placeholder" = "Введите Account Extended Public Key";
 "watch_address.public_key.invalid_key" = "Неверный ключ";
@@ -1444,6 +1522,7 @@
 "nft.activity.event_type.offerCancel" = "Предложение отменено";
 
 // Safe zone
+
 "safe_zone.nav.title" = "SAFE ZONE";
 "safe_zone.section.cross_eth" = "Cross Chain(ETH)";
 "safe_zone.section.cross_bsc" = "Cross Chain(BSC)";
@@ -1457,3 +1536,30 @@
 "safe_zone.row.blockExplorer" = "BlockExplorer";
 "safe_zone.row.acrossExplorer" = "Across Chain Explorer";
 "safe_dapp.input" = "Enter Link Access";
+
+// Activate Subscription
+
+"activate_subscription.title" = "Активировать";
+"activate_subscription.wallet" = "Кошелек";
+"activate_subscription.address" = "Адрес";
+"activate_subscription.message" = "Сообщение для подписи";
+"activate_subscription.sign" = "Подписать";
+"activate_subscription.activating" = "Активация...";
+"activate_subscription.failed_to_activate" = "Не удалось активировать подписку";
+"activate_subscription.activated" = "Активировано";
+
+// Launch
+
+"launch.failed_to_launch" = "Не удалось запустить приложение из-за внутренней ошибки. Пожалуйста, попробуйте перезапустить приложение или сообщите об ошибке нашей службе поддержки.";
+"launch.failed_to_launch.report" = "Пожаловаться";
+
+// Tron
+
+"tron.send.activation_fee" = "Комиссия за активацию";
+"tron.send.resources_consumed" = "Расходуемые ресурсы";
+"tron.send.bandwidth" = "Bandwidth";
+"tron.send.energy" = "Energy";
+"tron.send.fee.info" = "Ориентировочные затраты на отправку данной транзакции по сети (без учёта energy, Bandwidth и комиссии за активацию) предполагаются";
+"tron.send.resources_consumed.info" = "Bandwidth - это единица, которая измеряет размер байт транзакции, хранящихся в базе данных блокчейна. Чем больше транзакция, тем больше bandwidth будет потребляться.\n\nEnergy — это единица, измеряющая количество вычислений, требуемых виртуальной машиной TRON для выполнения конкретных операций в сети TRON.\n\nПоскольку транзакции смарт-контракта требуют выполнения вычислительных ресурсов, каждая сделка по контракту требует оплаты energy комиссии.";
+"tron.send.activation_fee.info" = "Передача токенов TRX или TRC-10 на адрес неактивного аккаунта активирует его.";
+"tron.send.inactive_address" = "Этот адрес не активен";

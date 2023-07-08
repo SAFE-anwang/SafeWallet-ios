@@ -67,7 +67,7 @@ extension UniswapModule: ISwapProvider {
     }
 
     var settingsDataSource: ISwapSettingsDataSource? {
-        UniswapSettingsModule.dataSource(tradeService: tradeService)
+        UniswapSettingsModule.dataSource(settingProvider: tradeService, showDeadline: true)
     }
 
     var swapState: SwapModule.DataSourceState {
@@ -97,6 +97,11 @@ extension UniswapModule {
 
     enum UniswapWarning: Warning {
         case highPriceImpact
+        case forbiddenPriceImpact
+    }
+
+    enum UniswapError: Error {
+        case forbiddenPriceImpact(provider: String)
     }
 
     enum TradeError: Error {
