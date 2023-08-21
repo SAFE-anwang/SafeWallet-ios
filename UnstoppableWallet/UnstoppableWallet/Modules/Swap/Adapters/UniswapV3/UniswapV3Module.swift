@@ -9,12 +9,12 @@ class UniswapV3Module {
     private let pendingAllowanceService: SwapPendingAllowanceService
     private let service: UniswapV3Service
 
-    init?(dex: SwapModule.Dex, dataSourceState: SwapModule.DataSourceState) {
+    init?(dex: SwapModule.Dex, dataSourceState: SwapModule.DataSourceState, dexType: DexType) {
         guard let evmKit = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
             return nil
         }
 
-        guard let swapKit = try? UniswapKit.KitV3.instance(evmKit: evmKit) else {
+        guard let swapKit = try? UniswapKit.KitV3.instance(evmKit: evmKit, dexType: dexType) else {
             return nil
         }
 

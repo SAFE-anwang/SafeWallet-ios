@@ -12,8 +12,8 @@ struct SecuritySettingsModule {
                 evmSyncSourceManager: App.shared.evmSyncSourceManager
         )
         let blockchainSettingsViewModel = BlockchainSettingsViewModel(service: blockchainSettingsService)
+        let fallbackBlockViewModel = FallbackBlockViewModel(walletManager: App.shared.walletManager, accountManager: App.shared.accountManager, adapterManager: App.shared.adapterManager)
         
-        return SecuritySettingsViewController(viewModel: viewModel, blockchainSettingsViewModel: blockchainSettingsViewModel)
+        return SecuritySettingsViewController(viewModel: viewModel, blockchainSettingsViewModel: blockchainSettingsViewModel, fallbackBlockViewModel: fallbackBlockViewModel)
     }
-
 }

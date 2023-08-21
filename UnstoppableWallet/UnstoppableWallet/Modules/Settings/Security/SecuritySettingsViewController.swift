@@ -11,7 +11,7 @@ class SecuritySettingsViewController: ThemeViewController {
     
     private let blockchainSettingsViewModel: BlockchainSettingsViewModel
     private var blockchainSettingsViewItem = BlockchainSettingsViewModel.ViewItem(btcViewItems: [], evmViewItems: [])
-
+    private let fallbackBlockViewModel: FallbackBlockViewModel
     private let disposeBag = DisposeBag()
 
     private let tableView = SectionsTableView(style: .grouped)
@@ -21,9 +21,10 @@ class SecuritySettingsViewController: ThemeViewController {
     
 //    private let vpnManager: SafeVPNViewModel
     
-    init(viewModel: SecuritySettingsViewModel, blockchainSettingsViewModel: BlockchainSettingsViewModel) {
+    init(viewModel: SecuritySettingsViewModel, blockchainSettingsViewModel: BlockchainSettingsViewModel, fallbackBlockViewModel: FallbackBlockViewModel) {
         self.viewModel = viewModel
         self.blockchainSettingsViewModel = blockchainSettingsViewModel
+        self.fallbackBlockViewModel = fallbackBlockViewModel
 //        vpnManager = App.shared.SafeVPNManager
         super.init()
 
@@ -112,6 +113,21 @@ class SecuritySettingsViewController: ThemeViewController {
 
         if !success {
             tableView.reloadData()
+        }
+    }
+    
+
+    private func showSelector(onSelect: @escaping (Int) -> ()) {
+        
+        let viewController = FallbackBlockModule.viewController(
+                image: nil,
+                title: "safe_setting.fallback.title".localized,
+                viewItems: fallbackBlockViewModel.fallbackBlockViewItems.map{$0.item},
+                onSelect: onSelect
+        )
+
+        DispatchQueue.main.async {
+            self.present(viewController, animated: true)
         }
     }
 
@@ -247,8 +263,13 @@ extension SecuritySettingsViewController {
                 isFirst: true,
                 isLast: true,
                 action: { [weak self] in
-                    // self?.navigationController?.pushViewController(BlockchainSettingsModule.viewController(), animated: true)
-                    HudHelper.instance.show(banner: .attention(string: "safe_zone.Safe4_Coming_Soon".localized))
+                    self?.showSelector(onSelect: { [weak self] index in
+                        if let item = self?.fallbackBlockViewModel.fallbackBlockViewItems[index] {
+                            self?.fallbackBlockViewModel.fallbackBlock(item: item)
+                            self?.tabBarController?.selectedIndex = 1
+                            self?.navigationController?.popViewController(animated: true)
+                        }
+                    })
                     self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
                 }
         )

@@ -71,10 +71,10 @@ class MainSettingsViewController: ThemeViewController {
         securityCell.set(backgroundStyle: .lawrence, isLast: true)
         syncSecurityCell()
 
-        appearanceCell.set(backgroundStyle: .lawrence, isFirst: true)
+        appearanceCell.set(backgroundStyle: .lawrence)
         buildTitleValue(cell: appearanceCell, image: UIImage(named: "brush_24"), title: "appearance.title".localized)
 
-        contactBookCell.set(backgroundStyle: .lawrence)
+        contactBookCell.set(backgroundStyle: .lawrence, isFirst: true)
         buildTitleValue(cell: contactBookCell, image: UIImage(named: "user_24"), title: "contacts.title".localized)
 
         iCloudSyncCell.set(backgroundStyle: .lawrence)
@@ -250,17 +250,17 @@ class MainSettingsViewController: ThemeViewController {
 //                        self?.navigationController?.pushViewController(SecuritySettingsModule.viewController(), animated: true)
 //                    }
 //            ),
-//            StaticRow(
-//                    cell: contactBookCell,
-//                    id: "address-book",
-//                    height: .heightCell48,
-//                    action: { [weak self] in
-//                        guard let viewController = ContactBookModule.viewController(mode: .edit) else {
-//                            return
-//                        }
-//                        self?.navigationController?.pushViewController(viewController, animated: true)
-//                    }
-//            ),
+            StaticRow(
+                    cell: contactBookCell,
+                    id: "address-book",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        guard let viewController = ContactBookModule.viewController(mode: .edit) else {
+                            return
+                        }
+                        self?.navigationController?.pushViewController(viewController, animated: true)
+                    }
+            ),
 //            StaticRow(
 //                    cell: iCloudSyncCell,
 //                    id: "icloud-sync",

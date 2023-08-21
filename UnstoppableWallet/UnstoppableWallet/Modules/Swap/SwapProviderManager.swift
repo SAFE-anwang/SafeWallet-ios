@@ -58,7 +58,9 @@ class SwapProviderManager {
         case .uniswap, .pancake, .quickSwap:
             return UniswapModule(dex: dex, dataSourceState: state)
         case .uniswapV3:
-            return UniswapV3Module(dex: dex, dataSourceState: state)
+            return UniswapV3Module(dex: dex, dataSourceState: state, dexType: .uniswap)
+        case .pancakeV3:
+            return UniswapV3Module(dex: dex, dataSourceState: state, dexType: .pancakeSwap)
         case .oneInch:
             return OneInchModule(dex: dex, dataSourceState: state)
         case .safeSwap:

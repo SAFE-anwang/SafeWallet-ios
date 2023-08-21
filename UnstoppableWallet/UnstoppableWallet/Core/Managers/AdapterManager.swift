@@ -168,5 +168,8 @@ extension AdapterManager {
             }
         }
     }
-
+    
+    func preloadAdapters() {
+        initAdapters(wallets: walletManager.activeWallets)
+    }
 }

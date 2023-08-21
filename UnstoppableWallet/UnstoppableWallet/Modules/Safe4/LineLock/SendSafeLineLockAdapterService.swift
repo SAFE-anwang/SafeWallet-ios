@@ -4,11 +4,11 @@ import RxCocoa
 import RxRelay
 import HsToolKit
 import Hodler
-import EvmKit
+import BitcoinCore
 
-class SendSafe2wsafeAdapterService {
+class SendSafeLineLockAdapterService {
     private let disposeBag = DisposeBag()
-    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.send.wsafe_adapter_service", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.send.safe_adapter_service", qos: .userInitiated)
 
     private let feeRateService: FeeRateService
     private let amountInputService: IAmountInputService
@@ -16,11 +16,7 @@ class SendSafe2wsafeAdapterService {
     private let timeLockService: TimeLockService?
     private let btcBlockchainManager: BtcBlockchainManager
     private let adapter: ISendSafeCoinAdapter
-    private let ethAdapter: ISendEthereumAdapter
-    
-    private var contractAddressHex: String? = nil
-    private var toAddressHex: String? // 跨链接收人Address
-    
+    private let lineLockInputService: LineLockInputService
     let inputOutputOrderService: InputOutputOrderService
 
     // Outputs
@@ -61,7 +57,7 @@ class SendSafe2wsafeAdapterService {
     }
 
     init(feeRateService: FeeRateService, amountInputService: IAmountInputService, addressService: AddressService,
-         inputOutputOrderService: InputOutputOrderService, timeLockService: TimeLockService?, btcBlockchainManager: BtcBlockchainManager, adapter: ISendSafeCoinAdapter, ethAdapter: ISendEthereumAdapter, contractAddress: Address?) {
+inputOutputOrderService: InputOutputOrderService, timeLockService: TimeLockService?, btcBlockchainManager: BtcBlockchainManager, adapter: ISendSafeCoinAdapter, lineLockInputService: LineLockInputService) {
         self.feeRateService = feeRateService
         self.amountInputService = amountInputService
         self.addressService = addressService
@@ -69,16 +65,7 @@ class SendSafe2wsafeAdapterService {
         self.inputOutputOrderService = inputOutputOrderService
         self.btcBlockchainManager = btcBlockchainManager
         self.adapter = adapter
-        self.ethAdapter = ethAdapter
-        
-        self.toAddressHex = ethAdapter.evmKitWrapper.evmKit.address.hex
-        
-        if let address = contractAddress {
-            contractAddressHex = address.raw
-            minimumSendAmount = adapter.minimumSendAmountSafe(address: address.raw)
-        }
-        
-        App.shared.safeInfoManager.startNet()
+        self.lineLockInputService = lineLockInputService
         
         sync(feeRate: .completed(10))
         
@@ -98,7 +85,8 @@ class SendSafe2wsafeAdapterService {
         subscribe(disposeBag, feeRateService.statusObservable) { [weak self] in
             self?.sync(feeRate: $0)
         }
-        
+
+        minimumSendAmount = adapter.minimumSendAmountSafe(address: addressService.state.address?.raw)
     }
 
     private func sync(feeRate: DataStatus<Int>? = nil, updatedFrom: UpdatedField = .feeRate) {
@@ -116,15 +104,14 @@ class SendSafe2wsafeAdapterService {
         case .failed(let error):
             feeState = .failed(error)
         case .completed(let feeRate):
-            // addressService.state.address?.raw
-            update(feeRate: feeRate, amount: amount, address: contractAddressHex, pluginData: pluginData, updatedFrom: updatedFrom)
+            update(feeRate: feeRate, amount: amount, address: addressService.state.address?.raw, pluginData: pluginData, updatedFrom: updatedFrom)
         }
     }
 
     private func update(feeRate: Int, amount: Decimal, address: String?, pluginData: [UInt8: IBitcoinPluginData], updatedFrom: UpdatedField) {
         queue.async { [weak self] in
-            if let fee = self?.adapter.convertFeeSafe(amount: amount, address: address), let newFee = self?.newFee(fee) {
-                self?.feeState = .completed(newFee)
+            if let fee = self?.adapter.feeSafe(amount: amount, address: address) {
+                self?.feeState = .completed(fee)
             }
             if updatedFrom != .amount,
                let availableBalance = self?.adapter.availableBalanceSafe(address: address){
@@ -142,45 +129,10 @@ class SendSafe2wsafeAdapterService {
     private var pluginData: [UInt8: IBitcoinPluginData] {
         timeLockService?.pluginData ?? [:]
     }
-    
-    private func getReverseHex(addressHex: String) -> String {
-        var wsafeAddress = ""
-        let safeRemarkPrex = "736166650100c9dcee22bb18bd289bca86e2c8bbb6487089adc9a13d875e538dd35c70a6bea42c0100000a020100122e"
-        switch ethAdapter.evmKitWrapper.blockchainType {
-        case .binanceSmartChain:
-            wsafeAddress = "bsc:" + addressHex
-        case .ethereum:
-            wsafeAddress = "eth:" + addressHex
-        case .polygon:
-            wsafeAddress = "matic:" + addressHex
-        default: break
-        }
-        return safeRemarkPrex + wsafeAddress.hs.data.toHexString()
-    }
-    
-    func newFee(_ fee: Decimal) -> Decimal {
-        var newFee = fee
-        do {
-            let safeInfo = try App.shared.safeInfoManager.getSafeInfo()
-            switch ethAdapter.evmKitWrapper.blockchainType {
-            case .binanceSmartChain:
-                newFee += Decimal(safeInfo.bsc?.safe_fee ?? 0)
-            case .ethereum:
-                newFee += Decimal(safeInfo.eth?.safe_fee ?? 0)
-            case .polygon:
-                newFee += Decimal(safeInfo.matic?.safe_fee ?? 0)
-            default: break
-            }
-            return newFee
-            
-        }catch {}
-        
-        return newFee
-    }
 
 }
 
-extension SendSafe2wsafeAdapterService: ISendXFeeValueService, IAvailableBalanceService, ISendXSendAmountBoundsService {
+extension SendSafeLineLockAdapterService: ISendXFeeValueService, IAvailableBalanceService, ISendXSendAmountBoundsService {
 
     var feeStateObservable: Observable<DataStatus<Decimal>> {
         feeStateRelay.asObservable()
@@ -204,39 +156,49 @@ extension SendSafe2wsafeAdapterService: ISendXFeeValueService, IAvailableBalance
 
 }
 
-extension SendSafe2wsafeAdapterService: ISendService {
+extension SendSafeLineLockAdapterService: ISendService {
 
     func sendSingle(logger: Logger) -> Single<Void> {
-        
         let address: Address
         switch addressService.state {
         case .success(let sendAddress): address = sendAddress
         case .fetchError(let error): return Single.error(error)
         default: return Single.error(AppError.addressInvalid)
         }
-        guard case let .completed(feeRate) = feeRateService.status else {
+
+        guard case let .completed(_) = feeRateService.status else {
             return Single.error(SendTransactionError.noFee)
         }
 
         guard !amountInputService.amount.isZero else {
             return Single.error(SendTransactionError.wrongAmount)
         }
-        guard let contractAddress = contractAddressHex else {
-            return Single.error(SendTransactionError.invalidAddress)
+        guard let lockedValue = lineLockInputService.amount, lockedValue > 0 else {
+            return Single.error(SendLineLockError.wrongAmount)
+        }
+        guard let startMonth = lineLockInputService.startMonth else {
+            return Single.error(SendLineLockError.invalidMonth)
+        }
+        guard let intervalMonth = lineLockInputService.intervalMonth else {
+            return Single.error(SendLineLockError.invalidMonth)
         }
         
-        let reverseHex = getReverseHex(addressHex: address.raw)
-        return adapter.sendSingle(amount: amountInputService.amount, address: contractAddress, sortMode: .shuffle, logger: logger, lockedTimeInterval: nil, reverseHex: reverseHex)
+        let (totalAmount, reverseHex) = lineLockInputService.getLineLockInfo(coinAmount: amountInputService.amount, lockedValue: lockedValue, startMonth: startMonth, intervalMonth: intervalMonth)
+        
+        if let data = pluginData[HodlerPlugin.id] as? HodlerData {
+            return adapter.sendSingle(amount: totalAmount, address: address.raw, sortMode: .shuffle, logger: logger, lockedTimeInterval: data.lockTimeInterval, reverseHex: reverseHex)
+        }
+        return adapter.sendSingle(amount: totalAmount, address: address.raw, sortMode: .shuffle, logger: logger, lockedTimeInterval: nil, reverseHex: reverseHex)
     }
 
 }
 
-extension SendSafe2wsafeAdapterService {
+extension SendSafeLineLockAdapterService {
 
     private enum UpdatedField: String {
         case amount, address, pluginData, feeRate
     }
+    
+
 
 }
-
-

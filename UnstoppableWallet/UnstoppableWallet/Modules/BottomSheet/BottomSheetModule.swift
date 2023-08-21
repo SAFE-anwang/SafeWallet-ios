@@ -112,6 +112,22 @@ extension BottomSheetModule {
                 ]
         )
     }
+    
+    static func fallbackBlockConfirmation(action: (() -> ())?) -> UIViewController {
+        viewController(
+                image: .local(image: UIImage(named: "warning_2_24")?.withTintColor(.themeJacob)),
+                title: "safe_setting.fallback.sheet.title".localized,
+                items: [
+                    .highlightedDescription(text: "safe_setting.fallback.sheet.desc".localized)
+                ],
+                buttons: [
+                    .init(style: .yellow, title: "safe_setting.fallback.sheet.button".localized) {
+                        action?()
+                    },
+                    .init(style: .transparent, title: "button.cancel".localized)
+                ]
+        )
+    }
 
 }
 

@@ -42,14 +42,19 @@ class CoinAnalyticsService {
 
     private func loadPreview() {
         let addresses = resolveAddresses()
-
+    
         Task { [weak self, marketKit, fullCoin] in
             do {
                 let analyticsPreview = try await marketKit.analyticsPreview(coinUid: fullCoin.coin.uid, addresses: addresses)
                 let subscriptionAddress = analyticsPreview.subscriptions.sorted { lhs, rhs in lhs.deadline > rhs.deadline }.first?.address
                 self?.state = .preview(analyticsPreview: analyticsPreview, subscriptionAddress: subscriptionAddress)
             } catch {
-                self?.state = .failed(error)
+                if fullCoin.coin.uid == safeCoinUid {
+                    let analyticsPreview = try AnalyticsPreview(JSON: [:])
+                    self?.state = .preview(analyticsPreview: analyticsPreview, subscriptionAddress: nil)
+                }else {
+                    self?.state = .failed(error)
+                }
             }
         }.store(in: &tasks)
     }

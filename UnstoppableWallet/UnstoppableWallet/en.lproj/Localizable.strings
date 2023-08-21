@@ -1539,6 +1539,24 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 "safe_zone.Safe4_Disabled" = "Cross chain transfer business is suspended. Please try again later";
 "safe_zone.Safe4_Min_Fee" = "The minimum amount of cross chain transfer is %@ SAFE";
 
+"safe_setting.fallbackBlock" = "Height: %@";
+"safe_setting.fallback.title" = "SAFE block fallback height";
+"safe_setting.fallback.sheet.title" = "SAFE Block Fallback";
+"safe_setting.fallback.sheet.desc" = "This operation will resynchronize the block.";
+"safe_setting.fallback.sheet.button" = "Fallback";
+
+"safe_lock.amount" = "Total amount to be locked";
+"safe_lock.amount.unlock" = "Every time lock amount";
+"safe_lock.month.start" = "Starting month";
+"safe_lock.month.interval" = "Interval month";
+"safe_lock.desc" = "From starting month %d, every %d months unlock %@ safes, and use %@ safe in total.";
+"safe_lock.amount.unlock.error" = "Each lockdown amount cannot be greater than the total amount to be locked";
+"safe_lock.amount.error" = "Exceeding valid values of 1-120";
+"safe_lock.amount.locked" = "%@ months";
+
+"safe_lock.recoard.nav" = "Lock up record";
+"safe_lock.recoard.title" = "%@ SAFE locked in total";
+
 // Activate Subscription
 
 "activate_subscription.title" = "Activate";

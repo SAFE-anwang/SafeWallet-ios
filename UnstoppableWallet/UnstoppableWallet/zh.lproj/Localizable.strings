@@ -1554,6 +1554,24 @@
 "safe_zone.Safe4_Disabled" = "跨链转账业务暂停使用，请稍后再试";
 "safe_zone.Safe4_Min_Fee" = "跨链转账最小金额是 %@ SAFE";
 
+"safe_setting.fallbackBlock" = "高度: %@";
+"safe_setting.fallback.title" = "SAFE区块回退高度";
+"safe_setting.fallback.sheet.title" = "SAFE区块回退";
+"safe_setting.fallback.sheet.desc" = "此操作将重新同步区块。";
+"safe_setting.fallback.sheet.button" = "回退";
+
+"safe_lock.amount" = "待锁仓总金额";
+"safe_lock.amount.unlock" = "每次锁仓金额";
+"safe_lock.month.start" = "起始月份";
+"safe_lock.month.interval" = "间隔月份";
+"safe_lock.desc" = "从第%d个月开始，每隔%d个月解锁%@个SAFE，总共使用%@个SAFE.";
+"safe_lock.amount.unlock.error" = "每次锁仓金额不能大于待锁仓的总金额";
+"safe_lock.amount.error" = "请设置有效值，范围1~120";
+"safe_lock.amount.locked" = "%@个月";
+
+
+"safe_lock.recoard.nav" = "锁仓记录";
+"safe_lock.recoard.title" = "总锁定：%@ SAFE";
 // Activate Subscription
 
 "activate_subscription.title" = "激活";

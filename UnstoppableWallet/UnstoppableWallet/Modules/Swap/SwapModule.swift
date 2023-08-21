@@ -157,8 +157,8 @@ extension BlockchainType {
 
     var allowedProviders: [SwapModule.Dex.Provider] {
         switch self {
-        case .ethereum: return [.oneInch, .uniswap, .uniswapV3, .safeSwap]
-        case .binanceSmartChain: return [.oneInch, .pancake, .safeSwap]
+        case .ethereum: return [.oneInch, .uniswap, .uniswapV3, .safeSwap, .pancakeV3]
+        case .binanceSmartChain: return [.oneInch, .pancake, .pancakeV3, .safeSwap]
         case .polygon: return [.oneInch, .quickSwap, .uniswapV3, .safeSwap]
         case .avalanche: return [.oneInch]
         case .optimism: return [.oneInch]
@@ -178,6 +178,7 @@ extension SwapModule.Dex {
         case uniswapV3 = "Uniswap V3"
         case oneInch = "1Inch"
         case pancake = "PancakeSwap"
+        case pancakeV3 = "PancakeSwap V3"
         case quickSwap = "QuickSwap"
         case safeSwap = "SafeSwap"
         
@@ -187,6 +188,7 @@ extension SwapModule.Dex {
             case .uniswapV3: return [.ethereum, .arbitrumOne, .polygon]
             case .oneInch: return [.ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom]
             case .pancake: return [.binanceSmartChain]
+            case .pancakeV3: return [.ethereum, .binanceSmartChain]
             case .quickSwap: return [.polygon]
             case .safeSwap: return [.ethereum, .binanceSmartChain, .polygon]
             }
@@ -196,7 +198,7 @@ extension SwapModule.Dex {
             switch self {
             case .uniswap, .uniswapV3: return "https://uniswap.org/"
             case .oneInch: return "https://app.1inch.io/"
-            case .pancake: return "https://pancakeswap.finance/"
+            case .pancake, .pancakeV3: return "https://pancakeswap.finance/"
             case .quickSwap: return "https://quickswap.exchange/"
             case .safeSwap: return "https://anwang.com"
             }
@@ -208,6 +210,7 @@ extension SwapModule.Dex {
             case .uniswapV3: return "Uniswap v.3"
             case .oneInch: return "1Inch"
             case .pancake: return "PancakeSwap"
+            case .pancakeV3: return "PancakeSwap v.3"
             case .quickSwap: return "QuickSwap"
             case .safeSwap: return "SafeSwap"
 
@@ -218,7 +221,7 @@ extension SwapModule.Dex {
             switch self {
             case .uniswap, .uniswapV3: return "uniswap_32"
             case .oneInch: return "1inch_32"
-            case .pancake: return "pancake_32"
+            case .pancake, .pancakeV3: return "pancake_32"
             case .quickSwap: return "quick_32"
             case .safeSwap: return "safelog"
             }

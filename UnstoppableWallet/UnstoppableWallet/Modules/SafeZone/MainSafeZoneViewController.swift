@@ -70,6 +70,16 @@ class MainSafeZoneViewController: ThemeViewController {
         urlManager.open(url: explorerUrl, from: navigationController)
 
     }
+    private func openLineLockRecoard() {
+        tableView.deselectCell(withCoordinator: transitionCoordinator, animated: true)
+        if let module = LineLockRecoardModule.viewController() {
+            navigationController?.pushViewController(module, animated: true)
+        }
+
+    }
+    
+    
+    
     private func buildTitleImage(title: String, backgroundStyle: BaseSelectableThemeCell.BackgroundStyle, isFirst: Bool = false, isLast: Bool = false) -> BaseSelectableThemeCell {
         let cell = BaseSelectableThemeCell()
         cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
@@ -292,9 +302,10 @@ class MainSafeZoneViewController: ThemeViewController {
                     id: "locked_Rows",
                     height: .heightCell48,
                     action: { [weak self] in
-                        // to do ..
-                        HudHelper.instance.show(banner: .attention(string: "safe_zone.Safe4_Coming_Soon".localized))
                         self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
+                        if let module = Safe4Module.handlerLineLock() {
+                            self?.present(module, animated: true)
+                        }
                     }
             ),
             StaticRow(
@@ -302,9 +313,10 @@ class MainSafeZoneViewController: ThemeViewController {
                     id: "locked_Rows",
                     height: .heightCell48,
                     action: { [weak self] in
-                        // to do ..
-                        HudHelper.instance.show(banner: .attention(string: "safe_zone.Safe4_Coming_Soon".localized))
-                        self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
+                        self?.openLineLockRecoard()
+//                        // to do ..
+//                        HudHelper.instance.show(banner: .attention(string: "safe_zone.Safe4_Coming_Soon".localized))
+//                        self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
                     }
             ),
         ]

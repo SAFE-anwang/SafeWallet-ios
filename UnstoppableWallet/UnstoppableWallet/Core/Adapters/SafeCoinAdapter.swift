@@ -6,10 +6,11 @@ import HsToolKit
 import BitcoinCore
 import MarketKit
 import HdWalletKit
+import Checkpoints
 
 class SafeCoinAdapter: BitcoinBaseAdapter {
     private let feeRate = 10
-    private let safeCoinKit: SafeCoinKit.Kit
+    public  let safeCoinKit: SafeCoinKit.Kit
         
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
         let networkType: SafeCoinKit.Kit.NetworkType = .mainNet
@@ -125,7 +126,7 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
                     if let lineLock = reverseHex.stringToObj(LineLock.self) {
                         // 设置最新区块高度
                         lineLock.lastHeight = self?.safeCoinKit.lastBlockInfo?.height ?? 0
-                        let value = self!.convertToSatoshi(value: Decimal(Double(lineLock.lockedValue)!) * self!.coinRate)
+                        let value = self!.convertToSatoshi(value: Decimal(string: lineLock.lockedValue)!)
                         lineLock.lockedValue = "\(value)"
                         newReverseHex = lineLock.reverseHex()
                     }
@@ -156,8 +157,32 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
         case .bip69: return .bip69
         }
     }
+    
+    public func fallbackBlock(date: CheckpointData.FallbackDate) {
+        if let _ = safeCoinKit.lastBlockInfo {
+            do {
+                let checkpoint = try Checkpoint(safe: date)
+                let startBlockHeight = checkpoint.block.height
+                
+                guard let lastBlockHeight = safeCoinKit.lastBlockInfo?.height, startBlockHeight <= lastBlockHeight else { return }
+                let blocksList = safeCoinKit.bitcoinCore.storage.blocks(from: startBlockHeight, to: lastBlockHeight, ascending: false)
+                if blocksList.count > 0 {
+                    safeCoinKit.stop()
+                    try safeCoinKit.bitcoinCore.storage.delete(blocks: blocksList)
+                    safeCoinKit.bitcoinCore.updateLastBlockInfo(network: .main, fallbackDate: date)
+                    safeCoinKit.start()
+                }
+            }catch {}
+        }
+    }
 
 
+}
+
+public struct BlockInfo {
+    public let headerHash: String
+    public let height: Int
+    public let timestamp: Int?
 }
 
 extension SafeCoinAdapter {
