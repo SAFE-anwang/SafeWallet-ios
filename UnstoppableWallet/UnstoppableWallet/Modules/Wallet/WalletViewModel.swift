@@ -242,7 +242,7 @@ extension WalletViewModel {
             openBackupRequiredRelay.accept(wallet)
         }
     }
-
+    
     func onTapChart(element: WalletModule.Element) {
         guard let coin = element.coin, let item = service.item(element: element), item.priceItem != nil else {
             return

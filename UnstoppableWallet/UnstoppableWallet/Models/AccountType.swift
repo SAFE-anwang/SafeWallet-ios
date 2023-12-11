@@ -65,6 +65,17 @@ enum AccountType {
             return []
         }
     }
+    
+    var dogecoinSupportedDerivations: [MnemonicDerivation] {
+        switch self {
+        case .mnemonic:
+            return [.bip44]
+        case .hdExtendedKey(let key):
+            return key.purposes.map { $0.mnemonicDerivation }
+        default:
+            return []
+        }
+    }
 
     func supports(configuredToken: ConfiguredToken) -> Bool {
         switch self {
@@ -74,6 +85,7 @@ enum AccountType {
             case (.bitcoinCash, .native): return true
             case (.ecash, .native): return true
             case (.litecoin, .native): return true
+            case (.dogecoin, .native): return true
             case (.dash, .native): return true
             case (.zcash, .native): return true
             case (.binanceChain, .native), (.binanceChain, .bep2): return true
@@ -86,7 +98,7 @@ enum AccountType {
             case (.arbitrumOne, .native), (.arbitrumOne, .eip20): return true
             case (.optimism, .native), (.optimism, .eip20): return true
             case (.tron, .native), (.tron, .eip20): return true
-            case (.unsupported(let uid), .native): return uid == safeCoinUid
+            case (.safe, .native): return true
             default: return false
             }
         case .hdExtendedKey(let key):
@@ -101,7 +113,7 @@ enum AccountType {
                 }
 
                 return key.coinTypes.contains(where: { $0 == .litecoin })
-            case .bitcoinCash, .ecash, .dash:
+            case .bitcoinCash, .ecash, .dash, .dogecoin:
                 return key.purposes.contains(where: { $0 == .bip44 })
             default:
                 return false
@@ -116,7 +128,8 @@ enum AccountType {
             case (.fantom, .native), (.fantom, .eip20): return true
             case (.arbitrumOne, .native), (.arbitrumOne, .eip20): return true
             case (.optimism, .native), (.optimism, .eip20): return true
-            case (.unsupported(let uid), .native): return uid == safeCoinUid
+            case (.safe, .native): return true
+            case (.dogecoin, .native): return true
             default: return false
             }
         case .tronAddress:

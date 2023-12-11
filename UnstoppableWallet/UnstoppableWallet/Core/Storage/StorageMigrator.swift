@@ -209,12 +209,14 @@ class StorageMigrator {
         migrator.registerMigration("fillBlockchainSettingsFromEnabledWallets") { db in
             let wallets = try EnabledWallet_v_0_13.filter(EnabledWallet_v_0_13.Columns.coinId == "BTC" ||
                     EnabledWallet_v_0_13.Columns.coinId == "LTC" ||
+                    EnabledWallet_v_0_13.Columns.coinId == "DOGE" ||
                     EnabledWallet_v_0_13.Columns.coinId == "BCH" ||
                     EnabledWallet_v_0_13.Columns.coinId == "DASH").fetchAll(db)
 
             let coinTypeKeyMap = [
                 "BTC": "bitcoin",
                 "LTC": "litecoin",
+                "DOGE": "dogecoin",
                 "BCH": "bitcoinCash",
                 "DASH": "dash"
             ]
@@ -452,7 +454,7 @@ class StorageMigrator {
                 let coinId = oldWallet.coinId
                 var coinSettingsId = ""
 
-                if coinId == "bitcoin" || coinId == "litecoin" {
+                if coinId == "bitcoin" || coinId == "litecoin" || coinId == "dogecoin" {
                     let oldSetting = settingRecords.first { $0.coinType == coinId && $0.key == "derivation" }
                     let newValue = oldSetting?.value ?? "bip49"
                     coinSettingsId = "derivation:\(newValue)"
@@ -735,6 +737,7 @@ class StorageMigrator {
         case .bitcoin: return TokenQuery(blockchainType: .bitcoin, tokenType: .native)
         case .bitcoinCash: return TokenQuery(blockchainType: .bitcoinCash, tokenType: .native)
         case .litecoin: return TokenQuery(blockchainType: .litecoin, tokenType: .native)
+        case .dogecoin: return TokenQuery(blockchainType: .dogecoin, tokenType: .native)
         case .dash: return TokenQuery(blockchainType: .dash, tokenType: .native)
         case .zcash: return TokenQuery(blockchainType: .zcash, tokenType: .native)
         case .ethereum: return TokenQuery(blockchainType: .ethereum, tokenType: .native)
@@ -748,7 +751,7 @@ class StorageMigrator {
         case .optimismErc20(let address): return TokenQuery(blockchainType: .optimism, tokenType: .eip20(address: address))
         case .arbitrumOneErc20(let address): return TokenQuery(blockchainType: .arbitrumOne, tokenType: .eip20(address: address))
         case .bep2(let symbol): return symbol == "BNB" ? TokenQuery(blockchainType: .binanceChain, tokenType: .native) : TokenQuery(blockchainType: .binanceChain, tokenType: .bep2(symbol: symbol))
-        case .unsupported(let uid): return  uid == safeCoinUid ? TokenQuery(blockchainType: .unsupported(uid: safeCoinUid), tokenType: .native) : TokenQuery(blockchainType: .unsupported(uid: ""), tokenType: .unsupported(type: "", reference: nil))
+        case .safe: return  TokenQuery(blockchainType: .safe, tokenType: .native)
         default: return TokenQuery(blockchainType: .unsupported(uid: ""), tokenType: .unsupported(type: "", reference: nil))
         }
     }

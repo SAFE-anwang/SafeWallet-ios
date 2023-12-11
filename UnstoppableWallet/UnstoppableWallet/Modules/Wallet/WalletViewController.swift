@@ -290,6 +290,12 @@ class WalletViewController: ThemeViewController {
                         self?.openSwap(wallet: wallet)
                     }
                 },
+                liquidityAction: { [weak self] in
+                    if let wallet = viewItem.element.wallet {
+                        self?.openLiquidity(wallet: wallet)
+                    }
+                    //self?.viewModel.onTapLiquidity(element: viewItem.element)
+                },
                 onChart: { [weak self] in
                     self?.viewModel.onTapChart(element: viewItem.element)
                 },
@@ -308,6 +314,7 @@ class WalletViewController: ThemeViewController {
             headerView.onTapSortBy = { [weak self] in self?.openSortType() }
             headerView.onTapAddCoin = { [weak self] in self?.openManageWallets() }
             headerView.onTapTransactions = {[weak self] in self?.openTransactions() }
+            headerView.onTapLiquidityRecord = {[weak self] in self?.onTapLiquidityRecord() }
         }
     }
 
@@ -333,9 +340,15 @@ class WalletViewController: ThemeViewController {
             present(module, animated: true)
         }
     }
-
+    
     private func openSwap(wallet: Wallet) {
         if let module = SwapModule.viewController(tokenFrom: wallet.token) {
+            present(module, animated: true)
+        }
+    }
+    
+    private func openLiquidity(wallet: Wallet) {
+        if let module = LiquidityMainModule.viewController(tokenFrom: wallet.token) {
             present(module, animated: true)
         }
     }
@@ -385,6 +398,13 @@ class WalletViewController: ThemeViewController {
     
     private func openTransactions() {
        let module = TransactionsModule.viewController()
+        navigationController?.pushViewController(module, animated: true)
+    }
+    
+    private func onTapLiquidityRecord() {
+        guard let module = LiquidityRecordModule.viewController()  else {
+            return
+        }
         navigationController?.pushViewController(module, animated: true)
     }
 

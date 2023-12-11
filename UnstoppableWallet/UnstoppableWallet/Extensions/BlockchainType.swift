@@ -9,6 +9,7 @@ extension BlockchainType {
         .bitcoinCash,
         .ecash,
         .litecoin,
+        .dogecoin,
         .dash,
         .zcash,
         .ethereum,
@@ -21,8 +22,7 @@ extension BlockchainType {
         .binanceSmartChain,
         .binanceChain,
         .tron,
-        .unsupported(uid: safeCoinUid)
-
+        .safe,
     ]
 
     func placeholderImageName(tokenProtocol: TokenProtocol?) -> String {
@@ -36,6 +36,9 @@ extension BlockchainType {
     var imageUrl: String {
         if uid == safeCoinUid {
             return "https://anwang.com/img/logos/safe.png"
+        }else if uid == dogeCoinUid {
+            let scale = Int(UIScreen.main.scale)
+            return "https://cdn.blocksdecoded.com/coin-icons/32px/\(uid)@\(scale)x.png"
         }else {
             let scale = Int(UIScreen.main.scale)
             return "https://cdn.blocksdecoded.com/blockchain-icons/32px/\(uid)@\(scale)x.png"
@@ -44,7 +47,7 @@ extension BlockchainType {
 
     var coinSettingType: CoinSettingType? {
         switch self {
-        case .bitcoin, .litecoin: return .derivation
+        case .bitcoin, .litecoin, .dogecoin: return .derivation
         case .bitcoinCash: return .bitcoinCashCoinType
         default: return nil
         }
@@ -83,7 +86,7 @@ extension BlockchainType {
         switch self {
         case .bitcoin: return 1
         case .ethereum: return 2
-        case .unsupported(let uid): return uid == safeCoinUid ? 3 : Int.max
+        case .safe: return 3
         case .binanceSmartChain: return 4
         case .tron: return 5
         case .polygon: return 6
@@ -155,13 +158,12 @@ extension BlockchainType {
     }
 
     var isUnsupported: Bool {
-        if case .unsupported = self { return self == .unsupported(uid: safeCoinUid) ? false : true }
         return false
     }
 
     func badge(coinSettings: CoinSettings) -> String? {
         switch self {
-        case .bitcoin, .litecoin:
+        case .bitcoin, .litecoin, .dogecoin:
             return coinSettings.derivation?.rawValue.uppercased()
         case .bitcoinCash:
             return coinSettings.bitcoinCashCoinType?.title.uppercased()
@@ -188,6 +190,7 @@ extension BlockchainType {
         case .litecoin: return "LTC (BIP44, BIP49, BIP84, BIP86)"
         case .binanceChain: return "BNB, BEP2 tokens"
         case .tron: return "TRX, TRC20 tokens"
+        case .dogecoin: return "Dogecoin (BIP44)"
         default: return ""
         }
     }

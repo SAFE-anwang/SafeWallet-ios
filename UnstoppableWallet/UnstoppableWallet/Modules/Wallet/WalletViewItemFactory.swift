@@ -158,6 +158,7 @@ class WalletViewItemFactory {
 
                 if wallet.token.swappable {
                     buttons[.swap] = sendButtonState
+                    buttons[.liquidity]  = sendButtonState
                 }
             }
 

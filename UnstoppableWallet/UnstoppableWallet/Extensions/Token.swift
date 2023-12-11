@@ -6,7 +6,7 @@ extension Token {
         switch type {
         case .native:
             switch blockchainType {
-            case .ethereum, .binanceSmartChain, .unsupported(uid: safeCoinUid), .tron: return nil
+            case .ethereum, .binanceSmartChain, .safe, .tron: return nil
             case .binanceChain: return "BEP2"
             default: return blockchain.name
             }
@@ -91,7 +91,7 @@ extension Token {
 
     var configuredTokens: [ConfiguredToken] {
         switch blockchainType {
-        case .bitcoin, .litecoin:
+        case .bitcoin, .litecoin, .dogecoin:
             return MnemonicDerivation.allCases.map {
                 ConfiguredToken(token: self, coinSettings: [.derivation: $0.rawValue])
             }

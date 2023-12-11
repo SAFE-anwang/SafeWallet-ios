@@ -211,12 +211,84 @@ extension ABI.Element.Function {
     }
 }
 
-// MARK: - Event logs decoding
+// MARK: - Event logs decoding & encoding
 
 extension ABI.Element.Event {
     public func decodeReturnedLogs(eventLogTopics: [Data], eventLogData: Data) -> [String: Any]? {
         guard let eventContent = ABIDecoder.decodeLog(event: self, eventLogTopics: eventLogTopics, eventLogData: eventLogData) else { return nil }
         return eventContent
+    }
+
+    public static func encodeTopic(input: ABI.Element.Event.Input, value: Any) -> EventFilterParameters.Topic? {
+        switch input.type {
+        case .string:
+            guard let string = value as? String else {
+                return nil
+            }
+            return .string(string.sha3(.keccak256).addHexPrefix())
+        case .dynamicBytes:
+            guard let data = ABIEncoder.convertToData(value) else {
+                return nil
+            }
+            return .string(data.sha3(.keccak256).toHexString().addHexPrefix())
+        case .bytes(length: _):
+            guard let data = ABIEncoder.convertToData(value), let data = data.setLengthLeft(32) else {
+                return nil
+            }
+            return .string(data.toHexString().addHexPrefix())
+        case .address, .uint(bits: _), .int(bits: _), .bool:
+            guard let encoded = ABIEncoder.encodeSingleType(type: input.type, value: value) else {
+                return nil
+            }
+            return .string(encoded.toHexString().addHexPrefix())
+        default:
+            guard let data = try? ABIEncoder.abiEncode(value).setLengthLeft(32) else {
+                return nil
+            }
+            return .string(data.toHexString().addHexPrefix())
+        }
+    }
+
+    public func encodeParameters(_ parameters: [Any?]) -> [EventFilterParameters.Topic?] {
+        guard parameters.count <= inputs.count else {
+            // too many arguments for fragment
+            return []
+        }
+        var topics: [EventFilterParameters.Topic?] = []
+
+        if !anonymous {
+            topics.append(.string(topic.toHexString().addHexPrefix()))
+        }
+
+        for (i, p) in parameters.enumerated() {
+            let input = inputs[i]
+            if !input.indexed {
+                // cannot filter non-indexed parameters; must be null
+                return []
+            }
+            if p == nil {
+                topics.append(nil)
+            } else if input.type.isArray || input.type.isTuple {
+                // filtering with tuples or arrays not supported
+                return []
+            } else if let p = p as? Array<Any> {
+                topics.append(.strings(p.map { Self.encodeTopic(input: input, value: $0) }))
+            } else {
+                topics.append(Self.encodeTopic(input: input, value: p!))
+            }
+        }
+
+        // Trim off trailing nulls
+        while let last = topics.last {
+            if last == nil {
+                topics.removeLast()
+            } else if case .string(let string) = last, string == nil {
+                topics.removeLast()
+            } else {
+                break
+            }
+        }
+        return topics
     }
 }
 
@@ -397,9 +469,9 @@ extension ABI.Element.Function {
         /// 4) `messageLength` is used to determine where message bytes end to decode string correctly.
         /// 5) The rest of the `data` must be 0 bytes or empty.
         if data.bytes.count >= 100,
-           Data(data[0..<4]) == Data.fromHex("08C379A0"),
-           BigInt(data[4..<36]) == 32,
-           let messageLength = Int(Data(data[36..<68]).toHexString(), radix: 16),
+           Data(data[data.startIndex ..< data.startIndex + 4]) == Data.fromHex("08C379A0"),
+           BigInt(data[data.startIndex + 4 ..< data.startIndex + 36]) == 32,
+           let messageLength = Int(Data(data[data.startIndex + 36 ..< data.startIndex + 68]).toHexString(), radix: 16),
            let message = String(bytes: data.bytes[68..<(68+messageLength)], encoding: .utf8),
            (68+messageLength == data.count || data.bytes[68+messageLength..<data.count].reduce(0) { $0 + $1 } == 0) {
             return ["_success": false,
@@ -410,11 +482,11 @@ extension ABI.Element.Function {
 
         if data.count >= 4,
            let errors = errors,
-           let customError = errors[data[0..<4].toHexString().stripHexPrefix()] {
+           let customError = errors[data[data.startIndex ..< data.startIndex + 4].toHexString().stripHexPrefix()] {
             var errorResponse: [String: Any] = ["_success": false, "_abortedByRevertOrRequire": true, "_error": customError.errorDeclaration]
 
             if (data.count > 32 && !customError.inputs.isEmpty),
-               let decodedInputs = ABIDecoder.decode(types: customError.inputs, data: Data(data[4..<data.count])) {
+               let decodedInputs = ABIDecoder.decode(types: customError.inputs, data: Data(data[data.startIndex + 4 ..< data.startIndex + data.count])) {
                 for idx in decodedInputs.indices {
                     errorResponse["\(idx)"] = decodedInputs[idx]
                     if !customError.inputs[idx].name.isEmpty {

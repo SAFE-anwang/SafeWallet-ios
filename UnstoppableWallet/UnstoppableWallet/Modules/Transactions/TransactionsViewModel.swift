@@ -365,7 +365,7 @@ enum BlockchainSeries {
 
     var types: [BlockchainType] {
         switch self {
-        case .Bitcoin: return [.bitcoin, .litecoin, .dash, .bitcoinCash]
+        case .Bitcoin: return [.bitcoin, .litecoin, .dogecoin, .dash, .bitcoinCash]
         }
     }
     

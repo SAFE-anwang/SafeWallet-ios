@@ -15,7 +15,8 @@ class WalletHeaderView: UITableViewHeaderFooterView {
     var onTapSortBy: (() -> ())?
     var onTapAddCoin: (() -> ())?
     var onTapTransactions: (() -> ())?
-
+    var onTapLiquidityRecord: (() -> ())?
+    
     override init(reuseIdentifier: String?) {
         super.init(reuseIdentifier: reuseIdentifier)
 
@@ -48,6 +49,7 @@ class WalletHeaderView: UITableViewHeaderFooterView {
         sortAddCoinView.onTapDropDown = { [weak self] in self?.onTapSortBy?() }
         sortAddCoinView.onTapSettings = { [weak self] in self?.onTapAddCoin?() }
         sortAddCoinView.onTapTransactions = { [weak self] in self?.onTapTransactions?() }
+        sortAddCoinView.onTapLiquidityRecord = { [weak self] in self?.onTapLiquidityRecord?() }
         
         contentView.addSubview(watchAccountImage)
         watchAccountImage.snp.makeConstraints { maker in

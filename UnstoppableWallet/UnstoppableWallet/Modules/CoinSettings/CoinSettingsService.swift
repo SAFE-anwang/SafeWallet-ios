@@ -28,10 +28,10 @@ extension CoinSettingsService {
 
         if blockchainType.coinSettingType == .derivation {
             let currentDerivations = settingsArray.compactMap { $0[.derivation].flatMap { MnemonicDerivation(rawValue: $0) } }
-
+            let supportedDerivations = token.coin.uid == dogeCoinUid ? accountType.dogecoinSupportedDerivations : accountType.supportedDerivations
             let request = Request(
                     token: token,
-                    type: .derivation(allDerivations: accountType.supportedDerivations, current: currentDerivations),
+                    type: .derivation(allDerivations: supportedDerivations, current: currentDerivations),
                     allowEmpty: allowEmpty
             )
 

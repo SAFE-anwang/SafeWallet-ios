@@ -14,12 +14,17 @@ class BalanceButtonsView: UIView {
     private let addressButton = PrimaryButton()
     private let swapButtonWrapper = UIControl()
     private let swapButton = PrimaryCircleButton()
+    
+    private let liquidityButtonWrapper = UIControl()
+    private let liquidityButton = PrimaryCircleButton()
+    
     private let chartButtonWrapper = UIControl()
     private let chartButton = PrimaryCircleButton()
 
     private var onTapReceive: (() -> ())?
     private var onTapSend: (() -> ())?
     private var onTapSwap: (() -> ())?
+    private var onTapLiquidity: (() -> ())?
     private var onTapChart: (() -> ())?
 
     init() {
@@ -80,7 +85,18 @@ class BalanceButtonsView: UIView {
         swapButton.set(style: .gray)
         swapButton.set(image: UIImage(named: "arrow_swap_2_24"))
         swapButton.addTarget(self, action: #selector(onSwap), for: .touchUpInside)
+        
+        stackView.addArrangedSubview(liquidityButtonWrapper)
 
+        liquidityButtonWrapper.addSubview(liquidityButton)
+        liquidityButton.snp.makeConstraints { maker in
+            maker.edges.equalToSuperview()
+        }
+
+        liquidityButton.set(style: .gray)
+        liquidityButton.set(image: UIImage(named: "arrow_swap_approval_2_24"))
+        liquidityButton.addTarget(self, action: #selector(onLiquidity), for: .touchUpInside)
+        
         stackView.addArrangedSubview(chartButtonWrapper)
 
         chartButtonWrapper.addSubview(chartButton)
@@ -97,12 +113,13 @@ class BalanceButtonsView: UIView {
         fatalError("not implemented")
     }
 
-    func bind(buttons: [WalletModule.Button: ButtonState], sendAction: @escaping () -> (), receiveAction: @escaping () -> (), swapAction: @escaping () -> (), chartAction: @escaping () -> ()) {
+    func bind(buttons: [WalletModule.Button: ButtonState], sendAction: @escaping () -> (), receiveAction: @escaping () -> (), swapAction: @escaping () -> (), liquidityAction: @escaping () -> (), chartAction: @escaping () -> ()) {
         sendButton.isEnabled = buttons[.send] == .enabled
         receiveButton.isEnabled = buttons[.receive] == .enabled
         receiveCircleButton.isEnabled = buttons[.receive] == .enabled
         addressButton.isEnabled = buttons[.address] == .enabled
         swapButton.isEnabled = buttons[.swap] == .enabled
+        liquidityButton.isEnabled = buttons[.liquidity] == .enabled
         chartButton.isEnabled = buttons[.chart] == .enabled
 
         sendButtonWrapper.isHidden = (buttons[.send] ?? .hidden) == .hidden
@@ -110,11 +127,13 @@ class BalanceButtonsView: UIView {
         receiveCircleButton.isHidden = (buttons[.receive] ?? .hidden) == .hidden || buttons.count <= 3
         addressButton.isHidden = (buttons[.address] ?? .hidden) == .hidden
         swapButtonWrapper.isHidden = (buttons[.swap] ?? .hidden) == .hidden
+        liquidityButtonWrapper.isHidden = (buttons[.liquidity] ?? .hidden) == .hidden
         chartButtonWrapper.isHidden = (buttons[.chart] ?? .hidden) == .hidden
 
         onTapSend = sendAction
         onTapReceive = receiveAction
         onTapSwap = swapAction
+        onTapLiquidity = liquidityAction
         onTapChart = chartAction
     }
 
@@ -129,7 +148,10 @@ class BalanceButtonsView: UIView {
     @objc private func onSwap() {
         onTapSwap?()
     }
-
+    @objc private func onLiquidity() {
+        onTapLiquidity?()
+    }
+    
     @objc private func onChart() {
         onTapChart?()
     }

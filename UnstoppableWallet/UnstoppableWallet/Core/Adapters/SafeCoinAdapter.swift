@@ -78,7 +78,7 @@ extension SafeCoinAdapter: DashKitDelegate {
 extension SafeCoinAdapter: ISendSafeCoinAdapter {
     
     var blockchainType: BlockchainType {
-        .unsupported(uid: safeCoinUid)
+        .safe
     }
     
     func minimumSendAmountSafe(address: String?) -> Decimal {

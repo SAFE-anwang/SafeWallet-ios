@@ -14,7 +14,7 @@ class Safe4Module {
         
         for wallet in walletList {
             if wallet.coin.uid == safeCoinUid {
-                if wallet.token.blockchain.type == .unsupported(uid: safeCoinUid) {
+                if wallet.token.blockchain.type == .safe {
                     safeWallet = wallet
                     
                 } else if chainType == .ETH, wallet.token.blockchain.type == .ethereum {
@@ -90,7 +90,7 @@ class Safe4Module {
         
         for wallet in walletList {
             if wallet.coin.uid == safeCoinUid {
-                if wallet.token.blockchain.type == .unsupported(uid: safeCoinUid) {
+                if wallet.token.blockchain.type == .safe {
                     safeWallet = wallet
                     
                 } else if chainType == .ETH, wallet.token.blockchain.type == .ethereum {
@@ -155,7 +155,7 @@ class Safe4Module {
         
         for wallet in walletList {
             if wallet.coin.uid == safeCoinUid {
-                if wallet.token.blockchain.type == .unsupported(uid: safeCoinUid), wallet.token.coin.uid == safeCoinUid {
+                if wallet.token.blockchain.type == .safe, wallet.token.coin.uid == safeCoinUid {
                     safeWallet = wallet
                 }
             }

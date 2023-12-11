@@ -4,6 +4,7 @@ import BitcoinCore
 import DashKit
 import SafeCoinKit
 import LitecoinKit
+import DogecoinKit
 import BitcoinCashKit
 import BinanceChainKit
 import ZcashLightClientKit
@@ -15,13 +16,14 @@ class AddressParserFactory {
         switch blockchainType {
         case .bitcoin: return AddressUriParser(validScheme: "bitcoin", removeScheme: true)
         case .litecoin: return AddressUriParser(validScheme: "litecoin", removeScheme: true)
+        case .dogecoin: return AddressUriParser(validScheme: "dogecoin", removeScheme: true)
         case .bitcoinCash: return AddressUriParser(validScheme: "bitcoincash", removeScheme: false)
         case .ecash: return AddressUriParser(validScheme: "ecash", removeScheme: false)
         case .dash: return AddressUriParser(validScheme: "dash", removeScheme: true)
         case .ethereum: return AddressUriParser(validScheme: "ethereum", removeScheme: true)
         case .binanceChain: return AddressUriParser(validScheme: "binance", removeScheme: true)
         case .zcash: return AddressUriParser(validScheme: "zcash", removeScheme: true)
-        case .unsupported(let uid): return uid == safeCoinUid ? AddressUriParser(validScheme: "safe-anwang", removeScheme: true) : AddressUriParser(validScheme: nil, removeScheme: false)
+        case .safe: return AddressUriParser(validScheme: "safe-anwang", removeScheme: true)
         default: return AddressUriParser(validScheme: nil, removeScheme: false)
         }
     }
@@ -29,7 +31,7 @@ class AddressParserFactory {
     static func parserChain(blockchainType: BlockchainType) -> AddressParserChain {
         switch blockchainType {
 
-        case .bitcoin, .dash, .litecoin, .bitcoinCash, .ecash, .unsupported(_):
+        case .bitcoin, .dash, .litecoin, .dogecoin, .bitcoinCash, .ecash, .safe:
             let scriptConverter = ScriptConverter()
 
             let specificAddressConverter: IAddressConverter?
@@ -41,19 +43,18 @@ class AddressParserFactory {
             case .litecoin:
                 network = LitecoinKit.MainNet()
                 specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
+            case .dogecoin:
+                network = DogecoinKit.MainNet()
+                specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
             case .bitcoinCash:
                 network = BitcoinCashKit.MainNet()
                 specificAddressConverter = CashBech32AddressConverter(prefix: network.bech32PrefixPattern)
             case .ecash:
                 network = ECashKit.MainNet()
                 specificAddressConverter = CashBech32AddressConverter(prefix: network.bech32PrefixPattern)
-            case .unsupported(let uid):
-                if uid == safeCoinUid {
-                    network = SafeCoinKit.MainNet()
-                    specificAddressConverter = nil
-                }else {
-                    return AddressParserChain()
-                }
+            case .safe:
+                network = SafeCoinKit.MainNet()
+                specificAddressConverter = nil
             default:
                 network = BitcoinKit.MainNet()
                 specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
@@ -119,7 +120,7 @@ class AddressParserFactory {
 
             return addressParserChain
         case .solana: return AddressParserChain()
-       // case .unsupported: return AddressParserChain()
+        case .unsupported: return AddressParserChain()
         }
 
     }

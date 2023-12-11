@@ -74,7 +74,7 @@ class SendModule {
         var timeLockService: TimeLockService?
         var timeLockErrorService: SendTimeLockErrorService?
 
-        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .bitcoin || adapter.blockchainType == .bitcoinCash || adapter.blockchainType == .dash || adapter.blockchainType == .litecoin {
+        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .bitcoin || adapter.blockchainType == .bitcoinCash || adapter.blockchainType == .dash || adapter.blockchainType == .litecoin, adapter.blockchainType == .dogecoin {
             let timeLockServiceInstance = TimeLockService()
             timeLockService = timeLockServiceInstance
             timeLockErrorService = SendTimeLockErrorService(timeLockService: timeLockServiceInstance, addressService: addressService, adapter: adapter)
@@ -384,7 +384,7 @@ class SendModule {
         var timeLockService: TimeLockService?
         var timeLockErrorService: SafeSendTimeLockErrorService?
 
-        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .unsupported(uid: safeCoinUid){
+        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .safe {
             let timeLockServiceInstance = TimeLockService()
             timeLockService = timeLockServiceInstance
             timeLockErrorService = SafeSendTimeLockErrorService(timeLockService: timeLockServiceInstance, addressService: addressService, adapter: adapter)

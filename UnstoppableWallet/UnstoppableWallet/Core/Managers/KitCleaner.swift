@@ -17,6 +17,7 @@ extension KitCleaner {
         DispatchQueue.global(qos: .background).async {
             try? BitcoinAdapter.clear(except: accountIds)
             try? LitecoinAdapter.clear(except: accountIds)
+            try? DogecoinAdapter.clear(except: accountIds)
             try? BitcoinCashAdapter.clear(except: accountIds)
             try? DashAdapter.clear(except: accountIds)
             try? EvmAdapter.clear(except: accountIds)

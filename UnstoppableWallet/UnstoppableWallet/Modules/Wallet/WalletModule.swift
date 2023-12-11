@@ -124,6 +124,7 @@ extension WalletModule {
         case receive
         case address
         case swap
+        case liquidity
         case chart
     }
 

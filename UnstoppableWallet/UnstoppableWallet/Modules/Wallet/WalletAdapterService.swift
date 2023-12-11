@@ -39,7 +39,6 @@ class WalletAdapterService {
     }
 
     private func subscribeToAdapters() {
-        adaptersDisposeBag = DisposeBag()
 
         for (wallet, adapter) in adapterMap {
             subscribe(adaptersDisposeBag, adapter.balanceDataUpdatedObservable) { [weak self] in

@@ -10,7 +10,6 @@ struct SwapApproveConfirmationModule {
         guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper else {
             return nil
         }
-
         guard let coinServiceFactory = EvmCoinServiceFactory(
                 blockchainType: dex.blockchainType,
                 marketKit: App.shared.marketKit,

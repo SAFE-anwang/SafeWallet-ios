@@ -9,8 +9,9 @@ class BtcBlockchainManager {
         .bitcoinCash,
         .ecash,
         .litecoin,
+        .dogecoin,
         .dash,
-        .unsupported(uid: safeCoinUid)
+        .safe
     ]
 
     private let marketKit: MarketKit.Kit
@@ -55,6 +56,10 @@ extension BtcBlockchainManager {
     func syncMode(blockchainType: BlockchainType, accountOrigin: AccountOrigin) -> BitcoinCore.SyncMode {
         if accountOrigin == .created {
             return .newWallet
+        }
+        
+        if blockchainType == .dogecoin {
+            return .full
         }
 
         switch restoreMode(blockchainType: blockchainType) {

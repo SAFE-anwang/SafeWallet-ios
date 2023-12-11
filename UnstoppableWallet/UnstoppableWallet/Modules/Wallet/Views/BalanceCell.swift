@@ -58,7 +58,7 @@ class BalanceCell: UITableViewCell {
         fatalError("not implemented")
     }
 
-    func bind(viewItem: BalanceViewItem, animated: Bool = false, duration: TimeInterval = 0.2, onSend: @escaping () -> (), onReceive: @escaping () -> (), onSwap: @escaping () -> (), onChart: @escaping () -> (), onTapError: (() -> ())?) {
+    func bind(viewItem: BalanceViewItem, animated: Bool = false, duration: TimeInterval = 0.2, onSend: @escaping () -> (), onReceive: @escaping () -> (), onSwap: @escaping () -> (), liquidityAction: @escaping () -> (), onChart: @escaping () -> (), onTapError: (() -> ())?) {
         topView.bind(viewItem: viewItem.topViewItem, onTapError: onTapError)
         topView.layoutIfNeeded()
 
@@ -81,7 +81,7 @@ class BalanceCell: UITableViewCell {
         }
 
         if let buttons = viewItem.buttons {
-            buttonsView.bind(buttons: buttons, sendAction: onSend, receiveAction: onReceive, swapAction: onSwap, chartAction: onChart)
+            buttonsView.bind(buttons: buttons, sendAction: onSend, receiveAction: onReceive, swapAction: onSwap, liquidityAction: liquidityAction, chartAction: onChart)
         }
         buttonsView.set(hidden: viewItem.buttons == nil, animated: animated, duration: duration)
     }

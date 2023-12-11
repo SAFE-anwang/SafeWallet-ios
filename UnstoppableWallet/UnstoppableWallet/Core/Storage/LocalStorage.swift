@@ -16,7 +16,7 @@ class LocalStorage {
     private let keyZCashRewind = "z_cash_always_pending_rewind"
     private let keyDefaultProvider = "swap_provider"
     private let keyRemoteContactSync = "icloud-sync-value"
-
+    private let keyDefaultLiquidityProvider = "swap_liquidity_provider"
     private let storage: StorageKit.ILocalStorage
 
     init(storage: StorageKit.ILocalStorage) {
@@ -82,5 +82,15 @@ extension LocalStorage {
         let key = [keyDefaultProvider, blockchainType.uid].joined(separator: "|")
         storage.set(value: provider.rawValue, for: key)
     }
+    
+    func defaultLiquidityProvider(blockchainType: BlockchainType) -> LiquidityMainModule.Dex.Provider {
+        let key = [keyDefaultLiquidityProvider, blockchainType.uid].joined(separator: "|")
+        let raw: String? = storage.value(for: key)
+        return (raw.flatMap { LiquidityMainModule.Dex.Provider(rawValue: $0) }) ?? blockchainType.allowedLiquidityProviders[0]
+    }
 
+    func setDefaultLiquidityProvider(blockchainType: BlockchainType, provider: LiquidityMainModule.Dex.Provider) {
+        let key = [keyDefaultLiquidityProvider, blockchainType.uid].joined(separator: "|")
+        storage.set(value: provider.rawValue, for: key)
+    }
 }

@@ -24,6 +24,7 @@ struct SendEvmData {
         case uniswap(info: SwapInfo)
         case oneInchSwap(info: OneInchSwapInfo)
         case safeSwap(info: SafeSwapInfo)
+        case pancakeLiquidity(info: PancakeLiquidityInfo)
         
         var dAppInfo: DAppInfo? {
             if case .otherDApp(let info) = self { return info } else { return nil }
@@ -43,6 +44,10 @@ struct SendEvmData {
         
         var safeSwapInfo: SafeSwapInfo? {
             if case .safeSwap(let info) = self { return info } else { return nil }
+        }
+        
+        var pancakeLiquidityInfo: PancakeLiquidityInfo? {
+            if case .pancakeLiquidity(let info) = self { return info } else { return nil }
         }
     }
 
@@ -87,13 +92,24 @@ struct SendEvmData {
         let slippage: Decimal
         let recipient: Address?
     }
+    
+    struct PancakeLiquidityInfo {
+        let estimatedOut: Decimal
+        let estimatedIn: Decimal
+        let slippage: String?
+        let deadline: String?
+        let recipientDomain: String?
+        let price: String?
+        let priceImpact: PancakeLiquidityModule.PriceImpactViewItem?
+        let gasPrice: Decimal?
+    }
 
 }
 
 struct SendEvmConfirmationModule {
     private static let forceMultiplier: Double = 1.2
 
-    static func viewController(evmKitWrapper: EvmKitWrapper, sendData: SendEvmData, isEth2safe: Bool = false) -> UIViewController? {
+    static func viewController(evmKitWrapper: EvmKitWrapper, sendData: SendEvmData, gasLimitType: GasLimitType = .common) -> UIViewController? {
         let evmKit = evmKitWrapper.evmKit
 
         guard let coinServiceFactory = EvmCoinServiceFactory(
@@ -107,7 +123,7 @@ struct SendEvmConfirmationModule {
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
                 evmKit: evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory,
-                 isEth2safe: isEth2safe
+                gasLimitType: gasLimitType
         ) else {
             return nil
         }

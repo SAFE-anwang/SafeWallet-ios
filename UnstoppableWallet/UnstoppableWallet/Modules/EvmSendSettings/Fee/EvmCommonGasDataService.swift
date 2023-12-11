@@ -8,12 +8,12 @@ import RxSwift
 class EvmCommonGasDataService {
     private let evmKit: EvmKit.Kit
     private(set) var predefinedGasLimit: Int?
-    private(set) var isEth2safe: Bool = false
-
-    init(evmKit: EvmKit.Kit, predefinedGasLimit: Int?, isEth2safe: Bool = false) {
+    private(set) var gasLimitType: GasLimitType = .common
+    
+    init(evmKit: EvmKit.Kit, predefinedGasLimit: Int?, gasLimitType: GasLimitType = .common) {
         self.evmKit = evmKit
         self.predefinedGasLimit = predefinedGasLimit
-        self.isEth2safe = isEth2safe
+        self.gasLimitType = gasLimitType
     }
 
     func gasDataSingle(gasPrice: GasPrice, transactionData: TransactionData, stubAmount: BigUInt? = nil) -> Single<EvmFeeModule.GasData> {
@@ -24,35 +24,52 @@ class EvmCommonGasDataService {
         let surchargeRequired = !transactionData.input.isEmpty
         
         var adjustedTransactionData: TransactionData
-        if isEth2safe {
+        
+        switch gasLimitType {
+        case .common:
+            adjustedTransactionData = stubAmount.map { TransactionData(to: transactionData.to, value: $0, input: transactionData.input) } ?? transactionData
+        case .contract:
             let _transactionData = TransactionData(to: evmKit.address, value: transactionData.value, input: transactionData.input)
             adjustedTransactionData = stubAmount.map { TransactionData(to: evmKit.address, value: $0, input: transactionData.input) } ?? _transactionData
-        }else {
-            adjustedTransactionData = stubAmount.map { TransactionData(to: transactionData.to, value: $0, input: transactionData.input) } ?? transactionData
         }
-
+        
         return evmKit.estimateGas(transactionData: adjustedTransactionData, gasPrice: gasPrice)
-                .map { estimatedGasLimit in
-                    let limit = surchargeRequired ? EvmFeeModule.surcharged(gasLimit: estimatedGasLimit) : estimatedGasLimit
+                .map { [weak self] estimatedGasLimit in
+                    
+                    let limit: Int
+                    
+                    switch self?.gasLimitType {
+                    case .common, .none:
+                        limit = surchargeRequired ? EvmFeeModule.surcharged(gasLimit: estimatedGasLimit) : estimatedGasLimit
+                        
+                    case .contract(let customLimit):
+                        limit = customLimit
+                    }
                     
                     return EvmFeeModule.GasData(
-                        limit: self.isEth2safe == true ? 100000 : limit,
+                            limit: limit,
                             estimatedLimit: estimatedGasLimit,
                             price: gasPrice
                     )
                 }
     }
-
 }
+
+
 
 extension EvmCommonGasDataService {
 
-    static func instance(evmKit: EvmKit.Kit, blockchainType: BlockchainType, predefinedGasLimit: Int?, isEth2safe: Bool = false) -> EvmCommonGasDataService {
+    static func instance(evmKit: EvmKit.Kit, blockchainType: BlockchainType, predefinedGasLimit: Int?, gasLimitType: GasLimitType = .common) -> EvmCommonGasDataService {
         if let rollupFeeContractAddress = blockchainType.rollupFeeContractAddress {
             return EvmRollupGasDataService(evmKit: evmKit, l1GasFeeContractAddress: rollupFeeContractAddress, predefinedGasLimit: predefinedGasLimit)
         }
 
-        return EvmCommonGasDataService(evmKit: evmKit, predefinedGasLimit: predefinedGasLimit, isEth2safe: isEth2safe)
+        return EvmCommonGasDataService(evmKit: evmKit, predefinedGasLimit: predefinedGasLimit, gasLimitType: gasLimitType)
     }
 
+}
+
+enum GasLimitType {
+    case common
+    case contract(limit: Int)
 }

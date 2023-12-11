@@ -64,7 +64,7 @@ class CoinOverviewViewItemFactory {
 
     private func typesTitle(coinUid: String) -> String {
         switch coinUid {
-        case "bitcoin", "litecoin": return "coin_overview.bips".localized
+        case "bitcoin", "litecoin", "dogecoin": return "coin_overview.bips".localized
         case "bitcoin-cash": return "coin_overview.coin_types".localized
         default: return "coin_overview.blockchains".localized
         }
@@ -84,7 +84,7 @@ class CoinOverviewViewItemFactory {
             switch item.configuredToken.token.type {
             case .native:
                 switch blockchain.type {
-                case .bitcoin, .litecoin:
+                case .bitcoin, .litecoin, .dogecoin:
                     title = item.configuredToken.coinSettings.derivation?.title
                     subtitle = item.configuredToken.coinSettings.derivation?.addressType
                 case .bitcoinCash:

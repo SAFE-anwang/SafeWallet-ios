@@ -20,5 +20,17 @@ struct CoinSelectModule {
 
         return CoinSelectViewController(viewModel: viewModel, delegate: delegate)
     }
+    
+    static func viewController(dex: LiquidityMainModule.Dex, delegate: ICoinSelectDelegate) -> UIViewController {
+        let service = LiquidityCoinSelectService(
+                dex: dex,
+                marketKit: App.shared.marketKit,
+                walletManager: App.shared.walletManager,
+                adapterManager: App.shared.adapterManager,
+                currencyKit: App.shared.currencyKit
+        )
+        let viewModel = LiquidityCoinSelectViewModel(service: service)
 
+        return LiquidityCoinSelectViewController(viewModel: viewModel, delegate: delegate)
+    }
 }

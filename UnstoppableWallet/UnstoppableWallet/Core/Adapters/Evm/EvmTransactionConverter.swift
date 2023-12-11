@@ -343,7 +343,13 @@ extension EvmTransactionConverter {
                                 transferEvents(outgoingEip721Transfers: outgoingEip721Transfers) + transferEvents(outgoingEip1155Transfers: outgoingEip1155Transfers)
                 )
             }
-
+        case let decoration as LiquidityDecoration:
+            return EvmTransactionRecord(
+                    source: source,
+                    transaction: transaction,
+                    baseToken: baseToken,
+                    ownTransaction: transaction.from == evmKit.address
+            )
         default: ()
         }
 

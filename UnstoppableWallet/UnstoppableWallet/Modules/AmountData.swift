@@ -52,3 +52,8 @@ struct AmountData {
     }
 
 }
+
+struct LiquidityAmountData {
+    let primary: AmountInfo
+    let secondary: AmountInfo?
+}

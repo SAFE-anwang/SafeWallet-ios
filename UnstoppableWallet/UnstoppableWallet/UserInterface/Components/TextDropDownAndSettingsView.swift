@@ -12,16 +12,25 @@ class TextDropDownAndSettingsView: UIView {
     private let selectorButton = SelectorButton()
     private let settingsButton = SecondaryCircleButton()
     private let transactionsButton = SecondaryCircleButton()
+    private let liquidityRecordButton = SecondaryCircleButton()
 
     var onTapDropDown: (() -> ())?
     var onTapSettings: (() -> ())?
     var onTapSelector: ((Int) -> ())?
     var onTapTransactions: (() -> ())?
+    var onTapLiquidityRecord: (() -> ())?
     
     var isEnabledTransactions: Bool = true {
         didSet {
             transactionsButton.isHidden = !isEnabledTransactions
             transactionsButton.isEnabled = isEnabledTransactions
+        }
+    }
+    
+    var isEnabledLiquidity: Bool = true {
+        didSet {
+            liquidityRecordButton.isHidden = !isEnabledLiquidity
+            liquidityRecordButton.isEnabled = isEnabledLiquidity
         }
     }
     
@@ -47,11 +56,16 @@ class TextDropDownAndSettingsView: UIView {
         stackView.spacing = .margin16
 
         stackView.addArrangedSubview(selectorButton)
+        
+        stackView.addArrangedSubview(liquidityRecordButton)
         stackView.addArrangedSubview(transactionsButton)
         stackView.addArrangedSubview(settingsButton)
 
         selectorButton.isHidden = true
         selectorButton.onSelect = { [weak self] in self?.onTapSelector?($0) }
+        
+        liquidityRecordButton.set(image: UIImage(named: "filled_transaction_2n_24"))
+        liquidityRecordButton.addTarget(self, action: #selector(onTapLiquidityRecordButton), for: .touchUpInside)
         
         transactionsButton.set(image: UIImage(named: "filled_transaction_2n_24"))
         transactionsButton.addTarget(self, action: #selector(onTapTransactionsButton), for: .touchUpInside)
@@ -75,6 +89,10 @@ class TextDropDownAndSettingsView: UIView {
     
     @objc private func onTapTransactionsButton() {
         onTapTransactions?()
+    }
+    
+    @objc private func onTapLiquidityRecordButton() {
+        onTapLiquidityRecord?()
     }
 
     func bind(dropdownTitle: String?, settingsHidden: Bool = false) {

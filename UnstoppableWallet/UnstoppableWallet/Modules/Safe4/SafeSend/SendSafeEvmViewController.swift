@@ -125,7 +125,7 @@ class SendSafeEvmViewController: ThemeViewController {
     }
 
     private func openConfirm(sendData: SendEvmData) {
-        guard let viewController = SendEvmConfirmationModule.viewController(evmKitWrapper: evmKitWrapper, sendData: sendData, isEth2safe: true) else {
+        guard let viewController = SendEvmConfirmationModule.viewController(evmKitWrapper: evmKitWrapper, sendData: sendData, gasLimitType: .contract(limit: 100000)) else {
             return
         }
         navigationController?.pushViewController(viewController, animated: true)

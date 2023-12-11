@@ -30,6 +30,10 @@ class FeeRateProvider {
     var litecoinFeeRate: Int {
         feeRateKit.litecoin
     }
+    
+    var dogecoinFeeRate: Int {
+        2000
+    }
 
     var bitcoinCashFeeRate: Int {
         feeRateKit.bitcoinCash
@@ -124,6 +128,19 @@ class SafeFeeRateProvider: IFeeRateProvider {
     }
 }
 
+class DogecoinFeeRateProvider: IFeeRateProvider {
+
+    
+    private let feeRateProvider: FeeRateProvider
+
+    init(feeRateProvider: FeeRateProvider) {
+        self.feeRateProvider = feeRateProvider
+    }
+    
+    func recommendedFeeRate() async throws -> Int {
+        feeRateProvider.dogecoinFeeRate
+    }
+}
 private func ceil(_ value: Int, multiply: Double?) -> Int {
     guard let multiply = multiply else {
         return value

@@ -86,7 +86,7 @@ extension SendSafe2wsafeFactory: ISendFeeSettingsFactory {
         let feeCautionViewModel = SendFeeWarningViewModel(service: feeRateService)
         let amountCautionViewModel = SendFeeSettingsAmountCautionViewModel(service: amountCautionService, feeToken: token)
         let feeRateViewModel = FeeRateViewModel(service: feeRateService, feeCautionViewModel: feeCautionViewModel, amountCautionViewModel: amountCautionViewModel)
-        if token.blockchainType == .unsupported(uid: safeCoinUid) {
+        if token.blockchainType == .safe{
             dataSources.append(FeeRateDataSource(feeViewModel: feeViewModel, feeRateViewModel: feeRateViewModel))
         }
 
