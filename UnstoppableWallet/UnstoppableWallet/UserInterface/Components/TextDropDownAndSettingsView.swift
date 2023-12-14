@@ -64,7 +64,7 @@ class TextDropDownAndSettingsView: UIView {
         selectorButton.isHidden = true
         selectorButton.onSelect = { [weak self] in self?.onTapSelector?($0) }
         
-        liquidityRecordButton.set(image: UIImage(named: "filled_transaction_2n_24"))
+        liquidityRecordButton.set(image: UIImage(named: "arrow_swap_approval_2_24"))
         liquidityRecordButton.addTarget(self, action: #selector(onTapLiquidityRecordButton), for: .touchUpInside)
         
         transactionsButton.set(image: UIImage(named: "filled_transaction_2n_24"))

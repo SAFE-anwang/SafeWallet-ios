@@ -24,7 +24,7 @@ struct LiquidityConfirmationModule {
         let gasDataService = EvmCommonGasDataService.instance(
                 evmKit: evmKitWrapper.evmKit,
                 blockchainType: evmKitWrapper.blockchainType,
-                predefinedGasLimit: nil,
+                predefinedGasLimit: 500000,
                 gasLimitType: .contract(limit: 500000)
         )
         

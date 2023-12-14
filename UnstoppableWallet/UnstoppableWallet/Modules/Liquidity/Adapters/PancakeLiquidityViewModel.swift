@@ -39,7 +39,7 @@ class PancakeLiquidityViewModel {
     private var openRevokeRelay = PublishRelay<LiquidityAllowanceService.ApproveData>()
     private var openApproveRelay = PublishRelay<LiquidityAllowanceService.ApproveData>()
 
-    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.swap_view_model")
+    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.liquidity_view_model")
 
     init(service: PancakeLiquidityService, tradeService: PancakeLiquidityTradeService, switchService: AmountTypeSwitchService, allowanceServiceA: LiquidityAllowanceService, pendingAllowanceServiceA: LiquidityPendingAllowanceService, allowanceServiceB: LiquidityAllowanceService, pendingAllowanceServiceB: LiquidityPendingAllowanceService,currencyKit: CurrencyKit.Kit, viewItemHelper: LiquidityViewItemHelper) {
         self.service = service
@@ -335,19 +335,17 @@ extension PancakeLiquidityViewModel {
     
     func onTapRevoke() {
 
-//        guard let approveData = service.approveData(amount: 0, token: token) else {
-//            return
-//        }
-//
-//        openRevokeRelay.accept(approveData)
-    }
+        guard let approveData = service.approveData(amount: 0) else {
+            return
+        }
+        openRevokeRelay.accept(approveData)
+    }    
 
     func onTapApprove() {
-//        guard let approveData = service.approveData(token: token) else {
-//            return
-//        }
-//
-//        openApproveRelay.accept(approveData)
+        guard let approveData = service.approveData() else {
+            return
+        }
+        openApproveRelay.accept(approveData)
     }
 
     func didApprove() {

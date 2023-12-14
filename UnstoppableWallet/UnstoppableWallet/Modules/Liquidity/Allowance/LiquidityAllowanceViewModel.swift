@@ -25,7 +25,7 @@ class LiquidityAllowanceViewModel {
         syncVisible()
 
         subscribe(disposeBag, Observable.combineLatest(allowanceService.stateObservable, errorProvider.errorsObservable)) { [weak self] in self?.handle(allowanceState: $0, errors: $1) }
-//        subscribe(disposeBag, errorProvider.errorsObservable) { [weak self] in self?.handle(errors: $0) }
+        subscribe(disposeBag, errorProvider.errorsObservable) { [weak self] in self?.handle(errors: $0) }
     }
 
     private func syncVisible(allowanceState: LiquidityAllowanceService.State? = nil) {
@@ -48,7 +48,7 @@ class LiquidityAllowanceViewModel {
     }
 
     private func handle(allowanceState: LiquidityAllowanceService.State?, errors: [Error]) {
-//        syncVisible(allowanceState: allowanceState)
+        syncVisible(allowanceState: allowanceState)
 
         if let state = allowanceService.state {
             allowanceRelay.accept(allowance(state: state, errors: errors))

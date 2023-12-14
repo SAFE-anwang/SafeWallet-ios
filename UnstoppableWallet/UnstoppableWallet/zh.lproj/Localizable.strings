@@ -404,7 +404,7 @@
 
 // Swap
 
-"swap.title" = "合约调用";
+"swap.title" = "交易互兑";
 "swap.you_pay" = "您支付";
 "swap.estimated" = "估计";
 "swap.balance" = "余额";
@@ -464,11 +464,11 @@
 
 // Swap Approving
 
-"swap.approve.subtitle" = "合约调用";
+"swap.approve.subtitle" = "交易互兑";
 
 // Swap Confirmation
 
-"swap.confirmation.swap_button" = "合约调用";
+"swap.confirmation.swap_button" = "交易互兑";
 "swap.confirmation.swap_button_liquidity" = "添加流动性";
 "swap.confirmation.impact_too_high" = "由于流动性极低，禁止SafeWallet进行该交换操作，因为您将获得非常不利的价格。\n如果您仍然想要交换，请使用%@网站。";
 "swap.confirmation.impact_warning" = "重要提示！您正在以极其不利的价格进行交易。这是因为流动性非常低。";
@@ -836,7 +836,7 @@
 "transactions.burn" = "燃烧";
 "transactions.mint" = "发行";
 "transactions.approve" = "批准";
-"transactions.swap" = "合约调用";
+"transactions.swap" = "交易互兑";
 "transactions.contract_call" = "合约调用";
 "transactions.contract_creation" = "合约创建";
 "transactions.external_call" = "外部呼叫";
@@ -1601,5 +1601,9 @@
 "tron.send.inactive_address" = "此地址未激活";
 
 // Liquidity
+"liquidity.pool.quantity" = "流动性数量";
+"liquidity.title.add" = "添加流动性";
 "liquidity.title.record" = "流动性";
 "liquidity.remove" = "移除流动性";
+"liquidity.empty.description" = "你还没有添加流动性";
+"liquidity.remove.description" = "确定移除流动性吗？";

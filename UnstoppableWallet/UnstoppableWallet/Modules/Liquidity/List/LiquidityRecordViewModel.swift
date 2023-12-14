@@ -10,31 +10,33 @@ import EvmKit
 
 class LiquidityRecordViewModel {
     private var viewItemsRelay = BehaviorRelay<[RecordItem]>(value: [])
+    private var loadingRelay = BehaviorRelay<Bool>(value: false)
     private let service: LiquidityRecordService
-    
     private var disposeBag = DisposeBag()
 
     init(service: LiquidityRecordService) {
         self.service = service
-        
         subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
     }
     
     private func sync(state: LiquidityRecordService.State) {
         switch state {
         case .loading:
-            viewItemsRelay.accept([])
+            loadingRelay.accept(true)
 
         case .completed(let datas):
             viewItemsRelay.accept(datas)
-
+            loadingRelay.accept(false)
         case .failed:
-            print("Error")
+            loadingRelay.accept(false)
         }
     }
 }
 
 extension LiquidityRecordViewModel {
+    var loadingDriver: Driver<Bool> {
+        loadingRelay.asDriver()
+    }
     
     var viewItemsDriver: Driver<[RecordItem]> {
         viewItemsRelay.asDriver()
@@ -42,6 +44,10 @@ extension LiquidityRecordViewModel {
     
     func removeLiquidity(recordItem: RecordItem) {
         service.removeLiquidity(viewItem: recordItem)
+    }
+    
+    func refresh() {
+        service.refresh()
     }
 }
 
@@ -55,7 +61,8 @@ extension LiquidityRecordViewModel {
         let liquidity: Decimal
         let shareRate: Decimal
         let totalSupply: Decimal
-        let pairAddress: EvmKit.Address
+        let pair: LiquidityPair
+        
         var amountAStr: String {
             decimalNumberToInt(value: amountA, scale: 8)
         }
@@ -65,7 +72,7 @@ extension LiquidityRecordViewModel {
         }
         
         var liquidityDec: String {
-            "流动性数量".localized + ":\(decimalNumberToInt(value: liquidity, scale: 5))/\(decimalNumberToInt(value: shareRate * 100, scale: 8))%"
+            "liquidity.pool.quantity".localized + ":\(decimalNumberToInt(value: liquidity, scale: 5))/\(decimalNumberToInt(value: shareRate * 100, scale: 8))%"
         }
         
         func decimalNumberToInt(value: Decimal, scale: Int) -> String {

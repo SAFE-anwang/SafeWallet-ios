@@ -66,6 +66,7 @@ class LiquidityProviderMannager {
 //            return OneInchModule(dex: dex, dataSourceState: state)
 //        case .safeSwap:
 //            return SafeSwapModule(dex: dex, dataSourceState: state)
+        default: return nil
         }
     }
 

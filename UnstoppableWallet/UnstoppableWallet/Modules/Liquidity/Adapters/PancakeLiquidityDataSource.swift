@@ -27,8 +27,10 @@ class PancakeLiquidityDataSource {
     private let warningCell = HighlightedDescriptionCell(showVerticalMargin: false)
     private let errorCell = TitledHighlightedDescriptionCell()
     private let buttonStackCell = StackViewCell()
+    
     private let revokeButton = PrimaryButton()
     private let approve1Button = PrimaryButton()
+
     private let proceedButton = PrimaryButton()
     private let proceed2Button = PrimaryButton()
 
@@ -269,9 +271,9 @@ class PancakeLiquidityDataSource {
     }
 
     private func openRevoke(approveData: LiquidityAllowanceService.ApproveData) {
-        guard let provider = SwapModule.Dex.Provider(rawValue: approveData.dex.provider.rawValue) else { return }
-        let dex = SwapModule.Dex(blockchainType: approveData.dex.blockchainType, provider: provider)
-        let approve = SwapAllowanceService.ApproveData(dex: dex, token: approveData.token, spenderAddress: approveData.spenderAddress, amount: approveData.amount, allowance: approveData.allowance)
+
+        let approve = SwapAllowanceService.ApproveData(dex: approveData.dex, token: approveData.token, spenderAddress: approveData.spenderAddress, amount: approveData.amount, allowance: approveData.allowance)
+        
         guard let viewController = SwapApproveConfirmationModule.revokeViewController(data: approve, delegate: self) else {
             return
         }
@@ -280,9 +282,8 @@ class PancakeLiquidityDataSource {
     }
 
     private func openApprove(approveData: LiquidityAllowanceService.ApproveData) {
-        guard let provider = SwapModule.Dex.Provider(rawValue: approveData.dex.provider.rawValue) else { return }
-        let dex = SwapModule.Dex(blockchainType: approveData.dex.blockchainType, provider: provider)
-        let approve = SwapAllowanceService.ApproveData(dex: dex, token: approveData.token, spenderAddress: approveData.spenderAddress, amount: approveData.amount, allowance: approveData.allowance)
+
+        let approve = SwapAllowanceService.ApproveData(dex: approveData.dex, token: approveData.token, spenderAddress: approveData.spenderAddress, amount: approveData.amount, allowance: approveData.allowance)
         
         guard let viewController = SwapApproveModule.instance(data: approve, delegate: self) else {
             return

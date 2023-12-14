@@ -128,6 +128,22 @@ extension BottomSheetModule {
                 ]
         )
     }
+    
+    static func removeLiquidityConfirmation(action: (() -> ())?) -> UIViewController {
+        viewController(
+                image: .local(image: UIImage(named: "warning_2_24")?.withTintColor(.themeJacob)),
+                title: "liquidity.remove".localized,
+                items: [
+                    .highlightedDescription(text: "liquidity.remove.description".localized)
+                ],
+                buttons: [
+                    .init(style: .yellow, title: "button.ok".localized) {
+                        action?()
+                    },
+                    .init(style: .transparent, title: "button.cancel".localized)
+                ]
+        )
+    }
 
 }
 

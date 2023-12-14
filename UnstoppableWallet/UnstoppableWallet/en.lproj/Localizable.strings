@@ -1586,5 +1586,8 @@ Go to Settings - > Unstoppable and allow access to the camera.";
 "tron.send.inactive_address" = "This address is not active";
 
 // Liquidity
+"liquidity.pool.quantity" = "Liquidity quantity";
+"liquidity.title.add" = "Add Liquidity";
 "liquidity.title.record" = "Liquidity";
 "liquidity.remove" = "Remove Liquidity";
+"liquidity.empty.description" = "You haven't added liquidity yet";

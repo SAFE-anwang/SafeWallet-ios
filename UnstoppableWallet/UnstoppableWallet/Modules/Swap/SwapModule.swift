@@ -129,6 +129,7 @@ extension SwapModule {
     enum SwapError: Error, Equatable {
         case noBalanceIn
         case insufficientBalanceIn
+        case insufficientBalanceIn2
         case insufficientAllowance
         case needRevokeAllowance(allowance: CoinValue)
 
@@ -136,6 +137,7 @@ extension SwapModule {
             switch (lhs, rhs) {
             case (.noBalanceIn, .noBalanceIn): return true
             case (.insufficientBalanceIn, .insufficientBalanceIn): return true
+            case (.insufficientBalanceIn2, .insufficientBalanceIn2): return true
             case (.insufficientAllowance, .insufficientAllowance): return true
             case (.needRevokeAllowance(let lAllowance), .needRevokeAllowance(let rAllowance)): return lAllowance == rAllowance
             default: return false

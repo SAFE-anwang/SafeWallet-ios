@@ -100,12 +100,12 @@ class LiquidityFeeService {
 
     private func syncStatus(transaction: EvmFeeModule.Transaction, errors: [Error], warnings: [Warning]) {
         var errors: [Error] = errors
-
-        let totalAmount = transaction.transactionData.value + transaction.gasData.fee
+/* // remove limit
+        let totalAmount = transaction.gasData.fee
         if totalAmount > evmBalance {
             errors.append(SendEvmTransactionService.TransactionError.insufficientBalance(requiredBalance: totalAmount))
         }
-        
+ */
         let transactionData = TransactionData(to: transaction.transactionData.to, value: 0, input: transaction.transactionData.input)
         let newTransaction = EvmFeeModule.Transaction(transactionData: transactionData, gasData: transaction.gasData)
         

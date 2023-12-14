@@ -76,29 +76,11 @@ extension LiquidityMainModule {
 
 extension LiquidityMainModule {
 
-    enum ApproveStepState: Int {
-        case notApproved, revokeRequired, revoking, approveRequired, approving, approved
+    class DataSourceState: SwapModule.DataSourceState {
     }
 
-    class DataSourceState {
-        var tokenFrom: Token?
-        var tokenTo: Token?
-        var amountFrom: Decimal?
-        var amountTo: Decimal?
-        var exactFrom: Bool
-
-        init(tokenFrom: Token?, tokenTo: Token? = nil, amountFrom: Decimal? = nil, amountTo: Decimal? = nil, exactFrom: Bool = true) {
-            self.tokenFrom = tokenFrom
-            self.tokenTo = tokenTo
-            self.amountFrom = amountFrom
-            self.amountTo = amountTo
-            self.exactFrom = exactFrom
-        }
-
-    }
-
-    class Dex {
-        var blockchainType: BlockchainType {
+    class Dex: SwapModule.Dex {
+        override var blockchainType: BlockchainType {
             didSet {
                 let allowedProviders = blockchainType.allowedLiquidityProviders
                 if !allowedProviders.contains(provider) {
@@ -107,106 +89,25 @@ extension LiquidityMainModule {
             }
         }
 
-        var provider: Provider {
+        override var provider: Provider {
             didSet {
                 if !provider.allowedBlockchainTypes.contains(blockchainType) {
                     blockchainType = provider.allowedBlockchainTypes[0]
                 }
             }
         }
-
-        init(blockchainType: BlockchainType, provider: Provider) {
-            self.blockchainType = blockchainType
-            self.provider = provider
-        }
-
-    }
-
-}
-
-extension LiquidityMainModule {
-
-    enum SwapError: Error, Equatable {
-        case noBalanceIn
-        case insufficientBalanceIn
-        case insufficientBalanceOut
-        case insufficientAllowance
-        case needRevokeAllowance(allowance: CoinValue)
-
-        static func ==(lhs: SwapError, rhs: SwapError) -> Bool {
-            switch (lhs, rhs) {
-            case (.noBalanceIn, .noBalanceIn): return true
-            case (.insufficientBalanceIn, .insufficientBalanceIn): return true
-            case (.insufficientBalanceOut, .insufficientBalanceOut): return true
-            case (.insufficientAllowance, .insufficientAllowance): return true
-            case (.needRevokeAllowance(let lAllowance), .needRevokeAllowance(let rAllowance)): return lAllowance == rAllowance
-            default: return false
-            }
-        }
-
-        var revokeAllowance: CoinValue? {
-            switch self {
-            case .needRevokeAllowance(let allowance): return allowance
-            default: return nil
-            }
-        }
-
     }
 
 }
 
 extension BlockchainType {
 
-    var allowedLiquidityProviders: [LiquidityMainModule.Dex.Provider] {
+    var allowedLiquidityProviders: [SwapModule.Dex.Provider] {
         switch self {
-//        case .ethereum: return [.oneInch, .uniswap, .uniswapV3, .safeSwap, .pancakeV3]
         case .binanceSmartChain: return [.pancake]
-//        case .polygon: return [.oneInch, .quickSwap, .uniswapV3, .safeSwap]
-//        case .avalanche: return [.oneInch]
-//        case .optimism: return [.oneInch]
-//        case .arbitrumOne: return [.oneInch, .uniswapV3]
-//        case .gnosis: return [.oneInch]
-//        case .fantom: return [.oneInch]
         default: return []
         }
     }
 
 }
 
-extension LiquidityMainModule.Dex {
-
-    enum Provider: String {
-        case pancake = "PancakeSwap"
-        
-        var allowedBlockchainTypes: [BlockchainType] {
-            switch self {
-            case .pancake: return [.binanceSmartChain]
-            }
-        }
-
-        var infoUrl: String {
-            switch self {
-            case .pancake: return "https://pancakeswap.finance/"
-            }
-        }
-
-        var title: String {
-            switch self {
-            case .pancake: return "PancakeSwap"
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .pancake: return "pancake_32"
-            }
-        }
-
-    }
-
-}
-
-//protocol ISwapErrorProvider {
-//    var errors: [Error] { get }
-//    var errorsObservable: Observable<[Error]> { get }
-//}
