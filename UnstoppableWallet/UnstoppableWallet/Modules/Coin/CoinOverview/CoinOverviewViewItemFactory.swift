@@ -1,9 +1,8 @@
-import Foundation
 import CurrencyKit
+import Foundation
 import MarketKit
 
 class CoinOverviewViewItemFactory {
-
     private func roundedFormat(coinCode: String, value: Decimal?) -> String? {
         guard let value = value, !value.isZero, let formattedValue = ValueFormatter.instance.formatShort(value: value, decimalCount: 0, symbol: coinCode) else {
             return nil
@@ -57,11 +56,6 @@ class CoinOverviewViewItemFactory {
         return viewItems
     }
 
-    private func categories(info: MarketInfoOverview) -> [String]? {
-        let categories = info.categories
-        return categories.isEmpty ? nil : categories.map { $0.name }
-    }
-
     private func typesTitle(coinUid: String) -> String {
         switch coinUid {
         case "bitcoin", "litecoin", "dogecoin": return "coin_overview.bips".localized
@@ -72,7 +66,7 @@ class CoinOverviewViewItemFactory {
 
     private func typeViewItems(tokenItems: [CoinOverviewService.TokenItem]) -> [CoinOverviewViewModel.TypeViewItem] {
         tokenItems.map { item in
-            let blockchain = item.configuredToken.blockchain
+            let blockchain = item.token.blockchain
 
             let title: String?
             let subtitle: String?
@@ -81,39 +75,36 @@ class CoinOverviewViewItemFactory {
             var showAdd = false
             var showAdded = false
 
-            switch item.configuredToken.token.type {
+            switch item.token.type {
             case .native:
-                switch blockchain.type {
-                case .bitcoin, .litecoin, .dogecoin:
-                    title = item.configuredToken.coinSettings.derivation?.title
-                    subtitle = item.configuredToken.coinSettings.derivation?.addressType
-                case .bitcoinCash:
-                    title = item.configuredToken.coinSettings.bitcoinCashCoinType?.title
-                    subtitle = item.configuredToken.coinSettings.bitcoinCashCoinType?.description
-                default:
-                    title = blockchain.name
-                    subtitle = "coin_platforms.native".localized
-                }
-            case .eip20(let address):
+                title = blockchain.name
+                subtitle = "coin_platforms.native".localized
+            case let .derived(derivation):
+                title = derivation.mnemonicDerivation.title
+                subtitle = derivation.mnemonicDerivation.addressType + derivation.mnemonicDerivation.recommended
+            case let .addressType(type):
+                title = type.bitcoinCashCoinType.title
+                subtitle = type.bitcoinCashCoinType.description + type.bitcoinCashCoinType.recommended
+            case let .eip20(address):
                 title = blockchain.name
                 subtitle = address.shortened
                 reference = address
-                url = blockchain.eip20TokenUrl(address: address)
-            case .bep2(let symbol):
+                url = blockchain.explorerUrl(reference: address)
+            case let .bep2(symbol):
                 title = blockchain.name
                 subtitle = symbol
                 reference = symbol
-                url = blockchain.bep2TokenUrl(symbol: symbol)
-            case .spl(let address):
+                url = blockchain.explorerUrl(reference: symbol)
+            case let .spl(address):
                 title = blockchain.name
                 subtitle = address.shortened
                 reference = address
-                url = nil
+                url = blockchain.explorerUrl(reference: address)
             case let .unsupported(_, _reference):
                 title = blockchain.name
                 subtitle = _reference?.shortened
                 reference = _reference
-                url = reference.flatMap { blockchain.eip20TokenUrl(address: $0) }
+                url = blockchain.explorerUrl(reference: reference)
             }
 
             switch item.state {
@@ -123,13 +114,13 @@ class CoinOverviewViewItemFactory {
             }
 
             return CoinOverviewViewModel.TypeViewItem(
-                    iconUrl: blockchain.type.imageUrl,
-                    title: title,
-                    subtitle: subtitle,
-                    reference: reference,
-                    explorerUrl: url,
-                    showAdd: showAdd,
-                    showAdded: showAdded
+                iconUrl: blockchain.type.imageUrl,
+                title: title,
+                subtitle: subtitle,
+                reference: reference,
+                explorerUrl: url,
+                showAdd: showAdd,
+                showAdded: showAdded
             )
         }
     }
@@ -193,17 +184,15 @@ class CoinOverviewViewItemFactory {
             }
 
             return CoinOverviewViewModel.LinkViewItem(
-                    title: linkTitle(type: linkType, url: url),
-                    iconName: linkIconName(type: linkType),
-                    url: linkUrl(type: linkType, url: url)
+                title: linkTitle(type: linkType, url: url),
+                iconName: linkIconName(type: linkType),
+                url: linkUrl(type: linkType, url: url)
             )
         }
     }
-
 }
 
 extension CoinOverviewViewItemFactory {
-
     func viewItem(item: CoinOverviewService.Item, currency: Currency, typesShown: Bool) -> CoinOverviewViewModel.ViewItem {
         let info = item.info
         let coin = info.fullCoin.coin
@@ -214,35 +203,33 @@ extension CoinOverviewViewItemFactory {
 
         if !item.tokens.isEmpty {
             types = CoinOverviewViewModel.TypesViewItem(
-                    title: typesTitle(coinUid: coin.uid),
-                    viewItems: typeViewItems(tokenItems: item.tokens.count > 4 && !typesShown ? Array(item.tokens.prefix(3)) : item.tokens),
-                    action: item.tokens.count > 4 ? (typesShown ? .showLess : .showMore) : nil
+                title: typesTitle(coinUid: coin.uid),
+                viewItems: typeViewItems(tokenItems: item.tokens.count > 4 && !typesShown ? Array(item.tokens.prefix(3)) : item.tokens),
+                action: item.tokens.count > 4 ? (typesShown ? .showLess : .showMore) : nil
             )
         }
 
         return CoinOverviewViewModel.ViewItem(
-                coinViewItem: CoinOverviewViewModel.CoinViewItem(
-                        name: coin.name,
-                        marketCapRank: marketCapRank,
-                        imageUrl: coin.imageUrl,
-                        imagePlaceholderName: "placeholder_circle_32"
-                ),
-
+            coinViewItem: CoinOverviewViewModel.CoinViewItem(
+                name: coin.name,
                 marketCapRank: marketCapRank,
-                marketCap: info.marketCap.flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) },
-                totalSupply: roundedFormat(coinCode: coinCode, value: info.totalSupply),
-                circulatingSupply: roundedFormat(coinCode: coinCode, value: info.circulatingSupply),
-                volume24h: info.volume24h.flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) },
-                dilutedMarketCap: info.dilutedMarketCap.flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) },
-                genesisDate: info.genesisDate.map { DateHelper.instance.formatFullDateOnly(from: $0) },
+                imageUrl: coin.imageUrl,
+                imagePlaceholderName: "placeholder_circle_32"
+            ),
 
-                performance: performanceViewItems(info: info),
-                categories: categories(info: info),
-                types: types,
-                description: info.description,
-                guideUrl: item.guideUrl,
-                links: links(info: info)
+            marketCapRank: marketCapRank,
+            marketCap: info.marketCap.flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) },
+            totalSupply: roundedFormat(coinCode: coinCode, value: info.totalSupply),
+            circulatingSupply: roundedFormat(coinCode: coinCode, value: info.circulatingSupply),
+            volume24h: info.volume24h.flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) },
+            dilutedMarketCap: info.dilutedMarketCap.flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) },
+            genesisDate: info.genesisDate.map { DateHelper.instance.formatFullDateOnly(from: $0) },
+
+            performance: performanceViewItems(info: info),
+            types: types,
+            description: info.description,
+            guideUrl: item.guideUrl,
+            links: links(info: info)
         )
     }
-
 }

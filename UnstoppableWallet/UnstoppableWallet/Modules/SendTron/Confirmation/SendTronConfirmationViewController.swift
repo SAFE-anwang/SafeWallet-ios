@@ -17,7 +17,7 @@ class SendTronConfirmationViewController: ThemeViewController {
     private let tableView = SectionsTableView(style: .grouped)
     let bottomWrapper = BottomGradientHolder()
 
-    private let sendButton = PrimaryButton()
+    private let sendButton = SliderButton()
     private let feeCell: FeeCell
 
     private var sectionViewItems = [SendTronConfirmationViewModel.SectionViewItem]()
@@ -59,23 +59,17 @@ class SendTronConfirmationViewController: ThemeViewController {
 
         tableView.sectionDataSource = self
 
-        view.addSubview(bottomWrapper)
-        bottomWrapper.snp.makeConstraints { maker in
-            maker.top.equalTo(tableView.snp.bottom).offset(-CGFloat.margin16)
-            maker.leading.trailing.equalToSuperview()
-            maker.bottom.equalTo(view.safeAreaLayoutGuide)
-        }
+        bottomWrapper.add(to: self, under: tableView)
 
         bottomWrapper.addSubview(sendButton)
-        sendButton.snp.makeConstraints { maker in
-            maker.top.equalToSuperview().inset(CGFloat.margin32)
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin24)
-            maker.bottom.equalToSuperview().inset(CGFloat.margin16)
-        }
 
-        sendButton.set(style: .yellow)
-        sendButton.setTitle("send.confirmation.send_button".localized, for: .normal)
-        sendButton.addTarget(self, action: #selector(onTapSend), for: .touchUpInside)
+        sendButton.title = "send.confirmation.slide_to_send".localized
+        sendButton.finalTitle = "send.confirmation.sending".localized
+        sendButton.slideImage = UIImage(named: "arrow_medium_2_right_24")
+        sendButton.finalImage = UIImage(named: "check_2_24")
+        sendButton.onTap = { [weak self] in
+            self?.transactionViewModel.send()
+        }
 
         subscribe(disposeBag, transactionViewModel.cautionsDriver) { [weak self] in self?.handle(cautions: $0) }
         subscribe(disposeBag, transactionViewModel.sendingSignal) { [weak self] in self?.handleSending() }
@@ -92,10 +86,6 @@ class SendTronConfirmationViewController: ThemeViewController {
         tableView.buildSections()
 
         isLoaded = true
-    }
-
-    @objc private func onTapSend() {
-        transactionViewModel.send()
     }
 
     private func handle(cautions: [TitledCaution]) {
@@ -128,6 +118,7 @@ class SendTronConfirmationViewController: ThemeViewController {
 
     private func handleSendFailed(error: String) {
         HudHelper.instance.show(banner: .error(string: error))
+        sendButton.reset()
     }
 
     private func reloadTable() {

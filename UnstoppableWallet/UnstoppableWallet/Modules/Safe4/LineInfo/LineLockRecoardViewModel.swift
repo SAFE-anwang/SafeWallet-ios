@@ -26,9 +26,12 @@ class LineLockRecoardViewModel {
         self.adapter = adapter
         
         guard wallet.coin.uid == safeCoinUid  && wallet.token.blockchain.type == .safe else { return }
-        if let state = WalletAdapterService(adapterManager: App.shared.adapterManager).state(wallet: wallet), state == .synced {
-            let title = "safe_lock.recoard.title".localized("\(adapter.balanceData.balanceLocked)")
-            lockedBalanceTitle = title
+        guard let account = App.shared.accountManager.activeAccount else { return }
+        if let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: wallet), state == .synced {
+            if let lockedBalanceData = adapter.balanceData as? LockedBalanceData {
+                let title = "safe_lock.recoard.title".localized("\(lockedBalanceData.locked)")
+                lockedBalanceTitle = title
+            }
             let lockUxto = adapter.safeCoinKit.getConfirmedUnspentOutputProvider().getLockUxto()
             syncLockedRecordItems(items: lockUxto)
         }

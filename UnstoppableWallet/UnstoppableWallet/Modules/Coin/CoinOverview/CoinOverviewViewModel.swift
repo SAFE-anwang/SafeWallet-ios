@@ -1,10 +1,10 @@
-import Foundation
-import RxSwift
-import RxRelay
-import RxCocoa
-import MarketKit
-import UIKit
 import ComponentKit
+import Foundation
+import MarketKit
+import RxCocoa
+import RxRelay
+import RxSwift
+import UIKit
 
 class CoinOverviewViewModel {
     private let service: CoinOverviewService
@@ -32,7 +32,7 @@ class CoinOverviewViewModel {
             viewItemRelay.accept(nil)
             loadingRelay.accept(true)
             syncErrorRelay.accept(false)
-        case .completed(let item):
+        case let .completed(item):
             viewItemRelay.accept(viewItemFactory.viewItem(item: item, currency: service.currency, typesShown: typesShown))
             loadingRelay.accept(false)
             syncErrorRelay.accept(false)
@@ -42,11 +42,9 @@ class CoinOverviewViewModel {
             syncErrorRelay.accept(true)
         }
     }
-
 }
 
 extension CoinOverviewViewModel {
-
     var viewItemDriver: Driver<ViewItem?> {
         viewItemRelay.asDriver()
     }
@@ -73,14 +71,20 @@ extension CoinOverviewViewModel {
 
     func onTapAddToWallet(index: Int) {
         do {
-            try service.addToWallet(index: index)
+            try service.editWallet(index: index, add: true)
             hudRelay.accept(.addedToWallet)
-        } catch {
-        }
+        } catch {}
+    }
+
+    func onTapAddedToWallet(index: Int) {
+        do {
+            try service.editWallet(index: index, add: false)
+            hudRelay.accept(.removedFromWallet)
+        } catch {}
     }
 
     func onTap(typesAction: TypesAction) {
-        guard case .completed(let item) = service.state else {
+        guard case let .completed(item) = service.state else {
             return
         }
 
@@ -91,11 +95,9 @@ extension CoinOverviewViewModel {
 
         viewItemRelay.accept(viewItemFactory.viewItem(item: item, currency: service.currency, typesShown: typesShown))
     }
-
 }
 
 extension CoinOverviewViewModel {
-
     struct CoinViewItem {
         let name: String
         let marketCapRank: String?
@@ -115,7 +117,6 @@ extension CoinOverviewViewModel {
         let genesisDate: String?
 
         let performance: [[PerformanceViewItem]]
-        let categories: [String]?
         let types: TypesViewItem?
         let description: String
         let guideUrl: URL?
@@ -162,5 +163,4 @@ extension CoinOverviewViewModel {
         let iconName: String
         let url: String
     }
-
 }

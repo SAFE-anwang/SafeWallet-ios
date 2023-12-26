@@ -49,8 +49,8 @@ class Safe4Module {
             HudHelper.instance.show(banner: .error(string: error ?? ""))
             return nil
         }
-        
-        if let state = WalletAdapterService(adapterManager: App.shared.adapterManager).state(wallet: safeWallet), state == .synced {
+        guard let account = App.shared.accountManager.activeAccount else { return nil }
+        if let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: safeWallet), state == .synced {
             
             guard let adapter = App.shared.adapterManager.adapter(for: safeWallet) else { return nil }
             
@@ -73,7 +73,7 @@ class Safe4Module {
             switch (adapter, ethAdapter){
             case (let adapter as ISendSafeCoinAdapter, let ethAdapter as ISendEthereumAdapter):
                 let data = Safe4Data(wsafeWallet: wsafeWallet, safeWallet: safeWallet, isETH: chainType == .ETH, isMatic: chainType == .MATIC, contractAddress: contractAddress, reciverAddress: reciverAddress)
-                return SendModule.wsafeViewController(token: safeWallet.token, adapter: adapter, ethAdapter: ethAdapter, data: data)
+                return SendModule.wsafeViewController(token: safeWallet.token, mode: .send, adapter: adapter, ethAdapter: ethAdapter, data: data)
             default: return nil
             }            
         }else {
@@ -124,8 +124,8 @@ class Safe4Module {
             HudHelper.instance.show(banner: .error(string: error ?? ""))
             return nil
         }
-        
-        if let state = WalletAdapterService(adapterManager: App.shared.adapterManager).state(wallet: wsafeWallet), state == .synced {
+        guard let account = App.shared.accountManager.activeAccount else { return nil }
+        if let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: wsafeWallet), state == .synced {
                         
             var contractAddress: Address?
             var reciverAddress: Address?
@@ -165,8 +165,8 @@ class Safe4Module {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
-        
-        guard let state = WalletAdapterService(adapterManager: App.shared.adapterManager).state(wallet: safeWallet), state == .synced else {
+        guard let account = App.shared.accountManager.activeAccount else { return nil }
+        guard let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: safeWallet), state == .synced else {
             HudHelper.instance.show(banner: .error(string: "balance.syncing".localized))
             return nil
         }
@@ -181,7 +181,7 @@ class Safe4Module {
         
         switch adapter {
         case let adapter as ISendSafeCoinAdapter:
-            return SendModule.lineLockViewController(token: safeWallet.token, adapter: adapter, reciverAddress: reciverAddress)
+            return SendModule.lineLockViewController(token: safeWallet.token, mode: .send, adapter: adapter, reciverAddress: reciverAddress)
         default: return nil
         }
         

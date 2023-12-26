@@ -29,6 +29,9 @@ extension UniswapProvider {
     var wethAddress: EvmKit.Address {
         swapKit.etherToken.address
     }
+    var isSafeswap: Bool {
+        swapKit.isSafeSwap
+    }
 
     func swapData(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token) async throws -> SwapData {
         let uniswapTokenIn = try uniswapToken(token: tokenIn)

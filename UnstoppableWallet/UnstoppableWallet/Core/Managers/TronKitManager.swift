@@ -8,18 +8,16 @@ import MarketKit
 class TronKitManager {
     private let disposeBag = DisposeBag()
     private let testNetManager: TestNetManager
-    private let appConfigProvider: AppConfigProvider
 
     private weak var _tronKitWrapper: TronKitWrapper?
 
     private let tronKitCreatedRelay = PublishRelay<Void>()
     private var currentAccount: Account?
 
-    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.tron-kit-manager", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "\(AppConfig.label).tron-kit-manager", qos: .userInitiated)
 
-    init(testNetManager: TestNetManager, appConfigProvider: AppConfigProvider) {
+    init(testNetManager: TestNetManager) {
         self.testNetManager = testNetManager
-        self.appConfigProvider = appConfigProvider
     }
 
     private func _tronKitWrapper(account: Account, blockchainType: BlockchainType) throws -> TronKitWrapper {
@@ -48,7 +46,7 @@ class TronKitManager {
             address: address,
             network: network,
             walletId: account.id,
-            apiKey: appConfigProvider.tronGridApiKey,
+            apiKey: AppConfig.tronGridApiKey,
             minLogLevel: .error
         )
 

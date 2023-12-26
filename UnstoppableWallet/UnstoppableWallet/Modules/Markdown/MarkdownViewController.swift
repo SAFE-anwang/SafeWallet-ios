@@ -142,6 +142,28 @@ class MarkdownViewController: ThemeViewController {
 
 extension MarkdownViewController {
 
+    static func header1Row(id: String, string: String) -> RowProtocol {
+        header1Row(id: id, attributedString: NSAttributedString(string: string, attributes: [.font: UIFont.title2, .foregroundColor: UIColor.themeLeah]))
+    }
+
+    static func header3Row(id: String, string: String) -> RowProtocol {
+        header3Row(id: id, attributedString: NSAttributedString(string: string, attributes: [.font: UIFont.headline2, .foregroundColor: UIColor.themeJacob]))
+    }
+
+    static func textRow(id: String, string: String) -> RowProtocol {
+        textRow(id: id, attributedString: NSAttributedString(string: string, attributes: [.font: UIFont.body, .foregroundColor: UIColor.themeBran]))
+    }
+
+    static func listItemRow(id: String, string: String) -> RowProtocol {
+        listItemRow(
+                id: id,
+                attributedString: NSAttributedString(string: string, attributes: [.font: UIFont.body, .foregroundColor: UIColor.themeBran]),
+                prefix: "•",
+                tightTop: false,
+                tightBottom: false
+        )
+    }
+
     static func headerRow(id: String, attributedString: NSAttributedString, level: Int) -> RowProtocol {
         if level == 1 || level == 2 {
             return header1Row(id: id, attributedString: attributedString)
@@ -243,6 +265,8 @@ extension MarkdownViewController: SectionsDataSource {
             return []
         }
 
+        let footerText = "© \(AppConfig.companyName) 2023"
+
         return [
             Section(
                     id: "blocks",
@@ -255,10 +279,10 @@ extension MarkdownViewController: SectionsDataSource {
                         Row<BrandFooterCell>(
                                 id: "brand",
                                 dynamicHeight: { containerWidth in
-                                    BrandFooterCell.height(containerWidth: containerWidth, title: BrandFooterCell.brandText)
+                                    BrandFooterCell.height(containerWidth: containerWidth, title: footerText)
                                 },
                                 bind: { cell, _ in
-                                    cell.title = BrandFooterCell.brandText
+                                    cell.title = footerText
                                 }
                         )
                     ]

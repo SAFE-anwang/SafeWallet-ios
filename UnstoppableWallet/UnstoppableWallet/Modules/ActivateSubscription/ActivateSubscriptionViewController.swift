@@ -14,11 +14,12 @@ class ActivateSubscriptionViewController: ThemeViewController {
     private let tableView = SectionsTableView(style: .grouped)
     private let spinner = HUDActivityView.create(with: .medium24)
     private let errorView = PlaceholderViewModule.reachabilityView()
+    private let noSubscriptionsView = PlaceholderView()
 
     private let buttonsHolder = BottomGradientHolder()
     private let signButton = PrimaryButton()
     private let activatingButton = PrimaryButton()
-    private let cancelButton = PrimaryButton()
+    private let rejectButton = PrimaryButton()
 
     private var viewItem: ActivateSubscriptionViewModel.ViewItem?
 
@@ -37,6 +38,9 @@ class ActivateSubscriptionViewController: ThemeViewController {
 
         title = "activate_subscription.title".localized
 
+        navigationItem.largeTitleDisplayMode = .never
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onTapClose))
+
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
             make.leading.top.trailing.equalToSuperview()
@@ -48,7 +52,7 @@ class ActivateSubscriptionViewController: ThemeViewController {
 
         view.addSubview(spinner)
         spinner.snp.makeConstraints { make in
-            make.center.equalTo(tableView)
+            make.center.equalToSuperview()
         }
 
         spinner.startAnimating()
@@ -60,36 +64,31 @@ class ActivateSubscriptionViewController: ThemeViewController {
 
         errorView.configureSyncError(action: { [weak self] in self?.viewModel.onTapRetry() })
 
-        view.addSubview(buttonsHolder)
-        buttonsHolder.snp.makeConstraints { make in
-            make.top.equalTo(tableView.snp.bottom).offset(-CGFloat.margin16)
-            make.leading.trailing.bottom.equalToSuperview()
+        view.addSubview(noSubscriptionsView)
+        noSubscriptionsView.snp.makeConstraints { maker in
+            maker.edges.equalToSuperview()
         }
 
-        let stackView = UIStackView()
+        noSubscriptionsView.image = UIImage(named: "sync_error_48")?.withTintColor(.themeGray)
+        noSubscriptionsView.text = "activate_subscription.no_subscriptions".localized
+        noSubscriptionsView.addPrimaryButton(style: .yellow, title: "subscription_info.get_premium".localized, target: self, action: #selector(onTapGetPremium))
 
-        buttonsHolder.addSubview(stackView)
-        stackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(CGFloat.margin24)
-        }
+        buttonsHolder.add(to: self, under: tableView)
+        buttonsHolder.addSubview(signButton)
 
-        stackView.axis = .vertical
-        stackView.spacing = .margin16
-
-        stackView.addArrangedSubview(signButton)
         signButton.set(style: .yellow)
         signButton.setTitle("activate_subscription.sign".localized, for: .normal)
-        signButton.addTarget(self, action: #selector(onTapSignButton), for: .touchUpInside)
+        signButton.addTarget(self, action: #selector(onTapSign), for: .touchUpInside)
 
-        stackView.addArrangedSubview(activatingButton)
+        buttonsHolder.addSubview(activatingButton)
         activatingButton.set(style: .yellow, accessoryType: .spinner)
         activatingButton.isEnabled = false
         activatingButton.setTitle("activate_subscription.activating".localized, for: .normal)
 
-        stackView.addArrangedSubview(cancelButton)
-        cancelButton.set(style: .gray)
-        cancelButton.setTitle("button.cancel".localized, for: .normal)
-        cancelButton.addTarget(self, action: #selector(onTapCancelButton), for: .touchUpInside)
+        buttonsHolder.addSubview(rejectButton)
+        rejectButton.set(style: .gray)
+        rejectButton.setTitle("button.reject".localized, for: .normal)
+        rejectButton.addTarget(self, action: #selector(onTapReject), for: .touchUpInside)
 
         viewModel.$spinnerVisible
                 .receive(on: DispatchQueue.main)
@@ -101,11 +100,23 @@ class ActivateSubscriptionViewController: ThemeViewController {
                 .sink { [weak self] visible in self?.errorView.isHidden = !visible }
                 .store(in: &cancellables)
 
+        viewModel.$noSubscriptionsVisible
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] visible in self?.noSubscriptionsView.isHidden = !visible }
+                .store(in: &cancellables)
+
         viewModel.$viewItem
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] viewItem in
-                    self?.viewItem = viewItem
-                    self?.tableView.reload()
+                    if let viewItem {
+                        self?.viewItem = viewItem
+                        self?.tableView.reload()
+                        self?.tableView.isHidden = false
+                        self?.buttonsHolder.isHidden = false
+                    } else {
+                        self?.tableView.isHidden = true
+                        self?.buttonsHolder.isHidden = true
+                    }
                 }
                 .store(in: &cancellables)
 
@@ -117,6 +128,11 @@ class ActivateSubscriptionViewController: ThemeViewController {
         viewModel.$activatingVisible
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] visible in self?.activatingButton.isHidden = !visible }
+                .store(in: &cancellables)
+
+        viewModel.$rejectEnabled
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] enabled in self?.rejectButton.isEnabled = enabled }
                 .store(in: &cancellables)
 
         viewModel.errorPublisher
@@ -131,15 +147,21 @@ class ActivateSubscriptionViewController: ThemeViewController {
                     self?.dismiss(animated: true)
                 }
                 .store(in: &cancellables)
-
-        tableView.buildSections()
     }
 
-    @objc private func onTapSignButton() {
+    @objc private func onTapSign() {
         viewModel.onTapSign()
     }
 
-    @objc private func onTapCancelButton() {
+    @objc private func onTapReject() {
+        dismiss(animated: true)
+    }
+
+    @objc private func onTapGetPremium() {
+        UrlManager.open(url: AppConfig.analyticsLink, inAppController: self)
+    }
+
+    @objc private func onTapClose() {
         dismiss(animated: true)
     }
 

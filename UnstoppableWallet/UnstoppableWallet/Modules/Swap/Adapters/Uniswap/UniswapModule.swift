@@ -8,13 +8,15 @@ class UniswapModule {
     private let allowanceService: SwapAllowanceService
     private let pendingAllowanceService: SwapPendingAllowanceService
     private let service: UniswapService
-
-    init?(dex: SwapModule.Dex, dataSourceState: SwapModule.DataSourceState) {
+    private let isSafeSwap: Bool
+    
+    init?(dex: SwapModule.Dex, dataSourceState: SwapModule.DataSourceState, isSafeSwap: Bool) {
+        self.isSafeSwap = isSafeSwap
         guard let evmKit = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
             return nil
         }
 
-        guard let swapKit = try? UniswapKit.Kit.instance(evmKit: evmKit) else {
+        guard let swapKit = try? UniswapKit.Kit.instance(evmKit: evmKit, isSafeSwap: isSafeSwap) else {
             return nil
         }
 

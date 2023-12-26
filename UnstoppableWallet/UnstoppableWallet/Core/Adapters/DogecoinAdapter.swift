@@ -1,5 +1,6 @@
 import DogecoinKit
 import BitcoinCore
+import Foundation
 import RxSwift
 import MarketKit
 import HdWalletKit
@@ -14,20 +15,20 @@ class DogecoinAdapter: BitcoinBaseAdapter {
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
         let networkType: DogecoinKit.Kit.NetworkType = .mainNet
         let logger = App.shared.logger.scoped(with: "DogeecoinKit")
-
+        
         switch wallet.account.type {
         case .mnemonic:
             guard let seed = wallet.account.type.mnemonicSeed else {
                 throw AdapterError.unsupportedAccount
             }
 
-            guard let derivation = wallet.coinSettings.derivation else {
-                throw AdapterError.wrongParameters
-            }
+//            guard let derivation = wallet.token.type.derivation else {
+//                throw AdapterError.wrongParameters
+//            }
 
             dogecoinKit = try DogecoinKit.Kit(
                     seed: seed,
-                    purpose: derivation.purpose,
+                    purpose: .bip44,//derivation.purpose,
                     walletId: wallet.account.id,
                     syncMode: syncMode,
                     networkType: networkType,
@@ -35,13 +36,13 @@ class DogecoinAdapter: BitcoinBaseAdapter {
                     logger: logger
             )
         case let .hdExtendedKey(key):
-            guard let derivation = wallet.coinSettings.derivation else {
-                throw AdapterError.wrongParameters
-            }
+//            guard let derivation = wallet.token.type.derivation else {
+//                throw AdapterError.wrongParameters
+//            }
 
             dogecoinKit = try DogecoinKit.Kit(
                     extendedKey: key,
-                    purpose: derivation.purpose,
+                    purpose: .bip44,//derivation.purpose,
                     walletId: wallet.account.id,
                     syncMode: syncMode,
                     networkType: networkType,

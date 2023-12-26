@@ -12,11 +12,8 @@ class PancakeLiquidityService {
     let dex: LiquidityMainModule.Dex
     private let tradeService: PancakeLiquidityTradeService
     
-    private let allowanceServiceA: LiquidityAllowanceService
-    private let pendingAllowanceServiceA: LiquidityPendingAllowanceService
-    
-    private let allowanceServiceB: LiquidityAllowanceService
-    private let pendingAllowanceServiceB: LiquidityPendingAllowanceService
+    private let allowanceService: LiquidityAllowanceService
+    private let pendingAllowanceService: LiquidityPendingAllowanceService
     private let adapterManager: AdapterManager
 
     private let disposeBag = DisposeBag()
@@ -56,15 +53,12 @@ class PancakeLiquidityService {
 
     private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.liquidity_service")
 
-    init(dex: LiquidityMainModule.Dex, tradeService: PancakeLiquidityTradeService, allowanceServiceA: LiquidityAllowanceService, pendingAllowanceServiceA: LiquidityPendingAllowanceService,  allowanceServiceB: LiquidityAllowanceService, pendingAllowanceServiceB: LiquidityPendingAllowanceService, adapterManager: AdapterManager) {
+    init(dex: LiquidityMainModule.Dex, tradeService: PancakeLiquidityTradeService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService, adapterManager: AdapterManager) {
         self.dex = dex
         self.tradeService = tradeService
         
-        self.allowanceServiceA = allowanceServiceA
-        self.pendingAllowanceServiceA = pendingAllowanceServiceA
-        
-        self.allowanceServiceB = allowanceServiceB
-        self.pendingAllowanceServiceB = pendingAllowanceServiceB
+        self.allowanceService = allowanceService
+        self.pendingAllowanceService = pendingAllowanceService
         
         self.adapterManager = adapterManager
 
@@ -85,17 +79,11 @@ class PancakeLiquidityService {
         subscribe(scheduler, disposeBag, tradeService.amountInObservable) { [weak self] amount in
             self?.onUpdate(amountIn: amount)
         }
-        subscribe(scheduler, disposeBag, allowanceServiceA.stateObservable) { [weak self] _ in
+        subscribe(scheduler, disposeBag, allowanceService.stateObservable) { [weak self] _ in
             self?.syncState()
         }
-        subscribe(scheduler, disposeBag, pendingAllowanceServiceA.stateObservable) { [weak self] _ in
-            self?.onUpdatePendingAllowanceState()
-        }
-        
-        subscribe(scheduler, disposeBag, allowanceServiceB.stateObservable) { [weak self] _ in
-            self?.syncState()
-        }
-        subscribe(scheduler, disposeBag, pendingAllowanceServiceB.stateObservable) { [weak self] _ in
+  
+        subscribe(scheduler, disposeBag, pendingAllowanceService.stateObservable) { [weak self] _ in
             self?.onUpdatePendingAllowanceState()
         }
     }
@@ -106,8 +94,8 @@ class PancakeLiquidityService {
 
     private func onUpdate(token: MarketKit.Token?) {
         balanceIn = token.flatMap { balance(token: $0) }
-        allowanceServiceA.set(token: token)
-        pendingAllowanceServiceA.set(token: token)
+        allowanceService.set(tokenA: token)
+        pendingAllowanceService.set(tokenA: token)
     }
 
     private func onUpdate(amountIn: Decimal?) {
@@ -116,8 +104,8 @@ class PancakeLiquidityService {
 
     private func onUpdate(tokenOut: MarketKit.Token?) {
         balanceOut = tokenOut.flatMap { balance(token: $0) }
-        allowanceServiceB.set(token: tokenOut)
-        pendingAllowanceServiceB.set(token: tokenOut)
+        allowanceService.set(tokenB: tokenOut)
+        pendingAllowanceService.set(tokenB: tokenOut)
     }
 
     private func onUpdatePendingAllowanceState() {
@@ -149,7 +137,7 @@ class PancakeLiquidityService {
             return SwapModule.SwapError.needRevokeAllowance(allowance: allowance)
         }
 
-        return SwapModule.SwapError.insufficientAllowance
+        return SwapModule.SwapError.insufficientAllowanceB
     }
 
     private func syncState() {
@@ -166,13 +154,11 @@ class PancakeLiquidityService {
         case .notReady(let errors):
             allErrors.append(contentsOf: errors)
         }
-        let (allErrorsA, loadingA) = syncState(allowanceService: allowanceServiceA, pendingAllowanceService: pendingAllowanceServiceA)
-        let (allErrorsB, loadingB) = syncState(allowanceService: allowanceServiceB, pendingAllowanceService: pendingAllowanceServiceB)
+        let (allError, loadingA) = syncState(allowanceService: allowanceService, pendingAllowanceService: pendingAllowanceService)
         
-        allErrors.append(contentsOf: allErrorsA)
-        allErrors.append(contentsOf: allErrorsB)
+        allErrors.append(contentsOf: allError)
         
-        loading = loadingA && loadingB
+        loading = loadingA
 
         if !loading {
             errors = allErrors
@@ -196,29 +182,28 @@ class PancakeLiquidityService {
             switch allowanceState {
             case .loading:
                 loading = true
-            case .ready(let allowance):
-                if let error = checkAllowanceError(allowance: allowance) {
+            case .ready(let allowanceA, let allowanceB):
+                if let error = checkAllowanceError(allowance: allowanceA) {
                     allErrors.append(error)
                 }
-                if allowanceService.token?.coin == tradeService.tokenOut?.coin {
-                    if let error = checkAllowanceBError(allowance: allowance) {
-                        allErrors.append(error)
-                    }
+                
+                if let error = checkAllowanceBError(allowance: allowanceB) {
+                    allErrors.append(error)
                 }
             case .notReady(let error):
                 allErrors.append(error)
             }
         }
 
-        if allowanceService.token?.coin == tradeService.tokenIn?.coin, let balanceIn = balanceIn {
+        if allowanceService.tokenA?.coin == tradeService.tokenIn?.coin, let balanceIn = balanceIn, allowanceService.tokenB?.coin == tradeService.tokenOut?.coin, let balanceOut = balanceOut {
             if tradeService.amountIn > balanceIn {
                 allErrors.append(SwapModule.SwapError.insufficientBalanceIn)
             }
-        } else if allowanceService.token?.coin == tradeService.tokenOut?.coin, let balanceOut = balanceOut {
+            
             if tradeService.amountOut > balanceOut {
                 allErrors.append(SwapModule.SwapError.insufficientBalanceIn2)
             }
-        }else {
+        } else {
             allErrors.append(SwapModule.SwapError.noBalanceIn)
         }
 
@@ -229,7 +214,7 @@ class PancakeLiquidityService {
     }
 
     private func balance(token: MarketKit.Token) -> Decimal? {
-        (adapterManager.adapter(for: token) as? IBalanceAdapter)?.balanceData.balance
+        (adapterManager.adapter(for: token) as? IBalanceAdapter)?.balanceData.available
     }
 
 }
@@ -254,21 +239,26 @@ extension PancakeLiquidityService: ISwapErrorProvider {
 
     func approveData(amount: Decimal? = nil)  -> LiquidityAllowanceService.ApproveData? {
         
-        let (allErrorsA, _) = syncState(allowanceService: allowanceServiceA, pendingAllowanceService: pendingAllowanceServiceA)
-        let (allErrorsB, _) = syncState(allowanceService: allowanceServiceB, pendingAllowanceService: pendingAllowanceServiceB)
-        
-        if !allErrorsA.isEmpty {
-            let amount = amount ??  balanceIn
-            guard let amount = amount else {
-                return nil
+        let (allErrors, _) = syncState(allowanceService: allowanceService, pendingAllowanceService: pendingAllowanceService)
+       
+        if !allErrors.isEmpty {
+            
+            if allErrors.contains(where: { .insufficientAllowance == $0 as? SwapModule.SwapError }) {
+                let amount = amount ?? balanceIn
+                guard let amount = amount else {
+                    return nil
+                }
+                let token = allowanceService.tokenA
+                return allowanceService.approveData(dex: dex, token: token, amount: amount)
+                
+            } else if allErrors.contains(where: { .insufficientAllowanceB == $0 as? SwapModule.SwapError }) {
+                let amount = amount ?? balanceOut
+                guard let amount = amount else {
+                    return nil
+                }
+                let token = allowanceService.tokenB
+                return allowanceService.approveData(dex: dex, token: token, amount: amount)
             }
-            return allowanceServiceA.approveData(dex: dex, amount: amount)
-        }else if !allErrorsB.isEmpty {
-            let amount = amount ??  balanceOut
-            guard let amount = amount else {
-                return nil
-            }
-            return allowanceServiceB.approveData(dex: dex, amount: amount)
         }
         return nil
     }

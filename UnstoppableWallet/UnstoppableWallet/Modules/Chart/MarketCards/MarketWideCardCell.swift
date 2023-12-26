@@ -9,7 +9,7 @@ class MarketWideCardCell: BaseSelectableThemeCell {
     private let infoButton = SecondaryCircleButton()
     private let valueLabel = UILabel()
     private let valueInfoLabel = UILabel()
-    private let chartView = RateChartView()
+    private var chartView: RateChartView?
 
     private var onTapInfo: (() -> ())?
 
@@ -54,6 +54,12 @@ class MarketWideCardCell: BaseSelectableThemeCell {
 
         valueInfoLabel.font = .subhead1
         valueInfoLabel.textColor = .themeGray
+    }
+
+    private func showChartView(configuration: ChartConfiguration) {
+        chartView?.removeFromSuperview()
+
+        let chartView = RateChartView(configuration: configuration)
 
         wrapperView.addSubview(chartView)
         chartView.snp.makeConstraints { make in
@@ -62,6 +68,7 @@ class MarketWideCardCell: BaseSelectableThemeCell {
             make.height.equalTo(60)
         }
 
+        self.chartView = chartView
         chartView.isUserInteractionEnabled = false
     }
 
@@ -73,28 +80,28 @@ class MarketWideCardCell: BaseSelectableThemeCell {
         onTapInfo?()
     }
 
-    func bind(title: String, value: String?, valueInfo: String?, chartData: ChartData? = nil, chartTrend: MovementTrend? = nil, chartCurveType: ChartConfiguration.CurveType = .line, onTapInfo: @escaping () -> ()) {
+    func bind(title: String, value: String?, valueInfo: String?, chartData: ChartData? = nil, chartTrend: MovementTrend? = nil, chartCurveType: ChartConfiguration.CurveType = .line, onTapInfo: (() -> ())? = nil) {
         titleLabel.text = title
         valueLabel.text = value
         valueInfoLabel.text = value != nil ? valueInfo : nil
 
         if let chartData, let chartTrend {
-            chartView.isHidden = false
-
             let chartConfiguration: ChartConfiguration
             switch chartCurveType {
             case .line: chartConfiguration = .previewChart
             case .bars: chartConfiguration = .previewBarChart
             }
-            chartView.apply(configuration: chartConfiguration)
+            showChartView(configuration: chartConfiguration)
 
-            chartView.setCurve(colorType: chartTrend.chartColorType)
-            chartView.set(chartData: chartData, animated: false)
+            chartView?.setCurve(colorType: chartTrend.chartColorType)
+            chartView?.set(chartData: chartData, animated: false)
         } else {
-            chartView.isHidden = true
+            chartView?.removeFromSuperview()
+            chartView = nil
         }
 
         self.onTapInfo = onTapInfo
+        infoButton.isHidden = onTapInfo == nil
     }
 
 }

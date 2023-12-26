@@ -48,9 +48,11 @@ class SendTronViewController: ThemeViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = "send.title".localized(viewModel.token.coin.code)
+        title = viewModel.title
 
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: iconImageView)
+        if (navigationController?.viewControllers.count ?? 0) == 1 {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: iconImageView)
+        }
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.cancel".localized, style: .plain, target: self, action: #selector(didTapCancel))
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
@@ -92,14 +94,18 @@ class SendTronViewController: ThemeViewController {
             self?.amountCell.set(cautionType: caution?.type)
             self?.amountCautionCell.set(caution: caution)
         }
+        subscribe(disposeBag, viewModel.addressCautionDriver) { [weak self] caution in
+            self?.recipientCell.set(cautionType: caution?.type)
+            self?.recipientCautionCell.set(caution: caution)
+        }
         subscribe(disposeBag, viewModel.proceedSignal) { [weak self] in self?.openConfirm(contract: $0) }
 
         tableView.buildSections()
         isLoaded = true
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
 
         if !keyboardShown {
             keyboardShown = true
@@ -138,10 +144,10 @@ class SendTronViewController: ThemeViewController {
 extension SendTronViewController: SectionsDataSource {
 
     func buildSections() -> [SectionProtocol] {
-        [
+        var sections = [
             Section(
                 id: "available-balance",
-                headerState: .margin(height: .margin4),
+                headerState: .margin(height: .margin12),
                 rows: [
                     StaticRow(
                         cell: availableBalanceCell,
@@ -152,7 +158,7 @@ extension SendTronViewController: SectionsDataSource {
             ),
             Section(
                 id: "amount",
-                headerState: .margin(height: .margin8),
+                headerState: .margin(height: .margin16),
                 rows: [
                     StaticRow(
                         cell: amountCell,
@@ -167,39 +173,46 @@ extension SendTronViewController: SectionsDataSource {
                         }
                     )
                 ]
-            ),
-            Section(
-                id: "recipient",
-                headerState: .margin(height: .margin16),
-                rows: [
-                    StaticRow(
-                        cell: recipientCell,
-                        id: "recipient-input",
-                        dynamicHeight: { [weak self] width in
-                            self?.recipientCell.height(containerWidth: width) ?? 0
-                        }
-                    ),
-                    StaticRow(
-                        cell: recipientCautionCell,
-                        id: "recipient-caution",
-                        dynamicHeight: { [weak self] width in
-                            self?.recipientCautionCell.height(containerWidth: width) ?? 0
-                        }
-                    )
-                ]
-            ),
-            Section(
-                id: "button",
-                footerState: .margin(height: .margin32),
-                rows: [
-                    StaticRow(
-                        cell: buttonCell,
-                        id: "button",
-                        height: PrimaryButtonCell.height
-                    )
-                ]
             )
         ]
+        if viewModel.showAddress {
+            sections.append(
+                    Section(
+                            id: "recipient",
+                            headerState: .margin(height: .margin16),
+                            rows: [
+                                StaticRow(
+                                        cell: recipientCell,
+                                        id: "recipient-input",
+                                        dynamicHeight: { [weak self] width in
+                                            self?.recipientCell.height(containerWidth: width) ?? 0
+                                        }
+                                ),
+                                StaticRow(
+                                        cell: recipientCautionCell,
+                                        id: "recipient-caution",
+                                        dynamicHeight: { [weak self] width in
+                                            self?.recipientCautionCell.height(containerWidth: width) ?? 0
+                                        }
+                                )
+                            ]
+                    )
+            )
+        }
+        sections.append(
+                Section(
+                        id: "button",
+                        footerState: .margin(height: .margin32),
+                        rows: [
+                            StaticRow(
+                                    cell: buttonCell,
+                                    id: "button",
+                                    height: PrimaryButtonCell.height
+                            )
+                        ]
+                )
+        )
+        return sections
     }
 
 }

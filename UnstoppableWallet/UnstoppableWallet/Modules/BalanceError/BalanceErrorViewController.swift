@@ -92,15 +92,17 @@ class BalanceErrorViewController: ThemeActionSheetController {
     }
 
     @objc private func onTapReport() {
+        let email = AppConfig.reportEmail
+
         if MFMailComposeViewController.canSendMail() {
             let controller = MFMailComposeViewController()
-            controller.setToRecipients([viewModel.email])
+            controller.setToRecipients([email])
             controller.setMessageBody(viewModel.errorString, isHTML: false)
             controller.mailComposeDelegate = self
 
             present(controller, animated: true)
         } else {
-            CopyHelper.copyAndNotify(value: viewModel.email)
+            CopyHelper.copyAndNotify(value: email)
         }
     }
 
@@ -110,7 +112,7 @@ class BalanceErrorViewController: ThemeActionSheetController {
 
     private func openBtc(blockchain: Blockchain) {
         dismiss(animated: true) { [weak self] in
-            self?.sourceViewController?.present(BtcBlockchainSettingsModule.viewController(blockchain: blockchain), animated: true)
+            self?.sourceViewController?.present(BtcBlockchainSettingsModule.view(blockchain: blockchain).toNavigationViewController(), animated: true)
         }
     }
 

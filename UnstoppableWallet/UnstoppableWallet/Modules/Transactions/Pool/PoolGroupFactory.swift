@@ -4,28 +4,47 @@ import MarketKit
 
 class PoolGroupFactory {
 
-    private func providers(wallets: [Wallet], blockchainType: BlockchainType?, filter: TransactionTypeFilter, configuredToken: ConfiguredToken?) -> [PoolProvider] {
-        if let configuredToken = configuredToken {
-            let poolSource = PoolSource(
-                    blockchainType: configuredToken.token.blockchainType,
-                    filter: filter,
-                    configuredToken: configuredToken,
-                    bep2Symbol: configuredToken.token.type.bep2Symbol
-            )
-
-            if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
-                let provider = PoolProvider(adapter: adapter, source: poolSource)
-                return [provider]
+    private func providers(poolGroupType: PoolGroupType, filter: TransactionTypeFilter) -> [PoolProvider] {
+        switch poolGroupType {
+        case .all(let wallets):
+            var poolSources = Set<PoolSource>()
+            
+            for wallet in wallets {
+                let poolSource: PoolSource
+                
+                if App.shared.evmBlockchainManager.allBlockchains.contains(where: { $0 == wallet.token.blockchain }) || wallet.token.blockchainType == .tron {
+                    poolSource = PoolSource(
+                        token: nil,
+                        blockchainType: wallet.token.blockchainType,
+                        filter: filter
+                    )
+                } else {
+                    poolSource = PoolSource(
+                        token: wallet.token,
+                        blockchainType: wallet.token.blockchainType,
+                        filter: filter
+                    )
+                }
+                
+                poolSources.insert(poolSource)
             }
-        } else if let blockchainType = blockchainType {
+            
+            return poolSources.compactMap { poolSource in
+                if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+                    return PoolProvider(adapter: adapter, source: poolSource)
+                } else {
+                    return nil
+                }
+            }
+            
+        case .blockchain(let blockchainType, let wallets):
             if App.shared.evmBlockchainManager.allBlockchains.contains(where: { $0.type == blockchainType }) || blockchainType == .tron {
                 let poolSource = PoolSource(
-                        blockchainType: blockchainType,
-                        filter: filter,
-                        configuredToken: nil,
-                        bep2Symbol: nil
+                    token: nil,
+                    blockchainType: blockchainType,
+                    filter: filter
                 )
-
+                
                 if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
                     let provider = PoolProvider(adapter: adapter, source: poolSource)
                     return [provider]
@@ -36,14 +55,13 @@ class PoolGroupFactory {
                     guard wallet.token.blockchainType == blockchainType else {
                         continue
                     }
-
+                    
                     let poolSource = PoolSource(
-                            blockchainType: blockchainType,
-                            filter: filter,
-                            configuredToken: wallet.configuredToken,
-                            bep2Symbol: wallet.token.type.bep2Symbol
+                        token: wallet.token,
+                        blockchainType: blockchainType,
+                        filter: filter
                     )
-
+                    
                     if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
                         let provider = PoolProvider(adapter: adapter, source: poolSource)
                         providers.append(provider)
@@ -51,57 +69,87 @@ class PoolGroupFactory {
                 }
                 return providers
             }
-        } else {
-            var poolSources = Set<PoolSource>()
-
-            for wallet in wallets {
-                let poolSource: PoolSource
-
-                if App.shared.evmBlockchainManager.allBlockchains.contains(where: { $0 == wallet.token.blockchain }) || wallet.token.blockchainType == .tron {
-                    poolSource = PoolSource(
-                            blockchainType: wallet.token.blockchainType,
-                            filter: filter,
-                            configuredToken: nil,
-                            bep2Symbol: nil
+            
+        case .token(let token):
+            let poolSource = PoolSource(
+                token: token,
+                blockchainType: token.blockchainType,
+                filter: filter
+            )
+            
+            if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+                let provider = PoolProvider(adapter: adapter, source: poolSource)
+                return [provider]
+            }
+        case .blockchains(types: let types, wallets: let wallets): 
+            var providers = [PoolProvider]()
+            for blockchainType in types {
+               
+                if App.shared.evmBlockchainManager.allBlockchains.contains(where: { $0.type == blockchainType }) || blockchainType == .tron {
+                    let poolSource = PoolSource(
+                            token: nil,
+                            blockchainType: blockchainType,
+                            filter: filter
                     )
+
+                    if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+                        let provider = PoolProvider(adapter: adapter, source: poolSource)
+                        providers.append(provider)
+                        //return [provider]
+                    }
                 } else {
-                    poolSource = PoolSource(
-                            blockchainType: wallet.token.blockchainType,
-                            filter: filter,
-                            configuredToken: wallet.configuredToken,
-                            bep2Symbol: wallet.token.type.bep2Symbol
-                    )
+                   
+                    for wallet in wallets {
+                        guard wallet.token.blockchainType == blockchainType else {
+                            continue
+                        }
+
+                        let poolSource = PoolSource(
+                                token: wallet.token,
+                                blockchainType: blockchainType,
+                                filter: filter
+                        )
+
+                        if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+                            let provider = PoolProvider(adapter: adapter, source: poolSource)
+                            providers.append(provider)
+                        }
+                    }
+//                    providers.append(contentsOf: <#T##Sequence#>)
+//                    return providers
                 }
 
-                poolSources.insert(poolSource)
             }
-
-            return poolSources.compactMap { poolSource in
-                if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
-                    return PoolProvider(adapter: adapter, source: poolSource)
-                } else {
-                    return nil
-                }
-            }
+            return providers
+            
         }
-
         return []
     }
+}
+
+extension PoolGroupFactory {
+
+    func poolGroup(type: PoolGroupType, filter: TransactionTypeFilter) -> PoolGroup {
+        let providers = providers(poolGroupType: type, filter: filter)
+        return PoolGroup(pools: providers.map { Pool(provider: NonSpamPoolProvider(poolProvider: $0)) })
+    }
+    
+//    func poolGroup(wallets: [Wallet], blockchainTypes: [BlockchainType], filter: TransactionTypeFilter, configuredToken: ConfiguredToken?) -> PoolGroup {
+//        let  prviders = blockchainTypes.flatMap {
+//             providers(wallets: wallets, blockchainType: $0, filter: filter, configuredToken: configuredToken)
+//        }
+//        return PoolGroup(pools: prviders.map { Pool(provider: NonSpamPoolProvider(poolProvider: $0)) })
+//    }
 
 }
 
 extension PoolGroupFactory {
 
-    func poolGroup(wallets: [Wallet], blockchainType: BlockchainType?, filter: TransactionTypeFilter, configuredToken: ConfiguredToken?) -> PoolGroup {
-        let providers = providers(wallets: wallets, blockchainType: blockchainType, filter: filter, configuredToken: configuredToken)
-        return PoolGroup(pools: providers.map { Pool(provider: NonSpamPoolProvider(poolProvider: $0)) })
-    }
-    
-    func poolGroup(wallets: [Wallet], blockchainTypes: [BlockchainType], filter: TransactionTypeFilter, configuredToken: ConfiguredToken?) -> PoolGroup {
-        let  prviders = blockchainTypes.flatMap {
-             providers(wallets: wallets, blockchainType: $0, filter: filter, configuredToken: configuredToken)
-        }
-        return PoolGroup(pools: prviders.map { Pool(provider: NonSpamPoolProvider(poolProvider: $0)) })
+    enum PoolGroupType {
+        case all(wallets: [Wallet])
+        case blockchain(blockchainType: BlockchainType, wallets: [Wallet])
+        case blockchains(types: [BlockchainType], wallets: [Wallet])
+        case token(token: Token)
     }
 
 }

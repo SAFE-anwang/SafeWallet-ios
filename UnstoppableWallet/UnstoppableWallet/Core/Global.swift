@@ -1,5 +1,7 @@
+import Foundation
 import RxSwift
 import RxCocoa
+import Combine
 
 func subscribe<T>(_ disposeBag: DisposeBag, _ driver: Driver<T>, _ onNext: ((T) -> Void)? = nil) {
     driver.drive(onNext: onNext).disposed(by: disposeBag)
@@ -9,8 +11,8 @@ func subscribe<T>(_ disposeBag: DisposeBag, _ signal: Signal<T>, _ onNext: ((T) 
     signal.emit(onNext: onNext).disposed(by: disposeBag)
 }
 
-func subscribe<T>(_ disposeBag: DisposeBag, _ observable: Observable<T>, _ onNext: ((T) -> Void)? = nil) {
-    observable
+func subscribe<T>(_ disposeBag: DisposeBag, _ observable: Observable<T>?, _ onNext: ((T) -> Void)? = nil) {
+    observable?
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
             .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
             .subscribe(onNext: onNext)
@@ -28,4 +30,11 @@ func subscribe<T>(_ scheduler: ImmediateSchedulerType, _ disposeBag: DisposeBag,
             .observeOn(scheduler)
             .subscribe(onNext: onNext)
             .disposed(by: disposeBag)
+}
+
+func subscribe<T>(_ cancellables: inout Set<AnyCancellable>, _ publisher: AnyPublisher<T, Never>, _ receiveValue: @escaping ((T) -> Void)) {
+    publisher
+        .receive(on: DispatchQueue.main)
+        .sink(receiveValue: receiveValue)
+        .store(in: &cancellables)
 }

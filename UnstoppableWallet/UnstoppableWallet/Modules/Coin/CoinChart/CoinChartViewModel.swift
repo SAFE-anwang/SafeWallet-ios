@@ -6,13 +6,14 @@ import MarketKit
 import Chart
 import CurrencyKit
 import HUD
+import Combine
 
-class CoinChartViewModel {
+class CoinChartViewModel: ObservableObject {
     private let service: CoinChartService
     private let factory: CoinChartFactory
     private let disposeBag = DisposeBag()
 
-    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.coin-chart-view-model")
+    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "\(AppConfig.label).coin-chart-view-model")
 
     private let pointSelectedItemRelay = BehaviorRelay<ChartModule.SelectedPointViewItem?>(value: nil)
 
@@ -21,6 +22,10 @@ class CoinChartViewModel {
     private let loadingRelay = BehaviorRelay<Bool>(value: false)
     private let chartInfoRelay = BehaviorRelay<ChartModule.ViewItem?>(value: nil)
     private let errorRelay = BehaviorRelay<Bool>(value: false)
+    private let indicatorsShownRelay = BehaviorRelay<Bool>(value: true)
+    private let openSettingsRelay = PublishRelay<()>()
+
+    @Published private(set) var indicatorsShown: Bool
 
     var intervals: [String] {
         service.validIntervals.map { $0.title } + ["chart.time_duration.all".localized]
@@ -30,23 +35,31 @@ class CoinChartViewModel {
         self.service = service
         self.factory = factory
 
+        indicatorsShown = service.indicatorsShown
+
         subscribe(scheduler, disposeBag, service.intervalsUpdatedObservable) { [weak self] in self?.syncIntervalsUpdate() }
         subscribe(scheduler, disposeBag, service.periodTypeObservable) { [weak self] in self?.sync(periodType: $0) }
         subscribe(scheduler, disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
+        subscribe(scheduler, disposeBag, service.indicatorsShownUpdatedObservable) { [weak self] in self?.updateIndicatorsShown() }
 
         sync(periodType: service.periodType)
         sync(state: service.state)
+        indicatorsShownRelay.accept(service.indicatorsShown)
     }
 
     private func syncIntervalsUpdate() {
         intervalsUpdatedWithCurrentIndex.accept(index(periodType: service.periodType))
     }
 
+    private func updateIndicatorsShown() {
+        indicatorsShownRelay.accept(service.indicatorsShown)
+        indicatorsShown = service.indicatorsShown
+    }
+
     private func index(periodType: HsPeriodType) -> Int {
         switch periodType {
         case .byStartTime: return service.validIntervals.count
-        case .byPeriod(let interval): return service.validIntervals.firstIndex(of: interval) ?? 0
-        case .byCustomPoints(_, _): return 0
+        case .byPeriod(let interval), .byCustomPoints(let interval, _): return service.validIntervals.firstIndex(of: interval) ?? 0
         }
     }
 
@@ -66,7 +79,8 @@ class CoinChartViewModel {
         case .completed(let item):
             loadingRelay.accept(false)
             errorRelay.accept(false)
-            chartInfoRelay.accept(factory.convert(item: item, periodType: service.periodType, currency: service.currency))
+            let convert = factory.convert(item: item, periodType: service.periodType, currency: service.currency)
+            chartInfoRelay.accept(convert)
         }
     }
 
@@ -98,6 +112,14 @@ extension CoinChartViewModel: IChartViewModel {
         errorRelay.asDriver()
     }
 
+    var indicatorsShownDriver: Driver<Bool> {
+        indicatorsShownRelay.asDriver()
+    }
+
+    var openSettingsSignal: Signal<()> {
+        openSettingsRelay.asSignal()
+    }
+
     func onSelectInterval(at index: Int) {
         let intervals = service.validIntervals
 
@@ -121,6 +143,15 @@ extension CoinChartViewModel: IChartViewModel {
         service.fetch()
     }
 
+    func onTapChartSettings() {
+        // check subscriptions
+        openSettingsRelay.accept(())
+    }
+
+    func onToggleIndicators() {
+        service.indicatorsShown.toggle()
+    }
+
 }
 
 extension CoinChartViewModel: IChartViewTouchDelegate {
@@ -128,13 +159,14 @@ extension CoinChartViewModel: IChartViewTouchDelegate {
     public func touchDown() {
     }
 
-    public func select(item: ChartItem) {
+    public func select(item: ChartItem, indicators: [ChartIndicator]) {
         HapticGenerator.instance.notification(.feedback(.soft))
 
         pointSelectedItemRelay.accept(
                 factory.selectedPointViewItem(
                         chartItem: item,
-                        firstChartItem: chartInfoRelay.value?.chartData.items.first,
+                        indicators: indicators,
+                        firstChartItem: chartInfoRelay.value?.chartData.visibleItems.first,
                         currency: service.currency
                 )
         )

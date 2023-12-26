@@ -15,7 +15,7 @@ extension ChartConfiguration {
     }
 
     static var marketCapChart: ChartConfiguration {
-        baseChart.applyDominance()
+        baseChart
     }
 
     static var baseBarChart: ChartConfiguration {
@@ -43,12 +43,12 @@ extension ChartConfiguration {
         timelineHeight = 0
 
         showBorders = false
-        showIndicators = false
+        showIndicatorArea = false
         showVerticalLines = false
 
         curveWidth = 2
         curvePadding = UIEdgeInsets(top: 20, left: .margin8, bottom: 20, right: .margin8)
-        volumeBarsInsets = UIEdgeInsets(top: 8, left: .margin8, bottom: 0, right: .margin8)
+        indicatorAreaPadding = UIEdgeInsets(top: 8, left: .margin8, bottom: 0, right: .margin8)
 
         return self
     }
@@ -61,7 +61,7 @@ extension ChartConfiguration {
         curvePadding = UIEdgeInsets(top: .margin2, left: 0, bottom: 10, right: 0)
 
         showBorders = false
-        showIndicators = false
+        showIndicatorArea = false
         showLimits = false
         showVerticalLines = false
         isInteractive = false
@@ -96,13 +96,7 @@ extension ChartConfiguration {
 
     @discardableResult private func applyVolume() -> Self {
         indicatorHeight = 44
-        showIndicators = true
-
-        return self
-    }
-
-    @discardableResult private func applyDominance() -> Self {
-        showDominance = true
+        showIndicatorArea = true
 
         return self
     }
@@ -132,20 +126,21 @@ extension ChartConfiguration {
         timelineFont = .caption
         touchLineColor = .themeNina
         touchCircleColor = .themeLeah
-        emaShortColor = UIColor.themeStronbuy.withAlphaComponent(0.5)
-        emaLongColor = UIColor.themeJacob.withAlphaComponent(0.5)
-        macdSignalColor = UIColor.themeStronbuy.withAlphaComponent(0.5)
-        macdColor = UIColor.themeJacob.withAlphaComponent(0.5)
-        macdPositiveColor = UIColor.themeGreenD.withAlphaComponent(0.5)
-        macdNegativeColor = UIColor.themeRedD.withAlphaComponent(0.5)
-        rsiLineColor = UIColor.themeJacob.withAlphaComponent(0.5)
-
-        dominanceLineColor = UIColor.themeJacob.withAlphaComponent(0.5)
-
-        macdTextColor = .themeGray
-        macdTextFont = .caption
 
         return self
+    }
+
+}
+
+extension ChartIndicator.LineConfiguration {
+
+    static public var dominance: Self {
+        Self(color: ChartColor(.themeYellowD.withAlphaComponent(0.5)), width: 1)
+    }
+
+    static public var dominanceId: String {
+        let indicator = PrecalculatedIndicator(id: MarketGlobalModule.dominance, enabled: true, values: [], configuration: dominance)
+        return indicator.json
     }
 
 }

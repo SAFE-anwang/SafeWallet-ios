@@ -1,106 +1,87 @@
-import RxSwift
-import RxRelay
-import RxCocoa
 
-class SecuritySettingsViewModel {
-    private let service: SecuritySettingsService
-    private let disposeBag = DisposeBag()
+import Combine
 
-    private let pinViewItemRelay = BehaviorRelay<PinViewItem>(value: PinViewItem(enabled: false, editVisible: false, biometryViewItem: nil))
-    private let showErrorRelay = PublishRelay<String>()
-    private let openSetPinRelay = PublishRelay<()>()
-    private let openUnlockRelay = PublishRelay<()>()
+class SecuritySettingsViewModel: ObservableObject {
+    private let passcodeManager: PasscodeManager
+    private let biometryManager: BiometryManager
+    private let lockManager: LockManager
+    private let balanceHiddenManager: BalanceHiddenManager
+    private var cancellables = Set<AnyCancellable>()
 
-    init(service: SecuritySettingsService) {
-        self.service = service
+    @Published var currentPasscodeLevel: Int
+    @Published var isPasscodeSet: Bool
+    @Published var isDuressPasscodeSet: Bool
+    @Published var biometryType: BiometryType?
 
-        subscribe(disposeBag, service.pinItemObservable) { [weak self] in self?.sync(pinItem: $0) }
-
-        sync(pinItem: service.pinItem)
-    }
-
-    private func sync(pinItem: SecuritySettingsService.PinItem) {
-        let viewItem = PinViewItem(
-                enabled: pinItem.enabled,
-                editVisible: pinItem.enabled,
-                biometryViewItem: biometryViewItem(pinItem: pinItem)
-        )
-
-        pinViewItemRelay.accept(viewItem)
-    }
-
-    private func biometryViewItem(pinItem: SecuritySettingsService.PinItem) -> BiometryViewItem? {
-        guard pinItem.enabled else {
-            return nil
-        }
-
-        guard let biometryType = pinItem.biometryType else {
-            return nil
-        }
-
-        switch biometryType {
-        case .faceId: return BiometryViewItem(enabled: pinItem.biometryEnabled, icon: "face_id_24", title: "settings_security.face_id".localized)
-        case .touchId: return BiometryViewItem(enabled: pinItem.biometryEnabled, icon: "touch_id_2_24", title: "settings_security.touch_id".localized)
-        case .none: return nil
+    @Published var autoLockPeriod: AutoLockPeriod {
+        didSet {
+            lockManager.autoLockPeriod = autoLockPeriod
         }
     }
 
-}
-
-extension SecuritySettingsViewModel {
-
-    var pinViewItemDriver: Driver<PinViewItem> {
-        pinViewItemRelay.asDriver()
-    }
-
-    var showErrorSignal: Signal<String> {
-        showErrorRelay.asSignal()
-    }
-
-    var openSetPinSignal: Signal<()> {
-        openSetPinRelay.asSignal()
-    }
-
-    var openUnlockSignal: Signal<()> {
-        openUnlockRelay.asSignal()
-    }
-
-    func onTogglePin(isOn: Bool) {
-        if service.pinItem.enabled {
-            openUnlockRelay.accept(())
-        } else {
-            openSetPinRelay.accept(())
+    @Published var isBiometryToggleOn: Bool {
+        didSet {
+            if isBiometryToggleOn != biometryManager.biometryEnabled, isPasscodeSet {
+                set(biometryEnabled: isBiometryToggleOn)
+            }
         }
     }
 
-    func onToggleBiometry(isOn: Bool) {
-        service.toggleBiometry(isOn: isOn)
+    @Published var balanceAutoHide: Bool {
+        didSet {
+            balanceHiddenManager.set(balanceAutoHide: balanceAutoHide)
+        }
     }
 
-    func onUnlock() -> Bool {
+    init(passcodeManager: PasscodeManager, biometryManager: BiometryManager, lockManager: LockManager, balanceHiddenManager: BalanceHiddenManager) {
+        self.passcodeManager = passcodeManager
+        self.biometryManager = biometryManager
+        self.lockManager = lockManager
+        self.balanceHiddenManager = balanceHiddenManager
+
+        currentPasscodeLevel = passcodeManager.currentPasscodeLevel
+        isPasscodeSet = passcodeManager.isPasscodeSet
+        isDuressPasscodeSet = passcodeManager.isDuressPasscodeSet
+        biometryType = biometryManager.biometryType
+        autoLockPeriod = lockManager.autoLockPeriod
+
+        isBiometryToggleOn = biometryManager.biometryEnabled
+        balanceAutoHide = balanceHiddenManager.balanceAutoHide
+
+        passcodeManager.$currentPasscodeLevel
+            .sink { [weak self] in self?.currentPasscodeLevel = $0 }
+            .store(in: &cancellables)
+        passcodeManager.$isPasscodeSet
+            .sink { [weak self] in self?.isPasscodeSet = $0 }
+            .store(in: &cancellables)
+        passcodeManager.$isDuressPasscodeSet
+            .sink { [weak self] in self?.isDuressPasscodeSet = $0 }
+            .store(in: &cancellables)
+        biometryManager.$biometryType
+            .sink { [weak self] in self?.biometryType = $0 }
+            .store(in: &cancellables)
+        biometryManager.$biometryEnabled
+            .sink { [weak self] in self?.isBiometryToggleOn = $0 }
+            .store(in: &cancellables)
+    }
+
+    func removePasscode() {
         do {
-            try service.disablePin()
-            return true
+            try passcodeManager.removePasscode()
         } catch {
-            showErrorRelay.accept(error.smartDescription)
-            return false
+            print("Remove Passcode Error: \(error)")
         }
     }
 
-}
-
-extension SecuritySettingsViewModel {
-
-    struct PinViewItem {
-        let enabled: Bool
-        let editVisible: Bool
-        let biometryViewItem: BiometryViewItem?
+    func removeDuressPasscode() {
+        do {
+            try passcodeManager.removeDuressPasscode()
+        } catch {
+            print("Remove Duress Passcode Error: \(error)")
+        }
     }
 
-    struct BiometryViewItem {
-        let enabled: Bool
-        let icon: String
-        let title: String
+    func set(biometryEnabled: Bool) {
+        biometryManager.biometryEnabled = biometryEnabled
     }
-
 }

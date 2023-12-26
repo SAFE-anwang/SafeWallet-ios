@@ -5,14 +5,12 @@ import RxSwift
 class FeeRateProvider {
     private let feeRateKit: FeeRateKit.Kit
 
-    init(appConfigProvider: AppConfigProvider) {
+    init() {
         let providerConfig = FeeProviderConfig(
-                ethEvmUrl: FeeProviderConfig.infuraUrl(projectId: appConfigProvider.infuraCredentials.id),
-                ethEvmAuth: appConfigProvider.infuraCredentials.secret,
+                ethEvmUrl: FeeProviderConfig.infuraUrl(projectId: AppConfig.infuraCredentials.id),
+                ethEvmAuth: AppConfig.infuraCredentials.secret,
                 bscEvmUrl: FeeProviderConfig.defaultBscEvmUrl,
-                btcCoreRpcUrl: appConfigProvider.btcCoreRpcUrl,
-                btcCoreRpcUser: nil,
-                btcCoreRpcPassword: nil
+                mempoolSpaceUrl: AppConfig.mempoolSpaceUrl
         )
         feeRateKit = FeeRateKit.Kit.instance(providerConfig: providerConfig, minLogLevel: .error)
     }
@@ -27,42 +25,47 @@ class FeeRateProvider {
 //        feeRateKit.binanceSmartChain
 //    }
 
-    var litecoinFeeRate: Int {
+    fileprivate var litecoinFeeRate: Int {
         feeRateKit.litecoin
     }
     
     var dogecoinFeeRate: Int {
-        2000
+        4000
     }
 
-    var bitcoinCashFeeRate: Int {
+    fileprivate var bitcoinCashFeeRate: Int {
         feeRateKit.bitcoinCash
     }
 
-    var dashFeeRate: Int {
+    fileprivate var dashFeeRate: Int {
         feeRateKit.dash
     }
 
-    func bitcoinFeeRate(blockCount: Int) async throws -> Int {
-        try await feeRateKit.bitcoin(blockCount: blockCount)
+    fileprivate func bitcoinFeeRate() async throws -> MempoolSpaceProvider.RecommendedFees {
+        try await feeRateKit.bitcoin()
     }
 
 }
 
-class BitcoinFeeRateProvider: ICustomRangedFeeRateProvider {
-    static let defaultFeeRange: ClosedRange<Int> = 1...200
-    let customFeeRange: ClosedRange<Int> = BitcoinFeeRateProvider.defaultFeeRange
-    let step: Int = 1
+extension FeeRateProvider {
 
+    struct FeeRates {
+        let recommended: Int
+        let minimum: Int
+    }
+
+}
+
+class BitcoinFeeRateProvider: IFeeRateProvider {
     private let feeRateProvider: FeeRateProvider
-    private let recommendedBlockCount = 2
 
     init(feeRateProvider: FeeRateProvider) {
         self.feeRateProvider = feeRateProvider
     }
 
-    func recommendedFeeRate() async throws -> Int {
-        try await feeRateProvider.bitcoinFeeRate(blockCount: recommendedBlockCount)
+    func feeRates() async throws -> FeeRateProvider.FeeRates {
+        let rates = try await feeRateProvider.bitcoinFeeRate()
+        return .init(recommended: rates.halfHourFee, minimum: rates.minimumFee)
     }
 
 }
@@ -74,8 +77,8 @@ class LitecoinFeeRateProvider: IFeeRateProvider {
         self.feeRateProvider = feeRateProvider
     }
 
-    func recommendedFeeRate() async throws -> Int {
-        feeRateProvider.litecoinFeeRate
+    func feeRates() async throws -> FeeRateProvider.FeeRates {
+        .init(recommended: feeRateProvider.litecoinFeeRate, minimum: 0)
     }
 
 }
@@ -87,16 +90,16 @@ class BitcoinCashFeeRateProvider: IFeeRateProvider {
         self.feeRateProvider = feeRateProvider
     }
 
-    func recommendedFeeRate() async throws -> Int {
-        feeRateProvider.bitcoinCashFeeRate
+    func feeRates() async throws -> FeeRateProvider.FeeRates {
+        .init(recommended: feeRateProvider.bitcoinCashFeeRate, minimum: 0)
     }
 
 }
 
 class ECashFeeRateProvider: IFeeRateProvider {
 
-    func recommendedFeeRate() async throws -> Int {
-        1
+    func feeRates() async throws -> FeeRateProvider.FeeRates {
+        .init(recommended: 1, minimum: 0)
     }
 
 }
@@ -108,8 +111,8 @@ class DashFeeRateProvider: IFeeRateProvider {
         self.feeRateProvider = feeRateProvider
     }
 
-    func recommendedFeeRate() async throws -> Int {
-        feeRateProvider.dashFeeRate
+    func feeRates() async throws -> FeeRateProvider.FeeRates {
+        .init(recommended: feeRateProvider.dashFeeRate, minimum: 0)
     }
 
 }
@@ -123,8 +126,8 @@ class SafeFeeRateProvider: IFeeRateProvider {
         self.feeRateProvider = feeRateProvider
     }
     
-    func recommendedFeeRate() async throws -> Int {
-        10
+    func feeRates() async throws -> FeeRateProvider.FeeRates {
+        .init(recommended: 10, minimum: 0)
     }
 }
 
@@ -137,8 +140,8 @@ class DogecoinFeeRateProvider: IFeeRateProvider {
         self.feeRateProvider = feeRateProvider
     }
     
-    func recommendedFeeRate() async throws -> Int {
-        feeRateProvider.dogecoinFeeRate
+    func feeRates() async throws -> FeeRateProvider.FeeRates {
+        .init(recommended: feeRateProvider.dogecoinFeeRate, minimum: 0)
     }
 }
 private func ceil(_ value: Int, multiply: Double?) -> Int {

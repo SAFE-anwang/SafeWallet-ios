@@ -1,13 +1,14 @@
-import UIKit
+import ComponentKit
+import MessageUI
+import ModuleKit
+import RxCocoa
+import RxSwift
+import SafariServices
 import SectionsTableView
 import SnapKit
 import ThemeKit
 import UIExtensions
-import ModuleKit
-import RxSwift
-import RxCocoa
-import SafariServices
-import ComponentKit
+import UIKit
 
 class MainSettingsViewController: ThemeViewController {
     private let viewModel: MainSettingsViewModel
@@ -22,7 +23,6 @@ class MainSettingsViewController: ThemeViewController {
     private let securityCell = BaseSelectableThemeCell()
     private let appearanceCell = BaseSelectableThemeCell()
     private let contactBookCell = BaseSelectableThemeCell()
-    private let iCloudSyncCell = BaseSelectableThemeCell()
     private let baseCurrencyCell = BaseSelectableThemeCell()
     private let languageCell = BaseSelectableThemeCell()
     private let themeModeCell = BaseSelectableThemeCell()
@@ -30,6 +30,11 @@ class MainSettingsViewController: ThemeViewController {
 //    private let footerCell = MainSettingsFooterCell()
 
     private let showTestNetSwitcher: Bool
+    
+    private lazy var fallbackBlockViewModel: FallbackBlockViewModel = {
+        let viewModel = FallbackBlockViewModel(walletManager: App.shared.walletManager, accountManager: App.shared.accountManager, adapterManager: App.shared.adapterManager)
+        return viewModel
+    }()
 
     init(viewModel: MainSettingsViewModel, urlManager: UrlManager) {
         self.viewModel = viewModel
@@ -42,7 +47,8 @@ class MainSettingsViewController: ThemeViewController {
         tabBarItem = UITabBarItem(title: "settings.tab_bar_item".localized, image: UIImage(named: "filled_settings_2_24"), tag: 0)
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -68,17 +74,14 @@ class MainSettingsViewController: ThemeViewController {
         walletConnectCell.set(backgroundStyle: .lawrence, isFirst: true, isLast: true)
         syncWalletConnectCell()
 
-        securityCell.set(backgroundStyle: .lawrence, isLast: true)
+        securityCell.set(backgroundStyle: .lawrence, isFirst: true)
         syncSecurityCell()
 
         appearanceCell.set(backgroundStyle: .lawrence)
         buildTitleValue(cell: appearanceCell, image: UIImage(named: "brush_24"), title: "appearance.title".localized)
 
-        contactBookCell.set(backgroundStyle: .lawrence, isFirst: true)
-        buildTitleValue(cell: contactBookCell, image: UIImage(named: "user_24"), title: "contacts.title".localized)
-
-        iCloudSyncCell.set(backgroundStyle: .lawrence)
-        syncICloudCell()
+        contactBookCell.set(backgroundStyle: .lawrence)
+        syncContactBookCell()
 
         baseCurrencyCell.set(backgroundStyle: .lawrence)
         syncBaseCurrency()
@@ -96,7 +99,7 @@ class MainSettingsViewController: ThemeViewController {
 
         subscribe(disposeBag, viewModel.manageWalletsAlertDriver) { [weak self] in self?.syncManageAccountCell(alert: $0) }
         subscribe(disposeBag, viewModel.securityCenterAlertDriver) { [weak self] in self?.syncSecurityCell(alert: $0) }
-        subscribe(disposeBag, viewModel.iCloudSyncAlertDriver) { [weak self] in self?.syncICloudCell(alert: $0) }
+        subscribe(disposeBag, viewModel.iCloudSyncAlertDriver) { [weak self] in self?.syncContactBookCell(alert: $0) }
 
         subscribe(disposeBag, viewModel.walletConnectCountDriver) { [weak self] tuple in
             self?.syncWalletConnectCell(text: tuple?.text, highlighted: tuple?.highlighted ?? false)
@@ -113,6 +116,7 @@ class MainSettingsViewController: ThemeViewController {
     }
 
     override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         tableView.deselectCell(withCoordinator: transitionCoordinator, animated: animated)
     }
 
@@ -126,9 +130,9 @@ class MainSettingsViewController: ThemeViewController {
         buildTitleImage(cell: securityCell, image: UIImage(named: "shield_24"), title: "settings.security".localized, alertImage: alertImage)
     }
 
-    private func syncICloudCell(alert: Bool = false) {
+    private func syncContactBookCell(alert: Bool = false) {
         let alertImage = alert ? UIImage(named: "warning_2_20")?.withRenderingMode(.alwaysTemplate) : nil
-        buildTitleImage(cell: iCloudSyncCell, image: UIImage(named: "icloud_24"), title: "icloud_sync.title".localized, alertImage: alertImage)
+        buildTitleImage(cell: contactBookCell, image: UIImage(named: "user_24"), title: "contacts.title".localized, alertImage: alertImage)
     }
 
     private func syncAboutCell(alert: Bool = false) {
@@ -138,28 +142,33 @@ class MainSettingsViewController: ThemeViewController {
 
     private func buildTitleImage(cell: BaseThemeCell, image: UIImage?, title: String, alertImage: UIImage? = nil) {
         CellBuilderNew.buildStatic(cell: cell, rootElement: .hStack([
-            .image24 { (component: ImageComponent) -> () in
+            .image24 { (component: ImageComponent) in
                 component.imageView.image = image
             },
-            .text { (component: TextComponent) -> () in
+            .text { (component: TextComponent) in
                 component.font = .body
                 component.textColor = .themeLeah
                 component.text = title
             },
+            .image20 { (component: ImageComponent) in
+                component.isHidden = alertImage == nil
+                component.imageView.image = alertImage
+                component.imageView.tintColor = .themeLucian
+            },
             .margin8,
-            .image20 { (component: ImageComponent) -> () in
+            .image20 { (component: ImageComponent) in
                 component.imageView.image = UIImage(named: "arrow_big_forward_20")
-            }
+            },
         ]))
     }
 
     private func syncWalletConnectCell(text: String? = nil, highlighted: Bool = false) {
         buildTitleValue(
-                cell: walletConnectCell,
-                image: UIImage(named: "wallet_connect_24"),
-                title: "wallet_connect.title".localized,
-                value: !highlighted ? text : nil,
-                badge: highlighted ? text : nil
+            cell: walletConnectCell,
+            image: UIImage(named: "wallet_connect_24"),
+            title: "wallet_connect.title".localized,
+            value: !highlighted ? text : nil,
+            badge: highlighted ? text : nil
         )
     }
 
@@ -172,188 +181,268 @@ class MainSettingsViewController: ThemeViewController {
             .image24 { (component: ImageComponent) in
                 component.imageView.image = image
             },
-            .text { (component: TextComponent) -> () in
+            .text { (component: TextComponent) in
                 component.font = .body
                 component.textColor = .themeLeah
                 component.text = title
             },
-            .text { (component: TextComponent) -> () in
+            .text { (component: TextComponent) in
                 component.font = .subhead1
                 component.textColor = .themeGray
                 component.text = value
             },
             .margin8,
-            .badge { (component: BadgeComponent) -> () in
+            .badge { (component: BadgeComponent) in
                 component.badgeView.set(style: .medium)
                 component.isHidden = badge == nil
                 component.badgeView.text = badge
             },
             .margin8,
-            .image20 { (component: ImageComponent) -> () in
+            .image20 { (component: ImageComponent) in
                 component.imageView.image = UIImage(named: "arrow_big_forward_20")
-            }
+            },
         ]))
+    }
+
+    @objc private func onDonateTapped() {
+        guard let viewController = WalletModule.donateTokenListViewController() else {
+            return
+        }
+        present(viewController, animated: true)
     }
 
     private var accountRows: [RowProtocol] {
         [
             StaticRow(
-                    cell: manageAccountsCell,
-                    id: "manage-accounts",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        self?.navigationController?.pushViewController(ManageAccountsModule.viewController(mode: .manage), animated: true)
-                    }
+                cell: manageAccountsCell,
+                id: "manage-accounts",
+                height: .heightCell48,
+                action: { [weak self] in
+                    self?.navigationController?.pushViewController(ManageAccountsModule.viewController(mode: .manage), animated: true)
+                }
+            ),
+            tableView.universalRow48(
+                id: "blockchain-settings",
+                image: .local(UIImage(named: "blocks_24")),
+                title: .body("settings.blockchain_settings".localized),
+                accessoryType: .disclosure,
+//                isLast: true,
+                action: { [weak self] in
+                    let viewController = BlockchainSettingsModule.view().toViewController(title: "blockchain_settings.title".localized)
+                    viewController.hidesBottomBarWhenPushed = true
+                    self?.navigationController?.pushViewController(viewController, animated: true)
+                }
+            ),
+            
+            tableView.universalRow48(
+                id: "blockchain-settings",
+                image: .local(UIImage(named: "safelog")),
+                title: .body("settings_security.safe_block_height".localized),
+                accessoryType: .disclosure,
+                isLast: true,
+                action: { [weak self] in
+                    self?.showSelector(onSelect: { [weak self] index in
+                        if let item = self?.fallbackBlockViewModel.fallbackBlockViewItems[index] {
+                            self?.fallbackBlockViewModel.fallbackBlock(item: item)
+                            self?.tabBarController?.selectedIndex = 1
+//                            self?.navigationController?.popViewController(animated: true)
+                        }
+                    })
+                    self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
+                }
             ),
 //            tableView.universalRow48(
-//                    id: "blockchain-settings",
-//                    image: .local(UIImage(named: "blocks_24")),
-//                    title: .body("settings.blockchain_settings".localized),
-//                    accessoryType: .disclosure,
-//                    isLast: true,
-//                    action: { [weak self] in
-//                        self?.navigationController?.pushViewController(BlockchainSettingsModule.viewController(), animated: true)
-//                    }
-//            )
-            StaticRow(
-                    cell: securityCell,
-                    id: "security",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        self?.navigationController?.pushViewController(SecuritySettingsModule.viewController(), animated: true)
-                    }
-            )
+//                id: "backup-manager",
+//                image: .local(UIImage(named: "icloud_24")),
+//                title: .body("settings.backup_manager".localized),
+//                accessoryType: .disclosure,
+//                isLast: true,
+//                action: { [weak self] in
+//                    let viewController = BackupManagerModule.viewController()
+//                    self?.navigationController?.pushViewController(viewController, animated: true)
+//                }
+//            ),
+            
         ]
     }
 
     private var walletConnectRows: [RowProtocol] {
         [
             StaticRow(
-                    cell: walletConnectCell,
-                    id: "wallet-connect",
-                    height: .heightCell48,
-                    autoDeselect: true,
-                    action: { [weak self] in
-                        self?.viewModel.onTapWalletConnect()
-                    }
-            )
+                cell: walletConnectCell,
+                id: "wallet-connect",
+                height: .heightCell48,
+                autoDeselect: true,
+                action: { [weak self] in
+                    self?.viewModel.onTapWalletConnect()
+                }
+            ),
         ]
     }
 
     private var appearanceRows: [RowProtocol] {
         [
-//            StaticRow(
-//                    cell: securityCell,
-//                    id: "security",
-//                    height: .heightCell48,
-//                    action: { [weak self] in
-//                        self?.navigationController?.pushViewController(SecuritySettingsModule.viewController(), animated: true)
-//                    }
-//            ),
             StaticRow(
-                    cell: contactBookCell,
-                    id: "address-book",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        guard let viewController = ContactBookModule.viewController(mode: .edit) else {
-                            return
-                        }
-                        self?.navigationController?.pushViewController(viewController, animated: true)
-                    }
+                cell: securityCell,
+                id: "security",
+                height: .heightCell48,
+                action: { [weak self] in
+                    let viewController = SecuritySettingsModule.view().toViewController(title: "settings_security.title".localized)
+                    viewController.hidesBottomBarWhenPushed = true
+                    self?.navigationController?.pushViewController(viewController, animated: true)
+                }
             ),
-//            StaticRow(
-//                    cell: iCloudSyncCell,
-//                    id: "icloud-sync",
-//                    height: .heightCell48,
-//                    action: { [weak self] in
-//                        guard let viewController = ContactBookSyncSettingsModule.viewController else {
-//                            return
-//                        }
+            StaticRow(
+                cell: contactBookCell,
+                id: "address-book",
+                height: .heightCell48,
+                action: { [weak self] in
+                    guard let viewController = ContactBookModule.viewController(mode: .edit) else {
+                        return
+                    }
+                    self?.navigationController?.pushViewController(viewController, animated: true)
+                }
+            ),
+            StaticRow(
+                cell: appearanceCell,
+                id: "launch-screen",
+                height: .heightCell48,
+                action: { [weak self] in
+                    let viewController = AppearanceModule.view().toViewController(title: "appearance.title".localized)
+                    viewController.hidesBottomBarWhenPushed = true
+                    self?.navigationController?.pushViewController(viewController, animated: true)
+                }
+            ),
+            StaticRow(
+                cell: baseCurrencyCell,
+                id: "base-currency",
+                height: .heightCell48,
+                action: { [weak self] in
+                    self?.navigationController?.pushViewController(BaseCurrencySettingsModule.viewController(), animated: true)
+                }
+            ),
+            StaticRow(
+                cell: languageCell,
+                id: "language",
+                height: .heightCell48,
+                action: { [weak self] in
+                    let module = LanguageSettingsRouter.module { MainModule.instance(presetTab: .settings) }
+                    self?.navigationController?.pushViewController(module, animated: true)
+                }
+            ),
+        ]
+    }
+
+//    private var experimentalRows: [RowProtocol] {
+//        [
+//            tableView.universalRow48(
+//                id: "experimental-features",
+//                image: .local(UIImage(named: "flask_24")),
+//                title: .body("settings.experimental_features".localized),
+//                accessoryType: .disclosure,
+//                isFirst: true,
+//                isLast: true,
+//                action: { [weak self] in
+//                    let viewController = ExperimentalFeaturesView().toViewController(title: "settings.experimental_features.title".localized)
+//                    self?.navigationController?.pushViewController(viewController, animated: true)
+//                }
+//            ),
+//        ]
+//    }
 //
-//                        self?.navigationController?.pushViewController(viewController, animated: true)
-//                    }
+//    private var knowledgeRows: [RowProtocol] {
+//        [
+//            tableView.universalRow48(
+//                id: "faq",
+//                image: .local(UIImage(named: "message_square_24")),
+//                title: .body("settings.faq".localized),
+//                accessoryType: .disclosure,
+//                isFirst: true,
+//                action: { [weak self] in
+//                    self?.navigationController?.pushViewController(FaqModule.viewController(), animated: true)
+//                }
 //            ),
-            StaticRow(
-                    cell: appearanceCell,
-                    id: "launch-screen",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        self?.navigationController?.pushViewController(AppearanceModule.viewController(), animated: true)
-                    }
-            ),
-            StaticRow(
-                    cell: baseCurrencyCell,
-                    id: "base-currency",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        self?.navigationController?.pushViewController(BaseCurrencySettingsModule.viewController(), animated: true)
-                    }
-            ),
-            StaticRow(
-                    cell: languageCell,
-                    id: "language",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        let module = LanguageSettingsRouter.module { MainModule.instance(presetTab: .settings) }
-                        self?.navigationController?.pushViewController(module, animated: true)
-                    }
-            )
-        ]
-    }
-
-    private var experimentalRows: [RowProtocol] {
-        [
-            tableView.universalRow48(
-                    id: "experimental-features",
-                    image: .local(UIImage(named: "flask_24")),
-                    title: .body("settings.experimental_features".localized),
-                    accessoryType: .disclosure,
-                    isFirst: true,
-                    isLast: true,
-                    action: { [weak self] in
-                        self?.navigationController?.pushViewController(ExperimentalFeaturesModule.viewController(), animated: true)
-                    }
-            )
-        ]
-    }
-
-    private var knowledgeRows: [RowProtocol] {
-        [
-            tableView.universalRow48(
-                    id: "faq",
-                    image: .local(UIImage(named: "message_square_24")),
-                    title: .body("settings.faq".localized),
-                    accessoryType: .disclosure,
-                    isFirst: true,
-                    action: { [weak self] in
-                        self?.navigationController?.pushViewController(FaqModule.viewController(), animated: true)
-                    }
-            ),
-            tableView.universalRow48(
-                    id: "academy",
-                    image: .local(UIImage(named: "academy_1_24")),
-                    title: .body("guides.title".localized),
-                    accessoryType: .disclosure,
-                    isLast: true,
-                    action: { [weak self] in
-                        self?.navigationController?.pushViewController(GuidesModule.instance(), animated: true)
-                    }
-            )
-        ]
-    }
+//            tableView.universalRow48(
+//                id: "academy",
+//                image: .local(UIImage(named: "academy_1_24")),
+//                title: .body("guides.title".localized),
+//                accessoryType: .disclosure,
+//                isLast: true,
+//                action: { [weak self] in
+//                    self?.navigationController?.pushViewController(GuidesModule.instance(), animated: true)
+//                }
+//            ),
+//        ]
+//    }
 
     private var aboutRows: [RowProtocol] {
         [
             StaticRow(
-                    cell: aboutCell,
-                    id: "about",
-                    height: .heightCell48,
-                    action: { [weak self] in
-                        self?.navigationController?.pushViewController(AboutModule.viewController(), animated: true)
-                    }
-            )
+                cell: aboutCell,
+                id: "about",
+                height: .heightCell48,
+                action: { [weak self] in
+                    let viewController = AboutModule.view().toViewController(title: "settings.about_app.title".localized)
+                    viewController.hidesBottomBarWhenPushed = true
+                    self?.navigationController?.pushViewController(viewController, animated: true)
+                }
+            ),
         ]
     }
+
+    private var feedbackRows: [RowProtocol] {
+        [
+//            tableView.universalRow48(
+//                id: "rate-us",
+//                image: .local(UIImage(named: "rate_24")),
+//                title: .body("settings.rate_us".localized),
+//                accessoryType: .disclosure,
+//                autoDeselect: true,
+//                isFirst: true,
+//                action: { [weak self] in
+//                    self?.viewModel.onTapRateApp()
+//                }
+//            ),
+            tableView.universalRow48(
+                id: "tell-friends",
+                image: .local(UIImage(named: "share_1_24")),
+                title: .body("settings.tell_friends".localized),
+                accessoryType: .disclosure,
+                autoDeselect: true,
+                isFirst: true,
+                isLast: true,
+                action: { [weak self] in
+                    self?.openTellFriends()
+                }
+            ),
+//            tableView.universalRow48(
+//                id: "contact-us",
+//                image: .local(UIImage(named: "mail_24")),
+//                title: .body("settings.contact_us".localized),
+//                accessoryType: .disclosure,
+//                autoDeselect: true,
+//                isLast: true,
+//                action: { [weak self] in
+//                    self?.handleContact()
+//                }
+//            ),
+        ]
+    }
+
+//    private var donateRows: [RowProtocol] {
+//        [
+//            tableView.universalRow48(
+//                id: "donate",
+//                image: .local(UIImage(named: "heart_fill_24")?.withTintColor(.themeJacob)),
+//                title: .body("settings.donate.title".localized),
+//                accessoryType: .disclosure,
+//                autoDeselect: true,
+//                isFirst: true,
+//                isLast: true,
+//                action: { [weak self] in self?.onDonateTapped() }
+//            ),
+//        ]
+//    }
 
 //    private var footerRows: [RowProtocol] {
 //        [
@@ -364,55 +453,124 @@ class MainSettingsViewController: ThemeViewController {
 //            )
 //        ]
 //    }
+    
 
     private func openWalletConnect(mode: MainSettingsViewModel.WalletConnectOpenMode) {
         switch mode {
-        case .errorDialog(let error):
-            WalletConnectV2AppShowView.showWalletConnectError(error: error, sourceViewController: self)
+        case let .errorDialog(error):
+            WalletConnectAppShowView.showWalletConnectError(error: error, sourceViewController: self)
         case .list:
             navigationController?.pushViewController(WalletConnectListModule.viewController(), animated: true)
         }
     }
 
+    private func openTellFriends() {
+        let text = "settings_tell_friends.text".localized + "\n" + AppConfig.appWebPageLink
+        let activityViewController = UIActivityViewController(activityItems: [text], applicationActivities: [])
+        present(activityViewController, animated: true, completion: nil)
+    }
+
+    private func handleEmailContact() {
+        let email = AppConfig.reportEmail
+
+        if MFMailComposeViewController.canSendMail() {
+            let controller = MFMailComposeViewController()
+            controller.setToRecipients([email])
+            controller.mailComposeDelegate = self
+
+            present(controller, animated: true)
+        } else {
+            CopyHelper.copyAndNotify(value: email)
+        }
+    }
+
+//    private func handleTelegramContact() {
+//        navigationController?.pushViewController(PersonalSupportModule.viewController(), animated: true)
+//    }
+
+//    private func handleContact() {
+//        let viewController = BottomSheetModule.viewController(
+//            image: .local(image: UIImage(named: "at_24")?.withTintColor(.themeJacob)),
+//            title: "settings.contact.title".localized,
+//            items: [],
+//            buttons: [
+//                .init(style: .yellow, title: "settings.contact.via_email".localized, actionType: .afterClose) { [weak self] in
+//                    self?.handleEmailContact()
+//                },
+//                .init(style: .gray, title: "settings.contact.via_telegram".localized, actionType: .afterClose) { [weak self] in
+//                    self?.handleTelegramContact()
+//                },
+//            ]
+//        )
+//
+//        present(viewController, animated: true)
+//    }
 }
 
 extension MainSettingsViewController: SectionsDataSource {
-
     func buildSections() -> [SectionProtocol] {
         var sections: [SectionProtocol] = [
-            Section(id: "account", headerState: .margin(height: .margin12), rows: accountRows),
+//            Section(id: "donate", headerState: .margin(height: .margin12), rows: donateRows),
+            Section(id: "account", headerState: .margin(height: .margin32), rows: accountRows),
             Section(id: "wallet_connect", headerState: .margin(height: .margin32), rows: walletConnectRows),
             Section(id: "appearance_settings", headerState: .margin(height: .margin32), rows: appearanceRows),
 //            Section(id: "experimental", headerState: .margin(height: .margin32), rows: experimentalRows),
 //            Section(id: "knowledge", headerState: .margin(height: .margin32), rows: knowledgeRows),
             Section(id: "about", headerState: .margin(height: .margin32), rows: aboutRows),
-//            Section(id: "footer", headerState: .margin(height: .margin32), footerState: .margin(height: .margin32), rows: footerRows)
+            Section(id: "feedback", headerState: .margin(height: .margin32), rows: feedbackRows),
+//            Section(id: "footer", headerState: .margin(height: .margin32), footerState: .margin(height: .margin32), rows: footerRows),
         ]
 
         if showTestNetSwitcher {
             sections.append(
-                    Section(
+                Section(
+                    id: "test-net-switcher",
+                    footerState: .margin(height: .margin32),
+                    rows: [
+                        tableView.universalRow48(
                             id: "test-net-switcher",
-                            footerState: .margin(height: .margin32),
-                            rows: [
-                                tableView.universalRow48(
-                                        id: "test-net-switcher",
-                                        title: .body("TestNet Enabled"),
-                                        accessoryType: .switch(
-                                                isOn: App.shared.testNetManager.testNetEnabled,
-                                                onSwitch: { enabled in
-                                                    App.shared.testNetManager.set(testNetEnabled: enabled)
-                                                }
-                                        ),
-                                        isFirst: true,
-                                        isLast: true
-                                )
-                            ]
-                    )
+                            title: .body("TestNet Enabled"),
+                            accessoryType: .switch(
+                                isOn: App.shared.testNetManager.testNetEnabled,
+                                onSwitch: { enabled in
+                                    App.shared.testNetManager.set(testNetEnabled: enabled)
+                                }
+                            ),
+                            isFirst: true,
+                            isLast: true
+                        ),
+                    ]
+                )
             )
         }
 
         return sections
     }
+}
+
+extension MainSettingsViewController: MFMailComposeViewControllerDelegate {
+    func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith _: MFMailComposeResult, error _: Error?) {
+        controller.dismiss(animated: true)
+    }
+}
+extension MainSettingsViewController {
+    
+
+    
+    private func showSelector(onSelect: @escaping (Int) -> ()) {
+
+        let viewController = FallbackBlockModule.viewController(
+                image: nil,
+                title: "safe_setting.fallback.title".localized,
+                viewItems: fallbackBlockViewModel.fallbackBlockViewItems.map{$0.item},
+                onSelect: onSelect
+        )
+
+        DispatchQueue.main.async {
+            self.present(viewController, animated: true)
+        }
+    }
+    
 
 }
+

@@ -12,12 +12,11 @@ class SendSafe2wsafeFactory: BaseSendFactory {
     private let addressService: AddressService
     private let timeLockService: TimeLockService?
     private let adapterService: SendSafe2wsafeAdapterService
-    private let customFeeRateProvider: ICustomRangedFeeRateProvider?
     private let logger: Logger
     private let token: Token
     private let contractAddress: Address?
     
-    init(fiatService: FiatService, amountCautionService: SendAmountCautionService, addressService: AddressService, feeFiatService: FiatService, feeService: SendFeeService, feeRateService: FeeRateService, timeLockService: TimeLockService?, adapterService: SendSafe2wsafeAdapterService, customFeeRateProvider: ICustomRangedFeeRateProvider?, logger: Logger, token: Token, contractAddress: Address?) {
+    init(fiatService: FiatService, amountCautionService: SendAmountCautionService, addressService: AddressService, feeFiatService: FiatService, feeService: SendFeeService, feeRateService: FeeRateService, timeLockService: TimeLockService?, adapterService: SendSafe2wsafeAdapterService, logger: Logger, token: Token, contractAddress: Address?) {
         self.fiatService = fiatService
         self.amountCautionService = amountCautionService
         self.feeFiatService = feeFiatService
@@ -26,7 +25,6 @@ class SendSafe2wsafeFactory: BaseSendFactory {
         self.addressService = addressService
         self.timeLockService = timeLockService
         self.adapterService = adapterService
-        self.customFeeRateProvider = customFeeRateProvider
         self.logger = logger
         self.token = token
         self.contractAddress = contractAddress
@@ -83,7 +81,7 @@ extension SendSafe2wsafeFactory: ISendFeeSettingsFactory {
         var dataSources: [ISendSettingsDataSource] = []
 
         let feeViewModel = SendFeeViewModel(service: feeService)
-        let feeCautionViewModel = SendFeeWarningViewModel(service: feeRateService)
+        let feeCautionViewModel = SendFeeCautionViewModel(service: feeRateService)
         let amountCautionViewModel = SendFeeSettingsAmountCautionViewModel(service: amountCautionService, feeToken: token)
         let feeRateViewModel = FeeRateViewModel(service: feeRateService, feeCautionViewModel: feeCautionViewModel, amountCautionViewModel: amountCautionViewModel)
         if token.blockchainType == .safe{

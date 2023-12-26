@@ -86,7 +86,7 @@ extension MetricChartFactory {
             chartTrend = (lastItem.value - firstItem.value).isSignMinus ? .down : .up
             valueDiff = (lastItem.value - firstItem.value) / firstItem.value * 100
 
-            if let first = firstItem.indicators?[.dominance], let last = lastItem.indicators?[.dominance] {
+            if let first = itemData.indicators[MarketGlobalModule.dominance]?.first, let last = itemData.indicators[MarketGlobalModule.dominance]?.last {
                 rightSideMode = .dominance(value: last, diff: (last - first) / first * 100)
             }
         case .aggregated(let aggregatedValue):
@@ -94,22 +94,33 @@ extension MetricChartFactory {
             chartTrend = .neutral
         }
 
-        let chartItems = itemData.items.map { item -> ChartItem in
-            let chartItem = ChartItem(timestamp: item.timestamp)
-
-            chartItem.added(name: .rate, value: item.value)
-            item.indicators?.forEach { key, value in
-                chartItem.added(name: key, value: value)
+        var chartItems = [ChartItem]()
+        for index in 0..<itemData.items.count {
+            let chartItem = ChartItem(timestamp: itemData.items[index].timestamp)
+            chartItem.added(name: ChartData.rate, value: itemData.items[index].value)
+            if let value = itemData.indicators[ChartData.volume]?.at(index: index) {
+                chartItem.added(name: ChartData.volume, value: value)
             }
+            chartItems.append(chartItem)
+        }
 
-            return chartItem
+        var indicators = [ChartIndicator]()
+        if let dominancePoints = itemData.indicators[MarketGlobalModule.dominance] {
+            let dominanceIndicator = PrecalculatedIndicator(
+                    id: MarketGlobalModule.dominance,
+                    enabled: true,
+                    values: dominancePoints,
+                    configuration: ChartIndicator.LineConfiguration.dominance)
+
+            indicators.append(dominanceIndicator)
         }
 
         return ChartModule.ViewItem(
                 value: value,
                 valueDescription: nil,
                 rightSideMode: rightSideMode,
-                chartData: ChartData(items: chartItems, startTimestamp: startTimestamp, endTimestamp: endTimestamp),
+                chartData: ChartData(items: chartItems, startWindow: startTimestamp, endWindow: endTimestamp),
+                indicators: indicators,
                 chartTrend: chartTrend,
                 chartDiff: valueDiff,
                 minValue: format(value: min, valueType: valueType),
@@ -118,7 +129,7 @@ extension MetricChartFactory {
     }
 
     func selectedPointViewItem(chartItem: ChartItem, firstChartItem: ChartItem?, valueType: MetricChartModule.ValueType) -> ChartModule.SelectedPointViewItem? {
-        guard let value = chartItem.indicators[.rate] else {
+        guard let value = chartItem.indicators[ChartData.rate] else {
             return nil
         }
 
@@ -128,9 +139,9 @@ extension MetricChartFactory {
 
         var rightSideMode: ChartModule.RightSideMode = .none
 
-        if let dominance = chartItem.indicators[.dominance] {
+        if let dominance = chartItem.indicators[ChartIndicator.LineConfiguration.dominanceId] {
             rightSideMode = .dominance(value: dominance, diff: nil)
-        } else if let volume = chartItem.indicators[.volume] {
+        } else if let volume = chartItem.indicators[ChartData.volume] {
             rightSideMode = .volume(value: format(value: volume, valueType: valueType))
         }
 

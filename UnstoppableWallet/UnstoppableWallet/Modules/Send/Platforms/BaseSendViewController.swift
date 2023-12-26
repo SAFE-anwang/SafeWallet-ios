@@ -8,9 +8,8 @@ import ComponentKit
 
 class BaseSendViewController: ThemeViewController, SectionsDataSource {
     private let disposeBag = DisposeBag()
-    private let viewModel: SendViewModel
+    let viewModel: SendViewModel
 
-    private let iconImageView = UIImageView()
     let tableView = SectionsTableView(style: .grouped)
 
     private let confirmationFactory: ISendConfirmationFactory
@@ -63,23 +62,27 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        //title = "send.title".localized(viewModel.token.coin.code)
         
-        let closeButton = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onTapCloseButton))
-        navigationItem.leftBarButtonItems = [closeButton, UIBarButtonItem(customView: iconImageView)]
+        
+//        title = viewModel.title
+        navigationItem.largeTitleDisplayMode = .never
+
+        if (navigationController?.viewControllers.count ?? 0) == 1 {
+            let iconImageView = UIImageView()
+            let closeButton = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onTapCloseButton))
+            navigationItem.leftBarButtonItems = [closeButton, UIBarButtonItem(customView: iconImageView)]
+            iconImageView.snp.makeConstraints { make in
+                make.size.equalTo(CGFloat.iconSize24)
+            }
+            iconImageView.setImage(withUrlString: viewModel.token.coin.imageUrl, placeholder: UIImage(named: viewModel.token.placeholderImageName))
+            iconImageView.tintColor = .themeGray
+        }
 
         if feeSettingsFactory == nil {
             navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.cancel".localized, style: .plain, target: self, action: #selector(didTapCancel))
         } else {
             navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "manage_2_20"), style: .plain, target: self, action: #selector(openFeeSettings))
         }
-
-        iconImageView.snp.makeConstraints { make in
-            make.size.equalTo(CGFloat.iconSize24)
-        }
-        iconImageView.setImage(withUrlString: viewModel.token.coin.imageUrl, placeholder: UIImage(named: viewModel.token.placeholderImageName))
-        iconImageView.tintColor = .themeGray
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
@@ -129,8 +132,8 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
 
         if !keyboardShown {
             keyboardShown = true
@@ -169,7 +172,11 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
     }
 
     func buildSections() -> [SectionProtocol] {
-        [availableBalanceSection, amountSection, recipientSection, buttonSection]
+        var sections = [availableBalanceSection, amountSection]
+        if viewModel.showAddress {
+            sections.insert(recipientSection, at: 2)
+        }
+        return sections
     }
 
 }
@@ -195,7 +202,7 @@ extension BaseSendViewController {
     var availableBalanceSection: SectionProtocol {
         Section(
                 id: "available-balance",
-                headerState: .margin(height: .margin4),
+                headerState: .margin(height: .margin12),
                 rows: [
                     StaticRow(
                             cell: availableBalanceCell,
@@ -209,7 +216,7 @@ extension BaseSendViewController {
     var amountSection: SectionProtocol {
         Section(
                 id: "amount",
-                headerState: .margin(height: .margin8),
+                headerState: .margin(height: .margin16),
                 rows: [
                     StaticRow(
                             cell: amountCell,

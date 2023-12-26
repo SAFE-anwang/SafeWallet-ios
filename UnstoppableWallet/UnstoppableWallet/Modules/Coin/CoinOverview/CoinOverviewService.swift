@@ -13,7 +13,6 @@ class CoinOverviewService {
     private let marketKit: MarketKit.Kit
     private let currencyKit: CurrencyKit.Kit
     private let languageManager: LanguageManager
-    private let appConfigProvider: AppConfigProvider
     private let accountManager: AccountManager
     private let walletManager: WalletManager
 
@@ -24,12 +23,11 @@ class CoinOverviewService {
         }
     }
 
-    init(coinUid: String, marketKit: MarketKit.Kit, currencyKit: CurrencyKit.Kit, languageManager: LanguageManager, appConfigProvider: AppConfigProvider, accountManager: AccountManager, walletManager: WalletManager) {
+    init(coinUid: String, marketKit: MarketKit.Kit, currencyKit: CurrencyKit.Kit, languageManager: LanguageManager, accountManager: AccountManager, walletManager: WalletManager) {
         self.coinUid = coinUid
         self.marketKit = marketKit
         self.currencyKit = currencyKit
         self.languageManager = languageManager
-        self.appConfigProvider = appConfigProvider
         self.accountManager = accountManager
         self.walletManager = walletManager
     }
@@ -37,41 +35,32 @@ class CoinOverviewService {
     private func sync(info: MarketInfoOverview) {
         let account = accountManager.activeAccount
 
-        let configuredTokens = info.fullCoin.tokens
-                .map { $0.configuredTokens }
-                .flatMap { $0 }
+        let tokens = info.fullCoin.tokens
                 .filter {
-                    switch $0.token.type {
+                    switch $0.type {
                     case .unsupported(_, let reference): return reference != nil
                     default: return true
                     }
                 }
 
-        let walletConfiguredTokens = walletManager.activeWallets.map { $0.configuredToken }
+        let walletTokens = walletManager.activeWallets.map { $0.token }
 
-        let tokenItems = configuredTokens
-                .sorted { lhsConfiguredToken, rhsConfiguredToken in
-                    let lhsTypeOrder = lhsConfiguredToken.token.type.order
-                    let rhsTypeOrder = rhsConfiguredToken.token.type.order
+        let tokenItems = tokens
+                .sorted { lhsToken, rhsToken in
+                    let lhsTypeOrder = lhsToken.type.order
+                    let rhsTypeOrder = rhsToken.type.order
 
                     guard lhsTypeOrder == rhsTypeOrder else {
                         return lhsTypeOrder < rhsTypeOrder
                     }
 
-                    let lhsOrder = lhsConfiguredToken.blockchainType.order
-                    let rhsOrder = rhsConfiguredToken.blockchainType.order
-
-                    if lhsOrder != rhsOrder {
-                        return lhsOrder < rhsOrder
-                    }
-
-                    return lhsConfiguredToken.coinSettings.order < rhsConfiguredToken.coinSettings.order
+                    return lhsToken.blockchainType.order < rhsToken.blockchainType.order
                 }
-                .map { configuredToken in
+                .map { token in
                     let state: TokenItemState
 
-                    if let account = account, !account.watchAccount, account.type.supports(configuredToken: configuredToken) {
-                        if walletConfiguredTokens.contains(configuredToken) {
+                    if let account = account, !account.watchAccount, account.type.supports(token: token) {
+                        if walletTokens.contains(token) {
                             state = .alreadyAdded
                         } else {
                             state = .canBeAdded
@@ -81,7 +70,7 @@ class CoinOverviewService {
                     }
 
                     return TokenItem(
-                            configuredToken: configuredToken,
+                            token: token,
                             state: state
                     )
                 }
@@ -94,7 +83,7 @@ class CoinOverviewService {
             return nil
         }
 
-        return URL(string: guideFileUrl, relativeTo: appConfigProvider.guidesIndexUrl)
+        return URL(string: guideFileUrl, relativeTo: AppConfig.guidesIndexUrl)
     }
 
     private var guideFileUrl: String? {
@@ -143,19 +132,24 @@ extension CoinOverviewService {
         }.store(in: &tasks)
     }
 
-    func addToWallet(index: Int) throws {
+    func editWallet(index: Int, add: Bool) throws {
         guard case .completed(let item) = state else {
-            throw AddToWalletError.invalidState
+            throw EditWalletError.invalidState
         }
 
         guard let account = accountManager.activeAccount else {
-            throw AddToWalletError.noActiveAccount
+            throw EditWalletError.noActiveAccount
         }
 
-        let configuredToken = item.tokens[index].configuredToken
+        let token = item.tokens[index].token
 
-        let wallet = Wallet(configuredToken: configuredToken, account: account)
-        walletManager.save(wallets: [wallet])
+        let wallet = Wallet(token: token, account: account)
+
+        if add {
+            walletManager.save(wallets: [wallet])
+        } else {
+            walletManager.delete(wallets: [wallet])
+        }
 
         sync(info: item.info)
     }
@@ -171,7 +165,7 @@ extension CoinOverviewService {
     }
 
     struct TokenItem {
-        let configuredToken: ConfiguredToken
+        let token: Token
         let state: TokenItemState
     }
 
@@ -181,7 +175,7 @@ extension CoinOverviewService {
         case cannotBeAdded
     }
 
-    enum AddToWalletError: Error {
+    enum EditWalletError: Error {
         case invalidState
         case noActiveAccount
     }

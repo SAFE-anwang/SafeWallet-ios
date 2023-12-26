@@ -6,7 +6,7 @@ extension Token {
         switch type {
         case .native:
             switch blockchainType {
-            case .ethereum, .binanceSmartChain, .safe, .tron: return nil
+            case .ethereum, .binanceSmartChain, .safe, .dogecoin,.tron: return nil
             case .binanceChain: return "BEP2"
             default: return blockchain.name
             }
@@ -24,34 +24,8 @@ extension Token {
         }
     }
 
-    var tokenBlockchain: String {
-        switch type {
-        case .native:
-            switch blockchainType {
-            case .binanceChain: return "\(blockchain.name) (BEP2)"
-            default: return blockchain.name
-            }
-        case .eip20:
-            switch blockchainType {
-            case .ethereum: return "\(blockchain.name) (ERC20)"
-            case .binanceSmartChain: return "\(blockchain.name) (BEP20)"
-            case .tron: return "\(blockchain.name) (TRC20)"
-            default: return blockchain.name
-            }
-        case .bep2:
-            return "\(blockchain.name) (BEP2)"
-        default:
-            return blockchain.name
-        }
-    }
-
     var isCustom: Bool {
         coin.uid == tokenQuery.customCoinUid
-    }
-
-    // todo: remove this method
-    var isSupported: Bool {
-        tokenQuery.isSupported
     }
 
     var placeholderImageName: String {
@@ -72,35 +46,11 @@ extension Token {
         }
     }
 
-    var typeInfo: String {
+    var badge: String? {
         switch type {
-        case .native: return "coin_platforms.native".localized
-        case .eip20(let address): return address.shortened
-        case .bep2(let symbol): return symbol
-        default: return ""
-        }
-    }
-
-    var copyableTypeInfo: String? {
-        switch type {
-        case .eip20(let address): return address
-        case .bep2(let symbol): return symbol
-        default: return nil
-        }
-    }
-
-    var configuredTokens: [ConfiguredToken] {
-        switch blockchainType {
-        case .bitcoin, .litecoin, .dogecoin:
-            return MnemonicDerivation.allCases.map {
-                ConfiguredToken(token: self, coinSettings: [.derivation: $0.rawValue])
-            }
-        case .bitcoinCash:
-            return BitcoinCashCoinType.allCases.map {
-                ConfiguredToken(token: self, coinSettings: [.bitcoinCashCoinType: $0.rawValue])
-            }
-        default:
-            return [ConfiguredToken(token: self)]
+        case .derived(let derivation): return derivation.mnemonicDerivation.rawValue.uppercased()
+        case .addressType(let type): return type.bitcoinCashCoinType.title.uppercased()
+        default: return protocolName?.uppercased()
         }
     }
 

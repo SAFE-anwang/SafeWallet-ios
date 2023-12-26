@@ -34,18 +34,9 @@ class EvmCommonGasDataService {
         }
         
         return evmKit.estimateGas(transactionData: adjustedTransactionData, gasPrice: gasPrice)
-                .map { [weak self] estimatedGasLimit in
+                .map { estimatedGasLimit in
                     
-                    let limit: Int
-                    
-                    switch self?.gasLimitType {
-                    case .common, .none:
-                        limit = surchargeRequired ? EvmFeeModule.surcharged(gasLimit: estimatedGasLimit) : estimatedGasLimit
-                        
-                    case .contract(let customLimit):
-                        limit = customLimit
-                    }
-                    
+                    let limit = surchargeRequired ? EvmFeeModule.surcharged(gasLimit: estimatedGasLimit) : estimatedGasLimit
                     return EvmFeeModule.GasData(
                             limit: limit,
                             estimatedLimit: estimatedGasLimit,
@@ -71,5 +62,5 @@ extension EvmCommonGasDataService {
 
 enum GasLimitType {
     case common
-    case contract(limit: Int)
+    case contract
 }

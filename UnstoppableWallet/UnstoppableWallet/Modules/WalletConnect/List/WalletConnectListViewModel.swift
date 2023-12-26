@@ -1,93 +1,107 @@
 import Foundation
-import RxSwift
-import RxRelay
 import RxCocoa
+import RxRelay
+import RxSwift
+import WalletConnectPairing
+import WalletConnectSign
 
 class WalletConnectListViewModel {
     private let service: WalletConnectListService
+    private let eventHandler: IEventHandler
+
     private let disposeBag = DisposeBag()
 
-    private let newConnectionErrorRelay = PublishRelay<String>()
-    private let showWalletConnectV1MainServiceRelay = PublishRelay<WalletConnectV1MainService>()
-    private let showWalletConnectV2ValidatedRelay = PublishRelay<String>()
-    private let showWaitingForSessionRelay = PublishRelay<()>()
-    private let hideWaitingForSessionRelay = PublishRelay<()>()
+    private let showWalletConnectSessionRelay = PublishRelay<WalletConnectSign.Session>()
+    private let showWalletConnectValidatedRelay = PublishRelay<String>()
     private let showAttentionRelay = PublishRelay<String>()
     private let disableNewConnectionRelay = PublishRelay<Bool>()
-    private let showWalletConnectV1SessionRelay = PublishRelay<WalletConnectSession>()
 
-    init(service: WalletConnectListService) {
+    private let viewItemsRelay = BehaviorRelay<[WalletConnectListViewModel.ViewItem]>(value: [])
+    private let pairingCountRelay = BehaviorRelay<Int>(value: 0)
+    private let showDisconnectingRelay = PublishRelay<Void>()
+    private let showSuccessRelay = PublishRelay<Void>()
+
+    init(service: WalletConnectListService, eventHandler: IEventHandler) {
         self.service = service
+        self.eventHandler = eventHandler
 
-        subscribe(disposeBag, service.createServiceV1Observable) { [weak self] in self?.show(service: $0) }
-        subscribe(disposeBag, service.validateV2ResultObservable) { [weak self] in self?.validateV2(result: $0) }
-        subscribe(disposeBag, service.pairingV2ResultObservable) { [weak self] in self?.pairingV2(result: $0) }
-        subscribe(disposeBag, service.proposalV2ReceivedObservable) { [weak self] in self?.proposalReceived() }
-        subscribe(disposeBag, service.proposalV2timeOutObservable) { [weak self] in self?.proposalWaitingTimeOut() }
-        subscribe(disposeBag, service.connectionErrorObservable) { [weak self] in self?.show(connectionError: $0) }
+        subscribe(disposeBag, service.itemsObservable) { [weak self] in self?.sync(items: $0) }
+        subscribe(disposeBag, service.pendingRequestsObservable) { [weak self] in self?.sync(pendingRequests: $0) }
+        subscribe(disposeBag, service.pairingsObservable) { [weak self] in self?.sync(pairings: $0) }
+        subscribe(disposeBag, service.showSessionObservable) { [weak self] in self?.show(session: $0) }
+        subscribe(disposeBag, service.sessionKillingObservable) { [weak self] in self?.sync(sessionKillingState: $0) }
+
+        sync(items: service.items)
+        sync(pendingRequests: service.pendingRequests)
+        sync(pairings: service.pairings)
     }
 
-    private func show(service: WalletConnectV1MainService) {
-        showWalletConnectV1MainServiceRelay.accept(service)
+    private func sync(items: [WalletConnectListService.Item]) {
+        let viewItems = items.map {
+            let description = $0.blockchains.map { $0.shortName }.joined(separator: ", ")
+
+            var badge: String?
+            if $0.requestCount != 0 {
+                badge = "\($0.requestCount)"
+            }
+
+            return WalletConnectListViewModel.ViewItem(
+                id: $0.id,
+                title: ($0.appName != "") ? $0.appName : "Unnamed",
+                description: description,
+                badge: badge,
+                imageUrl: $0.appIcons.last
+            )
+        }
+
+        viewItemsRelay.accept(viewItems)
     }
 
-    private func validateV2(result: Result<String, Error>) {
-        switch result {
-        case .success(let uri): showWalletConnectV2ValidatedRelay.accept(uri)
-        case .failure(let error): newConnectionErrorRelay.accept(error.smartDescription)
+    private func sync(pairings: [WalletConnectPairing.Pairing]) {
+        pairingCountRelay.accept(pairings.count)
+    }
+
+    private func sync(pendingRequests _: [WalletConnectSign.Request]) {
+        sync(items: service.items)
+    }
+
+    private func sync(sessionKillingState: WalletConnectListService.SessionKillingState) {
+        switch sessionKillingState {
+        case .processing: showDisconnectingRelay.accept(())
+        case .completed: showSuccessRelay.accept(()) // don't needed different text
+        case .removedOnly: showSuccessRelay.accept(()) // app just remove peerId from database
         }
     }
 
-    private func pairingV2(result: Result<(), Error>) {
-        switch result {
-        case .success:
-            showWaitingForSessionRelay.accept(())
-            disableNewConnectionRelay.accept(true)
-        case .failure(let error): showAttentionRelay.accept(error.smartDescription)
-        }
+    private func show(session: WalletConnectSign.Session) {
+        showWalletConnectSessionRelay.accept(session)
     }
-
-    private func proposalReceived() {
-        hideWaitingForSessionRelay.accept(())
-        disableNewConnectionRelay.accept(false)
-    }
-
-    private func proposalWaitingTimeOut() {
-        showAttentionRelay.accept("alert.try_again".localized)
-        disableNewConnectionRelay.accept(false)
-    }
-
-    private func show(connectionError: Error) {
-        newConnectionErrorRelay.accept(connectionError.smartDescription)
-    }
-
 }
 
 extension WalletConnectListViewModel {
+    var showWalletConnectSessionSignal: Signal<WalletConnectSign.Session> {
+        showWalletConnectSessionRelay.asSignal()
+    }
 
-    var isWaitingForSession: Bool {
-        service.isWaitingForSession
+    var viewItemsDriver: Driver<[WalletConnectListViewModel.ViewItem]> {
+        viewItemsRelay.asDriver()
+    }
+
+    var pairingCountDriver: Driver<Int> {
+        pairingCountRelay.asDriver()
+    }
+
+    var showDisconnectingSignal: Signal<Void> {
+        showDisconnectingRelay.asSignal()
+    }
+
+    var showSuccessSignal: Signal<Void> {
+        showSuccessRelay.asSignal()
     }
 
     // NewConnection section
     var emptyList: Bool {
         service.emptySessionList && service.emptyPairingList
-    }
-
-    var showWalletConnectMainModuleSignal: Signal<WalletConnectV1MainService> {
-        showWalletConnectV1MainServiceRelay.asSignal()
-    }
-
-    var showWalletConnectV2ValidatedSignal: Signal<String> {
-        showWalletConnectV2ValidatedRelay.asSignal()
-    }
-
-    var showWaitingForSessionSignal: Signal<()> {
-        showWaitingForSessionRelay.asSignal()
-    }
-
-    var hideWaitingForSessionSignal: Signal<()> {
-        hideWaitingForSessionRelay.asSignal()
     }
 
     var disableNewConnectionSignal: Signal<Bool> {
@@ -98,22 +112,28 @@ extension WalletConnectListViewModel {
         showAttentionRelay.asSignal()
     }
 
-    var newConnectionErrorSignal: Signal<String> {
-        newConnectionErrorRelay.asSignal()
-    }
-
     func didScan(string: String) {
-        service.connect(uri: string)
+        Task { [weak self, eventHandler] in
+            defer { self?.disableNewConnectionRelay.accept(false) }
+
+            do {
+                self?.disableNewConnectionRelay.accept(true)
+                try await eventHandler.handle(event: string, eventType: .walletConnectUri)
+            } catch {}
+        }
     }
 
-    func pairV2(validUri: String) {
-        service.pairV2(validUri: validUri)
+    // Manage connections
+    func showSession(id: Int) {
+        service.showSession(id: id)
     }
 
+    func kill(id: Int) {
+        service.kill(id: id)
+    }
 }
 
 extension WalletConnectListViewModel {
-
     class ViewItem {
         let id: Int
         let title: String
@@ -129,15 +149,12 @@ extension WalletConnectListViewModel {
             self.imageUrl = imageUrl
         }
     }
-
 }
 
-extension WalletConnectUriHandler.ConnectionError : LocalizedError {
-
+extension WalletConnectUriHandler.ConnectionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .wrongUri: return "wallet_connect.error.invalid_url".localized
         }
     }
-
 }

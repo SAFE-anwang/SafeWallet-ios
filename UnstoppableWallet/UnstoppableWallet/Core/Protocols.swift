@@ -1,3 +1,4 @@
+import Combine
 import UIKit
 import RxSwift
 import GRDB
@@ -35,6 +36,20 @@ protocol IBalanceAdapter: IBaseAdapter {
 
 protocol IDepositAdapter: IBaseAdapter {
     var receiveAddress: DepositAddress { get }
+    var receiveAddressStatus: DataStatus<DepositAddress> { get }
+    var receiveAddressPublisher: AnyPublisher<DataStatus<DepositAddress>, Never> { get }
+}
+
+extension IDepositAdapter {
+
+    var receiveAddressStatus: DataStatus<DepositAddress> {
+        .completed(receiveAddress)
+    }
+
+    var receiveAddressPublisher: AnyPublisher<DataStatus<DepositAddress>, Never> {
+        Just(receiveAddressStatus).eraseToAnyPublisher()
+    }
+
 }
 
 protocol ITransactionsAdapter {
@@ -107,7 +122,7 @@ protocol ISendBinanceAdapter {
 
 protocol ISendZcashAdapter {
     var availableBalance: Decimal { get }
-    func validate(address: String) throws -> ZcashAdapter.AddressType
+    func validate(address: String, checkSendToSelf: Bool) throws -> ZcashAdapter.AddressType
     var fee: Decimal { get }
     func sendSingle(amount: Decimal, address: Recipient, memo: Memo?) -> Single<Void>
     func recipient(from stringEncodedAddress: String) -> Recipient?
@@ -141,12 +156,7 @@ protocol INftEventProvider {
 }
 
 protocol IFeeRateProvider {
-    func recommendedFeeRate() async throws -> Int
-}
-
-protocol ICustomRangedFeeRateProvider: IFeeRateProvider {
-    var customFeeRange: ClosedRange<Int> { get }
-    var step: Int { get }
+    func feeRates() async throws -> FeeRateProvider.FeeRates
 }
 
 protocol IAppManager {

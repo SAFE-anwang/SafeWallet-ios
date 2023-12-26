@@ -1,23 +1,23 @@
-import UIKit
 import MarketKit
-import SectionsTableView
-import RxSwift
-import RxCocoa
-import UniswapKit
 import OneInchKit
+import RxCocoa
+import RxSwift
+import SectionsTableView
+import UIKit
+import UniswapKit
 
 class SwapProviderManager {
     private let localStorage: LocalStorage
     private let evmBlockchainManager: EvmBlockchainManager
 
-    private let dataSourceUpdatedRelay = PublishRelay<()>()
+    private let dataSourceUpdatedRelay = PublishRelay<Void>()
     private(set) var dataSourceProvider: ISwapProvider? {
         didSet {
             dataSourceUpdatedRelay.accept(())
         }
     }
 
-    private let dexUpdatedRelay = PublishRelay<()>()
+    private let dexUpdatedRelay = PublishRelay<Void>()
     var dex: SwapModule.Dex? {
         didSet {
             dexUpdatedRelay.accept(())
@@ -56,7 +56,7 @@ class SwapProviderManager {
 
         switch dex.provider {
         case .uniswap, .pancake, .quickSwap:
-            return UniswapModule(dex: dex, dataSourceState: state)
+            return UniswapModule(dex: dex, dataSourceState: state, isSafeSwap: false)
         case .uniswapV3:
             return UniswapV3Module(dex: dex, dataSourceState: state, dexType: .uniswap)
         case .pancakeV3:
@@ -64,14 +64,18 @@ class SwapProviderManager {
         case .oneInch:
             return OneInchModule(dex: dex, dataSourceState: state)
         case .safeSwap:
-            return SafeSwapModule(dex: dex, dataSourceState: state)
+            return UniswapModule(dex: dex, dataSourceState: state, isSafeSwap: true)
         }
     }
-
+    
+    func switchToOneInch() {
+        guard let id = dex?.provider.id, id == SwapModule.Dex.Provider.safeSwap.id else { return }
+        guard let provider = dex?.blockchainType.allowedProviders.first(where: { $0 == .oneInch}) else { return }
+        set(provider: provider)
+    }
 }
 
 extension SwapProviderManager: ISwapDexManager {
-
     func set(provider: SwapModule.Dex.Provider) {
         guard provider != dex?.provider else {
             return
@@ -92,14 +96,12 @@ extension SwapProviderManager: ISwapDexManager {
         dataSourceProvider = self.provider(dex: dex)
     }
 
-    var dexUpdated: Signal<()> {
+    var dexUpdated: Signal<Void> {
         dexUpdatedRelay.asSignal()
     }
-
 }
 
 extension SwapProviderManager: ISwapDataSourceManager {
-
     var dataSource: ISwapDataSource? {
         dataSourceProvider?.dataSource
     }
@@ -108,8 +110,7 @@ extension SwapProviderManager: ISwapDataSourceManager {
         dataSourceProvider?.settingsDataSource
     }
 
-    var dataSourceUpdated: Signal<()> {
+    var dataSourceUpdated: Signal<Void> {
         dataSourceUpdatedRelay.asSignal()
     }
-
 }

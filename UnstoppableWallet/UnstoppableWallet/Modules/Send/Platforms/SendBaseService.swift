@@ -8,6 +8,11 @@ extension SendBaseService {
         case notReady
     }
 
+    enum Mode {
+        case send
+        case predefined(address: String)
+    }
+
     enum AmountError: Error {
         case invalidDecimal
         case insufficientBalance

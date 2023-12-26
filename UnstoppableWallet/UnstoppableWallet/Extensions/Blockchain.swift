@@ -1,7 +1,6 @@
 import MarketKit
 
 extension Blockchain {
-
     var shortName: String {
         switch type {
         case .binanceSmartChain: return "BSC"
@@ -9,23 +8,18 @@ extension Blockchain {
         }
     }
 
-    func eip20TokenUrl(address: String) -> String? {
-        // todo: remove this stub
-        switch uid {
-        case "ethereum": return "https://etherscan.io/token/\(address)"
-        case "binance-smart-chain": return "https://bscscan.com/token/\(address)"
-        default: ()
-        }
-
-        guard let eip3091url else {
+    func explorerUrl(reference: String?) -> String? {
+        // using eip3091url field as it was renamed in MarketKit for further refactoring
+        guard let explorerUrl = explorerUrl, let reference = reference else {
             return nil
         }
 
-        return "\(eip3091url)/token/\(address)"
+        return explorerUrl.replacingOccurrences(of: "$ref", with: reference)
     }
+}
 
-    func bep2TokenUrl(symbol: String) -> String {
-        "https://explorer.binance.org/asset/\(symbol)"
+extension Blockchain: Identifiable {
+    public var id: String {
+        uid
     }
-
 }

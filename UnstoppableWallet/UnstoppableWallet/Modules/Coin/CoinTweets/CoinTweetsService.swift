@@ -55,16 +55,19 @@ extension CoinTweetsService {
 
         tasks = Set()
 
-        Task { [weak self, marketKit, coinUid, twitterProvider] in
+        Task { [weak self, marketKit, coinUid, twitterProvider, userName] in
             do {
                 var twitterUser: TwitterUser?
-                if let user = self?.user {
-                    twitterUser = user
-                } else {
-                    let username = try await marketKit.twitterUsername(coinUid: coinUid)
-                    if let username, !username.isEmpty {
-                        twitterUser = try await twitterProvider.userRequest(username: username)
-                    }
+//                if let user = self?.user {
+//                    twitterUser = user
+//                } else {
+//                    let username = try await marketKit.twitterUsername(coinUid: coinUid)
+//                    if let username, !username.isEmpty {
+//                        twitterUser = try await twitterProvider.userRequest(username: username)
+//                    }
+//                }
+                if let userName, !userName.isEmpty {
+                    twitterUser = try await twitterProvider.userRequest(username: userName)
                 }
 
                 guard let twitterUser else {

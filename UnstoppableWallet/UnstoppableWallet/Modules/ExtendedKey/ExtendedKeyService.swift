@@ -190,27 +190,6 @@ extension ExtendedKeyService {
         itemRelay.asObservable()
     }
 
-//    var supportedBlockchains: [Blockchain] {
-//        switch accountType {
-//        case .hdExtendedKey(let key):
-//            switch key.info.coinType {
-//            case .bitcoin:
-//                switch derivation {
-//                case .bip44: return [.bitcoin, .bitcoinCash, .litecoin, .dash]
-//                case .bip49: return [.bitcoin, .litecoin]
-//                case .bip84: return [.bitcoin, .litecoin]
-//                }
-//            case .litecoin:
-//                return [.litecoin]
-//            }
-//        default:
-//            switch derivation {
-//            case .bip44: return [.bitcoin, .bitcoinCash, .litecoin, .dash]
-//            case .bip49: return [.bitcoin, .litecoin]
-//            case .bip84: return [.bitcoin, .litecoin]
-//            }
-//        }
-//    }
     var supportedBlockchains: [Blockchain] {
         var coinTypesDerivableFromKey = [HDExtendedKeyVersion.ExtendedKeyCoinType]()
         if case .hdExtendedKey(let key) = accountType {

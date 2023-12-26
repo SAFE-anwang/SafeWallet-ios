@@ -25,7 +25,7 @@ struct LiquidityConfirmationModule {
                 evmKit: evmKitWrapper.evmKit,
                 blockchainType: evmKitWrapper.blockchainType,
                 predefinedGasLimit: 500000,
-                gasLimitType: .contract(limit: 500000)
+                gasLimitType: .contract
         )
         
         let coinService = coinServiceFactory.baseCoinService

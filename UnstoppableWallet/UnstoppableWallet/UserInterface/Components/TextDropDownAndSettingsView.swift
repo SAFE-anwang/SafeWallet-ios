@@ -95,8 +95,11 @@ class TextDropDownAndSettingsView: UIView {
         onTapLiquidityRecord?()
     }
 
-    func bind(dropdownTitle: String?, settingsHidden: Bool = false) {
+    func set(dropdownTitle: String?) {
         dropdownButton.setTitle(dropdownTitle, for: .normal)
+    }
+
+    func set(settingsHidden: Bool) {
         settingsButton.isHidden = settingsHidden
     }
 

@@ -34,13 +34,11 @@ struct AddTokenModule {
             items.append(item)
         }
 
-        if let blockchain = try? App.shared.marketKit.blockchain(uid: BlockchainType.tron.uid),
-           blockchain.type.supports(accountType: account.type) {
+        if let blockchain = try? App.shared.marketKit.blockchain(uid: BlockchainType.tron.uid), blockchain.type.supports(accountType: account.type) {
             let service: IAddTokenBlockchainService = AddTronTokenBlockchainService(
                 blockchain: blockchain,
                 networkManager: App.shared.networkManager,
-                network: App.shared.testNetManager.testNetEnabled ? .nileTestnet : .mainNet,
-                appConfigProvider: App.shared.appConfigProvider
+                network: App.shared.testNetManager.testNetEnabled ? .nileTestnet : .mainNet
             )
 
             let item = Item(blockchain: blockchain, service: service)

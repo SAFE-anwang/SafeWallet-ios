@@ -168,15 +168,17 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
                 let blocksList = safeCoinKit.bitcoinCore.storage.blocks(from: startBlockHeight, to: lastBlockHeight, ascending: false)
                 if blocksList.count > 0 {
                     safeCoinKit.stop()
+                    safeCoinKit.bitcoinCore.stopDownload()
                     try safeCoinKit.bitcoinCore.storage.delete(blocks: blocksList)
-                    safeCoinKit.bitcoinCore.updateLastBlockInfo(network: .main, fallbackDate: date)
+                    if let network = safeCoinKit.safeMainNet {
+                        safeCoinKit.updateLastBlockInfo(network: network, syncMode: .api)
+                    }
+                    //updateLastBlockInfo(network: .main, fallbackDate: date)
                     safeCoinKit.start()
                 }
             }catch {}
         }
     }
-
-
 }
 
 public struct BlockInfo {

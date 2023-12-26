@@ -58,18 +58,21 @@ class LiquidityAllowanceViewModel {
     }
 
     private func handle(errors: [Error]) {
-        let error = errors.first(where: { .insufficientAllowance == $0 as? SwapModule.SwapError })
-        isErrorRelay.accept(error != nil)
+        let errorA = errors.first(where: { .insufficientAllowance == $0 as? SwapModule.SwapError })
+        let errorB = errors.first(where: { .insufficientAllowanceB == $0 as? SwapModule.SwapError })
+        isErrorRelay.accept(errorA != nil && errorB != nil )
 
         syncVisible()
     }
 
     private func allowance(state: LiquidityAllowanceService.State, errors: [Error]) -> String? {
-        let isInsufficientAllowance = errors.first(where: { .insufficientAllowance == $0 as? SwapModule.SwapError }) != nil
-
+        let isInsufficientAllowanceA = errors.first(where: { .insufficientAllowance == $0 as? SwapModule.SwapError }) != nil
+        let isInsufficientAllowanceB = errors.first(where: { .insufficientAllowanceB == $0 as? SwapModule.SwapError }) != nil
         switch state {
-        case .ready(let allowance):
-            return isInsufficientAllowance ? ValueFormatter.instance.formatFull(coinValue: allowance) : nil
+        case .ready(let allowanceA, let allowanceB):
+            let valueFormatterA = isInsufficientAllowanceA ? ValueFormatter.instance.formatFull(coinValue: allowanceA) : nil
+            let valueFormatterB = isInsufficientAllowanceB ? ValueFormatter.instance.formatFull(coinValue: allowanceB) : nil
+            return (valueFormatterA != nil) ? valueFormatterA : valueFormatterB
         default: return nil
         }
     }

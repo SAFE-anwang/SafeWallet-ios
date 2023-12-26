@@ -8,9 +8,12 @@ class LiquidityPendingAllowanceService {
     private let spenderAddress: EvmKit.Address
     private let adapterManager: AdapterManager
     private let allowanceService: LiquidityAllowanceService
+    
+    private(set) var tokenA: Token?
+    private(set) var tokenB: Token?
+    private var pendingAllowanceA: Decimal?
+    private var pendingAllowanceB: Decimal?
 
-    private(set) var token: Token?
-    private var pendingAllowance: Decimal?
 
     private let disposeBag = DisposeBag()
 
@@ -27,9 +30,10 @@ class LiquidityPendingAllowanceService {
         self.spenderAddress = spenderAddress
         self.adapterManager = adapterManager
         self.allowanceService = allowanceService
-
+        
         allowanceService.stateObservable
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                .observeOn(MainScheduler.asyncInstance)
                 .subscribe(onNext: { [weak self] _ in
                     self?.sync()
                 })
@@ -38,20 +42,22 @@ class LiquidityPendingAllowanceService {
 
     private func sync() {
 //        print("Pending allowance: \(pendingAllowance ?? -1)")
-        guard let pendingAllowance = pendingAllowance else {
+        guard let pendingAllowanceA = pendingAllowanceA, let pendingAllowanceB = pendingAllowanceB else {
             state = .notAllowed
             return
         }
 
 //        print("allowance state: \(allowanceService.state)")
-        guard case .ready(let allowance) = allowanceService.state else {
+        guard case .ready(let allowanceA, let allowanceB) = allowanceService.state else {
             state = .notAllowed
             return
         }
 
-        if pendingAllowance != allowance.value {
-            state = pendingAllowance == 0 ? .revoking : .pending
-        } else {
+        if pendingAllowanceA != allowanceA.value {
+            state = pendingAllowanceA == 0 ? .revoking : .pending
+        }else if pendingAllowanceB != allowanceB.value {
+            state = pendingAllowanceB == 0 ? .revoking : .pending
+        }else {
             state = .approved
         }
     }
@@ -64,21 +70,36 @@ extension LiquidityPendingAllowanceService {
         stateRelay.asObservable()
     }
 
-    func set(token: Token?) {
-        self.token = token
-        pendingAllowance = nil
-
+    func set(tokenA: Token?) {
+        self.tokenA = tokenA
+        pendingAllowanceA = nil
+        syncAllowance()
+    }
+    
+    func set(tokenB: Token?) {
+        self.tokenB = tokenB
+        pendingAllowanceB = nil
         syncAllowance()
     }
 
     func syncAllowance() {
-        guard let token = token, let adapter = adapterManager.adapter(for: token) as? IErc20Adapter else {
+        guard let tokenA = tokenA, let adapterA = adapterManager.adapter(for: tokenA) as? IErc20Adapter else {
+            return
+        }
+        
+        guard let tokenB = tokenB, let adapterB = adapterManager.adapter(for: tokenB) as? IErc20Adapter else {
             return
         }
 
-        for transaction in adapter.pendingTransactions {
+        for transaction in adapterA.pendingTransactions {
             if let approve = transaction as? ApproveTransactionRecord, let value = approve.value.decimalValue {
-                pendingAllowance = value
+                pendingAllowanceA = value
+            }
+        }
+        
+        for transaction in adapterB.pendingTransactions {
+            if let approve = transaction as? ApproveTransactionRecord, let value = approve.value.decimalValue {
+                pendingAllowanceB = value
             }
         }
 

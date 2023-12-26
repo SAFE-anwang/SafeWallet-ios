@@ -12,9 +12,9 @@ class SafeProvider {
     private let networkManager: NetworkManager
     private let headers: HTTPHeaders?
     
-    init(networkManager: NetworkManager, appConfigProvider: AppConfigProvider) {
+    init(networkManager: NetworkManager) {
         self.networkManager = networkManager
-        headers = appConfigProvider.hsProviderApiKey.flatMap { HTTPHeaders([HTTPHeader(name: "apikey", value: $0)]) }
+        headers = AppConfig.hsProviderApiKey.flatMap { HTTPHeaders([HTTPHeader(name: "apikey", value: $0)]) }
     }
 }
 

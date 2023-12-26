@@ -15,26 +15,32 @@ extension SectionsTableView {
         )
     }
 
-    func sectionFooter(text: String) -> ViewState<BottomDescriptionHeaderFooterView> {
+    func sectionFooter(text: String, textColor: UIColor = .themeGray, topMargin: CGFloat = .margin12, bottomMargin: CGFloat = .margin32) -> ViewState<BottomDescriptionHeaderFooterView> {
         registerHeaderFooter(forClass: BottomDescriptionHeaderFooterView.self)
 
         return .cellType(
                 hash: text,
-                binder: { $0.bind(text: text) },
-                dynamicHeight: { BottomDescriptionHeaderFooterView.height(containerWidth: $0, text: text) }
+                binder: {
+                    $0.bind(text: text, textColor: textColor, topMargin: topMargin, bottomMargin: bottomMargin)
+                },
+                dynamicHeight: { BottomDescriptionHeaderFooterView.height(containerWidth: $0, text: text, topMargin: topMargin, bottomMargin: bottomMargin) }
         )
     }
 
-    func highlightedDescriptionRow(id: String, text: String, ignoreBottomMargin: Bool = false) -> RowProtocol {
+    func highlightedDescriptionRow(id: String, style: HighlightedDescriptionBaseView.Style = .yellow, text: String, ignoreBottomMargin: Bool = false, topVerticalMargin: CGFloat? = nil) -> RowProtocol {
         registerCell(forClass: HighlightedDescriptionCell.self)
 
         return Row<HighlightedDescriptionCell>(
                 id: id,
                 dynamicHeight: { width in
-                    HighlightedDescriptionCell.height(containerWidth: width, text: text, ignoreBottomMargin: ignoreBottomMargin)
+                    HighlightedDescriptionCell.height(containerWidth: width, text: text, ignoreBottomMargin: ignoreBottomMargin, topVerticalMargin: topVerticalMargin ?? HighlightedDescriptionCell.defaultVerticalMargin)
                 },
                 bind: { cell, _ in
+                    cell.set(style: style)
                     cell.descriptionText = text
+                    if let topVerticalMargin {
+                        cell.set(verticalMargin: topVerticalMargin)
+                    }
                 }
         )
     }

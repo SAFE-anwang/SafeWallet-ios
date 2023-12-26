@@ -1,15 +1,12 @@
-import UIKit
-import ThemeKit
+import SwiftUI
 import MarketKit
 
 struct BtcBlockchainSettingsModule {
 
-    static func viewController(blockchain: Blockchain) -> UIViewController {
+    static func view(blockchain: Blockchain) -> some View {
         let service = BtcBlockchainSettingsService(blockchain: blockchain, btcBlockchainManager: App.shared.btcBlockchainManager)
         let viewModel = BtcBlockchainSettingsViewModel(service: service)
-        let viewController = BtcBlockchainSettingsViewController(viewModel: viewModel)
-
-        return ThemeNavigationController(rootViewController: viewController)
+        return BtcBlockchainSettingsView(viewModel: viewModel)
     }
 
 }

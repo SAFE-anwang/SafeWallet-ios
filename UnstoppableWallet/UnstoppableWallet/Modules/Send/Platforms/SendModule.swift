@@ -10,7 +10,7 @@ protocol ITitledCautionViewModel {
 
 class SendModule {
 
-    static func controller(wallet: Wallet) -> UIViewController? {
+    static func controller(wallet: Wallet, mode: SendBaseService.Mode = .send) -> UIViewController? {
         guard let adapter = App.shared.adapterManager.adapter(for: wallet) else {
             return nil
         }
@@ -21,22 +21,22 @@ class SendModule {
 
         switch adapter {
         case let adapter as ISendSafeCoinAdapter:
-            return SendModule.viewController(token: token, adapter: adapter)
+            return SendModule.viewController(token: token, mode: mode, adapter: adapter)
         case let adapter as ISendBitcoinAdapter:
-            return SendModule.viewController(token: token, adapter: adapter)
+            return SendModule.viewController(token: token, mode: mode, adapter: adapter)
         case let adapter as ISendBinanceAdapter:
-            return SendModule.viewController(token: token, adapter: adapter)
+            return SendModule.viewController(token: token, mode: mode, adapter: adapter)
         case let adapter as ISendZcashAdapter:
-            return SendModule.viewController(token: token, adapter: adapter)
+            return SendModule.viewController(token: token, mode: mode, adapter: adapter)
         case let adapter as ISendEthereumAdapter:
-            return SendEvmModule.viewController(token: token, adapter: adapter)
+            return SendEvmModule.viewController(token: token, mode: mode, adapter: adapter)
         case let adapter as ISendTronAdapter:
-            return SendTronModule.viewController(token: token, adapter: adapter)
+            return SendTronModule.viewController(token: token, mode: mode, adapter: adapter)
         default: return nil
         }
     }
 
-    private static func viewController(token: Token, adapter: ISendBitcoinAdapter) -> UIViewController? {
+    private static func viewController(token: Token, mode: SendBaseService.Mode, adapter: ISendBitcoinAdapter) -> UIViewController? {
         guard let feeRateProvider = App.shared.feeRateProviderFactory.provider(blockchainType: token.blockchainType) else {
             return nil
         }
@@ -97,7 +97,8 @@ class SendModule {
                 feeRateService: feeRateService,
                 timeLockErrorService: timeLockErrorService,
                 reachabilityManager: App.shared.reachabilityManager,
-                token: token
+                token: token,
+                mode: mode
         )
 
         //Add dependencies
@@ -131,10 +132,7 @@ class SendModule {
 
         // Fee
         let feeViewModel = SendFeeViewModel(service: feeService)
-        let feeWarningViewModel = SendFeeWarningViewModel(service: feeRateService)
-
-        // Confirmation and Settings
-        let customRangedFeeRateProvider = feeRateProvider as? ICustomRangedFeeRateProvider
+        let feeCautionViewModel = SendFeeCautionViewModel(service: feeRateService)
 
         let sendFactory = SendBitcoinFactory(
                 fiatService: fiatService,
@@ -145,7 +143,6 @@ class SendModule {
                 feeRateService: feeRateService,
                 timeLockService: timeLockService,
                 adapterService: bitcoinAdapterService,
-                customFeeRateProvider: customRangedFeeRateProvider,
                 logger: App.shared.logger,
                 token: token
         )
@@ -159,13 +156,13 @@ class SendModule {
                 amountCautionViewModel: amountCautionViewModel,
                 recipientViewModel: recipientViewModel,
                 feeViewModel: feeViewModel,
-                feeWarningViewModel: feeWarningViewModel
+                feeCautionViewModel: feeCautionViewModel
         )
 
-        return ThemeNavigationController(rootViewController: viewController)
+        return viewController
     }
 
-    private static func viewController(token: Token, adapter: ISendBinanceAdapter) -> UIViewController? {
+    private static func viewController(token: Token, mode: SendBaseService.Mode, adapter: ISendBinanceAdapter) -> UIViewController? {
         let feeToken = App.shared.feeCoinProvider.feeToken(token: token) ?? token
 
         let switchService = AmountTypeSwitchService(localStorage: StorageKit.LocalStorage.default)
@@ -197,7 +194,8 @@ class SendModule {
                 memoService: memoService,
                 adapter: adapter,
                 reachabilityManager: App.shared.reachabilityManager,
-                token: token
+                token: token,
+                mode: mode
         )
 
         //Add dependencies
@@ -254,10 +252,10 @@ class SendModule {
                 feeWarningViewModel: feeWarningViewModel
         )
 
-        return ThemeNavigationController(rootViewController: viewController)
+        return viewController
     }
 
-    private static func viewController(token: Token, adapter: ISendZcashAdapter) -> UIViewController? {
+    private static func viewController(token: Token, mode: SendBaseService.Mode, adapter: ISendZcashAdapter) -> UIViewController? {
         let switchService = AmountTypeSwitchService(localStorage: StorageKit.LocalStorage.default)
         let coinService = CoinService(token: token, currencyKit: App.shared.currencyKit, marketKit: App.shared.marketKit)
         let fiatService = FiatService(switchService: switchService, currencyKit: App.shared.currencyKit, marketKit: App.shared.marketKit)
@@ -287,7 +285,8 @@ class SendModule {
                 memoService: memoService,
                 adapter: adapter,
                 reachabilityManager: App.shared.reachabilityManager,
-                token: token
+                token: token,
+                mode: mode
         )
 
         //Add dependencies
@@ -343,10 +342,10 @@ class SendModule {
                 feeViewModel: feeViewModel
         )
 
-        return ThemeNavigationController(rootViewController: viewController)
+        return viewController
     }
     
-    static func viewController(token: Token, adapter: ISendSafeCoinAdapter) -> UIViewController? {
+    static func viewController(token: Token, mode: SendBaseService.Mode, adapter: ISendSafeCoinAdapter) -> UIViewController? {
         guard let feeRateProvider = App.shared.feeRateProviderFactory.provider(blockchainType: token.blockchainType) else {
             return nil
         }
@@ -407,7 +406,8 @@ class SendModule {
                 feeRateService: feeRateService,
                 timeLockErrorService: timeLockErrorService,
                 reachabilityManager: App.shared.reachabilityManager,
-                token: token
+                token: token,
+                mode: mode
         )
 
         //Add dependencies
@@ -441,11 +441,9 @@ class SendModule {
 
         // Fee
         let feeViewModel = SendFeeViewModel(service: feeService)
-        let feeWarningViewModel = SendFeeWarningViewModel(service: feeRateService)
+        let feeWarningViewModel = SendFeeCautionViewModel(service: feeRateService)
 
         // Confirmation and Settings
-        let customRangedFeeRateProvider = feeRateProvider as? ICustomRangedFeeRateProvider
-
         let sendFactory = SendSafeCoinFactory(
                 fiatService: fiatService,
                 amountCautionService: amountCautionService,
@@ -455,7 +453,6 @@ class SendModule {
                 feeRateService: feeRateService,
                 timeLockService: timeLockService,
                 adapterService: bitcoinAdapterService,
-                customFeeRateProvider: customRangedFeeRateProvider,
                 logger: App.shared.logger,
                 token: token
         )
@@ -469,14 +466,14 @@ class SendModule {
                 amountCautionViewModel: amountCautionViewModel,
                 recipientViewModel: recipientViewModel,
                 feeViewModel: feeViewModel,
-                feeWarningViewModel: feeWarningViewModel
+                feeCautionViewModel: feeWarningViewModel
         )
 
-        return ThemeNavigationController(rootViewController: viewController)
+        return viewController
     }
     
     // 跨链：sfe => wsafe
-    static func wsafeViewController(token: Token, adapter: ISendSafeCoinAdapter, ethAdapter: ISendEthereumAdapter, data: Safe4Data) -> UIViewController? {
+    static func wsafeViewController(token: Token, mode: SendBaseService.Mode, adapter: ISendSafeCoinAdapter, ethAdapter: ISendEthereumAdapter, data: Safe4Data) -> UIViewController? {
         guard let feeRateProvider = App.shared.feeRateProviderFactory.provider(blockchainType: token.blockchainType) else {
             return nil
         }
@@ -540,7 +537,8 @@ class SendModule {
                 feeRateService: feeRateService,
                 timeLockErrorService: nil,//timeLockErrorService,
                 reachabilityManager: App.shared.reachabilityManager,
-                token: token
+                token: token,
+                mode: mode
         )
 
         //Add dependencies
@@ -574,10 +572,9 @@ class SendModule {
 
         // Fee
         let feeViewModel = SendFeeViewModel(service: feeService)
-        let feeWarningViewModel = SendFeeWarningViewModel(service: feeRateService)
+        let feeWarningViewModel = SendFeeCautionViewModel(service: feeRateService)
 
         // Confirmation and Settings
-        let customRangedFeeRateProvider = feeRateProvider as? ICustomRangedFeeRateProvider
 
         let sendFactory = SendSafe2wsafeFactory(
                 fiatService: fiatService,
@@ -588,7 +585,6 @@ class SendModule {
                 feeRateService: feeRateService,
                 timeLockService: nil,//timeLockService,
                 adapterService: adapterService,
-                customFeeRateProvider: customRangedFeeRateProvider,
                 logger: App.shared.logger,
                 token: token,
                 contractAddress: data.contractAddress
@@ -618,7 +614,7 @@ class SendModule {
         return ThemeNavigationController(rootViewController: viewController)
     }
     
-    static func lineLockViewController(token: Token, adapter: ISendSafeCoinAdapter, reciverAddress: Address?) -> UIViewController? {
+    static func lineLockViewController(token: Token, mode: SendBaseService.Mode, adapter: ISendSafeCoinAdapter, reciverAddress: Address?) -> UIViewController? {
         guard let feeRateProvider = App.shared.feeRateProviderFactory.provider(blockchainType: token.blockchainType) else {
             return nil
         }
@@ -685,6 +681,7 @@ class SendModule {
                 timeLockErrorService: nil,// timeLockErrorService,
                 reachabilityManager: App.shared.reachabilityManager,
                 token: token,
+                mode: mode,
                 lineLockInputService: lineLockInputService
         )
 
@@ -719,10 +716,9 @@ class SendModule {
 
         // Fee
         let feeViewModel = SendFeeViewModel(service: feeService)
-        let feeWarningViewModel = SendFeeWarningViewModel(service: feeRateService)
+        let feeWarningViewModel = SendFeeCautionViewModel(service: feeRateService)
 
         // Confirmation and Settings
-        let customRangedFeeRateProvider = feeRateProvider as? ICustomRangedFeeRateProvider
 
         let sendFactory = SendSafeLineLockFactory(
                 fiatService: fiatService,
@@ -733,7 +729,6 @@ class SendModule {
                 feeRateService: feeRateService,
                 timeLockService: nil,//timeLockService,
                 adapterService: bitcoinAdapterService,
-                customFeeRateProvider: customRangedFeeRateProvider,
                 logger: App.shared.logger,
                 token: token
         )

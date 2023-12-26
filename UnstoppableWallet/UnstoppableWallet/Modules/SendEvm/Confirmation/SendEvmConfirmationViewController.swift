@@ -6,28 +6,61 @@ import RxCocoa
 import ComponentKit
 
 class SendEvmConfirmationViewController: SendEvmTransactionViewController {
-    private let sendButton = PrimaryButton()
+    private let mode: Mode
 
-    var confirmationTitle = "confirm".localized
-    var confirmationButtonTitle = "send.confirmation.send_button".localized
+    private let sendButton = PrimaryButton()
+    private let sendSliderButton = SliderButton()
+
+    init(mode: Mode, transactionViewModel: SendEvmTransactionViewModel, settingsViewModel: EvmSendSettingsViewModel) {
+        self.mode = mode
+
+        super.init(transactionViewModel: transactionViewModel, settingsViewModel: settingsViewModel)
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = confirmationTitle
+        switch mode {
+        case .send:
+            title = "confirm".localized
 
-        bottomWrapper.addSubview(sendButton)
-        sendButton.snp.makeConstraints { maker in
-            maker.top.equalToSuperview().inset(CGFloat.margin32)
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin24)
-            maker.bottom.equalToSuperview().inset(CGFloat.margin16)
+            bottomWrapper.addSubview(sendSliderButton)
+
+            sendSliderButton.title = "send.confirmation.slide_to_send".localized
+            sendSliderButton.finalTitle = "send.confirmation.sending".localized
+            sendSliderButton.slideImage = UIImage(named: "arrow_medium_2_right_24")
+            sendSliderButton.finalImage = UIImage(named: "check_2_24")
+            sendSliderButton.onTap = { [weak self] in
+                self?.transactionViewModel.send()
+            }
+        case .resend:
+            title = "tx_info.options.speed_up".localized
+            topDescription = "send.confirmation.resend_description".localized
+
+            bottomWrapper.addSubview(sendButton)
+
+            sendButton.set(style: .yellow)
+            sendButton.setTitle("send.confirmation.resend".localized, for: .normal)
+            sendButton.addTarget(self, action: #selector(onTapSend), for: .touchUpInside)
+        case .cancel:
+            title = "tx_info.options.cancel".localized
+            topDescription = "send.confirmation.cancel_description".localized
+
+            bottomWrapper.addSubview(sendButton)
+
+            sendButton.set(style: .yellow)
+            sendButton.setTitle("send.confirmation.cancel".localized, for: .normal)
+            sendButton.addTarget(self, action: #selector(onTapSend), for: .touchUpInside)
         }
 
-        sendButton.set(style: .yellow)
-        sendButton.setTitle(confirmationButtonTitle, for: .normal)
-        sendButton.addTarget(self, action: #selector(onTapSend), for: .touchUpInside)
-
-        subscribe(disposeBag, transactionViewModel.sendEnabledDriver) { [weak self] in self?.sendButton.isEnabled = $0 }
+        subscribe(disposeBag, transactionViewModel.sendEnabledDriver) { [weak self] enabled in
+            self?.sendSliderButton.isEnabled = enabled
+            self?.sendButton.isEnabled = enabled
+        }
     }
 
     @objc private func onTapSend() {
@@ -42,6 +75,22 @@ class SendEvmConfirmationViewController: SendEvmTransactionViewController {
         HudHelper.instance.show(banner: .sent)
 
         super.handleSendSuccess(transactionHash: transactionHash)
+    }
+
+    override func handleSendFailed(error: String) {
+        super.handleSendFailed(error: error)
+
+        sendSliderButton.reset()
+    }
+
+}
+
+extension SendEvmConfirmationViewController {
+
+    enum Mode {
+        case send
+        case resend
+        case cancel
     }
 
 }

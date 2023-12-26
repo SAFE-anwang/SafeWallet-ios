@@ -15,9 +15,7 @@ class WalletConnectMainViewController: ThemeViewController {
 
     private weak var sourceViewController: UIViewController?
 
-    var requestView: IWalletConnectMainRequestView?
-
-    var pendingRequestViewModel: WalletConnectV2MainPendingRequestViewModel? {
+    var pendingRequestViewModel: WalletConnectMainPendingRequestViewModel? {
         didSet {
             pendingRequestDisposeBag = DisposeBag()
             if let viewModel = pendingRequestViewModel {
@@ -30,7 +28,7 @@ class WalletConnectMainViewController: ThemeViewController {
             }
         }
     }
-    private var pendingRequestViewItems = [WalletConnectV2MainPendingRequestViewModel.ViewItem]()
+    private var pendingRequestViewItems = [WalletConnectMainPendingRequestViewModel.ViewItem]()
 
     private let spinner = HUDActivityView.create(with: .large48)
     private let buttonsHolder = BottomGradientHolder()
@@ -78,45 +76,26 @@ class WalletConnectMainViewController: ThemeViewController {
 
         spinner.set(hidden: true)
 
-        view.addSubview(buttonsHolder)
-        buttonsHolder.snp.makeConstraints { maker in
-            maker.top.equalTo(tableView.snp.bottom).offset(-CGFloat.margin4x)
-            maker.leading.trailing.bottom.equalToSuperview()
-        }
-
-        let stackView = UIStackView()
-
-        buttonsHolder.addSubview(stackView)
-        stackView.snp.makeConstraints { maker in
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin24)
-            maker.top.equalToSuperview().inset(CGFloat.margin32)
-            maker.bottom.equalToSuperview().offset(-CGFloat.margin16)
-        }
-
-        stackView.axis = .vertical
-        stackView.distribution = .fill
-        stackView.alignment = .fill
-        stackView.spacing = .margin16
-
-        stackView.addArrangedSubview(connectButton)
+        buttonsHolder.add(to: self, under: tableView)
+        buttonsHolder.addSubview(connectButton)
 
         connectButton.set(style: .yellow)
         connectButton.setTitle("button.connect".localized, for: .normal)
         connectButton.addTarget(self, action: #selector(onTapConnect), for: .touchUpInside)
 
-        stackView.addArrangedSubview(reconnectButton)
+        buttonsHolder.addSubview(reconnectButton)
 
         reconnectButton.set(style: .yellow)
         reconnectButton.setTitle("wallet_connect.button_reconnect".localized, for: .normal)
         reconnectButton.addTarget(self, action: #selector(onTapReconnect), for: .touchUpInside)
 
-        stackView.addArrangedSubview(cancelButton)
+        buttonsHolder.addSubview(cancelButton)
 
         cancelButton.set(style: .gray)
         cancelButton.setTitle("button.cancel".localized, for: .normal)
         cancelButton.addTarget(self, action: #selector(onTapCancel), for: .touchUpInside)
 
-        stackView.addArrangedSubview(disconnectButton)
+        buttonsHolder.addSubview(disconnectButton)
 
         disconnectButton.set(style: .red)
         disconnectButton.setTitle("wallet_connect.button_disconnect".localized, for: .normal)
@@ -241,9 +220,9 @@ class WalletConnectMainViewController: ThemeViewController {
         }
     }
 
-    // V2 pending requests section
+    // pending requests section
 
-    private func sync(pendingRequestViewItems: [WalletConnectV2MainPendingRequestViewModel.ViewItem]) {
+    private func sync(pendingRequestViewItems: [WalletConnectMainPendingRequestViewModel.ViewItem]) {
         self.pendingRequestViewItems = pendingRequestViewItems
 
         tableView.reload()
@@ -253,12 +232,12 @@ class WalletConnectMainViewController: ThemeViewController {
         pendingRequestViewModel?.onSelect(requestId: requestId)
     }
 
-    private func onTapReject(pendingRequestViewItem: WalletConnectV2MainPendingRequestViewModel.ViewItem) {
+    private func onTapReject(pendingRequestViewItem: WalletConnectMainPendingRequestViewModel.ViewItem) {
         pendingRequestViewModel?.onReject(id: pendingRequestViewItem.id)
     }
 
     private func showPending(request: WalletConnectRequest) {
-        guard let viewController = WalletConnectRequestModule.viewController(signService: App.shared.walletConnectV2SessionManager.service, request: request) else {
+        guard let viewController = WalletConnectRequestModule.viewController(signService: App.shared.walletConnectSessionManager.service, request: request) else {
             return
         }
 
@@ -270,7 +249,7 @@ class WalletConnectMainViewController: ThemeViewController {
 
 extension WalletConnectMainViewController: SectionsDataSource {
 
-    private func pendingRequestCell(viewItem: WalletConnectV2MainPendingRequestViewModel.ViewItem, isFirst: Bool, isLast: Bool) -> RowProtocol {
+    private func pendingRequestCell(viewItem: WalletConnectMainPendingRequestViewModel.ViewItem, isFirst: Bool, isLast: Bool) -> RowProtocol {
         var elements: [CellBuilderNew.CellElement] = [
             .vStackCentered([
                 .text { component in
@@ -380,16 +359,6 @@ extension WalletConnectMainViewController: SectionsDataSource {
             } else {
                 if let network = viewItem.network, let address = viewItem.address {
                     rowInfos.append(.value(title: network, value: address, valueColor: nil))
-                }
-            }
-
-            if let blockchains = viewItem.blockchains {
-                for blockchain in blockchains {
-                    rowInfos.append(.value(
-                            title: blockchain.chainTitle ?? "Unsupported",
-                            value: blockchain.address,
-                            valueColor: nil
-                    ))
                 }
             }
 

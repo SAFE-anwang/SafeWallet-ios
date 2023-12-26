@@ -41,7 +41,7 @@ class NftService {
         }
     }
 
-    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.nft-collections-service", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "\(AppConfig.label).nft-collections-service", qos: .userInitiated)
 
     init(account: Account, nftAdapterManager: NftAdapterManager, nftMetadataManager: NftMetadataManager, nftMetadataSyncer: NftMetadataSyncer, balanceHiddenManager: BalanceHiddenManager, balanceConversionManager: BalanceConversionManager, coinPriceService: WalletCoinPriceService) {
         self.account = account
@@ -175,7 +175,10 @@ class NftService {
 
         _syncItems()
 
-        coinPriceService.set(coinUids: allCoinUids(items: items).union(balanceConversionManager.conversionTokens.map { $0.coin.uid }))
+        coinPriceService.set(
+                coinUids: allCoinUids(items: items),
+                conversionCoinUids: Set(balanceConversionManager.conversionTokens.map { $0.coin.uid })
+        )
     }
 
     private func syncItems() {

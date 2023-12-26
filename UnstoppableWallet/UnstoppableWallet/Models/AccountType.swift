@@ -1,10 +1,10 @@
+import BitcoinCore
+import Crypto
+import EvmKit
 import Foundation
 import HdWalletKit
-import EvmKit
-import TronKit
-import BitcoinCore
 import MarketKit
-import Crypto
+import TronKit
 
 enum AccountType {
     case mnemonic(words: [String], salt: String, bip39Compliant: Bool)
@@ -12,13 +12,14 @@ enum AccountType {
     case evmAddress(address: EvmKit.Address)
     case tronAddress(address: TronKit.Address)
     case hdExtendedKey(key: HDExtendedKey)
+    case cex(cexAccount: CexAccount)
 
     var mnemonicSeed: Data? {
         switch self {
         case let .mnemonic(words, salt, bip39Compliant):
             return bip39Compliant
-                    ? Mnemonic.seed(mnemonic: words, passphrase: salt)
-                    : Mnemonic.seedNonStandard(mnemonic: words, passphrase: salt)
+                ? Mnemonic.seed(mnemonic: words, passphrase: salt)
+                : Mnemonic.seedNonStandard(mnemonic: words, passphrase: salt)
 
         default: return nil
         }
@@ -40,11 +41,13 @@ enum AccountType {
         case let .evmPrivateKey(data):
             privateData = data
         case let .evmAddress(address):
-            privateData = address.raw
+            privateData = address.hex.hs.data
         case let .tronAddress(address):
-            privateData = address.raw
+            privateData = address.hex.hs.data
         case let .hdExtendedKey(key):
             privateData = key.serialized
+        case let .cex(cexAccount):
+            privateData = cexAccount.uniqueId.data(using: .utf8) ?? Data() // always non-null
         }
 
         if hashed {
@@ -54,37 +57,14 @@ enum AccountType {
         }
     }
 
-    // todo: remove this method
-    var supportedDerivations: [MnemonicDerivation] {
+    func supports(token: Token) -> Bool {
         switch self {
         case .mnemonic:
-            return [.bip44, .bip49, .bip84, .bip86]
-        case .hdExtendedKey(let key):
-            return key.purposes.map { $0.mnemonicDerivation }
-        default:
-            return []
-        }
-    }
-    
-    var dogecoinSupportedDerivations: [MnemonicDerivation] {
-        switch self {
-        case .mnemonic:
-            return [.bip44]
-        case .hdExtendedKey(let key):
-            return key.purposes.map { $0.mnemonicDerivation }
-        default:
-            return []
-        }
-    }
-
-    func supports(configuredToken: ConfiguredToken) -> Bool {
-        switch self {
-        case .mnemonic:
-            switch (configuredToken.blockchainType, configuredToken.token.type) {
-            case (.bitcoin, .native): return true
-            case (.bitcoinCash, .native): return true
+            switch (token.blockchainType, token.type) {
+            case (.bitcoin, .derived): return true
+            case (.bitcoinCash, .addressType): return true
             case (.ecash, .native): return true
-            case (.litecoin, .native): return true
+            case (.litecoin, .derived): return true
             case (.dogecoin, .native): return true
             case (.dash, .native): return true
             case (.zcash, .native): return true
@@ -101,14 +81,14 @@ enum AccountType {
             case (.safe, .native): return true
             default: return false
             }
-        case .hdExtendedKey(let key):
-            switch configuredToken.blockchainType {
+        case let .hdExtendedKey(key):
+            switch token.blockchainType {
             case .bitcoin, .litecoin:
-                guard let derivation = configuredToken.coinSettings.derivation, key.purposes.contains(where: { $0.mnemonicDerivation == derivation }) else {
+                guard let derivation = token.type.derivation, key.purposes.contains(where: { $0.mnemonicDerivation == derivation }) else {
                     return false
                 }
 
-                if configuredToken.blockchainType == .bitcoin {
+                if token.blockchainType == .bitcoin {
                     return key.coinTypes.contains(where: { $0 == .bitcoin })
                 }
 
@@ -119,7 +99,7 @@ enum AccountType {
                 return false
             }
         case .evmPrivateKey, .evmAddress:
-            switch (configuredToken.blockchainType, configuredToken.token.type) {
+            switch (token.blockchainType, token.type) {
             case (.ethereum, .native), (.ethereum, .eip20): return true
             case (.binanceSmartChain, .native), (.binanceSmartChain, .eip20): return true
             case (.polygon, .native), (.polygon, .eip20): return true
@@ -133,10 +113,12 @@ enum AccountType {
             default: return false
             }
         case .tronAddress:
-            switch (configuredToken.blockchainType, configuredToken.token.type) {
+            switch (token.blockchainType, token.type) {
             case (.tron, .native), (.tron, .eip20): return true
             default: return false
             }
+        default:
+            return false
         }
     }
 
@@ -154,6 +136,20 @@ enum AccountType {
         }
     }
 
+    var supportsNft: Bool {
+        switch self {
+        case .cex: return false
+        default: return true
+        }
+    }
+
+    var withdrawalAllowed: Bool {
+        switch self {
+        case let .cex(cexAccount: account): return account.cex.withdrawalAllowed
+        default: return true
+        }
+    }
+
     var hideZeroBalances: Bool {
         switch self {
         case .evmAddress: return true
@@ -163,7 +159,7 @@ enum AccountType {
 
     var description: String {
         switch self {
-        case .mnemonic(let words, let salt, _):
+        case let .mnemonic(words, salt, _):
             let count = "\(words.count)"
             return salt.isEmpty ? "manage_accounts.n_words".localized(count) : "manage_accounts.n_words_with_passphrase".localized(count)
         case .evmPrivateKey:
@@ -172,7 +168,7 @@ enum AccountType {
             return "EVM Address"
         case .tronAddress:
             return "TRON Address"
-        case .hdExtendedKey(let key):
+        case let .hdExtendedKey(key):
             switch key {
             case .private:
                 switch key.derivedType {
@@ -186,14 +182,16 @@ enum AccountType {
                 default: return ""
                 }
             }
+        case let .cex(cexAccount):
+            return cexAccount.cex.title
         }
     }
 
     var detailedDescription: String {
         switch self {
-        case .evmAddress(let address):
+        case let .evmAddress(address):
             return address.eip55.shortened
-        case .tronAddress(let address):
+        case let .tronAddress(address):
             return address.base58.shortened
         default: return description
         }
@@ -207,7 +205,7 @@ enum AccountType {
             }
 
             return try? Signer.address(seed: mnemonicSeed, chain: chain)
-        case .evmPrivateKey(let data):
+        case let .evmPrivateKey(data):
             return Signer.address(privateKey: data)
         default:
             return nil
@@ -226,17 +224,15 @@ enum AccountType {
             }
 
             return try? EvmKit.Kit.sign(message: message, privateKey: privateKey, isLegacy: isLegacy)
-        case .evmPrivateKey(let data):
+        case let .evmPrivateKey(data):
             return try? EvmKit.Kit.sign(message: message, privateKey: data, isLegacy: isLegacy)
         default:
             return nil
         }
     }
-
 }
 
 extension AccountType {
-
     private static func split(_ string: String, separator: String) -> (String, String) {
         if let index = string.firstIndex(of: Character(separator)) {
             let left = String(string.prefix(upTo: index))
@@ -262,20 +258,30 @@ extension AccountType {
             return AccountType.evmPrivateKey(data: uniqueId)
         case .hdExtendedKey:
             do {
-                return AccountType.hdExtendedKey(key: try HDExtendedKey(data: uniqueId))
+                return try AccountType.hdExtendedKey(key: HDExtendedKey(data: uniqueId))
             } catch {
                 return nil
             }
-        case .evmAddress, .tronAddress: return nil
+        case .evmAddress:
+            return (try? EvmKit.Address(hex: string)).map { AccountType.evmAddress(address: $0) }
+        case .tronAddress:
+            return (try? TronKit.Address(address: string)).map { AccountType.tronAddress(address: $0) }
+        case .cex:
+            guard let cexAccount = CexAccount.decode(uniqueId: string) else {
+                return nil
+            }
+
+            return .cex(cexAccount: cexAccount)
         }
     }
 
     enum Abstract: String, Codable {
-        case mnemonic = "mnemonic"
+        case mnemonic
         case evmPrivateKey = "private_key"
         case evmAddress = "evm_address"
         case tronAddress = "tron_address"
         case hdExtendedKey = "hd_extended_key"
+        case cex
 
         init(_ type: AccountType) {
             switch type {
@@ -284,26 +290,34 @@ extension AccountType {
             case .evmAddress: self = .evmAddress
             case .tronAddress: self = .tronAddress
             case .hdExtendedKey: self = .hdExtendedKey
+            case .cex: self = .cex
+            }
+        }
+
+        var isWatch: Bool {
+            switch self {
+            case .evmAddress, .tronAddress: return true
+            default: return false
             }
         }
     }
-
 }
 
 extension AccountType: Hashable {
-
-    public static func ==(lhs: AccountType, rhs: AccountType) -> Bool {
+    public static func == (lhs: AccountType, rhs: AccountType) -> Bool {
         switch (lhs, rhs) {
         case (let .mnemonic(lhsWords, lhsSalt, lhsBip39Compliant), let .mnemonic(rhsWords, rhsSalt, rhsBip39Compliant)):
             return lhsWords == rhsWords && lhsSalt == rhsSalt && lhsBip39Compliant == rhsBip39Compliant
-        case (let .evmPrivateKey(lhsData), let .evmPrivateKey(rhsData)):
+        case let (.evmPrivateKey(lhsData), .evmPrivateKey(rhsData)):
             return lhsData == rhsData
-        case (let .evmAddress(lhsAddress), let .evmAddress(rhsAddress)):
+        case let (.evmAddress(lhsAddress), .evmAddress(rhsAddress)):
             return lhsAddress == rhsAddress
-        case (let .tronAddress(lhsAddress), let .tronAddress(rhsAddress)):
+        case let (.tronAddress(lhsAddress), .tronAddress(rhsAddress)):
             return lhsAddress == rhsAddress
-        case (let .hdExtendedKey(lhsKey), let .hdExtendedKey(rhsKey)):
+        case let (.hdExtendedKey(lhsKey), .hdExtendedKey(rhsKey)):
             return lhsKey == rhsKey
+        case let (.cex(lhsCexAccount), .cex(rhsCexAccount)):
+            return lhsCexAccount == rhsCexAccount
         default: return false
         }
     }
@@ -327,7 +341,21 @@ extension AccountType: Hashable {
         case let .hdExtendedKey(key):
             hasher.combine("hdExtendedKey")
             hasher.combine(key)
+        case let .cex(cexAccount):
+            hasher.combine("cex")
+            hasher.combine(cexAccount)
         }
     }
+}
 
+extension AccountType {
+    static func decrypt(crypto: BackupCrypto, type: AccountType.Abstract, passphrase: String) throws -> AccountType {
+        let data = try crypto.decrypt(passphrase: passphrase)
+
+        guard let accountType = AccountType.decode(uniqueId: data, type: type) else {
+            throw RestoreCloudModule.RestoreError.invalidBackup
+        }
+
+        return accountType
+    }
 }

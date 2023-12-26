@@ -5,7 +5,6 @@ import ComponentKit
 
 class BalanceTopView: UIView {
     static let height: CGFloat = 62
-    static let expandedMargin: CGFloat = 6
 
     private let coinIconView = BalanceCoinIconHolder()
     private let testnetImageView = UIImageView()
@@ -132,8 +131,8 @@ class BalanceTopView: UIView {
 
         switch viewItem.secondaryInfo {
         case let .amount(viewItem):
-            bottomLeftLabel.text = viewItem.rateValue.text
-            bottomLeftLabel.textColor = viewItem.rateValue.dimmed ? .themeGray50 : .themeGray
+            bottomLeftLabel.text = viewItem.descriptionValue.text
+            bottomLeftLabel.textColor = viewItem.descriptionValue.dimmed ? .themeGray50 : .themeGray
 
             if let diff = viewItem.diff {
                 diffLabel.isHidden = false

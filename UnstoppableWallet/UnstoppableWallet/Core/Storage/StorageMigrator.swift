@@ -329,18 +329,6 @@ class StorageMigrator {
             }
         }
 
-        migrator.registerMigration("createWalletConnectSessions") { db in
-            try db.create(table: WalletConnectSession.databaseTableName) { t in
-                t.column(WalletConnectSession.Columns.chainId.name, .integer).notNull()
-                t.column(WalletConnectSession.Columns.accountId.name, .text).notNull()
-                t.column(WalletConnectSession.Columns.session.name, .text).notNull()
-                t.column(WalletConnectSession.Columns.peerId.name, .text).notNull()
-                t.column(WalletConnectSession.Columns.peerMeta.name, .text).notNull()
-
-                t.primaryKey([WalletConnectSession.Columns.chainId.name, WalletConnectSession.Columns.accountId.name, WalletConnectSession.Columns.peerId.name], onConflict: .replace)
-            }
-        }
-
         migrator.registerMigration("extractCoinsAndChangeCoinIds") { db in
             // apply changes in database
             try db.drop(table: CoinRecord_v19.databaseTableName)
@@ -357,11 +345,11 @@ class StorageMigrator {
         }
 
         migrator.registerMigration("createActiveAccount") { db in
-            try db.create(table: ActiveAccount.databaseTableName) { t in
-                t.column(ActiveAccount.Columns.uniqueId.name, .text).notNull()
-                t.column(ActiveAccount.Columns.accountId.name, .text).notNull()
+            try db.create(table: ActiveAccount_v_0_36.databaseTableName) { t in
+                t.column(ActiveAccount_v_0_36.Columns.uniqueId.name, .text).notNull()
+                t.column(ActiveAccount_v_0_36.Columns.accountId.name, .text).notNull()
 
-                t.primaryKey([ActiveAccount.Columns.uniqueId.name], onConflict: .replace)
+                t.primaryKey([ActiveAccount_v_0_36.Columns.uniqueId.name], onConflict: .replace)
             }
         }
 
@@ -381,17 +369,17 @@ class StorageMigrator {
 
             try db.drop(table: AccountRecord_v_0_20.databaseTableName)
 
-            try db.create(table: AccountRecord.databaseTableName) { t in
-                t.column(AccountRecord.Columns.id.name, .text).notNull()
-                t.column(AccountRecord.Columns.name.name, .text).notNull()
-                t.column(AccountRecord.Columns.type.name, .text).notNull()
-                t.column(AccountRecord.Columns.origin.name, .text).notNull()
-                t.column(AccountRecord.Columns.backedUp.name, .boolean).notNull()
-                t.column(AccountRecord.Columns.wordsKey.name, .text)
-                t.column(AccountRecord.Columns.saltKey.name, .text)
-                t.column(AccountRecord.Columns.dataKey.name, .text)
+            try db.create(table: AccountRecord_v_0_36.databaseTableName) { t in
+                t.column(AccountRecord_v_0_36.Columns.id.name, .text).notNull()
+                t.column(AccountRecord_v_0_36.Columns.name.name, .text).notNull()
+                t.column(AccountRecord_v_0_36.Columns.type.name, .text).notNull()
+                t.column(AccountRecord_v_0_36.Columns.origin.name, .text).notNull()
+                t.column(AccountRecord_v_0_36.Columns.backedUp.name, .boolean).notNull()
+                t.column(AccountRecord_v_0_36.Columns.wordsKey.name, .text)
+                t.column(AccountRecord_v_0_36.Columns.saltKey.name, .text)
+                t.column(AccountRecord_v_0_36.Columns.dataKey.name, .text)
 
-                t.primaryKey([AccountRecord.Columns.id.name], onConflict: .replace)
+                t.primaryKey([AccountRecord_v_0_36.Columns.id.name], onConflict: .replace)
             }
 
             for (index, oldAccount) in oldAccounts.enumerated() {
@@ -416,7 +404,7 @@ class StorageMigrator {
                     accountType = "mnemonic"
                 }
 
-                let newAccount = AccountRecord(
+                let newAccount = AccountRecord_v_0_36(
                         id: oldAccount.id,
                         name: "Wallet \(index + 1)",
                         type: accountType,
@@ -431,7 +419,7 @@ class StorageMigrator {
                 try newAccount.insert(db)
 
                 if index == 0 {
-                    let activeAccount = ActiveAccount(accountId: oldAccount.id)
+                    let activeAccount = ActiveAccount_v_0_36(accountId: oldAccount.id)
                     try activeAccount.insert(db)
                 }
             }
@@ -509,7 +497,7 @@ class StorageMigrator {
 
         migrator.registerMigration("fillSaltToAccountsKeychain") { db in
             let keychain = Keychain(service: "io.horizontalsystems.bank.dev")
-            let records = try AccountRecord.fetchAll(db)
+            let records = try AccountRecord_v_0_36.fetchAll(db)
 
             for record in records {
                 try keychain.set("", key: "mnemonic_\(record.id)_salt")
@@ -534,11 +522,11 @@ class StorageMigrator {
         }
 
         migrator.registerMigration("createWalletConnectV2Sessions") { db in
-            try db.create(table: WalletConnectV2Session.databaseTableName) { t in
-                t.column(WalletConnectV2Session.Columns.accountId.name, .text).notNull()
-                t.column(WalletConnectV2Session.Columns.topic.name, .text).notNull()
+            try db.create(table: WalletConnectSession.databaseTableName) { t in
+                t.column(WalletConnectSession.Columns.accountId.name, .text).notNull()
+                t.column(WalletConnectSession.Columns.topic.name, .text).notNull()
 
-                t.primaryKey([WalletConnectV2Session.Columns.accountId.name, WalletConnectV2Session.Columns.topic.name], onConflict: .replace)
+                t.primaryKey([WalletConnectSession.Columns.accountId.name, WalletConnectSession.Columns.topic.name], onConflict: .replace)
             }
         }
 
@@ -660,19 +648,19 @@ class StorageMigrator {
 
             try db.drop(table: EnabledWallet_v_0_25.databaseTableName)
 
-            try db.create(table: EnabledWallet.databaseTableName) { t in
-                t.column(EnabledWallet.Columns.tokenQueryId.name, .text).notNull()
-                t.column(EnabledWallet.Columns.coinSettingsId.name, .text).notNull()
-                t.column(EnabledWallet.Columns.accountId.name, .text).notNull()
-                t.column(EnabledWallet.Columns.coinName.name, .text)
-                t.column(EnabledWallet.Columns.coinCode.name, .text)
-                t.column(EnabledWallet.Columns.tokenDecimals.name, .integer)
+            try db.create(table: EnabledWallet_v_0_34.databaseTableName) { t in
+                t.column(EnabledWallet_v_0_34.Columns.tokenQueryId.name, .text).notNull()
+                t.column(EnabledWallet_v_0_34.Columns.coinSettingsId.name, .text).notNull()
+                t.column(EnabledWallet_v_0_34.Columns.accountId.name, .text).notNull()
+                t.column(EnabledWallet_v_0_34.Columns.coinName.name, .text)
+                t.column(EnabledWallet_v_0_34.Columns.coinCode.name, .text)
+                t.column(EnabledWallet_v_0_34.Columns.tokenDecimals.name, .integer)
 
-                t.primaryKey([EnabledWallet.Columns.tokenQueryId.name, EnabledWallet.Columns.coinSettingsId.name, EnabledWallet.Columns.accountId.name], onConflict: .replace)
+                t.primaryKey([EnabledWallet_v_0_34.Columns.tokenQueryId.name, EnabledWallet_v_0_34.Columns.coinSettingsId.name, EnabledWallet_v_0_34.Columns.accountId.name], onConflict: .replace)
             }
 
             for old in oldWallets {
-                let record = EnabledWallet(
+                let record = EnabledWallet_v_0_34(
                         tokenQueryId: tokenQuery(coinTypeId: old.coinId).id,
                         coinSettingsId: old.coinSettingsId,
                         accountId: old.accountId,
@@ -684,20 +672,20 @@ class StorageMigrator {
                 try record.insert(db)
             }
 
-            // EnabledWalletCache
+            // EnabledWalletCache_v_0_36
 
             if try db.tableExists("enabled_wallet_caches") {
                 try db.drop(table: "enabled_wallet_caches")
             }
 
-            try db.create(table: EnabledWalletCache.databaseTableName) { t in
-                t.column(EnabledWalletCache.Columns.tokenQueryId.name, .text).notNull()
-                t.column(EnabledWalletCache.Columns.coinSettingsId.name, .text).notNull()
-                t.column(EnabledWalletCache.Columns.accountId.name, .text).notNull()
-                t.column(EnabledWalletCache.Columns.balance.name, .text).notNull()
-                t.column(EnabledWalletCache.Columns.balanceLocked.name, .text).notNull()
+            try db.create(table: EnabledWalletCache_v_0_36.databaseTableName) { t in
+                t.column(EnabledWalletCache_v_0_36.Columns.tokenQueryId.name, .text).notNull()
+                t.column("coinSettingsId", .text).notNull()
+                t.column(EnabledWalletCache_v_0_36.Columns.accountId.name, .text).notNull()
+                t.column(EnabledWalletCache_v_0_36.Columns.balance.name, .text).notNull()
+                t.column(EnabledWalletCache_v_0_36.Columns.balanceLocked.name, .text).notNull()
 
-                t.primaryKey([EnabledWalletCache.Columns.tokenQueryId.name, EnabledWalletCache.Columns.coinSettingsId.name, EnabledWalletCache.Columns.accountId.name], onConflict: .replace)
+                t.primaryKey([EnabledWalletCache_v_0_36.Columns.tokenQueryId.name, EnabledWalletCache_v_0_36.Columns.accountId.name], onConflict: .replace)
             }
         }
 
@@ -712,8 +700,8 @@ class StorageMigrator {
         }
 
         migrator.registerMigration("checkBIP39Compliance") { db in
-            try db.alter(table: AccountRecord.databaseTableName) { t in
-                t.add(column: AccountRecord.Columns.bip39Compliant.name, .boolean)
+            try db.alter(table: AccountRecord_v_0_36.databaseTableName) { t in
+                t.add(column: AccountRecord_v_0_36.Columns.bip39Compliant.name, .boolean)
             }
         }
 
@@ -724,6 +712,102 @@ class StorageMigrator {
                 t.column(EvmSyncSourceRecord.Columns.auth.name, .text)
 
                 t.primaryKey([EvmSyncSourceRecord.Columns.blockchainTypeUid.name, EvmSyncSourceRecord.Columns.url.name], onConflict: .replace)
+            }
+        }
+
+        migrator.registerMigration("Create CexAssetRecord") { db in
+            try db.create(table: CexAssetRecord.databaseTableName) { t in
+                t.column(CexAssetRecord.Columns.accountId.name, .text).notNull()
+                t.column(CexAssetRecord.Columns.id.name, .text).notNull()
+                t.column(CexAssetRecord.Columns.name.name, .text).notNull()
+                t.column(CexAssetRecord.Columns.freeBalance.name, .text).notNull()
+                t.column(CexAssetRecord.Columns.lockedBalance.name, .text).notNull()
+                t.column(CexAssetRecord.Columns.withdrawEnabled.name, .boolean).notNull()
+                t.column(CexAssetRecord.Columns.depositEnabled.name, .boolean).notNull()
+                t.column(CexAssetRecord.Columns.depositNetworks.name, .text)
+                t.column(CexAssetRecord.Columns.withdrawNetworks.name, .text)
+                t.column(CexAssetRecord.Columns.coinUid.name, .text)
+
+                t.primaryKey([CexAssetRecord.Columns.accountId.name, CexAssetRecord.Columns.id.name], onConflict: .replace)
+            }
+        }
+
+        migrator.registerMigration("Update EnabledWallet entities") { db in
+            try db.drop(table: EnabledWalletCache_v_0_36.databaseTableName)
+            try db.create(table: EnabledWalletCache_v_0_36.databaseTableName) { t in
+                t.column(EnabledWalletCache_v_0_36.Columns.tokenQueryId.name, .text).notNull()
+                t.column(EnabledWalletCache_v_0_36.Columns.accountId.name, .text).notNull()
+                t.column(EnabledWalletCache_v_0_36.Columns.balance.name, .text).notNull()
+                t.column(EnabledWalletCache_v_0_36.Columns.balanceLocked.name, .text).notNull()
+
+                t.primaryKey([EnabledWalletCache_v_0_36.Columns.tokenQueryId.name, EnabledWalletCache_v_0_36.Columns.accountId.name], onConflict: .replace)
+            }
+
+            var enabledWallets: [EnabledWallet] = []
+            let rows = try Row.fetchCursor(db, sql: "SELECT * FROM \(EnabledWallet_v_0_34.databaseTableName)")
+
+            while let row = try rows.next() {
+                guard let tokenQueryId = tokenQueryId(tokenQueryId: row["tokenQueryId"], coinSettingsId: row["coinSettingsId"]) else {
+                    continue
+                }
+
+                let updatedWallet = EnabledWallet(
+                    tokenQueryId: tokenQueryId,
+                    accountId: row["accountId"], coinName: row["coinName"],
+                    coinCode: row["coinCode"], tokenDecimals: row["tokenDecimals"]
+                )
+
+                enabledWallets.append(updatedWallet)
+            }
+
+            try db.drop(table: EnabledWallet_v_0_34.databaseTableName)
+            try db.create(table: EnabledWallet.databaseTableName) { t in
+                t.column(EnabledWallet.Columns.tokenQueryId.name, .text).notNull()
+                t.column(EnabledWallet.Columns.accountId.name, .text).notNull()
+                t.column(EnabledWallet.Columns.coinName.name, .text)
+                t.column(EnabledWallet.Columns.coinCode.name, .text)
+                t.column(EnabledWallet.Columns.tokenDecimals.name, .integer)
+
+                t.primaryKey([EnabledWallet.Columns.tokenQueryId.name, EnabledWallet.Columns.accountId.name], onConflict: .replace)
+            }
+
+            for wallet in enabledWallets {
+                try wallet.insert(db)
+            }
+        }
+
+        migrator.registerMigration("Update EnabledWalletCache fields") { db in
+            try db.drop(table: EnabledWalletCache_v_0_36.databaseTableName)
+            try db.create(table: EnabledWalletCache.databaseTableName) { t in
+                t.column(EnabledWalletCache.Columns.tokenQueryId.name, .text).notNull()
+                t.column(EnabledWalletCache.Columns.accountId.name, .text).notNull()
+                t.column(EnabledWalletCache.Columns.balances.name, .text).notNull()
+
+                t.primaryKey([EnabledWalletCache.Columns.tokenQueryId.name, EnabledWalletCache.Columns.accountId.name], onConflict: .replace)
+            }
+        }
+
+        migrator.registerMigration("Add level and fileBackedUp to AccountRecord") { db in
+            try db.alter(table: AccountRecord.databaseTableName) { t in
+                t.add(column: AccountRecord.Columns.level.name, .integer).defaults(to: 0)
+                t.add(column: AccountRecord.Columns.fileBackedUp.name, .boolean).defaults(to: false)
+            }
+        }
+
+        migrator.registerMigration("Update ActiveAccount table") { db in
+            let activeAccountId = try ActiveAccount_v_0_36.fetchOne(db)?.accountId
+
+            try db.drop(table: ActiveAccount_v_0_36.databaseTableName)
+
+            try db.create(table: ActiveAccount.databaseTableName) { t in
+                t.column(ActiveAccount.Columns.level.name, .integer).notNull()
+                t.column(ActiveAccount.Columns.accountId.name, .text).notNull()
+
+                t.primaryKey([ActiveAccount.Columns.level.name], onConflict: .replace)
+            }
+
+            if let activeAccountId {
+                try ActiveAccount(level: 0, accountId: activeAccountId).insert(db)
             }
         }
 
@@ -754,6 +838,68 @@ class StorageMigrator {
         case .safe: return  TokenQuery(blockchainType: .safe, tokenType: .native)
         default: return TokenQuery(blockchainType: .unsupported(uid: ""), tokenType: .unsupported(type: "", reference: nil))
         }
+    }
+
+    private static func tokenQueryId(tokenQueryId: String, coinSettingsId: String) -> String? {
+        let chunks = tokenQueryId.split(separator: "|").map { String($0) }
+
+        guard chunks.count == 2 else {
+            return nil
+        }
+
+        let blockchainUid = chunks[0]
+        let tokenType = chunks[1]
+
+        let tokenTypeChunks = tokenType.split(separator: ":").map { String($0) }
+        guard tokenTypeChunks.count == 1 && tokenTypeChunks[0] == "native" else {
+            return tokenQueryId
+        }
+
+        switch blockchainUid {
+            case "bitcoin", "litecoin":
+                let chunks = coinSettingsId.split(separator: "|")
+
+                for chunk in chunks {
+                    let subChunks = chunk.split(separator: ":")
+
+                    guard subChunks.count == 2 else {
+                        continue
+                    }
+
+                    let settingsName = String(subChunks[0])
+                    let derivation = String(subChunks[1])
+                    guard settingsName == "derivation", ["bip44", "bip49", "bip84", "bip86"].contains(derivation) else {
+                        continue
+                    }
+
+                    return "\(blockchainUid)|derived:\(derivation)"
+                }
+
+
+            case "bitcoin-cash":
+                let chunks = coinSettingsId.split(separator: "|")
+
+                for chunk in chunks {
+                    let subChunks = chunk.split(separator: ":")
+
+                    guard subChunks.count == 2 else {
+                        continue
+                    }
+
+                    let settingsName = String(subChunks[0])
+                    let addressType = String(subChunks[1])
+                    guard settingsName == "bitcoinCashCoinType", ["type0", "type145"].contains(addressType) else {
+                        continue
+                    }
+
+                    return "\(blockchainUid)|address_type:\(addressType)"
+                }
+
+            default:
+                return tokenQueryId
+        }
+
+        return nil
     }
 
 }

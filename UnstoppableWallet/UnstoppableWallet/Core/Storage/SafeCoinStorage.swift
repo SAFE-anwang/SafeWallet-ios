@@ -257,7 +257,7 @@ fileprivate class BlockchainRecord: Record, Decodable, ImmutableMappable {
         Blockchain(
                 type: BlockchainType(uid: uid),
                 name: name,
-                eip3091url: explorerUrl
+                explorerUrl: explorerUrl
         )
     }
 

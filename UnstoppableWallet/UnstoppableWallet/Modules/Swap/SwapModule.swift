@@ -5,6 +5,7 @@ import SectionsTableView
 import ThemeKit
 import RxSwift
 import RxCocoa
+import UniswapKit
 
 protocol ISwapDexManager {
     var dex: SwapModule.Dex? { get }
@@ -44,7 +45,7 @@ protocol ISwapDataSource: AnyObject {
 
 class SwapModule {
 
-    static func viewController(tokenFrom: Token? = nil) -> UIViewController? {
+    static func viewController(tokenFrom: MarketKit.Token? = nil) -> UIViewController? {
         let swapDexManager = SwapProviderManager(localStorage: App.shared.localStorage, evmBlockchainManager: App.shared.evmBlockchainManager, tokenFrom: tokenFrom)
 
         let viewModel =  SwapViewModel(dexManager: swapDexManager)
@@ -52,8 +53,7 @@ class SwapModule {
                 viewModel: viewModel,
                 dataSourceManager: swapDexManager
         )
-
-        return ThemeNavigationController(rootViewController: viewController)
+        return viewController
     }
 
 }
@@ -61,7 +61,7 @@ class SwapModule {
 extension SwapModule {
     private static let addressesForRevoke = ["0xdac17f958d2ee523a2206206994597c13d831ec7"]
 
-    static func mustBeRevoked(token: Token?) -> Bool {
+    static func mustBeRevoked(token: MarketKit.Token?) -> Bool {
         if let token = token,
            case .ethereum = token.blockchainType,
            case .eip20(let address) = token.type,
@@ -81,13 +81,13 @@ extension SwapModule {
     }
 
     class DataSourceState {
-        var tokenFrom: Token?
-        var tokenTo: Token?
+        var tokenFrom: MarketKit.Token?
+        var tokenTo: MarketKit.Token?
         var amountFrom: Decimal?
         var amountTo: Decimal?
         var exactFrom: Bool
 
-        init(tokenFrom: Token?, tokenTo: Token? = nil, amountFrom: Decimal? = nil, amountTo: Decimal? = nil, exactFrom: Bool = true) {
+        init(tokenFrom: MarketKit.Token?, tokenTo: MarketKit.Token? = nil, amountFrom: Decimal? = nil, amountTo: Decimal? = nil, exactFrom: Bool = true) {
             self.tokenFrom = tokenFrom
             self.tokenTo = tokenTo
             self.amountFrom = amountFrom
@@ -131,6 +131,7 @@ extension SwapModule {
         case insufficientBalanceIn
         case insufficientBalanceIn2
         case insufficientAllowance
+        case insufficientAllowanceB
         case needRevokeAllowance(allowance: CoinValue)
 
         static func ==(lhs: SwapError, rhs: SwapError) -> Bool {
@@ -139,6 +140,7 @@ extension SwapModule {
             case (.insufficientBalanceIn, .insufficientBalanceIn): return true
             case (.insufficientBalanceIn2, .insufficientBalanceIn2): return true
             case (.insufficientAllowance, .insufficientAllowance): return true
+            case (.insufficientAllowanceB, .insufficientAllowanceB): return true
             case (.needRevokeAllowance(let lAllowance), .needRevokeAllowance(let rAllowance)): return lAllowance == rAllowance
             default: return false
             }
@@ -160,7 +162,7 @@ extension BlockchainType {
     var allowedProviders: [SwapModule.Dex.Provider] {
         switch self {
         case .ethereum: return [.oneInch, .uniswap, .uniswapV3, .safeSwap, .pancakeV3]
-        case .binanceSmartChain: return [.oneInch, .pancake, .pancakeV3, .safeSwap]
+        case .binanceSmartChain: return [.oneInch, .pancake, .pancakeV3, .uniswapV3, .safeSwap]
         case .polygon: return [.oneInch, .quickSwap, .uniswapV3, .safeSwap]
         case .avalanche: return [.oneInch]
         case .optimism: return [.oneInch]
@@ -184,10 +186,22 @@ extension SwapModule.Dex {
         case quickSwap = "QuickSwap"
         case safeSwap = "SafeSwap"
         
+        var id: String {
+            switch self {
+            case .uniswap: return "uniswap"
+            case .uniswapV3: return "uniswap_v3"
+            case .oneInch: return "oneinch"
+            case .pancake: return "pancake"
+            case .pancakeV3: return "pancake_v3"
+            case .quickSwap: return "quickswap"
+            case .safeSwap: return "SafeSwap"
+            }
+        }
+
         var allowedBlockchainTypes: [BlockchainType] {
             switch self {
             case .uniswap: return [.ethereum]
-            case .uniswapV3: return [.ethereum, .arbitrumOne, .polygon]
+            case .uniswapV3: return [.ethereum, .binanceSmartChain, .arbitrumOne, .polygon]
             case .oneInch: return [.ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom]
             case .pancake: return [.binanceSmartChain]
             case .pancakeV3: return [.ethereum, .binanceSmartChain]
@@ -211,7 +225,7 @@ extension SwapModule.Dex {
             case .uniswap: return "Uniswap v.2"
             case .uniswapV3: return "Uniswap v.3"
             case .oneInch: return "1Inch"
-            case .pancake: return "PancakeSwap"
+            case .pancake: return "PancakeSwap v.2"
             case .pancakeV3: return "PancakeSwap v.3"
             case .quickSwap: return "QuickSwap"
             case .safeSwap: return "SafeSwap"
@@ -226,6 +240,13 @@ extension SwapModule.Dex {
             case .pancake, .pancakeV3: return "pancake_32"
             case .quickSwap: return "quick_32"
             case .safeSwap: return "safelog"
+            }
+        }
+
+        var dexType: DexType {
+            switch self {
+            case .uniswap, .uniswapV3: return .uniswap
+            default: return .pancakeSwap
             }
         }
 

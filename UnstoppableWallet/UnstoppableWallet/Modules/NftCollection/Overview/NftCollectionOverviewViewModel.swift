@@ -62,7 +62,7 @@ class NftCollectionOverviewViewModel {
                 name: contract.name,
                 schema: contract.schema,
                 reference: contract.address,
-                explorerUrl: service.blockchain?.eip20TokenUrl(address: contract.address)
+                explorerUrl: service.blockchain?.explorerUrl(reference: contract.address)
         )
     }
 
@@ -73,9 +73,9 @@ class NftCollectionOverviewViewModel {
             viewItems.append(LinkViewItem(type: .website, url: url))
         }
 
-        if let providerLink = service.providerLink {
-            viewItems.append(LinkViewItem(type: .provider(title: providerLink.title), url: providerLink.url))
-        }
+//        if let providerLink = service.providerLink {
+//            viewItems.append(LinkViewItem(type: .provider(title: providerLink.title), url: providerLink.url))
+//        }
 
         if let url = collection.discordLink {
             viewItems.append(LinkViewItem(type: .discord, url: url))

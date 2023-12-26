@@ -1,19 +1,13 @@
-import UIKit
+import SwiftUI
 
 struct SecuritySettingsModule {
-
-    static func viewController() -> UIViewController {
-        let service = SecuritySettingsService(pinKit: App.shared.pinKit)
-        let viewModel = SecuritySettingsViewModel(service: service)
-        
-        let blockchainSettingsService = BlockchainSettingsService(
-                btcBlockchainManager: App.shared.btcBlockchainManager,
-                evmBlockchainManager: App.shared.evmBlockchainManager,
-                evmSyncSourceManager: App.shared.evmSyncSourceManager
+    static func view() -> some View {
+        let viewModel = SecuritySettingsViewModel(
+            passcodeManager: App.shared.passcodeManager,
+            biometryManager: App.shared.biometryManager,
+            lockManager: App.shared.lockManager,
+            balanceHiddenManager: App.shared.balanceHiddenManager
         )
-        let blockchainSettingsViewModel = BlockchainSettingsViewModel(service: blockchainSettingsService)
-        let fallbackBlockViewModel = FallbackBlockViewModel(walletManager: App.shared.walletManager, accountManager: App.shared.accountManager, adapterManager: App.shared.adapterManager)
-        
-        return SecuritySettingsViewController(viewModel: viewModel, blockchainSettingsViewModel: blockchainSettingsViewModel, fallbackBlockViewModel: fallbackBlockViewModel)
+        return SecuritySettingsView(viewModel: viewModel)
     }
 }

@@ -1,55 +1,51 @@
 import Combine
-import RxSwift
-import RxRelay
-import LanguageKit
-import ThemeKit
 import CurrencyKit
-import PinKit
-import WalletConnectV1
+import LanguageKit
+import RxRelay
+import RxSwift
 import ThemeKit
+import WalletConnectV1
 
 class MainSettingsService {
     private let disposeBag = DisposeBag()
 
     private let backupManager: BackupManager
-    private let cloudAccountBackupManager: CloudAccountBackupManager
+    private let cloudAccountBackupManager: CloudBackupManager
     private let accountRestoreWarningManager: AccountRestoreWarningManager
     private let accountManager: AccountManager
-    private let contactBookManager: ContactBookManager?
-    private let pinKit: PinKit.Kit
+    private let contactBookManager: ContactBookManager
+    private let passcodeManager: PasscodeManager
     private let termsManager: TermsManager
     private let systemInfoManager: SystemInfoManager
     private let currencyKit: CurrencyKit.Kit
-    private let appConfigProvider: AppConfigProvider
     private let walletConnectSessionManager: WalletConnectSessionManager
-    private let walletConnectV2SessionManager: WalletConnectV2SessionManager
+    private let subscriptionManager: SubscriptionManager
+    private let rateAppManager: RateAppManager
 
     private let iCloudAvailableErrorRelay = BehaviorRelay<Bool>(value: false)
     private let noWalletRequiredActionsRelay = BehaviorRelay<Bool>(value: false)
 
-    init(backupManager: BackupManager, cloudAccountBackupManager: CloudAccountBackupManager, accountRestoreWarningManager: AccountRestoreWarningManager, accountManager: AccountManager, contactBookManager: ContactBookManager?, pinKit: PinKit.Kit, termsManager: TermsManager,
-         systemInfoManager: SystemInfoManager, currencyKit: CurrencyKit.Kit, appConfigProvider: AppConfigProvider,
-         walletConnectSessionManager: WalletConnectSessionManager, walletConnectV2SessionManager: WalletConnectV2SessionManager) {
+    init(backupManager: BackupManager, cloudAccountBackupManager: CloudBackupManager, accountRestoreWarningManager: AccountRestoreWarningManager, accountManager: AccountManager, contactBookManager: ContactBookManager, passcodeManager: PasscodeManager, termsManager: TermsManager,
+         systemInfoManager: SystemInfoManager, currencyKit: CurrencyKit.Kit, walletConnectSessionManager: WalletConnectSessionManager, subscriptionManager: SubscriptionManager, rateAppManager: RateAppManager)
+    {
         self.cloudAccountBackupManager = cloudAccountBackupManager
         self.backupManager = backupManager
         self.accountRestoreWarningManager = accountRestoreWarningManager
         self.accountManager = accountManager
         self.contactBookManager = contactBookManager
-        self.pinKit = pinKit
+        self.passcodeManager = passcodeManager
         self.termsManager = termsManager
         self.systemInfoManager = systemInfoManager
         self.currencyKit = currencyKit
-        self.appConfigProvider = appConfigProvider
         self.walletConnectSessionManager = walletConnectSessionManager
-        self.walletConnectV2SessionManager = walletConnectV2SessionManager
+        self.subscriptionManager = subscriptionManager
+        self.rateAppManager = rateAppManager
 
-        if let contactBookManager {
-            subscribe(disposeBag, contactBookManager.iCloudErrorObservable) { [weak self] error in
-                if error != nil, (self?.contactBookManager?.remoteSync ?? false) {
-                    self?.iCloudAvailableErrorRelay.accept(true)
-                } else {
-                    self?.iCloudAvailableErrorRelay.accept(false)
-                }
+        subscribe(disposeBag, contactBookManager.iCloudErrorObservable) { [weak self] error in
+            if error != nil, self?.contactBookManager.remoteSync ?? false {
+                self?.iCloudAvailableErrorRelay.accept(true)
+            } else {
+                self?.iCloudAvailableErrorRelay.accept(false)
             }
         }
 
@@ -62,15 +58,9 @@ class MainSettingsService {
     private func syncWalletRequiredActions() {
         noWalletRequiredActionsRelay.accept(backupManager.allBackedUp && !accountRestoreWarningManager.hasNonStandard)
     }
-
 }
 
 extension MainSettingsService {
-
-    var companyWebPageLink: String {
-        appConfigProvider.companyWebPageLink
-    }
-
     var noWalletRequiredActions: Bool {
         backupManager.allBackedUp && !accountRestoreWarningManager.hasNonStandard
     }
@@ -79,19 +69,16 @@ extension MainSettingsService {
         noWalletRequiredActionsRelay.asObservable()
     }
 
-    var isPinSet: Bool {
-        pinKit.isPinSet
+    var isPasscodeSet: Bool {
+        passcodeManager.isPasscodeSet
     }
 
-    var isPinSetPublisher: AnyPublisher<Bool, Never> {
-        pinKit.isPinSetPublisher
+    var isPasscodeSetPublisher: AnyPublisher<Bool, Never> {
+        passcodeManager.$isPasscodeSet
     }
 
     var isCloudAvailableError: Bool {
-        guard let contactBookManager else {
-            return false
-        }
-        return contactBookManager.remoteSync && contactBookManager.iCloudError != nil
+        contactBookManager.remoteSync && contactBookManager.iCloudError != nil
     }
 
     var iCloudAvailableErrorObservable: Observable<Bool> {
@@ -102,28 +89,25 @@ extension MainSettingsService {
         termsManager.termsAccepted
     }
 
-    var termsAcceptedObservable: Observable<Bool> {
-        termsManager.termsAcceptedObservable
+    var termsAcceptedPublisher: AnyPublisher<Bool, Never> {
+        termsManager.$termsAccepted
     }
 
     var walletConnectSessionCount: Int {
-        walletConnectSessionManager.sessions.count + walletConnectV2SessionManager.sessions.count
+        walletConnectSessionManager.sessions.count
     }
 
     var walletConnectSessionCountObservable: Observable<Int> {
-        Observable.combineLatest(walletConnectSessionManager.sessionsObservable, walletConnectV2SessionManager.sessionsObservable).map {
-            $0.count + $1.count
-        }
+        walletConnectSessionManager.sessionsObservable.map { $0.count }
     }
 
     var walletConnectPendingRequestCount: Int {
-        walletConnectV2SessionManager.activePendingRequests.count
+        walletConnectSessionManager.activePendingRequests.count
     }
 
     var walletConnectPendingRequestCountObservable: Observable<Int> {
-        walletConnectV2SessionManager.activePendingRequestsObservable.map { $0.count }
+        walletConnectSessionManager.activePendingRequestsObservable.map { $0.count }
     }
-
 
     var currentLanguageDisplayName: String? {
         LanguageManager.shared.currentLanguageDisplayName
@@ -145,6 +129,10 @@ extension MainSettingsService {
         accountManager.activeAccount
     }
 
+    var isAuthenticated: Bool {
+        subscriptionManager.isAuthenticated
+    }
+
     var walletConnectState: WalletConnectState {
         guard let activeAccount = activeAccount else {
             return .noAccount
@@ -160,15 +148,20 @@ extension MainSettingsService {
         return .unBackedUpAccount(account: activeAccount)
     }
 
+    var analyticsLink: String {
+        AppConfig.analyticsLink
+    }
+
+    func rateApp() {
+        rateAppManager.forceShow()
+    }
 }
 
 extension MainSettingsService {
-
     enum WalletConnectState {
         case noAccount
         case backedUp
         case nonSupportedAccountType(accountType: AccountType)
         case unBackedUpAccount(account: Account)
     }
-
 }

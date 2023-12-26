@@ -11,16 +11,16 @@ class NftAdapterManager {
     private let adaptersUpdatedRelay = PublishRelay<[NftKey: INftAdapter]>()
     private var _adapterMap = [NftKey: INftAdapter]()
 
-    private let queue = DispatchQueue(label: "io.horizontal-systems.unstoppable.nft-adapter_manager", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "\(AppConfig.label).nft-adapter_manager", qos: .userInitiated)
 
     init(walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager) {
         self.walletManager = walletManager
         self.evmBlockchainManager = evmBlockchainManager
 
-        walletManager.activeWalletsUpdatedObservable
+        walletManager.activeWalletDataUpdatedObservable
                 .observeOn(ConcurrentDispatchQueueScheduler(qos: .utility))
-                .subscribe(onNext: { [weak self] wallets in
-                    self?.handleAdaptersReady(wallets: wallets)
+                .subscribe(onNext: { [weak self] walletData in
+                    self?.handleAdaptersReady(wallets: walletData.wallets)
                 })
                 .disposed(by: disposeBag)
 

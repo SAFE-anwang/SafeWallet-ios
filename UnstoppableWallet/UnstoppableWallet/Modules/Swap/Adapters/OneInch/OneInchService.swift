@@ -50,7 +50,7 @@ class OneInchService {
         }
     }
 
-    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.swap_service")
+    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "\(AppConfig.label).swap_service")
 
     init(dex: SwapModule.Dex, evmKit: EvmKit.Kit, tradeService: OneInchTradeService, allowanceService: SwapAllowanceService, pendingAllowanceService: SwapPendingAllowanceService, adapterManager: AdapterManager) {
         self.dex = dex
@@ -173,7 +173,7 @@ class OneInchService {
     }
 
     private func balance(token: MarketKit.Token) -> Decimal? {
-        (adapterManager.adapter(for: token) as? IBalanceAdapter)?.balanceData.balance
+        (adapterManager.adapter(for: token) as? IBalanceAdapter)?.balanceData.available
     }
 
 }

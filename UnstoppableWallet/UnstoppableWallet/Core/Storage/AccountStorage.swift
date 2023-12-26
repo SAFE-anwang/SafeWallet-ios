@@ -67,14 +67,28 @@ class AccountStorage {
             }
 
             type = .hdExtendedKey(key: key)
+        case .cex:
+            guard let data = recoverData(id: id, typeName: typeName, keyName: .data) else {
+                return nil
+            }
+
+            let uniqueId = String(decoding: data, as: UTF8.self)
+
+            guard let cexAccount = CexAccount.decode(uniqueId: uniqueId) else {
+                return nil
+            }
+
+            type = .cex(cexAccount: cexAccount)
         }
 
         return Account(
                 id: id,
+                level: record.level,
                 name: record.name,
                 type: type,
                 origin: origin,
-                backedUp: record.backedUp
+                backedUp: record.backedUp,
+                fileBackedUp: record.fileBackedUp
         )
     }
 
@@ -105,14 +119,21 @@ class AccountStorage {
         case .hdExtendedKey(let key):
             typeName = .hdExtendedKey
             dataKey = try store(data: key.serialized, id: id, typeName: typeName, keyName: .data)
+        case .cex(let cexAccount):
+            typeName = .cex
+            if let data = cexAccount.uniqueId.data(using: .utf8) {
+                dataKey = try store(data: data, id: id, typeName: typeName, keyName: .data)
+            }
         }
 
         return AccountRecord(
                 id: id,
+                level: account.level,
                 name: account.name,
                 type: typeName.rawValue,
                 origin: account.origin.rawValue,
                 backedUp: account.backedUp,
+                fileBackedUp: account.fileBackedUp,
                 wordsKey: wordsKey,
                 saltKey: saltKey,
                 dataKey: dataKey,
@@ -135,6 +156,8 @@ class AccountStorage {
             try secureStorage.removeValue(for: secureKey(id: id, typeName: .tronAddress, keyName: .data))
         case .hdExtendedKey:
             try secureStorage.removeValue(for: secureKey(id: id, typeName: .hdExtendedKey, keyName: .data))
+        case .cex:
+            try secureStorage.removeValue(for: secureKey(id: id, typeName: .cex, keyName: .data))
         }
     }
 
@@ -220,6 +243,7 @@ extension AccountStorage {
         case evmAddress = "address"
         case tronAddress
         case hdExtendedKey
+        case cex
     }
 
     private enum KeyName: String {

@@ -89,7 +89,7 @@ class UniswapTradeService: ISwapSettingProvider {
     init(uniswapProvider: UniswapProvider, state: SwapModule.DataSourceState, evmKit: EvmKit.Kit) {
         self.uniswapProvider = uniswapProvider
         syncInterval = evmKit.chain.syncInterval
-
+        
         tokenIn = state.tokenFrom
         tokenOut = state.tokenTo
         if state.exactFrom {
@@ -180,7 +180,10 @@ class UniswapTradeService: ISwapSettingProvider {
                     error = UniswapModule.TradeError.wrapUnwrapNotAllowed
                 }
             }
-
+            if error.localizedDescription == "", uniswapProvider.isSafeswap {
+                
+            }
+            
             state = .notReady(errors: [error])
             return false
         }

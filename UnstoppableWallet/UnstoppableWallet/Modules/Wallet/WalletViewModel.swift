@@ -1,55 +1,101 @@
+import Combine
 import Foundation
-import RxSwift
-import RxRelay
-import RxCocoa
+import HsExtensions
 import MarketKit
+import RxCocoa
+import RxRelay
+import RxSwift
 
 class WalletViewModel {
     private let service: WalletService
+    private let eventHandler: IEventHandler
     private let factory: WalletViewItemFactory
     private let accountRestoreWarningFactory: AccountRestoreWarningFactory
+    private var cancellables = Set<AnyCancellable>()
     private let disposeBag = DisposeBag()
 
     private let titleRelay = BehaviorRelay<String?>(value: nil)
-    private let displayModeRelay = BehaviorRelay<DisplayMode>(value: .list)
-    private let headerViewItemRelay = BehaviorRelay<HeaderViewItem?>(value: nil)
     private let showWarningRelay = BehaviorRelay<CancellableTitledCaution?>(value: nil)
-    private let sortByRelay = BehaviorRelay<String?>(value: nil)
-    private let viewItemsRelay = BehaviorRelay<[BalanceViewItem]>(value: [])
-    private let openReceiveRelay = PublishRelay<Wallet>()
-    private let openBackupRequiredRelay = PublishRelay<Wallet>()
-    private let openCoinPageRelay = PublishRelay<Coin>()
-    private let noConnectionErrorRelay = PublishRelay<()>()
+    private let openReceiveRelay = PublishRelay<Void>()
+    private let openElementRelay = PublishRelay<WalletModule.Element>()
+    private let openBackupRequiredRelay = PublishRelay<Account>()
+    private let noConnectionErrorRelay = PublishRelay<Void>()
     private let openSyncErrorRelay = PublishRelay<(Wallet, Error)>()
-    private let playHapticRelay = PublishRelay<()>()
-    private let scrollToTopRelay = PublishRelay<()>()
+    private let playHapticRelay = PublishRelay<Void>()
+    private let scrollToTopRelay = PublishRelay<Void>()
+    private let disableQrScannerRelay = PublishRelay<Bool>()
 
-    private var viewItems = [BalanceViewItem]()
-    private var expandedElement: WalletModule.Element?
+    @PostPublished private(set) var state: State = .list(viewItems: [])
+    @PostPublished private(set) var headerViewItem: WalletModule.HeaderViewItem?
+    @Published private(set) var sortBy: String?
+    @Published private(set) var controlViewItem: ControlViewItem?
+    @Published private(set) var nftVisible: Bool = false
+    @Published private(set) var qrScanVisible: Bool = true
 
-    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.wallet-view-model", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "\(AppConfig.label).wallet-view-model", qos: .userInitiated)
 
-    init(service: WalletService, factory: WalletViewItemFactory, accountRestoreWarningFactory: AccountRestoreWarningFactory) {
+    init(service: WalletService, eventHandler: IEventHandler, factory: WalletViewItemFactory, accountRestoreWarningFactory: AccountRestoreWarningFactory) {
         self.service = service
+        self.eventHandler = eventHandler
         self.factory = factory
         self.accountRestoreWarningFactory = accountRestoreWarningFactory
 
         subscribe(disposeBag, service.activeAccountObservable) { [weak self] in self?.sync(activeAccount: $0) }
         subscribe(disposeBag, service.balanceHiddenObservable) { [weak self] _ in self?.onUpdateBalanceHidden() }
-        subscribe(disposeBag, service.totalItemObservable) { [weak self] in self?.sync(totalItem: $0) }
         subscribe(disposeBag, service.itemUpdatedObservable) { [weak self] in self?.syncUpdated(item: $0) }
-        subscribe(disposeBag, service.itemsObservable) { [weak self] in self?.sync(items: $0) }
         subscribe(disposeBag, service.sortTypeObservable) { [weak self] in self?.sync(sortType: $0, scrollToTop: true) }
         subscribe(disposeBag, service.balancePrimaryValueObservable) { [weak self] _ in self?.onUpdateBalancePrimaryValue() }
 
+        service.$state
+            .sink { [weak self] in self?.sync(serviceState: $0) }
+            .store(in: &cancellables)
+
+        service.$totalItem
+            .sink { [weak self] in self?.sync(totalItem: $0) }
+            .store(in: &cancellables)
+
         sync(activeAccount: service.activeAccount)
         sync(totalItem: service.totalItem)
-        sync(items: service.items)
         sync(sortType: service.sortType, scrollToTop: false)
+        _sync(serviceState: service.state)
+    }
+
+    private func sync(serviceState: WalletService.State) {
+        queue.async {
+            self._sync(serviceState: serviceState)
+        }
+    }
+
+    private func _sync(serviceState _: WalletService.State) {
+        switch service.state {
+        case .noAccount: state = .noAccount
+        case .loading: state = .loading
+        case let .loaded(items):
+            if items.isEmpty, !service.cexAccount {
+                state = service.watchAccount ? .watchEmpty : .empty
+            } else {
+                state = .list(viewItems: items.map { _viewItem(item: $0) })
+            }
+        case let .failed(reason):
+            switch reason {
+            case .syncFailed: state = .syncFailed
+            case .invalidApiKey: state = .invalidApiKey
+            }
+        }
+
+        switch service.state {
+        case let .loaded(items): qrScanVisible = !service.watchAccount && !items.isEmpty
+        default: qrScanVisible = false
+        }
     }
 
     private func sync(activeAccount: Account?) {
         titleRelay.accept(activeAccount?.name)
+        nftVisible = activeAccount?.type.supportsNft ?? false
+
+        controlViewItem = activeAccount.map {
+            ControlViewItem(watchVisible: $0.watchAccount, coinManagerVisible: !$0.cexAccount && !$0.watchAccount)
+        }
 
         if let account = activeAccount {
             showWarningRelay.accept(accountRestoreWarningFactory.caution(account: account, canIgnoreActiveAccountWarning: true))
@@ -57,21 +103,20 @@ class WalletViewModel {
     }
 
     private func onUpdateBalanceHidden() {
-        sync(items: service.items)
+        sync(serviceState: service.state)
         sync(totalItem: service.totalItem)
     }
 
     private func onUpdateBalancePrimaryValue() {
-        sync(items: service.items)
+        sync(serviceState: service.state)
     }
 
     private func sync(totalItem: WalletService.TotalItem?) {
-        let headerViewItem = totalItem.map { factory.headerViewItem(totalItem: $0, balanceHidden: service.balanceHidden, watchAccount: service.watchAccount) }
-        headerViewItemRelay.accept(headerViewItem)
+        headerViewItem = totalItem.map { factory.headerViewItem(totalItem: $0, balanceHidden: service.balanceHidden, account: service.activeAccount) }
     }
 
     private func sync(sortType: WalletModule.SortType, scrollToTop: Bool) {
-        sortByRelay.accept(sortType.title)
+        sortBy = sortType.title
 
         if scrollToTop {
             scrollToTopRelay.accept(())
@@ -80,84 +125,50 @@ class WalletViewModel {
 
     private func syncUpdated(item: WalletService.Item) {
         queue.async {
-            guard let index = self.viewItems.firstIndex(where: { $0.element == item.element }) else {
+            guard case var .list(viewItems) = self.state else {
                 return
             }
 
-            self.viewItems[index] = self.viewItem(item: item)
-            self.viewItemsRelay.accept(self.viewItems)
-        }
-    }
-
-    private func sync(items: [WalletService.Item]) {
-        queue.async {
-            self.viewItems = items.map {
-                self.viewItem(item: $0)
+            guard let index = viewItems.firstIndex(where: { $0.element == item.element }) else {
+                return
             }
-            self.viewItemsRelay.accept(self.viewItems)
-        }
 
-        displayModeRelay.accept(items.isEmpty ? (service.watchAccount ? .watchEmpty : .empty) : .list)
+            viewItems[index] = self._viewItem(item: item)
+            self.state = .list(viewItems: viewItems)
+        }
     }
 
-    private func viewItem(item: WalletService.Item) -> BalanceViewItem {
+    private func _viewItem(item: WalletService.Item) -> BalanceViewItem {
         factory.viewItem(
-                item: item,
-                balancePrimaryValue: service.balancePrimaryValue,
-                balanceHidden: service.balanceHidden,
-                expanded: item.element == expandedElement
+            item: item,
+            balancePrimaryValue: service.balancePrimaryValue,
+            balanceHidden: service.balanceHidden
         )
     }
-
-    private func syncViewItem(element: WalletModule.Element) {
-        guard let item = service.item(element: element), let index = viewItems.firstIndex(where: { $0.element == element }) else {
-            return
-        }
-
-        viewItems[index] = viewItem(item: item)
-    }
-
 }
 
 extension WalletViewModel {
-
     var titleDriver: Driver<String?> {
         titleRelay.asDriver()
-    }
-
-    var displayModeDriver: Driver<DisplayMode> {
-        displayModeRelay.asDriver()
-    }
-
-    var headerViewItemDriver: Driver<HeaderViewItem?> {
-        headerViewItemRelay.asDriver()
-    }
-
-    var sortByDriver: Driver<String?> {
-        sortByRelay.asDriver()
     }
 
     var showWarningDriver: Driver<CancellableTitledCaution?> {
         showWarningRelay.asDriver()
     }
 
-    var viewItemsDriver: Driver<[BalanceViewItem]> {
-        viewItemsRelay.asDriver()
-    }
-
-    var openReceiveSignal: Signal<Wallet> {
+    var openReceiveSignal: Signal<Void> {
         openReceiveRelay.asSignal()
     }
 
-    var openBackupRequiredSignal: Signal<Wallet> {
+    var openElementSignal: Signal<WalletModule.Element> {
+        openElementRelay.asSignal()
+    }
+
+    var openBackupRequiredSignal: Signal<Account> {
         openBackupRequiredRelay.asSignal()
     }
 
-    var openCoinPageSignal: Signal<Coin> {
-        openCoinPageRelay.asSignal()
-    }
-
-    var noConnectionErrorSignal: Signal<()> {
+    var noConnectionErrorSignal: Signal<Void> {
         noConnectionErrorRelay.asSignal()
     }
 
@@ -165,29 +176,33 @@ extension WalletViewModel {
         openSyncErrorRelay.asSignal()
     }
 
-    var showAccountsLostSignal: Signal<()> {
+    var showAccountsLostSignal: Signal<Void> {
         service.accountsLostObservable.asSignal(onErrorJustReturn: ())
     }
 
-    var playHapticSignal: Signal<()> {
+    var playHapticSignal: Signal<Void> {
         playHapticRelay.asSignal()
     }
 
-    var scrollToTopSignal: Signal<()> {
+    var scrollToTopSignal: Signal<Void> {
         scrollToTopRelay.asSignal()
+    }
+
+    var disableQrScannerSignal: Signal<Bool> {
+        disableQrScannerRelay.asSignal()
     }
 
     var sortTypeViewItems: [AlertViewItem] {
         WalletModule.SortType.allCases.map { sortType in
             AlertViewItem(
-                    text: sortType.title,
-                    selected: sortType == service.sortType
+                text: sortType.title,
+                selected: sortType == service.sortType
             )
         }
     }
 
     var swipeActionsEnabled: Bool {
-        !service.watchAccount
+        !service.watchAccount && !service.cexAccount
     }
 
     var lastCreatedAccount: Account? {
@@ -217,38 +232,18 @@ extension WalletViewModel {
     }
 
     func onTap(element: WalletModule.Element) {
-        queue.async {
-            if self.expandedElement == element {
-                self.expandedElement = nil
-                self.syncViewItem(element: element)
-            } else {
-                let oldExpandedElement = self.expandedElement
-                self.expandedElement = element
-
-                if let oldExpandedElement {
-                    self.syncViewItem(element: oldExpandedElement)
-                }
-                self.syncViewItem(element: element)
-            }
-
-            self.viewItemsRelay.accept(self.viewItems)
-        }
+        openElementRelay.accept(element)
     }
 
-    func onTapReceive(wallet: Wallet) {
-        if wallet.account.backedUp || service.isCloudBackedUp(account: wallet.account) {
-            openReceiveRelay.accept(wallet)
-        } else {
-            openBackupRequiredRelay.accept(wallet)
-        }
-    }
-    
-    func onTapChart(element: WalletModule.Element) {
-        guard let coin = element.coin, let item = service.item(element: element), item.priceItem != nil else {
+    func onTapReceive() {
+        guard let account = service.activeAccount else {
             return
         }
-
-        openCoinPageRelay.accept(coin)
+        if account.backedUp || service.isCloudBackedUp(account: account) {
+            openReceiveRelay.accept(())
+        } else {
+            openBackupRequiredRelay.accept(account)
+        }
     }
 
     func onTapFailedIcon(element: WalletModule.Element) {
@@ -285,10 +280,6 @@ extension WalletViewModel {
     }
 
     func onDisable(element: WalletModule.Element) {
-        if expandedElement == element {
-            expandedElement = nil
-        }
-
         service.disable(element: element)
     }
 
@@ -296,22 +287,45 @@ extension WalletViewModel {
         service.didIgnoreAccountWarning()
     }
 
+    func process(scanned: String) {
+        Task { [weak self, eventHandler] in
+            defer {
+                self?.disableQrScannerRelay.accept(false)
+            }
+
+            do {
+                self?.disableQrScannerRelay.accept(true)
+                try await eventHandler.handle(event: scanned, eventType: .walletConnectUri)
+            } catch {}
+        }
+    }
 }
 
 extension WalletViewModel {
-
-    enum DisplayMode {
-        case list
+    enum State: CustomStringConvertible {
+        case list(viewItems: [BalanceViewItem])
+        case noAccount
         case empty
         case watchEmpty
+        case loading
+        case syncFailed
+        case invalidApiKey
+
+        var description: String {
+            switch self {
+            case let .list(viewItems): return "list: \(viewItems.count) view items"
+            case .noAccount: return "noAccount"
+            case .empty: return "empty"
+            case .watchEmpty: return "watchEmpty"
+            case .loading: return "loading"
+            case .syncFailed: return "syncFailed"
+            case .invalidApiKey: return "invalidApiKey"
+            }
+        }
     }
 
-    struct HeaderViewItem {
-        let amount: String?
-        let amountExpired: Bool
-        let convertedValue: String?
-        let convertedValueExpired: Bool
-        let watchAccount: Bool
+    struct ControlViewItem {
+        let watchVisible: Bool
+        let coinManagerVisible: Bool
     }
-
 }

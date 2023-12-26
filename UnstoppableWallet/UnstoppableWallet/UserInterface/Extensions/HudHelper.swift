@@ -9,12 +9,14 @@ extension HudHelper {
         case addedToWatchlist
         case removedFromWatchlist
         case addedToWallet
+        case removedFromWallet
         case alreadyAddedToWallet
         case notSupportedYet
         case copied
         case saved
         case savedToCloud
         case done
+        case restored
         case created
         case imported
         case walletAdded
@@ -43,12 +45,14 @@ extension HudHelper {
             case .addedToWatchlist: image = UIImage(named: "star_24")
             case .removedFromWatchlist: image = UIImage(named: "star_off_24")
             case .addedToWallet: image = UIImage(named: "add_to_wallet_2_24")
+            case .removedFromWallet: image = UIImage(named: "empty_wallet_24")
             case .alreadyAddedToWallet: image = UIImage(named: "warning_2_24")
             case .notSupportedYet: image = UIImage(named: "warning_2_24")
             case .copied: image = UIImage(named: "copy_24")
             case .saved: image = UIImage(named: "download_24")
             case .savedToCloud: image = UIImage(named: "icloud_24")
             case .done: image = UIImage(named: "circle_check_24")
+            case .restored: image = UIImage(named: "download_24")
             case .created: image = UIImage(named: "add_to_wallet_24")
             case .imported: image = UIImage(named: "add_to_wallet_2_24")
             case .walletAdded: image = UIImage(named: "binocule_24")
@@ -71,8 +75,8 @@ extension HudHelper {
         var color: UIColor {
             switch self {
             case .addedToWatchlist, .alreadyAddedToWallet, .notSupportedYet, .sent, .swapped, .approved, .revoked, .attention: return .themeJacob
-            case .removedFromWatchlist,  .deleted, .noInternet, .disconnectedWalletConnect, .error: return .themeLucian
-            case .addedToWallet, .copied, .saved, .savedToCloud, .done, .created, .imported, .walletAdded, .enabled, .success: return .themeRemus
+            case .removedFromWallet, .removedFromWatchlist,  .deleted, .noInternet, .disconnectedWalletConnect, .error: return .themeLucian
+            case .addedToWallet, .copied, .saved, .savedToCloud, .done, .restored, .created, .imported, .walletAdded, .enabled, .success: return .themeRemus
             case .waitingForSession, .disconnectingWalletConnect, .enabling, .sending, .swapping, .approving, .revoking: return .themeGray
             }
         }
@@ -82,12 +86,14 @@ extension HudHelper {
             case .addedToWatchlist: return "alert.added_to_watchlist".localized
             case .removedFromWatchlist: return "alert.removed_from_watchlist".localized
             case .addedToWallet: return "alert.added_to_wallet".localized
+            case .removedFromWallet: return "alert.removed_from_wallet".localized
             case .alreadyAddedToWallet: return "alert.already_added_to_wallet".localized
             case .notSupportedYet: return "alert.not_supported_yet".localized
             case .copied: return "alert.copied".localized
             case .saved: return "alert.saved".localized
             case .savedToCloud: return "alert.saved_to_icloud".localized
             case .done: return "alert.success_action".localized
+            case .restored: return "alert.restored".localized
             case .created: return "alert.created".localized
             case .imported: return "alert.imported".localized
             case .walletAdded: return "alert.wallet_added".localized
@@ -114,7 +120,7 @@ extension HudHelper {
 
         var showingTime: TimeInterval? {
             switch self {
-            case .waitingForSession, .disconnectingWalletConnect, .enabling: return nil
+            case .waitingForSession, .disconnectingWalletConnect, .sending, .enabling: return nil
             default: return 2
             }
         }

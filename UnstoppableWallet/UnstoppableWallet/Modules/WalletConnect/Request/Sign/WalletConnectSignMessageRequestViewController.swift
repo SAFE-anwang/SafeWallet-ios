@@ -41,29 +41,14 @@ class WalletConnectSignMessageRequestViewController: ThemeViewController {
 
         tableView.sectionDataSource = self
 
-        view.addSubview(bottomWrapper)
-        bottomWrapper.snp.makeConstraints { maker in
-            maker.top.equalTo(tableView.snp.bottom).offset(-CGFloat.margin16)
-            maker.leading.trailing.equalToSuperview()
-            maker.bottom.equalTo(view.safeAreaLayoutGuide)
-        }
-
+        bottomWrapper.add(to: self, under: tableView)
         bottomWrapper.addSubview(signButton)
-        signButton.snp.makeConstraints { maker in
-            maker.top.equalToSuperview().inset(CGFloat.margin32)
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin24)
-        }
 
         signButton.set(style: .yellow)
         signButton.setTitle("button.sign".localized, for: .normal)
         signButton.addTarget(self, action: #selector(onTapSign), for: .touchUpInside)
 
         bottomWrapper.addSubview(rejectButton)
-        rejectButton.snp.makeConstraints { maker in
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin24)
-            maker.top.equalTo(signButton.snp.bottom).offset(CGFloat.margin16)
-            maker.bottom.equalToSuperview().inset(CGFloat.margin16)
-        }
 
         rejectButton.set(style: .gray)
         rejectButton.setTitle("button.reject".localized, for: .normal)
@@ -104,7 +89,7 @@ extension WalletConnectSignMessageRequestViewController: SectionsDataSource {
     func buildSections() -> [SectionProtocol] {
         var sections = [SectionProtocol]()
 
-        if viewModel.domain != nil || viewModel.dAppName != nil {
+        if viewModel.domain != nil || viewModel.dAppName != nil || viewModel.chain.chainName != nil {
             var rows: [RowProtocol] = []
 
             if let domain = viewModel.domain {
@@ -113,7 +98,7 @@ extension WalletConnectSignMessageRequestViewController: SectionsDataSource {
                         title: .subhead2("wallet_connect.sign.domain".localized),
                         value: .subhead1(domain),
                         isFirst: true,
-                        isLast: viewModel.dAppName == nil
+                        isLast: viewModel.dAppName == nil && viewModel.chain.chainName == nil
                 )
 
                 rows.append(row)
@@ -125,6 +110,18 @@ extension WalletConnectSignMessageRequestViewController: SectionsDataSource {
                         title: .subhead2("wallet_connect.sign.dapp_name".localized),
                         value: .subhead1(dAppName),
                         isFirst: viewModel.domain == nil,
+                        isLast: viewModel.chain.chainName == nil
+                )
+
+                rows.append(row)
+            }
+
+            if let chainName = viewModel.chain.chainName {
+                let row = tableView.universalRow48(
+                        id: "chain_name",
+                        title: .subhead2(chainName),
+                        value: .subhead1(viewModel.chain.address?.shortened),
+                        isFirst: viewModel.domain == nil && viewModel.dAppName == nil,
                         isLast: true
                 )
 

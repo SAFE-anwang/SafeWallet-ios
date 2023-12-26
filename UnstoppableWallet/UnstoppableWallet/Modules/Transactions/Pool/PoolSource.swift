@@ -2,16 +2,14 @@ import Foundation
 import MarketKit
 
 struct PoolSource {
+    let token: Token?
     let blockchainType: BlockchainType
     let filter: TransactionTypeFilter
-    let configuredToken: ConfiguredToken?
-    let bep2Symbol: String?
 
     var transactionSource: TransactionSource {
         TransactionSource(
                 blockchainType: blockchainType,
-                coinSettings: configuredToken?.coinSettings ?? [:],
-                bep2Symbol: bep2Symbol
+                meta: token?.type.meta
         )
     }
 }
@@ -19,14 +17,13 @@ struct PoolSource {
 extension PoolSource: Hashable {
 
     public func hash(into hasher: inout Hasher) {
+        hasher.combine(token)
         hasher.combine(blockchainType)
         hasher.combine(filter)
-        hasher.combine(configuredToken)
-        hasher.combine(bep2Symbol)
     }
 
     public static func ==(lhs: PoolSource, rhs: PoolSource) -> Bool {
-        lhs.blockchainType == rhs.blockchainType && lhs.filter == rhs.filter && lhs.configuredToken == rhs.configuredToken && lhs.bep2Symbol == rhs.bep2Symbol
+        lhs.token == rhs.token && lhs.blockchainType == rhs.blockchainType && lhs.filter == rhs.filter
     }
 
 }

@@ -6,9 +6,9 @@ import RxRelay
 import EvmKit
 
 class WalletConnectMainViewModel {
-    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.wallet_connect_main")
+    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "\(AppConfig.label).wallet_connect_main")
 
-    private let service: IWalletConnectMainService
+    private let service: WalletConnectMainService
     private let disposeBag = DisposeBag()
 
     private let showErrorRelay = PublishRelay<String>()
@@ -24,7 +24,7 @@ class WalletConnectMainViewModel {
     private let viewItemRelay = BehaviorRelay<ViewItem?>(value: nil)
     private let finishRelay = PublishRelay<Void>()
 
-    init(service: IWalletConnectMainService) {
+    init(service: WalletConnectMainService) {
         self.service = service
 
         subscribe(scheduler, disposeBag, service.errorObservable) { [weak self] in
@@ -77,40 +77,23 @@ class WalletConnectMainViewModel {
         reconnectButtonRelay.accept(stateForReconnectButton ? (connectionState == .disconnected ? .enabled : .hidden) : .hidden)
         closeVisibleRelay.accept(state == .ready)
 
-        var address: String?
-        var network: String?
-        var networkEditable = false
-        var blockchains: [BlockchainViewItem]?
-
-        let multiChain = service.appMetaItem?.multiChain ?? false
-
-        if multiChain {
-            // v2
-            blockchains = allowedBlockchains
-                    .map { item in
-                        BlockchainViewItem(
-                                chainId: item.chainId,
-                                chainTitle: item.blockchain.name,
-                                address: item.address.shortened,
-                                selected: item.selected
-                        )
-                    }
-        } else {
-            // v1
-            if let blockchainItem = allowedBlockchains.first(where: { $0.selected }) {
-                address = blockchainItem.address.shortened
-                network = blockchainItem.blockchain.name
-                networkEditable = state == .waitingForApproveSession
-            }
-        }
+        let blockchains = allowedBlockchains
+                .map { item in
+                    BlockchainViewItem(
+                            chainId: item.chainId,
+                            chainTitle: item.blockchain.name,
+                            address: item.address.shortened,
+                            selected: item.selected
+                    )
+                }
 
         let viewItem = ViewItem(
                 dAppMeta: service.appMetaItem.map { dAppMetaViewItem(appMetaItem: $0) },
                 status: status(connectionState: connectionState),
                 activeAccountName: service.activeAccountName,
-                address: address,
-                network: network,
-                networkEditable: networkEditable,
+                address: nil,
+                network: nil,
+                networkEditable: false,
                 blockchains: blockchains,
                 hint: service.hint
         )

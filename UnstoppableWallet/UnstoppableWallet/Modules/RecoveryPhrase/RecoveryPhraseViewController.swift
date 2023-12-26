@@ -46,18 +46,10 @@ class RecoveryPhraseViewController: ThemeViewController {
 
         let buttonsHolder = BottomGradientHolder()
 
-        view.addSubview(buttonsHolder)
-        buttonsHolder.snp.makeConstraints { maker in
-            maker.top.equalTo(tableView.snp.bottom).offset(-CGFloat.margin16)
-            maker.leading.trailing.bottom.equalToSuperview()
-        }
-
+        buttonsHolder.add(to: self, under: tableView)
         let copyButton = PrimaryButton()
 
         buttonsHolder.addSubview(copyButton)
-        copyButton.snp.makeConstraints { maker in
-            maker.edges.equalToSuperview().inset(CGFloat.margin24)
-        }
 
         copyButton.set(style: .yellow)
         copyButton.setTitle("button.copy".localized, for: .normal)
@@ -100,7 +92,7 @@ extension RecoveryPhraseViewController: SectionsDataSource {
         var rows: [RowProtocol] = [
             tableView.highlightedDescriptionRow(
                     id: "warning",
-                    text: "recovery_phrase.warning".localized
+                    text: "recovery_phrase.warning".localized(AppConfig.appName)
             ),
             marginRow(id: "warning-bottom-margin", height: .margin12),
             Row<MnemonicPhraseCell>(

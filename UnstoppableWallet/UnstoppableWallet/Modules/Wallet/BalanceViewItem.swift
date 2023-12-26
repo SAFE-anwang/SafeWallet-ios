@@ -4,10 +4,7 @@ import MarketKit
 
 struct BalanceViewItem {
     let element: WalletModule.Element
-
     let topViewItem: BalanceTopViewItem
-    let lockedAmountViewItem: BalanceLockedAmountViewItem?
-    let buttons: [WalletModule.Button: ButtonState]?
 }
 
 struct BalanceTopViewItem {
@@ -20,6 +17,7 @@ struct BalanceTopViewItem {
     let syncSpinnerProgress: Int?
     let indefiniteSearchCircle: Bool
     let failedImageViewVisible: Bool
+    let sendEnabled: Bool
 
     let primaryValue: (text: String?, dimmed: Bool)?
     let secondaryInfo: BalanceSecondaryInfoViewItem    
@@ -32,8 +30,8 @@ enum BalanceSecondaryInfoViewItem {
 }
 
 struct BalanceSecondaryAmountViewItem {
+    let descriptionValue: (text: String?, dimmed: Bool)
     let secondaryValue: (text: String?, dimmed: Bool)?
-    let rateValue: (text: String?, dimmed: Bool)
     let diff: (text: String, type: BalanceDiffType)?
 }
 
@@ -41,20 +39,6 @@ enum BalanceDiffType {
     case dimmed
     case positive
     case negative
-}
-
-struct BalanceLockedAmountViewItem {
-    let coinValue: (text: String?, dimmed: Bool)
-    let currencyValue: (text: String?, dimmed: Bool)?
-    let coinName: String?
-}
-
-struct BalanceButtonsViewItem {
-    let sendButtonState: ButtonState
-    let receiveButtonState: ButtonState
-    let addressButtonState: ButtonState
-    let swapButtonState: ButtonState
-    let chartButtonState: ButtonState
 }
 
 extension BalanceTopViewItem: Equatable {
@@ -97,21 +81,10 @@ extension BalanceSecondaryAmountViewItem: Equatable {
     static func ==(lhs: BalanceSecondaryAmountViewItem, rhs: BalanceSecondaryAmountViewItem) -> Bool {
         lhs.secondaryValue?.text == rhs.secondaryValue?.text &&
                 lhs.secondaryValue?.dimmed == rhs.secondaryValue?.dimmed &&
-                lhs.rateValue.text == rhs.rateValue.text &&
-                lhs.rateValue.dimmed == rhs.rateValue.dimmed &&
+                lhs.descriptionValue.text == rhs.descriptionValue.text &&
+                lhs.descriptionValue.dimmed == rhs.descriptionValue.dimmed &&
                 lhs.diff?.text == rhs.diff?.text &&
                 lhs.diff?.type == rhs.diff?.type
-    }
-
-}
-
-extension BalanceLockedAmountViewItem: Equatable {
-
-    static func ==(lhs: BalanceLockedAmountViewItem, rhs: BalanceLockedAmountViewItem) -> Bool {
-        lhs.coinValue.text == rhs.coinValue.text &&
-                lhs.coinValue.dimmed == rhs.coinValue.dimmed &&
-                lhs.currencyValue?.text == rhs.currencyValue?.text &&
-                lhs.currencyValue?.dimmed == rhs.currencyValue?.dimmed
     }
 
 }
@@ -123,9 +96,7 @@ extension BalanceViewItem: DiffAware {
     }
 
     static func compareContent(_ a: BalanceViewItem, _ b: BalanceViewItem) -> Bool {
-        a.topViewItem == b.topViewItem &&
-                a.lockedAmountViewItem == b.lockedAmountViewItem &&
-                a.buttons == b.buttons
+        a.topViewItem == b.topViewItem
     }
 
 }
@@ -133,7 +104,7 @@ extension BalanceViewItem: DiffAware {
 extension BalanceViewItem: CustomStringConvertible {
 
     var description: String {
-        "[topViewItem: \(topViewItem); lockedAmountViewItem: ; buttonsViewItem: ]"
+        "[topViewItem: \(topViewItem); buttonsViewItem: ]"
     }
 
 }
@@ -161,7 +132,7 @@ extension BalanceSecondaryInfoViewItem: CustomStringConvertible {
 extension BalanceSecondaryAmountViewItem: CustomStringConvertible {
 
     var description: String {
-        "[secondaryValue: \(secondaryValue.map { "[text: \($0.text ?? "nil"); dimmed: \($0.dimmed)]" } ?? "nil"); rateValue: \("[text: \(rateValue.text ?? "nil"); dimmed: \(rateValue.dimmed)]"); diff: \(diff.map { "[text: \($0.text); type: \($0.type)]" } ?? "nil")]"
+        "[secondaryValue: \(secondaryValue.map { "[text: \($0.text ?? "nil"); dimmed: \($0.dimmed)]" } ?? "nil"); rateValue: \("[text: \(descriptionValue.text ?? "nil"); dimmed: \(descriptionValue.dimmed)]"); diff: \(diff.map { "[text: \($0.text); type: \($0.type)]" } ?? "nil")]"
     }
 
 }

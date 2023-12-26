@@ -1,6 +1,6 @@
 import Foundation
-import StorageKit
 import MarketKit
+import StorageKit
 
 class LocalStorage {
     private let agreementAcceptedKey = "i_understand_key"
@@ -17,16 +17,18 @@ class LocalStorage {
     private let keyDefaultProvider = "swap_provider"
     private let keyRemoteContactSync = "icloud-sync-value"
     private let keyDefaultLiquidityProvider = "swap_liquidity_provider"
+    private let keyUserChartIndicatorsSync = "user-chart-indicators"
+    private let keyIndicatorsShown = "indicators-shown"
+    private let keyTelegramSupportRequested = "telegram-support-requested"
+
     private let storage: StorageKit.ILocalStorage
 
     init(storage: StorageKit.ILocalStorage) {
         self.storage = storage
     }
-
 }
 
 extension LocalStorage {
-
     var debugLog: String? {
         get { storage.value(for: debugLogKey) }
         set { storage.set(value: newValue, for: debugLogKey) }
@@ -92,5 +94,34 @@ extension LocalStorage {
     func setDefaultLiquidityProvider(blockchainType: BlockchainType, provider: LiquidityMainModule.Dex.Provider) {
         let key = [keyDefaultLiquidityProvider, blockchainType.uid].joined(separator: "|")
         storage.set(value: provider.rawValue, for: key)
+    }
+    
+    var chartIndicators: Data? {
+        get { storage.value(for: keyUserChartIndicatorsSync) }
+        set { storage.set(value: newValue, for: keyUserChartIndicatorsSync) }
+    }
+
+    var indicatorsShown: Bool {
+        get { storage.value(for: keyIndicatorsShown) ?? true }
+        set { storage.set(value: newValue, for: keyIndicatorsShown) }
+    }
+
+    var telegramSupportRequested: Bool {
+        get { storage.value(for: keyTelegramSupportRequested) ?? false }
+        set { storage.set(value: newValue, for: keyTelegramSupportRequested) }
+    }
+}
+
+extension LocalStorage {
+    func restore(backup: SettingsBackup) {
+        lockTimeEnabled = backup.lockTimeEnabled
+        remoteContactsSync = backup.remoteContactsSync ?? false
+        indicatorsShown = backup.indicatorsShown
+        backup.swapProviders.forEach { provider in
+            let blockchainType = BlockchainType(uid: provider.blockchainTypeId)
+            if let dexProvider = SwapModule.Dex.Provider(rawValue: provider.provider) {
+                return setDefaultProvider(blockchainType: blockchainType, provider: dexProvider)
+            }
+        }
     }
 }

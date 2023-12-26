@@ -1,3 +1,4 @@
+import Combine
 import UIKit
 import RxSwift
 import ThemeKit
@@ -9,10 +10,11 @@ import MarketKit
 import Chart
 
 class CoinAnalyticsViewController: ThemeViewController {
-    private let placeholderText = "•••"
+    private static let placeholderText = "•••"
 
     private let viewModel: CoinAnalyticsViewModel
     private let disposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
 
     private let tableView = SectionsTableView(style: .grouped)
 
@@ -23,6 +25,17 @@ class CoinAnalyticsViewController: ThemeViewController {
     weak var parentNavigationController: UINavigationController?
 
     private var viewItem: CoinAnalyticsViewModel.ViewItem?
+    private var indicatorViewItem: CoinAnalyticsViewModel.IndicatorViewItem?
+
+    private let currencyFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.maximumFractionDigits = 0
+        formatter.minimumFractionDigits = 0
+        formatter.currencySymbol = "$"
+        formatter.internationalCurrencySymbol = "$"
+        return formatter
+    }()
 
     init(viewModel: CoinAnalyticsViewModel) {
         self.viewModel = viewModel
@@ -76,9 +89,9 @@ class CoinAnalyticsViewController: ThemeViewController {
         tableView.backgroundColor = .clear
         tableView.showsVerticalScrollIndicator = false
 
-        tableView.registerCell(forClass: PlaceholderCell.self)
         tableView.registerCell(forClass: MarketWideCardCell.self)
         tableView.registerCell(forClass: CoinAnalyticsHoldersCell.self)
+        tableView.registerCell(forClass: IndicatorAdviceCell.self)
         tableView.sectionDataSource = self
 
         subscribe(disposeBag, viewModel.viewItemDriver) { [weak self] in
@@ -94,10 +107,26 @@ class CoinAnalyticsViewController: ThemeViewController {
             self?.emptyView.isHidden = !visible
         }
 
+        viewModel.indicatorViewItemsPublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] in
+                    self?.indicatorViewItem = $0
+                    self?.tableView.reload()
+                }
+                .store(in: &cancellables)
+
+        viewModel.subscriptionInfoPublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] in
+                    self?.openSubscriptionInfo()
+                }
+                .store(in: &cancellables)
+
         viewModel.onLoad()
     }
 
     override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         tableView.deselectCell(withCoordinator: transitionCoordinator, animated: animated)
     }
 
@@ -112,14 +141,18 @@ class CoinAnalyticsViewController: ThemeViewController {
         tableView.reload()
     }
 
-    private func openSubscriptionInfo() {
-        UrlManager.open(url: viewModel.analyticsLink, inAppController: parentNavigationController)
+    private func formatUsd(value: Int, number: String) -> String {
+        let string = currencyFormatter.string(from: value as NSNumber) ?? ""
+        return number.localized(string)
     }
 
-    private func openActivateSubscription(address: String) {
-        guard let viewController = ActivateSubscriptionModule.viewController(address: address) else {
-            return
-        }
+    private func openTechnicalIndicatorInfo() {
+        let viewController = InfoModule.viewController(viewItems: [
+            .header1(text: "coin_analytics.technical_indicators".localized),
+            .listItem(text: "coin_analytics.technical_indicators.info1".localized),
+            .listItem(text: "coin_analytics.technical_indicators.info2".localized),
+            .listItem(text: "coin_analytics.technical_indicators.info3".localized),
+        ])
 
         parentNavigationController?.present(viewController, animated: true)
     }
@@ -215,15 +248,109 @@ class CoinAnalyticsViewController: ThemeViewController {
         parentNavigationController?.present(viewController, animated: true)
     }
 
-    private func openRevenueInfo() {
-        let viewController = InfoModule.viewController(viewItems: [
-            .header1(text: "coin_analytics.project_revenue".localized),
-            .listItem(text: "coin_analytics.project_revenue.info1".localized),
-            .listItem(text: "coin_analytics.project_revenue.info2".localized),
-            .listItem(text: "coin_analytics.project_revenue.info3".localized)
-        ])
+    private func openCexVolumeScoreInfo() {
+        let viewController = CoinAnalyticsRatingScaleViewController(
+                title: "coin_analytics.cex_volume".localized,
+                description: "coin_analytics.overall_score.cex_volume".localized,
+                scores: [
+                    .excellent: "> \(formatUsd(value: 10, number: "number.million"))",
+                    .good: "> \(formatUsd(value: 5, number: "number.million"))",
+                    .fair: "> \(formatUsd(value: 1, number: "number.million"))",
+                    .poor: "< \(formatUsd(value: 1, number: "number.million"))",
+                ]
+        )
 
-        parentNavigationController?.present(viewController, animated: true)
+        parentNavigationController?.present(ThemeNavigationController(rootViewController: viewController), animated: true)
+    }
+
+    private func openDexVolumeScoreInfo() {
+        let viewController = CoinAnalyticsRatingScaleViewController(
+                title: "coin_analytics.dex_volume".localized,
+                description: "coin_analytics.overall_score.dex_volume".localized,
+                scores: [
+                    .excellent: "> \(formatUsd(value: 1, number: "number.million"))",
+                    .good: "> \(formatUsd(value: 500, number: "number.thousand"))",
+                    .fair: "> \(formatUsd(value: 100, number: "number.thousand"))",
+                    .poor: "< \(formatUsd(value: 100, number: "number.thousand"))",
+                ]
+        )
+
+        parentNavigationController?.present(ThemeNavigationController(rootViewController: viewController), animated: true)
+    }
+
+    private func openDexLiquidityScoreInfo() {
+        let viewController = CoinAnalyticsRatingScaleViewController(
+                title: "coin_analytics.dex_liquidity".localized,
+                description: "coin_analytics.overall_score.dex_liquidity".localized,
+                scores: [
+                    .excellent: "> \(formatUsd(value: 2, number: "number.million"))",
+                    .good: "> \(formatUsd(value: 1, number: "number.million"))",
+                    .fair: "> \(formatUsd(value: 500, number: "number.thousand"))",
+                    .poor: "< \(formatUsd(value: 500, number: "number.thousand"))",
+                ]
+        )
+
+        parentNavigationController?.present(ThemeNavigationController(rootViewController: viewController), animated: true)
+    }
+
+    private func openAddressesScoreInfo() {
+        let viewController = CoinAnalyticsRatingScaleViewController(
+                title: "coin_analytics.active_addresses".localized,
+                description: "coin_analytics.overall_score.active_addresses".localized,
+                scores: [
+                    .excellent: "> 500",
+                    .good: "> 200",
+                    .fair: "> 100",
+                    .poor: "< 100",
+                ]
+        )
+
+        parentNavigationController?.present(ThemeNavigationController(rootViewController: viewController), animated: true)
+    }
+
+    private func openTvlScoreInfo() {
+        let viewController = CoinAnalyticsRatingScaleViewController(
+                title: "coin_analytics.project_tvl".localized,
+                description: "coin_analytics.overall_score.project_tvl".localized,
+                scores: [
+                    .excellent: "> \(formatUsd(value: 200, number: "number.million"))",
+                    .good: "> \(formatUsd(value: 100, number: "number.million"))",
+                    .fair: "> \(formatUsd(value: 50, number: "number.million"))",
+                    .poor: "< \(formatUsd(value: 50, number: "number.million"))",
+                ]
+        )
+
+        parentNavigationController?.present(ThemeNavigationController(rootViewController: viewController), animated: true)
+    }
+
+    private func openTransactionCountScoreInfo() {
+        let viewController = CoinAnalyticsRatingScaleViewController(
+                title: "coin_analytics.transaction_count".localized,
+                description: "coin_analytics.overall_score.transaction_count".localized,
+                scores: [
+                    .excellent: "> \("number.thousand".localized("10"))",
+                    .good: "> \("number.thousand".localized("5"))",
+                    .fair: "> \("number.thousand".localized("1"))",
+                    .poor: "< \("number.thousand".localized("1"))",
+                ]
+        )
+
+        parentNavigationController?.present(ThemeNavigationController(rootViewController: viewController), animated: true)
+    }
+
+    private func openHoldersScoreInfo() {
+        let viewController = CoinAnalyticsRatingScaleViewController(
+                title: "coin_analytics.holders".localized,
+                description: "coin_analytics.overall_score.holders".localized,
+                scores: [
+                    .excellent: "> \("number.thousand".localized("100"))",
+                    .good: "> \("number.thousand".localized("50"))",
+                    .fair: "> \("number.thousand".localized("30"))",
+                    .poor: "< \("number.thousand".localized("30"))",
+                ]
+        )
+
+        parentNavigationController?.present(ThemeNavigationController(rootViewController: viewController), animated: true)
     }
 
     private func openMajorHolders(blockchain: Blockchain) {
@@ -266,6 +393,32 @@ class CoinAnalyticsViewController: ThemeViewController {
         parentNavigationController?.present(viewController, animated: true)
     }
 
+    private func openPeriodSelect() {
+        let viewController = SelectorModule.bottomSingleSelectorViewController(
+                title: "coin_analytics.period.select_title".localized,
+                viewItems: viewModel.periodViewItems,
+                onSelect: { [weak self] index in
+                    self?.viewModel.onSelectPeriod(index: index)
+                }
+        )
+
+        present(viewController, animated: true)
+    }
+
+    private func openDetailAdvices() {
+        guard let viewItems = viewModel.detailAdviceSectionViewItems else {
+            return
+        }
+
+        let viewController = CoinDetailAdviceViewController(viewItems: viewItems)
+        parentNavigationController?.pushViewController(viewController, animated: true)
+    }
+
+    private func openSubscriptionInfo() {
+        let viewController = SubscriptionInfoViewController()
+        parentNavigationController?.present(ThemeNavigationController(rootViewController: viewController), animated: true)
+    }
+
     private func placeholderChartData() -> ChartData {
         var chartItems = [ChartItem]()
 
@@ -274,18 +427,18 @@ class CoinAnalyticsViewController: ThemeViewController {
             let baseValue = Decimal(i) * 2
 
             chartItems.append(contentsOf: [
-                ChartItem(timestamp: baseTimeStamp).added(name: .rate, value: baseValue + 2),
-                ChartItem(timestamp: baseTimeStamp + 25).added(name: .rate, value: baseValue + 6),
-                ChartItem(timestamp: baseTimeStamp + 50).added(name: .rate, value: baseValue),
-                ChartItem(timestamp: baseTimeStamp + 75).added(name: .rate, value: baseValue + 9)
+                ChartItem(timestamp: baseTimeStamp).added(name: ChartData.rate, value: baseValue + 2),
+                ChartItem(timestamp: baseTimeStamp + 25).added(name: ChartData.rate, value: baseValue + 6),
+                ChartItem(timestamp: baseTimeStamp + 50).added(name: ChartData.rate, value: baseValue),
+                ChartItem(timestamp: baseTimeStamp + 75).added(name: ChartData.rate, value: baseValue + 9)
             ])
         }
 
         chartItems.append(
-                ChartItem(timestamp: 800).added(name: .rate, value: 16)
+                ChartItem(timestamp: 800).added(name: ChartData.rate, value: 16)
         )
 
-        return ChartData(items: chartItems, startTimestamp: 0, endTimestamp: 800)
+        return ChartData(items: chartItems, startWindow: 0, endWindow: 800)
     }
 
 }
@@ -293,13 +446,13 @@ class CoinAnalyticsViewController: ThemeViewController {
 extension CoinAnalyticsViewController: SectionsDataSource {
 
     private func chartRow(id: String, title: String, valueInfo: String, chartCurveType: ChartConfiguration.CurveType, viewItem: Previewable<CoinAnalyticsViewModel.ChartViewItem>, isLast: Bool, infoAction: @escaping () -> (), action: @escaping () -> ()) -> RowProtocol {
-        let value: String?
+        let value: String
         let chartData: ChartData
         let chartTrend: MovementTrend
 
         switch viewItem {
         case .preview:
-            value = placeholderText
+            value = Self.placeholderText
             chartData = placeholderChartData()
             chartTrend = .ignored
         case .regular(let viewItem):
@@ -340,7 +493,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
 
         if let value {
             switch value {
-            case .preview: rowValue = placeholderText
+            case .preview: rowValue = Self.placeholderText
             case .regular(let value): rowValue = value
             }
         }
@@ -365,51 +518,104 @@ extension CoinAnalyticsViewController: SectionsDataSource {
         )
     }
 
-    private func lockInfoSection(lockInfo: CoinAnalyticsViewModel.LockInfo) -> SectionProtocol {
-        let icon: UIImage?
-        let text: String
-        let buttonTitle: String
-        let buttonStyle: PrimaryButton.Style
-        let onTapButton: () -> ()
-
-        switch lockInfo {
-        case .notSubscribed:
-            icon = UIImage(named: "lock_48")?.withTintColor(.themeJacob)
-            text = "coin_analytics.locked.not_subscribed".localized
-            buttonTitle = "coin_analytics.locked.learn_more".localized
-            buttonStyle = .gray
-            onTapButton = { [weak self] in self?.openSubscriptionInfo() }
-        case .notActivated(let address):
-            icon = UIImage(named: "unlock_48")?.withTintColor(.themeJacob)
-            text = "coin_analytics.locked.not_activated".localized
-            buttonTitle = "coin_analytics.locked.activate".localized
-            buttonStyle = .yellow
-            onTapButton = { [weak self] in self?.openActivateSubscription(address: address) }
-        }
-
+    private func indicatorSection(viewItem: CoinAnalyticsViewModel.IndicatorViewItem) -> SectionProtocol {
+        let disableInfo = viewItem.loading || viewItem.error || viewItem.viewItems.isEmpty
         return Section(
-                id: "lock-info",
-                headerState: .margin(height: .margin12),
+                id: "indicator-section",
+                headerState: .margin(height: 12),
                 rows: [
-                    Row<PlaceholderCell>(
-                            id: "lock-info",
-                            dynamicHeight: { _ in PlaceholderCell.height(text: text) },
-                            bind: { cell, _ in
-                                cell.set(backgroundStyle: .lawrence, isFirst: true, isLast: true)
-                                cell.bind(
-                                        icon: icon,
-                                        text: text,
-                                        buttonTitle: buttonTitle,
-                                        buttonStyle: buttonStyle,
-                                        onTapButton: onTapButton
-                                )
+                    Row<IndicatorAdviceCell>(id: "indicator-advices-row",
+                            height: IndicatorAdviceCell.height,
+                            autoDeselect: false,
+                            bind: { [weak self] cell, _ in
+                                cell.set(backgroundStyle: .lawrence, isFirst: true)
+                                cell.set(loading: viewItem.loading)
+
+                                if viewItem.error {
+                                    cell.setEmpty(value: "n/a".localized)
+                                    return
+                                }
+
+                                if viewItem.viewItems.isEmpty {
+                                    cell.setEmpty(value: Self.placeholderText)
+                                } else {
+                                    cell.set(viewItems: viewItem.viewItems)
+                                }
+
+                                cell.onTapInfo = { [weak self] in
+                                    self?.openTechnicalIndicatorInfo()
+                                }
                             }
-                    )
-                ]
-        )
+                    ),
+                    tableView.universalRow48(
+                            id: "period",
+                            title: .subhead2("coin_analytics.period".localized, color: .themeGray),
+                            value: .subhead2(viewModel.period, color: viewItem.switchEnabled ? .themeLeah : .themeGray),
+                            accessoryType: .dropdown,
+                            autoDeselect: true,
+                            action: viewItem.switchEnabled ? { [weak self] in
+                                self?.openPeriodSelect()
+                            } : nil
+                    ),
+                    tableView.universalRow48(
+                            id: "details",
+                            title: .subhead2("coin_analytics.details".localized, color: disableInfo ? .themeGray50 : .themeGray),
+                            accessoryType: .disclosure,
+                            autoDeselect: true,
+                            isLast: true,
+                            action: !disableInfo ? { [weak self] in
+                                self?.openDetailAdvices()
+                            } : nil
+                    ),
+                ])
+    }
+
+    private func ratingRow(id: String, rating: Previewable<CoinAnalyticsModule.Rating>, isFirst: Bool = false, isLast: Bool = false, action: @escaping () -> ()) -> RowProtocol {
+        let titleElements: [CellBuilderNew.CellElement] = [
+            .textElement(text: .subhead2("coin_analytics.overall_score".localized), parameters: .highHugging),
+            .margin8,
+            .imageElement(image: .local(UIImage(named: "circle_information_20")?.withTintColor(.themeGray)), size: .image20)
+        ]
+
+        switch rating {
+        case .preview:
+            return CellBuilderNew.row(
+                    rootElement: .hStack(titleElements + [
+                        .textElement(text: .subhead1(Self.placeholderText), parameters: .rightAlignment)
+                    ]),
+                    tableView: tableView,
+                    id: id,
+                    height: .heightCell48,
+                    autoDeselect: true,
+                    bind: { cell in
+                        cell.set(backgroundStyle: .lawrence, isFirst: isFirst, isLast: isLast)
+                    },
+                    action: action
+            )
+        case .regular(let rating):
+            return CellBuilderNew.row(
+                    rootElement: .hStack(titleElements + [
+                        .textElement(text: .subhead1(rating.title.uppercased(), color: rating.color), parameters: .rightAlignment),
+                        .margin8,
+                        .imageElement(image: .local(rating.image), size: .image24)
+                    ]),
+                    tableView: tableView,
+                    id: id,
+                    hash: rating.title,
+                    height: .heightCell48,
+                    autoDeselect: true,
+                    bind: { cell in
+                        cell.set(backgroundStyle: .lawrence, isFirst: isFirst, isLast: isLast)
+                    },
+                    action: action
+            )
+        }
     }
 
     private func cexVolumeSection(viewItem: CoinAnalyticsViewModel.RankCardViewItem) -> SectionProtocol {
+        let items: [Any?] = [true, viewItem.rating, viewItem.rank]
+        let itemCount = items.compactMap { $0 }.count
+
         var rows: [RowProtocol] = [
             chartRow(
                     id: "cex-volume",
@@ -417,7 +623,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                     valueInfo: "coin_analytics.last_30d".localized,
                     chartCurveType: .bars,
                     viewItem: viewItem.chart,
-                    isLast: viewItem.rank == nil,
+                    isLast: itemCount == 1,
                     infoAction: { [weak self] in
                         self?.openCexVolumeInfo()
                     },
@@ -427,6 +633,19 @@ extension CoinAnalyticsViewController: SectionsDataSource {
             )
         ]
 
+        if let rating = viewItem.rating {
+            rows.append(
+                    ratingRow(
+                            id: "cex-volume-rating",
+                            rating: rating,
+                            isLast: rows.count + 1 == itemCount,
+                            action: { [weak self] in
+                                self?.openCexVolumeScoreInfo()
+                            }
+                    )
+            )
+        }
+
         if let rank = viewItem.rank {
             rows.append(
                     previewableRow(
@@ -434,7 +653,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                             title: "coin_analytics.30_day_rank".localized,
                             value: rank,
                             accessoryType: .disclosure,
-                            isLast: true,
+                            isLast: rows.count + 1 == itemCount,
                             action: rank.previewableValue { _ in { [weak self] in
                                 self?.openRanks(type: .cexVolume)
                             }}
@@ -450,6 +669,9 @@ extension CoinAnalyticsViewController: SectionsDataSource {
     }
 
     private func dexVolumeSection(viewItem: CoinAnalyticsViewModel.RankCardViewItem) -> SectionProtocol {
+        let items: [Any?] = [true, viewItem.rating, viewItem.rank]
+        let itemCount = items.compactMap { $0 }.count
+
         var rows: [RowProtocol] = [
             chartRow(
                     id: "dex-volume",
@@ -457,7 +679,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                     valueInfo: "coin_analytics.last_30d".localized,
                     chartCurveType: .bars,
                     viewItem: viewItem.chart,
-                    isLast: viewItem.rank == nil,
+                    isLast: itemCount == 1,
                     infoAction: { [weak self] in
                         self?.openDexVolumeInfo()
                     },
@@ -467,6 +689,19 @@ extension CoinAnalyticsViewController: SectionsDataSource {
             )
         ]
 
+        if let rating = viewItem.rating {
+            rows.append(
+                    ratingRow(
+                            id: "dex-volume-rating",
+                            rating: rating,
+                            isLast: rows.count + 1 == itemCount,
+                            action: { [weak self] in
+                                self?.openDexVolumeScoreInfo()
+                            }
+                    )
+            )
+        }
+
         if let rank = viewItem.rank {
             rows.append(
                     previewableRow(
@@ -474,7 +709,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                             title: "coin_analytics.30_day_rank".localized,
                             value: rank,
                             accessoryType: .disclosure,
-                            isLast: true,
+                            isLast: rows.count + 1 == itemCount,
                             action: rank.previewableValue { _ in { [weak self] in
                                 self?.openRanks(type: .dexVolume)
                             }}
@@ -490,6 +725,9 @@ extension CoinAnalyticsViewController: SectionsDataSource {
     }
 
     private func dexLiquiditySection(viewItem: CoinAnalyticsViewModel.RankCardViewItem) -> SectionProtocol {
+        let items: [Any?] = [true, viewItem.rating, viewItem.rank]
+        let itemCount = items.compactMap { $0 }.count
+
         var rows: [RowProtocol] = [
             chartRow(
                     id: "dex-liquidity",
@@ -497,7 +735,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                     valueInfo: "coin_analytics.current".localized,
                     chartCurveType: .line,
                     viewItem: viewItem.chart,
-                    isLast: viewItem.rank == nil,
+                    isLast: itemCount == 1,
                     infoAction: { [weak self] in
                         self?.openDexLiquidityInfo()
                     },
@@ -507,6 +745,19 @@ extension CoinAnalyticsViewController: SectionsDataSource {
             )
         ]
 
+        if let rating = viewItem.rating {
+            rows.append(
+                    ratingRow(
+                            id: "dex-liquidity-rating",
+                            rating: rating,
+                            isLast: rows.count + 1 == itemCount,
+                            action: { [weak self] in
+                                self?.openDexLiquidityScoreInfo()
+                            }
+                    )
+            )
+        }
+
         if let rank = viewItem.rank {
             rows.append(
                     previewableRow(
@@ -514,7 +765,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                             title: "coin_analytics.rank".localized,
                             value: rank,
                             accessoryType: .disclosure,
-                            isLast: true,
+                            isLast: rows.count + 1 == itemCount,
                             action: rank.previewableValue { _ in { [weak self] in
                                 self?.openRanks(type: .dexLiquidity)
                             }}
@@ -530,7 +781,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
     }
 
     private func addressesSection(viewItem: CoinAnalyticsViewModel.ActiveAddressesViewItem) -> SectionProtocol {
-        let items: [Any?] = [true, viewItem.count30d, viewItem.rank]
+        let items: [Any?] = [true, viewItem.rating, viewItem.count30d, viewItem.rank]
         let itemCount = items.compactMap { $0 }.count
 
         var rows: [RowProtocol] = [
@@ -549,6 +800,19 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                     }
             )
         ]
+
+        if let rating = viewItem.rating {
+            rows.append(
+                    ratingRow(
+                            id: "addresses-rating",
+                            rating: rating,
+                            isLast: rows.count + 1 == itemCount,
+                            action: { [weak self] in
+                                self?.openAddressesScoreInfo()
+                            }
+                    )
+            )
+        }
 
         if let count30d = viewItem.count30d {
             rows.append(
@@ -584,7 +848,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
     }
 
     private func txCountSection(viewItem: CoinAnalyticsViewModel.TransactionCountViewItem) -> SectionProtocol {
-        let items: [Any?] = [true, viewItem.volume, viewItem.rank]
+        let items: [Any?] = [true, viewItem.rating, viewItem.volume, viewItem.rank]
         let itemCount = items.compactMap { $0 }.count
 
         var rows: [RowProtocol] = [
@@ -603,6 +867,19 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                     }
             )
         ]
+
+        if let rating = viewItem.rating {
+            rows.append(
+                    ratingRow(
+                            id: "tx-count-rating",
+                            rating: rating,
+                            isLast: rows.count + 1 == itemCount,
+                            action: { [weak self] in
+                                self?.openTransactionCountScoreInfo()
+                            }
+                    )
+            )
+        }
 
         if let volume = viewItem.volume {
             rows.append(
@@ -637,7 +914,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
         )
     }
 
-    private func holdersSection(viewItem: Previewable<CoinAnalyticsViewModel.HoldersViewItem>, rank: Previewable<String>?) -> SectionProtocol {
+    private func holdersSection(viewItem: Previewable<CoinAnalyticsViewModel.HoldersViewItem>, rank: Previewable<String>?, rating: Previewable<CoinAnalyticsModule.Rating>?) -> SectionProtocol {
         struct Blockchain {
             let imageUrl: String?
             let name: String
@@ -651,11 +928,11 @@ extension CoinAnalyticsViewController: SectionsDataSource {
 
         switch viewItem {
         case .preview:
-            value = placeholderText
+            value = Self.placeholderText
             blockchains = [
-                Blockchain(imageUrl: nil, name: "Blockchain 1", value: placeholderText, action: nil),
-                Blockchain(imageUrl: nil, name: "Blockchain 2", value: placeholderText, action: nil),
-                Blockchain(imageUrl: nil, name: "Blockchain 3", value: placeholderText, action: nil),
+                Blockchain(imageUrl: nil, name: "Blockchain 1", value: Self.placeholderText, action: nil),
+                Blockchain(imageUrl: nil, name: "Blockchain 2", value: Self.placeholderText, action: nil),
+                Blockchain(imageUrl: nil, name: "Blockchain 3", value: Self.placeholderText, action: nil),
             ]
             chartItems = [
                 (0.5, UIColor.themeGray.withAlphaComponent(0.8)),
@@ -704,7 +981,22 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                         cell.bind(items: chartItems)
                     }
             )
-        ] + blockchains.enumerated().map { index, blockchain in
+        ]
+
+        if let rating {
+            rows.append(
+                    ratingRow(
+                            id: "holders-rating",
+                            rating: rating,
+                            isLast: false,
+                            action: { [weak self] in
+                                self?.openHoldersScoreInfo()
+                            }
+                    )
+            )
+        }
+
+        rows.append(contentsOf: blockchains.enumerated().map { index, blockchain in
             tableView.universalRow56(
                     id: "holders-blockchain-\(index)",
                     image: .url(blockchain.imageUrl, placeholder: "placeholder_rectangle_32"),
@@ -715,7 +1007,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                     isLast: index == blockchains.count - 1 && rank == nil,
                     action: blockchain.action
             )
-        }
+        })
 
         if let rank {
             rows.append(
@@ -740,6 +1032,9 @@ extension CoinAnalyticsViewController: SectionsDataSource {
     }
 
     private func tvlSection(viewItem: CoinAnalyticsViewModel.TvlViewItem) -> SectionProtocol {
+        let items: [Any?] = [true, viewItem.rating, viewItem.rank, viewItem.ratio]
+        let itemCount = items.compactMap { $0 }.count
+
         var rows: [RowProtocol] = [
             chartRow(
                     id: "tvl",
@@ -747,7 +1042,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                     valueInfo: "coin_analytics.current".localized,
                     chartCurveType: .line,
                     viewItem: viewItem.chart,
-                    isLast: viewItem.rank == nil && viewItem.ratio == nil,
+                    isLast: itemCount == 1,
                     infoAction: { [weak self] in
                         self?.openTvlInfo()
                     },
@@ -757,6 +1052,19 @@ extension CoinAnalyticsViewController: SectionsDataSource {
             )
         ]
 
+        if let rating = viewItem.rating {
+            rows.append(
+                    ratingRow(
+                            id: "tvl-rating",
+                            rating: rating,
+                            isLast: rows.count + 1 == itemCount,
+                            action: { [weak self] in
+                                self?.openTvlScoreInfo()
+                            }
+                    )
+            )
+        }
+
         if let rank = viewItem.rank {
             rows.append(
                     previewableRow(
@@ -764,7 +1072,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                             title: "coin_analytics.rank".localized,
                             value: rank,
                             accessoryType: .disclosure,
-                            isLast: viewItem.ratio == nil,
+                            isLast: rows.count + 1 == itemCount,
                             action: rank.previewableValue { _ in { [weak self] in
                                 self?.openTvlRank()
                             }}
@@ -778,7 +1086,7 @@ extension CoinAnalyticsViewController: SectionsDataSource {
                             id: "tvl-ratio",
                             title: "coin_analytics.tvl_ratio".localized,
                             value: ratio,
-                            isLast: true
+                            isLast: rows.count + 1 == itemCount
                     )
             )
         }
@@ -790,13 +1098,13 @@ extension CoinAnalyticsViewController: SectionsDataSource {
         )
     }
 
-    private func revenueSection(viewItem: CoinAnalyticsViewModel.RevenueViewItem) -> SectionProtocol {
+    private func valueRankSection(id: String, title: String, viewItem: CoinAnalyticsViewModel.ValueRankViewItem, onTapRank: @escaping () -> ()) -> SectionProtocol {
         let value: String?
         let valueInfo: String?
 
         switch viewItem.value {
         case .preview:
-            value = placeholderText
+            value = Self.placeholderText
             valueInfo = nil
         case .regular(let _value):
             value = _value
@@ -805,19 +1113,16 @@ extension CoinAnalyticsViewController: SectionsDataSource {
 
         var rows: [RowProtocol] = [
             Row<MarketWideCardCell>(
-                    id: "revenue",
+                    id: id,
                     height: MarketWideCardCell.height(hasChart: false),
-                    bind: { [weak self] cell, _ in
+                    bind: { cell, _ in
                         cell.set(backgroundStyle: .lawrence, isFirst: true)
                         cell.selectionStyle = .none
 
                         cell.bind(
-                                title: "coin_analytics.project_revenue".localized,
+                                title: title,
                                 value: value,
-                                valueInfo: valueInfo,
-                                onTapInfo: {
-                                    self?.openRevenueInfo()
-                                }
+                                valueInfo: valueInfo
                         )
                     }
             )
@@ -826,22 +1131,43 @@ extension CoinAnalyticsViewController: SectionsDataSource {
         if let rank = viewItem.rank {
             rows.append(
                     previewableRow(
-                            id: "revenue-rank",
+                            id: "\(id)-rank",
                             title: "coin_analytics.30_day_rank".localized,
                             value: rank,
                             accessoryType: .disclosure,
                             isLast: true,
-                            action: rank.previewableValue { _ in { [weak self] in
-                                self?.openRanks(type: .revenue)
-                            }}
+                            action: rank.previewableValue { _ in onTapRank }
                     )
             )
         }
 
         return Section(
-                id: "revenue",
+                id: id,
                 headerState: .margin(height: .margin12),
+                footerState: viewItem.description.map { tableView.sectionFooter(text: $0, bottomMargin: .margin12) } ?? .margin(height: 0),
                 rows: rows
+        )
+    }
+
+    private func feeSection(viewItem: CoinAnalyticsViewModel.ValueRankViewItem) -> SectionProtocol {
+        valueRankSection(
+                id: "fee",
+                title: "coin_analytics.project_fee".localized,
+                viewItem: viewItem,
+                onTapRank: { [weak self] in
+                    self?.openRanks(type: .fee)
+                }
+        )
+    }
+
+    private func revenueSection(viewItem: CoinAnalyticsViewModel.ValueRankViewItem) -> SectionProtocol {
+        valueRankSection(
+                id: "revenue",
+                title: "coin_analytics.project_revenue".localized,
+                viewItem: viewItem,
+                onTapRank: { [weak self] in
+                    self?.openRanks(type: .revenue)
+                }
         )
     }
 
@@ -931,8 +1257,8 @@ extension CoinAnalyticsViewController: SectionsDataSource {
         var sections = [SectionProtocol]()
 
         if let viewItem {
-            if let lockInfo = viewItem.lockInfo {
-                sections.append(lockInfoSection(lockInfo: lockInfo))
+            if let indicatorViewItem {
+                sections.append(indicatorSection(viewItem: indicatorViewItem))
             }
 
             if let viewItem = viewItem.cexVolume {
@@ -941,6 +1267,10 @@ extension CoinAnalyticsViewController: SectionsDataSource {
 
             if let viewItem = viewItem.dexVolume {
                 sections.append(dexVolumeSection(viewItem: viewItem))
+            }
+
+            if let viewItem = viewItem.tvl {
+                sections.append(tvlSection(viewItem: viewItem))
             }
 
             if let viewItem = viewItem.dexLiquidity {
@@ -956,11 +1286,11 @@ extension CoinAnalyticsViewController: SectionsDataSource {
             }
 
             if let holdersViewItem = viewItem.holders {
-                sections.append(holdersSection(viewItem: holdersViewItem, rank: viewItem.holdersRank))
+                sections.append(holdersSection(viewItem: holdersViewItem, rank: viewItem.holdersRank, rating: viewItem.holdersRating))
             }
 
-            if let viewItem = viewItem.tvl {
-                sections.append(tvlSection(viewItem: viewItem))
+            if let viewItem = viewItem.fee {
+                sections.append(feeSection(viewItem: viewItem))
             }
 
             if let viewItem = viewItem.revenue {

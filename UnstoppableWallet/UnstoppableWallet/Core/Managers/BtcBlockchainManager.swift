@@ -1,7 +1,7 @@
-import RxSwift
-import RxRelay
-import MarketKit
 import BitcoinCore
+import MarketKit
+import RxRelay
+import RxSwift
 
 class BtcBlockchainManager {
     private let blockchainTypes: [BlockchainType] = [
@@ -32,11 +32,9 @@ class BtcBlockchainManager {
             allBlockchains = []
         }
     }
-
 }
 
 extension BtcBlockchainManager {
-
     func blockchain(token: Token) -> Blockchain? {
         allBlockchains.first(where: { token.blockchain == $0 })
     }
@@ -81,5 +79,44 @@ extension BtcBlockchainManager {
         storage.save(btcTransactionSortMode: transactionSortMode, blockchainType: blockchainType)
         transactionSortModeUpdatedRelay.accept(blockchainType)
     }
+}
 
+extension BtcBlockchainManager {
+    var backup: [BtcRestoreModeBackup] {
+        blockchainTypes.map {
+            BtcRestoreModeBackup(
+                blockchainTypeUid: $0.uid,
+                restoreMode: restoreMode(blockchainType: $0).rawValue,
+                sortMode: transactionSortMode(blockchainType: $0).rawValue
+            )
+        }
+    }
+
+    func restore(backup: [BtcRestoreModeBackup]) {
+        backup
+            .forEach { backup in
+                let type = BlockchainType(uid: backup.blockchainTypeUid)
+
+                if let mode = BtcRestoreMode(rawValue: backup.restoreMode) {
+                    save(restoreMode: mode, blockchainType: type)
+                }
+                if let mode = TransactionDataSortMode(rawValue: backup.sortMode) {
+                    save(transactionSortMode: mode, blockchainType: type)
+                }
+            }
+    }
+}
+
+extension BtcBlockchainManager {
+    struct BtcRestoreModeBackup: Codable {
+        let blockchainTypeUid: String
+        let restoreMode: String
+        let sortMode: String
+
+        enum CodingKeys: String, CodingKey {
+            case blockchainTypeUid = "blockchain_type_id"
+            case restoreMode = "restore_mode"
+            case sortMode = "sort_mode"
+        }
+    }
 }

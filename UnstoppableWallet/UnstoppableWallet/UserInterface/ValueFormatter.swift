@@ -4,8 +4,8 @@ import CurrencyKit
 class ValueFormatter {
     static let instance = ValueFormatter()
 
-    private let rawFormatterQueue = DispatchQueue(label: "io.horizontalsystems.unstoppable.value-formatter.raw-formatter", qos: .utility)
-    private let currencyFormatterQueue = DispatchQueue(label: "io.horizontalsystems.unstoppable.value-formatter.currency-formatter", qos: .utility)
+    private let rawFormatterQueue = DispatchQueue(label: "\(AppConfig.label).value-formatter.raw-formatter", qos: .utility)
+    private let currencyFormatterQueue = DispatchQueue(label: "\(AppConfig.label).value-formatter.currency-formatter", qos: .utility)
 
     private let rawFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -242,11 +242,11 @@ extension ValueFormatter {
     }
 
     func formatShort(coinValue: CoinValue, showCode: Bool = true, showSign: Bool = false) -> String? {
-        formatShort(value: coinValue.value, decimalCount: coinValue.decimals, symbol: showCode ? coinValue.coin.code : nil, showSign: showSign)
+        formatShort(value: coinValue.value, decimalCount: coinValue.decimals, symbol: showCode ? coinValue.symbol : nil, showSign: showSign)
     }
 
     func formatFull(coinValue: CoinValue, showCode: Bool = true, showSign: Bool = false) -> String? {
-        formatFull(value: coinValue.value, decimalCount: coinValue.decimals, symbol: showCode ? coinValue.coin.code : nil, showSign: showSign)
+        formatFull(value: coinValue.value, decimalCount: coinValue.decimals, symbol: showCode ? coinValue.symbol : nil, showSign: showSign)
     }
 
     func formatShort(currency: Currency, value: Decimal, showSign: Bool = false) -> String? {

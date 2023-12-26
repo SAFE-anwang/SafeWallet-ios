@@ -62,9 +62,9 @@ class LiquidityCoinSelectViewController: ThemeSearchViewController {
         tableView.reload()
     }
 
-    override func onUpdate(filter: String?) {
-        viewModel.apply(filter: filter)
-    }
+//    override func onUpdate(filter: String?) {
+//        viewModel.apply(filter: filter)
+//    }
 
 }
 

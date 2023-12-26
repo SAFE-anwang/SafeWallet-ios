@@ -11,7 +11,7 @@ class SendConfirmationViewController: ThemeViewController, SectionsDataSource {
 
     private let tableView = SectionsTableView(style: .grouped)
     private let bottomWrapper = BottomGradientHolder()
-    private let sendButton = PrimaryButton()
+    private let sendButton = SliderButton()
 
     private var viewItems = [[SendConfirmationViewModel.ViewItem]]()
 
@@ -41,23 +41,16 @@ class SendConfirmationViewController: ThemeViewController, SectionsDataSource {
             maker.leading.top.trailing.equalToSuperview()
         }
 
-        view.addSubview(bottomWrapper)
-        bottomWrapper.snp.makeConstraints { maker in
-            maker.top.equalTo(tableView.snp.bottom).offset(-CGFloat.margin16)
-            maker.leading.trailing.equalToSuperview()
-            maker.bottom.equalTo(view.safeAreaLayoutGuide)
-        }
-
+        bottomWrapper.add(to: self, under: tableView)
         bottomWrapper.addSubview(sendButton)
-        sendButton.snp.makeConstraints { maker in
-            maker.top.equalToSuperview().inset(CGFloat.margin32)
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin24)
-            maker.bottom.equalToSuperview().inset(CGFloat.margin16)
-        }
 
-        sendButton.set(style: .yellow)
-        sendButton.setTitle("send.confirmation.send_button".localized, for: .normal)
-        sendButton.addTarget(self, action: #selector(onTapSend), for: .touchUpInside)
+        sendButton.title = "send.confirmation.slide_to_send".localized
+        sendButton.finalTitle = "send.confirmation.sending".localized
+        sendButton.slideImage = UIImage(named: "arrow_medium_2_right_24")
+        sendButton.finalImage = UIImage(named: "check_2_24")
+        sendButton.onTap = { [weak self] in
+            self?.viewModel.send()
+        }
 
         subscribe(disposeBag, viewModel.sendEnabledDriver) { [weak self] in self?.sendButton.isEnabled = $0 }
         subscribe(disposeBag, viewModel.viewItemDriver) { [weak self] in self?.sync(viewItems: $0) }
@@ -77,10 +70,6 @@ class SendConfirmationViewController: ThemeViewController, SectionsDataSource {
         dismiss(animated: true)
     }
 
-    @objc private func onTapSend() {
-        viewModel.send()
-    }
-
     func handleSendSuccess() {
         HudHelper.instance.show(banner: .sent)
 
@@ -89,6 +78,7 @@ class SendConfirmationViewController: ThemeViewController, SectionsDataSource {
 
     private func handleSendFailed(error: String) {
         HudHelper.instance.show(banner: .error(string: error))
+        sendButton.reset()
     }
 
     private func row(viewItem: SendConfirmationViewModel.ViewItem, rowInfo: RowInfo) -> RowProtocol {

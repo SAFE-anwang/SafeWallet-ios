@@ -44,7 +44,7 @@ extension RestoreSettingsService {
             return
         }
 
-        let existingSettings = account.map { manager.settings(account: $0, blockchainType: blockchainType) } ?? [:]
+        let existingSettings = account.map { manager.settings(accountId: $0.id, blockchainType: blockchainType) } ?? [:]
 
         if blockchainType.restoreSettingTypes.contains(.birthdayHeight) && existingSettings[.birthdayHeight] == nil {
             let request = Request(
@@ -63,7 +63,7 @@ extension RestoreSettingsService {
         manager.save(settings: settings, account: account, blockchainType: blockchainType)
     }
 
-    func enter(birthdayHeight: Int?, token: Token) {
+    @discardableResult func enter(birthdayHeight: Int?, token: Token) -> TokenWithSettings {
         var settings = RestoreSettings()
         if let birthdayHeight = birthdayHeight?.description ?? RestoreSettingType.birthdayHeight.createdAccountValue(blockchainType: token.blockchainType) {
             settings[.birthdayHeight] = String(birthdayHeight)
@@ -71,14 +71,16 @@ extension RestoreSettingsService {
 
         let tokenWithSettings = TokenWithSettings(token: token, settings: settings)
         approveSettingsRelay.accept(tokenWithSettings)
+
+        return tokenWithSettings
     }
 
     func cancel(token: Token) {
         rejectApproveSettingsRelay.accept(token)
     }
 
-    func settings(account: Account, blockchainType: BlockchainType) -> RestoreSettings {
-        manager.settings(account: account, blockchainType: blockchainType)
+    func settings(accountId: String, blockchainType: BlockchainType) -> RestoreSettings {
+        manager.settings(accountId: accountId, blockchainType: blockchainType)
     }
 
 }

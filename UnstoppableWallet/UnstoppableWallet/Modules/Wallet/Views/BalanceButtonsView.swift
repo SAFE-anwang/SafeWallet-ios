@@ -5,12 +5,16 @@ import ThemeKit
 import ComponentKit
 
 class BalanceButtonsView: UIView {
-    public static let height: CGFloat = 72
+    public static let height: CGFloat = 70
 
     private let sendButtonWrapper = UIControl()
     private let sendButton = PrimaryButton()
+    private let withdrawButtonWrapper = UIControl()
+    private let withdrawButton = PrimaryButton()
     private let receiveButton = PrimaryButton()
     private let receiveCircleButton = PrimaryCircleButton()
+    private let depositButtonWrapper = UIControl()
+    private let depositButton = PrimaryButton()
     private let addressButton = PrimaryButton()
     private let swapButtonWrapper = UIControl()
     private let swapButton = PrimaryCircleButton()
@@ -21,8 +25,10 @@ class BalanceButtonsView: UIView {
     private let chartButtonWrapper = UIControl()
     private let chartButton = PrimaryCircleButton()
 
-    private var onTapReceive: (() -> ())?
     private var onTapSend: (() -> ())?
+    private var onTapWithdraw: (() -> ())?
+    private var onTapReceive: (() -> ())?
+    private var onTapDeposit: (() -> ())?
     private var onTapSwap: (() -> ())?
     private var onTapLiquidity: (() -> ())?
     private var onTapChart: (() -> ())?
@@ -34,8 +40,8 @@ class BalanceButtonsView: UIView {
 
         addSubview(stackView)
         stackView.snp.makeConstraints { maker in
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin12)
-            maker.top.equalToSuperview().offset(10)
+            maker.leading.trailing.equalToSuperview()
+            maker.top.equalToSuperview().offset(CGFloat.margin4)
         }
 
         stackView.axis = .horizontal
@@ -50,18 +56,41 @@ class BalanceButtonsView: UIView {
             maker.edges.equalToSuperview()
         }
 
-        sendButton.set(style: .yellow)
+        sendButton.set(style: .yellow, accessoryType: .icon(image: UIImage(named: "arrow_medium_2_up_right_24")))
         sendButton.setTitle("balance.send".localized, for: .normal)
         sendButton.addTarget(self, action: #selector(onSend), for: .touchUpInside)
+
+        stackView.addArrangedSubview(withdrawButtonWrapper)
+
+        withdrawButtonWrapper.addSubview(withdrawButton)
+        withdrawButton.snp.makeConstraints { maker in
+            maker.edges.equalToSuperview()
+        }
+
+        withdrawButton.set(style: .yellow)
+        withdrawButton.setTitle("balance.withdraw".localized, for: .normal)
+        withdrawButton.addTarget(self, action: #selector(onWithdraw), for: .touchUpInside)
 
         stackView.addArrangedSubview(receiveButton)
         receiveButton.snp.makeConstraints { maker in
             maker.width.equalTo(sendButton)
         }
 
-        receiveButton.set(style: .gray)
-        receiveButton.setTitle("balance.deposit".localized, for: .normal)
+        receiveButton.set(style: .gray, accessoryType: .icon(image: UIImage(named: "arrow_medium_2_down_left_24")))
+        receiveButton.setTitle("balance.receive".localized, for: .normal)
         receiveButton.addTarget(self, action: #selector(onReceive), for: .touchUpInside)
+
+        stackView.addArrangedSubview(depositButtonWrapper)
+
+        depositButtonWrapper.addSubview(depositButton)
+        depositButton.snp.makeConstraints { maker in
+            maker.edges.equalToSuperview()
+            maker.width.equalTo(withdrawButton)
+        }
+
+        depositButton.set(style: .gray)
+        depositButton.setTitle("balance.deposit".localized, for: .normal)
+        depositButton.addTarget(self, action: #selector(onDeposit), for: .touchUpInside)
 
         stackView.addArrangedSubview(receiveCircleButton)
 
@@ -113,25 +142,32 @@ class BalanceButtonsView: UIView {
         fatalError("not implemented")
     }
 
-    func bind(buttons: [WalletModule.Button: ButtonState], sendAction: @escaping () -> (), receiveAction: @escaping () -> (), swapAction: @escaping () -> (), liquidityAction: @escaping () -> (), chartAction: @escaping () -> ()) {
+
+    func bind(buttons: [WalletModule.Button: ButtonState], sendAction: (() -> ())?, withdrawAction: (() -> ())?, receiveAction: (() -> ())?, depositAction: (() -> ())?, swapAction: (() -> ())?, liquidityAction: (() -> ())?, chartAction: (() -> ())?) {
         sendButton.isEnabled = buttons[.send] == .enabled
+        withdrawButton.isEnabled = buttons[.withdraw] == .enabled
         receiveButton.isEnabled = buttons[.receive] == .enabled
         receiveCircleButton.isEnabled = buttons[.receive] == .enabled
+        depositButton.isEnabled = buttons[.deposit] == .enabled
         addressButton.isEnabled = buttons[.address] == .enabled
         swapButton.isEnabled = buttons[.swap] == .enabled
         liquidityButton.isEnabled = buttons[.liquidity] == .enabled
         chartButton.isEnabled = buttons[.chart] == .enabled
 
         sendButtonWrapper.isHidden = (buttons[.send] ?? .hidden) == .hidden
-        receiveButton.isHidden = (buttons[.receive] ?? .hidden) == .hidden || buttons.count > 3
-        receiveCircleButton.isHidden = (buttons[.receive] ?? .hidden) == .hidden || buttons.count <= 3
+        withdrawButtonWrapper.isHidden = (buttons[.withdraw] ?? .hidden) == .hidden
+        receiveButton.isHidden = (buttons[.receive] ?? .hidden) == .hidden || buttons.count > 2
+        receiveCircleButton.isHidden = (buttons[.receive] ?? .hidden) == .hidden || buttons.count <= 2
+        depositButtonWrapper.isHidden = (buttons[.deposit] ?? .hidden) == .hidden
         addressButton.isHidden = (buttons[.address] ?? .hidden) == .hidden
         swapButtonWrapper.isHidden = (buttons[.swap] ?? .hidden) == .hidden
         liquidityButtonWrapper.isHidden = (buttons[.liquidity] ?? .hidden) == .hidden
         chartButtonWrapper.isHidden = (buttons[.chart] ?? .hidden) == .hidden
 
         onTapSend = sendAction
+        onTapWithdraw = withdrawAction
         onTapReceive = receiveAction
+        onTapDeposit = depositAction
         onTapSwap = swapAction
         onTapLiquidity = liquidityAction
         onTapChart = chartAction
@@ -141,8 +177,16 @@ class BalanceButtonsView: UIView {
         onTapSend?()
     }
 
+    @objc private func onWithdraw() {
+        onTapWithdraw?()
+    }
+
     @objc private func onReceive() {
         onTapReceive?()
+    }
+
+    @objc private func onDeposit() {
+        onTapDeposit?()
     }
 
     @objc private func onSwap() {

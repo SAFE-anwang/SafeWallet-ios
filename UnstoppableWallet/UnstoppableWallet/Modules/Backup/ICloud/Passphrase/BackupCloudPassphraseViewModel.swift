@@ -76,29 +76,52 @@ extension BackupCloudPassphraseViewModel {
         passphraseConfirmationCaution = nil
 
         processing = true
-        Task { [weak self, service] in
-            do {
-                try await service.createBackup()
-                self?.processing = false
-                self?.finishSubject.send(())
-            } catch {
-                switch (error as? BackupCloudPassphraseService.CreateError) {
-                case .emptyPassphrase:
-                    self?.passphraseCaution = Caution(text: "backup.cloud.password.error.empty_passphrase".localized, type: .error)
-                case .simplePassword:
-                    self?.passphraseCaution = Caution(text: "backup.cloud.password.error.minimum_requirement".localized, type: .error)
-                case .invalidConfirmation:
-                    self?.passphraseConfirmationCaution = Caution(text: "backup.cloud.password.confirm.error.doesnt_match".localized, type: .error)
-                case .urlNotAvailable:
-                    self?.showErrorSubject.send("backup.cloud.not_available".localized)
-                case .cantSaveFile:
-                    self?.showErrorSubject.send("backup.cloud.cant_create_file".localized)
-                case .none:
-                    self?.showErrorSubject.send(error.smartDescription)
-                }
-                self?.processing = false
+        do {
+            try service.createBackup()
+            processing = false
+            finishSubject.send(())
+        } catch {
+            switch error {
+            case BackupCrypto.ValidationError.emptyPassphrase:
+                passphraseCaution = Caution(text: error.localizedDescription, type: .error)
+            case BackupCrypto.ValidationError.simplePassword:
+                passphraseCaution = Caution(text: error.localizedDescription, type: .error)
+            case BackupCloudPassphraseService.CreateError.invalidConfirmation:
+                passphraseConfirmationCaution = Caution(text: "backup.cloud.password.confirm.error.doesnt_match".localized, type: .error)
+            default:
+                showErrorSubject.send(error.smartDescription)
             }
+            processing = false
         }
     }
 
 }
+
+extension BackupCrypto.ValidationError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .emptyPassphrase: return "backup.cloud.password.error.empty_passphrase".localized
+        case .simplePassword: return "backup.cloud.password.error.minimum_requirement".localized
+        }
+    }
+}
+
+extension BackupCloudPassphraseService.CreateError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .urlNotAvailable: return "backup.cloud.not_available".localized
+        case .cantSaveFile: return "backup.cloud.cant_create_file".localized
+        case .invalidConfirmation: return "invalid confirmation".localized
+        }
+    }
+}
+
+extension CloudBackupManager.BackupError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .urlNotAvailable: return "backup.cloud.not_available".localized
+        case .itemNotFound: return nil
+        }
+    }
+}
+

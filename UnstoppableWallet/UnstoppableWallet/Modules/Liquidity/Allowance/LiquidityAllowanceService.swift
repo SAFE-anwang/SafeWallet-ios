@@ -9,7 +9,8 @@ class LiquidityAllowanceService {
     private let spenderAddress: EvmKit.Address
     private let adapterManager: AdapterManager
 
-    private(set) var token: Token?
+    private(set) var tokenA: Token?
+    private(set) var tokenB: Token?
 
     private let disposeBag = DisposeBag()
     private var allowanceDisposeBag = DisposeBag()
@@ -29,6 +30,7 @@ class LiquidityAllowanceService {
 
         evmKit.lastBlockHeightObservable
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                .observeOn(MainScheduler.asyncInstance)
                 .subscribe(onNext: { [weak self] blockNumber in
                     self?.sync()
                 })
@@ -38,7 +40,12 @@ class LiquidityAllowanceService {
     private func sync() {
         allowanceDisposeBag = DisposeBag()
 
-        guard let token = token, let adapter = adapterManager.adapter(for: token) as? IErc20Adapter else {
+        guard let tokenA = tokenA, let adapterA = adapterManager.adapter(for: tokenA) as? IErc20Adapter else {
+            state = nil
+            return
+        }
+        
+        guard let tokenB = tokenB, let adapterB = adapterManager.adapter(for: tokenB) as? IErc20Adapter else {
             state = nil
             return
         }
@@ -48,12 +55,12 @@ class LiquidityAllowanceService {
         } else {
             state = .loading
         }
-
-        adapter
-                .allowanceSingle(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
+        
+        Single.zip( adapterA.allowanceSingle(spenderAddress: spenderAddress, defaultBlockParameter: .latest),
+                        adapterB.allowanceSingle(spenderAddress: spenderAddress, defaultBlockParameter: .latest))
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                .subscribe(onSuccess: { [weak self] allowance in
-                    self?.state = .ready(allowance: CoinValue(kind: .token(token: token), value: allowance))
+                .subscribe(onSuccess: { [weak self] allowanceA, allowanceB in
+                    self?.state = .ready(allowanceA: CoinValue(kind: .token(token: tokenA), value: allowanceA), allowanceB: CoinValue(kind: .token(token: tokenB), value: allowanceB))
                 }, onError: { [weak self] error in
                     self?.state = .notReady(error: error)
                 })
@@ -68,27 +75,46 @@ extension LiquidityAllowanceService {
         stateRelay.asObservable()
     }
 
-    func set(token: Token?) {
-        self.token = token
+    func set(tokenA: Token?) {
+        self.tokenA = tokenA
+        sync()
+    }
+    
+    func set(tokenB: Token?) {
+        self.tokenB = tokenB
         sync()
     }
 
-    func approveData(dex: LiquidityMainModule.Dex, amount: Decimal) -> ApproveData? {
-        guard case .ready(let allowance) = state else {
-            return nil
-        }
+    func approveData(dex: LiquidityMainModule.Dex, token: Token?, amount: Decimal) -> ApproveData? {
+        
+        if case .ready(let allowanceA, let allowanceB) = state {
+            
+            guard let token else { return nil }
+            
+            if token == tokenA  {
+                return ApproveData(
+                        dex: dex,
+                        token: token,
+                        spenderAddress: spenderAddress,
+                        amount: amount,
+                        allowance: allowanceA.value
+                )
+            }
+            
+            if token == tokenB  {
+                return ApproveData(
+                        dex: dex,
+                        token: token,
+                        spenderAddress: spenderAddress,
+                        amount: amount,
+                        allowance: allowanceB.value
+                )
+            }
+            
 
-        guard let token = token else {
-            return nil
         }
-
-        return ApproveData(
-                dex: dex,
-                token: token,
-                spenderAddress: spenderAddress,
-                amount: amount,
-                allowance: allowance.value
-        )
+        return nil
+   
     }
 
 }
@@ -97,13 +123,13 @@ extension LiquidityAllowanceService {
 
     enum State: Equatable {
         case loading
-        case ready(allowance: CoinValue)
+        case ready(allowanceA: CoinValue, allowanceB: CoinValue)
         case notReady(error: Error)
 
         static func ==(lhs: State, rhs: State) -> Bool {
             switch (lhs, rhs) {
             case (.loading, .loading): return true
-            case (.ready(let lhsAllowance), .ready(let rhsAllowance)): return lhsAllowance == rhsAllowance
+            case (.ready(let lhsAllowanceA, let lhsAllowanceB), .ready(let rhsAllowanceA, let rhsAllowanceB)): return lhsAllowanceA == rhsAllowanceA && lhsAllowanceB == rhsAllowanceB
             default: return false
             }
         }

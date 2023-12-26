@@ -61,13 +61,13 @@ class AddLiquidityTransactionViewController: ThemeViewController {
         tableView.delaysContentTouches = false
 
         tableView.sectionDataSource = self
+        bottomWrapper.add(to: self, under: tableView)
 
-        view.addSubview(bottomWrapper)
-        bottomWrapper.snp.makeConstraints { maker in
-            maker.top.equalTo(tableView.snp.bottom).offset(-CGFloat.margin16)
-            maker.leading.trailing.equalToSuperview()
-            maker.bottom.equalTo(view.safeAreaLayoutGuide)
-        }
+//        bottomWrapper.snp.makeConstraints { maker in
+//            maker.top.equalTo(tableView.snp.bottom).offset(-CGFloat.margin16)
+//            maker.leading.trailing.equalToSuperview()
+//            maker.bottom.equalTo(view.safeAreaLayoutGuide)
+//        }
 
         subscribe(disposeBag, transactionViewModel.cautionsDriver) { [weak self] in self?.handle(cautions: $0) }
         subscribe(disposeBag, transactionViewModel.sendingSignal) { [weak self] in self?.handleSending() }

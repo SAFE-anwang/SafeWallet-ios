@@ -7,11 +7,8 @@ class PancakeLiquidityModule {
     private let tradeService: PancakeLiquidityTradeService
     private let service: PancakeLiquidityService
 
-    private let allowanceServiceA: LiquidityAllowanceService
-    private let pendingAllowanceServiceA: LiquidityPendingAllowanceService
-
-    private let allowanceServiceB: LiquidityAllowanceService
-    private let pendingAllowanceServiceB: LiquidityPendingAllowanceService
+    private let allowanceService: LiquidityAllowanceService
+    private let pendingAllowanceService: LiquidityPendingAllowanceService
 
     init?(dex: LiquidityMainModule.Dex, dataSourceState: LiquidityMainModule.DataSourceState) {
         guard let evmKit = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
@@ -30,37 +27,23 @@ class PancakeLiquidityModule {
                 evmKit: evmKit
         )
         
-        allowanceServiceA = LiquidityAllowanceService(
+        allowanceService = LiquidityAllowanceService(
                 spenderAddress: liquidityRepository.routerAddress,
                 adapterManager: App.shared.adapterManager,
                 evmKit: evmKit
         )
-        pendingAllowanceServiceA = LiquidityPendingAllowanceService(
+        
+        pendingAllowanceService = LiquidityPendingAllowanceService(
                 spenderAddress: liquidityRepository.routerAddress,
                 adapterManager: App.shared.adapterManager,
-                allowanceService: allowanceServiceA
+                allowanceService: allowanceService
         )
 
-        
-        allowanceServiceB = LiquidityAllowanceService(
-                spenderAddress: liquidityRepository.routerAddress,
-                adapterManager: App.shared.adapterManager,
-                evmKit: evmKit
-        )
-        
-        pendingAllowanceServiceB = LiquidityPendingAllowanceService(
-                spenderAddress: liquidityRepository.routerAddress,
-                adapterManager: App.shared.adapterManager,
-                allowanceService: allowanceServiceB
-        )
-        
         service = PancakeLiquidityService(
                 dex: dex,
                 tradeService: tradeService,
-                allowanceServiceA: allowanceServiceA,
-                pendingAllowanceServiceA: pendingAllowanceServiceA,
-                allowanceServiceB: allowanceServiceB,
-                pendingAllowanceServiceB: pendingAllowanceServiceB,
+                allowanceService: allowanceService,
+                pendingAllowanceService: pendingAllowanceService,
                 adapterManager: App.shared.adapterManager
         )
     }
@@ -70,15 +53,13 @@ class PancakeLiquidityModule {
 extension PancakeLiquidityModule: ILiquidityProvider {
 
     var dataSource: ILiquidityDataSource {
-        let allowanceViewModel = LiquidityAllowanceViewModel(errorProvider: service, allowanceService: allowanceServiceA, pendingAllowanceService: pendingAllowanceServiceA)
+        let allowanceViewModel = LiquidityAllowanceViewModel(errorProvider: service, allowanceService: allowanceService, pendingAllowanceService: pendingAllowanceService)
         let viewModel = PancakeLiquidityViewModel(
                 service: service,
                 tradeService: tradeService,
                 switchService: AmountTypeSwitchService(localStorage: StorageKit.LocalStorage.default, useLocalStorage: false),
-                allowanceServiceA: allowanceServiceA,
-                pendingAllowanceServiceA: pendingAllowanceServiceA,
-                allowanceServiceB: allowanceServiceB,
-                pendingAllowanceServiceB: pendingAllowanceServiceB,
+                allowanceService: allowanceService,
+                pendingAllowanceService: pendingAllowanceService,
                 currencyKit: App.shared.currencyKit,
                 viewItemHelper: LiquidityViewItemHelper()
         )

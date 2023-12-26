@@ -6,7 +6,7 @@ import Eip20Kit
 import NftKit
 import UniswapKit
 import OneInchKit
-import SafeSwapKit
+//import SafeSwapKit
 import HdWalletKit
 import MarketKit
 
@@ -21,7 +21,7 @@ class EvmKitManager {
     private let evmKitUpdatedRelay = PublishRelay<Void>()
     private var currentAccount: Account?
 
-    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.ethereum-kit-manager", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "\(AppConfig.label).ethereum-kit-manager", qos: .userInitiated)
 
     init(chain: Chain, syncSourceManager: EvmSyncSourceManager) {
         self.chain = chain
@@ -108,9 +108,6 @@ class EvmKitManager {
         UniswapKit.Kit.addDecorators(to: evmKit)
         try? KitV3.addDecorators(to: evmKit)
         OneInchKit.Kit.addDecorators(to: evmKit)
-        
-        SafeSwapKit.Kit.addDecorators(to: evmKit)
-
         evmKit.start()
 
         let wrapper = EvmKitWrapper(blockchainType: blockchainType, evmKit: evmKit, nftKit: nftKit, signer: signer)

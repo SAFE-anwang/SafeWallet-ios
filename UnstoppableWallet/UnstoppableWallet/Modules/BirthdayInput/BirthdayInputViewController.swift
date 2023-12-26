@@ -6,21 +6,16 @@ import SnapKit
 import MarketKit
 import SectionsTableView
 
-protocol IBirthdayInputDelegate: AnyObject {
-    func didEnter(birthdayHeight: Int?)
-    func didCancelEnterBirthdayHeight()
-}
-
 class BirthdayInputViewController: KeyboardAwareViewController {
-    private let wrapperViewHeight: CGFloat =  .margin16 + .heightButton + .margin32
-
     private let token: Token
-    private weak var delegate: IBirthdayInputDelegate?
+
+    var onEnterBirthdayHeight: ((Int?) -> ())?
+    var onCancel: (() -> ())?
 
     private let iconImageView = UIImageView()
     private let tableView = SectionsTableView(style: .grouped)
 
-    private let gradientWrapperView = GradientView(gradientHeight: .margin16, fromColor: UIColor.themeTyler.withAlphaComponent(0), toColor: UIColor.themeTyler)
+    private let gradientWrapperView = BottomGradientHolder()
     let doneButton = PrimaryButton()
 
     private let heightInputCell = InputCell(singleLine: true)
@@ -30,9 +25,8 @@ class BirthdayInputViewController: KeyboardAwareViewController {
     private var walletType: WalletType = .new
     private var didTapDone = false
 
-    init(token: Token, delegate: IBirthdayInputDelegate) {
+    init(token: Token) {
         self.token = token
-        self.delegate = delegate
 
         super.init(scrollViews: [tableView], accessoryView: gradientWrapperView)
     }
@@ -70,42 +64,22 @@ class BirthdayInputViewController: KeyboardAwareViewController {
             self?.onInputCell(inFocus: startEditing)
         }
 
-        view.addSubview(gradientWrapperView)
-        gradientWrapperView.snp.makeConstraints { maker in
-            maker.height.equalTo(wrapperViewHeight).priority(.high)
-            maker.leading.trailing.bottom.equalToSuperview()
-        }
-
+        gradientWrapperView.add(to: self)
         gradientWrapperView.addSubview(doneButton)
-        doneButton.snp.makeConstraints { maker in
-            maker.top.equalToSuperview().inset(CGFloat.margin32)
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin24)
-            maker.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).inset(CGFloat.margin16)
-        }
 
         doneButton.set(style: .yellow)
         doneButton.setTitle("button.done".localized, for: .normal)
         doneButton.addTarget(self, action: #selector(onTapDoneButton), for: .touchUpInside)
 
-        additionalContentInsets = UIEdgeInsets(top: 0, left: 0, bottom: -.margin16, right: 0)
-        additionalInsetsOnlyForClosedKeyboard = false
-        ignoreSafeAreaForAccessoryView = false
-
         tableView.buildSections()
         isLoaded = true
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
-        setInitialState(bottomPadding: gradientWrapperView.height)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
 
         if !didTapDone {
-            delegate?.didCancelEnterBirthdayHeight()
+            onCancel?()
         }
     }
 
@@ -150,7 +124,7 @@ class BirthdayInputViewController: KeyboardAwareViewController {
     }
 
     @objc private func onTapCancel() {
-        delegate?.didCancelEnterBirthdayHeight()
+        onCancel?()
         dismiss(animated: true)
     }
 
@@ -158,10 +132,10 @@ class BirthdayInputViewController: KeyboardAwareViewController {
         didTapDone = true
 
         if walletType == .new {
-            delegate?.didEnter(birthdayHeight: nil)
+            onEnterBirthdayHeight?(nil)
         } else {
             let birthdayHeight = heightInputCell.inputText.flatMap { Int($0) } ?? 0
-            delegate?.didEnter(birthdayHeight: birthdayHeight)
+            onEnterBirthdayHeight?(birthdayHeight)
         }
 
         dismiss(animated: true)

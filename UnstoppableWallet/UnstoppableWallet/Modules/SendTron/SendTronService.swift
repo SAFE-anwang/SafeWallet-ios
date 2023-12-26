@@ -8,6 +8,8 @@ import HsExtensions
 
 class SendTronService {
     let sendToken: Token
+    let mode: SendBaseService.Mode
+
     private let disposeBag = DisposeBag()
     private let adapter: ISendTronAdapter
     private let addressService: AddressService
@@ -29,12 +31,25 @@ class SendTronService {
         }
     }
 
+    private let addressErrorRelay = PublishRelay<Error?>()
+    private var addressError: Error? = nil {
+        didSet {
+            addressErrorRelay.accept(addressError)
+        }
+    }
+
     private let activeAddressRelay = PublishRelay<Bool>()
 
-    init(token: Token, adapter: ISendTronAdapter, addressService: AddressService) {
+    init(token: Token, mode: SendBaseService.Mode, adapter: ISendTronAdapter, addressService: AddressService) {
         sendToken = token
+        self.mode = mode
         self.adapter = adapter
         self.addressService = addressService
+
+        switch mode {
+        case .predefined(let address): addressService.set(text: address)
+        case .send: ()
+        }
 
         subscribe(disposeBag, addressService.stateObservable) { [weak self] in self?.sync(addressState: $0) }
     }
@@ -67,7 +82,7 @@ class SendTronService {
             throw AmountError.invalidDecimal
         }
 
-        guard amount <= adapter.balanceData.balance else {
+        guard amount <= adapter.balanceData.available else {
             throw AmountError.insufficientBalance
         }
 
@@ -86,6 +101,10 @@ extension SendTronService {
         amountCautionRelay.asObservable()
     }
 
+    var addressErrorObservable: Observable<Error?> {
+        addressErrorRelay.asObservable()
+    }
+
     var activeAddressObservable: Observable<Bool> {
         activeAddressRelay.asObservable()
     }
@@ -95,7 +114,7 @@ extension SendTronService {
 extension SendTronService: IAvailableBalanceService {
 
     var availableBalance: DataStatus<Decimal> {
-        .completed(adapter.balanceData.balance)
+        .completed(adapter.balanceData.available)
     }
 
     var availableBalanceObservable: Observable<DataStatus<Decimal>> {
@@ -115,7 +134,7 @@ extension SendTronService: IAmountInputService {
     }
 
     var balance: Decimal? {
-        adapter.balanceData.balance
+        adapter.balanceData.available
     }
 
     var amountObservable: Observable<Decimal> {
@@ -127,7 +146,7 @@ extension SendTronService: IAmountInputService {
     }
 
     var balanceObservable: Observable<Decimal?> {
-        .just(adapter.balanceData.balance)
+        .just(adapter.balanceData.available)
     }
 
     func onChange(amount: Decimal) {
@@ -136,7 +155,7 @@ extension SendTronService: IAmountInputService {
                 tronAmount = try validTronAmount(amount: amount)
 
                 var amountWarning: AmountWarning? = nil
-                if amount.isEqual(to: adapter.balanceData.balance) {
+                if amount.isEqual(to: adapter.balanceData.available) {
                     switch sendToken.type {
                         case .native: amountWarning = AmountWarning.coinNeededForFee
                         default: ()
@@ -158,6 +177,12 @@ extension SendTronService: IAmountInputService {
 
     func sync(address: String) {
         guard let tronAddress = try? TronKit.Address(address: address) else {
+            return
+        }
+
+        guard tronAddress != adapter.tronKitWrapper.tronKit.receiveAddress else {
+            state = .notReady
+            addressError = AddressError.ownAddress
             return
         }
 
@@ -192,6 +217,10 @@ extension SendTronService {
     enum AmountError: Error {
         case invalidDecimal
         case insufficientBalance
+    }
+
+    enum AddressError: Error {
+        case ownAddress
     }
 
     enum AmountWarning {

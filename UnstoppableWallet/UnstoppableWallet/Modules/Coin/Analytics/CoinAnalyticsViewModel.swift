@@ -7,13 +7,20 @@ import MarketKit
 import Chart
 
 class CoinAnalyticsViewModel {
+    private let queue = DispatchQueue(label: "\(AppConfig.label).coin_analytics_view_model", qos: .userInitiated)
+
     private let service: CoinAnalyticsService
+    private let technicalIndicatorService: TechnicalIndicatorService
+    private let coinIndicatorViewItemFactory: CoinIndicatorViewItemFactory
     private var cancellables = Set<AnyCancellable>()
 
     private let viewItemRelay = BehaviorRelay<ViewItem?>(value: nil)
     private let loadingRelay = BehaviorRelay<Bool>(value: false)
     private let syncErrorRelay = BehaviorRelay<Bool>(value: false)
     private let emptyViewRelay = BehaviorRelay<Bool>(value: false)
+
+    private let indicatorViewItemsSubject = CurrentValueSubject<IndicatorViewItem, Never>(.empty)
+    private let subscriptionInfoSubject = PassthroughSubject<Void, Never>()
 
     private let ratioFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -33,30 +40,65 @@ class CoinAnalyticsViewModel {
         return formatter
     }()
 
-    init(service: CoinAnalyticsService) {
+    init(service: CoinAnalyticsService, technicalIndicatorService: TechnicalIndicatorService, coinIndicatorViewItemFactory: CoinIndicatorViewItemFactory) {
         self.service = service
+        self.technicalIndicatorService = technicalIndicatorService
+        self.coinIndicatorViewItemFactory = coinIndicatorViewItemFactory
 
         service.$state
-                .sink { [weak self] in self?.sync(state: $0) }
+                .receive(on: queue)
+                .sink { [weak self] _ in self?.sync() }
                 .store(in: &cancellables)
 
-        sync(state: service.state)
+        technicalIndicatorService.$state
+                .receive(on: queue)
+                .sink { [weak self] _ in self?.sync() }
+                .store(in: &cancellables)
+
+        sync()
     }
 
-    private func sync(state: CoinAnalyticsService.State) {
+    private func syncIndicators(enabled: Bool) {
+        var loading = false
+        var error: Bool = false
+        var switchEnabled = false
+        var viewItems = [CoinIndicatorViewItemFactory.ViewItem]()
+
+        if enabled {
+            switch technicalIndicatorService.state {
+            case .loading: loading = true
+            case .failed:
+                error = true
+                switchEnabled = true
+            case .completed(let items):
+                switchEnabled = true
+                viewItems = coinIndicatorViewItemFactory.viewItems(items: items)
+            }
+        }
+
+        let viewItem = IndicatorViewItem(loading: loading, error: error, switchEnabled: switchEnabled, viewItems: viewItems)
+        indicatorViewItemsSubject.send(viewItem)
+    }
+
+    private func sync() {
+        let state = service.state
         switch state {
         case .loading:
             viewItemRelay.accept(nil)
             loadingRelay.accept(true)
             syncErrorRelay.accept(false)
             emptyViewRelay.accept(false)
+
+            syncIndicators(enabled: false)
         case .failed:
             viewItemRelay.accept(nil)
             loadingRelay.accept(false)
             syncErrorRelay.accept(true)
             emptyViewRelay.accept(false)
-        case .preview(let analyticsPreview, let subscriptionAddress):
-            let viewItem = previewViewItem(analyticsPreview: analyticsPreview, subscriptionAddress: subscriptionAddress)
+
+            syncIndicators(enabled: false)
+        case .preview(let analyticsPreview):
+            let viewItem = previewViewItem(analyticsPreview: analyticsPreview)
 
             if viewItem.isEmpty {
                 viewItemRelay.accept(nil)
@@ -68,6 +110,9 @@ class CoinAnalyticsViewModel {
 
             loadingRelay.accept(false)
             syncErrorRelay.accept(false)
+
+            syncIndicators(enabled: false)
+            subscriptionInfoSubject.send()
         case .success(let analytics):
             let viewItem = viewItem(analytics: analytics)
 
@@ -81,6 +126,8 @@ class CoinAnalyticsViewModel {
 
             loadingRelay.accept(false)
             syncErrorRelay.accept(false)
+
+            syncIndicators(enabled: true)
         }
     }
 
@@ -94,10 +141,10 @@ class CoinAnalyticsViewModel {
         }
 
         let chartItems = points.map {
-            ChartItem(timestamp: $0.timestamp).added(name: .rate, value: $0.value)
+            ChartItem(timestamp: $0.timestamp).added(name: ChartData.rate, value: $0.value)
         }
 
-        let chartData = ChartData(items: chartItems, startTimestamp: first.timestamp, endTimestamp: last.timestamp)
+        let chartData = ChartData(items: chartItems, startWindow: first.timestamp, endWindow: last.timestamp)
 
         var valueString: String?
 
@@ -116,18 +163,19 @@ class CoinAnalyticsViewModel {
         )
     }
 
-    private func rankCardViewItem(points: [ChartPoint]?, value: Decimal?, postfix: ChartPreviewValuePostfix, rank: Int?) -> RankCardViewItem? {
+    private func rankCardViewItem(points: [ChartPoint]?, value: Decimal?, postfix: ChartPreviewValuePostfix, rank: Int?, rating: String?) -> RankCardViewItem? {
         guard let points, let chartViewItem = chartViewItem(points: points, value: value, postfix: postfix) else {
             return nil
         }
 
         return RankCardViewItem(
                 chart: .regular(value: chartViewItem),
-                rank: rank.map { .regular(value: rankString(value: $0)) }
+                rank: rank.map { .regular(value: rankString(value: $0)) },
+                rating: rating.flatMap { CoinAnalyticsModule.Rating(rawValue: $0) }.map { .regular(value: $0) }
         )
     }
 
-    private func activeAddressesViewItem(points: [ChartPoint]?, value: Decimal?, count30d: Int?, rank: Int?) -> ActiveAddressesViewItem? {
+    private func activeAddressesViewItem(points: [ChartPoint]?, value: Decimal?, count30d: Int?, rank: Int?, rating: String?) -> ActiveAddressesViewItem? {
         guard let points, let chartViewItem = chartViewItem(points: points, value: value, postfix: .noPostfix) else {
             return nil
         }
@@ -135,11 +183,12 @@ class CoinAnalyticsViewModel {
         return ActiveAddressesViewItem(
                 chart: .regular(value: chartViewItem),
                 count30d: count30d.flatMap { ValueFormatter.instance.formatShort(value: Decimal($0)) }.map { .regular(value: $0) },
-                rank: rank.map { .regular(value: rankString(value: $0)) }
+                rank: rank.map { .regular(value: rankString(value: $0)) },
+                rating: rating.flatMap { CoinAnalyticsModule.Rating(rawValue: $0) }.map { .regular(value: $0) }
         )
     }
 
-    private func transactionCountViewItem(points: [ChartPoint]?, value: Decimal?, volume: Decimal?, rank: Int?) -> TransactionCountViewItem? {
+    private func transactionCountViewItem(points: [ChartPoint]?, value: Decimal?, volume: Decimal?, rank: Int?, rating: String?) -> TransactionCountViewItem? {
         guard let points, let chartViewItem = chartViewItem(points: points, value: value, postfix: .noPostfix) else {
             return nil
         }
@@ -147,7 +196,8 @@ class CoinAnalyticsViewModel {
         return TransactionCountViewItem(
                 chart: .regular(value: chartViewItem),
                 volume: volume.flatMap { ValueFormatter.instance.formatShort(value: $0) }.map { .regular(value: [$0, coin.code].joined(separator: " ")) },
-                rank: rank.map { .regular(value: rankString(value: $0)) }
+                rank: rank.map { .regular(value: rankString(value: $0)) },
+                rating: rating.flatMap { CoinAnalyticsModule.Rating(rawValue: $0) }.map { .regular(value: $0) }
         )
     }
 
@@ -195,7 +245,7 @@ class CoinAnalyticsViewModel {
         return .regular(value: viewItem)
     }
 
-    private func tvlViewItem(points: [ChartPoint]?, rank: Int?, ratio: Decimal?) -> TvlViewItem? {
+    private func tvlViewItem(points: [ChartPoint]?, rank: Int?, ratio: Decimal?, rating: String?) -> TvlViewItem? {
         guard let points, let chartViewItem = chartViewItem(points: points, value: points.last?.value, postfix: .currency) else {
             return nil
         }
@@ -203,64 +253,78 @@ class CoinAnalyticsViewModel {
         return TvlViewItem(
                 chart: .regular(value: chartViewItem),
                 rank: rank.map { .regular(value: rankString(value: $0)) },
-                ratio: ratio.flatMap { ratioFormatter.string(from: $0 as NSNumber) }.map { .regular(value: $0) }
+                ratio: ratio.flatMap { ratioFormatter.string(from: $0 as NSNumber) }.map { .regular(value: $0) },
+                rating: rating.flatMap { CoinAnalyticsModule.Rating(rawValue: $0) }.map { .regular(value: $0) }
         )
     }
 
-    private func revenueViewItem(value: Decimal?, rank: Int?) -> RevenueViewItem? {
+    private func valueRankViewItem(value: Decimal?, rank: Int?, description: String?) -> ValueRankViewItem? {
         guard let value, let formattedValue = ValueFormatter.instance.formatShort(currency: service.currency, value: value) else {
             return nil
         }
 
-        return RevenueViewItem(
+        return ValueRankViewItem(
                 value: .regular(value: formattedValue),
-                rank: rank.map { .regular(value: rankString(value: $0)) }
+                rank: rank.map { .regular(value: rankString(value: $0)) },
+                description: description
         )
     }
 
     private func viewItem(analytics: Analytics) -> ViewItem {
         ViewItem(
-                lockInfo: nil,
                 cexVolume: rankCardViewItem(
                         points: analytics.cexVolume?.aggregatedChartPoints.points,
                         value: analytics.cexVolume?.aggregatedChartPoints.aggregatedValue,
                         postfix: .currency,
-                        rank: analytics.cexVolume?.rank30d
+                        rank: analytics.cexVolume?.rank30d,
+                        rating: analytics.cexVolume?.rating
                 ),
                 dexVolume: rankCardViewItem(
                         points: analytics.dexVolume?.aggregatedChartPoints.points,
                         value: analytics.dexVolume?.aggregatedChartPoints.aggregatedValue,
                         postfix: .currency,
-                        rank: analytics.dexVolume?.rank30d
+                        rank: analytics.dexVolume?.rank30d,
+                        rating: analytics.dexVolume?.rating
                 ),
                 dexLiquidity: rankCardViewItem(
                         points: analytics.dexLiquidity?.chartPoints,
                         value: analytics.dexLiquidity?.chartPoints.last?.value,
                         postfix: .currency,
-                        rank: analytics.dexLiquidity?.rank
+                        rank: analytics.dexLiquidity?.rank,
+                        rating: analytics.dexLiquidity?.rating
                 ),
                 activeAddresses: activeAddressesViewItem(
                         points: analytics.addresses?.chartPoints,
                         value: analytics.addresses?.chartPoints.last?.value,
                         count30d: analytics.addresses?.count30d,
-                        rank: analytics.addresses?.rank30d
+                        rank: analytics.addresses?.rank30d,
+                        rating: analytics.addresses?.rating
                 ),
                 transactionCount: transactionCountViewItem(
                         points: analytics.transactions?.aggregatedChartPoints.points,
                         value: analytics.transactions?.aggregatedChartPoints.aggregatedValue,
                         volume: analytics.transactions?.volume30d,
-                        rank: analytics.transactions?.rank30d
+                        rank: analytics.transactions?.rank30d,
+                        rating: analytics.transactions?.rating
                 ),
                 holders: holdersViewItem(holderBlockchains: analytics.holders),
                 holdersRank: analytics.holdersRank.map { .regular(value: rankString(value: $0)) },
+                holdersRating: analytics.holdersRating.flatMap { CoinAnalyticsModule.Rating(rawValue: $0) }.map { .regular(value: $0) },
                 tvl: tvlViewItem(
                         points: analytics.tvl?.chartPoints,
                         rank: analytics.tvl?.rank,
-                        ratio: analytics.tvl?.ratio
+                        ratio: analytics.tvl?.ratio,
+                        rating: analytics.tvl?.rating
                 ),
-                revenue: revenueViewItem(
+                fee: valueRankViewItem(
+                        value: analytics.fee?.value30d,
+                        rank: analytics.fee?.rank30d,
+                        description: analytics.fee?.description
+                ),
+                revenue: valueRankViewItem(
                         value: analytics.revenue?.value30d,
-                        rank: analytics.revenue?.rank30d
+                        rank: analytics.revenue?.rank30d,
+                        description: analytics.revenue?.description
                 ),
                 reports: analytics.reports
                         .map { .regular(value: "\($0)") },
@@ -275,23 +339,53 @@ class CoinAnalyticsViewModel {
         )
     }
 
-    private func previewViewItem(analyticsPreview data: AnalyticsPreview, subscriptionAddress: String?) -> ViewItem {
+    private func previewViewItem(analyticsPreview data: AnalyticsPreview) -> ViewItem {
         ViewItem(
-                lockInfo: subscriptionAddress.map { .notActivated(address: $0) } ?? .notSubscribed,
-                cexVolume: data.cexVolume ? RankCardViewItem(chart: .preview, rank: data.cexVolumeRank30d ? .preview : nil) : nil,
-                dexVolume: data.dexVolume ? RankCardViewItem(chart: .preview, rank: data.dexVolumeRank30d ? .preview : nil) : nil,
-                dexLiquidity: data.dexLiquidity ? RankCardViewItem(chart: .preview, rank: data.dexLiquidityRank ? .preview : nil) : nil,
-                activeAddresses: data.addresses ? ActiveAddressesViewItem(chart: .preview, count30d: data.addressesCount30d ? .preview : nil, rank: data.addressesRank30d ? .preview : nil) : nil,
-                transactionCount: data.transactions ? TransactionCountViewItem(chart: .preview, volume: data.transactionsVolume30d ? .preview : nil, rank: data.transactionsRank30d ? .preview : nil) : nil,
+                cexVolume: data.cexVolume ? RankCardViewItem(chart: .preview, rank: data.cexVolumeRank30d ? .preview : nil, rating: data.cexVolumeRating ? .preview : nil) : nil,
+                dexVolume: data.dexVolume ? RankCardViewItem(chart: .preview, rank: data.dexVolumeRank30d ? .preview : nil, rating: data.dexVolumeRating ? .preview : nil) : nil,
+                dexLiquidity: data.dexLiquidity ? RankCardViewItem(chart: .preview, rank: data.dexLiquidityRank ? .preview : nil, rating: data.dexLiquidityRating ? .preview : nil) : nil,
+                activeAddresses: data.addresses ? ActiveAddressesViewItem(chart: .preview, count30d: data.addressesCount30d ? .preview : nil, rank: data.addressesRank30d ? .preview : nil, rating: data.addressesRating ? .preview : nil) : nil,
+                transactionCount: data.transactions ? TransactionCountViewItem(chart: .preview, volume: data.transactionsVolume30d ? .preview : nil, rank: data.transactionsRank30d ? .preview : nil, rating: data.transactionsRating ? .preview : nil) : nil,
                 holders: data.holders ? .preview : nil,
                 holdersRank: data.holdersRank ? .preview : nil,
-                tvl: data.tvl ? TvlViewItem(chart: .preview, rank: data.tvlRank ? .preview : nil, ratio: data.tvlRatio ? .preview : nil) : nil,
-                revenue: data.revenue ? RevenueViewItem(value: .preview, rank: data.revenueRank30d ? .preview : nil) : nil,
+                holdersRating: data.holdersRating ? .preview : nil,
+                tvl: data.tvl ? TvlViewItem(chart: .preview, rank: data.tvlRank ? .preview : nil, ratio: data.tvlRatio ? .preview : nil, rating: data.tvlRating ? .preview : nil) : nil,
+                fee: data.fee ? ValueRankViewItem(value: .preview, rank: data.feeRank30d ? .preview : nil, description: nil) : nil,
+                revenue: data.revenue ? ValueRankViewItem(value: .preview, rank: data.revenueRank30d ? .preview : nil, description: nil) : nil,
                 reports: data.reports ? .preview : nil,
                 investors: data.fundsInvested ? .preview : nil,
                 treasuries: data.treasuries ? .preview : nil,
                 auditAddresses: service.auditAddresses != nil ? .preview : nil
         )
+    }
+
+}
+
+extension CoinAnalyticsViewModel {
+
+    var period: String {
+        technicalIndicatorService.period.title
+    }
+
+    var periodViewItems: [SelectorModule.ViewItem] {
+        technicalIndicatorService.allPeriods.map {
+            .init(title: $0.title, selected: $0 == technicalIndicatorService.period)
+        }
+    }
+
+    var detailAdviceSectionViewItems: [CoinIndicatorViewItemFactory.SectionDetailViewItem]? {
+        guard let items = technicalIndicatorService.state.data else {
+            return nil
+        }
+        return coinIndicatorViewItemFactory.detailViewItems(items: items)
+    }
+
+    func onSelectPeriod(index: Int) {
+        guard let period = technicalIndicatorService.allPeriods.at(index: index) else {
+            return
+        }
+
+        technicalIndicatorService.period = period
     }
 
 }
@@ -314,12 +408,16 @@ extension CoinAnalyticsViewModel {
         emptyViewRelay.asDriver()
     }
 
-    var coin: Coin {
-        service.coin
+    var indicatorViewItemsPublisher: AnyPublisher<IndicatorViewItem, Never> {
+        indicatorViewItemsSubject.eraseToAnyPublisher()
     }
 
-    var analyticsLink: String {
-        service.analyticsLink
+    var subscriptionInfoPublisher: AnyPublisher<Void, Never> {
+        subscriptionInfoSubject.eraseToAnyPublisher()
+    }
+
+    var coin: Coin {
+        service.coin
     }
 
     func onLoad() {
@@ -335,7 +433,6 @@ extension CoinAnalyticsViewModel {
 extension CoinAnalyticsViewModel {
 
     struct ViewItem {
-        let lockInfo: LockInfo?
         let cexVolume: RankCardViewItem?
         let dexVolume: RankCardViewItem?
         let dexLiquidity: RankCardViewItem?
@@ -343,8 +440,10 @@ extension CoinAnalyticsViewModel {
         let transactionCount: TransactionCountViewItem?
         let holders: Previewable<HoldersViewItem>?
         let holdersRank: Previewable<String>?
+        let holdersRating: Previewable<CoinAnalyticsModule.Rating>?
         let tvl: TvlViewItem?
-        let revenue: RevenueViewItem?
+        let fee: ValueRankViewItem?
+        let revenue: ValueRankViewItem?
         let reports: Previewable<String>?
         let investors: Previewable<String>?
         let treasuries: Previewable<String>?
@@ -356,9 +455,13 @@ extension CoinAnalyticsViewModel {
         }
     }
 
-    enum LockInfo {
-        case notSubscribed
-        case notActivated(address: String)
+    struct IndicatorViewItem {
+        static let empty = IndicatorViewItem(loading: false, error: false, switchEnabled: false, viewItems: [])
+
+        let loading: Bool
+        let error: Bool
+        let switchEnabled: Bool
+        let viewItems: [CoinIndicatorViewItemFactory.ViewItem]
     }
 
     struct ChartViewItem {
@@ -370,18 +473,21 @@ extension CoinAnalyticsViewModel {
     struct RankCardViewItem {
         let chart: Previewable<ChartViewItem>
         let rank: Previewable<String>?
+        let rating: Previewable<CoinAnalyticsModule.Rating>?
     }
 
     struct ActiveAddressesViewItem {
         let chart: Previewable<ChartViewItem>
         let count30d: Previewable<String>?
         let rank: Previewable<String>?
+        let rating: Previewable<CoinAnalyticsModule.Rating>?
     }
 
     struct TransactionCountViewItem {
         let chart: Previewable<ChartViewItem>
         let volume: Previewable<String>?
         let rank: Previewable<String>?
+        let rating: Previewable<CoinAnalyticsModule.Rating>?
     }
 
     struct HoldersViewItem {
@@ -401,11 +507,13 @@ extension CoinAnalyticsViewModel {
         let chart: Previewable<ChartViewItem>
         let rank: Previewable<String>?
         let ratio: Previewable<String>?
+        let rating: Previewable<CoinAnalyticsModule.Rating>?
     }
 
-    struct RevenueViewItem {
+    struct ValueRankViewItem {
         let value: Previewable<String>
         let rank: Previewable<String>?
+        let description: String?
     }
 
     enum ChartPreviewValuePostfix {
@@ -438,6 +546,20 @@ enum Previewable<T> {
         switch self {
         case .preview: return nil
         case .regular(let value): return mapper(value)
+        }
+    }
+
+}
+
+extension HsPointTimePeriod {
+
+    var title: String {
+        switch self {
+        case .minute30, .hour8: return "" // not used
+        case .hour1: return "coin_analytics.period.1h".localized
+        case .hour4: return "coin_analytics.period.4h".localized
+        case .day1: return "coin_analytics.period.1d".localized
+        case .week1: return "coin_analytics.period.1w".localized
         }
     }
 

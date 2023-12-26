@@ -1,10 +1,14 @@
-import RxSwift
-import RxRelay
-import StorageKit
 import MarketKit
+import RxRelay
+import RxSwift
+import StorageKit
 
 class BalanceConversionManager {
-    private let blockchainTypes: [BlockchainType] = [.bitcoin, .ethereum, .binanceSmartChain]
+    private let tokenQueries = [
+        TokenQuery(blockchainType: .bitcoin, tokenType: .derived(derivation: .bip84)),
+        TokenQuery(blockchainType: .ethereum, tokenType: .native),
+        TokenQuery(blockchainType: .binanceSmartChain, tokenType: .native),
+    ]
     private let keyBlockchainUid = "conversion-blockchain-uid"
 
     private let marketKit: MarketKit.Kit
@@ -25,10 +29,9 @@ class BalanceConversionManager {
         self.marketKit = marketKit
 
         do {
-            let queries = blockchainTypes.map { TokenQuery(blockchainType: $0, tokenType: .native) }
-            let tokens = try marketKit.tokens(queries: queries)
-            conversionTokens = blockchainTypes.compactMap { blockchainType in
-                tokens.first { $0.blockchainType == blockchainType }
+            let tokens = try marketKit.tokens(queries: tokenQueries)
+            conversionTokens = tokenQueries.compactMap { tokenQuery in
+                tokens.first { $0.tokenQuery == tokenQuery }
             }
         } catch {
             conversionTokens = []
@@ -43,11 +46,9 @@ class BalanceConversionManager {
             conversionToken = conversionTokens.first
         }
     }
-
 }
 
 extension BalanceConversionManager {
-
     var conversionTokenObservable: Observable<Token?> {
         conversionTokenRelay.asObservable()
     }
@@ -62,12 +63,14 @@ extension BalanceConversionManager {
         self.conversionToken = conversionTokens[newIndex]
     }
 
-    func setConversionToken(index: Int) {
-        guard index < conversionTokens.count else {
-            return
-        }
-
-        conversionToken = conversionTokens[index]
+    func set(conversionToken: Token?) {
+        self.conversionToken = conversionToken
     }
 
+    func set(tokenQueryId: String?) {
+        conversionToken = tokenQueryId
+            .flatMap { TokenQuery(id: $0) }
+            .flatMap { try? marketKit.token(query: $0) } ??
+            conversionTokens.first
+    }
 }

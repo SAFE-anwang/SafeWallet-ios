@@ -12,10 +12,8 @@ class PancakeLiquidityViewModel {
     public let tradeService: PancakeLiquidityTradeService
     public let switchService: AmountTypeSwitchService
     private let currencyKit: CurrencyKit.Kit
-    private let allowanceServiceA: LiquidityAllowanceService
-    private let pendingAllowanceServiceA: LiquidityPendingAllowanceService
-    private let allowanceServiceB: LiquidityAllowanceService
-    private let pendingAllowanceServiceB: LiquidityPendingAllowanceService
+    private let allowanceService: LiquidityAllowanceService
+    private let pendingAllowanceService: LiquidityPendingAllowanceService
 
     private let viewItemHelper: LiquidityViewItemHelper
 
@@ -41,22 +39,19 @@ class PancakeLiquidityViewModel {
 
     private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.liquidity_view_model")
 
-    init(service: PancakeLiquidityService, tradeService: PancakeLiquidityTradeService, switchService: AmountTypeSwitchService, allowanceServiceA: LiquidityAllowanceService, pendingAllowanceServiceA: LiquidityPendingAllowanceService, allowanceServiceB: LiquidityAllowanceService, pendingAllowanceServiceB: LiquidityPendingAllowanceService,currencyKit: CurrencyKit.Kit, viewItemHelper: LiquidityViewItemHelper) {
+    init(service: PancakeLiquidityService, tradeService: PancakeLiquidityTradeService, switchService: AmountTypeSwitchService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService,currencyKit: CurrencyKit.Kit, viewItemHelper: LiquidityViewItemHelper) {
         self.service = service
         self.tradeService = tradeService
         self.switchService = switchService
-        self.allowanceServiceA = allowanceServiceA
-        self.pendingAllowanceServiceA = pendingAllowanceServiceA
+        self.allowanceService = allowanceService
+        self.pendingAllowanceService = pendingAllowanceService
         
-        self.allowanceServiceB = allowanceServiceB
-        self.pendingAllowanceServiceB = pendingAllowanceServiceB
         self.currencyKit = currencyKit
         self.viewItemHelper = viewItemHelper
 
         subscribeToService()
 
-        sync(state: service, pendingAllowanceService: pendingAllowanceServiceA)
-        sync(state: service, pendingAllowanceService: pendingAllowanceServiceB)
+        sync(state: service, pendingAllowanceService: pendingAllowanceService)
         
         sync(errors: service.errors)
         sync(tradeState: tradeService.state)
@@ -70,8 +65,7 @@ class PancakeLiquidityViewModel {
         subscribe(disposeBag, service.balanceInObservable) { [weak self] in self?.sync(fromBalance: $0) }
         subscribe(scheduler, disposeBag, tradeService.stateObservable) { [weak self] in self?.sync(tradeState: $0) }
         subscribe(scheduler, disposeBag, tradeService.settingsObservable) { [weak self] in self?.sync(swapSettings: $0) }
-        subscribe(scheduler, disposeBag, pendingAllowanceServiceA.stateObservable) { [weak self] _ in self?.handleObservable() }
-        subscribe(scheduler, disposeBag, pendingAllowanceServiceB.stateObservable) { [weak self] _ in self?.handleObservable() }
+        subscribe(scheduler, disposeBag, pendingAllowanceService.stateObservable) { [weak self] _ in self?.handleObservable() }
         subscribe(disposeBag, switchService.amountTypeObservable) { [weak self] in self?.sync(amountType: $0) }
         subscribe(disposeBag, switchService.toggleAvailableObservable) { [weak self] in self?.sync(toggleAvailable: $0) }
 
@@ -91,12 +85,8 @@ class PancakeLiquidityViewModel {
         if let errors = errors {
             sync(errors: errors)
         }
-
-        syncProceedAction(service: service, pendingAllowanceService: pendingAllowanceServiceA)
-        syncApproveAction(service: service, pendingAllowanceService: pendingAllowanceServiceA)
-        
-        syncProceedAction(service: service, pendingAllowanceService: pendingAllowanceServiceB)
-        syncApproveAction(service: service, pendingAllowanceService: pendingAllowanceServiceB)
+        syncProceedAction(service: service, pendingAllowanceService: pendingAllowanceService)
+        syncApproveAction(service: service, pendingAllowanceService: pendingAllowanceService) 
     }
 
     private func handle(countdownValue: Float) {
@@ -166,6 +156,7 @@ class PancakeLiquidityViewModel {
             switch error {
             case .noBalanceIn: actionState = .disabled(title: "swap.not_available_button".localized)
             case .insufficientBalanceIn: actionState = .disabled(title: "swap.button_error.insufficient_balance".localized)
+            case .insufficientBalanceIn2: actionState = .disabled(title: "swap.button_error.insufficient_balance".localized)
             case .needRevokeAllowance:
                 switch tradeService.state {
                 case .notReady: ()
@@ -204,10 +195,15 @@ class PancakeLiquidityViewModel {
             approveStep = .notApproved
         } else if service.errors.contains(where: { .insufficientBalanceIn == $0 as? SwapModule.SwapError }) {
             approveStep = .notApproved
-        } else if revokeWarning != nil {
+        } else if service.errors.contains(where: { .insufficientBalanceIn2 == $0 as? SwapModule.SwapError }) {
+            approveStep = .notApproved
+        }else if revokeWarning != nil {
             revokeAction = .enabled(title: "button.revoke".localized)
             approveStep = .revokeRequired
         } else if service.errors.contains(where: { .insufficientAllowance == $0 as? SwapModule.SwapError }) {
+            approveAction = .enabled(title: "button.approve".localized)
+            approveStep = .approveRequired
+        } else if service.errors.contains(where: { .insufficientAllowanceB == $0 as? SwapModule.SwapError }) {
             approveAction = .enabled(title: "button.approve".localized)
             approveStep = .approveRequired
         } else if case .approved = pendingAllowanceService.state {
@@ -334,11 +330,11 @@ extension PancakeLiquidityViewModel {
     }
     
     func onTapRevoke() {
-
         guard let approveData = service.approveData(amount: 0) else {
             return
         }
         openRevokeRelay.accept(approveData)
+        
     }    
 
     func onTapApprove() {
@@ -349,8 +345,7 @@ extension PancakeLiquidityViewModel {
     }
 
     func didApprove() {
-        pendingAllowanceServiceA.syncAllowance()
-        pendingAllowanceServiceB.syncAllowance()
+        pendingAllowanceService.syncAllowance()
     }
 
     func onTapProceed() {

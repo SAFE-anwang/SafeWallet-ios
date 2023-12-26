@@ -78,6 +78,10 @@ extension MetricChartViewModel: IChartViewModel {
         intervalIndexRelay.asDriver()
     }
 
+    var indicatorsShownDriver: Driver<Bool> {
+        .just(true)
+    }
+
     var loadingDriver: Driver<Bool> {
         loadingRelay.asDriver()
     }
@@ -116,7 +120,7 @@ extension MetricChartViewModel: IChartViewTouchDelegate {
     public func touchDown() {
     }
 
-    public func select(item: ChartItem) {
+    public func select(item: ChartItem, indicators: [ChartIndicator]) {
         HapticGenerator.instance.notification(.feedback(.soft))
 
         pointSelectedItemRelay.accept(
