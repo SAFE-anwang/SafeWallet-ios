@@ -104,6 +104,7 @@ extension BlockchainType {
     var allowedLiquidityProviders: [SwapModule.Dex.Provider] {
         switch self {
         case .binanceSmartChain: return [.pancake]
+        case .ethereum: return [.uniswap]
         default: return []
         }
     }

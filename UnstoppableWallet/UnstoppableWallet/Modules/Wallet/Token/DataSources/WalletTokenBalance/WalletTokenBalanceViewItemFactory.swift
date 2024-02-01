@@ -27,7 +27,9 @@ class WalletTokenBalanceViewItemFactory {
 
                 if wallet.token.swappable {
                     buttons[.swap] = sendButtonState
-                    buttons[.liquidity] = .enabled
+                    if [.binanceSmartChain, .ethereum].contains(wallet.token.blockchainType) {
+                        buttons[.liquidity] = .enabled
+                    }
                 }
             }
         case let .cexAsset(cexAsset):

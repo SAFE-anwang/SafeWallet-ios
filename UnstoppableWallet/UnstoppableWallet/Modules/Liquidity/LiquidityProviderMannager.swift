@@ -4,7 +4,6 @@ import SectionsTableView
 import RxSwift
 import RxCocoa
 import UniswapKit
-//import OneInchKit
 
 class LiquidityProviderMannager {
     private let localStorage: LocalStorage
@@ -55,9 +54,8 @@ class LiquidityProviderMannager {
         let state = dataSourceProvider?.swapState ?? LiquidityMainModule.DataSourceState(tokenFrom: tokenFrom)
 
         switch dex.provider {
-        case .pancake:
+        case .uniswap, .pancake:
             return PancakeLiquidityModule(dex: dex, dataSourceState: state)
-//            return UniswapModule(dex: dex, dataSourceState: state)
 //        case .uniswapV3:
 //            return UniswapV3Module(dex: dex, dataSourceState: state, dexType: .uniswap)
 //        case .pancakeV3:
