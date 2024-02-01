@@ -194,7 +194,7 @@ extension CoinChartService {
         tasks = Set()
         state = .loading
 
-        if startTime == nil {
+        if startTime == nil, coinUid != safeCoinUid {
             fetchStartTime()
         }
 
