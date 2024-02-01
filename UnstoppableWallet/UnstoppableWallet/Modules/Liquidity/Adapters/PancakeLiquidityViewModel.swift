@@ -37,7 +37,7 @@ class PancakeLiquidityViewModel {
     private var openRevokeRelay = PublishRelay<LiquidityAllowanceService.ApproveData>()
     private var openApproveRelay = PublishRelay<LiquidityAllowanceService.ApproveData>()
 
-    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.liquidity_view_model")
+    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "anwang.safewallet.liquidity_view_model")
 
     init(service: PancakeLiquidityService, tradeService: PancakeLiquidityTradeService, switchService: AmountTypeSwitchService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService,currencyKit: CurrencyKit.Kit, viewItemHelper: LiquidityViewItemHelper) {
         self.service = service

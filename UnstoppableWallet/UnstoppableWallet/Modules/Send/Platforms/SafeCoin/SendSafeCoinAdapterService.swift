@@ -7,7 +7,7 @@ import Hodler
 
 class SendSafeCoinAdapterService {
     private let disposeBag = DisposeBag()
-    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.send.safe_adapter_service", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "anwang.safewallet.send.safe_adapter_service", qos: .userInitiated)
 
     private let feeRateService: FeeRateService
     private let amountInputService: IAmountInputService

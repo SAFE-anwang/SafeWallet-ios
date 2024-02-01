@@ -553,7 +553,7 @@ Go to Settings - > %@ and allow access to the camera.";
 
 "swap.confirmation.swap_button" = "Swap";
 "swap.confirmation.swap_button_liquidity" = "Add liquidity";
-"swap.confirmation.impact_too_high" = "Unstoppable has disabled swap action for this trade because you're getting an extremely unfavorable price. This is due to extremely low liquidity.\nIf you still want to swap please use %@ website instead.";
+"swap.confirmation.impact_too_high" = "SafeWallet has disabled swap action for this trade because you're getting an extremely unfavorable price. This is due to extremely low liquidity.\nIf you still want to swap please use %@ website instead.";
 "swap.confirmation.slide_to_swap" = "Slide to Swap";
 "swap.confirmation.swapping" = "Swapping";
 "swap.confirmation.impact_too_high" = "%@ has disabled swap action for this trade because you're getting an extremely unfavorable price. This is due to extremely low liquidity.\nIf you still want to swap please use %@ website instead.";
@@ -1099,7 +1099,7 @@ Go to Settings - > %@ and allow access to the camera.";
 
 // Settings -> Tell Friends
 
-"settings_tell_friends.text" = "Be Unstoppable";
+"settings_tell_friends.text" = "Be SafeWallet";
 
 // Settings -> Blockchain Settings
 

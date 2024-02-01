@@ -51,7 +51,7 @@ class PancakeLiquidityService {
         }
     }
 
-    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.liquidity_service")
+    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "anwang.safewallet.liquidity_service")
 
     init(dex: LiquidityMainModule.Dex, tradeService: PancakeLiquidityTradeService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService, adapterManager: AdapterManager) {
         self.dex = dex

@@ -8,7 +8,7 @@ import EvmKit
 
 class SendSafe2wsafeAdapterService {
     private let disposeBag = DisposeBag()
-    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.send.wsafe_adapter_service", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "anwang.safewallet.send.wsafe_adapter_service", qos: .userInitiated)
 
     private let feeRateService: FeeRateService
     private let amountInputService: IAmountInputService
