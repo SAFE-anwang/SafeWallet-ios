@@ -57,6 +57,14 @@
 	<string>${infura_project_id}</string>
 	<key>InfuraProjectSecret</key>
 	<string>${infura_project_secret}</string>
+    <key>InfuraProjectId_2</key>
+    <string>${infura_project_id_2}</string>
+    <key>InfuraProjectSecret_2</key>
+    <string>${infura_project_secret_2}</string>
+    <key>InfuraProjectId_3</key>
+    <string>${infura_project_id_3}</string>
+    <key>InfuraProjectSecret_3</key>
+    <string>${infura_project_secret_3}</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tg</string>
@@ -147,5 +155,9 @@
 	<string>${wallet_connect_v2_project_key}</string>
 	<key>oneInchApiKey</key>
 	<string>${one_inch_api_key}</string>
+    <key>oneInchApiKey_2</key>
+    <string>${one_inch_api_key_2}</string>
+    <key>oneInchApiKey_3</key>
+    <string>${one_inch_api_key_3}</string>
 </dict>
 </plist>

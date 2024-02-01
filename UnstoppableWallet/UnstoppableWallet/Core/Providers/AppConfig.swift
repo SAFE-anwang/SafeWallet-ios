@@ -3,6 +3,7 @@ import UIKit
 import MarketKit
 
 struct AppConfig {
+    
     static let label = "SafeWallet"
     static let backupSalt = "SafeWallet"
 
@@ -62,11 +63,22 @@ struct AppConfig {
     static var officeMode: Bool {
         Bundle.main.object(forInfoDictionaryKey: "OfficeMode") as? String == "true"
     }
-
+    
+    private static let randomNumber = Int.random(in: 0...2)
+    
     static var infuraCredentials: (id: String, secret: String?) {
         let id = (Bundle.main.object(forInfoDictionaryKey: "InfuraProjectId") as? String) ?? ""
         let secret = Bundle.main.object(forInfoDictionaryKey: "InfuraProjectSecret") as? String
-        return (id: id, secret: secret)
+        
+        let id_2 = (Bundle.main.object(forInfoDictionaryKey: "InfuraProjectId_2") as? String) ?? ""
+        let secret_2 = Bundle.main.object(forInfoDictionaryKey: "InfuraProjectSecret_2") as? String
+        
+        let id_3 = (Bundle.main.object(forInfoDictionaryKey: "InfuraProjectId_3") as? String) ?? ""
+        let secret_3 = Bundle.main.object(forInfoDictionaryKey: "InfuraProjectSecret_3") as? String
+        
+        let ids = [id, id_2, id_3]
+        let secrets = [secret, secret_2, secret_3]
+        return (id: ids[randomNumber], secret: secrets[randomNumber])
     }
 
     static var etherscanKey: String {
@@ -128,11 +140,19 @@ struct AppConfig {
     static var unstoppableDomainsApiKey: String? {
         (Bundle.main.object(forInfoDictionaryKey: "UnstoppableDomainsApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
-
+    
+    private static let randomIndex = Int.random(in: 0...2)
     static var oneInchApiKey: String? {
-        (Bundle.main.object(forInfoDictionaryKey: "oneInchApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        
+        let apiKey = (Bundle.main.object(forInfoDictionaryKey: "oneInchApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        
+        let apiKey_2 = (Bundle.main.object(forInfoDictionaryKey: "oneInchApiKey_2") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        
+        let apiKey_3 = (Bundle.main.object(forInfoDictionaryKey: "oneInchApiKey_3") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        
+        return [apiKey, apiKey_2, apiKey_3][randomIndex]
     }
-
+    
     static var defaultWords: String {
         Bundle.main.object(forInfoDictionaryKey: "DefaultWords") as? String ?? ""
     }
