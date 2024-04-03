@@ -1,11 +1,9 @@
-import Foundation
-import UIKit
-import RxCocoa
-import CurrencyKit
 import Chart
+import Foundation
+import RxCocoa
+import UIKit
 
-struct ChartModule {
-
+enum ChartModule {
     struct ViewItem {
         let value: String?
         let valueDescription: String?
@@ -16,8 +14,7 @@ struct ChartModule {
         let chartTrend: MovementTrend
         let chartDiff: Decimal?
 
-        let minValue: String?
-        let maxValue: String?
+        let limitFormatter: ((Decimal) -> String?)?
     }
 
     struct SelectedPointViewItem {
@@ -40,7 +37,6 @@ struct ChartModule {
         case dominance(value: Decimal?, diff: Decimal?)
         case indicators(top: NSAttributedString?, bottom: NSAttributedString?)
     }
-
 }
 
 enum MovementTrend {
@@ -60,9 +56,9 @@ enum MovementTrend {
 }
 
 protocol IChartViewModel {
+    var showAll: Bool { get }
     var intervals: [String] { get }
     var intervalsUpdatedWithCurrentIndexDriver: Driver<Int> { get }
-    var intervalIndexDriver: Driver<Int> { get }
     var pointSelectedItemDriver: Driver<ChartModule.SelectedPointViewItem?> { get }
     var loadingDriver: Driver<Bool> { get }
     var indicatorsShownDriver: Driver<Bool> { get }

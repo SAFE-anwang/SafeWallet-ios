@@ -1,10 +1,9 @@
-import Foundation
 import BigInt
+import Foundation
 
-fileprivate let max256ByteNumber = BigUInt(Data(hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
+private let max256ByteNumber = BigUInt(Data(hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
 
 extension Decimal {
-
     init?(bigUInt: BigUInt, decimals: Int) {
         guard let significand = Decimal(string: bigUInt.description) else {
             return nil
@@ -27,4 +26,9 @@ extension Decimal {
         return maxInDecimal == self
     }
 
+    func rounded(decimal: Int) -> Decimal {
+        let poweredDecimal = self * pow(10, decimal)
+        let handler = NSDecimalNumberHandler(roundingMode: .plain, scale: 0, raiseOnExactness: false, raiseOnOverflow: false, raiseOnUnderflow: false, raiseOnDivideByZero: false)
+        return NSDecimalNumber(decimal: poweredDecimal).rounding(accordingToBehavior: handler).decimalValue / pow(10, decimal)
+    }
 }

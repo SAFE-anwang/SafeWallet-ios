@@ -4,7 +4,6 @@ import SectionsTableView
 import SnapKit
 import ThemeKit
 import UIExtensions
-import ModuleKit
 import RxSwift
 import RxCocoa
 import ComponentKit
@@ -21,6 +20,9 @@ class LiquidityRecordViewController: ThemeViewController {
     private let refreshControl = UIRefreshControl()
     private let emptyView = PlaceholderView()
     
+    weak var parentNavigationController: UINavigationController?
+
+    
     init(viewModel: LiquidityRecordViewModel) {
         self.viewModel = viewModel
         super.init()
@@ -34,8 +36,7 @@ class LiquidityRecordViewController: ThemeViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "liquidity.title.record".localized
-        navigationItem.backBarButtonItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
+        
         
         refreshControl.tintColor = .themeLeah
         refreshControl.alpha = 0.6
@@ -79,11 +80,7 @@ class LiquidityRecordViewController: ThemeViewController {
         subscribe(disposeBag, viewModel.errorDriver) { [weak self] message in
             self?.show(error: message)
         }
-        
-        subscribe(disposeBag, viewModel.showMessageDriver) { [weak self] message in
-            self?.show(message: message)
-        }
-        
+
         subscribe(disposeBag, viewModel.viewItemsDriver) { [weak self] in self?.sync(data: $0) }
         
         viewModel.refresh()
@@ -111,26 +108,16 @@ class LiquidityRecordViewController: ThemeViewController {
         }
     }
 
-    private func removeConfirmation(viewItem: LiquidityRecordViewModel.RecordItem) {
-        let viewController = BottomSheetModule.removeLiquidityConfirmation { [weak self] in
-            self?.viewModel.removeLiquidity(recordItem: viewItem)
-            self?.dismiss(animated: true)
-        }
-        present(viewController, animated: true)
-    }
-    
     private func show(error: String?) {
         if let message  = error {
             HudHelper.instance.show(banner: .error(string: message))
         }
     }
     
-    private func show(message: String?) {
-        if let message  = message {
-            HudHelper.instance.show(banner: .success(string: message))
-        }
+    private func removeConfirmation(viewItem: LiquidityRecordViewModel.RecordItem) {
+        let viewController = LiquidityRemoveConfirmViewController(viewModel: viewModel, recordItem: viewItem)
+        parentNavigationController?.pushViewController(viewController, animated: true)
     }
-    
 }
 
 extension LiquidityRecordViewController: SectionsDataSource {

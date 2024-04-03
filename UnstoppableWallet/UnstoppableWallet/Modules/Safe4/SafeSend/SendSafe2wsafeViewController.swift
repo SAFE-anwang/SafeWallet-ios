@@ -8,9 +8,9 @@ import RxCocoa
 
 class SendSafe2wsafeViewController: BaseSendViewController {
     private let disposeBag = DisposeBag()
-
+    
     private let feeWarningViewModel: ITitledCautionViewModel
-
+    
     private let feeCell: FeeCell
     private let feeCautionCell = TitledHighlightedDescriptionCell()
     
@@ -27,10 +27,10 @@ class SendSafe2wsafeViewController: BaseSendViewController {
          amountInputViewModel: AmountInputViewModel,
          amountCautionViewModel: SendAmountCautionViewModel,
          recipientViewModel: RecipientAddressViewModel,
+         memoViewModel: SendMemoInputViewModel,
          feeViewModel: SendFeeViewModel,
          feeWarningViewModel: ITitledCautionViewModel
     ) {
-
         self.feeWarningViewModel = feeWarningViewModel
         
         feeCell = FeeCell(viewModel: feeViewModel, title: "fee_settings.fee".localized)
@@ -52,7 +52,8 @@ class SendSafe2wsafeViewController: BaseSendViewController {
                 availableBalanceViewModel: availableBalanceViewModel,
                 amountInputViewModel: amountInputViewModel,
                 amountCautionViewModel: amountCautionViewModel,
-                recipientViewModel: recipientViewModel
+                recipientViewModel: recipientViewModel, 
+                memoViewModel: memoViewModel
         )
         
 

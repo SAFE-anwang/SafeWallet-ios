@@ -1,26 +1,25 @@
-import UIKit
-import ThemeKit
 import EvmKit
 import OneInchKit
+import ThemeKit
+import UIKit
 
-struct SwapConfirmationModule {
-
+enum SwapConfirmationModule {
     static func viewController(sendData: SendEvmData, dex: SwapModule.Dex) -> UIViewController? {
-        guard let evmKitWrapper =  App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper else {
             return nil
         }
 
         guard let coinServiceFactory = EvmCoinServiceFactory(
-                blockchainType: dex.blockchainType,
-                marketKit: App.shared.marketKit,
-                currencyKit: App.shared.currencyKit,
-                coinManager: App.shared.coinManager
+            blockchainType: dex.blockchainType,
+            marketKit: App.shared.marketKit,
+            currencyManager: App.shared.currencyManager,
+            coinManager: App.shared.coinManager
         ) else {
             return nil
         }
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
-                evmKit: evmKitWrapper.evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory
+            evmKit: evmKitWrapper.evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory
         ) else {
             return nil
         }
@@ -33,23 +32,25 @@ struct SwapConfirmationModule {
     }
 
     static func viewController(parameters: OneInchSwapParameters, dex: SwapModule.Dex) -> UIViewController? {
-        guard let evmKitWrapper =  App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper else {
             return nil
         }
 
         let evmKit = evmKitWrapper.evmKit
         guard let apiKey = AppConfig.oneInchApiKey,
-              let swapKit = try? OneInchKit.Kit.instance(evmKit: evmKit, apiKey: apiKey) else {
+              let rpcSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: dex.blockchainType)?.rpcSource
+        else {
             return nil
         }
 
-        let oneInchProvider = OneInchProvider(swapKit: swapKit)
+        let swapKit = OneInchKit.Kit.instance(apiKey: apiKey)
+        let oneInchProvider = OneInchProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource)
 
         guard let coinServiceFactory = EvmCoinServiceFactory(
-                blockchainType: dex.blockchainType,
-                marketKit: App.shared.marketKit,
-                currencyKit: App.shared.currencyKit,
-                coinManager: App.shared.coinManager
+            blockchainType: dex.blockchainType,
+            marketKit: App.shared.marketKit,
+            currencyManager: App.shared.currencyManager,
+            coinManager: App.shared.coinManager
         ) else {
             return nil
         }
@@ -58,7 +59,7 @@ struct SwapConfirmationModule {
         let coinService = coinServiceFactory.baseCoinService
         let feeViewItemFactory = FeeViewItemFactory(scale: coinService.token.blockchainType.feePriceScale)
         let nonceService = NonceService(evmKit: evmKit, replacingNonce: nil)
-        let feeService = OneInchFeeService(evmKit: evmKit,  provider: oneInchProvider, gasPriceService: gasPriceService, coinService: coinServiceFactory.baseCoinService, parameters: parameters)
+        let feeService = OneInchFeeService(evmKit: evmKit, provider: oneInchProvider, gasPriceService: gasPriceService, coinService: coinServiceFactory.baseCoinService, parameters: parameters)
         let settingsService = EvmSendSettingsService(feeService: feeService, nonceService: nonceService)
 
         let cautionsFactory = SendEvmCautionsFactory()
@@ -83,5 +84,4 @@ struct SwapConfirmationModule {
 
         return SwapConfirmationViewController(transactionViewModel: transactionViewModel, settingsViewModel: settingsViewModel)
     }
-
 }

@@ -39,9 +39,7 @@ class RestoreTypeViewController: ThemeViewController {
             maker.edges.equalToSuperview()
         }
 
-        if #available(iOS 15.0, *) {
-            tableView.sectionHeaderTopPadding = 0
-        }
+        tableView.sectionHeaderTopPadding = 0
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
 
@@ -149,24 +147,18 @@ class RestoreTypeViewController: ThemeViewController {
         var viaPush = true
         switch type {
         case .recoveryOrPrivateKey: viewController = RestoreModule.viewController(sourceViewController: self, returnViewController: returnViewController)
-            /*
-        case .cloudRestore: viewController = RestoreCloudModule.viewController(returnViewController: returnViewController)
-        case .fileRestore:
-            let documentPicker: UIDocumentPickerViewController
-            if #available(iOS 14.0, *) {
-                let types = UTType.types(tag: "json", tagClass: UTTagClass.filenameExtension, conformingTo: nil)
-                documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: types)
-            } else {
-                documentPicker = UIDocumentPickerViewController(documentTypes: ["*.json"], in: .import)
-            }
-
-            documentPicker.delegate = self
-            documentPicker.allowsMultipleSelection = false
-
-            viaPush = false
-            viewController = documentPicker
-        case .cex: viewController = RestoreCexViewController(returnViewController: returnViewController)
-             */
+//        case .cloudRestore: viewController = RestoreCloudModule.viewController(returnViewController: returnViewController)
+//        case .fileRestore:
+//            let documentPicker: UIDocumentPickerViewController
+//            let types = UTType.types(tag: "json", tagClass: UTTagClass.filenameExtension, conformingTo: nil)
+//            documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: types)
+//
+//            documentPicker.delegate = self
+//            documentPicker.allowsMultipleSelection = false
+//
+//            viaPush = false
+//            viewController = documentPicker
+//        case .cex: viewController = RestoreCexViewController(returnViewController: returnViewController)
         }
 
         if viaPush {

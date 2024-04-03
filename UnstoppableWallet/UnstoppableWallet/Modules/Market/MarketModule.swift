@@ -1,12 +1,10 @@
-import Foundation
-import UIKit
-import ThemeKit
-import CurrencyKit
-import MarketKit
 import ComponentKit
-import StorageKit
-import SectionsTableView
+import Foundation
 import Kingfisher
+import MarketKit
+import SectionsTableView
+import ThemeKit
+import UIKit
 
 enum RowActionType {
     case additive
@@ -27,82 +25,79 @@ enum RowActionType {
     }
 }
 
-struct MarketModule {
-
+enum MarketModule {
     static func viewController() -> UIViewController {
-        let service = MarketService(storage: StorageKit.LocalStorage.default, launchScreenManager: App.shared.launchScreenManager)
-        let viewModel = MarketViewModel(service: service)
-        return MarketViewController(viewModel: viewModel)
+        MarketViewController()
     }
 
-    static func marketListCell(tableView: UITableView, backgroundStyle: BaseThemeCell.BackgroundStyle, listViewItem: MarketModule.ListViewItem, isFirst: Bool, isLast: Bool, rowActionProvider: (() -> [RowAction])?, action: (() -> ())?) -> RowProtocol {
+    static func marketListCell(tableView: UITableView, backgroundStyle: BaseThemeCell.BackgroundStyle, listViewItem: MarketModule.ListViewItem, isFirst: Bool, isLast: Bool, rowActionProvider: (() -> [RowAction])?, action: (() -> Void)?) -> RowProtocol {
         CellBuilderNew.row(
-                rootElement: .hStack([
-                    .image32 { component in
-                        component.imageView.contentMode = .scaleAspectFill
-                        component.imageView.clipsToBounds = true
-                        component.imageView.cornerRadius = listViewItem.iconShape.radius
-                        component.imageView.layer.cornerCurve = .continuous
-                        component.imageView.kf.setImage(
-                                with: URL(string: listViewItem.iconUrl),
-                                placeholder: UIImage(named: listViewItem.iconPlaceholderName),
-                                options: [.onlyLoadFirstFrame]
-                        )
-                    },
-                    .vStackCentered([
-                        .hStack([
-                            .text { component in
-                                component.font = .body
-                                component.textColor = .themeLeah
-                                component.text = listViewItem.leftPrimaryValue
-                            },
-                            .text { component in
-                                component.font = .body
-                                component.textColor = .themeLeah
-                                component.textAlignment = .right
-                                component.setContentCompressionResistancePriority(.required, for: .horizontal)
-                                component.text = listViewItem.rightPrimaryValue
-                            }
-                        ]),
-                        .margin(1),
-                        .hStack([
-                            .badge { component in
-                                if let badge = listViewItem.badge {
-                                    component.isHidden = false
-                                    component.badgeView.set(style: .small)
-                                    component.badgeView.text = badge
-                                    component.badgeView.change = listViewItem.badgeSecondaryValue
-                                } else {
-                                    component.isHidden = true
-                                }
-                            },
-                            .margin4,
-                            .text { component in
-                                component.font = .subhead2
-                                component.textColor = .themeGray
-                                component.text = listViewItem.leftSecondaryValue
-                            },
-                            .text { component in
-                                component.setContentCompressionResistancePriority(.required, for: .horizontal)
-                                component.setContentHuggingPriority(.required, for: .horizontal)
-                                component.textAlignment = .right
-                                let marketFieldData = marketFieldPreference(dataValue: listViewItem.rightSecondaryValue)
-                                component.font = .subhead2
-                                component.textColor = marketFieldData.color
-                                component.text = marketFieldData.value
-                            }
-                        ])
-                    ])
-                ]),
-                tableView: tableView,
-                id: "\(listViewItem.uid ?? "")-\(listViewItem.leftPrimaryValue)",
-                height: .heightDoubleLineCell,
-                autoDeselect: true,
-                rowActionProvider: rowActionProvider,
-                bind: { cell in
-                    cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
+            rootElement: .hStack([
+                .image32 { component in
+                    component.imageView.contentMode = .scaleAspectFill
+                    component.imageView.clipsToBounds = true
+                    component.imageView.cornerRadius = listViewItem.iconShape.radius
+                    component.imageView.layer.cornerCurve = .continuous
+                    component.imageView.kf.setImage(
+                        with: listViewItem.iconUrl.flatMap { URL(string: $0) },
+                        placeholder: UIImage(named: listViewItem.iconPlaceholderName),
+                        options: [.onlyLoadFirstFrame]
+                    )
                 },
-                action: action
+                .vStackCentered([
+                    .hStack([
+                        .text { component in
+                            component.font = .body
+                            component.textColor = .themeLeah
+                            component.text = listViewItem.leftPrimaryValue
+                        },
+                        .text { component in
+                            component.font = .body
+                            component.textColor = .themeLeah
+                            component.textAlignment = .right
+                            component.setContentCompressionResistancePriority(.required, for: .horizontal)
+                            component.text = listViewItem.rightPrimaryValue
+                        },
+                    ]),
+                    .margin(1),
+                    .hStack([
+                        .badge { component in
+                            if let badge = listViewItem.badge {
+                                component.isHidden = false
+                                component.badgeView.set(style: .small)
+                                component.badgeView.text = badge
+                                component.badgeView.change = listViewItem.badgeSecondaryValue
+                            } else {
+                                component.isHidden = true
+                            }
+                        },
+                        .margin4,
+                        .text { component in
+                            component.font = .subhead2
+                            component.textColor = .themeGray
+                            component.text = listViewItem.leftSecondaryValue
+                        },
+                        .text { component in
+                            component.setContentCompressionResistancePriority(.required, for: .horizontal)
+                            component.setContentHuggingPriority(.required, for: .horizontal)
+                            component.textAlignment = .right
+                            let marketFieldData = marketFieldPreference(dataValue: listViewItem.rightSecondaryValue)
+                            component.font = .subhead2
+                            component.textColor = marketFieldData.color
+                            component.text = marketFieldData.value
+                        },
+                    ]),
+                ]),
+            ]),
+            tableView: tableView,
+            id: "\(listViewItem.uid ?? "")-\(listViewItem.leftPrimaryValue)",
+            height: .heightDoubleLineCell,
+            autoDeselect: true,
+            rowActionProvider: rowActionProvider,
+            bind: { cell in
+                cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
+            },
+            action: action
         )
     }
 
@@ -112,10 +107,10 @@ struct MarketModule {
         let color: UIColor
 
         switch dataValue {
-        case .valueDiff(let currencyValue, let diff):
+        case let .valueDiff(currencyValue, diff):
             title = nil
 
-            if let currencyValue = currencyValue, let diff = diff {
+            if let currencyValue, let diff {
                 let valueDiff = diff * currencyValue.value / 100
                 value = ValueFormatter.instance.formatShort(currency: currencyValue.currency, value: valueDiff, showSign: true) ?? "----"
                 color = valueDiff.isSignMinus ? .themeLucian : .themeRemus
@@ -123,19 +118,19 @@ struct MarketModule {
                 value = "----"
                 color = .themeGray50
             }
-        case .diff(let diff):
+        case let .diff(diff):
             title = nil
             value = diff.flatMap { ValueFormatter.instance.format(percentValue: $0) } ?? "----"
-            if let diff = diff {
+            if let diff {
                 color = diff.isSignMinus ? .themeLucian : .themeRemus
             } else {
                 color = .themeGray50
             }
-        case .volume(let volume):
+        case let .volume(volume):
             title = "market.top.volume.title".localized
             value = volume
             color = .themeGray
-        case .marketCap(let marketCap):
+        case let .marketCap(marketCap):
             title = "market.top.market_cap.title".localized
             value = marketCap
             color = .themeGray
@@ -143,25 +138,23 @@ struct MarketModule {
 
         return (title: title, value: value, color: color)
     }
-
 }
 
 extension MarketModule {
-
     enum Tab: Int, CaseIterable {
         case overview
-//        case posts
+        case posts
         case watchlist
         case twiitter
-        case Dapp
-
+//        case Dapp
+        
         var title: String {
             switch self {
             case .overview: return "market.category.overview".localized
-//            case .posts: return "market.category.posts".localized
+            case .posts: return "market.category.posts".localized
             case .watchlist: return "market.category.watchlist".localized
             case .twiitter: return "market.category.twiitter".localized
-            case .Dapp: return "market.category.dapp".localized
+//            case .Dapp: return "market.category.dapp".localized
             }
         }
     }
@@ -184,6 +177,17 @@ extension MarketModule {
             case .topLosers: return "market.top.top_losers".localized
             }
         }
+
+        var raw: String {
+            switch self {
+            case .highestCap: return "highestCap"
+            case .lowestCap: return "lowestCap"
+            case .highestVolume: return "highestVolume"
+            case .lowestVolume: return "lowestVolume"
+            case .topGainers: return "topGainers"
+            case .topLosers: return "topLosers"
+            }
+        }
     }
 
     enum MarketField: Int, CaseIterable {
@@ -198,6 +202,14 @@ extension MarketModule {
             case .volume: return "market.market_field.vol".localized
             }
         }
+
+        var raw: String {
+            switch self {
+            case .price: return "price"
+            case .marketCap: return "marketCap"
+            case .volume: return "volume"
+            }
+        }
     }
 
     enum MarketTop: Int, CaseIterable {
@@ -206,11 +218,13 @@ extension MarketModule {
         case top300 = 300
 
         var title: String {
-            "\(self.rawValue)"
+            "\(rawValue)"
         }
     }
 
-    enum PriceChangeType: CaseIterable {
+    enum PriceChangeType: Int, CaseIterable {
+        static let sortingTypes: [Self] = [.day, .week, .month]
+
         case day
         case week
         case week2
@@ -226,6 +240,14 @@ extension MarketModule {
             case .month: return "market.advanced_search.month".localized
             case .month6: return "market.advanced_search.month6".localized
             case .year: return "market.advanced_search.year".localized
+            }
+        }
+
+        var shortTitle: String {
+            switch self {
+            case .week: return "market.advanced_search.week.short".localized
+            case .month: return "market.advanced_search.month.short".localized
+            default: return "market.advanced_search.day.short".localized
             }
         }
     }
@@ -274,11 +296,9 @@ extension MarketModule {
             }
         }
     }
-
 }
 
 extension MarketKit.MarketInfo {
-
     func priceChangeValue(type: MarketModule.PriceChangeType) -> Decimal? {
         switch type {
         case .day: return priceChange24h
@@ -289,11 +309,9 @@ extension MarketKit.MarketInfo {
         case .year: return priceChange1y
         }
     }
-
 }
 
-extension Array where Element == MarketKit.MarketInfo {
-
+extension [MarketKit.MarketInfo] {
     func sorted(sortingField: MarketModule.SortingField, priceChangeType: MarketModule.PriceChangeType) -> [MarketKit.MarketInfo] {
         sorted { lhsMarketInfo, rhsMarketInfo in
             switch sortingField {
@@ -313,11 +331,9 @@ extension Array where Element == MarketKit.MarketInfo {
             }
         }
     }
-
 }
 
-extension MarketModule {  // ViewModel Items
-
+extension MarketModule { // ViewModel Items
     enum MarketDataValue {
         case valueDiff(CurrencyValue?, Decimal?)
         case diff(Decimal?)
@@ -327,7 +343,7 @@ extension MarketModule {  // ViewModel Items
 
     struct ListViewItem {
         let uid: String?
-        let iconUrl: String
+        let iconUrl: String?
         let iconShape: IconShape
         let iconPlaceholderName: String
         let leftPrimaryValue: String
@@ -360,7 +376,5 @@ extension MarketModule {  // ViewModel Items
             case .full: return 0
             }
         }
-
     }
-
 }

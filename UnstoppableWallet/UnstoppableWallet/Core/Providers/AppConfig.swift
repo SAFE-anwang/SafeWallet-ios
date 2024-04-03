@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 import MarketKit
 
-struct AppConfig {
+enum AppConfig {
     
     static let label = "SafeWallet"
     static let backupSalt = "SafeWallet"
@@ -10,7 +10,7 @@ struct AppConfig {
     static let companyName = "anwang"
     static let reportEmail = ""
     static let companyWebPageLink = "https://www.anwang.com"
-    static let appWebPageLink = "https://oulayun.fun/SafeWallet"
+    static let appWebPageLink = "https://www.anwang.com/#safewallet"
     static let analyticsLink = "https://unstoppable.money/analytics"
     static let appGitHubAccount = "SAFE-anwang"
     static let appGitHubRepository = ""
@@ -36,8 +36,9 @@ struct AppConfig {
         .arbitrumOne: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
         .gnosis: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
         .fantom: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+        .ton: "UQAYLATDlfKgn3cKZAgznvowhXzpqgxrIicesxJfo9f6PN3k",
         .tron: "TQzANCd363w5CjRWDtswm8Y5nFPAdnwekF",
-        .solana: "5gattKnvu5f1NDHBuZ6VfDXjRrJa9UcAArkZ3ys3e82F"
+        .solana: "5gattKnvu5f1NDHBuZ6VfDXjRrJa9UcAArkZ3ys3e82F",
     ]
 
     static var appVersion: String {
@@ -173,4 +174,11 @@ struct AppConfig {
         (Bundle.main.object(forInfoDictionaryKey: "OpenSeaApiKey") as? String) ?? ""
     }
 
+    static var swapEnabled: Bool {
+        Bundle.main.object(forInfoDictionaryKey: "SwapEnabled") as? String == "true"
+    }
+
+    static var donateEnabled: Bool {
+        Bundle.main.object(forInfoDictionaryKey: "DonateEnabled") as? String == "true"
+    }
 }

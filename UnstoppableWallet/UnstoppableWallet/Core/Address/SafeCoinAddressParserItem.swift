@@ -1,4 +1,5 @@
 import Foundation
+import MarketKit
 import RxSwift
 
 class SafeCoinAddressParserItem {
@@ -11,7 +12,9 @@ class SafeCoinAddressParserItem {
 }
 
 extension SafeCoinAddressParserItem: IAddressParserItem {
-
+    
+    var blockchainType: BlockchainType { .safe }
+    
     func handle(address: String) -> Single<Address> {
         do {
             try adapter.validateSafe(address: address)

@@ -8,8 +8,6 @@
 	<string>${bscscan_api_key}</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>CFBundleDisplayName</key>
-	<string>SafeWallet</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -34,6 +32,16 @@
 				<string>unstoppable.money</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>toncoin.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>ton</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
@@ -43,6 +51,8 @@
 	<string>${default_words}</string>
 	<key>DefiYieldApiKey</key>
 	<string>$(defiyield_api_key)</string>
+	<key>DonateEnabled</key>
+	<string>${donate_enabled}</string>
 	<key>EtherscanApiKey</key>
 	<string>${etherscan_api_key}</string>
 	<key>FtmscanApiKey</key>
@@ -55,16 +65,16 @@
 	<false/>
 	<key>InfuraProjectId</key>
 	<string>${infura_project_id}</string>
+	<key>InfuraProjectId_2</key>
+	<string>${infura_project_id_2}</string>
+	<key>InfuraProjectId_3</key>
+	<string>${infura_project_id_3}</string>
 	<key>InfuraProjectSecret</key>
 	<string>${infura_project_secret}</string>
-    <key>InfuraProjectId_2</key>
-    <string>${infura_project_id_2}</string>
-    <key>InfuraProjectSecret_2</key>
-    <string>${infura_project_secret_2}</string>
-    <key>InfuraProjectId_3</key>
-    <string>${infura_project_id_3}</string>
-    <key>InfuraProjectSecret_3</key>
-    <string>${infura_project_secret_3}</string>
+	<key>InfuraProjectSecret_2</key>
+	<string>${infura_project_secret_2}</string>
+	<key>InfuraProjectSecret_3</key>
+	<string>${infura_project_secret_3}</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tg</string>
@@ -104,6 +114,11 @@
 			<string>Any</string>
 		</dict>
 	</dict>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>CoinPriceListIntent</string>
+		<string>SingleCoinPriceIntent</string>
+	</array>
 	<key>OfficeMode</key>
 	<string>${OfficeMode}</string>
 	<key>OpenSeaApiKey</key>
@@ -122,6 +137,8 @@
 	<string>${ShowTestNetSwitcher}</string>
 	<key>SnowtraceApiKey</key>
 	<string>${snowtrace_api_key}</string>
+	<key>SwapEnabled</key>
+	<string>${swap_enabled}</string>
 	<key>TronGridApiKey</key>
 	<string>${trongrid_api_key}</string>
 	<key>TwitterBearerToken</key>
@@ -155,9 +172,9 @@
 	<string>${wallet_connect_v2_project_key}</string>
 	<key>oneInchApiKey</key>
 	<string>${one_inch_api_key}</string>
-    <key>oneInchApiKey_2</key>
-    <string>${one_inch_api_key_2}</string>
-    <key>oneInchApiKey_3</key>
-    <string>${one_inch_api_key_3}</string>
+	<key>oneInchApiKey_2</key>
+	<string>${one_inch_api_key_2}</string>
+	<key>oneInchApiKey_3</key>
+	<string>${one_inch_api_key_3}</string>
 </dict>
 </plist>

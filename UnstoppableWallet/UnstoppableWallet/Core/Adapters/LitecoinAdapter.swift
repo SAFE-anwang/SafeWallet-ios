@@ -61,11 +61,26 @@ class LitecoinAdapter: BitcoinBaseAdapter {
                 confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
                 logger: logger
             )
+        case let .btcAddress(address, _, tokenType):
+            guard let purpose = tokenType.derivation?.purpose else {
+                throw AdapterError.wrongParameters
+            }
+
+            litecoinKit = try LitecoinKit.Kit(
+                watchAddress: address,
+                purpose: purpose,
+                walletId: wallet.account.id,
+                syncMode: syncMode,
+                hasher: hasher,
+                networkType: networkType,
+                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                logger: logger
+            )
         default:
             throw AdapterError.unsupportedAccount
         }
 
-        super.init(abstractKit: litecoinKit, wallet: wallet)
+        super.init(abstractKit: litecoinKit, wallet: wallet, syncMode: syncMode)
 
         litecoinKit.delegate = self
     }
@@ -76,6 +91,10 @@ class LitecoinAdapter: BitcoinBaseAdapter {
 
     override func explorerUrl(transactionHash: String) -> String? {
         "https://blockchair.com/litecoin/transaction/" + transactionHash
+    }
+
+    override func explorerUrl(address: String) -> String? {
+        "https://blockchair.com/litecoin/address/" + address
     }
 }
 

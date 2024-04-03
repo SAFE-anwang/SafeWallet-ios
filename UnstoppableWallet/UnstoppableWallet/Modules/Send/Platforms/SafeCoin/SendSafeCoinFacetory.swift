@@ -1,7 +1,7 @@
-import UIKit
-import MarketKit
 import HsToolKit
-import CurrencyKit
+import MarketKit
+import SwiftUI
+import UIKit
 
 class SendSafeCoinFactory: BaseSendFactory {
     private let fiatService: FiatService
@@ -11,11 +11,12 @@ class SendSafeCoinFactory: BaseSendFactory {
     private let feeRateService: FeeRateService
     private let addressService: AddressService
     private let timeLockService: TimeLockService?
+    private let memoService: SendMemoInputService
     private let adapterService: SendSafeCoinAdapterService
     private let logger: Logger
     private let token: Token
-
-    init(fiatService: FiatService, amountCautionService: SendAmountCautionService, addressService: AddressService, feeFiatService: FiatService, feeService: SendFeeService, feeRateService: FeeRateService, timeLockService: TimeLockService?, adapterService: SendSafeCoinAdapterService, logger: Logger, token: Token) {
+    
+    init(fiatService: FiatService, amountCautionService: SendAmountCautionService, addressService: AddressService, memoService: SendMemoInputService, feeFiatService: FiatService, feeService: SendFeeService, feeRateService: FeeRateService, timeLockService: TimeLockService?, adapterService: SendSafeCoinAdapterService, logger: Logger, token: Token) {
         self.fiatService = fiatService
         self.amountCautionService = amountCautionService
         self.feeFiatService = feeFiatService
@@ -23,6 +24,7 @@ class SendSafeCoinFactory: BaseSendFactory {
         self.feeRateService = feeRateService
         self.addressService = addressService
         self.timeLockService = timeLockService
+        self.memoService = memoService
         self.adapterService = adapterService
         self.logger = logger
         self.token = token
@@ -39,7 +41,16 @@ class SendSafeCoinFactory: BaseSendFactory {
         let (feeCoinValue, feeCurrencyValue) = try values(fiatService: feeFiatService)
 
         viewItems.append(SendConfirmationAmountViewItem(coinValue: coinValue, currencyValue: currencyValue, receiver: address))
+        
+        if memoService.isAvailable, let memo = memoService.memo, !memo.isEmpty {
+            viewItems.append(SendConfirmationMemoViewItem(memo: memo))
+        }
+
         viewItems.append(SendConfirmationFeeViewItem(coinValue: feeCoinValue, currencyValue: feeCurrencyValue))
+        
+        if !App.shared.btcBlockchainManager.transactionRbfEnabled(blockchainType: token.blockchainType) {
+            viewItems.append(SendConfirmationDisabledRbfViewItem())
+        }
 
         if (timeLockService?.lockTime ?? .none) != TimeLockService.Item.none {
             viewItems.append(SendConfirmationLockUntilViewItem(lockValue: timeLockService?.lockTime.title ?? "n/a".localized))
@@ -71,6 +82,7 @@ extension SendSafeCoinFactory: ISendConfirmationFactory {
 
 extension SendSafeCoinFactory: ISendFeeSettingsFactory {
         
+    
     func feeSettingsViewController() throws -> UIViewController {
         var dataSources: [ISendSettingsDataSource] = []
 
@@ -85,7 +97,10 @@ extension SendSafeCoinFactory: ISendFeeSettingsFactory {
         let inputOutputOrderViewModel = InputOutputOrderViewModel(service: adapterService.inputOutputOrderService)
         dataSources.append(InputOutputOrderDataSource(viewModel: inputOutputOrderViewModel))
 
-        if let timeLockService = timeLockService {
+        let rbfViewModel = RbfViewModel(service: adapterService.rbfService)
+        dataSources.append(RbfDataSource(viewModel: rbfViewModel))
+
+        if let timeLockService {
             let timeLockViewModel = TimeLockViewModel(service: timeLockService)
             dataSources.append(TimeLockDataSource(viewModel: timeLockViewModel))
         }

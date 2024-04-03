@@ -1,7 +1,6 @@
+import EvmKit
 import Foundation
 import UniswapKit
-import EvmKit
-import StorageKit
 
 class UniswapModule {
     private let tradeService: UniswapTradeService
@@ -15,56 +14,59 @@ class UniswapModule {
         guard let evmKit = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
             return nil
         }
-
-        guard let swapKit = try? UniswapKit.Kit.instance(evmKit: evmKit, isSafeSwap: isSafeSwap) else {
+        guard let swapKit = try? UniswapKit.Kit.instance(isSafeSwap: isSafeSwap),
+              let rpcSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: dex.blockchainType)?.rpcSource
+        else {
             return nil
         }
-
-        let uniswapRepository = UniswapProvider(swapKit: swapKit)
+        
+//        guard let swapKit = try? UniswapKit.Kit.instance(evmKit: evmKit, isSafeSwap: isSafeSwap) else {
+//            return nil
+//        }
+        let uniswapRepository = UniswapProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource)
+        print("OneInchProvider router Address: \(uniswapRepository.routerAddress.hex)")
 
         tradeService = UniswapTradeService(
-                uniswapProvider: uniswapRepository,
-                state: dataSourceState,
-                evmKit: evmKit
+            uniswapProvider: uniswapRepository,
+            state: dataSourceState,
+            evmKit: evmKit
         )
         allowanceService = SwapAllowanceService(
-                spenderAddress: uniswapRepository.routerAddress,
-                adapterManager: App.shared.adapterManager,
-                evmKit: evmKit
+            spenderAddress: uniswapRepository.routerAddress,
+            adapterManager: App.shared.adapterManager,
+            evmKit: evmKit
         )
         pendingAllowanceService = SwapPendingAllowanceService(
-                spenderAddress: uniswapRepository.routerAddress,
-                adapterManager: App.shared.adapterManager,
-                allowanceService: allowanceService
+            spenderAddress: uniswapRepository.routerAddress,
+            adapterManager: App.shared.adapterManager,
+            allowanceService: allowanceService
         )
         service = UniswapService(
-                dex: dex,
-                tradeService: tradeService,
-                allowanceService: allowanceService,
-                pendingAllowanceService: pendingAllowanceService,
-                adapterManager: App.shared.adapterManager
+            dex: dex,
+            tradeService: tradeService,
+            allowanceService: allowanceService,
+            pendingAllowanceService: pendingAllowanceService,
+            adapterManager: App.shared.adapterManager
         )
     }
-
 }
 
 extension UniswapModule: ISwapProvider {
-
     var dataSource: ISwapDataSource {
         let allowanceViewModel = SwapAllowanceViewModel(errorProvider: service, allowanceService: allowanceService, pendingAllowanceService: pendingAllowanceService)
         let viewModel = UniswapViewModel(
-                service: service,
-                tradeService: tradeService,
-                switchService: AmountTypeSwitchService(localStorage: StorageKit.LocalStorage.default, useLocalStorage: false),
-                allowanceService: allowanceService,
-                pendingAllowanceService: pendingAllowanceService,
-                currencyKit: App.shared.currencyKit,
-                viewItemHelper: SwapViewItemHelper()
+            service: service,
+            tradeService: tradeService,
+            switchService: AmountTypeSwitchService(userDefaultsStorage: App.shared.userDefaultsStorage, useLocalStorage: false),
+            allowanceService: allowanceService,
+            pendingAllowanceService: pendingAllowanceService,
+            currencyManager: App.shared.currencyManager,
+            viewItemHelper: SwapViewItemHelper()
         )
 
         return UniswapDataSource(
-                viewModel: viewModel,
-                allowanceViewModel: allowanceViewModel
+            viewModel: viewModel,
+            allowanceViewModel: allowanceViewModel
         )
     }
 
@@ -76,17 +78,16 @@ extension UniswapModule: ISwapProvider {
         let exactIn = tradeService.tradeType == .exactIn
 
         return SwapModule.DataSourceState(
-                tokenFrom: tradeService.tokenIn,
-                tokenTo: tradeService.tokenOut,
-                amountFrom: tradeService.amountIn,
-                amountTo: tradeService.amountOut,
-                exactFrom: exactIn)
+            tokenFrom: tradeService.tokenIn,
+            tokenTo: tradeService.tokenOut,
+            amountFrom: tradeService.amountIn,
+            amountTo: tradeService.amountOut,
+            exactFrom: exactIn
+        )
     }
-
 }
 
 extension UniswapModule {
-
     struct PriceImpactViewItem {
         let value: String
         let level: UniswapTradeService.PriceImpactLevel
@@ -109,26 +110,30 @@ extension UniswapModule {
     enum TradeError: Error {
         case wrapUnwrapNotAllowed
     }
-
 }
 
 extension UniswapKit.Kit.TradeError: LocalizedError {
-
     public var errorDescription: String? {
         switch self {
         case .tradeNotFound: return "swap.trade_error.not_found".localized
         default: return nil
         }
     }
+}
 
+extension UniswapKit.KitV3.TradeError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .tradeNotFound: return "swap.trade_error.not_found".localized
+        default: return nil
+        }
+    }
 }
 
 extension UniswapModule.TradeError: LocalizedError {
-
     public var errorDescription: String? {
         switch self {
         case .wrapUnwrapNotAllowed: return "swap.trade_error.wrap_unwrap_not_allowed".localized
         }
     }
-
 }

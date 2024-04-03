@@ -2,7 +2,6 @@ import Foundation
 import RxSwift
 import RxCocoa
 import UniswapKit
-import CurrencyKit
 import EvmKit
 import MarketKit
 class PancakeLiquidityViewModel {
@@ -11,7 +10,7 @@ class PancakeLiquidityViewModel {
     public let service: PancakeLiquidityService
     public let tradeService: PancakeLiquidityTradeService
     public let switchService: AmountTypeSwitchService
-    private let currencyKit: CurrencyKit.Kit
+    private let currencyManager: CurrencyManager
     private let allowanceService: LiquidityAllowanceService
     private let pendingAllowanceService: LiquidityPendingAllowanceService
 
@@ -39,14 +38,14 @@ class PancakeLiquidityViewModel {
 
     private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "anwang.safewallet.liquidity_view_model")
 
-    init(service: PancakeLiquidityService, tradeService: PancakeLiquidityTradeService, switchService: AmountTypeSwitchService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService,currencyKit: CurrencyKit.Kit, viewItemHelper: LiquidityViewItemHelper) {
+    init(service: PancakeLiquidityService, tradeService: PancakeLiquidityTradeService, switchService: AmountTypeSwitchService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService,currencyManager: CurrencyManager, viewItemHelper: LiquidityViewItemHelper) {
         self.service = service
         self.tradeService = tradeService
         self.switchService = switchService
         self.allowanceService = allowanceService
         self.pendingAllowanceService = pendingAllowanceService
         
-        self.currencyKit = currencyKit
+        self.currencyManager = currencyManager
         self.viewItemHelper = viewItemHelper
 
         subscribeToService()
@@ -242,7 +241,7 @@ class PancakeLiquidityViewModel {
 extension PancakeLiquidityViewModel {
 
     var amountTypeSelectorItems: [String] {
-        ["swap.amount_type.coin".localized, currencyKit.baseCurrency.code]
+        ["swap.amount_type.coin".localized, currencyManager.baseCurrency.code]
     }
 
     var amountTypeIndexDriver: Driver<Int> {

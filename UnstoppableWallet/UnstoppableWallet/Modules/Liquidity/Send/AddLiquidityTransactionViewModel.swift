@@ -9,7 +9,6 @@ import Eip20Kit
 import NftKit
 import MarketKit
 import HsExtensions
-import CurrencyKit
 
 class AddLiquidityTransactionViewModel {
     private let disposeBag = DisposeBag()
@@ -29,12 +28,12 @@ class AddLiquidityTransactionViewModel {
     private let sendSuccessRelay = PublishRelay<Data>()
     private let sendFailedRelay = PublishRelay<String>()
         
-    private let currencyKit: CurrencyKit.Kit
+    private let currencyManager: CurrencyManager
     private let marketKit: MarketKit.Kit
     private let chainToken: MarketKit.Token
     
     private var rate: CurrencyValue? {
-        let baseCurrency = currencyKit.baseCurrency
+        let baseCurrency = currencyManager.baseCurrency
         let coinPrice = marketKit.coinPrice(coinUid: chainToken.coin.uid, currencyCode: baseCurrency.code)
         if let value = coinPrice?.value {
             return CurrencyValue(currency: baseCurrency, value: value)
@@ -42,14 +41,15 @@ class AddLiquidityTransactionViewModel {
         return nil
     }
 
-    init(service: IAddLiquidityTransactionService, coinServiceFactory: EvmCoinServiceFactory, cautionsFactory: SendEvmCautionsFactory, evmLabelManager: EvmLabelManager, contactLabelService: ContactLabelService, currencyKit: CurrencyKit.Kit, marketKit: MarketKit.Kit, chainToken: MarketKit.Token) {
+    init(service: IAddLiquidityTransactionService, coinServiceFactory: EvmCoinServiceFactory, cautionsFactory: SendEvmCautionsFactory, evmLabelManager: EvmLabelManager, contactLabelService: ContactLabelService, marketKit: MarketKit.Kit, currencyManager: CurrencyManager, chainToken: MarketKit.Token) {
         self.service = service
         self.coinServiceFactory = coinServiceFactory
         self.cautionsFactory = cautionsFactory
         self.evmLabelManager = evmLabelManager
         self.contactLabelService = contactLabelService
-        self.currencyKit = currencyKit
         self.marketKit = marketKit
+        self.currencyManager = currencyManager
+        
         self.chainToken = chainToken
         subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
         subscribe(disposeBag, service.sendStateObservable) { [weak self] in self?.sync(sendState: $0) }

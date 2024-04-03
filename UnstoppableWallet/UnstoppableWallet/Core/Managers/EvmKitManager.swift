@@ -1,14 +1,13 @@
-import Foundation
-import RxSwift
-import RxRelay
-import EvmKit
 import Eip20Kit
-import NftKit
-import UniswapKit
-import OneInchKit
-//import SafeSwapKit
+import EvmKit
+import Foundation
 import HdWalletKit
 import MarketKit
+import NftKit
+import OneInchKit
+import RxRelay
+import RxSwift
+import UniswapKit
 
 class EvmKitManager {
     let chain: Chain
@@ -34,7 +33,7 @@ class EvmKitManager {
 
     private func handleUpdatedSyncSource(blockchainType: BlockchainType) {
         queue.sync {
-            guard let _evmKitWrapper = _evmKitWrapper else {
+            guard let _evmKitWrapper else {
                 return
             }
 
@@ -48,7 +47,7 @@ class EvmKitManager {
     }
 
     private func _evmKitWrapper(account: Account, blockchainType: BlockchainType) throws -> EvmKitWrapper {
-        if let _evmKitWrapper = _evmKitWrapper, let currentAccount = currentAccount, currentAccount == account {
+        if let _evmKitWrapper, let currentAccount, currentAccount == account {
             return _evmKitWrapper
         }
 
@@ -74,12 +73,12 @@ class EvmKitManager {
         }
 
         let evmKit = try EvmKit.Kit.instance(
-                address: address,
-                chain: chain,
-                rpcSource: syncSource.rpcSource,
-                transactionSource: syncSource.transactionSource,
-                walletId: account.id,
-                minLogLevel: .error
+            address: address,
+            chain: chain,
+            rpcSource: syncSource.rpcSource,
+            transactionSource: syncSource.transactionSource,
+            walletId: account.id,
+            minLogLevel: .error
         )
 
         Eip20Kit.Kit.addDecorators(to: evmKit)
@@ -108,6 +107,7 @@ class EvmKitManager {
         UniswapKit.Kit.addDecorators(to: evmKit)
         try? KitV3.addDecorators(to: evmKit)
         OneInchKit.Kit.addDecorators(to: evmKit)
+
         evmKit.start()
 
         let wrapper = EvmKitWrapper(blockchainType: blockchainType, evmKit: evmKit, nftKit: nftKit, signer: signer)
@@ -119,11 +119,9 @@ class EvmKitManager {
 
         return wrapper
     }
-
 }
 
 extension EvmKitManager {
-
     var evmKitCreatedObservable: Observable<Void> {
         evmKitCreatedRelay.asObservable()
     }
@@ -143,7 +141,6 @@ extension EvmKitManager {
             try _evmKitWrapper(account: account, blockchainType: blockchainType)
         }
     }
-
 }
 
 class EvmKitWrapper {
@@ -160,39 +157,44 @@ class EvmKitWrapper {
     }
 
     func sendSingle(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) -> Single<FullTransaction> {
-        guard let signer = signer else {
+        guard let signer else {
             return Single.error(SignerError.signerNotSupported)
         }
 
         return evmKit.rawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
-                .flatMap { [weak self] rawTransaction in
-                    guard let strongSelf = self else {
-                        return Single.error(AppError.weakReference)
-                    }
-
-                    do {
-                        let signature = try signer.signature(rawTransaction: rawTransaction)
-                        return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature)
-                    } catch {
-                        return Single.error(error)
-                    }
+            .flatMap { [weak self] rawTransaction in
+                guard let strongSelf = self else {
+                    return Single.error(AppError.weakReference)
                 }
+
+                do {
+                    let signature = try signer.signature(rawTransaction: rawTransaction)
+                    return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature)
+                } catch {
+                    return Single.error(error)
+                }
+            }
     }
 
+    func send(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) async throws -> FullTransaction {
+        guard let signer else {
+            throw SignerError.signerNotSupported
+        }
+
+        let rawTransaction = try await evmKit.fetchRawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
+        let signature = try signer.signature(rawTransaction: rawTransaction)
+        return try await evmKit.send(rawTransaction: rawTransaction, signature: signature)
+    }
 }
 
 extension EvmKitManager {
-
     enum KitWrapperError: Error {
         case mnemonicNoSeed
     }
-
 }
 
 extension EvmKitWrapper {
-
     enum SignerError: Error {
         case signerNotSupported
     }
-
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1420"
+   LastUpgradeVersion = "1430"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D38404E1218317DF007D50AD"
-               BuildableName = "Unstoppable D.app"
+               BuildableName = "SafeWallet D.app"
                BlueprintName = "Development"
                ReferencedContainer = "container:UnstoppableWallet.xcodeproj">
             </BuildableReference>
@@ -44,7 +44,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D38404E1218317DF007D50AD"
-            BuildableName = "Unstoppable D.app"
+            BuildableName = "SafeWallet D.app"
             BlueprintName = "Development"
             ReferencedContainer = "container:UnstoppableWallet.xcodeproj">
          </BuildableReference>

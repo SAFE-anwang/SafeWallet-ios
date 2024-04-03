@@ -1,28 +1,29 @@
-import UIKit
-import ThemeKit
-import EvmKit
 import BigInt
+import EvmKit
 import HsExtensions
+import MarketKit
+import ThemeKit
+import UIKit
 
-struct SwapApproveConfirmationModule {
-
-    static func viewController(sendData: SendEvmData, dex: SwapModule.Dex, revokeAllowance: Bool = false, delegate: ISwapApproveDelegate?) -> UIViewController? {
-        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper else {
-            return nil
+enum SwapApproveConfirmationModule {
+    static func viewController(sendData: SendEvmData, blockchainType: BlockchainType, revokeAllowance: Bool = false, delegate: ISwapApproveDelegate?) throws -> UIViewController {
+        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
+            throw CreateError.noEvmKit
         }
+
         guard let coinServiceFactory = EvmCoinServiceFactory(
-                blockchainType: dex.blockchainType,
-                marketKit: App.shared.marketKit,
-                currencyKit: App.shared.currencyKit,
-                coinManager: App.shared.coinManager
+            blockchainType: blockchainType,
+            marketKit: App.shared.marketKit,
+            currencyManager: App.shared.currencyManager,
+            coinManager: App.shared.coinManager
         ) else {
-            return nil
+            throw CreateError.cantFoundBaseToken
         }
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
-                evmKit: evmKitWrapper.evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory
+            evmKit: evmKitWrapper.evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory
         ) else {
-            return nil
+            throw CreateError.wrongGasPriceService
         }
 
         let service = SendEvmTransactionService(sendData: sendData, evmKitWrapper: evmKitWrapper, settingsService: settingsService, evmLabelManager: App.shared.evmLabelManager)
@@ -41,10 +42,10 @@ struct SwapApproveConfirmationModule {
         }
 
         let service = SwapApproveService(
-                eip20Kit: eip20Adapter.eip20Kit,
-                amount: BigUInt(data.amount.hs.roundedString(decimal: data.token.decimals)) ?? 0,
-                spenderAddress: data.spenderAddress,
-                allowance: 0
+            eip20Kit: eip20Adapter.eip20Kit,
+            amount: BigUInt(data.amount.hs.roundedString(decimal: data.token.decimals)) ?? 0,
+            spenderAddress: data.spenderAddress,
+            allowance: 0
         )
 
         guard case let .approveAllowed(sendData) = service.state else {
@@ -52,12 +53,24 @@ struct SwapApproveConfirmationModule {
         }
         let sendEvmData = SendEvmData(transactionData: sendData, additionalInfo: nil, warnings: [])
 
-        guard let confirmationController = SwapApproveConfirmationModule.viewController(sendData: sendEvmData, dex: data.dex, revokeAllowance: true, delegate: delegate) else {
+        guard let confirmationController = try? SwapApproveConfirmationModule.viewController(sendData: sendEvmData, blockchainType: data.dex.blockchainType, revokeAllowance: true, delegate: delegate) else {
             return nil
         }
 
         return ThemeNavigationController(rootViewController: confirmationController)
     }
 
+    enum CreateError: LocalizedError {
+        case noEvmKit
+        case cantFoundBaseToken
+        case wrongGasPriceService
 
+        var errorDescription: String? {
+            switch self {
+            case .noEvmKit: return "Can't create EvmKit!"
+            case .cantFoundBaseToken: return "Can't found token for fee payments!"
+            case .wrongGasPriceService: return "Can't create service for calculating Gas Price!"
+            }
+        }
+    }
 }

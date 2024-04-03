@@ -4,7 +4,6 @@ import ThemeKit
 import SectionsTableView
 import ComponentKit
 import HUD
-import LanguageKit
 
 class MarketDappListViewController: ThemeViewController {
     private let viewModel: MarketDappViewModel

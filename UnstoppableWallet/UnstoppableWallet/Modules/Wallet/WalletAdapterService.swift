@@ -1,6 +1,6 @@
 import Foundation
-import RxSwift
 import RxRelay
+import RxSwift
 
 protocol IWalletAdapterServiceDelegate: AnyObject {
     func didPrepareAdapters()
@@ -45,6 +45,7 @@ class WalletAdapterService {
     }
 
     private func subscribeToAdapters() {
+        adaptersDisposeBag = DisposeBag()
 
         for (wallet, adapter) in adapterMap {
             subscribe(adaptersDisposeBag, adapter.balanceDataUpdatedObservable) { [weak self] in
@@ -56,11 +57,9 @@ class WalletAdapterService {
             }
         }
     }
-
 }
 
 extension WalletAdapterService {
-
     func isMainNet(wallet: Wallet) -> Bool? {
         queue.sync { adapterMap[wallet]?.isMainNet }
     }
@@ -76,5 +75,4 @@ extension WalletAdapterService {
     func refresh() {
         adapterManager.refresh()
     }
-
 }

@@ -1,7 +1,7 @@
-import UIKit
 import EvmKit
-import NftKit
 import MarketKit
+import NftKit
+import UIKit
 
 extension BlockchainType {
     static let supported: [BlockchainType] = [
@@ -22,6 +22,7 @@ extension BlockchainType {
         .binanceSmartChain,
         .binanceChain,
         .tron,
+        .ton,
         .safe,
     ]
 
@@ -53,26 +54,27 @@ extension BlockchainType {
     }
 
     var order: Int {
-        switch self {
-        case .bitcoin: return 1
-        case .ethereum: return 2
-        case .safe: return 3
-        case .binanceSmartChain: return 4
-        case .tron: return 5
-        case .polygon: return 6
-        case .avalanche: return 7
-        case .zcash: return 8
-        case .bitcoinCash: return 9
-        case .ecash: return 10
-        case .litecoin: return 11
-        case .dash: return 12
-        case .binanceChain: return 13
-        case .gnosis: return 14
-        case .fantom: return 15
-        case .arbitrumOne: return 16
-        case .optimism: return 17
-        default: return Int.max
-        }
+        let blockchainTypes: [BlockchainType] = [
+            .bitcoin,
+            .ethereum,
+            .binanceSmartChain,
+            .tron,
+            .ton,
+            .polygon,
+            .avalanche,
+            .zcash,
+            .bitcoinCash,
+            .ecash,
+            .litecoin,
+            .dash,
+            .binanceChain,
+            .gnosis,
+            .fantom,
+            .arbitrumOne,
+            .optimism,
+        ]
+
+        return blockchainTypes.firstIndex(of: self) ?? Int.max
     }
 
     var resendable: Bool {
@@ -105,12 +107,12 @@ extension BlockchainType {
         }
     }
 
-    // todo: remove this method
+    // TODO: remove this method
     func supports(accountType: AccountType) -> Bool {
         switch accountType {
         case .mnemonic:
             return true
-        case .hdExtendedKey(let key):
+        case let .hdExtendedKey(key):
             switch self {
             case .bitcoin: return key.coinTypes.contains(where: { $0 == .bitcoin })
             case .litecoin: return key.coinTypes.contains(where: { $0 == .litecoin })
@@ -124,12 +126,17 @@ extension BlockchainType {
             }
         case .tronAddress:
             return self == .tron
+        case .tonAddress:
+            return self == .ton
+        case let .btcAddress(_, blockchainType, _):
+            return self == blockchainType
         default:
             return false
         }
     }
 
     var isUnsupported: Bool {
+        if case .unsupported = self { return true }
         return false
     }
 
@@ -151,6 +158,7 @@ extension BlockchainType {
         case .litecoin: return "LTC (BIP44, BIP49, BIP84, BIP86)"
         case .binanceChain: return "BNB, BEP2 tokens"
         case .tron: return "TRX, TRC20 tokens"
+        case .ton: return "TON"
         case .dogecoin: return "Dogecoin"
         default: return ""
         }
@@ -191,17 +199,25 @@ extension BlockchainType {
             }
         default:
             return [
-                TokenQuery(blockchainType: self, tokenType: .native)
+                TokenQuery(blockchainType: self, tokenType: .native),
             ]
         }
     }
 
+    func supports(restoreMode: BtcRestoreMode) -> Bool {
+        guard case .blockchair = restoreMode else {
+            return true
+        }
+
+        switch self {
+        case .bitcoin, .bitcoinCash: return true
+        default: return false
+        }
+    }
 }
 
 extension BlockchainType: Comparable {
-
-    public static func <(lhs: BlockchainType, rhs: BlockchainType) -> Bool {
+    public static func < (lhs: BlockchainType, rhs: BlockchainType) -> Bool {
         lhs.order < rhs.order
     }
-
 }

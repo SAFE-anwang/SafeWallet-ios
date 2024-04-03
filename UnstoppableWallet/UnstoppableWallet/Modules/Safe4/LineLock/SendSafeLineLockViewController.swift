@@ -40,6 +40,7 @@ class SendSafeLineLockViewController: BaseSendViewController {
          amountInputViewModel: AmountInputViewModel,
          amountCautionViewModel: SendAmountCautionViewModel,
          recipientViewModel: RecipientAddressViewModel,
+         memoViewModel: SendMemoInputViewModel,
          feeViewModel: SendFeeViewModel,
          feeWarningViewModel: ITitledCautionViewModel,
          lineLockInputViewModel: LineLockInputViewModel
@@ -60,16 +61,17 @@ class SendSafeLineLockViewController: BaseSendViewController {
             self.timeLockViewModel = timeLockViewModel
             safeLockTimeCell = SafeDropDownListCell(viewModel: timeLockViewModel, title: "fee_settings.time_lock".localized)
         }
-
+        
         super.init(
-                confirmationFactory: confirmationFactory,
-                feeSettingsFactory: feeSettingsFactory,
-                viewModel: viewModel,
-                availableBalanceViewModel: availableBalanceViewModel,
-                amountInputViewModel: amountInputViewModel,
-                amountCautionViewModel: amountCautionViewModel,
-                recipientViewModel: recipientViewModel
+            confirmationFactory: confirmationFactory,
+            viewModel: viewModel,
+            availableBalanceViewModel: availableBalanceViewModel,
+            amountInputViewModel: amountInputViewModel,
+            amountCautionViewModel: amountCautionViewModel,
+            recipientViewModel: recipientViewModel,
+            memoViewModel: memoViewModel
         )
+
         
 
     }

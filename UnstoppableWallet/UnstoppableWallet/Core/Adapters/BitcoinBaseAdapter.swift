@@ -1,20 +1,21 @@
-import Foundation
 import BitcoinCore
+import Foundation
+import HdWalletKit
 import Hodler
-import RxSwift
 import HsToolKit
 import MarketKit
-import HdWalletKit
+import RxSwift
 
 class BitcoinBaseAdapter {
     static let confirmationsThreshold = 3
     private let abstractKit: AbstractKit
 
-    var coinRate: Decimal { 100_000_000 } //pow(10, 8)
+    var coinRate: Decimal { 100_000_000 } // pow(10, 8)
 
     private let lastBlockUpdatedSubject = PublishSubject<Void>()
     private let balanceStateSubject = PublishSubject<AdapterState>()
     private let balanceSubject = PublishSubject<BalanceData>()
+    private let syncMode: BitcoinCore.SyncMode
     let transactionRecordsSubject = PublishSubject<[BitcoinTransactionRecord]>()
 
     private(set) var balanceState: AdapterState {
@@ -23,15 +24,17 @@ class BitcoinBaseAdapter {
             syncing = balanceState.syncing
         }
     }
+
     private(set) var syncing: Bool = true
 
-    private let token: Token
+    let token: Token
     private let transactionSource: TransactionSource
 
-    init(abstractKit: AbstractKit, wallet: Wallet) {
+    init(abstractKit: AbstractKit, wallet: Wallet, syncMode: BitcoinCore.SyncMode) {
         self.abstractKit = abstractKit
         token = wallet.token
         transactionSource = wallet.transactionSource
+        self.syncMode = syncMode
 
         balanceState = .notSynced(error: AppError.unknownError)
     }
@@ -40,23 +43,30 @@ class BitcoinBaseAdapter {
         var lockInfo: TransactionLockInfo?
         var anyNotMineFromAddress: String?
         var anyNotMineToAddress: String?
-                
+
         for input in transaction.inputs {
             if anyNotMineFromAddress == nil, let address = input.address {
                 anyNotMineFromAddress = address
             }
         }
 
+        var memo: String? = nil
         for output in transaction.outputs {
+            // get last memo (we use last output for memo op_return)
+            if output.memo != nil {
+                memo = output.memo
+            }
+
             guard output.value > 0 else {
                 continue
             }
             
-            if let unlockedHeight = output.unlockedHeight, unlockedHeight > 0 {
+            if let unlockedHeight = output.unlockedHeight, unlockedHeight > 0, let hodlerOutputData = output.pluginData as? HodlerOutputData {
                 let approxUnlockTime = (abstractKit.lastBlockInfo?.timestamp ?? 0) + ((unlockedHeight - (abstractKit.lastBlockInfo?.height ?? 0))  * 30 )
                 lockInfo = TransactionLockInfo(
                         lockedUntil: Date(timeIntervalSince1970: Double(approxUnlockTime)),
-                        originalAddress: output.address ?? "__",
+                        originalAddress: output.address ?? "__", 
+                        lockTimeInterval: hodlerOutputData.lockTimeInterval,
                         unlockedHeight: unlockedHeight
                         )
                 
@@ -65,9 +75,10 @@ class BitcoinBaseAdapter {
                let approximateUnlockTime = hodlerOutputData.approximateUnlockTime {
 
                 lockInfo = TransactionLockInfo(
-                        lockedUntil: Date(timeIntervalSince1970: Double(approximateUnlockTime)),
-                        originalAddress: hodlerOutputData.addressString,
-                        unlockedHeight: nil
+                    lockedUntil: Date(timeIntervalSince1970: Double(approximateUnlockTime)),
+                    originalAddress: hodlerOutputData.addressString,
+                    lockTimeInterval: hodlerOutputData.lockTimeInterval,
+                    unlockedHeight: nil
                 )
             }
             if anyNotMineToAddress == nil, let address = output.address, !output.mine {
@@ -78,59 +89,64 @@ class BitcoinBaseAdapter {
         switch transaction.type {
         case .incoming:
             return BitcoinIncomingTransactionRecord(
-                    token: token,
-                    source: transactionSource,
-                    uid: transaction.uid,
-                    transactionHash: transaction.transactionHash,
-                    transactionIndex: transaction.transactionIndex,
-                    blockHeight: transaction.blockHeight,
-                    confirmationsThreshold: Self.confirmationsThreshold,
-                    date: Date(timeIntervalSince1970: Double(transaction.timestamp)),
-                    fee: transaction.fee.map { Decimal($0) / coinRate },
-                    failed: transaction.status == .invalid,
-                    lockInfo: lockInfo,
-                    conflictingHash: transaction.conflictingHash,
-                    showRawTransaction: transaction.status == .new || transaction.status == .invalid,
-                    amount: Decimal(transaction.amount) / coinRate,
-                    from: anyNotMineFromAddress
+                token: token,
+                source: transactionSource,
+                uid: transaction.uid,
+                transactionHash: transaction.transactionHash,
+                transactionIndex: transaction.transactionIndex,
+                blockHeight: transaction.blockHeight,
+                confirmationsThreshold: Self.confirmationsThreshold,
+                date: Date(timeIntervalSince1970: Double(transaction.timestamp)),
+                fee: transaction.fee.map { Decimal($0) / coinRate },
+                failed: transaction.status == .invalid,
+                lockInfo: lockInfo,
+                conflictingHash: transaction.conflictingHash,
+                showRawTransaction: transaction.status == .new || transaction.status == .invalid,
+                amount: Decimal(transaction.amount) / coinRate,
+                from: anyNotMineFromAddress,
+                memo: memo
             )
         case .outgoing:
             return BitcoinOutgoingTransactionRecord(
-                    token: token,
-                    source: transactionSource,
-                    uid: transaction.uid,
-                    transactionHash: transaction.transactionHash,
-                    transactionIndex: transaction.transactionIndex,
-                    blockHeight: transaction.blockHeight,
-                    confirmationsThreshold: Self.confirmationsThreshold,
-                    date: Date(timeIntervalSince1970: Double(transaction.timestamp)),
-                    fee: transaction.fee.map { Decimal($0) / coinRate },
-                    failed: transaction.status == .invalid,
-                    lockInfo: lockInfo,
-                    conflictingHash: transaction.conflictingHash,
-                    showRawTransaction: transaction.status == .new || transaction.status == .invalid,
-                    amount: Decimal(transaction.amount) / coinRate,
-                    to: anyNotMineToAddress,
-                    sentToSelf: false
+                token: token,
+                source: transactionSource,
+                uid: transaction.uid,
+                transactionHash: transaction.transactionHash,
+                transactionIndex: transaction.transactionIndex,
+                blockHeight: transaction.blockHeight,
+                confirmationsThreshold: Self.confirmationsThreshold,
+                date: Date(timeIntervalSince1970: Double(transaction.timestamp)),
+                fee: transaction.fee.map { Decimal($0) / coinRate },
+                failed: transaction.status == .invalid,
+                lockInfo: lockInfo,
+                conflictingHash: transaction.conflictingHash,
+                showRawTransaction: transaction.status == .new || transaction.status == .invalid,
+                amount: Decimal(transaction.amount) / coinRate,
+                to: anyNotMineToAddress,
+                sentToSelf: false,
+                memo: memo,
+                replaceable: transaction.rbfEnabled && transaction.blockHeight == nil && transaction.conflictingHash == nil
             )
         case .sentToSelf:
             return BitcoinOutgoingTransactionRecord(
-                    token: token,
-                    source: transactionSource,
-                    uid: transaction.uid,
-                    transactionHash: transaction.transactionHash,
-                    transactionIndex: transaction.transactionIndex,
-                    blockHeight: transaction.blockHeight,
-                    confirmationsThreshold: Self.confirmationsThreshold,
-                    date: Date(timeIntervalSince1970: Double(transaction.timestamp)),
-                    fee: transaction.fee.map { Decimal($0) / coinRate },
-                    failed: transaction.status == .invalid,
-                    lockInfo: lockInfo,
-                    conflictingHash: transaction.conflictingHash,
-                    showRawTransaction: transaction.status == .new || transaction.status == .invalid,
-                    amount: Decimal(transaction.amount) / coinRate,
-                    to: anyNotMineToAddress,
-                    sentToSelf: true
+                token: token,
+                source: transactionSource,
+                uid: transaction.uid,
+                transactionHash: transaction.transactionHash,
+                transactionIndex: transaction.transactionIndex,
+                blockHeight: transaction.blockHeight,
+                confirmationsThreshold: Self.confirmationsThreshold,
+                date: Date(timeIntervalSince1970: Double(transaction.timestamp)),
+                fee: transaction.fee.map { Decimal($0) / coinRate },
+                failed: transaction.status == .invalid,
+                lockInfo: lockInfo,
+                conflictingHash: transaction.conflictingHash,
+                showRawTransaction: transaction.status == .new || transaction.status == .invalid,
+                amount: Decimal(transaction.amount) / coinRate,
+                to: transaction.outputs.first(where: { !$0.changeOutput })?.address ?? transaction.outputs.first?.address,
+                sentToSelf: true,
+                memo: memo,
+                replaceable: transaction.rbfEnabled && transaction.blockHeight == nil && transaction.conflictingHash == nil
             )
         }
     }
@@ -150,8 +166,8 @@ class BitcoinBaseAdapter {
 
     private func balanceData(balanceInfo: BalanceInfo) -> BalanceData {
         LockedBalanceData(
-                available: Decimal(balanceInfo.spendable) / coinRate,
-                locked: Decimal(balanceInfo.unspendable) / coinRate
+            available: Decimal(balanceInfo.spendable) / coinRate,
+            locked: Decimal(balanceInfo.unspendable) / coinRate
         )
     }
 
@@ -159,14 +175,24 @@ class BitcoinBaseAdapter {
         fatalError("Must be overridden by subclass")
     }
 
-    open func explorerUrl(transactionHash: String) -> String? {
+    open func explorerUrl(transactionHash _: String) -> String? {
         fatalError("Must be overridden by subclass")
     }
 
+    open func explorerUrl(address _: String) -> String? {
+        fatalError("Must be overridden by subclass")
+    }
+
+    private var showSyncedUntil: Bool {
+        if case .blockchair = syncMode {
+            return false
+        } else {
+            return true
+        }
+    }
 }
 
 extension BitcoinBaseAdapter: IAdapter {
-
     var isMainNet: Bool {
         true
     }
@@ -191,11 +217,9 @@ extension BitcoinBaseAdapter: IAdapter {
     var statusInfo: [(String, Any)] {
         abstractKit.statusInfo
     }
-
 }
 
 extension BitcoinBaseAdapter: BitcoinCoreDelegate {
-
     func transactionsUpdated(inserted: [TransactionInfo], updated: [TransactionInfo]) {
         var records = [BitcoinTransactionRecord]()
 
@@ -209,14 +233,13 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
         transactionRecordsSubject.onNext(records)
     }
 
-    func transactionsDeleted(hashes: [String]) {
-    }
+    func transactionsDeleted(hashes _: [String]) {}
 
     func balanceUpdated(balance: BalanceInfo) {
         balanceSubject.onNext(balanceData(balanceInfo: balance))
     }
 
-    func lastBlockInfoUpdated(lastBlockInfo: BlockInfo) {
+    func lastBlockInfoUpdated(lastBlockInfo _: BlockInfo) {
         lastBlockUpdatedSubject.onNext(())
     }
 
@@ -228,39 +251,39 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
             }
 
             balanceState = .synced
-        case .notSynced(let error):
+        case let .notSynced(error):
             let converted = error.convertedError
 
-            if case .notSynced(let appError) = balanceState, "\(converted)" == "\(appError)" {
+            if case let .notSynced(appError) = balanceState, "\(converted)" == "\(appError)" {
                 return
             }
 
             balanceState = .notSynced(error: converted)
-        case .syncing(let progress):
+        case let .syncing(progress):
             let newProgress = Int(progress * 100)
-            let newDate = abstractKit.lastBlockInfo?.timestamp.map { Date(timeIntervalSince1970: Double($0)) }
+            let newDate = showSyncedUntil
+                ? abstractKit.lastBlockInfo?.timestamp.map { Date(timeIntervalSince1970: Double($0)) }
+                : nil
 
             if case let .syncing(currentProgress, currentDate) = balanceState, newProgress == currentProgress {
-                if let currentDate = currentDate, let newDate = newDate, currentDate.isSameDay(as: newDate) {
+                if let currentDate, let newDate, currentDate.isSameDay(as: newDate) {
                     return
                 }
             }
 
             balanceState = .syncing(progress: newProgress, lastBlockDate: newDate)
-        case .apiSyncing(let newCount):
+        case let .apiSyncing(newCount):
             let newCountDescription = "balance.searching.count".localized("\(newCount)")
-            if case .customSyncing(_, let secondary, _) = balanceState, newCountDescription == secondary {
+            if case let .customSyncing(_, secondary, _) = balanceState, newCountDescription == secondary {
                 return
             }
 
             balanceState = .customSyncing(main: "balance.searching".localized(), secondary: newCountDescription, progress: nil)
         }
     }
-
 }
 
 extension BitcoinBaseAdapter: IBalanceAdapter {
-
     var balanceStateUpdatedObservable: Observable<AdapterState> {
         balanceStateSubject.asObservable()
     }
@@ -272,13 +295,11 @@ extension BitcoinBaseAdapter: IBalanceAdapter {
     var balanceDataUpdatedObservable: Observable<BalanceData> {
         balanceSubject.asObservable()
     }
-
 }
 
 extension BitcoinBaseAdapter {
-
-    func availableBalance(feeRate: Int, address: String?, pluginData: [UInt8: IBitcoinPluginData] = [:]) -> Decimal {
-        let amount = (try? abstractKit.maxSpendableValue(toAddress: address, feeRate: feeRate, pluginData: pluginData)) ?? 0
+    func availableBalance(feeRate: Int, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:]) -> Decimal {
+        let amount = (try? abstractKit.maxSpendableValue(toAddress: address, memo: memo, feeRate: feeRate, unspentOutputs: unspentOutputs, pluginData: pluginData)) ?? 0
         return Decimal(amount) / coinRate
     }
 
@@ -288,7 +309,7 @@ extension BitcoinBaseAdapter {
 
     func minimumSendAmount(address: String?) -> Decimal {
         do {
-            return Decimal(try abstractKit.minSpendableValue(toAddress: address)) / coinRate
+            return try Decimal(abstractKit.minSpendableValue(toAddress: address)) / coinRate
         } catch {
             return 0
         }
@@ -302,17 +323,23 @@ extension BitcoinBaseAdapter {
         try validate(address: address, pluginData: [:])
     }
 
-    func fee(amount: Decimal, feeRate: Int, address: String?, pluginData: [UInt8: IBitcoinPluginData] = [:]) -> Decimal {
-        do {
-            let amount = convertToSatoshi(value: amount)
-            let fee = try abstractKit.fee(for: amount, toAddress: address, feeRate: feeRate, pluginData: pluginData)
-            return Decimal(fee) / coinRate
-        } catch {
-            return 0
-        }
+    func sendInfo(amount: Decimal, feeRate: Int, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:]) throws -> SendInfo {
+        let amount = convertToSatoshi(value: amount)
+
+        let info = try abstractKit.sendInfo(for: amount, toAddress: address, memo: memo, feeRate: feeRate, unspentOutputs: unspentOutputs, pluginData: pluginData)
+        return SendInfo(
+            unspentOutputs: info.unspentOutputs.map(\.info),
+            fee: Decimal(info.fee) / coinRate,
+            changeValue: info.changeValue.map { Decimal($0) / coinRate },
+            changeAddress: info.changeAddress?.stringValue
+        )
     }
 
-    func sendSingle(amount: Decimal, address: String, feeRate: Int, pluginData: [UInt8: IBitcoinPluginData] = [:], sortMode: TransactionDataSortMode, logger: Logger) -> Single<Void> {
+    var unspentOutputs: [UnspentOutputInfo] {
+        abstractKit.unspentOutputs
+    }
+
+    func sendSingle(amount: Decimal, address: String, memo: String?, feeRate: Int, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:], sortMode: TransactionDataSortMode, rbfEnabled: Bool, logger: Logger) -> Single<Void> {
         let satoshiAmount = convertToSatoshi(value: amount)
         let sortType = convertToKitSortMode(sort: sortMode)
 
@@ -320,7 +347,7 @@ extension BitcoinBaseAdapter {
             do {
                 if let adapter = self {
                     logger.debug("Sending to \(String(reflecting: adapter.abstractKit))", save: true)
-                    _ = try adapter.abstractKit.send(to: address, value: satoshiAmount, feeRate: feeRate, sortType: sortType, pluginData: pluginData)
+                    _ = try adapter.abstractKit.send(to: address, memo: memo, value: satoshiAmount, feeRate: feeRate, sortType: sortType, rbfEnabled: rbfEnabled, unspentOutputs: unspentOutputs, pluginData: pluginData)
                 }
                 observer(.success(()))
             } catch {
@@ -330,11 +357,9 @@ extension BitcoinBaseAdapter {
             return Disposables.create()
         }
     }
-
 }
 
 extension BitcoinBaseAdapter: ITransactionsAdapter {
-
     var lastBlockInfo: LastBlockInfo? {
         abstractKit.lastBlockInfo.map { LastBlockInfo(height: $0.height, timestamp: $0.timestamp) }
     }
@@ -347,23 +372,27 @@ extension BitcoinBaseAdapter: ITransactionsAdapter {
         lastBlockUpdatedSubject.asObservable()
     }
 
-    func transactionsObservable(token: Token?, filter: TransactionTypeFilter) -> Observable<[TransactionRecord]> {
-        transactionRecordsSubject.asObservable()
-                .map { transactions in
-                    transactions.compactMap { transaction -> TransactionRecord? in
-                        switch (transaction, filter) {
-                        case (_, .all): return transaction
-                        case (is BitcoinIncomingTransactionRecord, .incoming): return transaction
-                        case (is BitcoinOutgoingTransactionRecord, .outgoing): return transaction
-                        case (let tx as BitcoinOutgoingTransactionRecord, .incoming): return tx.sentToSelf ? transaction : nil
-                        default: return nil
-                        }
-                    }
-                }
-                .filter { !$0.isEmpty }
+    var additionalTokenQueries: [TokenQuery] {
+        []
     }
 
-    func transactionsSingle(from: TransactionRecord?, token: Token?, filter: TransactionTypeFilter, limit: Int) -> Single<[TransactionRecord]> {
+    func transactionsObservable(token _: Token?, filter: TransactionTypeFilter, address _: String?) -> Observable<[TransactionRecord]> {
+        transactionRecordsSubject.asObservable()
+            .map { transactions in
+                transactions.compactMap { transaction -> TransactionRecord? in
+                    switch (transaction, filter) {
+                    case (_, .all): return transaction
+                    case (is BitcoinIncomingTransactionRecord, .incoming): return transaction
+                    case (is BitcoinOutgoingTransactionRecord, .outgoing): return transaction
+                    case let (tx as BitcoinOutgoingTransactionRecord, .incoming): return tx.sentToSelf ? transaction : nil
+                    default: return nil
+                    }
+                }
+            }
+            .filter { !$0.isEmpty }
+    }
+
+    func transactionsSingle(from: TransactionRecord?, token _: Token?, filter: TransactionTypeFilter, address _: String?, limit: Int) -> Single<[TransactionRecord]> {
         let bitcoinFilter: TransactionFilterType?
         switch filter {
         case .all: bitcoinFilter = nil
@@ -373,9 +402,9 @@ extension BitcoinBaseAdapter: ITransactionsAdapter {
         }
 
         let transactions = abstractKit.transactions(fromUid: from?.uid, type: bitcoinFilter, limit: limit)
-                .map {
-                    transactionRecord(fromTransaction: $0)
-                }
+            .map {
+                transactionRecord(fromTransaction: $0)
+            }
 
         return Single.just(transactions)
     }
@@ -384,14 +413,40 @@ extension BitcoinBaseAdapter: ITransactionsAdapter {
         abstractKit.rawTransaction(transactionHash: hash)
     }
 
+    func speedUpTransactionInfo(transactionHash: String) -> (originalTransactionSize: Int, feeRange: Range<Int>)? {
+        abstractKit.speedUpTransactionInfo(transactionHash: transactionHash)
+    }
+
+    func cancelTransactionInfo(transactionHash: String) -> (originalTransactionSize: Int, feeRange: Range<Int>)? {
+        abstractKit.cancelTransactionInfo(transactionHash: transactionHash)
+    }
+
+    func speedUpTransaction(transactionHash: String, minFee: Int) throws -> (replacment: ReplacementTransaction, record: BitcoinTransactionRecord) {
+        let replacment = try abstractKit.speedUpTransaction(transactionHash: transactionHash, minFee: minFee)
+        return (replacment: replacment, record: transactionRecord(fromTransaction: replacment.info))
+    }
+
+    func cancelTransaction(transactionHash: String, minFee: Int) throws -> (replacment: ReplacementTransaction, record: BitcoinTransactionRecord) {
+        let replacment = try abstractKit.cancelTransaction(transactionHash: transactionHash, minFee: minFee)
+        return (replacment: replacment, record: transactionRecord(fromTransaction: replacment.info))
+    }
+
+    func send(replacementTransaction: ReplacementTransaction) throws -> FullTransaction {
+        try abstractKit.send(replacementTransaction: replacementTransaction)
+    }
 }
 
 extension BitcoinBaseAdapter: IDepositAdapter {
-
     var receiveAddress: DepositAddress {
         DepositAddress(abstractKit.receiveAddress())
     }
 
+    func usedAddresses(change: Bool) -> [UsedAddress] {
+        abstractKit.usedAddresses(change: change).map {
+            let url = explorerUrl(address: $0.address).flatMap { URL(string: $0) }
+            return UsedAddress(index: $0.index, address: $0.address, explorerUrl: url)
+        }.sorted { $0.index < $1.index }
+    }
 }
 
 class DepositAddress {
@@ -400,4 +455,25 @@ class DepositAddress {
     init(_ receiveAddress: String) {
         address = receiveAddress
     }
+}
+
+public struct UsedAddress: Hashable {
+    let index: Int
+    let address: String
+    let explorerUrl: URL?
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(index)
+        hasher.combine(address)
+        hasher.combine(explorerUrl?.absoluteString)
+    }
+}
+
+struct SendInfo {
+    static let empty: Self = .init(unspentOutputs: [], fee: 0, changeValue: nil, changeAddress: nil)
+
+    public let unspentOutputs: [UnspentOutputInfo]
+    public let fee: Decimal
+    public let changeValue: Decimal?
+    public let changeAddress: String?
 }

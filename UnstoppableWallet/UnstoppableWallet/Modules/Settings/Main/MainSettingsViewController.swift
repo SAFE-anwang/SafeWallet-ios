@@ -1,6 +1,5 @@
 import ComponentKit
 import MessageUI
-import ModuleKit
 import RxCocoa
 import RxSwift
 import SafariServices
@@ -318,7 +317,7 @@ class MainSettingsViewController: ThemeViewController {
                 id: "base-currency",
                 height: .heightCell48,
                 action: { [weak self] in
-                    self?.navigationController?.pushViewController(BaseCurrencySettingsModule.viewController(), animated: true)
+                    self?.navigationController?.pushViewController(BaseCurrencySettingsModule.view().toViewController(title: "settings.base_currency.title".localized), animated: true)
                 }
             ),
             StaticRow(
@@ -326,7 +325,7 @@ class MainSettingsViewController: ThemeViewController {
                 id: "language",
                 height: .heightCell48,
                 action: { [weak self] in
-                    let module = LanguageSettingsRouter.module { MainModule.instance(presetTab: .settings) }
+                    let module = LanguageSettingsModule.view().toViewController(title: "settings.language".localized)
                     self?.navigationController?.pushViewController(module, animated: true)
                 }
             ),

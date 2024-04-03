@@ -4,7 +4,6 @@ import RxSwift
 import RxRelay
 import RxCocoa
 import UniswapKit
-import CurrencyKit
 import MarketKit
 import EvmKit
 import ComponentKit
@@ -14,7 +13,7 @@ class LiquidityRecordViewModel {
     private var loadingRelay = BehaviorRelay<Bool>(value: true)
     private let syncErrorRelay = BehaviorRelay<Bool>(value: false)
     private var errorRelay = BehaviorRelay<String?>(value: nil)
-    private var showMessageRelay = BehaviorRelay<String?>(value: nil)
+    private var removeStatusRelay = BehaviorRelay<(Bool, String?)>(value: (false, nil))
     private let service: LiquidityRecordService
     private var disposeBag = DisposeBag()
 
@@ -38,16 +37,32 @@ class LiquidityRecordViewModel {
             viewItemsRelay.accept(datas)
             loadingRelay.accept(false)
             syncErrorRelay.accept(datas.count == 0)
-            showMessageRelay.accept("liquidity.remove.succ".localized)
+            removeStatusRelay.accept((true, "liquidity.remove.succ".localized))
+            refresh()
             
         case .failed(error: let error):
-            if case let JsonRpcResponse.ResponseError.rpcError(rpcError) = error {
-                errorRelay.accept("liquidity.remove.error.insufficient".localized)
-            }else {
-                errorRelay.accept(error.localizedDescription)
-            }
+            errorRelay.accept(error.localizedDescription)
             loadingRelay.accept(false)
             syncErrorRelay.accept(true)
+            
+        case .removeFailed(error: let error, data: let data):
+            if case JsonRpcResponse.ResponseError.rpcError(_) = error {
+                var feeType: String = ""
+                switch data.tokenA.blockchainType {
+                case .binanceSmartChain:
+                    feeType = "BNB"
+                case .ethereum:
+                    feeType = "ETH"
+                default:
+                    feeType = ""
+                }
+                removeStatusRelay.accept((false, "liquidity.remove.error.insufficient".localized(feeType)))
+            }else {
+                removeStatusRelay.accept((false, error.localizedDescription))
+            }
+            loadingRelay.accept(false)
+            syncErrorRelay.accept(false)
+            
         }
     }
 }
@@ -65,16 +80,16 @@ extension LiquidityRecordViewModel {
         errorRelay.asDriver()
     }
     
-    var showMessageDriver: Driver<String?> {
-        showMessageRelay.asDriver()
-    }
-    
     var viewItemsDriver: Driver<[RecordItem]> {
         viewItemsRelay.asDriver()
     }
     
-    func removeLiquidity(recordItem: RecordItem) {
-        service.removeLiquidity(viewItem: recordItem)
+    var removeStatusDriver: Driver<(Bool, String?)> {
+        removeStatusRelay.asDriver()
+    }
+    
+    func removeLiquidity(recordItem: RecordItem, ratio: BigUInt) {
+        service.removeLiquidity(viewItem: recordItem, ratio: ratio)
     }
     
     func refresh() {
@@ -93,7 +108,7 @@ extension LiquidityRecordViewModel {
         let shareRate: Decimal
         let totalSupply: Decimal
         let pair: LiquidityPair
-        
+         
         var amountAStr: String {
             decimalNumberToInt(value: amountA, scale: 8)
         }
@@ -103,7 +118,8 @@ extension LiquidityRecordViewModel {
         }
         
         var liquidityDec: String {
-            "liquidity.pool.quantity".localized + ":\(decimalNumberToInt(value: liquidity, scale: 5))/\(decimalNumberToInt(value: shareRate * 100, scale: 8))%"
+            let liquidity =  liquidity < 0.00000001 ? "<0.00000001" : decimalNumberToInt(value: liquidity, scale: 8)
+            return "liquidity.pool.quantity".localized + ":\(liquidity)/\(decimalNumberToInt(value: shareRate * 100, scale: 8))%"
         }
         
         func decimalNumberToInt(value: Decimal, scale: Int) -> String {

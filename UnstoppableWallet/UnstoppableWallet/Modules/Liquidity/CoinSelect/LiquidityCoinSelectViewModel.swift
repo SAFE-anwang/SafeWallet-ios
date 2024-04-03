@@ -3,7 +3,6 @@ import Foundation
 import RxSwift
 import RxCocoa
 import MarketKit
-import CurrencyKit
 
 class LiquidityCoinSelectViewModel {
     private let service: LiquidityCoinSelectService

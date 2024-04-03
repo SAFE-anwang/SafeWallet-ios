@@ -1,4 +1,3 @@
-import CurrencyKit
 import Foundation
 import MarketKit
 
@@ -25,7 +24,7 @@ class WalletTokenBalanceViewItemFactory {
                 buttons[.send] = sendButtonState
                 buttons[.receive] = .enabled
 
-                if wallet.token.swappable {
+                if AppConfig.swapEnabled, wallet.token.swappable {
                     buttons[.swap] = sendButtonState
                     if [.binanceSmartChain, .ethereum].contains(wallet.token.blockchainType) {
                         buttons[.liquidity] = .enabled
@@ -61,7 +60,7 @@ class WalletTokenBalanceViewItemFactory {
     private func descriptionValue(item: WalletTokenBalanceService.BalanceItem, balanceHidden: Bool) -> (text: String?, dimmed: Bool) {
         if case let .syncing(progress, lastBlockDate) = item.state {
             var text = ""
-            if let progress = progress {
+            if let progress {
                 text = "balance.syncing_percent".localized("\(progress)%")
             } else {
                 text = "balance.syncing".localized
@@ -121,13 +120,13 @@ class WalletTokenBalanceViewItemFactory {
 
     private func coinValue(value: Decimal, decimalCount: Int, symbol: String? = nil, balanceHidden: Bool, state: AdapterState) -> (text: String?, dimmed: Bool) {
         (
-            text: balanceHidden ? "*****" : ValueFormatter.instance.formatFull(value: value, decimalCount: decimalCount, symbol: symbol),
+            text: balanceHidden ? BalanceHiddenManager.placeholder : ValueFormatter.instance.formatFull(value: value, decimalCount: decimalCount, symbol: symbol),
             dimmed: state != .synced
         )
     }
 
     private func currencyValue(value: Decimal, balanceHidden: Bool, state: AdapterState, priceItem: WalletCoinPriceService.Item?) -> (text: String?, dimmed: Bool) {
-        guard let priceItem = priceItem else {
+        guard let priceItem else {
             return (text: "---", dimmed: true)
         }
 
@@ -135,7 +134,7 @@ class WalletTokenBalanceViewItemFactory {
         let currencyValue = CurrencyValue(currency: price.currency, value: value * price.value)
 
         return (
-            text: balanceHidden ? "*****" : ValueFormatter.instance.formatFull(currencyValue: currencyValue),
+            text: balanceHidden ? BalanceHiddenManager.placeholder : ValueFormatter.instance.formatFull(currencyValue: currencyValue),
             dimmed: state != .synced || priceItem.expired
         )
     }

@@ -1,9 +1,11 @@
-import UIKit
-import ThemeKit
-import SnapKit
-import RxSwift
-import RxCocoa
 import ComponentKit
+import MarketKit
+import RxCocoa
+import RxSwift
+import SnapKit
+import SwiftUI
+import ThemeKit
+import UIKit
 
 class SwapApproveConfirmationViewController: SendEvmTransactionViewController {
     private let approveButton = PrimaryButton()
@@ -15,7 +17,8 @@ class SwapApproveConfirmationViewController: SendEvmTransactionViewController {
         super.init(transactionViewModel: transactionViewModel, settingsViewModel: settingsViewModel)
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -47,5 +50,33 @@ class SwapApproveConfirmationViewController: SendEvmTransactionViewController {
 
         super.handleSendSuccess(transactionHash: transactionHash)
     }
+}
 
+struct SwapApproveConfirmationView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+
+    let sendData: SendEvmData
+    let blockchainType: BlockchainType
+    weak var delegate: ISwapApproveDelegate?
+
+    init(sendData: SendEvmData, blockchainType: BlockchainType, delegate: ISwapApproveDelegate?) {
+        self.sendData = sendData
+        self.blockchainType = blockchainType
+        self.delegate = delegate
+    }
+
+    func makeUIViewController(context _: Context) -> UIViewController {
+        do {
+            let viewController = try SwapApproveConfirmationModule.viewController(
+                sendData: sendData,
+                blockchainType: blockchainType,
+                delegate: delegate
+            )
+            return ThemeNavigationController(rootViewController: viewController)
+        } catch {
+            return ThemeNavigationController(rootViewController: ErrorViewController(text: error.localizedDescription))
+        }
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

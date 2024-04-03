@@ -1,15 +1,15 @@
-import UIKit
-import ThemeKit
 import ComponentKit
 import MarketKit
 import MobileCoreServices
+import SwiftUI
+import ThemeKit
+import UIKit
 
 protocol ContactBookSelectorDelegate: AnyObject {
     func onFetch(address: String)
 }
 
-struct ContactBookModule {
-
+enum ContactBookModule {
     private static func showAddContact(mode: ContactBookModule.AddContactMode, contactAddress: ContactAddress, parentViewController: UIViewController?) {
         switch mode {
         case .new:
@@ -27,16 +27,16 @@ struct ContactBookModule {
         }
     }
 
-    private static func chooseAddContactMode(resultAfterClose: Bool, action: ((AddContactMode) -> ())?) -> UIViewController {
+    private static func chooseAddContactMode(resultAfterClose: Bool, action: ((AddContactMode) -> Void)?) -> UIViewController {
         let alertViewItems = [
             AlertViewItem(text: "contacts.add_address.create_new".localized, selected: false),
-            AlertViewItem(text: "contacts.add_address.add_to_contact".localized, selected: false)
+            AlertViewItem(text: "contacts.add_address.add_to_contact".localized, selected: false),
         ]
 
         return AlertRouter.module(
-                title: "contacts.add_address.title".localized,
-                viewItems: alertViewItems,
-                afterClose: resultAfterClose
+            title: "contacts.add_address.title".localized,
+            viewItems: alertViewItems,
+            afterClose: resultAfterClose
         ) { index in
             switch index {
             case 0: action?(.new)
@@ -44,11 +44,9 @@ struct ContactBookModule {
             }
         }
     }
-
 }
 
 extension ContactBookModule {
-
     static func viewController(mode: Mode, presented: Bool = false) -> UIViewController? {
         let service = ContactBookService(marketKit: App.shared.marketKit, contactManager: App.shared.contactManager, blockchainType: mode.blockchainType)
         let viewModel = ContactBookViewModel(service: service)
@@ -75,11 +73,9 @@ extension ContactBookModule {
 
         parentViewController?.present(alertController, animated: true)
     }
-
 }
 
 extension ContactBookModule {
-
     enum Mode {
         case edit
         case select(BlockchainType, ContactBookSelectorDelegate)
@@ -87,14 +83,14 @@ extension ContactBookModule {
 
         var blockchainType: BlockchainType? {
             switch self {
-            case .select(let blockchainType, _): return blockchainType
+            case let .select(blockchainType, _): return blockchainType
             default: return nil
             }
         }
 
         var delegate: ContactBookSelectorDelegate? {
             switch self {
-            case .select(_, let delegate): return delegate
+            case let .select(_, delegate): return delegate
             default: return nil
             }
         }
@@ -116,5 +112,23 @@ extension ContactBookModule {
         case restore
         case backup
     }
+}
 
+struct ContactBookView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+
+    let mode: ContactBookModule.Mode
+    let presented: Bool
+
+    init(mode: ContactBookModule.Mode, presented: Bool) {
+        self.mode = mode
+        self.presented = presented
+    }
+
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        ContactBookModule.viewController(mode: mode, presented: presented) ?? UIViewController()
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

@@ -1,24 +1,38 @@
+import Combine
+import BitcoinCore
 import Foundation
 import RxSwift
 import RxCocoa
 import RxRelay
 import HsToolKit
 import Hodler
-import BitcoinCore
+import EvmKit
 
 class SendSafeLineLockAdapterService {
     private let disposeBag = DisposeBag()
-    private let queue = DispatchQueue(label: "io.horizontalsystems.unstoppable.send.safe_adapter_service", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "anwang.safewallet.send.safe_adapter_service", qos: .userInitiated)
 
     private let feeRateService: FeeRateService
     private let amountInputService: IAmountInputService
     private let addressService: AddressService
+    private let memoService: SendMemoInputService
     private let timeLockService: TimeLockService?
     private let btcBlockchainManager: BtcBlockchainManager
     private let adapter: ISendSafeCoinAdapter
     private let lineLockInputService: LineLockInputService
     let inputOutputOrderService: InputOutputOrderService
-
+    let rbfService: RbfService
+    
+    let customOutputsUpdatedSubject = PassthroughSubject<Void, Never>()
+    var customOutputs: [UnspentOutputInfo]? {
+        didSet {
+            if customOutputs != oldValue {
+                sync()
+                customOutputsUpdatedSubject.send()
+            }
+        }
+    }
+    
     // Outputs
     let feeStateRelay = BehaviorRelay<DataStatus<Decimal>>(value: .loading)
     var feeState: DataStatus<Decimal> = .loading {
@@ -26,6 +40,14 @@ class SendSafeLineLockAdapterService {
             if !feeState.equalTo(oldValue) {
                 feeStateRelay.accept(feeState)
             }
+        }
+    }
+    
+    let sendInfoRelay = BehaviorRelay<DataStatus<SendInfo>>(value: .loading)
+    var sendInfoState: DataStatus<SendInfo> = .loading {
+        didSet {
+            feeState = sendInfoState.map(\.fee)
+            sendInfoRelay.accept(sendInfoState)
         }
     }
 
@@ -56,14 +78,16 @@ class SendSafeLineLockAdapterService {
         }
     }
 
-    init(feeRateService: FeeRateService, amountInputService: IAmountInputService, addressService: AddressService,
-inputOutputOrderService: InputOutputOrderService, timeLockService: TimeLockService?, btcBlockchainManager: BtcBlockchainManager, adapter: ISendSafeCoinAdapter, lineLockInputService: LineLockInputService) {
+    init(feeRateService: FeeRateService, amountInputService: IAmountInputService, addressService: AddressService, memoService: SendMemoInputService,
+inputOutputOrderService: InputOutputOrderService, rbfService: RbfService, timeLockService: TimeLockService?, btcBlockchainManager: BtcBlockchainManager, adapter: ISendSafeCoinAdapter, lineLockInputService: LineLockInputService) {
         self.feeRateService = feeRateService
         self.amountInputService = amountInputService
         self.addressService = addressService
         self.timeLockService = timeLockService
+        self.memoService = memoService
         self.inputOutputOrderService = inputOutputOrderService
         self.btcBlockchainManager = btcBlockchainManager
+        self.rbfService = rbfService
         self.adapter = adapter
         self.lineLockInputService = lineLockInputService
         
@@ -75,8 +99,12 @@ inputOutputOrderService: InputOutputOrderService, timeLockService: TimeLockServi
         subscribe(disposeBag, addressService.stateObservable) { [weak self] _ in
             self?.sync(updatedFrom: .address)
         }
-
-        if let timeLockService = timeLockService {
+        
+        subscribe(disposeBag, memoService.memoObservable) { [weak self] _ in
+            self?.sync(updatedFrom: .memo)
+        }
+        
+        if let timeLockService {
             subscribe(disposeBag, timeLockService.pluginDataObservable) { [weak self] _ in
                 self?.sync(updatedFrom: .pluginData)
             }
@@ -90,31 +118,41 @@ inputOutputOrderService: InputOutputOrderService, timeLockService: TimeLockServi
     }
 
     private func sync(feeRate: DataStatus<Int>? = nil, updatedFrom: UpdatedField = .feeRate) {
-        let feeRate = feeRate ?? feeRateService.status
+        let feeRateStatus = feeRate ?? feeRateService.status
         let amount = amountInputService.amount
+        var feeRate = 0
 
-        switch feeRate {
+        switch feeRateStatus {
         case .loading:
-            guard !amount.isZero else {      // force update fee for bitcoin, when clear amount to zero value
-                feeState = .completed(0)
+            guard !amount.isZero else { // force update fee for bitcoin, when clear amount to zero value
+                sendInfoState = .completed(SendInfo.empty)
                 return
             }
 
-            feeState = .loading
-        case .failed(let error):
-            feeState = .failed(error)
-        case .completed(let feeRate):
-            update(feeRate: feeRate, amount: amount, address: addressService.state.address?.raw, pluginData: pluginData, updatedFrom: updatedFrom)
+            sendInfoState = .loading
+        case let .failed(error):
+            sendInfoState = .failed(error)
+        case let .completed(_feeRate):
+            feeRate = _feeRate
         }
+
+        update(feeRate: feeRate, amount: amount, address: addressService.state.address?.raw, pluginData: pluginData, updatedFrom: updatedFrom)
     }
 
     private func update(feeRate: Int, amount: Decimal, address: String?, pluginData: [UInt8: IBitcoinPluginData], updatedFrom: UpdatedField) {
+        let memo = memoService.memo
         queue.async { [weak self] in
-            if let fee = self?.adapter.feeSafe(amount: amount, address: address) {
-                self?.feeState = .completed(fee)
+            do {
+                if let sendInfo = try self?.adapter
+                    .sendInfoSafe(amount: amount, feeRate: feeRate, address: address, memo: memo, unspentOutputs: self?.customOutputs, pluginData: pluginData)
+                {
+                    self?.sendInfoState = .completed(sendInfo)
+                }
+            } catch {
+                self?.sendInfoState = .failed(error)
             }
             if updatedFrom != .amount,
-               let availableBalance = self?.adapter.availableBalanceSafe(address: address){
+               let availableBalance = self?.adapter.availableBalanceSafe(feeRate: feeRate, address: address, memo: memo, unspentOutputs: self?.customOutputs, pluginData: pluginData){
                 self?.availableBalance = .completed(availableBalance)
             }
 //            if updatedFrom == .pluginData {
@@ -166,7 +204,7 @@ extension SendSafeLineLockAdapterService: ISendService {
         default: return Single.error(AppError.addressInvalid)
         }
 
-        guard case let .completed(_) = feeRateService.status else {
+        guard case let .completed(feeRate) = feeRateService.status else {
             return Single.error(SendTransactionError.noFee)
         }
 
@@ -185,10 +223,21 @@ extension SendSafeLineLockAdapterService: ISendService {
         
         let (totalAmount, reverseHex) = lineLockInputService.getLineLockInfo(coinAmount: amountInputService.amount, lockedValue: lockedValue, startMonth: startMonth, intervalMonth: intervalMonth)
         
-        if let data = pluginData[HodlerPlugin.id] as? HodlerData {
-            return adapter.sendSingle(amount: totalAmount, address: address.raw, sortMode: .shuffle, logger: logger, lockedTimeInterval: data.lockTimeInterval, reverseHex: reverseHex)
-        }
-        return adapter.sendSingle(amount: totalAmount, address: address.raw, sortMode: .shuffle, logger: logger, lockedTimeInterval: nil, reverseHex: reverseHex)
+        let data = pluginData[HodlerPlugin.id] as? HodlerData
+        let rbfEnabled = btcBlockchainManager.transactionRbfEnabled(blockchainType: adapter.blockchainType)
+
+        return adapter.sendSingle(amount: totalAmount, 
+                                  address: address.raw,
+                                  memo: memoService.memo,
+                                  feeRate: feeRate,
+                                  unspentOutputs: customOutputs,
+                                  pluginData: pluginData,
+                                  sortMode: .shuffle,
+                                  rbfEnabled: rbfEnabled,
+                                  logger: logger,
+                                  lockedTimeInterval: data?.lockTimeInterval,
+                                  reverseHex: reverseHex
+        )
     }
 
 }
@@ -196,7 +245,7 @@ extension SendSafeLineLockAdapterService: ISendService {
 extension SendSafeLineLockAdapterService {
 
     private enum UpdatedField: String {
-        case amount, address, pluginData, feeRate
+        case amount, address, memo, pluginData, feeRate
     }
     
 

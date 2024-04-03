@@ -67,13 +67,13 @@ class CoinHistoricalPrice: Record {
         "coinHistoricalPrice"
     }
 
-    required init(row: Row) {
+    required init(row: Row) throws {
         coinUid = row[Columns.coinUid]
         currencyCode = row[Columns.currencyCode]
         value = row[Columns.value]
         timestamp = row[Columns.timestamp]
 
-        super.init(row: row)
+        try super.init(row: row)
     }
 
     override open func encode(to container: inout PersistenceContainer) {

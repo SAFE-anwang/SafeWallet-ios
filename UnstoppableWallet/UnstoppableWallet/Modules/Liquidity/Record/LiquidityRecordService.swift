@@ -2,7 +2,6 @@ import Foundation
 import RxSwift
 import RxRelay
 import MarketKit
-import CurrencyKit
 import UniswapKit
 import HsExtensions
 import EvmKit
@@ -14,41 +13,47 @@ import Web3Core
 import web3swift
 import Eip20Kit
 
-class LiquidityRecordService {
+class LiquidityRecordService {    
+    private let currentBlockchainType: BlockchainType
     private let marketKit: MarketKit.Kit
     private let walletManager: WalletManager
     private let adapterManager: AdapterManager
-    private let evmKitWrapper: EvmKitWrapper
-    private let evmKit: EvmKit.Kit
-    private let swapKit: UniswapKit.Kit
     private var viewItemsRelay = BehaviorRelay<[LiquidityRecordViewModel.RecordItem]>(value: [])
     private var viewItems = [LiquidityRecordViewModel.RecordItem]()
     private let disposeBag = DisposeBag()
     private let stateRelay = PublishRelay<State>()
+    private var ratio: BigUInt = 100
+    private var evmKitWrapper: EvmKitWrapper?
+    private var legacyGasPrice: GasPrice?
+    
     private(set) var state: State = .loading {
         didSet {
             stateRelay.accept(state)
         }
     }
-    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "io.horizontalsystems.unstoppable.liquidity_record")
+    private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "anwang.safewallet.liquidity_record")
 
     
-    init(marketKit: MarketKit.Kit, walletManager: WalletManager, adapterManager: AdapterManager, evmKitWrapper: EvmKitWrapper, swapKit: UniswapKit.Kit) {
+    init(marketKit: MarketKit.Kit, walletManager: WalletManager, adapterManager: AdapterManager, blockchainType: BlockchainType) {
         self.marketKit = marketKit
         self.walletManager = walletManager
         self.adapterManager = adapterManager
+        
+        self.currentBlockchainType = blockchainType
+        
+        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
+            return
+        }
         self.evmKitWrapper = evmKitWrapper
-        self.evmKit = evmKitWrapper.evmKit
-        self.swapKit = swapKit        
+        syncgasPrice(evmKitWrapper: evmKitWrapper)
     }
     
     func refresh() {
         syncItems()
     }
     
-    private func syncItems() {
-        
-        let tokenQuerys = activeWallets.compactMap { TokenQuery(blockchainType: .binanceSmartChain, tokenType: $0.token.type) }
+    private func syncItems() {        
+        let tokenQuerys = activeWallets.compactMap { TokenQuery(blockchainType: $0.token.blockchainType, tokenType: $0.token.type) }
         guard let tokens = try? marketKit.tokens(queries: tokenQuerys) else { return }
         
         state = .loading
@@ -77,8 +82,12 @@ extension LiquidityRecordService {
     
     private func getAllPair(activeWallets: [Wallet]) -> [(Wallet,Wallet)] {
         var pairs: [(Wallet, Wallet)] = []
-        for i in 0 ..< activeWallets.count - 1 {
-            pairs.append((activeWallets[i], activeWallets[i+1]))
+        if activeWallets.count > 0 {
+            for i in 0 ..< activeWallets.count - 1 {
+                if activeWallets[i].token.blockchainType == activeWallets[i+1].token.blockchainType {
+                    pairs.append((activeWallets[i], activeWallets[i+1]))
+                }
+            }
         }
         return pairs
     }
@@ -104,7 +113,15 @@ extension LiquidityRecordService {
     }
     
     private var activeWallets: [Wallet] {
-        walletManager.activeWallets.filter { $0.token.blockchainType == .binanceSmartChain && $0.token.coin.code != "Cake-LP" }
+        walletManager.activeWallets.filter { $0.token.blockchainType == currentBlockchainType && $0.token.coin.code != codeName }
+    }
+    
+    private var codeName: String {
+        switch currentBlockchainType {
+        case .binanceSmartChain: return "Cake-LP"
+        case .ethereum: return "UNI-V2"
+        default: return ""
+        }
     }
     
     private func getWallet(token: MarketKit.Token) -> Wallet? {
@@ -118,7 +135,7 @@ extension LiquidityRecordService {
     
     private func buildLiquidityPairItem(tokens: [MarketKit.Token], wallet: Wallet) throws -> LiquidityPairItem {
         
-        if  let token = tokens.first(where: { $0.coin.uid == wallet.coin.uid }) {
+        if  let token = tokens.first(where: { $0.coin.uid == wallet.coin.uid && $0.blockchainType == wallet.token.blockchainType}) {
             let tokenAddress = try address(token: token)
             return LiquidityPairItem(token: token, address: tokenAddress)
         } else {
@@ -140,10 +157,10 @@ typealias PoolInfo = (balanceOfAccount: BigUInt, reserves: (BigUInt,BigUInt) , p
 
 extension LiquidityRecordService {
     
-    private func liquiditypoolInfo(pairAddress: EvmKit.Address, receiveAddress: EvmKit.Address) async throws -> PoolInfo {
-        let balanceOfAccount = try await getBalanceOf(contractAddress: pairAddress, walletAddress: receiveAddress)
-        let (reserve0, reserve1) = try await getReserves(contractAddress: pairAddress)
-        let poolTokenTotalSupply = try await getTotalSupply(contractAddress: pairAddress)
+    private func liquiditypoolInfo(evmKit: EvmKit.Kit, pairAddress: EvmKit.Address, receiveAddress: EvmKit.Address) async throws -> PoolInfo {
+        let (reserve0, reserve1) = try await getReserves(evmKit: evmKit, contractAddress: pairAddress)
+        let poolTokenTotalSupply = try await getTotalSupply(evmKit: evmKit, contractAddress: pairAddress)
+        let balanceOfAccount = try await getBalanceOf(evmKit: evmKit, contractAddress: pairAddress, walletAddress: receiveAddress)
         return PoolInfo(balanceOfAccount, (reserve0, reserve1), poolTokenTotalSupply)
     }
 }
@@ -151,15 +168,15 @@ extension LiquidityRecordService {
 extension LiquidityRecordService {
 
     private func getLiquidityRecordItem(walletA: Wallet, pairItemA: LiquidityPairItem, walletB: Wallet, pairItemB: LiquidityPairItem) async -> LiquidityRecordViewModel.RecordItem? {
-        
         guard let receiveAddress = getReceiveAddress(wallet: walletA) else { return nil }
-        let liquidityPair = LiquidityPair.getPairAddress(itemA: pairItemA, itemB: pairItemB)
+        guard let evmKit = evmKitWrapper?.evmKit else { return nil }
+        guard let liquidityPair = LiquidityPair.getPairAddress(evmKit: evmKit, itemA: pairItemA, itemB: pairItemB) else { return nil }
         let tokenA = liquidityPair.item0.token
         let tokenB = liquidityPair.item1.token
         let pairAddress = liquidityPair.pairAddress
-        
+
         do {
-            let poolInfo = try await liquiditypoolInfo(pairAddress: pairAddress, receiveAddress: receiveAddress)
+            let poolInfo = try await liquiditypoolInfo(evmKit: evmKit, pairAddress: pairAddress, receiveAddress: receiveAddress)
             guard poolInfo.balanceOfAccount > 0 else { return nil }
 
             let shareRate = (Decimal(bigUInt: poolInfo.balanceOfAccount, decimals: 0) ?? 0) / (Decimal(bigUInt: poolInfo.poolTokenTotalSupply, decimals: 0) ?? 0)
@@ -184,23 +201,27 @@ extension LiquidityRecordService {
 
 extension LiquidityRecordService {
     
-    func removeLiquidity(viewItem: LiquidityRecordViewModel.RecordItem) {
+    func removeLiquidity(viewItem: LiquidityRecordViewModel.RecordItem, ratio: BigUInt) {
         state = .loading
+        self.ratio = ratio
         Task {
             do {
                 guard let wallet = getWallet(token: viewItem.pair.item0.token), let receiveAddress = getReceiveAddress(wallet: wallet) else{ return }
+                guard let evmKitWrapper = evmKitWrapper else { return }
                 let pairAddress = viewItem.pair.pairAddress
-                let poolInfo = try await liquiditypoolInfo(pairAddress: pairAddress, receiveAddress: receiveAddress)
-                let eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKit, contractAddress: pairAddress)
+                let poolInfo = try await liquiditypoolInfo(evmKit: evmKitWrapper.evmKit, pairAddress: pairAddress, receiveAddress: receiveAddress)
+                let eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: pairAddress)
                 try await allowance(eip20Kit: eip20Kit, viewItem: viewItem, pairAddress: pairAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
             }catch {
-                state = .failed(error: LiquidityRecordError.dataError)
+                self.state = .removeFailed(error: LiquidityRecordError.dataError, data: viewItem)
             }
         }
     }
     
     private func allowance(eip20Kit: Eip20Kit.Kit, viewItem: LiquidityRecordViewModel.RecordItem, pairAddress: EvmKit.Address, receiveAddress: EvmKit.Address, poolInfo: PoolInfo) async throws {
-        let contractAddress = try EvmKit.Address(hex: Constants.DEX.PANCAKE_V2_ROUTER_ADDRESS)
+        guard let evmKit = evmKitWrapper?.evmKit else { return }
+        let routerAddressString = try Constants.routerAddressString(chain: evmKit.chain)
+        let contractAddress = try EvmKit.Address(hex: routerAddressString)
         let result = try await eip20Kit.allowance(spenderAddress: contractAddress, defaultBlockParameter: .latest)
         let liquidity = poolInfo.balanceOfAccount
 
@@ -214,7 +235,9 @@ extension LiquidityRecordService {
     }
     
     private func approve(eip20Kit: Eip20Kit.Kit, viewItem: LiquidityRecordViewModel.RecordItem, receiveAddress: EvmKit.Address, poolInfo: PoolInfo) async throws {
-        let contractAddress = try EvmKit.Address(hex: Constants.DEX.PANCAKE_V2_ROUTER_ADDRESS)
+        guard let evmKit = evmKitWrapper?.evmKit else { return }
+        let routerAddressString = try Constants.routerAddressString(chain: evmKit.chain)
+        let contractAddress = try EvmKit.Address(hex: routerAddressString)
 //        let liquidity = poolInfo.balanceOfAccount
         let maxValue = BigUInt(Data(hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
         let transactionData = eip20Kit.approveTransactionData(spenderAddress: contractAddress, amount: maxValue)
@@ -223,7 +246,7 @@ extension LiquidityRecordService {
             .subscribe(onSuccess: { [weak self] fullTransaction in
                 self?.remove(viewItem: viewItem, contractAddress: contractAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
             }, onError: { error in
-                self.state = .failed(error: error)
+                self.state = .removeFailed(error: error, data: viewItem)
             })
             .disposed(by: disposeBag)
     }
@@ -240,8 +263,8 @@ extension LiquidityRecordService {
 
         let deadline = Constants.getDeadLine()
         
-        let liquidity = poolInfo.balanceOfAccount
-
+        let liquidity = (poolInfo.balanceOfAccount / 100) * ratio
+        
         let method = RemoveLiquidityMethod(tokenA: addressA, tokenB: addressB, liquidity: liquidity, amountAMin: amountAMin, amountBMin: amountBMin, to: receiveAddress, deadline: deadline)
         let transactionData = EvmKit.TransactionData(to: contractAddress, value: 0, input: method.encodedABI())
         Task {
@@ -257,21 +280,22 @@ extension LiquidityRecordService {
                         }
 
                     }, onError: { error in
-                        self.state = .failed(error: error)
+                        self.state = .removeFailed(error: error, data: viewItem)
                     })
                     .disposed(by: disposeBag)
             } catch {
-                state = .failed(error: LiquidityRecordError.dataError)
+                self.state = .removeFailed(error: LiquidityRecordError.dataError, data: viewItem)
             }
         }
 
     }
     
     private func send(transactionData: TransactionData) async throws -> Single<FullTransaction> {
-        
-        let nonce = try await evmKit.nonce(defaultBlockParameter: .pending)
-        let gasPrice = GasPrice.legacy(gasPrice: FeePriceScale.gwei.scaleValue * 5)
-        let gasLimit = 500000
+        guard let evmKitWrapper = evmKitWrapper else { return Single.error( LiquidityRecordError.evmKitWrapperError) }
+        let nonce = try await evmKitWrapper.evmKit.nonce(defaultBlockParameter: .pending)
+        guard let gasPrice = legacyGasPrice else { return Single.error( LiquidityRecordError.noGasPrice) }
+        let gasLimit = try await evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
+    
         return evmKitWrapper.sendSingle(
                         transactionData: transactionData,
                         gasPrice: gasPrice,
@@ -279,12 +303,26 @@ extension LiquidityRecordService {
                         nonce: nonce
                 )
     }
+        
+    private func syncgasPrice(evmKitWrapper: EvmKitWrapper) {
+        let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKitWrapper.evmKit)
+        gasPriceProvider.gasPriceSingle()
+            .subscribe(
+                onSuccess: { [weak self] gasPrice in
+                    self?.legacyGasPrice =  gasPrice
+                },
+                onError: { [weak self] error in
+                    self?.state = .failed(error: error)
+                }
+            )
+            .disposed(by: disposeBag)
+    }
     
 }
 
 extension LiquidityRecordService {
     
-    private func getNonces(contractAddress: EvmKit.Address, receiveAddress: EvmKit.Address) async throws -> BigUInt {
+    private func getNonces(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address, receiveAddress: EvmKit.Address) async throws -> BigUInt {
         
         let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: GetNoncesMethod(address: receiveAddress).encodedABI())
         var rawReserve: BigUInt = 0
@@ -294,7 +332,7 @@ extension LiquidityRecordService {
         return rawReserve
     }
     
-    private func getTotalSupply(contractAddress: EvmKit.Address) async throws -> BigUInt {
+    private func getTotalSupply(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address) async throws -> BigUInt {
         let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: GetTotalSupplyMethod().encodedABI())
         var rawReserve: BigUInt = 0
         if data.count >= 32 {
@@ -303,7 +341,7 @@ extension LiquidityRecordService {
         return rawReserve
     }
     
-    private func getReserves(contractAddress: EvmKit.Address) async throws -> (BigUInt,BigUInt) {
+    private func getReserves(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address) async throws -> (BigUInt,BigUInt) {
         let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: GetReservesMethod().encodedABI())
         var rawReserve0: BigUInt = 0
         var rawReserve1: BigUInt = 0
@@ -314,7 +352,7 @@ extension LiquidityRecordService {
         return (rawReserve0,rawReserve1)
     }
     
-    private func getBalanceOf(contractAddress: EvmKit.Address, walletAddress: EvmKit.Address) async throws -> BigUInt {
+    private func getBalanceOf(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address, walletAddress: EvmKit.Address) async throws -> BigUInt {
         let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: GetBalanceOfMethod(address: walletAddress).encodedABI())
         var rawReserve: BigUInt = 0
         if data.count >= 32 {
@@ -334,6 +372,8 @@ extension LiquidityRecordService {
         case insufficientAmount
         case unsupportedToken
         case dataError
+        case evmKitWrapperError
+        case noGasPrice
     }
     
     enum LiquidityABIError: Error {
@@ -349,6 +389,7 @@ extension LiquidityRecordService {
         case completed(data: [LiquidityRecordViewModel.RecordItem])
         case removeSuccess(data: [LiquidityRecordViewModel.RecordItem])
         case failed(error: Error)
+        case removeFailed(error: Error, data: LiquidityRecordViewModel.RecordItem)
     }
 }
 

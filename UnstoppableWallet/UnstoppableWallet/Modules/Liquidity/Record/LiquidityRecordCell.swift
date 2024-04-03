@@ -67,7 +67,6 @@ class LiquidityRecordCell: UITableViewCell {
 
         separatorView2.backgroundColor = .themeSteel20
         
-        
         cardView.contentView.addSubview(liquidityNumLabel)
         liquidityNumLabel.snp.makeConstraints { maker in
             maker.leading.trailing.equalToSuperview().inset(CGFloat.margin12)

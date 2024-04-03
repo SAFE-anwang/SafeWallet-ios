@@ -1,16 +1,15 @@
-import StorageKit
 import ThemeKit
 import UIKit
 
-struct MainModule {
+enum MainModule {
     enum Tab: Int {
-        case market, balance, safeZone, settings
+        case market, balance, transactions, settings
     }
 
     static func instance(presetTab: Tab? = nil) -> UIViewController {
         let service = MainService(
             localStorage: App.shared.localStorage,
-            storage: StorageKit.LocalStorage.default,
+            userDefaultsStorage: App.shared.userDefaultsStorage,
             launchScreenManager: App.shared.launchScreenManager,
             accountManager: App.shared.accountManager,
             walletManager: App.shared.walletManager,
@@ -49,7 +48,11 @@ struct MainModule {
         let viewController = MainViewController(viewModel: viewModel)
 
         let deepLinkHandler = WalletConnectAppShowModule.handler(parentViewController: viewController)
+        let widgetCoinHandler = WidgetCoinAppShowModule.handler(parentViewController: viewController)
+        let sendAddressHandler = AddressAppShowModule.handler(parentViewController: viewController)
         eventHandler.append(handler: deepLinkHandler)
+        eventHandler.append(handler: widgetCoinHandler)
+        eventHandler.append(handler: sendAddressHandler)
 
         App.shared.lockDelegate.viewController = viewController
 

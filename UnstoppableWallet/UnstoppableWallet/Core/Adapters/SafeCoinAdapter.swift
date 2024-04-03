@@ -43,7 +43,7 @@ class SafeCoinAdapter: BitcoinBaseAdapter {
             throw AdapterError.unsupportedAccount
         }
 
-        super.init(abstractKit: safeCoinKit, wallet: wallet)
+        super.init(abstractKit: safeCoinKit, wallet: wallet, syncMode: syncMode)
 
         safeCoinKit.delegate = self
     }
@@ -55,10 +55,14 @@ class SafeCoinAdapter: BitcoinBaseAdapter {
     override func explorerUrl(transactionHash: String) -> String? {
          "https://chain.anwang.com/tx/" + transactionHash
     }
+    
+    override func explorerUrl(address: String) -> String? {
+        "https://chain.anwang.com/address/" + address
+    }
 
 }
 
-extension SafeCoinAdapter: DashKitDelegate {
+extension SafeCoinAdapter: SafeCoinKitDelegate {
 
     public func transactionsUpdated(inserted: [DashTransactionInfo], updated: [DashTransactionInfo]) {
         var records = [BitcoinTransactionRecord]()
@@ -75,36 +79,45 @@ extension SafeCoinAdapter: DashKitDelegate {
 
 }
 
+extension SafeCoinAdapter {
+    static func clear(except excludedWalletIds: [String]) throws {
+        try Kit.clear(exceptFor: excludedWalletIds)
+    }
+}
+
 extension SafeCoinAdapter: ISendSafeCoinAdapter {
-    
+    func availableBalanceSafe(feeRate: Int, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:]) -> Decimal {
+        availableBalance(feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
+    }
+
+    func validateSafe(address: String) throws {
+        try validate(address: address)
+    }
+
+    func sendInfoSafe(amount: Decimal, feeRate: Int, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:]) throws -> SendInfo {
+        return try sendInfo(amount: amount, feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
+    }
+
     var blockchainType: BlockchainType {
         .safe
+    }
+    
+    func maximumSendAmountSafe(pluginData: [UInt8: IBitcoinPluginData]) -> Decimal? {
+        maximumSendAmount(pluginData: pluginData)
     }
     
     func minimumSendAmountSafe(address: String?) -> Decimal {
         minimumSendAmount(address: address)
     }
-    
-    func validateSafe(address: String) throws {
-        try validate(address: address)
-    }
-    
-    func availableBalanceSafe(address: String?) -> Decimal {
-        availableBalance(feeRate: feeRate, address: address)
-    }
-    
-    func feeSafe(amount: Decimal, address: String?) -> Decimal {
-        fee(amount: amount, feeRate: feeRate, address: address)
-    }
-    
-    func convertFeeSafe(amount: Decimal, address: String?) -> Decimal {
+        
+    func convertFeeSafe(amount: Decimal, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:]) throws -> SendInfo {
         // 增加兑换WSAFE流量手续费
         var convertFeeRate = feeRate
         convertFeeRate += 50
-        return fee(amount: amount, feeRate: convertFeeRate, address: address)
+        return try sendInfo(amount: Decimal(convertFeeRate), feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
     }
     
-    func sendSingle(amount: Decimal, address: String, sortMode: TransactionDataSortMode, logger: HsToolKit.Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> RxSwift.Single<Void> {
+    func sendSingle(amount: Decimal, address: String, memo: String?, feeRate: Int, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:], sortMode: TransactionDataSortMode, rbfEnabled: Bool, logger: Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> Single<Void> {
         var unlockedHeight = 0
         if let lockedValueInSeconds = lockedTimeInterval?.valueInSeconds {
             let step = 86400 * Int(lockedValueInSeconds/(30 * 24 * 60 * 60))
@@ -133,7 +146,7 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
 
                 }
                 if let adapter = self {
-                    _ = try adapter.safeCoinKit.sendSafe(to: address, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, pluginData: [:], unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
+                    _ = try adapter.safeCoinKit.sendSafe(to: address, memo: memo, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, rbfEnabled: rbfEnabled, unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
                 }
                 observer(.success(()))
             } catch {
@@ -171,9 +184,9 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
                     safeCoinKit.bitcoinCore.stopDownload()
                     try safeCoinKit.bitcoinCore.storage.delete(blocks: blocksList)
                     if let network = safeCoinKit.safeMainNet {
-                        safeCoinKit.updateLastBlockInfo(network: network, syncMode: .api)
+                        safeCoinKit.updateLastBlockInfo(network: network, syncMode: .api, fallbackDate: date)
+
                     }
-                    //updateLastBlockInfo(network: .main, fallbackDate: date)
                     safeCoinKit.start()
                 }
             }catch {}
@@ -185,12 +198,4 @@ public struct BlockInfo {
     public let headerHash: String
     public let height: Int
     public let timestamp: Int?
-}
-
-extension SafeCoinAdapter {
-
-    static func clear(except excludedWalletIds: [String]) throws {
-        try Kit.clear(exceptFor: excludedWalletIds)
-    }
-
 }

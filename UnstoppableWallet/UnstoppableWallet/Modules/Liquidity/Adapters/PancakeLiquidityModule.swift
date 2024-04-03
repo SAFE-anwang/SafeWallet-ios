@@ -1,7 +1,6 @@
 import Foundation
 import UniswapKit
 import EvmKit
-import StorageKit
 
 class PancakeLiquidityModule {
     private let tradeService: PancakeLiquidityTradeService
@@ -11,15 +10,18 @@ class PancakeLiquidityModule {
     private let pendingAllowanceService: LiquidityPendingAllowanceService
 
     init?(dex: LiquidityMainModule.Dex, dataSourceState: LiquidityMainModule.DataSourceState) {
+
         guard let evmKit = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
             return nil
         }
 
-        guard let swapKit = try? UniswapKit.Kit.instance(evmKit: evmKit) else {
+        guard let swapKit = try? UniswapKit.Kit.instance(),
+              let rpcSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: dex.blockchainType)?.rpcSource
+        else {
             return nil
         }
 
-        let liquidityRepository = PancakeLiquidityProvider(swapKit: swapKit)
+        let liquidityRepository = PancakeLiquidityProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource)
 
         tradeService = PancakeLiquidityTradeService(
                 liquidityProvider: liquidityRepository,
@@ -57,10 +59,10 @@ extension PancakeLiquidityModule: ILiquidityProvider {
         let viewModel = PancakeLiquidityViewModel(
                 service: service,
                 tradeService: tradeService,
-                switchService: AmountTypeSwitchService(localStorage: StorageKit.LocalStorage.default, useLocalStorage: false),
+                switchService: AmountTypeSwitchService(userDefaultsStorage: App.shared.userDefaultsStorage, useLocalStorage: false),
                 allowanceService: allowanceService,
                 pendingAllowanceService: pendingAllowanceService,
-                currencyKit: App.shared.currencyKit,
+                currencyManager: App.shared.currencyManager,
                 viewItemHelper: LiquidityViewItemHelper()
         )
 

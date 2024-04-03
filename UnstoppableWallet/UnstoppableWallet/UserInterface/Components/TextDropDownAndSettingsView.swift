@@ -1,7 +1,7 @@
-import UIKit
-import ThemeKit
-import SnapKit
 import ComponentKit
+import SnapKit
+import ThemeKit
+import UIKit
 
 class TextDropDownAndSettingsView: UIView {
     static let height: CGFloat = .heightSingleLineCell
@@ -11,14 +11,16 @@ class TextDropDownAndSettingsView: UIView {
     private let stackView = UIStackView()
     private let selectorButton = SelectorButton()
     private let settingsButton = SecondaryCircleButton()
+
+    var onTapDropDown: (() -> Void)?
+    var onTapSettings: (() -> Void)?
+    var onTapSelector: ((Int) -> Void)?
+
     private let transactionsButton = SecondaryCircleButton()
     private let liquidityRecordButton = SecondaryCircleButton()
 
-    var onTapDropDown: (() -> ())?
-    var onTapSettings: (() -> ())?
-    var onTapSelector: ((Int) -> ())?
-    var onTapTransactions: (() -> ())?
-    var onTapLiquidityRecord: (() -> ())?
+    var onTapTransactions: (() -> Void)?
+    var onTapLiquidityRecord: (() -> Void)?
     
     var isEnabledTransactions: Bool = true {
         didSet {
@@ -75,7 +77,8 @@ class TextDropDownAndSettingsView: UIView {
         
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -119,5 +122,4 @@ class TextDropDownAndSettingsView: UIView {
     func setSelector(isEnabled: Bool) {
         selectorButton.isEnabled = isEnabled
     }
-
 }

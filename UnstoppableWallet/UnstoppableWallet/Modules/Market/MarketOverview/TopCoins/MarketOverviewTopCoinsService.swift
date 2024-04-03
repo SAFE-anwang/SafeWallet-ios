@@ -1,9 +1,8 @@
-import Foundation
 import Combine
-import RxSwift
-import RxRelay
-import CurrencyKit
+import Foundation
 import MarketKit
+import RxRelay
+import RxSwift
 
 class MarketOverviewTopCoinsService {
     private let baseService: MarketOverviewService
@@ -24,8 +23,8 @@ class MarketOverviewTopCoinsService {
         self.baseService = baseService
 
         baseService.$state
-                .sink { [weak self] in self?.sync(state: $0) }
-                .store(in: &cancellables)
+            .sink { [weak self] in self?.sync(state: $0) }
+            .store(in: &cancellables)
 
         sync(state: baseService.state)
     }
@@ -48,11 +47,9 @@ class MarketOverviewTopCoinsService {
             }
         }
     }
-
 }
 
 extension MarketOverviewTopCoinsService {
-
     var marketInfosObservable: Observable<[MarketInfo]?> {
         marketInfosRelay.asObservable()
     }
@@ -61,12 +58,10 @@ extension MarketOverviewTopCoinsService {
         self.marketTop = marketTop
         sync(state: baseService.state)
     }
-
 }
 
 extension MarketOverviewTopCoinsService: IMarketListDecoratorService {
-
-    var initialMarketFieldIndex: Int {
+    var initialIndex: Int {
         0
     }
 
@@ -78,13 +73,10 @@ extension MarketOverviewTopCoinsService: IMarketListDecoratorService {
         .day
     }
 
-    func onUpdate(marketFieldIndex: Int) {
-    }
-
+    func onUpdate(index _: Int) {}
 }
 
 extension MarketOverviewTopCoinsService {
-
     enum ListType: String, CaseIterable {
         case topGainers
         case topLosers
@@ -101,6 +93,12 @@ extension MarketOverviewTopCoinsService {
             case .topGainers, .topLosers: return .price
             }
         }
-    }
 
+        var statSection: StatSection {
+            switch self {
+            case .topGainers: return .topGainers
+            case .topLosers: return .topLosers
+            }
+        }
+    }
 }

@@ -1,8 +1,18 @@
+import BitcoinCore
+import Combine
 import Foundation
-import RxSwift
+import HsToolKit
 import RxCocoa
 import RxRelay
-import HsToolKit
+import RxSwift
+
+protocol ISendInfoValueService: AnyObject {
+    var unspentOutputs: [UnspentOutputInfo] { get }
+    var customOutputs: [UnspentOutputInfo]? { get }
+    var customOutputsUpdatedPublisher: AnyPublisher<Void, Never> { get }
+    var sendInfoState: DataStatus<SendInfo> { get }
+    var sendInfoStateObservable: Observable<DataStatus<SendInfo>> { get }
+}
 
 protocol ISendXFeeValueService: AnyObject {
     var feeState: DataStatus<Decimal> { get }
@@ -27,19 +37,39 @@ class SendBitcoinAdapterService {
     private let feeRateService: FeeRateService
     private let amountInputService: IAmountInputService
     private let addressService: AddressService
+    private let memoService: SendMemoInputService
     private let timeLockService: TimeLockService?
     private let btcBlockchainManager: BtcBlockchainManager
     private let adapter: ISendBitcoinAdapter
 
     let inputOutputOrderService: InputOutputOrderService
+    let rbfService: RbfService
+
+    let customOutputsUpdatedSubject = PassthroughSubject<Void, Never>()
+    var customOutputs: [UnspentOutputInfo]? {
+        didSet {
+            if customOutputs != oldValue {
+                sync()
+                customOutputsUpdatedSubject.send()
+            }
+        }
+    }
 
     // Outputs
-    let feeStateRelay = BehaviorRelay<DataStatus<Decimal>>(value: .loading)
+    let feeRelay = BehaviorRelay<DataStatus<Decimal>>(value: .loading)
     var feeState: DataStatus<Decimal> = .loading {
         didSet {
             if !feeState.equalTo(oldValue) {
-                feeStateRelay.accept(feeState)
+                feeRelay.accept(feeState)
             }
+        }
+    }
+
+    let sendInfoRelay = BehaviorRelay<DataStatus<SendInfo>>(value: .loading)
+    var sendInfoState: DataStatus<SendInfo> = .loading {
+        didSet {
+            feeState = sendInfoState.map(\.fee)
+            sendInfoRelay.accept(sendInfoState)
         }
     }
 
@@ -62,7 +92,7 @@ class SendBitcoinAdapterService {
     }
 
     let maximumSendAmountRelay = BehaviorRelay<Decimal?>(value: nil)
-    var maximumSendAmount: Decimal? = nil {
+    var maximumSendAmount: Decimal? {
         didSet {
             if maximumSendAmount != oldValue {
                 maximumSendAmountRelay.accept(maximumSendAmount)
@@ -70,13 +100,16 @@ class SendBitcoinAdapterService {
         }
     }
 
-    init(feeRateService: FeeRateService, amountInputService: IAmountInputService, addressService: AddressService,
-         inputOutputOrderService: InputOutputOrderService, timeLockService: TimeLockService?, btcBlockchainManager: BtcBlockchainManager, adapter: ISendBitcoinAdapter) {
+    init(feeRateService: FeeRateService, amountInputService: IAmountInputService, addressService: AddressService, memoService: SendMemoInputService,
+         inputOutputOrderService: InputOutputOrderService, rbfService: RbfService, timeLockService: TimeLockService?, btcBlockchainManager: BtcBlockchainManager, adapter: ISendBitcoinAdapter)
+    {
         self.feeRateService = feeRateService
         self.amountInputService = amountInputService
         self.addressService = addressService
+        self.memoService = memoService
         self.timeLockService = timeLockService
         self.inputOutputOrderService = inputOutputOrderService
+        self.rbfService = rbfService
         self.btcBlockchainManager = btcBlockchainManager
         self.adapter = adapter
 
@@ -86,8 +119,11 @@ class SendBitcoinAdapterService {
         subscribe(disposeBag, addressService.stateObservable) { [weak self] _ in
             self?.sync(updatedFrom: .address)
         }
+        subscribe(disposeBag, memoService.memoObservable) { [weak self] _ in
+            self?.sync(updatedFrom: .memo)
+        }
 
-        if let timeLockService = timeLockService {
+        if let timeLockService {
             subscribe(disposeBag, timeLockService.pluginDataObservable) { [weak self] _ in
                 self?.sync(updatedFrom: .pluginData)
             }
@@ -109,15 +145,15 @@ class SendBitcoinAdapterService {
 
         switch feeRateStatus {
         case .loading:
-            guard !amount.isZero else {      // force update fee for bitcoin, when clear amount to zero value
-                feeState = .completed(0)
+            guard !amount.isZero else { // force update fee for bitcoin, when clear amount to zero value
+                sendInfoState = .completed(SendInfo.empty)
                 return
             }
 
-            feeState = .loading
-        case .failed(let error):
-            feeState = .failed(error)
-        case .completed(let _feeRate):
+            sendInfoState = .loading
+        case let .failed(error):
+            sendInfoState = .failed(error)
+        case let .completed(_feeRate):
             feeRate = _feeRate
         }
 
@@ -125,12 +161,21 @@ class SendBitcoinAdapterService {
     }
 
     private func update(feeRate: Int, amount: Decimal, address: String?, pluginData: [UInt8: IBitcoinPluginData], updatedFrom: UpdatedField) {
+        let memo = memoService.memo
         queue.async { [weak self] in
-            if let fee = self?.adapter.fee(amount: amount, feeRate: feeRate, address: address, pluginData: pluginData) {
-                self?.feeState = .completed(fee)
+            do {
+                if let sendInfo = try self?.adapter
+                    .sendInfo(amount: amount, feeRate: feeRate, address: address, memo: memo, unspentOutputs: self?.customOutputs, pluginData: pluginData)
+                {
+                    self?.sendInfoState = .completed(sendInfo)
+                }
+            } catch {
+                self?.sendInfoState = .failed(error)
             }
+
             if updatedFrom != .amount,
-               let availableBalance = self?.adapter.availableBalance(feeRate: feeRate, address: address, pluginData: pluginData) {
+               let availableBalance = self?.adapter.availableBalance(feeRate: feeRate, address: address, memo: memo, unspentOutputs: self?.customOutputs, pluginData: pluginData)
+            {
                 self?.availableBalance = .completed(availableBalance)
             }
             if updatedFrom == .pluginData {
@@ -145,13 +190,23 @@ class SendBitcoinAdapterService {
     private var pluginData: [UInt8: IBitcoinPluginData] {
         timeLockService?.pluginData ?? [:]
     }
-
 }
 
-extension SendBitcoinAdapterService: ISendXFeeValueService, IAvailableBalanceService, ISendXSendAmountBoundsService {
+extension SendBitcoinAdapterService: ISendInfoValueService, ISendXFeeValueService, IAvailableBalanceService, ISendXSendAmountBoundsService {
+    var unspentOutputs: [UnspentOutputInfo] {
+        adapter.unspentOutputs
+    }
+
+    var customOutputsUpdatedPublisher: AnyPublisher<Void, Never> {
+        customOutputsUpdatedSubject.eraseToAnyPublisher()
+    }
 
     var feeStateObservable: Observable<DataStatus<Decimal>> {
-        feeStateRelay.asObservable()
+        feeRelay.asObservable()
+    }
+
+    var sendInfoStateObservable: Observable<DataStatus<SendInfo>> {
+        sendInfoRelay.asObservable()
     }
 
     var availableBalanceObservable: Observable<DataStatus<Decimal>> {
@@ -169,16 +224,14 @@ extension SendBitcoinAdapterService: ISendXFeeValueService, IAvailableBalanceSer
     func validate(address: String) throws {
         try adapter.validate(address: address, pluginData: pluginData)
     }
-
 }
 
 extension SendBitcoinAdapterService: ISendService {
-
     func sendSingle(logger: Logger) -> Single<Void> {
         let address: Address
         switch addressService.state {
-        case .success(let sendAddress): address = sendAddress
-        case .fetchError(let error): return Single.error(error)
+        case let .success(sendAddress): address = sendAddress
+        case let .fetchError(error): return Single.error(error)
         default: return Single.error(AppError.addressInvalid)
         }
 
@@ -191,22 +244,23 @@ extension SendBitcoinAdapterService: ISendService {
         }
 
         let sortMode = btcBlockchainManager.transactionSortMode(blockchainType: adapter.blockchainType)
+        let rbfEnabled = btcBlockchainManager.transactionRbfEnabled(blockchainType: adapter.blockchainType)
         return adapter.sendSingle(
-                amount: amountInputService.amount,
-                address: address.raw,
-                feeRate: feeRate,
-                pluginData: pluginData,
-                sortMode: sortMode,
-                logger: logger
+            amount: amountInputService.amount,
+            address: address.raw,
+            memo: memoService.memo,
+            feeRate: feeRate,
+            unspentOutputs: customOutputs,
+            pluginData: pluginData,
+            sortMode: sortMode,
+            rbfEnabled: rbfEnabled,
+            logger: logger
         )
     }
-
 }
 
 extension SendBitcoinAdapterService {
-
     private enum UpdatedField: String {
-        case amount, address, pluginData, feeRate
+        case amount, address, memo, pluginData, feeRate
     }
-
 }

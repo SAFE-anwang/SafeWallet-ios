@@ -4,16 +4,20 @@ import EvmKit
 import MarketKit
 
 class PancakeLiquidityProvider {
-    private let pancakeSwapKit: UniswapKit.Kit
-
-    init(swapKit: UniswapKit.Kit) {
-        self.pancakeSwapKit = swapKit
+    private let swapKit: UniswapKit.Kit
+    private let evmKit: EvmKit.Kit
+    private let rpcSource: RpcSource
+    
+    init(swapKit: UniswapKit.Kit, evmKit: EvmKit.Kit, rpcSource: RpcSource) {
+        self.swapKit = swapKit
+        self.evmKit = evmKit
+        self.rpcSource = rpcSource
     }
 
     private func liquidityToken(token: MarketKit.Token) throws -> UniswapKit.Token {
         switch token.type {
-        case .native: return pancakeSwapKit.etherToken
-        case let .eip20(address): return pancakeSwapKit.token(contractAddress: try EvmKit.Address(hex: address), decimals: token.decimals)
+        case .native: return try swapKit.etherToken(chain: evmKit.chain)
+        case let .eip20(address): return try swapKit.token(contractAddress: EvmKit.Address(hex: address), decimals: token.decimals)
         default: throw TokenError.unsupportedToken
         }
     }
@@ -23,31 +27,31 @@ class PancakeLiquidityProvider {
 extension PancakeLiquidityProvider {
 
     var routerAddress: EvmKit.Address {
-        pancakeSwapKit.routerAddress
+        try! swapKit.routerAddress(chain: evmKit.chain)
     }
 
     var wethAddress: EvmKit.Address {
-        pancakeSwapKit.etherToken.address
+        try! swapKit.etherToken(chain: evmKit.chain).address
     }
 
     func swapData(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token) async throws -> SwapData {
         let liquidityTokenIn = try liquidityToken(token: tokenIn)
         let liquidityTokenOut = try liquidityToken(token: tokenOut)
 
-        return try await pancakeSwapKit.swapData(tokenIn: liquidityTokenIn, tokenOut: liquidityTokenOut)
+        return try await swapKit.swapData(rpcSource: rpcSource, chain: evmKit.chain, tokenIn: liquidityTokenIn, tokenOut: liquidityTokenOut)
     }
 
     func tradeData(swapData: SwapData, amount: Decimal, /* tradeType: TradeType,*/ tradeOptions: TradeOptions) throws -> TradeData {
 //        switch tradeType {
 //        case .exactIn:
-            return try pancakeSwapKit.bestTradeExactIn(swapData: swapData, amountIn: amount, options: tradeOptions)
+            return try swapKit.bestTradeExactIn(swapData: swapData, amountIn: amount, options: tradeOptions)
 //        case .exactOut:
-//            return try pancakeSwapKit.bestTradeExactOut(swapData: swapData, amountOut: amount, options: tradeOptions)
+//            return try swapKit.bestTradeExactOut(swapData: swapData, amountOut: amount, options: tradeOptions)
 //        }
     }
 
     func transactionData(tradeData: TradeData, type: LiquidityHandleType) throws -> TransactionData {
-        try pancakeSwapKit.transactionLiquidityData(tradeData: tradeData, type: type)
+        try swapKit.transactionLiquidityData(tradeData: tradeData, type: type, chain: evmKit.chain, recipient: evmKit.address)
     }
 
 }

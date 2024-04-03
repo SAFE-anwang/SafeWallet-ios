@@ -1,5 +1,4 @@
 import Foundation
-import CurrencyKit
 import MarketKit
 
 class MarketListTvlDecorator {
@@ -10,11 +9,9 @@ class MarketListTvlDecorator {
     init(service: MarketGlobalTvlMetricService) {
         self.service = service
     }
-
 }
 
 extension MarketListTvlDecorator: IMarketListDecorator {
-
     func listViewItem(item defiCoin: DefiCoin) -> MarketModule.ListViewItem {
         let currency = service.currency
 
@@ -24,12 +21,12 @@ extension MarketListTvlDecorator: IMarketListDecorator {
         let name: String
 
         switch defiCoin.type {
-        case .fullCoin(let fullCoin):
+        case let .fullCoin(fullCoin):
             uid = fullCoin.coin.uid
             iconUrl = fullCoin.coin.imageUrl
             iconPlaceholderName = "placeholder_circle_32"
             name = fullCoin.coin.name
-        case .defiCoin(let defiName, let logo):
+        case let .defiCoin(defiName, logo):
             iconUrl = logo
             iconPlaceholderName = "placeholder_circle_32"
             name = defiName
@@ -44,14 +41,14 @@ extension MarketListTvlDecorator: IMarketListDecorator {
 
             var tvlChange: Decimal?
             switch service.priceChangePeriod {
-            case .day1: tvlChange = defiCoin.tvlChange1d
-            case .week1: tvlChange = defiCoin.tvlChange1w
-            case .week2: tvlChange = defiCoin.tvlChange2w
-            case .month1: tvlChange = defiCoin.tvlChange1m
-            case .month3: tvlChange = defiCoin.tvlChange3m
-            case .month6: tvlChange = defiCoin.tvlChange6m
-            case .year1: tvlChange = defiCoin.tvlChange1y
-            case .year2: ()
+            case .byPeriod(.day1): tvlChange = defiCoin.tvlChange1d
+            case .byPeriod(.week1): tvlChange = defiCoin.tvlChange1w
+            case .byPeriod(.week2): tvlChange = defiCoin.tvlChange2w
+            case .byPeriod(.month1): tvlChange = defiCoin.tvlChange1m
+            case .byPeriod(.month3): tvlChange = defiCoin.tvlChange3m
+            case .byPeriod(.month6): tvlChange = defiCoin.tvlChange6m
+            case .byPeriod(.year1): tvlChange = defiCoin.tvlChange1y
+            default: ()
             }
 
             switch service.marketTvlField {
@@ -64,17 +61,16 @@ extension MarketListTvlDecorator: IMarketListDecorator {
         }
 
         return MarketModule.ListViewItem(
-                uid: uid,
-                iconUrl: iconUrl,
-                iconShape: .square,
-                iconPlaceholderName: iconPlaceholderName,
-                leftPrimaryValue: name,
-                leftSecondaryValue: defiCoin.chains.count == 1 ? defiCoin.chains[0] : "market.global.tvl_in_defi.multi_chain".localized,
-                badge: "\(defiCoin.tvlRank)",
-                badgeSecondaryValue: nil,
-                rightPrimaryValue: tvl.flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) } ?? "n/a".localized,
-                rightSecondaryValue: diff
+            uid: uid,
+            iconUrl: iconUrl,
+            iconShape: .square,
+            iconPlaceholderName: iconPlaceholderName,
+            leftPrimaryValue: name,
+            leftSecondaryValue: defiCoin.chains.count == 1 ? defiCoin.chains[0] : "market.global.tvl_in_defi.multi_chain".localized,
+            badge: "\(defiCoin.tvlRank)",
+            badgeSecondaryValue: nil,
+            rightPrimaryValue: tvl.flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) } ?? "n/a".localized,
+            rightSecondaryValue: diff
         )
     }
-
 }

@@ -1,6 +1,6 @@
 import EvmKit
-import RxSwift
 import RxCocoa
+import RxSwift
 
 class NonceService {
     private var disposeBag = DisposeBag()
@@ -13,6 +13,7 @@ class NonceService {
             sync()
         }
     }
+
     let frozen: Bool
 
     var usingRecommended = true { didSet { usingRecommendedRelay.accept(usingRecommended) } }
@@ -49,11 +50,9 @@ class NonceService {
 
         status = .completed(FallibleData(data: nonce, errors: errors, warnings: []))
     }
-
 }
 
 extension NonceService {
-
     var statusObservable: Observable<DataStatus<FallibleData<Int>>> {
         statusRelay.asObservable()
     }
@@ -77,26 +76,36 @@ extension NonceService {
         status = .loading
 
         Single.zip(evmKit.nonceSingle(defaultBlockParameter: .pending), evmKit.nonceSingle(defaultBlockParameter: .latest))
-                .subscribe(
-                        onSuccess: { [weak self] noncePending, nonceLatest in
-                            self?.minimumNonce = nonceLatest
-                            self?.recommendedNonce = noncePending
-                            self?.usingRecommended = true
-                            self?.nonce = noncePending
-                        },
-                        onError: { [weak self] error in
-                            self?.status = .failed(error)
-                        }
-                )
-                .disposed(by: disposeBag)
+            .subscribe(
+                onSuccess: { [weak self] noncePending, nonceLatest in
+                    self?.minimumNonce = nonceLatest
+                    self?.recommendedNonce = noncePending
+                    self?.usingRecommended = true
+                    self?.nonce = noncePending
+                },
+                onError: { [weak self] error in
+                    self?.status = .failed(error)
+                }
+            )
+            .disposed(by: disposeBag)
     }
-
 }
 
 extension NonceService {
-
     enum NonceError: Error {
         case alreadyInUse
-    }
 
+        var titledCaution: TitledCaution {
+            TitledCaution(
+                title: "evm_send_settings.nonce.errors.already_in_use".localized,
+                text: "evm_send_settings.nonce.errors.already_in_use.info".localized,
+                type: .error
+            )
+        }
+
+        var caution: CautionNew {
+            let caution = titledCaution
+            return .init(title: caution.title, text: caution.text, type: caution.type)
+        }
+    }
 }

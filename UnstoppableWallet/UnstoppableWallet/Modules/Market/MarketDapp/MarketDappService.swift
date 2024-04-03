@@ -1,7 +1,6 @@
 import RxSwift
 import RxRelay
 import MarketKit
-import StorageKit
 
 class MarketDappService {
     

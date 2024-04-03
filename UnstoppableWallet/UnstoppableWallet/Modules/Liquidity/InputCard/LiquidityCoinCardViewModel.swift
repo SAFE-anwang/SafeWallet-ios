@@ -3,7 +3,6 @@ import Foundation
 import RxSwift
 import RxCocoa
 import UniswapKit
-import CurrencyKit
 import MarketKit
 
 class LiquidityCoinCardViewModel {

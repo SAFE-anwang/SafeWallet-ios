@@ -1,11 +1,11 @@
-import Foundation
-import EvmKit
-import RxSwift
 import BigInt
-import HsToolKit
 import Eip20Kit
-import UniswapKit
+import EvmKit
+import Foundation
+import HsToolKit
 import MarketKit
+import RxSwift
+import UniswapKit
 
 class EvmTransactionsAdapter: BaseEvmAdapter {
     static let decimal = 18
@@ -20,16 +20,16 @@ class EvmTransactionsAdapter: BaseEvmAdapter {
         super.init(evmKitWrapper: evmKitWrapper, decimals: EvmAdapter.decimals)
     }
 
-    private func tagQuery(token: MarketKit.Token?, filter: TransactionTypeFilter) -> TransactionTagQuery {
+    private func tagQuery(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> TransactionTagQuery {
         var type: TransactionTag.TagType?
         var `protocol`: TransactionTag.TagProtocol?
         var contractAddress: EvmKit.Address?
 
-        if let token = token {
+        if let token {
             switch token.type {
             case .native:
                 `protocol` = .native
-            case .eip20(let address):
+            case let .eip20(address):
                 if let address = try? EvmKit.Address(hex: address) {
                     `protocol` = .eip20
                     contractAddress = address
@@ -42,13 +42,12 @@ class EvmTransactionsAdapter: BaseEvmAdapter {
         case .all: ()
         case .incoming: type = .incoming
         case .outgoing: type = .outgoing
-//        case .swap: type = .swap
+        case .swap: type = .swap
         case .approve: type = .approve
         }
 
-        return TransactionTagQuery(type: type, protocol: `protocol`, contractAddress: contractAddress)
+        return TransactionTagQuery(type: type, protocol: `protocol`, contractAddress: contractAddress, address: address)
     }
-
 }
 
 extension EvmTransactionsAdapter: ITransactionsAdapter {
@@ -56,7 +55,7 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
         evmKit.transactionsSyncState.syncing
     }
 
-    var syncingObservable: Observable<()> {
+    var syncingObservable: Observable<Void> {
         evmKit.transactionsSyncStateObservable.map { _ in () }
     }
 
@@ -64,25 +63,47 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
         evmTransactionSource.name
     }
 
+    var additionalTokenQueries: [TokenQuery] {
+        evmKit.tagTokens().compactMap { tagToken in
+            var tokenType: TokenType?
+
+            switch tagToken.protocol {
+            case .native:
+                tokenType = .native
+            case .eip20:
+                if let contractAddress = tagToken.contractAddress {
+                    tokenType = .eip20(address: contractAddress.hex)
+                }
+            default:
+                ()
+            }
+
+            guard let tokenType else {
+                return nil
+            }
+
+            return TokenQuery(blockchainType: evmKitWrapper.blockchainType, tokenType: tokenType)
+        }
+    }
+
     func explorerUrl(transactionHash: String) -> String? {
         evmTransactionSource.transactionUrl(hash: transactionHash)
     }
 
-    func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter) -> Observable<[TransactionRecord]> {
-        evmKit.transactionsObservable(tagQueries: [tagQuery(token: token, filter: filter)]).map { [weak self] in
+    func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {
+        evmKit.transactionsObservable(tagQueries: [tagQuery(token: token, filter: filter, address: address?.lowercased())]).map { [weak self] in
             $0.compactMap { self?.transactionConverter.transactionRecord(fromTransaction: $0) }
         }
     }
 
-    func transactionsSingle(from: TransactionRecord?, token: MarketKit.Token?, filter: TransactionTypeFilter, limit: Int) -> Single<[TransactionRecord]> {
-        evmKit.transactionsSingle(tagQueries: [tagQuery(token: token, filter: filter)], fromHash: from.flatMap { Data(hex: $0.transactionHash) }, limit: limit)
-                .map { [weak self] transactions -> [TransactionRecord] in
-                    transactions.compactMap { self?.transactionConverter.transactionRecord(fromTransaction: $0) }
-                }
+    func transactionsSingle(from: TransactionRecord?, token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?, limit: Int) -> Single<[TransactionRecord]> {
+        evmKit.transactionsSingle(tagQueries: [tagQuery(token: token, filter: filter, address: address?.lowercased())], fromHash: from.flatMap { Data(hex: $0.transactionHash) }, limit: limit)
+            .map { [weak self] transactions -> [TransactionRecord] in
+                transactions.compactMap { self?.transactionConverter.transactionRecord(fromTransaction: $0) }
+            }
     }
 
-    func rawTransaction(hash: String) -> String? {
+    func rawTransaction(hash _: String) -> String? {
         nil
     }
-
 }

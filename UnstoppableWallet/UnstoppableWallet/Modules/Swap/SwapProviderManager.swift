@@ -34,7 +34,7 @@ class SwapProviderManager {
     private func initSectionsDataSource(tokenFrom: MarketKit.Token?) {
         let blockchainType: BlockchainType
 
-        if let tokenFrom = tokenFrom {
+        if let tokenFrom {
             if let type = evmBlockchainManager.blockchain(token: tokenFrom)?.type {
                 blockchainType = type
             } else {
@@ -57,10 +57,8 @@ class SwapProviderManager {
         switch dex.provider {
         case .uniswap, .pancake, .quickSwap:
             return UniswapModule(dex: dex, dataSourceState: state, isSafeSwap: false)
-        case .uniswapV3:
-            return UniswapV3Module(dex: dex, dataSourceState: state, dexType: .uniswap)
-        case .pancakeV3:
-            return UniswapV3Module(dex: dex, dataSourceState: state, dexType: .pancakeSwap)
+        case .uniswapV3, .pancakeV3:
+            return UniswapV3Module(dex: dex, dataSourceState: state)
         case .oneInch:
             return OneInchModule(dex: dex, dataSourceState: state)
         case .safeSwap:

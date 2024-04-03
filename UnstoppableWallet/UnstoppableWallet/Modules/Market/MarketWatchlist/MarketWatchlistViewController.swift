@@ -1,30 +1,29 @@
-import UIKit
+import SectionsTableView
 import SnapKit
 import ThemeKit
-import SectionsTableView
+import UIKit
 
 class MarketWatchlistViewController: MarketListViewController {
     weak var parentNavigationController: UINavigationController?
 
     private let viewModel: MarketWatchlistViewModel
 
-    private let multiSortHeaderView: MarketMultiSortHeaderView
+    private let singleSortHeaderView: MarketSingleSortHeaderView
     private let placeholderView = PlaceholderView()
 
     override var viewController: UIViewController? { parentNavigationController }
-    override var headerView: UITableViewHeaderFooterView? { multiSortHeaderView }
+    override var headerView: UITableViewHeaderFooterView? { singleSortHeaderView }
     override var emptyView: UIView? { placeholderView }
 
-    init(viewModel: MarketWatchlistViewModel, listViewModel: IMarketListViewModel, headerViewModel: MarketMultiSortHeaderViewModel) {
+    init(viewModel: MarketWatchlistViewModel, listViewModel: IMarketListViewModel, headerViewModel: MarketSingleSortHeaderViewModel) {
         self.viewModel = viewModel
-        multiSortHeaderView = MarketMultiSortHeaderView(viewModel: headerViewModel, hasTopSeparator: false)
+        singleSortHeaderView = MarketSingleSortHeaderView(viewModel: headerViewModel, hasTopSeparator: false)
 
-        super.init(listViewModel: listViewModel)
-
-        multiSortHeaderView.viewController = self
+        super.init(listViewModel: listViewModel, statPage: .watchlist)
     }
 
-    required init?(coder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -37,10 +36,7 @@ class MarketWatchlistViewController: MarketListViewController {
         viewModel.onLoad()
     }
 
-    override func showAddedToWatchlist() {
-    }
+    override func showAddedToWatchlist() {}
 
-    override func showRemovedFromWatchlist() {
-    }
-
+    override func showRemovedFromWatchlist() {}
 }

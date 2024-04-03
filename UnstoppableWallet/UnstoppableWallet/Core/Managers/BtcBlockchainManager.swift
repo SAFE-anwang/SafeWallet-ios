@@ -4,7 +4,7 @@ import RxRelay
 import RxSwift
 
 class BtcBlockchainManager {
-    private let blockchainTypes: [BlockchainType] = [
+    static let blockchainTypes: [BlockchainType] = [
         .bitcoin,
         .bitcoinCash,
         .ecash,
@@ -27,10 +27,14 @@ class BtcBlockchainManager {
         self.storage = storage
 
         do {
-            allBlockchains = try marketKit.blockchains(uids: blockchainTypes.map { $0.uid })
+            allBlockchains = try marketKit.blockchains(uids: Self.blockchainTypes.map(\.uid))
         } catch {
             allBlockchains = []
         }
+    }
+
+    private func fastestSyncMode(blockchainType: BlockchainType) -> BtcRestoreMode {
+        blockchainType.supports(restoreMode: .blockchair) ? .blockchair : .hybrid
     }
 }
 
@@ -48,20 +52,17 @@ extension BtcBlockchainManager {
     }
 
     func restoreMode(blockchainType: BlockchainType) -> BtcRestoreMode {
-        storage.btcRestoreMode(blockchainType: blockchainType) ?? .api
+        storage.btcRestoreMode(blockchainType: blockchainType) ?? fastestSyncMode(blockchainType: blockchainType)
     }
 
     func syncMode(blockchainType: BlockchainType, accountOrigin: AccountOrigin) -> BitcoinCore.SyncMode {
-        if accountOrigin == .created {
-            return .newWallet
-        }
-        
-        if blockchainType == .dogecoin {
-            return .full
-        }
+        let _restoreMode = accountOrigin == .created
+            ? fastestSyncMode(blockchainType: blockchainType)
+            : restoreMode(blockchainType: blockchainType)
 
-        switch restoreMode(blockchainType: blockchainType) {
-        case .api: return .api
+        switch _restoreMode {
+        case .blockchair: return .blockchair
+        case .hybrid: return .api
         case .blockchain: return .full
         }
     }
@@ -75,15 +76,23 @@ extension BtcBlockchainManager {
         storage.btcTransactionSortMode(blockchainType: blockchainType) ?? .shuffle
     }
 
+    func transactionRbfEnabled(blockchainType: BlockchainType) -> Bool {
+        storage.btcTransactionRbfEnabled(blockchainType: blockchainType) ?? true
+    }
+
     func save(transactionSortMode: TransactionDataSortMode, blockchainType: BlockchainType) {
         storage.save(btcTransactionSortMode: transactionSortMode, blockchainType: blockchainType)
         transactionSortModeUpdatedRelay.accept(blockchainType)
+    }
+
+    func save(rbfEnabled: Bool, blockchainType: BlockchainType) {
+        storage.save(btcRbfEnabled: rbfEnabled, blockchainType: blockchainType)
     }
 }
 
 extension BtcBlockchainManager {
     var backup: [BtcRestoreModeBackup] {
-        blockchainTypes.map {
+        Self.blockchainTypes.map {
             BtcRestoreModeBackup(
                 blockchainTypeUid: $0.uid,
                 restoreMode: restoreMode(blockchainType: $0).rawValue,

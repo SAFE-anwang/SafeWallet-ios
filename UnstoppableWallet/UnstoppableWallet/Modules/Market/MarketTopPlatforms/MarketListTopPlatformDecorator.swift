@@ -1,7 +1,6 @@
-import Foundation
-import CurrencyKit
-import MarketKit
 import ComponentKit
+import Foundation
+import MarketKit
 
 protocol IMarketListTopPlatformDecoratorService {
     var currency: Currency { get }
@@ -16,15 +15,13 @@ class MarketListTopPlatformDecorator {
     init(service: IMarketListTopPlatformDecoratorService) {
         self.service = service
     }
-
 }
 
 extension MarketListTopPlatformDecorator: IMarketListDecorator {
-
     func listViewItem(item: MarketKit.TopPlatform) -> MarketModule.ListViewItem {
         let currency = service.currency
 
-        let protocols = item.protocolsCount.map { "market.top.protocols".localized + " \($0)" } ?? ""
+        let protocols = item.protocolsCount.map { "market.top.protocols".localized(String($0)) } ?? ""
 
         let marketCap = item.marketCap.flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) } ?? "n/a".localized
 
@@ -41,17 +38,16 @@ extension MarketListTopPlatformDecorator: IMarketListDecorator {
         let dataValue: MarketModule.MarketDataValue = .diff(diff)
 
         return MarketModule.ListViewItem(
-                uid: item.blockchain.uid,
-                iconUrl: item.blockchain.type.imageUrl,
-                iconShape: .square,
-                iconPlaceholderName: "placeholder_rectangle_32",
-                leftPrimaryValue: item.blockchain.name,
-                leftSecondaryValue: protocols,
-                badge: rank.map { "\($0)" },
-                badgeSecondaryValue: rankChange,
-                rightPrimaryValue: marketCap,
-                rightSecondaryValue: dataValue
+            uid: item.blockchain.uid,
+            iconUrl: item.blockchain.type.imageUrl,
+            iconShape: .square,
+            iconPlaceholderName: "placeholder_rectangle_32",
+            leftPrimaryValue: item.blockchain.name,
+            leftSecondaryValue: protocols,
+            badge: rank.map { "\($0)" },
+            badgeSecondaryValue: rankChange,
+            rightPrimaryValue: marketCap,
+            rightSecondaryValue: dataValue
         )
     }
-
 }

@@ -38,7 +38,7 @@ class WalletConnectListViewController: ThemeViewController {
 
         title = "wallet_connect_list.title".localized
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "circle_information_24"), style: .plain, target: self, action: #selector(onTapInfo))
+//        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "circle_information_24"), style: .plain, target: self, action: #selector(onTapInfo))
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
         view.addSubview(tableView)
@@ -73,10 +73,6 @@ class WalletConnectListViewController: ThemeViewController {
         subscribe(disposeBag, viewModel.showDisconnectingSignal) { HudHelper.instance.show(banner: .disconnectingWalletConnect) }
         subscribe(disposeBag, viewModel.showSuccessSignal) { HudHelper.instance.show(banner: .disconnectedWalletConnect) }
         subscribe(disposeBag, viewModel.showWalletConnectSessionSignal) { [weak self] in self?.show(session: $0) }
-
-        if viewModel.emptyList {
-            startNewConnection()
-        }
     }
 
     private func sync(viewItems: [WalletConnectListViewModel.ViewItem]? = nil, pairingCount: Int? = nil) {
@@ -129,7 +125,7 @@ class WalletConnectListViewController: ThemeViewController {
 
     private func show(newConnectionError: String) {
         let viewController = BottomSheetModule.viewController(
-            image: .local(image: UIImage(named: "wallet_connect_24")?.withTintColor(.themeJacob)),
+            image: .walletConnect,
             title: "WalletConnect",
             items: [
                 .highlightedDescription(text: newConnectionError),
@@ -258,4 +254,8 @@ extension WalletConnectListViewController: SectionsDataSource {
 
         return sections
     }
+}
+
+extension BottomSheetTitleView.Image {
+    static let walletConnect: Self = .local(name: "wallet_connect_24", tint: .warning)
 }

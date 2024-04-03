@@ -16,6 +16,20 @@ class DogecoinAdapter: BitcoinBaseAdapter {
         let networkType: DogecoinKit.Kit.NetworkType = .mainNet
         let logger = App.shared.logger.scoped(with: "DogeecoinKit")
         
+        let hasher: (Data) -> Data = { data in
+            let params = DogecoinKit.Kit.defaultScryptParams
+
+            let result = try? BackupCryptoHelper.makeScrypt(
+                pass: data,
+                salt: data,
+                dkLen: params.length,
+                N: params.N,
+                r: params.r,
+                p: params.p
+            )
+            return result ?? Data()
+        }
+        
         switch wallet.account.type {
         case .mnemonic:
             guard let seed = wallet.account.type.mnemonicSeed else {
@@ -30,7 +44,8 @@ class DogecoinAdapter: BitcoinBaseAdapter {
                     seed: seed,
                     purpose: .bip44,//derivation.purpose,
                     walletId: wallet.account.id,
-                    syncMode: syncMode,
+                    syncMode: .full,
+                    hasher: hasher,
                     networkType: networkType,
                     confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
                     logger: logger
@@ -44,7 +59,8 @@ class DogecoinAdapter: BitcoinBaseAdapter {
                     extendedKey: key,
                     purpose: .bip44,//derivation.purpose,
                     walletId: wallet.account.id,
-                    syncMode: syncMode,
+                    syncMode: .full, 
+                    hasher: hasher,
                     networkType: networkType,
                     confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
                     logger: logger
@@ -53,7 +69,7 @@ class DogecoinAdapter: BitcoinBaseAdapter {
             throw AdapterError.unsupportedAccount
         }
 
-        super.init(abstractKit: dogecoinKit, wallet: wallet)
+        super.init(abstractKit: dogecoinKit, wallet: wallet, syncMode: syncMode)
 
         dogecoinKit.delegate = self
     }
@@ -64,6 +80,10 @@ class DogecoinAdapter: BitcoinBaseAdapter {
 
     override func explorerUrl(transactionHash: String) -> String? {
         "https://blockchair.com/dogecoin/transaction/" + transactionHash
+    }
+    
+    override func explorerUrl(address: String) -> String? {
+        "https://blockchair.com/dogecoin/address/" + address
     }
 
 }

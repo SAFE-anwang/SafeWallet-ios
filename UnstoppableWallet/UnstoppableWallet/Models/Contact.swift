@@ -36,7 +36,7 @@ class ContactAddress: Codable, ImmutableMappable, Hashable, Equatable {
     }
 }
 
-extension Array where Element == ContactAddress {
+extension [ContactAddress] {
     static func == (lhs: [ContactAddress], rhs: [ContactAddress]) -> Bool {
         Set(lhs) == Set(rhs)
     }
@@ -79,6 +79,14 @@ class Contact: Codable, ImmutableMappable, Hashable, Equatable {
 
     func address(blockchainUid: String) -> ContactAddress? {
         addresses.first { $0.blockchainUid == blockchainUid }
+    }
+
+    func has(blockchainUId: String) -> Bool {
+        addresses.contains(where: { $0.blockchainUid == blockchainUId })
+    }
+
+    func hasOne(of blockchainUids: [String]) -> Bool {
+        !Set(addresses.map(\.blockchainUid)).intersection(Set(blockchainUids)).isEmpty
     }
 }
 

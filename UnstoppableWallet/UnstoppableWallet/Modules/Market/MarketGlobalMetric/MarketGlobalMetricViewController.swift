@@ -1,10 +1,10 @@
-import UIKit
-import SnapKit
-import ThemeKit
-import SectionsTableView
 import Chart
 import ComponentKit
 import RxSwift
+import SectionsTableView
+import SnapKit
+import ThemeKit
+import UIKit
 
 class MarketGlobalMetricViewController: MarketListViewController {
     private let metricsType: MarketGlobalModule.MetricsType
@@ -33,16 +33,25 @@ class MarketGlobalMetricViewController: MarketListViewController {
 
         chartCell = ChartCell(viewModel: chartViewModel, configuration: configuration)
         chartRow = StaticRow(
-                cell: chartCell,
-                id: "chartView",
-                height: chartCell.cellHeight
+            cell: chartCell,
+            id: "chartView",
+            height: chartCell.cellHeight
         )
 
-        super.init(listViewModel: listViewModel)
+        let statPage: StatPage
 
+        switch metricsType {
+        case .totalMarketCap: statPage = .globalMetricsMarketCap
+        case .volume24h: statPage = .globalMetricsVolume
+        case .defiCap: statPage = .globalMetricsDefiCap
+        case .tvlInDefi: statPage = .globalMetricsTvlInDefi
+        }
+
+        super.init(listViewModel: listViewModel, statPage: statPage)
     }
 
-    required init?(coder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -71,30 +80,29 @@ class MarketGlobalMetricViewController: MarketListViewController {
 
         return [
             Section(
-                    id: "header",
-                    rows: [
-                        Row<MarketHeaderCell>(
-                                id: "header",
-                                height: MarketHeaderCell.height,
-                                bind: { [weak self] cell, _ in
-                                    self?.bind(cell: cell)
-                                }
-                        )
-                    ]
+                id: "header",
+                rows: [
+                    Row<MarketHeaderCell>(
+                        id: "header",
+                        height: MarketHeaderCell.height,
+                        bind: { [weak self] cell, _ in
+                            self?.bind(cell: cell)
+                        }
+                    ),
+                ]
             ),
             Section(
-                    id: "chart",
-                    rows: [chartRow]
-            )
+                id: "chart",
+                rows: [chartRow]
+            ),
         ]
     }
 
     private func bind(cell: MarketHeaderCell) {
         cell.set(
-                title: metricsType.title,
-                description: metricsType.description,
-                imageMode: .remote(imageUrl: metricsType.imageUid.headerImageUrl)
+            title: metricsType.title,
+            description: metricsType.description,
+            imageMode: .remote(imageUrl: metricsType.imageUid.headerImageUrl)
         )
     }
-
 }

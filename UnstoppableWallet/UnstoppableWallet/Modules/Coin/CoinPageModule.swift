@@ -1,16 +1,15 @@
-import LanguageKit
 import MarketKit
 import SwiftUI
 import ThemeKit
 import UIKit
 
-struct CoinPageModule {
+enum CoinPageModule {
     static func view(fullCoin: FullCoin) -> some View {
         let viewModel = CoinPageViewModelNew(fullCoin: fullCoin, favoritesManager: App.shared.favoritesManager)
 
         let overviewView = CoinOverviewModule.view(coinUid: fullCoin.coin.uid)
         let analyticsView = CoinAnalyticsModule.view(fullCoin: fullCoin)
-        let marketsView = CoinMarketsModule.view(coin: fullCoin.coin)
+        let marketsView = CoinMarketsView(coin: fullCoin.coin)
 
         return CoinPageView(
             viewModel: viewModel,
@@ -33,8 +32,9 @@ struct CoinPageModule {
         let viewModel = CoinPageViewModel(service: service)
 
         let overviewController = CoinOverviewModule.viewController(coinUid: coinUid)
-        let marketsController = CoinMarketsModule.viewController(coin: fullCoin.coin)
+        let marketsController = CoinMarketsView(coin: fullCoin.coin).toViewController()
         let analyticsController = CoinAnalyticsModule.viewController(fullCoin: fullCoin)
+//        let tweetsController = CoinTweetsModule.viewController(fullCoin: fullCoin)
         let tweetsController = fullCoin.coin.uid == safeCoinUid ? CoinTweetsModule.viewController(username: "safeanwang") : CoinTweetsModule.viewController(fullCoin: fullCoin)
 
         let viewController = CoinPageViewController(

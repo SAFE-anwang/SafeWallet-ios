@@ -1,57 +1,49 @@
 import Combine
 import EvmKit
-import MarketKit
-import CurrencyKit
-import HsToolKit
 import HsExtensions
+import HsToolKit
+import MarketKit
 
 class CoinAnalyticsService {
     private let fullCoin: FullCoin
     private let marketKit: MarketKit.Kit
-    private let currencyKit: CurrencyKit.Kit
+    private let currencyManager: CurrencyManager
     private let subscriptionManager: SubscriptionManager
     private var tasks = Set<AnyTask>()
     private var cancellables = Set<AnyCancellable>()
 
     @PostPublished private(set) var state: State = .loading
 
-    init(fullCoin: FullCoin, marketKit: MarketKit.Kit, currencyKit: CurrencyKit.Kit, subscriptionManager: SubscriptionManager) {
+    init(fullCoin: FullCoin, marketKit: MarketKit.Kit, currencyManager: CurrencyManager, subscriptionManager: SubscriptionManager) {
         self.fullCoin = fullCoin
         self.marketKit = marketKit
-        self.currencyKit = currencyKit
+        self.currencyManager = currencyManager
         self.subscriptionManager = subscriptionManager
 
         subscriptionManager.$isAuthenticated
-                .sink { [weak self] isAuthenticated in
-                    if isAuthenticated {
-                        self?.sync()
-                    }
+            .sink { [weak self] isAuthenticated in
+                if isAuthenticated {
+                    self?.sync()
                 }
-                .store(in: &cancellables)
+            }
+            .store(in: &cancellables)
     }
 
     private func loadPreview() {
         Task { [weak self, marketKit, fullCoin] in
             do {
-                let analyticsPreview = try await marketKit.analyticsPreview(coinUid: fullCoin.coin.uid)
+                let analyticsPreview = try await marketKit.analyticsPreview(coinUid: fullCoin.coin.uid, apiTag: "")
                 self?.state = .preview(analyticsPreview: analyticsPreview)
             } catch {
-                if fullCoin.coin.uid == safeCoinUid {
-                    let analyticsPreview = try AnalyticsPreview(JSON: [:])
-                    self?.state = .preview(analyticsPreview: analyticsPreview)
-                }else {
-                    self?.state = .failed(error)
-                }
+                self?.state = .failed(error)
             }
         }.store(in: &tasks)
     }
-
 }
 
 extension CoinAnalyticsService {
-
     var currency: Currency {
-        currencyKit.baseCurrency
+        currencyManager.baseCurrency
     }
 
     var coin: Coin {
@@ -61,8 +53,8 @@ extension CoinAnalyticsService {
     var auditAddresses: [String]? {
         let addresses = fullCoin.tokens.compactMap { token in
             switch (token.blockchainType, token.type) {
-            case (.ethereum, .eip20(let address)): return address
-            case (.binanceSmartChain, .eip20(let address)): return address
+            case let (.ethereum, .eip20(address)): return address
+            case let (.binanceSmartChain, .eip20(address)): return address
             default: return nil
             }
         }
@@ -86,34 +78,31 @@ extension CoinAnalyticsService {
         if subscriptionManager.isAuthenticated {
             Task { [weak self, subscriptionManager, marketKit, fullCoin, currency] in
                 try await subscriptionManager.fetch(
-                        request: {
-                            try await marketKit.analytics(coinUid: fullCoin.coin.uid, currencyCode: currency.code)
-                        },
-                        onSuccess: { [weak self] analytics in
-                            self?.state = .success(analytics: analytics)
-                        },
-                        onInvalidAuthToken: { [weak self] in
-                            self?.loadPreview()
-                        },
-                        onFailure: { [weak self] error in
-                            self?.state = .failed(error)
-                        }
+                    request: {
+                        try await marketKit.analytics(coinUid: fullCoin.coin.uid, currencyCode: currency.code, apiTag: "")
+                    },
+                    onSuccess: { [weak self] analytics in
+                        self?.state = .success(analytics: analytics)
+                    },
+                    onInvalidAuthToken: { [weak self] in
+                        self?.loadPreview()
+                    },
+                    onFailure: { [weak self] error in
+                        self?.state = .failed(error)
+                    }
                 )
             }.store(in: &tasks)
         } else {
             loadPreview()
         }
     }
-
 }
 
 extension CoinAnalyticsService {
-
     enum State {
         case loading
         case failed(Error)
         case preview(analyticsPreview: AnalyticsPreview)
         case success(analytics: Analytics)
     }
-
 }

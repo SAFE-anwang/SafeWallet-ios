@@ -1,143 +1,58 @@
+import Combine
 import Foundation
-import RxSwift
-import RxRelay
+import HsExtensions
 import MarketKit
+import RxSwift
 
 class TransactionsService: BaseTransactionsService {
     private let walletManager: WalletManager
+    private let disposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
 
-    private let blockchainRelay = PublishRelay<SelectedBlockchain?>()
-    private(set) var blockchain: SelectedBlockchain? {
+    @DistinctPublished var transactionFilter = TransactionFilter() {
         didSet {
-            blockchainRelay.accept(blockchain)
+            syncPoolGroup()
         }
     }
 
-    private let tokenRelay = PublishRelay<Token?>()
-    private(set) var token: Token? {
-        didSet {
-            tokenRelay.accept(token)
-        }
-    }
-
-    private(set) var allBlockchains = [Blockchain]()
-
-    init(walletManager: WalletManager, adapterManager: TransactionAdapterManager, rateService: HistoricalRateService, nftMetadataService: NftMetadataService) {
+    init(walletManager: WalletManager, adapterManager: TransactionAdapterManager, rateService: HistoricalRateService, nftMetadataService: NftMetadataService, balanceHiddenManager: BalanceHiddenManager) {
         self.walletManager = walletManager
 
-        super.init(rateService: rateService, nftMetadataService: nftMetadataService)
+        super.init(rateService: rateService, nftMetadataService: nftMetadataService, balanceHiddenManager: balanceHiddenManager)
 
-        subscribe(disposeBag, adapterManager.adaptersReadyObservable) { [weak self] _ in self?.syncWallets() }
-
-        _syncWallets()
-    }
-
-    override var _canReset: Bool {
-        super._canReset || blockchain != nil || token != nil
-    }
-
-    private func syncWallets() {
-        queue.async {
-            self._syncWallets()
-        }
-    }
-
-    private func _syncWallets() {
-        allBlockchains = Array(Set(walletManager.activeWallets.map { $0.token.blockchain }))
-
-        if let blockchain = blockchain {
-            
-            switch blockchain {
-            case .blockchain(let blockchain):
-                if !allBlockchains.contains(blockchain) { self.blockchain = nil }
-                
-            case .blockchainSeries(let series):
-                guard series.isContains(allBlockchains.map{$0.type}) else {
-                    return self.blockchain = nil
-                }
-            }
+        subscribe(disposeBag, adapterManager.adaptersReadyObservable) { [weak self] _ in
+            self?.syncPoolGroup()
         }
 
-        if let token, !walletManager.activeWallets.contains(where: { $0.token == token }) {
-            self.token = nil
-            blockchain = nil
-        }
-
-        _syncCanReset()
-
-//        print("SYNC POOL GROUP: sync wallets: \(walletManager.activeWallets.count)")
         _syncPoolGroup()
     }
 
+    private func syncPoolGroup() {
+        queue.async {
+            self._syncPoolGroup()
+        }
+    }
+
     override var _poolGroupType: PoolGroupFactory.PoolGroupType {
-        if let token {
+        if let token = transactionFilter.token {
             return .token(token: token)
-        } else if let blockchain {
+        } else if let blockchain = transactionFilter.blockchain {
             switch blockchain {
-            case .blockchain(let blockchain):
+            case let .blockchain(blockchain):
                 return .blockchain(blockchainType: blockchain.type, wallets: walletManager.activeWallets)
-            case .blockchainSeries(let series):
-                return .blockchains(types: series.types, wallets: walletManager.activeWallets)
+            case let .blockchainSeries(series):
+                return .blockchains(types: series.supportedTypes, wallets: walletManager.activeWallets)
             }
-            
         } else {
             return .all(wallets: walletManager.activeWallets)
         }
     }
 
-    override func _resetFilters() {
-        super._resetFilters()
-
-        blockchain = nil
-        token = nil
+    override var contact: Contact? {
+        transactionFilter.contact
     }
 
-}
-
-extension TransactionsService {
-
-    var blockchainObservable: Observable<SelectedBlockchain?> {
-        blockchainRelay.asObservable()
-    }
-
-    var tokenObservable: Observable<Token?> {
-        tokenRelay.asObservable()
-    }
-
-    func set(blockchain: SelectedBlockchain?) {
-        queue.async {
-            guard self.blockchain != blockchain else {
-                return
-            }
-
-            self.blockchain = blockchain
-            self.token = nil
-
-            self._syncCanReset()
-
-//            print("SYNC POOL GROUP: set blockchain")
-            self._syncPoolGroup()
-        }
-    }
-
-    func set(token: Token?) {
-        queue.async {
-            guard self.token != token else {
-                return
-            }
-
-            self.token = token
-            if let blockchain = token?.blockchain {
-                self.blockchain = .blockchain(blockchain: blockchain)
-
-            }else {
-                self.blockchain =  nil
-            }
-            self._syncCanReset()
-
-//            print("SYNC POOL GROUP: set token")
-            self._syncPoolGroup()
-        }
+    override var scamFilterEnabled: Bool {
+        transactionFilter.scamFilterEnabled
     }
 }
-

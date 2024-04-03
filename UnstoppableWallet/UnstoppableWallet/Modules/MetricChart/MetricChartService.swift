@@ -1,8 +1,7 @@
 import Combine
-import UIKit
-import MarketKit
-import CurrencyKit
 import HsExtensions
+import MarketKit
+import UIKit
 
 class MetricChartService {
     private var tasks = Set<AnyTask>()
@@ -10,7 +9,7 @@ class MetricChartService {
 
     private var chartFetcher: IMetricChartFetcher
 
-    @DistinctPublished var interval: HsTimePeriod {
+    @DistinctPublished var interval: HsPeriodType {
         didSet {
             if interval != oldValue {
                 fetchChartData()
@@ -18,17 +17,28 @@ class MetricChartService {
         }
     }
 
+    @DistinctPublished var intervals: [HsPeriodType]
+
     @PostPublished private(set) var state: DataStatus<MetricChartModule.ItemData> = .loading
 
-    private var itemDataMap = [HsTimePeriod: MetricChartModule.ItemData]()
+    private var itemDataMap = [HsPeriodType: MetricChartModule.ItemData]()
 
-    init(chartFetcher: IMetricChartFetcher, interval: HsTimePeriod) {
+    init(chartFetcher: IMetricChartFetcher, interval: HsPeriodType) {
         self.chartFetcher = chartFetcher
         self.interval = interval
 
+        intervals = chartFetcher.intervals
+
         chartFetcher.needUpdatePublisher
-                .sink { [weak self] in self?.fetchChartData() }
-                .store(in: &cancellables)
+            .sink { [weak self] in self?.fetchChartData() }
+            .store(in: &cancellables)
+        chartFetcher.needUpdateIntervals
+            .sink { [weak self] in self?.updateIntervals() }
+            .store(in: &cancellables)
+    }
+
+    private func updateIntervals() {
+        intervals = chartFetcher.intervals
     }
 
     func fetchChartData() {
@@ -51,15 +61,10 @@ class MetricChartService {
             }
         }.store(in: &tasks)
     }
-
 }
 
 extension MetricChartService {
-
     var valueType: MetricChartModule.ValueType {
         chartFetcher.valueType
     }
-
-    var intervals: [HsTimePeriod] { chartFetcher.intervals }
-
 }

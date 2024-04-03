@@ -1,21 +1,22 @@
-import UIKit
-import RxSwift
-import RxCocoa
-import ThemeKit
-import SectionsTableView
 import ComponentKit
 import HUD
+import RxCocoa
+import RxSwift
+import SectionsTableView
+import ThemeKit
+import UIKit
 
 protocol IMarketListViewModel {
     var viewItemDataDriver: Driver<MarketModule.ListViewItemData?> { get }
     var loadingDriver: Driver<Bool> { get }
     var syncErrorDriver: Driver<Bool> { get }
-    var scrollToTopSignal: Signal<()> { get }
+    var scrollToTopSignal: Signal<Void> { get }
     func refresh()
 }
 
 class MarketListViewController: ThemeViewController {
     private let listViewModel: IMarketListViewModel
+    private let statPage: StatPage
     private let disposeBag = DisposeBag()
 
     let tableView = SectionsTableView(style: .plain)
@@ -29,10 +30,11 @@ class MarketListViewController: ThemeViewController {
     var headerView: UITableViewHeaderFooterView? { nil }
     var emptyView: UIView? { nil }
     var refreshEnabled: Bool { true }
-    func topSections(loaded: Bool) -> [SectionProtocol] { [] }
+    func topSections(loaded _: Bool) -> [SectionProtocol] { [] }
 
-    init(listViewModel: IMarketListViewModel) {
+    init(listViewModel: IMarketListViewModel, statPage: StatPage) {
         self.listViewModel = listViewModel
+        self.statPage = statPage
 
         super.init()
 
@@ -43,7 +45,8 @@ class MarketListViewController: ThemeViewController {
         }
     }
 
-    required init?(coder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -59,15 +62,13 @@ class MarketListViewController: ThemeViewController {
             maker.edges.equalToSuperview()
         }
 
-        if #available(iOS 15.0, *) {
-            tableView.sectionHeaderTopPadding = 0
-        }
+        tableView.sectionHeaderTopPadding = 0
         tableView.separatorStyle = .none
         tableView.backgroundColor = .clear
 
         tableView.sectionDataSource = self
 
-        if let emptyView = emptyView {
+        if let emptyView {
             view.addSubview(emptyView)
             emptyView.snp.makeConstraints { maker in
                 maker.edges.equalTo(view.safeAreaLayoutGuide)
@@ -125,19 +126,19 @@ class MarketListViewController: ThemeViewController {
     private func sync(viewItemData: MarketModule.ListViewItemData?) {
         viewItems = viewItemData?.viewItems
 
-        if let viewItems = viewItems, viewItems.isEmpty {
+        if let viewItems, viewItems.isEmpty {
             emptyView?.isHidden = false
         } else {
             emptyView?.isHidden = true
         }
 
-        if let viewItems = viewItems, !viewItems.isEmpty {
+        if let viewItems, !viewItems.isEmpty {
             tableView.bounces = true
         } else {
             tableView.bounces = false
         }
 
-        if let viewItemData = viewItemData {
+        if let viewItemData {
             tableView.reload(animated: viewItemData.softUpdate)
         } else {
             tableView.reload()
@@ -145,12 +146,13 @@ class MarketListViewController: ThemeViewController {
     }
 
     func onSelect(viewItem: MarketModule.ListViewItem) {
-        guard let uid = viewItem.uid, let module = CoinPageModule.viewController(coinUid: uid) else {
+        guard let coinUid = viewItem.uid, let module = CoinPageModule.viewController(coinUid: coinUid) else {
             HudHelper.instance.show(banner: .attention(string: "market.project_has_no_coin".localized))
             return
         }
 
         viewController?.present(module, animated: true)
+        stat(page: statPage, event: .coinOpen, params: [.coinUid: coinUid])
     }
 
     private func rowActions(index: Int) -> [RowAction] {
@@ -164,7 +166,7 @@ class MarketListViewController: ThemeViewController {
 
         let type: RowActionType
         let iconName: String
-        let action: (UITableViewCell?) -> ()
+        let action: (UITableViewCell?) -> Void
 
         if isFavorite {
             type = .destructive
@@ -182,9 +184,9 @@ class MarketListViewController: ThemeViewController {
 
         return [
             RowAction(
-                    pattern: .icon(image: UIImage(named: iconName)?.withTintColor(type.iconColor), background: type.backgroundColor),
-                    action: action
-            )
+                pattern: .icon(image: UIImage(named: iconName)?.withTintColor(type.iconColor), background: type.backgroundColor),
+                action: action
+            ),
         ]
     }
 
@@ -199,15 +201,13 @@ class MarketListViewController: ThemeViewController {
     func showRemovedFromWatchlist() {
         HudHelper.instance.show(banner: .removedFromWatchlist)
     }
-
 }
 
 extension MarketListViewController: SectionsDataSource {
-
     func buildSections() -> [SectionProtocol] {
         let headerState: ViewState<UITableViewHeaderFooterView>
 
-        if let headerView = headerView, let viewItems = viewItems, !viewItems.isEmpty {
+        if let headerView, let viewItems, !viewItems.isEmpty {
             headerState = .static(view: headerView, height: .heightSingleLineCell)
         } else {
             headerState = .margin(height: 0)
@@ -215,28 +215,27 @@ extension MarketListViewController: SectionsDataSource {
 
         return topSections(loaded: viewItems != nil) + [
             Section(
-                    id: "coins",
-                    headerState: headerState,
-                    footerState: .marginColor(height: .margin32, color: .clear) ,
-                    rows: viewItems.map { viewItems in
-                        viewItems.enumerated().map { index, viewItem in
-                            MarketModule.marketListCell(
-                                    tableView: tableView,
-                                    backgroundStyle: .transparent,
-                                    listViewItem: viewItem,
-                                    isFirst: false,
-                                    isLast: index == viewItems.count - 1,
-                                    rowActionProvider: { [weak self] in
-                                        self?.rowActions(index: index) ?? []
-                                    },
-                                    action: { [weak self] in
-                                        self?.onSelect(viewItem: viewItem)
-                                    }
-                            )
-                        }
-                    } ?? []
-            )
+                id: "coins",
+                headerState: headerState,
+                footerState: .marginColor(height: .margin32, color: .clear),
+                rows: viewItems.map { viewItems in
+                    viewItems.enumerated().map { index, viewItem in
+                        MarketModule.marketListCell(
+                            tableView: tableView,
+                            backgroundStyle: .transparent,
+                            listViewItem: viewItem,
+                            isFirst: false,
+                            isLast: index == viewItems.count - 1,
+                            rowActionProvider: { [weak self] in
+                                self?.rowActions(index: index) ?? []
+                            },
+                            action: { [weak self] in
+                                self?.onSelect(viewItem: viewItem)
+                            }
+                        )
+                    }
+                } ?? []
+            ),
         ]
     }
-
 }

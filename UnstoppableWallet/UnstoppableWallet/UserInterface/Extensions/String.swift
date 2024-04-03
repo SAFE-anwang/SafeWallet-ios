@@ -1,7 +1,6 @@
 extension String {
-
     func stripping(prefix: String?) -> String {
-        if let prefix = prefix, hasPrefix(prefix) {
+        if let prefix, hasPrefix(prefix) {
             return String(dropFirst(prefix.count))
         }
 
@@ -9,7 +8,7 @@ extension String {
     }
 
     var shortened: String {
-        let excludedPrefixes = ["0x", "bc", "bnb", "ltc", "bitcoincash:"]
+        let excludedPrefixes = ["0x", "bc", "bnb", "ltc", "bitcoincash:", "ecash:"]
 
         var extraPrefix = 0
 
@@ -22,5 +21,10 @@ extension String {
 
         return String(prefix(extraPrefix + 4)) + "..." + String(suffix(4))
     }
+}
 
+extension String: Identifiable {
+    public var id: String {
+        self
+    }
 }

@@ -51,6 +51,6 @@ struct SafeCoinHistoricalPriceResponse: ImmutableMappable {
 
     init(map: Map) throws {
       //  timestamp = try map.value("timestamp")
-        price = try map.value("market_data.current_price.\(App.shared.currencyKit.baseCurrency.code.lowercased())")
+        price = try map.value("market_data.current_price.\(App.shared.currencyManager.baseCurrency.code.lowercased())")
     }
 }

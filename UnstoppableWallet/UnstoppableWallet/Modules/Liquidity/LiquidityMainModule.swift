@@ -34,10 +34,10 @@ protocol ILiquidityDataSource: AnyObject {
     var state: LiquidityMainModule.DataSourceState { get }
 
     var onOpen: ((_ viewController: UIViewController,_ viaPush: Bool) -> ())? { get set }
-    var onOpenSelectProvider: (() -> ())? { get set }
-    var onOpenSettings: (() -> ())? { get set }
-    var onClose: (() -> ())? { get set }
-    var onReload: (() -> ())? { get set }
+    var onOpenSelectProvider: (() -> Void)? { get set }
+    var onOpenSettings: (() -> Void)? { get set }
+    var onClose: (() -> Void)? { get set }
+    var onReload: (() -> Void)? { get set }
 
     func viewDidAppear()
 }

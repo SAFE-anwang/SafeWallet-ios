@@ -1,10 +1,10 @@
-import Foundation
-import MarketKit
-import RxSwift
-import RxRelay
-import TronKit
 import BigInt
+import Foundation
 import HsExtensions
+import MarketKit
+import RxRelay
+import RxSwift
+import TronKit
 
 class SendTronService {
     let sendToken: Token
@@ -13,6 +13,7 @@ class SendTronService {
     private let disposeBag = DisposeBag()
     private let adapter: ISendTronAdapter
     private let addressService: AddressService
+    private let memoService: SendMemoInputService
 
     private let stateRelay = PublishRelay<State>()
     private(set) var state: State = .notReady {
@@ -32,7 +33,7 @@ class SendTronService {
     }
 
     private let addressErrorRelay = PublishRelay<Error?>()
-    private var addressError: Error? = nil {
+    private var addressError: Error? {
         didSet {
             addressErrorRelay.accept(addressError)
         }
@@ -40,37 +41,42 @@ class SendTronService {
 
     private let activeAddressRelay = PublishRelay<Bool>()
 
-    init(token: Token, mode: SendBaseService.Mode, adapter: ISendTronAdapter, addressService: AddressService) {
+    init(token: Token, mode: SendBaseService.Mode, adapter: ISendTronAdapter, addressService: AddressService, memoService: SendMemoInputService) {
         sendToken = token
         self.mode = mode
         self.adapter = adapter
         self.addressService = addressService
+        self.memoService = memoService
 
         switch mode {
-        case .predefined(let address): addressService.set(text: address)
+        case let .prefilled(address, amount):
+            addressService.set(text: address)
+            if let amount { addressService.publishAmountRelay.accept(amount) }
+        case let .predefined(address): addressService.set(text: address)
         case .send: ()
         }
 
         subscribe(disposeBag, addressService.stateObservable) { [weak self] in self?.sync(addressState: $0) }
+        subscribe(disposeBag, memoService.memoObservable) { [weak self] _ in self?.syncState() }
     }
 
     private func sync(addressState: AddressService.State) {
         switch addressState {
-            case .success(let address):
-                do {
-                    addressData = AddressData(tronAddress: try TronKit.Address(address: address.raw), domain: address.domain)
-                } catch {
-                    addressData = nil
-                }
-            default: addressData = nil
+        case let .success(address):
+            do {
+                addressData = try AddressData(tronAddress: TronKit.Address(address: address.raw), domain: address.domain)
+            } catch {
+                addressData = nil
+            }
+        default: addressData = nil
         }
 
         syncState()
     }
 
     private func syncState() {
-        if amountCaution.error == nil, case .success = addressService.state, let tronAmount = tronAmount, let addressData = addressData {
-            let contract = adapter.contract(amount: tronAmount, address: addressData.tronAddress)
+        if amountCaution.error == nil, case .success = addressService.state, let tronAmount, let addressData {
+            let contract = adapter.contract(amount: tronAmount, address: addressData.tronAddress, memo: memoService.memo)
             state = .ready(contract: contract)
         } else {
             state = .notReady
@@ -88,11 +94,9 @@ class SendTronService {
 
         return tronAmount
     }
-
 }
 
 extension SendTronService {
-
     var stateObservable: Observable<State> {
         stateRelay.asObservable()
     }
@@ -108,11 +112,9 @@ extension SendTronService {
     var activeAddressObservable: Observable<Bool> {
         activeAddressRelay.asObservable()
     }
-
 }
 
 extension SendTronService: IAvailableBalanceService {
-
     var availableBalance: DataStatus<Decimal> {
         .completed(adapter.balanceData.available)
     }
@@ -120,11 +122,9 @@ extension SendTronService: IAvailableBalanceService {
     var availableBalanceObservable: Observable<DataStatus<Decimal>> {
         Observable.just(availableBalance)
     }
-
 }
 
 extension SendTronService: IAmountInputService {
-
     var amount: Decimal {
         0
     }
@@ -157,8 +157,8 @@ extension SendTronService: IAmountInputService {
                 var amountWarning: AmountWarning? = nil
                 if amount.isEqual(to: adapter.balanceData.available) {
                     switch sendToken.type {
-                        case .native: amountWarning = AmountWarning.coinNeededForFee
-                        default: ()
+                    case .native: amountWarning = AmountWarning.coinNeededForFee
+                    default: ()
                     }
                 }
 
@@ -204,11 +204,9 @@ extension SendTronService: IAmountInputService {
             })
             .disposed(by: disposeBag)
     }
-
 }
 
 extension SendTronService {
-
     enum State {
         case ready(contract: TronKit.Contract)
         case notReady
@@ -231,5 +229,14 @@ extension SendTronService {
         let tronAddress: TronKit.Address
         let domain: String?
     }
+}
 
+extension SendTronService: IMemoAvailableService {
+    var isAvailable: Bool {
+        false
+    }
+
+    var isAvailableObservable: Observable<Bool> {
+        Observable.empty()
+    }
 }

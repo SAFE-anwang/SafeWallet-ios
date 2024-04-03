@@ -13,7 +13,7 @@ struct LiquidityConfirmationModule {
         guard let coinServiceFactory = EvmCoinServiceFactory(
                 blockchainType: dex.blockchainType,
                 marketKit: App.shared.marketKit,
-                currencyKit: App.shared.currencyKit,
+                currencyManager: App.shared.currencyManager,
                 coinManager: App.shared.coinManager
         ) else {
             return nil
@@ -56,7 +56,7 @@ struct LiquidityConfirmationModule {
 
         let service = AddLiquidityTransactionService(sendData: sendData, evmKitWrapper: evmKitWrapper, settingsService: settingService, evmLabelManager: App.shared.evmLabelManager)
         let contactLabelService = ContactLabelService(contactManager: App.shared.contactManager, blockchainType: evmKitWrapper.blockchainType)
-        let viewModel = AddLiquidityTransactionViewModel(service: service, coinServiceFactory: coinServiceFactory, cautionsFactory: SendEvmCautionsFactory(), evmLabelManager: App.shared.evmLabelManager, contactLabelService: contactLabelService, currencyKit: App.shared.currencyKit, marketKit: App.shared.marketKit, chainToken: chainToken)
+        let viewModel = AddLiquidityTransactionViewModel(service: service, coinServiceFactory: coinServiceFactory, cautionsFactory: SendEvmCautionsFactory(), evmLabelManager: App.shared.evmLabelManager, contactLabelService: contactLabelService, marketKit: App.shared.marketKit, currencyManager: App.shared.currencyManager, chainToken: chainToken)
 
         return  LiquidityConfirmationViewController(transactionViewModel: viewModel, settingsViewModel: settingsViewModel)
     }

@@ -1,4 +1,3 @@
-
 import Combine
 
 class SecuritySettingsViewModel: ObservableObject {

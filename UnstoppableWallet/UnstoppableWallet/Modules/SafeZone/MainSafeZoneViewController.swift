@@ -3,7 +3,6 @@ import SectionsTableView
 import SnapKit
 import ThemeKit
 import UIExtensions
-import ModuleKit
 import RxSwift
 import RxCocoa
 import SafariServices

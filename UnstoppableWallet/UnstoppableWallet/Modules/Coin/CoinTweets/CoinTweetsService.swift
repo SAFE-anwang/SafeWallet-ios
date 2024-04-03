@@ -1,16 +1,15 @@
-import RxSwift
-import RxRelay
-import MarketKit
 import HsExtensions
+import MarketKit
+import RxRelay
+import RxSwift
 
 class CoinTweetsService {
     private var tasks = Set<AnyTask>()
     private let twitterProvider: TweetsProvider
     private let marketKit: MarketKit.Kit
     private var coinUid: String
-    private var userName: String? = nil
-    
-    private var user: TwitterUser? = nil
+    private var userName: String?
+    private var user: TwitterUser?
     private let stateRelay = PublishRelay<DataStatus<[Tweet]>>()
 
     private(set) var state: DataStatus<[Tweet]> = .loading {
@@ -35,11 +34,9 @@ class CoinTweetsService {
     private func handle(tweets: [Tweet]) {
         state = .completed(tweets)
     }
-
 }
 
 extension CoinTweetsService {
-
     var stateObservable: Observable<DataStatus<[Tweet]>> {
         stateRelay.asObservable()
     }
@@ -83,13 +80,10 @@ extension CoinTweetsService {
             }
         }.store(in: &tasks)
     }
-
 }
 
 extension CoinTweetsService {
-
     enum LoadError: Error {
         case tweeterUserNotFound
     }
-
 }

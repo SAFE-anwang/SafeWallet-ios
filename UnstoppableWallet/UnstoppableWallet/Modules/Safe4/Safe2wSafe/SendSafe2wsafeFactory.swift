@@ -1,7 +1,6 @@
 import UIKit
 import MarketKit
 import HsToolKit
-import CurrencyKit
 
 class SendSafe2wsafeFactory: BaseSendFactory {
     private let fiatService: FiatService

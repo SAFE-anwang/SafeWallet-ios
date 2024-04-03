@@ -1,19 +1,17 @@
-import UIKit
-import ThemeKit
-import SnapKit
 import ComponentKit
-import HUD
+import SnapKit
+import ThemeKit
+import UIKit
 
 class WalletHeaderView: UITableViewHeaderFooterView {
     static var height: CGFloat = TextDropDownAndSettingsView.height
-
     private let sortAddCoinView = TextDropDownAndSettingsView()
     private let watchAccountImage = ImageComponent(size: .iconSize24)
 
-    var onTapSortBy: (() -> ())?
-    var onTapAddCoin: (() -> ())?
-    var onTapTransactions: (() -> ())?
-    var onTapLiquidityRecord: (() -> ())?
+    var onTapSortBy: (() -> Void)?
+    var onTapAddCoin: (() -> Void)?
+    var onTapTransactions: (() -> Void)?
+    var onTapLiquidityRecord: (() -> Void)?
     
     override init(reuseIdentifier: String?) {
         super.init(reuseIdentifier: reuseIdentifier)
@@ -41,15 +39,16 @@ class WalletHeaderView: UITableViewHeaderFooterView {
         watchAccountImage.imageView.image = UIImage(named: "binocule_24")?.withTintColor(.themeGray)
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func bind(sortBy: String?) {
-        sortAddCoinView.set(dropdownTitle: sortBy)
+    func set(sortByTitle: String?) {
+        sortAddCoinView.set(dropdownTitle: sortByTitle)
     }
 
-    func bind(controlViewItem: WalletViewModel.ControlViewItem) {
+    func set(controlViewItem: WalletViewModel.ControlViewItem) {
         sortAddCoinView.set(settingsHidden: !controlViewItem.coinManagerVisible)
         watchAccountImage.isHidden = !controlViewItem.watchVisible
     }

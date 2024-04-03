@@ -1,9 +1,9 @@
-import Foundation
-import TronKit
-import RxSwift
 import BigInt
+import Foundation
 import HsToolKit
 import MarketKit
+import RxSwift
+import TronKit
 
 class TronTransactionsAdapter: BaseTronAdapter {
     static let decimal = 6
@@ -16,35 +16,34 @@ class TronTransactionsAdapter: BaseTronAdapter {
         super.init(tronKitWrapper: tronKitWrapper, decimals: TronAdapter.decimals)
     }
 
-    private func tagQuery(token: MarketKit.Token?, filter: TransactionTypeFilter) -> TransactionTagQuery {
+    private func tagQuery(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> TransactionTagQuery {
         var type: TransactionTag.TagType?
         var `protocol`: TransactionTag.TagProtocol?
         var contractAddress: TronKit.Address?
 
-        if let token = token {
+        if let token {
             switch token.type {
-                case .native:
-                    `protocol` = .native
-                case .eip20(let address):
-                    if let address = try? TronKit.Address(address: address) {
-                        `protocol` = .eip20
-                        contractAddress = address
-                    }
-                default: ()
+            case .native:
+                `protocol` = .native
+            case let .eip20(address):
+                if let address = try? TronKit.Address(address: address) {
+                    `protocol` = .eip20
+                    contractAddress = address
+                }
+            default: ()
             }
         }
 
         switch filter {
-            case .all: ()
-            case .incoming: type = .incoming
-            case .outgoing: type = .outgoing
-//            case .swap: type = .swap
-            case .approve: type = .approve
+        case .all: ()
+        case .incoming: type = .incoming
+        case .outgoing: type = .outgoing
+        case .swap: type = .swap
+        case .approve: type = .approve
         }
 
-        return TransactionTagQuery(type: type, protocol: `protocol`, contractAddress: contractAddress)
+        return TransactionTagQuery(type: type, protocol: `protocol`, contractAddress: contractAddress, address: address)
     }
-
 }
 
 extension TronTransactionsAdapter: ITransactionsAdapter {
@@ -52,7 +51,7 @@ extension TronTransactionsAdapter: ITransactionsAdapter {
         tronKit.syncState.syncing
     }
 
-    var syncingObservable: Observable<()> {
+    var syncingObservable: Observable<Void> {
         tronKit.syncStatePublisher.asObservable().map { _ in () }
     }
 
@@ -60,31 +59,55 @@ extension TronTransactionsAdapter: ITransactionsAdapter {
         "Tronscan"
     }
 
-    func explorerUrl(transactionHash: String) -> String? {
-        switch tronKit.network {
-            case .mainNet: return "https://tronscan.org/#/transaction/\(transactionHash)"
-            case .nileTestnet: return "https://nile.tronscan.org/#/transaction/\(transactionHash)"
-            case .shastaTestnet: return "https://shasta.tronscan.org/#/transaction/\(transactionHash)"
+    var additionalTokenQueries: [TokenQuery] {
+        tronKit.tagTokens().compactMap { tagToken in
+            var tokenType: TokenType?
+
+            switch tagToken.protocol {
+            case .native:
+                tokenType = .native
+            case .eip20:
+                if let contractAddress = tagToken.contractAddress {
+                    tokenType = .eip20(address: contractAddress.base58)
+                }
+            default:
+                ()
+            }
+
+            guard let tokenType else {
+                return nil
+            }
+
+            return TokenQuery(blockchainType: tronKitWrapper.blockchainType, tokenType: tokenType)
         }
     }
 
-    func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter) -> Observable<[TransactionRecord]> {
-        tronKit.transactionsPublisher(tagQueries: [tagQuery(token: token, filter: filter)]).asObservable()
+    func explorerUrl(transactionHash: String) -> String? {
+        switch tronKit.network {
+        case .mainNet: return "https://tronscan.org/#/transaction/\(transactionHash)"
+        case .nileTestnet: return "https://nile.tronscan.org/#/transaction/\(transactionHash)"
+        case .shastaTestnet: return "https://shasta.tronscan.org/#/transaction/\(transactionHash)"
+        }
+    }
+
+    func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {
+        let address = address.flatMap { try? TronKit.Address(address: $0) }?.hex
+        return tronKit.transactionsPublisher(tagQueries: [tagQuery(token: token, filter: filter, address: address)]).asObservable()
             .map { [weak self] in
                 $0.compactMap { self?.transactionConverter.transactionRecord(fromTransaction: $0) }
             }
     }
 
-    func transactionsSingle(from: TransactionRecord?, token: MarketKit.Token?, filter: TransactionTypeFilter, limit: Int) -> Single<[TransactionRecord]> {
-        let transactions = tronKit.transactions(tagQueries: [tagQuery(token: token, filter: filter)], fromHash: from.flatMap { Data(hex: $0.transactionHash) }, limit: limit)
+    func transactionsSingle(from: TransactionRecord?, token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?, limit: Int) -> Single<[TransactionRecord]> {
+        let address = address.flatMap { try? TronKit.Address(address: $0) }?.hex
+        let transactions = tronKit.transactions(tagQueries: [tagQuery(token: token, filter: filter, address: address)], fromHash: from.flatMap { Data(hex: $0.transactionHash) }, limit: limit)
 
         return Single.just(transactions.compactMap { transactionConverter.transactionRecord(fromTransaction: $0) })
     }
 
-    func rawTransaction(hash: String) -> String? {
+    func rawTransaction(hash _: String) -> String? {
         nil
     }
-
 }
 
 class ActivatedDepositAddress: DepositAddress {

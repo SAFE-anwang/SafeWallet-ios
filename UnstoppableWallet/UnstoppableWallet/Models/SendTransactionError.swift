@@ -7,7 +7,6 @@ enum SendTransactionError: Error {
 }
 
 extension SendTransactionError: LocalizedError {
-
     public var errorDescription: String? {
         switch self {
         case .wrongAmount: return "alert.wrong_amount".localized

@@ -33,7 +33,15 @@ class EvmSyncSourceManager {
     }
 }
 
+extension RpcSource {
+    static func safeBscRpcHttp() -> RpcSource {
+        .http(urls: [URL(string: "https://bsc-mainnet.core.chainstack.com/67f0d109c5c0b7f0aa251a89f12c0b7b")!], auth: nil)
+    }
+}
 extension EvmSyncSourceManager {
+    
+
+    
     var syncSourceObservable: Observable<BlockchainType> {
         syncSourceRelay.asObservable()
     }
@@ -47,6 +55,14 @@ extension EvmSyncSourceManager {
         case .ethereum:
             if testNetManager.testNetEnabled {
                 return [
+//                    EvmSyncSource(
+//                        name: "BlocksDecoded Sepolia",
+//                        rpcSource: .http(urls: [URL(string: "\(AppConfig.marketApiUrl)/v1/ethereum-rpc/sepolia")!], auth: nil),
+//                        transactionSource: EvmKit.TransactionSource(
+//                            name: "sepolia.etherscan.io",
+//                            type: .etherscan(apiBaseUrl: "https://api-sepolia.etherscan.io", txBaseUrl: "https://sepiloa.etherscan.io", apiKey: AppConfig.etherscanKey)
+//                        )
+//                    ),
                     EvmSyncSource(
                         name: "Infura Sepolia",
                         rpcSource: .http(urls: [URL(string: "https://sepolia.infura.io/v3/\(AppConfig.infuraCredentials.id)")!], auth: AppConfig.infuraCredentials.secret),
@@ -58,6 +74,11 @@ extension EvmSyncSourceManager {
                 ]
             } else {
                 return [
+//                    EvmSyncSource(
+//                        name: "BlocksDecoded",
+//                        rpcSource: .http(urls: [URL(string: "\(AppConfig.marketApiUrl)/v1/ethereum-rpc/mainnet")!], auth: nil),
+//                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+//                    ),
                     EvmSyncSource(
                         name: "Infura",
                         rpcSource: .ethereumInfuraWebsocket(projectId: AppConfig.infuraCredentials.id, projectSecret: AppConfig.infuraCredentials.secret),
@@ -96,7 +117,7 @@ extension EvmSyncSourceManager {
                     ),
                     EvmSyncSource(
                         name: "BSC RPC",
-                        rpcSource: .bscRpcHttp(),
+                        rpcSource: .safeBscRpcHttp(),
                         transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                     ),
                     EvmSyncSource(
@@ -384,3 +405,4 @@ extension EvmSyncSourceManager {
         let custom: [CustomSyncSource]
     }
 }
+

@@ -1,10 +1,10 @@
-import UIKit
-import ThemeKit
-import SnapKit
-import SectionsTableView
-import RxSwift
-import RxCocoa
 import ComponentKit
+import RxCocoa
+import RxSwift
+import SectionsTableView
+import SnapKit
+import ThemeKit
+import UIKit
 
 class BaseSendViewController: ThemeViewController, SectionsDataSource {
     private let disposeBag = DisposeBag()
@@ -13,7 +13,7 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
     let tableView = SectionsTableView(style: .grouped)
 
     private let confirmationFactory: ISendConfirmationFactory
-    let feeSettingsFactory: ISendFeeSettingsFactory?
+    private let feeSettingsFactory: ISendFeeSettingsFactory?
 
     private let amountCautionViewModel: SendAmountCautionViewModel
 
@@ -24,6 +24,8 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
 
     private let recipientCell: RecipientAddressInputCell
     private let recipientCautionCell: RecipientAddressCautionCell
+
+    private let memoCell: SendMemoInputCell
 
     private let buttonCell = PrimaryButtonCell()
 
@@ -36,9 +38,9 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
          availableBalanceViewModel: SendAvailableBalanceViewModel,
          amountInputViewModel: AmountInputViewModel,
          amountCautionViewModel: SendAmountCautionViewModel,
-         recipientViewModel: RecipientAddressViewModel
-    ) {
-
+         recipientViewModel: RecipientAddressViewModel,
+         memoViewModel: SendMemoInputViewModel)
+    {
         self.confirmationFactory = confirmationFactory
         self.feeSettingsFactory = feeSettingsFactory
 
@@ -51,26 +53,26 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
 
         recipientCell = RecipientAddressInputCell(viewModel: recipientViewModel)
         recipientCautionCell = RecipientAddressCautionCell(viewModel: recipientViewModel)
-        
+
+        memoCell = SendMemoInputCell(viewModel: memoViewModel, topInset: .margin12)
         super.init()
-        title = "send.title".localized(viewModel.token.coin.code)
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        
-//        title = viewModel.title
+
+        title = viewModel.title
         navigationItem.largeTitleDisplayMode = .never
 
         if (navigationController?.viewControllers.count ?? 0) == 1 {
             let iconImageView = UIImageView()
-            let closeButton = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onTapCloseButton))
-            navigationItem.leftBarButtonItems = [closeButton, UIBarButtonItem(customView: iconImageView)]
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: iconImageView)
+
             iconImageView.snp.makeConstraints { make in
                 make.size.equalTo(CGFloat.iconSize24)
             }
@@ -113,6 +115,10 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
             self?.reloadTable()
         }
 
+        memoCell.onChangeHeight = { [weak self] in
+            self?.reloadTable()
+        }
+
         buttonCell.set(style: .yellow)
         buttonCell.title = "send.next_button".localized
         buttonCell.onTap = { [weak self] in
@@ -140,11 +146,7 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
             _ = amountCell.becomeFirstResponder()
         }
     }
-    
-    @objc private func onTapCloseButton() {
-        dismiss(animated: true)
-    }
-    
+
     @objc private func didTapProceed() {
         viewModel.didTapProceed()
     }
@@ -178,11 +180,9 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
         }
         return sections
     }
-
 }
 
 extension BaseSendViewController {
-
     func didLoad() {
         tableView.buildSections()
         isLoaded = true
@@ -201,74 +201,88 @@ extension BaseSendViewController {
 
     var availableBalanceSection: SectionProtocol {
         Section(
-                id: "available-balance",
-                headerState: .margin(height: .margin12),
-                rows: [
-                    StaticRow(
-                            cell: availableBalanceCell,
-                            id: "available-balance",
-                            height: availableBalanceCell.cellHeight
-                    )
-                ]
+            id: "available-balance",
+            headerState: .margin(height: .margin12),
+            rows: [
+                StaticRow(
+                    cell: availableBalanceCell,
+                    id: "available-balance",
+                    height: availableBalanceCell.cellHeight
+                ),
+            ]
         )
     }
 
     var amountSection: SectionProtocol {
         Section(
-                id: "amount",
-                headerState: .margin(height: .margin16),
-                rows: [
-                    StaticRow(
-                            cell: amountCell,
-                            id: "amount-input",
-                            height: amountCell.cellHeight
-                    ),
-                    StaticRow(
-                            cell: amountCautionCell,
-                            id: "amount-caution",
-                            dynamicHeight: { [weak self] width in
-                                self?.amountCautionCell.height(containerWidth: width) ?? 0
-                            }
-                    )
-                ]
+            id: "amount",
+            headerState: .margin(height: .margin16),
+            rows: [
+                StaticRow(
+                    cell: amountCell,
+                    id: "amount-input",
+                    height: amountCell.cellHeight
+                ),
+                StaticRow(
+                    cell: amountCautionCell,
+                    id: "amount-caution",
+                    dynamicHeight: { [weak self] width in
+                        self?.amountCautionCell.height(containerWidth: width) ?? 0
+                    }
+                ),
+            ]
         )
     }
 
     var recipientSection: SectionProtocol {
         Section(
-                id: "recipient",
-                headerState: .margin(height: .margin12),
-                rows: [
-                    StaticRow(
-                            cell: recipientCell,
-                            id: "recipient-input",
-                            dynamicHeight: { [weak self] width in
-                                self?.recipientCell.height(containerWidth: width) ?? 0
-                            }
-                    ),
-                    StaticRow(
-                            cell: recipientCautionCell,
-                            id: "recipient-caution",
-                            dynamicHeight: { [weak self] width in
-                                self?.recipientCautionCell.height(containerWidth: width) ?? 0
-                            }
-                    )
-                ]
+            id: "recipient",
+            headerState: .margin(height: .margin12),
+            rows: [
+                StaticRow(
+                    cell: recipientCell,
+                    id: "recipient-input",
+                    dynamicHeight: { [weak self] width in
+                        self?.recipientCell.height(containerWidth: width) ?? 0
+                    }
+                ),
+                StaticRow(
+                    cell: recipientCautionCell,
+                    id: "recipient-caution",
+                    dynamicHeight: { [weak self] width in
+                        self?.recipientCautionCell.height(containerWidth: width) ?? 0
+                    }
+                ),
+            ]
+        )
+    }
+
+    var memoSection: SectionProtocol {
+        Section(
+            id: "memo",
+            rows: [
+                StaticRow(
+                    cell: memoCell,
+                    id: "memo-input",
+                    dynamicHeight: { [weak self] width in
+                        self?.memoCell.height(containerWidth: width) ?? 0
+                    }
+                ),
+            ]
         )
     }
 
     var buttonSection: SectionProtocol {
         Section(
-                id: "button",
-                footerState: .margin(height: .margin32),
-                rows: [
-                    StaticRow(
-                            cell: buttonCell,
-                            id: "button",
-                            height: PrimaryButtonCell.height
-                    )
-                ]
+            id: "button",
+            footerState: .margin(height: .margin32),
+            rows: [
+                StaticRow(
+                    cell: buttonCell,
+                    id: "button",
+                    height: PrimaryButtonCell.height
+                ),
+            ]
         )
     }
-
 }

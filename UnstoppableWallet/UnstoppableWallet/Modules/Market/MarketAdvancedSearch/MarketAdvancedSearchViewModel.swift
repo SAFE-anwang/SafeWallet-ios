@@ -1,8 +1,7 @@
 import Foundation
-import RxSwift
-import RxCocoa
 import MarketKit
-import CurrencyKit
+import RxCocoa
+import RxSwift
 
 class MarketAdvancedSearchViewModel {
     private let disposeBag = DisposeBag()
@@ -14,9 +13,19 @@ class MarketAdvancedSearchViewModel {
     private let coinListViewItemRelay = BehaviorRelay<ViewItem>(value: ViewItem(value: "", valueStyle: .none))
     private let marketCapViewItemRelay = BehaviorRelay<ViewItem>(value: ViewItem(value: "", valueStyle: .none))
     private let volumeViewItemRelay = BehaviorRelay<ViewItem>(value: ViewItem(value: "", valueStyle: .none))
+    private let listedOnTopExchangesRelay = BehaviorRelay<Bool>(value: false)
+    private let goodCexVolumeRelay = BehaviorRelay<Bool>(value: false)
+    private let goodDexVolumeRelay = BehaviorRelay<Bool>(value: false)
+    private let goodDistributionRelay = BehaviorRelay<Bool>(value: false)
     private let blockchainsViewItemRelay = BehaviorRelay<ViewItem>(value: ViewItem(value: "", valueStyle: .none))
     private let priceChangeTypeViewItemRelay = BehaviorRelay<ViewItem>(value: ViewItem(value: "", valueStyle: .none))
     private let priceChangeViewItemRelay = BehaviorRelay<ViewItem>(value: ViewItem(value: "", valueStyle: .none))
+    private let outperformedBtcRelay = BehaviorRelay<Bool>(value: false)
+    private let outperformedEthRelay = BehaviorRelay<Bool>(value: false)
+    private let outperformedBnbRelay = BehaviorRelay<Bool>(value: false)
+    private let priceCloseToAthRelay = BehaviorRelay<Bool>(value: false)
+    private let priceCloseToAtlRelay = BehaviorRelay<Bool>(value: false)
+    private let resetEnabledRelay = BehaviorRelay<Bool>(value: false)
 
     private var valueFilters: [MarketAdvancedSearchService.ValueFilter] {
         MarketAdvancedSearchService.ValueFilter.valuesByCurrencyCode[service.currencyCode] ?? []
@@ -30,9 +39,19 @@ class MarketAdvancedSearchViewModel {
         subscribe(disposeBag, service.coinListObservable) { [weak self] in self?.sync(coinList: $0) }
         subscribe(disposeBag, service.marketCapObservable) { [weak self] in self?.sync(marketCap: $0) }
         subscribe(disposeBag, service.volumeObservable) { [weak self] in self?.sync(volume: $0) }
+        subscribe(disposeBag, service.listedOnTopExchangesObservable) { [weak self] in self?.listedOnTopExchangesRelay.accept($0) }
+        subscribe(disposeBag, service.goodCexVolumeObservable) { [weak self] in self?.goodCexVolumeRelay.accept($0) }
+        subscribe(disposeBag, service.goodDexVolumeObservable) { [weak self] in self?.goodDexVolumeRelay.accept($0) }
+        subscribe(disposeBag, service.goodDistributionObservable) { [weak self] in self?.goodDistributionRelay.accept($0) }
         subscribe(disposeBag, service.blockchainsObservable) { [weak self] in self?.sync(blockchains: $0) }
         subscribe(disposeBag, service.priceChangeTypeObservable) { [weak self] in self?.sync(priceChangeType: $0) }
         subscribe(disposeBag, service.priceChangeObservable) { [weak self] in self?.sync(priceChange: $0) }
+        subscribe(disposeBag, service.outperformedBtcObservable) { [weak self] in self?.sync(outperformedBtc: $0) }
+        subscribe(disposeBag, service.outperformedEthObservable) { [weak self] in self?.sync(outperformedEth: $0) }
+        subscribe(disposeBag, service.outperformedBnbObservable) { [weak self] in self?.sync(outperformedBnb: $0) }
+        subscribe(disposeBag, service.priceCloseToAthObservable) { [weak self] in self?.sync(priceCloseToAth: $0) }
+        subscribe(disposeBag, service.priceCloseToAtlObservable) { [weak self] in self?.sync(priceCloseToAtl: $0) }
+        subscribe(disposeBag, service.canResetObservable) { [weak self] in self?.sync(canReset: $0) }
 
         sync(coinList: service.coinListCount)
         sync(marketCap: service.marketCap)
@@ -40,6 +59,7 @@ class MarketAdvancedSearchViewModel {
         sync(blockchains: service.blockchains)
         sync(priceChangeType: service.priceChangeType)
         sync(priceChange: service.priceChange)
+        sync(canReset: service.canReset)
 
         sync(state: service.state)
     }
@@ -48,7 +68,7 @@ class MarketAdvancedSearchViewModel {
         switch state {
         case .loading:
             buttonStateRelay.accept(.loading)
-        case .loaded(let marketInfos):
+        case let .loaded(marketInfos):
             if marketInfos.isEmpty {
                 buttonStateRelay.accept(.emptyResults)
             } else {
@@ -59,19 +79,19 @@ class MarketAdvancedSearchViewModel {
         }
     }
 
-    private func sync(coinList: MarketAdvancedSearchService.CoinListCount) {
+    private func sync(coinList _: MarketAdvancedSearchService.CoinListCount) {
         coinListViewItemRelay.accept(ViewItem(value: service.coinListCount.title, valueStyle: .normal))
     }
 
-    private func sync(marketCap: MarketAdvancedSearchService.ValueFilter) {
+    private func sync(marketCap _: MarketAdvancedSearchService.ValueFilter) {
         marketCapViewItemRelay.accept(ViewItem(value: service.marketCap.title, valueStyle: service.marketCap.valueStyle))
     }
 
-    private func sync(volume: MarketAdvancedSearchService.ValueFilter) {
+    private func sync(volume _: MarketAdvancedSearchService.ValueFilter) {
         volumeViewItemRelay.accept(ViewItem(value: service.volume.title, valueStyle: service.volume.valueStyle))
     }
 
-    private func sync(blockchains: [Blockchain]) {
+    private func sync(blockchains _: [Blockchain]) {
         let value: String
         let valueStyle: ValueStyle
 
@@ -89,18 +109,40 @@ class MarketAdvancedSearchViewModel {
         blockchainsViewItemRelay.accept(ViewItem(value: value, valueStyle: valueStyle))
     }
 
-    private func sync(priceChangeType: MarketModule.PriceChangeType) {
+    private func sync(priceChangeType _: MarketModule.PriceChangeType) {
         priceChangeTypeViewItemRelay.accept(ViewItem(value: service.priceChangeType.title, valueStyle: .normal))
     }
 
-    private func sync(priceChange: MarketAdvancedSearchService.PriceChangeFilter) {
+    private func sync(priceChange _: MarketAdvancedSearchService.PriceChangeFilter) {
         priceChangeViewItemRelay.accept(ViewItem(value: service.priceChange.title, valueStyle: service.priceChange.valueStyle))
     }
 
+    private func sync(outperformedBtc: Bool) {
+        outperformedBtcRelay.accept(outperformedBtc)
+    }
+
+    private func sync(outperformedEth: Bool) {
+        outperformedEthRelay.accept(outperformedEth)
+    }
+
+    private func sync(outperformedBnb: Bool) {
+        outperformedBnbRelay.accept(outperformedBnb)
+    }
+
+    private func sync(priceCloseToAth: Bool) {
+        priceCloseToAthRelay.accept(priceCloseToAth)
+    }
+
+    private func sync(priceCloseToAtl: Bool) {
+        priceCloseToAtlRelay.accept(priceCloseToAtl)
+    }
+
+    private func sync(canReset: Bool) {
+        resetEnabledRelay.accept(canReset)
+    }
 }
 
 extension MarketAdvancedSearchViewModel {
-
     var buttonStateDriver: Driver<ButtonState> {
         buttonStateRelay.asDriver()
     }
@@ -117,6 +159,22 @@ extension MarketAdvancedSearchViewModel {
         volumeViewItemRelay.asDriver()
     }
 
+    var listedOnTopExchangesDriver: Driver<Bool> {
+        listedOnTopExchangesRelay.asDriver()
+    }
+
+    var goodCexVolumeDriver: Driver<Bool> {
+        goodCexVolumeRelay.asDriver()
+    }
+
+    var goodDexVolumeDriver: Driver<Bool> {
+        goodDexVolumeRelay.asDriver()
+    }
+
+    var goodDistributionDriver: Driver<Bool> {
+        goodDistributionRelay.asDriver()
+    }
+
     var blockchainsViewItemDriver: Driver<ViewItem> {
         blockchainsViewItemRelay.asDriver()
     }
@@ -127,6 +185,30 @@ extension MarketAdvancedSearchViewModel {
 
     var priceChangeViewItemDriver: Driver<ViewItem> {
         priceChangeViewItemRelay.asDriver()
+    }
+
+    var outperformedBtcDriver: Driver<Bool> {
+        outperformedBtcRelay.asDriver()
+    }
+
+    var outperformedEthDriver: Driver<Bool> {
+        outperformedEthRelay.asDriver()
+    }
+
+    var outperformedBnbDriver: Driver<Bool> {
+        outperformedBnbRelay.asDriver()
+    }
+
+    var priceCloseToAthDriver: Driver<Bool> {
+        priceCloseToAthRelay.asDriver()
+    }
+
+    var priceCloseToAtlDriver: Driver<Bool> {
+        priceCloseToAtlRelay.asDriver()
+    }
+
+    var resetEnabledDriver: Driver<Bool> {
+        resetEnabledRelay.asDriver()
     }
 
     var coinListViewItems: [FilterViewItem] {
@@ -150,9 +232,9 @@ extension MarketAdvancedSearchViewModel {
     var blockchainViewItems: [SelectorModule.ViewItem] {
         service.allBlockchains.map { blockchain in
             SelectorModule.ViewItem(
-                    image: .url(blockchain.type.imageUrl, placeholder: "placeholder_rectangle_32"),
-                    title: blockchain.name,
-                    selected: service.blockchains.contains(blockchain)
+                image: .url(blockchain.type.imageUrl, placeholder: "placeholder_rectangle_32"),
+                title: blockchain.name,
+                selected: service.blockchains.contains(blockchain)
             )
         }
     }
@@ -170,7 +252,7 @@ extension MarketAdvancedSearchViewModel {
     }
 
     var marketInfos: [MarketInfo] {
-        guard case .loaded(let marketInfos) = service.state else {
+        guard case let .loaded(marketInfos) = service.state else {
             return []
         }
 
@@ -191,6 +273,22 @@ extension MarketAdvancedSearchViewModel {
 
     func setVolume(at index: Int) {
         service.volume = valueFilters[index]
+    }
+
+    func setListedOnTopExchanges(isOn: Bool) {
+        service.listedOnTopExchanges = isOn
+    }
+
+    func setGoodCexVolume(isOn: Bool) {
+        service.goodCexVolume = isOn
+    }
+
+    func setGoodDexVolume(isOn: Bool) {
+        service.goodDexVolume = isOn
+    }
+
+    func setGoodDistribution(isOn: Bool) {
+        service.goodDistribution = isOn
     }
 
     func setBlockchains(indexes: [Int]) {
@@ -228,11 +326,9 @@ extension MarketAdvancedSearchViewModel {
     func reset() {
         service.reset()
     }
-
 }
 
 extension MarketAdvancedSearchViewModel {
-
     struct FilterViewItem {
         let title: String
         let style: ValueStyle
@@ -257,19 +353,15 @@ extension MarketAdvancedSearchViewModel {
         case showResults(count: Int)
         case error(String)
     }
-
 }
 
 extension MarketAdvancedSearchService.CoinListCount {
-
     var title: String {
-        "market.advanced_search.top".localized(self.rawValue)
+        "market.advanced_search.top".localized(rawValue)
     }
-
 }
 
 extension MarketAdvancedSearchService.ValueFilter {
-
     static let valuesByCurrencyCode: [String: [Self]] = [
         "USD": [.none, .lessM5, .m5m20, .m20m100, .m100b1, .b1b5, .moreB5],
         "EUR": [.none, .lessM5, .m5m20, .m20m100, .m100b1, .b1b5, .moreB5],
@@ -283,7 +375,7 @@ extension MarketAdvancedSearchService.ValueFilter {
         "HKD": [.none, .lessM50, .m50m200, .m200b1, .b1b10, .b10b50, .moreB50],
         "ILS": [.none, .lessM10, .m10m40, .m40m200, .m200b2, .b2b10, .moreB10],
         "RUB": [.none, .lessM500, .m500b2, .b2b10, .b10b100, .b100b500, .moreB500],
-        "SGD": [.none, .lessM5, .m5m20, .m20m100, .m100b1, .b1b5, .moreB5]
+        "SGD": [.none, .lessM5, .m5m20, .m20m100, .m100b1, .b1b5, .moreB5],
     ]
 
     var title: String {
@@ -318,11 +410,9 @@ extension MarketAdvancedSearchService.ValueFilter {
     var valueStyle: MarketAdvancedSearchViewModel.ValueStyle {
         self == .none ? .none : .normal
     }
-
 }
 
 extension MarketAdvancedSearchService.PriceChangeFilter {
-
     var title: String {
         switch self {
         case .none: return "selector.any".localized
@@ -344,5 +434,4 @@ extension MarketAdvancedSearchService.PriceChangeFilter {
         case .minus10, .minus25, .minus50, .minus75: return .negative
         }
     }
-
 }

@@ -1,14 +1,13 @@
-import SectionsTableView
-import UIKit
-import ThemeKit
-import MarketKit
 import EvmKit
+import MarketKit
+import SectionsTableView
+import ThemeKit
+import UIKit
 
-struct EvmSendSettingsModule {
-
+enum EvmSendSettingsModule {
     static func instance(evmKit: EvmKit.Kit, blockchainType: BlockchainType, sendData: SendEvmData, coinServiceFactory: EvmCoinServiceFactory,
                          gasPrice: GasPrice? = nil, previousTransaction: EvmKit.Transaction? = nil,
-                         predefinedGasLimit: Int? = nil, gasLimitType: GasLimitType = .common) -> (EvmSendSettingsService, EvmSendSettingsViewModel)? {
+                         predefinedGasLimit: Int? = nil, predefinedNonce: Int? = nil, gasLimitType: GasLimitType = .common) -> (EvmSendSettingsService, EvmSendSettingsViewModel)? {
         let gasPriceService = EvmFeeModule.gasPriceService(evmKit: evmKit, gasPrice: gasPrice, previousTransaction: previousTransaction)
 
         let gasDataService = EvmCommonGasDataService.instance(
@@ -21,7 +20,7 @@ struct EvmSendSettingsModule {
         let coinService = coinServiceFactory.baseCoinService
         let feeViewItemFactory = FeeViewItemFactory(scale: coinService.token.blockchainType.feePriceScale)
         let feeService = EvmFeeService(evmKit: evmKit, gasPriceService: gasPriceService, gasDataService: gasDataService, coinService: coinService, transactionData: sendData.transactionData)
-        let nonceService = NonceService(evmKit: evmKit, replacingNonce: previousTransaction?.nonce)
+        let nonceService = NonceService(evmKit: evmKit, replacingNonce: previousTransaction?.nonce ?? predefinedNonce)
         let service = EvmSendSettingsService(feeService: feeService, nonceService: nonceService)
 
         let cautionsFactory = SendEvmCautionsFactory()
@@ -62,13 +61,12 @@ struct EvmSendSettingsModule {
 
         return ThemeNavigationController(rootViewController: settingsViewController)
     }
-
 }
 
 protocol IEvmSendSettingsDataSource: AnyObject {
     var tableView: SectionsTableView? { get set }
-    var onOpenInfo: ((String, String) -> ())? { get set }
-    var onUpdateAlteredState: (() -> ())? { get set }
+    var onOpenInfo: ((String, String) -> Void)? { get set }
+    var onUpdateAlteredState: (() -> Void)? { get set }
 
     var altered: Bool { get }
     var buildSections: [SectionProtocol] { get }
@@ -76,4 +74,3 @@ protocol IEvmSendSettingsDataSource: AnyObject {
     func onTapReset()
     func viewDidLoad()
 }
-

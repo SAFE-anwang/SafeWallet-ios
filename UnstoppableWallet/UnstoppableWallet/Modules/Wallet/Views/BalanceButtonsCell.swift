@@ -1,13 +1,13 @@
-import UIKit
-import ThemeKit
-import SnapKit
 import ComponentKit
+import SnapKit
+import ThemeKit
+import UIKit
 
 class BalanceButtonsCell: UITableViewCell {
     static let height = BalanceButtonsView.height
 
     private let buttonsView = BalanceButtonsView()
-    var actions: [WalletModule.Button: () -> ()] = [:]
+    var actions: [WalletModule.Button: () -> Void] = [:]
 
     override init(style: CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -22,7 +22,8 @@ class BalanceButtonsCell: UITableViewCell {
         }
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("not implemented")
     }
 

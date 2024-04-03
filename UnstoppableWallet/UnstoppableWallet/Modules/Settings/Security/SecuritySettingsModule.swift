@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct SecuritySettingsModule {
+enum SecuritySettingsModule {
     static func view() -> some View {
         let viewModel = SecuritySettingsViewModel(
             passcodeManager: App.shared.passcodeManager,
@@ -8,6 +8,7 @@ struct SecuritySettingsModule {
             lockManager: App.shared.lockManager,
             balanceHiddenManager: App.shared.balanceHiddenManager
         )
+
         return SecuritySettingsView(viewModel: viewModel)
     }
 }

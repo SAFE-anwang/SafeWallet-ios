@@ -1,31 +1,47 @@
 import SwiftUI
 
 struct ListSection<Content: View>: View {
-    @Environment(\.listStyle) var listStyle
+    @Environment(\.themeListStyle) var themeListStyle
 
-    @ViewBuilder let content: Content
+    private let selected: Bool
+    private let content: Content
+
+    init(selected: Bool = false, @ViewBuilder content: () -> Content) {
+        self.selected = selected
+        self.content = content()
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            _VariadicView.Tree(Layout()) {
+            _VariadicView.Tree(Layout(themeListStyle: themeListStyle)) {
                 content
             }
-            .background(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous).fill(listStyle.backgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: .cornerRadius12).stroke(listStyle.borderColor, lineWidth: .heightOneDp))
+            .modifier(ThemeListStyleModifier(themeListStyle: themeListStyle, selected: selected))
         }
     }
 
     struct Layout: _VariadicView_UnaryViewRoot {
+        let themeListStyle: ThemeListStyle
+
         @ViewBuilder
         func body(children: _VariadicView.Children) -> some View {
             let last = children.last?.id
 
             VStack(spacing: 0) {
-                ForEach(children) { child in
-                    child
+                switch themeListStyle {
+                case .lawrence, .bordered, .transparentInline:
+                    ForEach(children) { child in
+                        child
 
-                    if child.id != last {
+                        if child.id != last {
+                            HorizontalDivider()
+                        }
+                    }
+                case .transparent, .borderedLawrence:
+                    HorizontalDivider()
+
+                    ForEach(children) { child in
+                        child
                         HorizontalDivider()
                     }
                 }

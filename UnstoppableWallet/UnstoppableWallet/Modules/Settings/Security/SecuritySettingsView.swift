@@ -72,7 +72,7 @@ struct SecuritySettingsView: View {
                 VStack(spacing: 0) {
                     ListSection {
                         ListRow {
-                            Image("eye_off_24")
+                            Image("eye_off_24").themeIcon()
                             Toggle(isOn: $viewModel.balanceAutoHide) {
                                 Text("settings_security.balance_auto_hide".localized).themeBody()
                             }
@@ -231,5 +231,4 @@ struct SecuritySettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
     }
-    
 }

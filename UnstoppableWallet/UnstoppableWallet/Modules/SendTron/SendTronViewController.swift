@@ -1,10 +1,10 @@
-import UIKit
-import ThemeKit
-import SnapKit
-import SectionsTableView
-import RxSwift
 import RxCocoa
+import RxSwift
+import SectionsTableView
+import SnapKit
+import ThemeKit
 import TronKit
+import UIKit
 
 class SendTronViewController: ThemeViewController {
     private let tronKitWrapper: TronKitWrapper
@@ -22,12 +22,14 @@ class SendTronViewController: ThemeViewController {
     private let recipientCell: RecipientAddressInputCell
     private let recipientCautionCell: RecipientAddressCautionCell
 
+    private let memoCell: SendMemoInputCell
+
     private let buttonCell = PrimaryButtonCell()
 
     private var isLoaded = false
     private var keyboardShown = false
 
-    init(tronKitWrapper: TronKitWrapper, viewModel: SendTronViewModel, availableBalanceViewModel: ISendAvailableBalanceViewModel, amountViewModel: AmountInputViewModel, recipientViewModel: RecipientAddressViewModel) {
+    init(tronKitWrapper: TronKitWrapper, viewModel: SendTronViewModel, availableBalanceViewModel: ISendAvailableBalanceViewModel, amountViewModel: AmountInputViewModel, recipientViewModel: RecipientAddressViewModel, memoViewModel: SendMemoInputViewModel) {
         self.tronKitWrapper = tronKitWrapper
         self.viewModel = viewModel
 
@@ -38,10 +40,13 @@ class SendTronViewController: ThemeViewController {
         recipientCell = RecipientAddressInputCell(viewModel: recipientViewModel)
         recipientCautionCell = RecipientAddressCautionCell(viewModel: recipientViewModel)
 
+        memoCell = SendMemoInputCell(viewModel: memoViewModel)
+
         super.init()
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -82,6 +87,10 @@ class SendTronViewController: ThemeViewController {
         recipientCell.onOpenViewController = { [weak self] in self?.present($0, animated: true) }
 
         recipientCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+
+        memoCell.onChangeHeight = { [weak self] in
+            self?.reloadTable()
+        }
 
         buttonCell.set(style: .yellow)
         buttonCell.title = "send.next_button".localized
@@ -138,13 +147,26 @@ class SendTronViewController: ThemeViewController {
         }
         navigationController?.pushViewController(viewController, animated: true)
     }
-
 }
 
 extension SendTronViewController: SectionsDataSource {
+    var memoSection: SectionProtocol {
+        Section(
+            id: "memo",
+            rows: [
+                StaticRow(
+                    cell: memoCell,
+                    id: "memo-input",
+                    dynamicHeight: { [weak self] width in
+                        self?.memoCell.height(containerWidth: width) ?? 0
+                    }
+                ),
+            ]
+        )
+    }
 
     func buildSections() -> [SectionProtocol] {
-        var sections = [
+        var sections: [SectionProtocol] = [
             Section(
                 id: "available-balance",
                 headerState: .margin(height: .margin12),
@@ -153,7 +175,7 @@ extension SendTronViewController: SectionsDataSource {
                         cell: availableBalanceCell,
                         id: "available-balance",
                         height: availableBalanceCell.cellHeight
-                    )
+                    ),
                 ]
             ),
             Section(
@@ -171,48 +193,48 @@ extension SendTronViewController: SectionsDataSource {
                         dynamicHeight: { [weak self] width in
                             self?.amountCautionCell.height(containerWidth: width) ?? 0
                         }
-                    )
+                    ),
                 ]
-            )
+            ),
         ]
         if viewModel.showAddress {
             sections.append(
-                    Section(
-                            id: "recipient",
-                            headerState: .margin(height: .margin16),
-                            rows: [
-                                StaticRow(
-                                        cell: recipientCell,
-                                        id: "recipient-input",
-                                        dynamicHeight: { [weak self] width in
-                                            self?.recipientCell.height(containerWidth: width) ?? 0
-                                        }
-                                ),
-                                StaticRow(
-                                        cell: recipientCautionCell,
-                                        id: "recipient-caution",
-                                        dynamicHeight: { [weak self] width in
-                                            self?.recipientCautionCell.height(containerWidth: width) ?? 0
-                                        }
-                                )
-                            ]
-                    )
+                Section(
+                    id: "recipient",
+                    headerState: .margin(height: .margin16),
+                    rows: [
+                        StaticRow(
+                            cell: recipientCell,
+                            id: "recipient-input",
+                            dynamicHeight: { [weak self] width in
+                                self?.recipientCell.height(containerWidth: width) ?? 0
+                            }
+                        ),
+                        StaticRow(
+                            cell: recipientCautionCell,
+                            id: "recipient-caution",
+                            dynamicHeight: { [weak self] width in
+                                self?.recipientCautionCell.height(containerWidth: width) ?? 0
+                            }
+                        ),
+                    ]
+                )
             )
         }
+        sections.append(memoSection)
         sections.append(
-                Section(
+            Section(
+                id: "button",
+                footerState: .margin(height: .margin32),
+                rows: [
+                    StaticRow(
+                        cell: buttonCell,
                         id: "button",
-                        footerState: .margin(height: .margin32),
-                        rows: [
-                            StaticRow(
-                                    cell: buttonCell,
-                                    id: "button",
-                                    height: PrimaryButtonCell.height
-                            )
-                        ]
-                )
+                        height: PrimaryButtonCell.height
+                    ),
+                ]
+            )
         )
         return sections
     }
-
 }

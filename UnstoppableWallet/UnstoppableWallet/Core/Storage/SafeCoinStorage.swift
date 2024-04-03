@@ -190,14 +190,14 @@ fileprivate class TokenRecord: Record, Decodable, ImmutableMappable {
         }
     }
 
-    required init(row: Row) {
+    required init(row: Row) throws {
         coinUid = row[Columns.coinUid]
         blockchainUid = row[Columns.blockchainUid]
         type = row[Columns.type]
         decimals = row[Columns.decimals]
         reference = row[Columns.reference]
 
-        super.init(row: row)
+        try super.init(row: row)
     }
 
     override func encode(to container: inout PersistenceContainer) {
@@ -239,12 +239,12 @@ fileprivate class BlockchainRecord: Record, Decodable, ImmutableMappable {
         explorerUrl >>> map["url"]
     }
 
-    required init(row: Row) {
+    required init(row: Row) throws {
         uid = row[Columns.uid]
         name = row[Columns.name]
         explorerUrl = row[Columns.explorerUrl]
 
-        super.init(row: row)
+        try super.init(row: row)
     }
 
     override func encode(to container: inout PersistenceContainer) {

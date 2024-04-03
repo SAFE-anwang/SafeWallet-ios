@@ -1,6 +1,6 @@
-import RxSwift
-import RxRelay
 import RxCocoa
+import RxRelay
+import RxSwift
 
 protocol IMemoAvailableService: AnyObject {
     var isAvailable: Bool { get }
@@ -24,7 +24,12 @@ class SendMemoInputService {
         }
     }
 
-    var memo: String?
+    private let memoRelay = BehaviorRelay<String?>(value: nil)
+    var memo: String? {
+        didSet {
+            memoRelay.accept(memo)
+        }
+    }
 
     init(maxSymbols: Int) {
         self.maxSymbols = maxSymbols
@@ -33,7 +38,7 @@ class SendMemoInputService {
     private func setAvailableService() {
         availableDisposeBag = DisposeBag()
 
-        if let availableService = availableService {
+        if let availableService {
             subscribe(availableDisposeBag, availableService.isAvailableObservable) { [weak self] in self?.sync(available: $0) }
             sync(available: availableService.isAvailable)
         }
@@ -42,13 +47,15 @@ class SendMemoInputService {
     private func sync(available: Bool) {
         isAvailable = available
     }
-
 }
 
 extension SendMemoInputService {
-
     var isAvailableObservable: Observable<Bool> {
         isAvailableRelay.asObservable()
+    }
+
+    var memoObservable: Observable<String?> {
+        memoRelay.asObservable()
     }
 
     func set(text: String?) {
@@ -62,5 +69,4 @@ extension SendMemoInputService {
     func isValid(text: String) -> Bool {
         text.count <= maxSymbols
     }
-
 }
