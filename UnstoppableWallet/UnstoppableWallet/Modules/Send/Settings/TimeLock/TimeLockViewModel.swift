@@ -57,7 +57,7 @@ extension TimeLockViewModel: IDropDownListViewModel {
 
 extension HodlerPlugin.LockTimeInterval {
     static func title(lockTimeInterval: HodlerPlugin.LockTimeInterval?) -> String {
-        guard let lockTimeInterval = lockTimeInterval else {
+        guard let lockTimeInterval else {
             return "send.hodler_locktime_off".localized
         }
 
@@ -75,5 +75,4 @@ extension HodlerPlugin.LockTimeInterval {
             
         }
     }
-
 }

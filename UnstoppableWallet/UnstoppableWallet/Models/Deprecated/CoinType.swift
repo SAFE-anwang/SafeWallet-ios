@@ -242,7 +242,6 @@ extension CoinType: Identifiable {
 }
 
 extension CoinType: CustomStringConvertible {
-
     public var description: String {
         switch self {
         case .bitcoin: return "bitcoin"
