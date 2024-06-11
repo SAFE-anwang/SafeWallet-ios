@@ -16,9 +16,8 @@ class LiquidityRemoveConfirmView: UIView {
     private let separatorView1 = UIView()
     private let separatorView2 = UIView()
     private let separatorView3 = UIView()
-    
-    private let ratioView = RatioView()
-
+        
+    private let autocompleteView = LiquidityInputAccessoryView(frame: .zero)
     private let removeButton = PrimaryButton()
     
     private var onTapRemove: ((LiquidityRecordViewModel.RecordItem, BigUInt) -> ())?
@@ -41,6 +40,22 @@ class LiquidityRemoveConfirmView: UIView {
         removeButton.set(style: .yellow)
         removeButton.setTitle("liquidity.remove".localized, for: .normal)
         removeButton.addTarget(self, action: #selector(tapRemove), for: .touchUpInside)
+                
+        autocompleteView.heightValue = 44
+        autocompleteView.setDefaultSelected()
+        addSubview(autocompleteView)
+        autocompleteView.snp.makeConstraints { maker in
+            maker.top.equalTo(cardView.snp.bottom).inset(-CGFloat.margin12)
+            maker.leading.trailing.equalToSuperview()
+            maker.height.equalTo(44)
+        }
+        
+        addSubview(removeButton)
+        removeButton.snp.makeConstraints { maker in
+            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin12)
+            maker.top.equalTo(autocompleteView.snp.bottom).inset(-CGFloat.margin12)
+            maker.height.equalTo(PairTokenView.height)
+        }
         
         cardView.contentView.addSubview(tokenAView)
         tokenAView.snp.makeConstraints { maker in
@@ -80,30 +95,6 @@ class LiquidityRemoveConfirmView: UIView {
             maker.height.equalTo(PairTokenView.height)
             maker.bottom.equalToSuperview()
         }
-
-        addSubview(separatorView3)
-        separatorView3.snp.makeConstraints { maker in
-            maker.leading.trailing.equalToSuperview()
-            maker.top.equalTo(cardView.snp.bottom).inset(-CGFloat.margin12)
-            maker.height.equalTo(CGFloat.heightOneDp)
-        }
-        separatorView3.backgroundColor = .themeSteel20
-        
-        addSubview(ratioView)
-        ratioView.snp.makeConstraints { maker in
-            maker.top.equalTo(separatorView3.snp.bottom).inset(-CGFloat.margin12)
-            maker.leading.trailing.equalToSuperview()
-            maker.height.equalTo(RatioView.height)
-        }
-        
-        addSubview(removeButton)
-        removeButton.snp.makeConstraints { maker in
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin12)
-            maker.top.equalTo(ratioView.snp.bottom).inset(-CGFloat.margin12)
-            maker.height.equalTo(PairTokenView.height)
-            maker.bottom.equalToSuperview()
-        }
-
     }
 
     required init?(coder: NSCoder) {
@@ -132,92 +123,8 @@ class LiquidityRemoveConfirmView: UIView {
     
     @objc private func tapRemove() {
         guard let item = viewItem else { return }
-        onTapRemove?(item, ratioView.seletedRatio)
-    }
-    
-    static func height() -> CGFloat {
-        var height: CGFloat = margins.height
-
-        height += PairTokenView.height * 4 + 10 + RatioView.height
-        
-        height += CGFloat.heightOneDp * 3
-        
-        return height
+        guard let value = autocompleteView.selected?.value else { return }
+        onTapRemove?(item, BigUInt(Int(value * 100)))
     }
 }
 
-enum RemoveRatio: BigUInt, CaseIterable {
-    case ratio_25 = 25
-    case ratio_50 = 50
-    case ratio_75 = 75
-    case ratio_100 = 100
-    
-    var title: String {
-        switch self {
-        case .ratio_25: return "25%"
-        case .ratio_50: return "50%"
-        case .ratio_75: return "75%"
-        case .ratio_100: return "100%"
-        }
-    }
-}
-
-class RatioView: UIView {
-    static let height: CGFloat = 50
-    static let width = (UIScreen.main.bounds.width - 4 * CGFloat.margin12) / CGFloat(RemoveRatio.allCases.count)
-    private let buttonStackView = UIStackView()
-    private(set) var seletedRatio: BigUInt
-    private var primaryButtons = [PrimaryButtonComponent]()
-    init() {
-        seletedRatio = RemoveRatio.ratio_100.rawValue
-       
-        super.init(frame: .zero)
-        
-        addSubview(buttonStackView)
-        buttonStackView.snp.makeConstraints { maker in
-            maker.top.equalToSuperview().offset(CGFloat.margin12)
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin12)
-            maker.bottom.equalToSuperview().inset(CGFloat.margin12)
-        }
-
-        buttonStackView.axis = .horizontal
-        buttonStackView.alignment = .fill
-        buttonStackView.spacing = .margin12
-        
-        primaryButtons.removeAll()
-        for (index, item) in RemoveRatio.allCases.enumerated() {
-            let component = PrimaryButtonComponent()
-            let accessory = PrimaryButton.AccessoryType.none
-            component.button.set(style: .gray, accessoryType: accessory)
-            component.button.setTitle(item.title, for: .normal)
-            component.button.titleLabel?.font = UIFont.systemFont(ofSize: 13)
-            component.button.tag = index
-            component.onTap = { [weak self] in
-                self?.seletedRatio = item.rawValue
-                self?.reloadButtonsStatus()
-            }
-            
-            component.snp.makeConstraints { make in
-                make.height.equalTo(RatioView.height)
-                make.width.equalTo((RatioView.width - CGFloat.margin12))
-            }
-            buttonStackView.addArrangedSubview(component)
-            primaryButtons.append(component)
-        }
-        reloadButtonsStatus()
-       
-    }
-    
-    private func reloadButtonsStatus() {
-        
-        for (index, component) in primaryButtons.enumerated() {
-            let isSelected = seletedRatio == RemoveRatio.allCases[index].rawValue
-            component.button.set(style: isSelected ? .yellow : .gray, accessoryType: .none)
-
-        }
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}

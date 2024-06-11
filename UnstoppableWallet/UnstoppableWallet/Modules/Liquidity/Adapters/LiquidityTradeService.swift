@@ -6,7 +6,7 @@ import RxRelay
 import MarketKit
 import HsExtensions
 
-class PancakeLiquidityTradeService: ISwapSettingProvider {
+class LiquidityTradeService: ISwapSettingProvider {
     private static let timerFramePerSecond = 30
 
     private var disposeBag = DisposeBag()
@@ -17,7 +17,7 @@ class PancakeLiquidityTradeService: ISwapSettingProvider {
     private static let warningPriceImpact: Decimal = 5
     private static let forbiddenPriceImpact: Decimal = 20
 
-    private let liquidityProvider: PancakeLiquidityProvider
+    private let liquidityProvider: LiquidityProvider
     let syncInterval: TimeInterval
 
     private var swapData: SwapData?
@@ -86,7 +86,7 @@ class PancakeLiquidityTradeService: ISwapSettingProvider {
         }
     }
 
-    init(liquidityProvider: PancakeLiquidityProvider, state: LiquidityMainModule.DataSourceState, evmKit: EvmKit.Kit) {
+    init(liquidityProvider: LiquidityProvider, state: LiquidityMainModule.DataSourceState, evmKit: EvmKit.Kit) {
         self.liquidityProvider = liquidityProvider
         syncInterval = evmKit.chain.syncInterval
 
@@ -173,11 +173,11 @@ class PancakeLiquidityTradeService: ISwapSettingProvider {
                 let wethAddressString = liquidityProvider.wethAddress.hex
 
                 if case .native = tokenIn?.type, case .eip20(let address) = tokenOut?.type, address == wethAddressString {
-                    error = PancakeLiquidityModule.TradeError.wrapUnwrapNotAllowed
+                    error = LiquidityModule.TradeError.wrapUnwrapNotAllowed
                 }
 
                 if case .native = tokenOut?.type, case .eip20(let address) = tokenIn?.type, address == wethAddressString {
-                    error = PancakeLiquidityModule.TradeError.wrapUnwrapNotAllowed
+                    error = LiquidityModule.TradeError.wrapUnwrapNotAllowed
                 }
             }
 
@@ -202,7 +202,7 @@ class PancakeLiquidityTradeService: ISwapSettingProvider {
 
 }
 
-extension PancakeLiquidityTradeService {
+extension LiquidityTradeService {
 
     var stateObservable: Observable<State> {
         stateRelay.asObservable()
@@ -319,7 +319,7 @@ extension PancakeLiquidityTradeService {
 
 }
 
-extension PancakeLiquidityTradeService {
+extension LiquidityTradeService {
 
     enum State {
         case loading
@@ -342,12 +342,13 @@ extension PancakeLiquidityTradeService {
             self.tradeData = tradeData
 
             impactLevel = tradeData.priceImpact.map { priceImpact in
-                switch priceImpact {
-                case 0..<PancakeLiquidityTradeService.normalPriceImpact: return .negligible
-                case PancakeLiquidityTradeService.normalPriceImpact..<PancakeLiquidityTradeService.warningPriceImpact: return .normal
-                case PancakeLiquidityTradeService.warningPriceImpact..<PancakeLiquidityTradeService.forbiddenPriceImpact: return .warning
-                default: return .forbidden
-                }
+                return .negligible
+//                switch priceImpact {
+//                case 0..<LiquidityTradeService.normalPriceImpact: return .negligible
+//                case LiquidityTradeService.normalPriceImpact..<LiquidityTradeService.warningPriceImpact: return .normal
+//                case LiquidityTradeService.warningPriceImpact..<LiquidityTradeService.forbiddenPriceImpact: return .warning
+//                default: return .forbidden
+//                }
             }
         }
     }

@@ -36,7 +36,7 @@ class LiquidityConfirmationViewController: AddLiquidityTransactionViewController
     }
 
     override func handleSendSuccess(transactionHash: Data) {
-        HudHelper.instance.show(banner: .swapped)
+        HudHelper.instance.show(banner: .liquidity)
 
         super.handleSendSuccess(transactionHash: transactionHash)
     }

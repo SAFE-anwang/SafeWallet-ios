@@ -2,9 +2,9 @@ import Foundation
 import UniswapKit
 import EvmKit
 
-class PancakeLiquidityModule {
-    private let tradeService: PancakeLiquidityTradeService
-    private let service: PancakeLiquidityService
+class LiquidityModule {
+    private let tradeService: LiquidityTradeService
+    private let service: LiquidityService
 
     private let allowanceService: LiquidityAllowanceService
     private let pendingAllowanceService: LiquidityPendingAllowanceService
@@ -21,9 +21,9 @@ class PancakeLiquidityModule {
             return nil
         }
 
-        let liquidityRepository = PancakeLiquidityProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource)
+        let liquidityRepository = LiquidityProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource)
 
-        tradeService = PancakeLiquidityTradeService(
+        tradeService = LiquidityTradeService(
                 liquidityProvider: liquidityRepository,
                 state: dataSourceState,
                 evmKit: evmKit
@@ -41,7 +41,7 @@ class PancakeLiquidityModule {
                 allowanceService: allowanceService
         )
 
-        service = PancakeLiquidityService(
+        service = LiquidityService(
                 dex: dex,
                 tradeService: tradeService,
                 allowanceService: allowanceService,
@@ -52,11 +52,11 @@ class PancakeLiquidityModule {
 
 }
 
-extension PancakeLiquidityModule: ILiquidityProvider {
+extension LiquidityModule: ILiquidityProvider {
 
     var dataSource: ILiquidityDataSource {
         let allowanceViewModel = LiquidityAllowanceViewModel(errorProvider: service, allowanceService: allowanceService, pendingAllowanceService: pendingAllowanceService)
-        let viewModel = PancakeLiquidityViewModel(
+        let viewModel = LiquidityViewModel(
                 service: service,
                 tradeService: tradeService,
                 switchService: AmountTypeSwitchService(userDefaultsStorage: App.shared.userDefaultsStorage, useLocalStorage: false),
@@ -66,7 +66,7 @@ extension PancakeLiquidityModule: ILiquidityProvider {
                 viewItemHelper: LiquidityViewItemHelper()
         )
 
-        return PancakeLiquidityDataSource(
+        return LiquidityDataSource(
                 viewModel: viewModel,
                 allowanceViewModel: allowanceViewModel
         )
@@ -89,11 +89,11 @@ extension PancakeLiquidityModule: ILiquidityProvider {
 
 }
 
-extension PancakeLiquidityModule {
+extension LiquidityModule {
 
     struct PriceImpactViewItem {
         let value: String
-        let level: PancakeLiquidityTradeService.PriceImpactLevel
+        let level: LiquidityTradeService.PriceImpactLevel
     }
 
     struct GuaranteedAmountViewItem {
@@ -116,7 +116,7 @@ extension PancakeLiquidityModule {
 
 }
 
-extension PancakeLiquidityModule.TradeError: LocalizedError {
+extension LiquidityModule.TradeError: LocalizedError {
 
     public var errorDescription: String? {
         switch self {

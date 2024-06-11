@@ -37,7 +37,8 @@ extension HudHelper {
         case success(string: String)
         case attention(string: String)
         case error(string: String)
-
+        case liquidity
+        
         var icon: UIImage? {
             let image: UIImage?
             switch self {
@@ -67,6 +68,7 @@ extension HudHelper {
             case .success: image = UIImage(named: "circle_check_24")
             case .attention: image = UIImage(named: "warning_2_24")
             case .error: image = UIImage(named: "circle_warning_24")
+            case .liquidity: image = UIImage(named: "circle_check_24")
             }
             return image?.withRenderingMode(.alwaysTemplate)
         }
@@ -75,7 +77,7 @@ extension HudHelper {
             switch self {
             case .addedToWatchlist, .alreadyAddedToWallet, .notSupportedYet, .sent, .swapped, .approved, .revoked, .attention: return .themeJacob
             case .removedFromWallet, .removedFromWatchlist, .deleted, .noInternet, .disconnectedWalletConnect, .error: return .themeLucian
-            case .addedToWallet, .copied, .saved, .savedToCloud, .done, .restored, .created, .imported, .walletAdded, .enabled, .success: return .themeRemus
+            case .addedToWallet, .copied, .saved, .savedToCloud, .done, .restored, .created, .imported, .walletAdded, .enabled, .success, .liquidity: return .themeRemus
             case .waitingForSession, .disconnectingWalletConnect, .enabling, .sending, .swapping, .approving, .revoking: return .themeGray
             }
         }
@@ -114,6 +116,7 @@ extension HudHelper {
             case let .success(description): return description
             case let .attention(description): return description
             case let .error(description): return description
+            case .liquidity: return "liquidity.add.success".localized
             }
         }
 

@@ -101,7 +101,3 @@ class LiquidityInputCell: UITableViewCell {
     }
 
 }
-
-extension LiquidityInputCell {
-
-}

@@ -20,12 +20,12 @@ class LiquidityViewItemHelper {
         return (first.formattedFull, second.formattedFull)
     }
 
-    func priceImpactViewItem(priceImpact: Decimal?, impactLevel: PancakeLiquidityTradeService.PriceImpactLevel?, minLevel: PancakeLiquidityTradeService.PriceImpactLevel = .normal) -> PancakeLiquidityModule.PriceImpactViewItem? {
+    func priceImpactViewItem(priceImpact: Decimal?, impactLevel: LiquidityTradeService.PriceImpactLevel?, minLevel: LiquidityTradeService.PriceImpactLevel = .normal) -> LiquidityModule.PriceImpactViewItem? {
         guard var priceImpact = priceImpact, let impactLevel, impactLevel.rawValue >= minLevel.rawValue else {
             return nil
         }
         priceImpact.negate()
-        return PancakeLiquidityModule.PriceImpactViewItem(
+        return LiquidityModule.PriceImpactViewItem(
                 value: priceImpact.description + "%",
                 level: impactLevel
         )

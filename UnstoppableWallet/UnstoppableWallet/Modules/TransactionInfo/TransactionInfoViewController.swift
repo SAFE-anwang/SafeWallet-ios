@@ -380,31 +380,31 @@ class TransactionInfoViewController: ThemeViewController {
         let textFont: UIFont = .subhead2
 
         return CellBuilderNew.row(
-            rootElement: .hStack([
-                .image24 { (component: ImageComponent) in
-                    component.imageView.image = image?.withTintColor(.themeGray)
+                rootElement: .hStack([
+                    .image24 { (component: ImageComponent) -> () in
+                        component.imageView.image = image?.withTintColor(.themeGray)
+                    },
+                    .text { (component: TextComponent) -> () in
+                        component.font = textFont
+                        component.textColor = .themeGray
+                        component.text = text
+                        component.numberOfLines = 0
+                    }
+                ]),
+                tableView: tableView,
+                id: id,
+                dynamicHeight: { containerWidth in
+                    CellBuilderNew.height(
+                            containerWidth: containerWidth,
+                            backgroundStyle: backgroundStyle,
+                            text: text,
+                            font: textFont,
+                            elements: [.fixed(width: .iconSize20), .multiline]
+                    )
                 },
-                .text { (component: TextComponent) in
-                    component.font = textFont
-                    component.textColor = .themeGray
-                    component.text = text
-                    component.numberOfLines = 0
-                },
-            ]),
-            tableView: tableView,
-            id: id,
-            dynamicHeight: { containerWidth in
-                CellBuilderNew.height(
-                    containerWidth: containerWidth,
-                    backgroundStyle: backgroundStyle,
-                    text: text,
-                    font: textFont,
-                    elements: [.fixed(width: .iconSize20), .multiline]
-                )
-            },
-            bind: { cell in
-                cell.set(backgroundStyle: backgroundStyle, isFirst: rowInfo.isFirst, isLast: rowInfo.isLast)
-            }
+                bind: { cell in
+                    cell.set(backgroundStyle: backgroundStyle, isFirst: rowInfo.isFirst, isLast: rowInfo.isLast)
+                }
         )
     }
 

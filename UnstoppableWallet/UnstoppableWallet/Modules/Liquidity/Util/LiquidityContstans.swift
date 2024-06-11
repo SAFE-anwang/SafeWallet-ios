@@ -40,16 +40,12 @@ class Constants {
         }
     }
     
-
     static let deadLine: Int = 20 // 20 min
 
     static func getDeadLine() -> BigUInt {
         let txDeadLine = (UInt64(Date().timeIntervalSince1970) + UInt64(60 * Constants.deadLine))
         return BigUInt(integerLiteral: txDeadLine)
     }
-
-    // user default slippage
-    static let slippage = Decimal(0.005)
     
     public enum UnsupportedChainError: Error {
         case noRouterAddress

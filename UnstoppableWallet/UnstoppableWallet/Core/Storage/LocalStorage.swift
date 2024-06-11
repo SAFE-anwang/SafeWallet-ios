@@ -85,13 +85,13 @@ extension LocalStorage {
         userDefaultsStorage.set(value: provider.rawValue, for: key)
     }
     
-    func defaultLiquidityProvider(blockchainType: BlockchainType) -> LiquidityMainModule.Dex.Provider {
+    func defaultLiquidityProvider(blockchainType: BlockchainType) -> SwapModule.Dex.Provider {
         let key = [keyDefaultLiquidityProvider, blockchainType.uid].joined(separator: "|")
         let raw: String? = userDefaultsStorage.value(for: key)
-        return (raw.flatMap { LiquidityMainModule.Dex.Provider(rawValue: $0) }) ?? blockchainType.allowedLiquidityProviders[0]
+        return (raw.flatMap { SwapModule.Dex.Provider(rawValue: $0) }) ?? blockchainType.allowedLiquidityProviders[0]
     }
 
-    func setDefaultLiquidityProvider(blockchainType: BlockchainType, provider: LiquidityMainModule.Dex.Provider) {
+    func setDefaultLiquidityProvider(blockchainType: BlockchainType, provider: SwapModule.Dex.Provider) {
         let key = [keyDefaultLiquidityProvider, blockchainType.uid].joined(separator: "|")
         userDefaultsStorage.set(value: provider.rawValue, for: key)
     }

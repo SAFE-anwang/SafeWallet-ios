@@ -8,7 +8,7 @@ import RxCocoa
 
 protocol ILiquidityDexManager {
     var dex: LiquidityMainModule.Dex? { get }
-    func set(provider: LiquidityMainModule.Dex.Provider)
+    func set(provider: SwapModule.Dex.Provider)
 
     var dexUpdated: Signal<()> { get }
 }
@@ -42,7 +42,7 @@ protocol ILiquidityDataSource: AnyObject {
     func viewDidAppear()
 }
 
-class LiquidityMainModule {
+enum LiquidityMainModule {
 
     static func viewController(tokenFrom: Token? = nil) -> UIViewController? {
         let swapDexManager = LiquidityProviderMannager(localStorage: App.shared.localStorage, evmBlockchainManager: App.shared.evmBlockchainManager, tokenFrom: tokenFrom)
@@ -54,7 +54,6 @@ class LiquidityMainModule {
         )
         return viewController
     }
-
 }
 
 extension LiquidityMainModule {
@@ -67,19 +66,30 @@ extension LiquidityMainModule {
            Self.addressesForRevoke.contains(address.lowercased()) {
             return true
         }
-
         return false
     }
-
 }
 
 extension LiquidityMainModule {
 
-    class DataSourceState: SwapModule.DataSourceState {
-    }
+    class DataSourceState {
+        var tokenFrom: MarketKit.Token?
+        var tokenTo: MarketKit.Token?
+        var amountFrom: Decimal?
+        var amountTo: Decimal?
+        var exactFrom: Bool
 
-    class Dex: SwapModule.Dex {
-        override var blockchainType: BlockchainType {
+        init(tokenFrom: MarketKit.Token?, tokenTo: MarketKit.Token? = nil, amountFrom: Decimal? = nil, amountTo: Decimal? = nil, exactFrom: Bool = true) {
+            self.tokenFrom = tokenFrom
+            self.tokenTo = tokenTo
+            self.amountFrom = amountFrom
+            self.amountTo = amountTo
+            self.exactFrom = exactFrom
+        }
+    }
+    
+    class Dex {
+        var blockchainType: BlockchainType {
             didSet {
                 let allowedProviders = blockchainType.allowedLiquidityProviders
                 if !allowedProviders.contains(provider) {
@@ -88,12 +98,17 @@ extension LiquidityMainModule {
             }
         }
 
-        override var provider: Provider {
+        var provider: SwapModule.Dex.Provider {
             didSet {
                 if !provider.allowedBlockchainTypes.contains(blockchainType) {
                     blockchainType = provider.allowedBlockchainTypes[0]
                 }
             }
+        }
+
+        init(blockchainType: BlockchainType, provider: SwapModule.Dex.Provider) {
+            self.blockchainType = blockchainType
+            self.provider = provider
         }
     }
 
@@ -103,8 +118,8 @@ extension BlockchainType {
 
     var allowedLiquidityProviders: [SwapModule.Dex.Provider] {
         switch self {
-        case .binanceSmartChain: return [.pancake]
-        case .ethereum: return [.uniswap]
+        case .binanceSmartChain: return [.pancake, .pancakeV3]
+        case .ethereum: return [.uniswap]//, .uniswapV3]
         default: return []
         }
     }

@@ -7,9 +7,9 @@ import EvmKit
 import Foundation
 import MarketKit
 
-class PancakeLiquidityService {
+class LiquidityService {
     let dex: LiquidityMainModule.Dex
-    private let tradeService: PancakeLiquidityTradeService
+    private let tradeService: LiquidityTradeService
     
     private let allowanceService: LiquidityAllowanceService
     private let pendingAllowanceService: LiquidityPendingAllowanceService
@@ -52,7 +52,7 @@ class PancakeLiquidityService {
 
     private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "anwang.safewallet.liquidity_service")
 
-    init(dex: LiquidityMainModule.Dex, tradeService: PancakeLiquidityTradeService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService, adapterManager: AdapterManager) {
+    init(dex: LiquidityMainModule.Dex, tradeService: LiquidityTradeService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService, adapterManager: AdapterManager) {
         self.dex = dex
         self.tradeService = tradeService
         
@@ -87,7 +87,7 @@ class PancakeLiquidityService {
         }
     }
 
-    private func onUpdateTrade(state: PancakeLiquidityTradeService.State) {
+    private func onUpdateTrade(state: LiquidityTradeService.State) {
         syncState()
     }
 
@@ -218,7 +218,7 @@ class PancakeLiquidityService {
 
 }
 
-extension PancakeLiquidityService: ISwapErrorProvider {
+extension LiquidityService: ISwapErrorProvider {
 
     var stateObservable: Observable<State> {
         stateRelay.asObservable()
@@ -263,7 +263,7 @@ extension PancakeLiquidityService: ISwapErrorProvider {
     }
 }
 
-extension PancakeLiquidityService {
+extension LiquidityService {
 
     enum State: Equatable {
         case loading

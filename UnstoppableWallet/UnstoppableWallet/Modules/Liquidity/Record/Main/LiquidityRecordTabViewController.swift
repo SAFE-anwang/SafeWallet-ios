@@ -15,14 +15,14 @@ class LiquidityRecordTabViewController: ThemeViewController {
     private let viewModel: LiquidityRecordTabViewModel
     private let pageViewController = UIPageViewController(transitionStyle: .scroll, navigationOrientation: .horizontal)
     
-    private let bscViewController: LiquidityRecordViewController
-    private let ethViewController: LiquidityRecordViewController
+    private var bscViewController: LiquidityRecordViewController
+    private var ethViewController: LiquidityRecordViewController
     
-    init(viewModel: LiquidityRecordTabViewModel) {
+    init?(viewModel: LiquidityRecordTabViewModel) {
         self.viewModel = viewModel
         
-        bscViewController = LiquidityRecordModule.subViewController(blockchainType: .binanceSmartChain)
-        ethViewController = LiquidityRecordModule.subViewController(blockchainType: .ethereum)
+        bscViewController = LiquidityRecordModule.subViewController(dexType: .pancakeSwap, blockchainType: .binanceSmartChain)
+        ethViewController = LiquidityRecordModule.subViewController(dexType: .uniswap, blockchainType: .ethereum)
         
         super.init()
         

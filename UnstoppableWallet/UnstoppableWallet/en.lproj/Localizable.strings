@@ -2047,7 +2047,24 @@
 "liquidity.remove.error.insufficient" = "Insufficient balance of %@ fee";
 "liquidity.empty.description" = "You haven't added liquidity yet";
 "liquidity.remove.description" = "Are you sure to remove liquidity?";
-
+"liquidity.tick.price.min" = "Min Price";
+"liquidity.tick.price.max" = "Max Price";
+"liquidity.tick.price.current" = "Current Price";
+"liquidity.tick.price.per" = " per ";
+"liquidity.tick.full.range" = "Full Range";
+"liquidity.tick.range.error" = "Invalid range selected. The min price must be lower than the max price.";
+"liquidity.tick.range.less.error" = "Invalid range selected.The min price must be lower than the current price.";
+"liquidity.tick.range.greater.error" = "Invalid range selected.The current price must be lower than the max price.";
+"liquidity.tick.state.inactive" = "Inactive";
+"liquidity.tick.state.active" = "Active";
+"liquidity.tick.min" = "Min";
+"liquidity.tick.max" = "Max";
+"liquidity.remove.rate.title" = "AMOUNT OF LIQUIDITY TO REMOVE";
+"liquidity.remove.receive.title" = "YOU WILL RECEIVE";
+"liquidity.remove.pooled" = "Pooled ";
+"liquidity.remove.feeEarned" = " Fee Earned";
+"liquidity.record.error" = "Load Liquidity Faild";
+"liquidity.add.success" = "Liquidity has been added and submitting for online listing";
 // Cex Coin Select
 
 "cex_coin_select.title" = "Choose Coin";

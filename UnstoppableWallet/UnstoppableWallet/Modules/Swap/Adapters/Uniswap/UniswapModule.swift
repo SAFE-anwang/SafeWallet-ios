@@ -109,6 +109,9 @@ extension UniswapModule {
 
     enum TradeError: Error {
         case wrapUnwrapNotAllowed
+        case tickRangeError
+        case lessTickRangeError
+        case greaterTickRangeError
     }
 }
 
@@ -134,6 +137,9 @@ extension UniswapModule.TradeError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .wrapUnwrapNotAllowed: return "swap.trade_error.wrap_unwrap_not_allowed".localized
+        case .tickRangeError: return "liquidity.tick.range.error".localized
+        case .lessTickRangeError: return "liquidity.tick.range.less.error".localized
+        case .greaterTickRangeError: return "liquidity.tick.range.greater.error".localized
         }
     }
 }

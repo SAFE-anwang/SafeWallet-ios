@@ -1,10 +1,10 @@
-import EvmKit
-import RxCocoa
-import RxSwift
-import SectionsTableView
-import SnapKit
-import ThemeKit
 import UIKit
+import ThemeKit
+import SnapKit
+import SectionsTableView
+import RxSwift
+import RxCocoa
+import EvmKit
 
 class SendEvmViewController: ThemeViewController {
     private let evmKitWrapper: EvmKitWrapper
@@ -41,8 +41,7 @@ class SendEvmViewController: ThemeViewController {
         super.init()
     }
 
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -135,81 +134,84 @@ class SendEvmViewController: ThemeViewController {
         }
         navigationController?.pushViewController(viewController, animated: true)
     }
+
 }
 
 extension SendEvmViewController: SectionsDataSource {
+
     func buildSections() -> [SectionProtocol] {
         var sections = [
             Section(
-                id: "available-balance",
-                headerState: .margin(height: .margin12),
-                rows: [
-                    StaticRow(
-                        cell: availableBalanceCell,
-                        id: "available-balance",
-                        height: availableBalanceCell.cellHeight
-                    ),
-                ]
+                    id: "available-balance",
+                    headerState: .margin(height: .margin12),
+                    rows: [
+                        StaticRow(
+                                cell: availableBalanceCell,
+                                id: "available-balance",
+                                height: availableBalanceCell.cellHeight
+                        )
+                    ]
             ),
             Section(
-                id: "amount",
-                headerState: .margin(height: .margin16),
-                rows: [
-                    StaticRow(
-                        cell: amountCell,
-                        id: "amount-input",
-                        height: amountCell.cellHeight
-                    ),
-                    StaticRow(
-                        cell: amountCautionCell,
-                        id: "amount-caution",
-                        dynamicHeight: { [weak self] width in
-                            self?.amountCautionCell.height(containerWidth: width) ?? 0
-                        }
-                    ),
-                ]
-            ),
+                    id: "amount",
+                    headerState: .margin(height: .margin16),
+                    rows: [
+                        StaticRow(
+                                cell: amountCell,
+                                id: "amount-input",
+                                height: amountCell.cellHeight
+                        ),
+                        StaticRow(
+                                cell: amountCautionCell,
+                                id: "amount-caution",
+                                dynamicHeight: { [weak self] width in
+                                    self?.amountCautionCell.height(containerWidth: width) ?? 0
+                                }
+                        )
+                    ]
+            )
         ]
 
         if viewModel.showAddress {
             sections.append(
-                Section(
-                    id: "recipient",
-                    headerState: .margin(height: .margin16),
-                    rows: [
-                        StaticRow(
-                            cell: recipientCell,
-                            id: "recipient-input",
-                            dynamicHeight: { [weak self] width in
-                                self?.recipientCell.height(containerWidth: width) ?? 0
-                            }
-                        ),
-                        StaticRow(
-                            cell: recipientCautionCell,
-                            id: "recipient-caution",
-                            dynamicHeight: { [weak self] width in
-                                self?.recipientCautionCell.height(containerWidth: width) ?? 0
-                            }
-                        ),
-                    ]
-                )
+                    Section(
+                            id: "recipient",
+                            headerState: .margin(height: .margin16),
+                            rows: [
+                                StaticRow(
+                                        cell: recipientCell,
+                                        id: "recipient-input",
+                                        dynamicHeight: { [weak self] width in
+                                            self?.recipientCell.height(containerWidth: width) ?? 0
+                                        }
+                                ),
+                                StaticRow(
+                                        cell: recipientCautionCell,
+                                        id: "recipient-caution",
+                                        dynamicHeight: { [weak self] width in
+                                            self?.recipientCautionCell.height(containerWidth: width) ?? 0
+                                        }
+                                )
+                            ]
+                    )
             )
         }
 
         sections.append(
-            Section(
-                id: "button",
-                footerState: .margin(height: .margin32),
-                rows: [
-                    StaticRow(
-                        cell: buttonCell,
+                Section(
                         id: "button",
-                        height: PrimaryButtonCell.height
-                    ),
-                ]
-            )
+                        footerState: .margin(height: .margin32),
+                        rows: [
+                            StaticRow(
+                                    cell: buttonCell,
+                                    id: "button",
+                                    height: PrimaryButtonCell.height
+                            )
+                        ]
+                )
         )
 
         return sections
     }
+
 }

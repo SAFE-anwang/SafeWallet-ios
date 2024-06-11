@@ -55,7 +55,7 @@ class FilterView: UIView {
         collectionView.backgroundColor = .clear
         collectionView.scrollsToTop = false
         collectionView.showsHorizontalScrollIndicator = false
-
+        collectionView.showsVerticalScrollIndicator = false
         collectionView.registerCell(forClass: FilterHeaderCell.self)
 
         if bottomSeparator {

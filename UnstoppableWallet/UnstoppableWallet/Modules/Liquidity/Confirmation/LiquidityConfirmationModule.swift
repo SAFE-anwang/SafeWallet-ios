@@ -21,16 +21,19 @@ struct LiquidityConfirmationModule {
         
         let gasPriceService = EvmFeeModule.gasPriceService(evmKit: evmKitWrapper.evmKit)
 
-        let gasDataService = EvmCommonGasDataService.instance(
-                evmKit: evmKitWrapper.evmKit,
-                blockchainType: evmKitWrapper.blockchainType,
-                predefinedGasLimit: 500000,
-                gasLimitType: .contract
-        )
+        let predefinedGasLimit: Int?
+        switch dex.provider {
+        case .uniswapV3, .pancakeV3:
+            predefinedGasLimit = 650000
+        case .uniswap, .pancake:
+            predefinedGasLimit = 500000
+        default:
+            predefinedGasLimit = nil
+        }
         
         let coinService = coinServiceFactory.baseCoinService
         let feeViewItemFactory = FeeViewItemFactory(scale: coinService.token.blockchainType.feePriceScale)
-        let feeService = LiquidityFeeService(evmKit: evmKitWrapper.evmKit, gasPriceService: gasPriceService, gasDataService: gasDataService, coinService: coinService, transactionData: sendData.transactionData)
+        let feeService = LiquidityFeeService(evmKit: evmKitWrapper.evmKit, gasPriceService: gasPriceService, coinService: coinService, transactionData: sendData.transactionData, predefinedGasLimit: predefinedGasLimit)
         let nonceService = NonceService(evmKit: evmKitWrapper.evmKit, replacingNonce: nil)
         let settingService = EvmSendSettingsService(feeService: feeService, nonceService: nonceService)
         
@@ -60,6 +63,5 @@ struct LiquidityConfirmationModule {
 
         return  LiquidityConfirmationViewController(transactionViewModel: viewModel, settingsViewModel: settingsViewModel)
     }
-
 }
 

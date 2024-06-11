@@ -4,11 +4,11 @@ import RxCocoa
 import UniswapKit
 import EvmKit
 import MarketKit
-class PancakeLiquidityViewModel {
+class LiquidityViewModel {
     private let disposeBag = DisposeBag()
 
-    public let service: PancakeLiquidityService
-    public let tradeService: PancakeLiquidityTradeService
+    public let service: LiquidityService
+    public let tradeService: LiquidityTradeService
     public let switchService: AmountTypeSwitchService
     private let currencyManager: CurrencyManager
     private let allowanceService: LiquidityAllowanceService
@@ -17,7 +17,7 @@ class PancakeLiquidityViewModel {
     private let viewItemHelper: LiquidityViewItemHelper
 
     private var availableBalanceRelay = BehaviorRelay<String?>(value: nil)
-    private var priceImpactRelay = BehaviorRelay<PancakeLiquidityModule.PriceImpactViewItem?>(value: nil)
+    private var priceImpactRelay = BehaviorRelay<LiquidityModule.PriceImpactViewItem?>(value: nil)
     private var buyPriceRelay = BehaviorRelay<SwapPriceCell.PriceViewItem?>(value: nil)
     private var countdownTimerRelay = BehaviorRelay<Float>(value: 1)
     private var isLoadingRelay = BehaviorRelay<Bool>(value: false)
@@ -38,7 +38,7 @@ class PancakeLiquidityViewModel {
 
     private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "anwang.safewallet.liquidity_view_model")
 
-    init(service: PancakeLiquidityService, tradeService: PancakeLiquidityTradeService, switchService: AmountTypeSwitchService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService,currencyManager: CurrencyManager, viewItemHelper: LiquidityViewItemHelper) {
+    init(service: LiquidityService, tradeService: LiquidityTradeService, switchService: AmountTypeSwitchService, allowanceService: LiquidityAllowanceService, pendingAllowanceService: LiquidityPendingAllowanceService,currencyManager: CurrencyManager, viewItemHelper: LiquidityViewItemHelper) {
         self.service = service
         self.tradeService = tradeService
         self.switchService = switchService
@@ -73,7 +73,7 @@ class PancakeLiquidityViewModel {
         sync(toggleAvailable: switchService.toggleAvailable)
     }
 
-    private func sync(state service: PancakeLiquidityService, pendingAllowanceService: LiquidityPendingAllowanceService) {
+    private func sync(state service: LiquidityService, pendingAllowanceService: LiquidityPendingAllowanceService) {
         let state = service.state
 
         isLoadingRelay.accept(state == .loading)
@@ -117,7 +117,7 @@ class PancakeLiquidityViewModel {
         swapErrorRelay.accept(filtered.first?.convertedError.smartDescription)
     }
 
-    private func sync(tradeState: PancakeLiquidityTradeService.State) {
+    private func sync(tradeState: LiquidityTradeService.State) {
         var loading = false
         switch tradeState {
         case .loading:
@@ -146,7 +146,7 @@ class PancakeLiquidityViewModel {
         settingsViewItemRelay.accept(settingsViewItem(settings: swapSettings))
     }
 
-    private func syncProceedAction(service: PancakeLiquidityService, pendingAllowanceService: LiquidityPendingAllowanceService) {
+    private func syncProceedAction(service: LiquidityService, pendingAllowanceService: LiquidityPendingAllowanceService) {
         var actionState = ActionState.disabled(title: "swap.proceed_button".localized)
 
         if case .ready = service.state {
@@ -154,8 +154,8 @@ class PancakeLiquidityViewModel {
         } else if let error = service.errors.compactMap({ $0 as? SwapModule.SwapError}).first {
             switch error {
             case .noBalanceIn: actionState = .disabled(title: "swap.not_available_button".localized)
-            case .insufficientBalanceIn: actionState = .disabled(title: "swap.button_error.insufficient_balance".localized)
-            case .insufficientBalanceIn2: actionState = .disabled(title: "swap.button_error.insufficient_balance".localized)
+            case .insufficientBalanceIn: actionState = .disabled(title: (tradeService.tokenIn?.coin.code ?? "") + "swap.button_error.insufficient_balance".localized)
+            case .insufficientBalanceIn2: actionState = .disabled(title: (tradeService.tokenOut?.coin.code ?? "") + "swap.button_error.insufficient_balance".localized)
             case .needRevokeAllowance:
                 switch tradeService.state {
                 case .notReady: ()
@@ -169,7 +169,7 @@ class PancakeLiquidityViewModel {
         proceedActionRelay.accept(actionState)
     }
 
-    private func syncApproveAction(service: PancakeLiquidityService, pendingAllowanceService: LiquidityPendingAllowanceService) {
+    private func syncApproveAction(service: LiquidityService, pendingAllowanceService: LiquidityPendingAllowanceService) {
         
         var approveAction: ActionState = .hidden
         var revokeAction: ActionState = .hidden
@@ -238,7 +238,7 @@ class PancakeLiquidityViewModel {
 
 }
 
-extension PancakeLiquidityViewModel {
+extension LiquidityViewModel {
 
     var amountTypeSelectorItems: [String] {
         ["swap.amount_type.coin".localized, currencyManager.baseCurrency.code]
@@ -276,7 +276,7 @@ extension PancakeLiquidityViewModel {
         swapErrorRelay.asDriver()
     }
 
-    var priceImpactDriver: Driver<PancakeLiquidityModule.PriceImpactViewItem?> {
+    var priceImpactDriver: Driver<LiquidityModule.PriceImpactViewItem?> {
         priceImpactRelay.asDriver()
     }
 
@@ -356,7 +356,7 @@ extension PancakeLiquidityViewModel {
             return
         }
         
-        let swapInfo = SendEvmData.PancakeLiquidityInfo(
+        let swapInfo = SendEvmData.LiquidityInfo(
                 estimatedOut: tradeService.amountOut,
                 estimatedIn: tradeService.amountIn,
                 slippage: viewItemHelper.slippage(tradeService.settings.allowedSlippage),
@@ -375,13 +375,13 @@ extension PancakeLiquidityViewModel {
         var impactErrors = [Error]()
 
         switch trade.impactLevel {
-        case .warning:  impactWarnings = [PancakeLiquidityModule.LiquidityWarning.highPriceImpact]
-        case .forbidden:  impactErrors = [PancakeLiquidityModule.LiquidityError.forbiddenPriceImpact(provider: "PancakeSwap")] // we can use url from dex
+        case .warning: impactWarnings = [LiquidityModule.LiquidityWarning.highPriceImpact]
+        case .forbidden: impactErrors = [LiquidityModule.LiquidityError.forbiddenPriceImpact(provider: "LiquiditySwap")] // we can use url from dex
         default: ()
         }
         let sendEvmData = SendEvmData(
                 transactionData: transactionData,
-                additionalInfo: .pancakeLiquidity(info: swapInfo),
+                additionalInfo: .liquidity(info: swapInfo),
                 warnings: impactWarnings,
                 errors: impactErrors
         )
@@ -391,13 +391,13 @@ extension PancakeLiquidityViewModel {
 
 }
 
-extension PancakeLiquidityViewModel {
+extension LiquidityViewModel {
 
     struct TradeViewItem {
         let executionPrice: String?
         let executionPriceInverted: String?
-        let priceImpact: PancakeLiquidityModule.PriceImpactViewItem?
-        let guaranteedAmount: PancakeLiquidityModule.GuaranteedAmountViewItem?
+        let priceImpact: LiquidityModule.PriceImpactViewItem?
+        let guaranteedAmount: LiquidityModule.GuaranteedAmountViewItem?
     }
 
     struct SettingsViewItem {

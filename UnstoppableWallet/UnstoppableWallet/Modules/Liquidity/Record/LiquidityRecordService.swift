@@ -70,10 +70,10 @@ class LiquidityRecordService {
                         viewItems.append(item)
                     }
                 }catch {
-                    state = .failed(error: LiquidityRecordError.dataError)
+                    state = .failed(error: error.localizedDescription)
                 }
             }
-            state = .completed(data: viewItems)
+            state = .completed(datas: viewItems)
         }
     }
 
@@ -153,15 +153,14 @@ extension LiquidityRecordService {
     }
 }
 
-typealias PoolInfo = (balanceOfAccount: BigUInt, reserves: (BigUInt,BigUInt) , poolTokenTotalSupply: BigUInt)
-
 extension LiquidityRecordService {
     
     private func liquiditypoolInfo(evmKit: EvmKit.Kit, pairAddress: EvmKit.Address, receiveAddress: EvmKit.Address) async throws -> PoolInfo {
         let (reserve0, reserve1) = try await getReserves(evmKit: evmKit, contractAddress: pairAddress)
         let poolTokenTotalSupply = try await getTotalSupply(evmKit: evmKit, contractAddress: pairAddress)
         let balanceOfAccount = try await getBalanceOf(evmKit: evmKit, contractAddress: pairAddress, walletAddress: receiveAddress)
-        return PoolInfo(balanceOfAccount, (reserve0, reserve1), poolTokenTotalSupply)
+        print("balanceOfAccount:\(balanceOfAccount.description)")
+        return PoolInfo(pooltToken0Amount: reserve0, pooltToken1Amount: reserve1, balanceOfAccount: balanceOfAccount, poolTokenTotalSupply: poolTokenTotalSupply)
     }
 }
 
@@ -171,28 +170,11 @@ extension LiquidityRecordService {
         guard let receiveAddress = getReceiveAddress(wallet: walletA) else { return nil }
         guard let evmKit = evmKitWrapper?.evmKit else { return nil }
         guard let liquidityPair = LiquidityPair.getPairAddress(evmKit: evmKit, itemA: pairItemA, itemB: pairItemB) else { return nil }
-        let tokenA = liquidityPair.item0.token
-        let tokenB = liquidityPair.item1.token
-        let pairAddress = liquidityPair.pairAddress
-
         do {
+            let pairAddress = liquidityPair.pairAddress
             let poolInfo = try await liquiditypoolInfo(evmKit: evmKit, pairAddress: pairAddress, receiveAddress: receiveAddress)
             guard poolInfo.balanceOfAccount > 0 else { return nil }
-
-            let shareRate = (Decimal(bigUInt: poolInfo.balanceOfAccount, decimals: 0) ?? 0) / (Decimal(bigUInt: poolInfo.poolTokenTotalSupply, decimals: 0) ?? 0)
-            let decimalValueA = (Decimal(bigUInt: poolInfo.reserves.0, decimals: tokenA.decimals) ?? 0) * shareRate
-            let decimalValueB = (Decimal(bigUInt: poolInfo.reserves.1, decimals: tokenB.decimals) ?? 0) * shareRate
-            let liquidity = Decimal(bigUInt: poolInfo.balanceOfAccount, decimals: 18) ?? 0
-            let totalSupply = Decimal(bigUInt: poolInfo.poolTokenTotalSupply, decimals: 16) ?? 0
-            
-            return LiquidityRecordViewModel.RecordItem(tokenA: tokenA,
-                                                       tokenB: tokenB,
-                                                       amountA: decimalValueA,
-                                                       amountB: decimalValueB,
-                                                       liquidity: liquidity,
-                                                       shareRate: shareRate,
-                                                       totalSupply: totalSupply,
-                                                       pair: liquidityPair)
+            return LiquidityRecordViewModel.RecordItem(poolInfo: poolInfo, pair: liquidityPair)
         }catch {
             return nil
         }
@@ -213,7 +195,7 @@ extension LiquidityRecordService {
                 let eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: pairAddress)
                 try await allowance(eip20Kit: eip20Kit, viewItem: viewItem, pairAddress: pairAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
             }catch {
-                self.state = .removeFailed(error: LiquidityRecordError.dataError, data: viewItem)
+                state = .failed(error: error.localizedDescription)
             }
         }
     }
@@ -238,7 +220,6 @@ extension LiquidityRecordService {
         guard let evmKit = evmKitWrapper?.evmKit else { return }
         let routerAddressString = try Constants.routerAddressString(chain: evmKit.chain)
         let contractAddress = try EvmKit.Address(hex: routerAddressString)
-//        let liquidity = poolInfo.balanceOfAccount
         let maxValue = BigUInt(Data(hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
         let transactionData = eip20Kit.approveTransactionData(spenderAddress: contractAddress, amount: maxValue)
         try await send(transactionData: transactionData)
@@ -246,24 +227,21 @@ extension LiquidityRecordService {
             .subscribe(onSuccess: { [weak self] fullTransaction in
                 self?.remove(viewItem: viewItem, contractAddress: contractAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
             }, onError: { error in
-                self.state = .removeFailed(error: error, data: viewItem)
+                self.state = .approveFailed
             })
             .disposed(by: disposeBag)
     }
     
     private func remove(viewItem: LiquidityRecordViewModel.RecordItem, contractAddress: EvmKit.Address, receiveAddress: EvmKit.Address, poolInfo: PoolInfo) {
-        let shareRate = (Decimal(bigUInt: poolInfo.balanceOfAccount, decimals: 0) ?? 0) / (Decimal(bigUInt: poolInfo.poolTokenTotalSupply, decimals: 0) ?? 0)
         let addressA = viewItem.pair.item0.address
         let addressB = viewItem.pair.item1.address
-
-        let decimalAMin = (Decimal(bigUInt: poolInfo.reserves.0, decimals: 0) ?? 0) * shareRate * Constants.slippage
-        let decimalBMin = (Decimal(bigUInt: poolInfo.reserves.1, decimals: 0) ?? 0) * shareRate * Constants.slippage
-        let amountAMin = BigUInt(decimalAMin.hs.roundedString(decimal: 0)) ?? 0
-        let amountBMin = BigUInt(decimalBMin.hs.roundedString(decimal: 0)) ?? 0
-
+        let slippage:(BigUInt, BigUInt) = (5, 1000)
+        let amountAMin = (viewItem.poolInfo.userToken0Amount * slippage.0 / slippage.1) * ratio / 100
+        let amountBMin = (viewItem.poolInfo.userToken1Amount * slippage.0 / slippage.1) * ratio / 100
+        
         let deadline = Constants.getDeadLine()
         
-        let liquidity = (poolInfo.balanceOfAccount / 100) * ratio
+        let liquidity = poolInfo.balanceOfAccount * ratio / 100
         
         let method = RemoveLiquidityMethod(tokenA: addressA, tokenB: addressB, liquidity: liquidity, amountAMin: amountAMin, amountBMin: amountBMin, to: receiveAddress, deadline: deadline)
         let transactionData = EvmKit.TransactionData(to: contractAddress, value: 0, input: method.encodedABI())
@@ -275,19 +253,20 @@ extension LiquidityRecordService {
                         if  let strongSelf = self {
                             if let index = strongSelf.viewItems.firstIndex(where: { $0.pair.pairAddress ==  viewItem.pair.pairAddress }) {
                                 strongSelf.viewItems.remove(at: index)
-                                strongSelf.state = .removeSuccess(data: strongSelf.viewItems)
+                                strongSelf.state = .removeSuccess
                             }
                         }
 
                     }, onError: { error in
-                        self.state = .removeFailed(error: error, data: viewItem)
+                        let message = self.errorMessage(error: error, item: viewItem)
+                        self.state = .removeFailed(error: message)
                     })
                     .disposed(by: disposeBag)
             } catch {
-                self.state = .removeFailed(error: LiquidityRecordError.dataError, data: viewItem)
+                let message = self.errorMessage(error: error, item: viewItem)
+                self.state = .removeFailed(error: message)
             }
         }
-
     }
     
     private func send(transactionData: TransactionData) async throws -> Single<FullTransaction> {
@@ -312,10 +291,26 @@ extension LiquidityRecordService {
                     self?.legacyGasPrice =  gasPrice
                 },
                 onError: { [weak self] error in
-                    self?.state = .failed(error: error)
+                    self?.state = .gasPriceFailed
                 }
             )
             .disposed(by: disposeBag)
+    }
+    
+    func errorMessage(error: Error, item: LiquidityRecordViewModel.RecordItem) -> String {
+        if case JsonRpcResponse.ResponseError.rpcError(_) = error {
+            let feeType: String
+            switch item.tokenA.blockchainType {
+            case .binanceSmartChain:
+                feeType = "BNB"
+            case .ethereum:
+                feeType = "ETH"
+            default:
+                feeType = ""
+            }
+            return "liquidity.remove.error.insufficient".localized(feeType)
+        }
+        return error.localizedDescription
     }
     
 }
@@ -361,8 +356,34 @@ extension LiquidityRecordService {
         return rawReserve
     }    
 }
+
 extension LiquidityRecordService {
+    
+    struct PoolInfo {
+        let pooltToken0Amount: BigUInt
+        let pooltToken1Amount: BigUInt
+        let balanceOfAccount: BigUInt
+        let poolTokenTotalSupply: BigUInt
         
+        var shareRate: Decimal {
+            (Decimal(bigUInt: balanceOfAccount, decimals: 0) ?? 0) / (Decimal(bigUInt: poolTokenTotalSupply, decimals: 0) ?? 1)
+        }
+        
+        var userToken0Amount: BigUInt {
+            pooltToken0Amount * balanceOfAccount / poolTokenTotalSupply
+        }
+        
+        var userToken1Amount: BigUInt {
+            pooltToken1Amount * balanceOfAccount / poolTokenTotalSupply
+        }
+    }
+    
+    enum RemoveType {
+        case all
+        case ratio(value: BigUInt)
+    }
+    
+    
     public enum UnsupportedChainError: Error {
         case noWethAddress
     }
@@ -386,10 +407,12 @@ extension LiquidityRecordService {
     
     enum State {
         case loading
-        case completed(data: [LiquidityRecordViewModel.RecordItem])
-        case removeSuccess(data: [LiquidityRecordViewModel.RecordItem])
-        case failed(error: Error)
-        case removeFailed(error: Error, data: LiquidityRecordViewModel.RecordItem)
+        case completed(datas: [LiquidityRecordViewModel.RecordItem])
+        case failed(error: String)
+        case approveFailed
+        case removeSuccess
+        case gasPriceFailed
+        case removeFailed(error: String)
     }
 }
 

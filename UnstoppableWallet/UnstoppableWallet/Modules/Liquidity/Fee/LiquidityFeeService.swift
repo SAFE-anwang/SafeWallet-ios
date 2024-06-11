@@ -10,7 +10,7 @@ class LiquidityFeeService {
     let coinService: CoinService
 
     private let evmKit: EvmKit.Kit
-    private let gasDataService: EvmCommonGasDataService
+    private var predefinedGasLimit: Int?
     private var transactionData: TransactionData
 
     private let transactionStatusRelay = PublishRelay<DataStatus<FallibleData<EvmFeeModule.Transaction>>>()
@@ -23,13 +23,13 @@ class LiquidityFeeService {
     private var disposeBag = DisposeBag()
     private var gasPriceDisposeBag = DisposeBag()
     
-    init(evmKit: EvmKit.Kit, gasPriceService: IGasPriceService, gasDataService: EvmCommonGasDataService, coinService: CoinService, transactionData: TransactionData) {
+    init(evmKit: EvmKit.Kit, gasPriceService: IGasPriceService, coinService: CoinService, transactionData: TransactionData, predefinedGasLimit: Int? = nil) {
         self.evmKit = evmKit
         self.gasPriceService = gasPriceService
-        self.gasDataService = gasDataService
         self.coinService = coinService
         self.transactionData = transactionData
-
+        self.predefinedGasLimit = predefinedGasLimit
+        
         sync(gasPriceStatus: gasPriceService.status)
         subscribe(gasPriceDisposeBag, gasPriceService.statusObservable) { [weak self] in
             self?.sync(gasPriceStatus: $0)
@@ -45,53 +45,50 @@ class LiquidityFeeService {
     }
 
     private func sync(fallibleGasPrices: FallibleData<EvmFeeModule.GasPrices>) {
-        disposeBag = DisposeBag()
-        let single: Single<EvmFeeModule.Transaction>
-        let transactionData = transactionData
-        
-        
-        if transactionData.input.isEmpty, transactionData.value == evmBalance {
-            // If try to send native token (input is empty) and max value, we must calculate fee and decrease maximum value by that fee
-            single = gasDataService
-                    .gasDataSingle(gasPrice: fallibleGasPrices.data.recommended, transactionData: transactionData, stubAmount: 1)
-                    .flatMap { adjustedGasData in
-                        adjustedGasData.set(price: fallibleGasPrices.data.userDefined)
 
-                        if transactionData.value <= adjustedGasData.fee {
-                            return Single.error(EvmFeeModule.GasDataError.insufficientBalance)
-                        } else {
-                            let adjustedTransactionData = TransactionData(to: transactionData.to, value: transactionData.value - adjustedGasData.fee, input: transactionData.input)
-                            return Single.just(EvmFeeModule.Transaction(transactionData: adjustedTransactionData, gasData: adjustedGasData))
-                        }
+        Task {               
+            let single: Single<EvmFeeModule.Transaction>
+            let transactionData = transactionData
+            let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKit)
+            let gasPrice = try await gasPriceProvider.gasPrice()
+            
+            do {
+                let gasLimit: Int
+                if let predefinedGasLimit {
+                    gasLimit = predefinedGasLimit
+                }else {
+                    gasLimit = try await evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
+                }
+               
+                let adjustedGasData = EvmFeeModule.GasData(limit: gasLimit, price: gasPrice)
+                
+                if transactionData.input.isEmpty, transactionData.value == evmBalance {
+                    adjustedGasData.set(price: fallibleGasPrices.data.userDefined)
+                    
+                    if transactionData.value <= adjustedGasData.fee {
+                        single = Single.error(EvmFeeModule.GasDataError.insufficientBalance)
+                    } else {
+                        let adjustedTransactionData = TransactionData(to: transactionData.to, value: transactionData.value - adjustedGasData.fee, input: transactionData.input)
+                        single = Single.just(EvmFeeModule.Transaction(transactionData: adjustedTransactionData, gasData: adjustedGasData))
                     }
-        } else {
-            single = gasDataService
-                .gasDataSingle(gasPrice: fallibleGasPrices.data.userDefined, transactionData: transactionData)
-                    .catchError { [weak self] error in
-                        if case AppError.ethereum(reason: let ethereumError) = error.convertedError,
-                           case .lowerThanBaseGasLimit = ethereumError,
-                           let _self = self {
-                            return _self
-                                    .gasDataService
-                                    .gasDataSingle(gasPrice: fallibleGasPrices.data.recommended, transactionData: transactionData)
-                                    .map { gasData in
-                                        gasData.set(price: fallibleGasPrices.data.userDefined)
-                                        return gasData
-                                    }
-                        }
-
-                        return .error(error)
-                    }
-                    .map { EvmFeeModule.Transaction(transactionData: transactionData, gasData: $0) }
+                    
+                }else {
+                    adjustedGasData.set(price: fallibleGasPrices.data.userDefined)
+                    let adjustedTransactionData = EvmFeeModule.Transaction(transactionData: transactionData, gasData: adjustedGasData)
+                    single = Single.just(adjustedTransactionData)
+                }
+            }catch{
+                single = Single.error(EvmFeeModule.GasDataError.insufficientBalance)
+            }
+            
+            single.subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .subscribe(onSuccess: { [weak self] transaction in
+                        self?.syncStatus(transaction: transaction, errors: fallibleGasPrices.errors, warnings: fallibleGasPrices.warnings)
+                    }, onError: { error in
+                        self.status = .failed(error)
+                    })
+                    .disposed(by: disposeBag)
         }
-
-        single.subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                .subscribe(onSuccess: { [weak self] transaction in
-                    self?.syncStatus(transaction: transaction, errors: fallibleGasPrices.errors, warnings: fallibleGasPrices.warnings)
-                }, onError: { error in
-                    self.status = .failed(error)
-                })
-                .disposed(by: disposeBag)
     }
     
     private var evmBalance: BigUInt {

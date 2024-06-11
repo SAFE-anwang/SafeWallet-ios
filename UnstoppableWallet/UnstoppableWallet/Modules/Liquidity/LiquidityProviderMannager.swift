@@ -51,18 +51,20 @@ class LiquidityProviderMannager {
     }
 
     private func provider(dex: LiquidityMainModule.Dex, tokenFrom: MarketKit.Token? = nil) -> ILiquidityProvider? {
-        let state = dataSourceProvider?.swapState ?? LiquidityMainModule.DataSourceState(tokenFrom: tokenFrom)
+        let state: LiquidityMainModule.DataSourceState
+        if let provider  = dataSourceProvider {
+            state = provider.swapState
+        }else {
+            state = LiquidityMainModule.DataSourceState(tokenFrom: tokenFrom)
+        }
+        
+//        let state = dataSourceProvider?.swapState ?? LiquidityMainModule.DataSourceState(tokenFrom: tokenFrom)
 
         switch dex.provider {
         case .uniswap, .pancake:
-            return PancakeLiquidityModule(dex: dex, dataSourceState: state)
-//        case .uniswapV3:
-//            return UniswapV3Module(dex: dex, dataSourceState: state, dexType: .uniswap)
-//        case .pancakeV3:
-//            return UniswapV3Module(dex: dex, dataSourceState: state, dexType: .pancakeSwap)
-//        case .oneInch:
-//            return OneInchModule(dex: dex, dataSourceState: state)
-//        case .safeSwap:
+            return LiquidityModule(dex: dex, dataSourceState: state)
+        case .uniswapV3, .pancakeV3:
+            return LiquidityV3Module(dex: dex, dataSourceState: state)
         default: return nil
         }
     }
@@ -71,7 +73,8 @@ class LiquidityProviderMannager {
 
 extension LiquidityProviderMannager: ILiquidityDexManager {
 
-    func set(provider: LiquidityMainModule.Dex.Provider) {
+
+    func set(provider: SwapModule.Dex.Provider) {
         guard provider != dex?.provider else {
             return
         }
@@ -94,7 +97,6 @@ extension LiquidityProviderMannager: ILiquidityDexManager {
     var dexUpdated: Signal<()> {
         dexUpdatedRelay.asSignal()
     }
-
 }
 
 extension LiquidityProviderMannager: ILiquidityDataSourceManager {

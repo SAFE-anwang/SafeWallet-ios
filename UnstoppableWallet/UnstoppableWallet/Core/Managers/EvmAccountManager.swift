@@ -127,6 +127,44 @@ class EvmAccountManager {
                         }
                     }
                 }
+            case let decoration as LiquidityDecoration:
+                if decoration.internalTransactions.contains(where: { $0.to == address }) {
+                    foundTokens.insert(FoundToken(tokenType: .native))
+                }
+
+                for eventInstance in decoration.eventInstances {
+                    guard let transferEventInstance = eventInstance as? TransferEventInstance else {
+                        continue
+                    }
+
+                    if transferEventInstance.to == address {
+                        let tokenType: TokenType = .eip20(address: transferEventInstance.contractAddress.hex)
+                        if let fromAddress = decoration.recipient, fromAddress == address {
+                            foundTokens.insert(FoundToken(tokenType: tokenType, tokenInfo: transferEventInstance.tokenInfo))
+                        } else {
+                            suspiciousTokenTypes.insert(tokenType)
+                        }
+                    }
+                }
+            case let decoration as LiquidityV3Decoration:
+                if decoration.internalTransactions.contains(where: { $0.to == address }) {
+                    foundTokens.insert(FoundToken(tokenType: .native))
+                }
+
+                for eventInstance in decoration.eventInstances {
+                    guard let transferEventInstance = eventInstance as? TransferEventInstance else {
+                        continue
+                    }
+
+                    if transferEventInstance.to == address {
+                        let tokenType: TokenType = .eip20(address: transferEventInstance.contractAddress.hex)
+                        if let fromAddress = decoration.recipient, fromAddress == address {
+                            foundTokens.insert(FoundToken(tokenType: tokenType, tokenInfo: transferEventInstance.tokenInfo))
+                        } else {
+                            suspiciousTokenTypes.insert(tokenType)
+                        }
+                    }
+                }
 
             default: ()
             }

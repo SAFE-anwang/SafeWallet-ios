@@ -24,8 +24,8 @@ struct SendEvmData {
         case uniswap(info: SwapInfo)
         case oneInchSwap(info: OneInchSwapInfo)
         case safeSwap(info: SwapInfo)
-        case pancakeLiquidity(info: PancakeLiquidityInfo)
-        
+        case liquidity(info: LiquidityInfo)
+        case v3Liquidity(info: LiquidityInfo)
         var dAppInfo: DAppInfo? {
             if case let .otherDApp(info) = self { return info } else { return nil }
         }
@@ -46,8 +46,12 @@ struct SendEvmData {
             if case .safeSwap(let info) = self { return info } else { return nil }
         }
         
-        var pancakeLiquidityInfo: PancakeLiquidityInfo? {
-            if case .pancakeLiquidity(let info) = self { return info } else { return nil }
+        var liquidityInfo: LiquidityInfo? {
+            if case .liquidity(let info) = self { return info } else { return nil }
+        }
+        
+        var liquidityV3Info: LiquidityInfo? {
+            if case .v3Liquidity(let info) = self { return info } else { return nil }
         }
     }
 
@@ -86,19 +90,16 @@ struct SendEvmData {
         let recipient: Address?
     }
     
-
-    
-    struct PancakeLiquidityInfo {
+    struct LiquidityInfo {
         let estimatedOut: Decimal
         let estimatedIn: Decimal
         let slippage: String?
         let deadline: String?
         let recipientDomain: String?
         let price: String?
-        let priceImpact: PancakeLiquidityModule.PriceImpactViewItem?
+        let priceImpact: LiquidityModule.PriceImpactViewItem?
         let gasPrice: Decimal?
     }
-
 }
 
 enum SendEvmConfirmationModule {

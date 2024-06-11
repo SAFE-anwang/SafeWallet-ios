@@ -382,6 +382,47 @@ extension EvmTransactionConverter {
                         transferEvents(outgoingEip721Transfers: outgoingEip721Transfers) + transferEvents(outgoingEip1155Transfers: outgoingEip1155Transfers)
                 )
             }
+            
+        case let decoration as LiquidityV3Decoration:
+            let address = evmKit.address
+
+            let internalTransactions = decoration.internalTransactions.filter { $0.to == address }
+
+            let eip20Transfers = decoration.eventInstances.compactMap { $0 as? TransferEventInstance }
+            let incomingEip20Transfers = eip20Transfers.filter { $0.to == address && $0.from != address }
+            let outgoingEip20Transfers = eip20Transfers.filter { $0.from == address }
+
+            let eip721Transfers = decoration.eventInstances.compactMap { $0 as? Eip721TransferEventInstance }
+            let incomingEip721Transfers = eip721Transfers.filter { $0.to == address && $0.from != address }
+            let outgoingEip721Transfers = eip721Transfers.filter { $0.from == address }
+
+            let eip1155Transfers = decoration.eventInstances.compactMap { $0 as? Eip1155TransferEventInstance }
+            let incomingEip1155Transfers = eip1155Transfers.filter { $0.to == address && $0.from != address }
+            let outgoingEip1155Transfers = eip1155Transfers.filter { $0.from == address }
+
+            if transaction.from == address, let contractAddress = transaction.to, let value = transaction.value {
+                return ContractCallTransactionRecord(
+                    source: source,
+                    transaction: transaction,
+                    baseToken: baseToken,
+                    contractAddress: contractAddress.eip55,
+                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                    incomingEvents: transferEvents(internalTransactions: internalTransactions) + transferEvents(incomingEip20Transfers: incomingEip20Transfers) +
+                        transferEvents(incomingEip721Transfers: incomingEip721Transfers) + transferEvents(incomingEip1155Transfers: incomingEip1155Transfers),
+                    outgoingEvents: transferEvents(contractAddress: contractAddress, value: value) + transferEvents(outgoingEip20Transfers: outgoingEip20Transfers) +
+                        transferEvents(outgoingEip721Transfers: outgoingEip721Transfers) + transferEvents(outgoingEip1155Transfers: outgoingEip1155Transfers)
+                )
+            } else if transaction.from != address, transaction.to != address {
+                return ExternalContractCallTransactionRecord(
+                    source: source,
+                    transaction: transaction,
+                    baseToken: baseToken,
+                    incomingEvents: transferEvents(internalTransactions: internalTransactions) + transferEvents(incomingEip20Transfers: incomingEip20Transfers) +
+                        transferEvents(incomingEip721Transfers: incomingEip721Transfers) + transferEvents(incomingEip1155Transfers: incomingEip1155Transfers),
+                    outgoingEvents: transferEvents(outgoingEip20Transfers: outgoingEip20Transfers) +
+                        transferEvents(outgoingEip721Transfers: outgoingEip721Transfers) + transferEvents(outgoingEip1155Transfers: outgoingEip1155Transfers)
+                )
+            }
 
         default: ()
         }

@@ -199,7 +199,6 @@ class AddLiquidityTransactionViewModel {
             return additionalInfo?.oneInchSwapInfo.map { oneInchItems(oneInchSwapInfo: $0) }
             
         case let decoration as LiquidityDecoration:
-            
             return  addLiquidityItems(
                      amountInA: decoration.amountInA,
                      amountInB: decoration.amountInB,
@@ -207,8 +206,18 @@ class AddLiquidityTransactionViewModel {
                      tokenInB: decoration.tokenInB,
                      recipient: decoration.recipient,
                      deadline: decoration.deadline,
-                     swapInfo: additionalInfo?.pancakeLiquidityInfo,
+                     swapInfo: additionalInfo?.liquidityInfo,
                      nonce: nonce
+            )
+            
+        case let decoration as LiquidityV3Decoration:
+            return addV3LiquidityItems(tokenId: decoration.tokenId,
+                                       amount0: decoration.amount0,
+                                       amount1: decoration.amount1,
+                                       recipient: decoration.recipient,
+                                       deadline: decoration.deadline,
+                                       swapInfo: additionalInfo?.liquidityV3Info,
+                                       nonce: nonce
             )
         default:
             return nil
@@ -654,8 +663,73 @@ class AddLiquidityTransactionViewModel {
 
         return viewItems
     }
+    private func addV3LiquidityItems(tokenId: BigUInt, amount0: LiquidityV3Decoration.Amount?, amount1: LiquidityV3Decoration.Amount?, recipient: EvmKit.Address?, deadline: BigUInt?, swapInfo: SendEvmData.LiquidityInfo?, nonce: Int?) -> [SectionViewItem]? {
+        var sections = [SectionViewItem]()
+        var inViewItems: [ViewItem] = [
+            .subhead(
+                    iconName: "arrow_medium_2_up_right_24",
+                    title: "send.confirmation.you_send".localized,
+                    value:  "#\(tokenId.description)"
+            )
+        ]
+        sections.append(SectionViewItem(viewItems: inViewItems))
+        
+        var otherViewItems = [ViewItem]()
+
+        if let slippage = swapInfo?.slippage {
+            otherViewItems.append(.value(title: "swap.advanced_settings.slippage".localized, value: slippage, type: .regular))
+        }
+        if let deadline = swapInfo?.deadline {
+            otherViewItems.append(.value(title: "swap.advanced_settings.deadline".localized, value: deadline, type: .regular))
+        }
+
+        if let recipient = recipient {
+            let addressValue = recipient.eip55
+            let addressTitle = swapInfo?.recipientDomain ?? evmLabelManager.addressLabel(address: addressValue)
+            let contactData = contactLabelService.contactData(for: addressValue)
+
+            otherViewItems.append(.address(
+                    title: "swap.advanced_settings.recipient_address".localized,
+                    value: addressValue,
+                    valueTitle: addressTitle,
+                    contactAddress: contactData.contactAddress
+                )
+            )
+            if let contactName = contactData.name {
+                otherViewItems.append(.value(title: "send.confirmation.contact_name".localized, value: contactName, type: .regular))
+            }
+        }
+
+        if let price = swapInfo?.price {
+            otherViewItems.append(.value(title: "swap.price".localized, value: price, type: .regular))
+        }
+        if let priceImpact = swapInfo?.priceImpact {
+            var type: ValueType
+            switch priceImpact.level {
+            case .normal: type = .warning
+            case .warning, .forbidden: type = .alert
+            default: type = .regular
+            }
+
+            otherViewItems.append(.value(title: "swap.price_impact".localized, value: priceImpact.value, type: type))
+        }
+        
+        if case .extremum(let value0) = amount0, case .extremum(let value1) = amount1 {
+//            otherViewItems.append(doubleAmountViewItem(coinService: coinServiceInA, title: "swap.confirmation.maximum_sent".localized, value: value0))
+//            otherViewItems.append(doubleAmountViewItem(coinService: coinServiceInB, title: "swap.confirmation.maximum_sent".localized, value: value1))
+        }
+        
+        if let nonce = nonce {
+            otherViewItems.append(.value(title: "send.confirmation.nonce".localized, value: nonce.description, type: .regular))
+        }
+
+        if !otherViewItems.isEmpty {
+            sections.append(SectionViewItem(viewItems: otherViewItems))
+        }
+        return sections
+    }
     
-    private func addLiquidityItems(amountInA: LiquidityDecoration.Amount, amountInB: LiquidityDecoration.Amount, tokenInA: LiquidityDecoration.Token, tokenInB: LiquidityDecoration.Token, recipient: EvmKit.Address?, deadline: BigUInt?, swapInfo: SendEvmData.PancakeLiquidityInfo?, nonce: Int?) -> [SectionViewItem]? {
+    private func addLiquidityItems(amountInA: LiquidityDecoration.Amount, amountInB: LiquidityDecoration.Amount, tokenInA: LiquidityDecoration.Token, tokenInB: LiquidityDecoration.Token, recipient: EvmKit.Address?, deadline: BigUInt?, swapInfo: SendEvmData.LiquidityInfo?, nonce: Int?) -> [SectionViewItem]? {
         guard let coinServiceInA = coinService(token: tokenInA), let coinServiceInB = coinService(token: tokenInB) else {
             return nil
         }
@@ -685,22 +759,7 @@ class AddLiquidityTransactionViewModel {
         }
 
         sections.append(SectionViewItem(viewItems: inViewItems))
-
-//        var outViewItems: [ViewItem] = [
-//            .subhead(iconName: "arrow_medium_2_down_left_24", title: "swap.you_get".localized, value: coinServiceOut.token.coin.name)
-//        ]
-//
-//        switch amountOut {
-//        case .exact(let value):
-//            outViewItems.append(amountViewItem(coinService: coinServiceOut, value: value, type: .incoming))
-//        case .extremum:
-//            if let estimatedOut = swapInfo?.estimatedOut {
-//                outViewItems.append(estimatedAmountViewItem(coinService: coinServiceOut, value: estimatedOut, type: .incoming))
-//            }
-//        }
-
-//        sections.append(SectionViewItem(viewItems: outViewItems))
-
+        
         var otherViewItems = [ViewItem]()
 
         if let slippage = swapInfo?.slippage {
@@ -744,7 +803,6 @@ class AddLiquidityTransactionViewModel {
         if case .extremum(let valueA) = amountInA, case .extremum(let valueB) = amountInB {
             otherViewItems.append(doubleAmountViewItem(coinService: coinServiceInA, title: "swap.confirmation.maximum_sent".localized, value: valueA))
             otherViewItems.append(doubleAmountViewItem(coinService: coinServiceInB, title: "swap.confirmation.maximum_sent".localized, value: valueB))
-
         }
 //        else if case .extremum(let value) = amountOut {
 //            otherViewItems.append(doubleAmountViewItem(coinService: coinServiceOut, title: "swap.confirmation.minimum_received".localized, value: value))

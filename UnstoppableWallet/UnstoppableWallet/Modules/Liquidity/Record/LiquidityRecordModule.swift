@@ -16,18 +16,26 @@ class LiquidityRecordModule {
         return viewController
     }
     
-    static func subViewController(blockchainType: BlockchainType) -> LiquidityRecordViewController {
-        
+    static func subViewController(dexType: UniswapKit.DexType, blockchainType: BlockchainType) -> LiquidityRecordViewController {
 
-
-        let service = LiquidityRecordService(
+        let v2Service = LiquidityRecordService(
             marketKit: App.shared.marketKit,
             walletManager: App.shared.walletManager,
             adapterManager: App.shared.adapterManager,
             blockchainType: blockchainType
         )
-        let viewModel =  LiquidityRecordViewModel(service: service)
-        let viewController = LiquidityRecordViewController(viewModel: viewModel)
+        
+        let v3Service = LiquidityV3RecordService(
+            dexType: dexType,
+            marketKit: App.shared.marketKit,
+            walletManager: App.shared.walletManager,
+            adapterManager: App.shared.adapterManager,
+            blockchainType: blockchainType
+        )
+        
+        let viewModel =  LiquidityRecordViewModel(service: v2Service)
+        let v3ViewModel =  LiquidityV3RecordViewModel(service: v3Service)
+        let viewController = LiquidityRecordViewController(viewModel: viewModel, v3ViewModel: v3ViewModel)
 
         return viewController
     }
@@ -37,7 +45,6 @@ class LiquidityRecordModule {
         return viewController
     }
     
-
     enum Tab: Int, CaseIterable {
         case bsc
         case eth
@@ -47,6 +54,14 @@ class LiquidityRecordModule {
             case .bsc: return "BSC".localized
             case .eth: return "ETH".localized
             }
+        }
+    }
+    
+    private func dexType(blockchainType: BlockchainType) -> DexType? {
+        switch blockchainType {
+        case .binanceSmartChain: return .pancakeSwap
+        case .ethereum: return .uniswap
+        default: return nil
         }
     }
 }

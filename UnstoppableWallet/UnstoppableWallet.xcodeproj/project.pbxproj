@@ -2744,6 +2744,46 @@
 		ABC9AFFCAC47238A626A97C3 /* MultiSwapRecipientView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9ADCE6C6975672E185951 /* MultiSwapRecipientView.swift */; };
 		ABC9AFFD730AC3274811DA61 /* ContactBookContactViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9A8A353E491AAD3EDA120 /* ContactBookContactViewController.swift */; };
 		ABC9AFFE5C166606FD561A21 /* WCSendEthereumTransactionRequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9A363B3AD4E8759B29FB0 /* WCSendEthereumTransactionRequestService.swift */; };
+		C82347B32C0E046F00D925CC /* LiquidityRecordDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82347B22C0E046F00D925CC /* LiquidityRecordDataSource.swift */; };
+		C82347B42C0E046F00D925CC /* LiquidityRecordDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82347B22C0E046F00D925CC /* LiquidityRecordDataSource.swift */; };
+		C83EA5D42C02522800C9A644 /* LiquidityV3RecordService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5D32C02522800C9A644 /* LiquidityV3RecordService.swift */; };
+		C83EA5D52C02522800C9A644 /* LiquidityV3RecordService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5D32C02522800C9A644 /* LiquidityV3RecordService.swift */; };
+		C83EA5D72C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5D62C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift */; };
+		C83EA5D82C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5D62C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift */; };
+		C83EA5DB2C07380100C9A644 /* LiquidityInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5DA2C07380100C9A644 /* LiquidityInputAccessoryView.swift */; };
+		C83EA5DC2C07380100C9A644 /* LiquidityInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5DA2C07380100C9A644 /* LiquidityInputAccessoryView.swift */; };
+		C83EA5E12C0771DF00C9A644 /* LiquidityV3RecordCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5E02C0771DE00C9A644 /* LiquidityV3RecordCell.swift */; };
+		C83EA5E22C0771DF00C9A644 /* LiquidityV3RecordCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5E02C0771DE00C9A644 /* LiquidityV3RecordCell.swift */; };
+		C83EA5E42C07723200C9A644 /* LiquidityV3RecordDetailHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5E32C07723200C9A644 /* LiquidityV3RecordDetailHeaderView.swift */; };
+		C83EA5E52C07723200C9A644 /* LiquidityV3RecordDetailHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5E32C07723200C9A644 /* LiquidityV3RecordDetailHeaderView.swift */; };
+		C83EA5E72C07886500C9A644 /* LiquidityV3RecordViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5E62C07886500C9A644 /* LiquidityV3RecordViewModel.swift */; };
+		C83EA5E82C07886500C9A644 /* LiquidityV3RecordViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5E62C07886500C9A644 /* LiquidityV3RecordViewModel.swift */; };
+		C83EA5EA2C0792E200C9A644 /* LiquidityRecordSendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5E92C0792E200C9A644 /* LiquidityRecordSendService.swift */; };
+		C83EA5EB2C0792E200C9A644 /* LiquidityRecordSendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5E92C0792E200C9A644 /* LiquidityRecordSendService.swift */; };
+		C83EA5ED2C08400600C9A644 /* LiquiditySliderWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5EC2C08400500C9A644 /* LiquiditySliderWrapper.swift */; };
+		C83EA5EE2C08400600C9A644 /* LiquiditySliderWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5EC2C08400500C9A644 /* LiquiditySliderWrapper.swift */; };
+		C83EA5F22C09D14F00C9A644 /* LiquidityV3RecordDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5F12C09D14F00C9A644 /* LiquidityV3RecordDetailViewController.swift */; };
+		C83EA5F32C09D14F00C9A644 /* LiquidityV3RecordDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5F12C09D14F00C9A644 /* LiquidityV3RecordDetailViewController.swift */; };
+		C83EA5F52C09E15C00C9A644 /* LiquidityV3RecordDetailCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5F42C09E15C00C9A644 /* LiquidityV3RecordDetailCell.swift */; };
+		C83EA5F62C09E15C00C9A644 /* LiquidityV3RecordDetailCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5F42C09E15C00C9A644 /* LiquidityV3RecordDetailCell.swift */; };
+		C87953042BD94CFF00E9315A /* LiquidityV3Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87952FE2BD94CFF00E9315A /* LiquidityV3Service.swift */; };
+		C87953052BD94CFF00E9315A /* LiquidityV3Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87952FE2BD94CFF00E9315A /* LiquidityV3Service.swift */; };
+		C87953062BD94CFF00E9315A /* LiquidityV3Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87952FF2BD94CFF00E9315A /* LiquidityV3Provider.swift */; };
+		C87953072BD94CFF00E9315A /* LiquidityV3Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87952FF2BD94CFF00E9315A /* LiquidityV3Provider.swift */; };
+		C87953082BD94CFF00E9315A /* LiquidityV3TradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953002BD94CFF00E9315A /* LiquidityV3TradeService.swift */; };
+		C87953092BD94CFF00E9315A /* LiquidityV3TradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953002BD94CFF00E9315A /* LiquidityV3TradeService.swift */; };
+		C879530A2BD94CFF00E9315A /* LiquidityV3ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953012BD94CFF00E9315A /* LiquidityV3ViewModel.swift */; };
+		C879530B2BD94CFF00E9315A /* LiquidityV3ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953012BD94CFF00E9315A /* LiquidityV3ViewModel.swift */; };
+		C879530C2BD94CFF00E9315A /* LiquidityV3Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953022BD94CFF00E9315A /* LiquidityV3Module.swift */; };
+		C879530D2BD94CFF00E9315A /* LiquidityV3Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953022BD94CFF00E9315A /* LiquidityV3Module.swift */; };
+		C879530E2BD94CFF00E9315A /* LiquidityV3DataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953032BD94CFF00E9315A /* LiquidityV3DataSource.swift */; };
+		C879530F2BD94CFF00E9315A /* LiquidityV3DataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953032BD94CFF00E9315A /* LiquidityV3DataSource.swift */; };
+		C87953112BDA4DE800E9315A /* LiquidityTickInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953102BDA4DE800E9315A /* LiquidityTickInputCell.swift */; };
+		C87953122BDA4DE800E9315A /* LiquidityTickInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953102BDA4DE800E9315A /* LiquidityTickInputCell.swift */; };
+		C87953152BDA553C00E9315A /* LiquidityTickInputCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953142BDA553C00E9315A /* LiquidityTickInputCardView.swift */; };
+		C87953162BDA553C00E9315A /* LiquidityTickInputCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953142BDA553C00E9315A /* LiquidityTickInputCardView.swift */; };
+		C87953182BDB93DE00E9315A /* LiquidityTickInputCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953172BDB93DE00E9315A /* LiquidityTickInputCardViewModel.swift */; };
+		C87953192BDB93DE00E9315A /* LiquidityTickInputCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87953172BDB93DE00E9315A /* LiquidityTickInputCardViewModel.swift */; };
 		C889AC462BAAAB520077383F /* SafeDropDownListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C889AC452BAAAB520077383F /* SafeDropDownListCell.swift */; };
 		C889AC472BAAAB520077383F /* SafeDropDownListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C889AC452BAAAB520077383F /* SafeDropDownListCell.swift */; };
 		C889AC4A2BAAACB40077383F /* SafeSendTimeLockErrorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C889AC482BAAACB30077383F /* SafeSendTimeLockErrorService.swift */; };
@@ -2878,18 +2918,18 @@
 		C89081002BA9F0E100CCFFA4 /* LiquidityProviderMannager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080972BA9F0E000CCFFA4 /* LiquidityProviderMannager.swift */; };
 		C89081012BA9F0E100CCFFA4 /* LiquidityViewItemHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080992BA9F0E000CCFFA4 /* LiquidityViewItemHelper.swift */; };
 		C89081022BA9F0E100CCFFA4 /* LiquidityViewItemHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080992BA9F0E000CCFFA4 /* LiquidityViewItemHelper.swift */; };
-		C89081032BA9F0E100CCFFA4 /* PancakeLiquidityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809A2BA9F0E000CCFFA4 /* PancakeLiquidityProvider.swift */; };
-		C89081042BA9F0E100CCFFA4 /* PancakeLiquidityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809A2BA9F0E000CCFFA4 /* PancakeLiquidityProvider.swift */; };
-		C89081052BA9F0E100CCFFA4 /* PancakeLiquidityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809B2BA9F0E000CCFFA4 /* PancakeLiquidityService.swift */; };
-		C89081062BA9F0E100CCFFA4 /* PancakeLiquidityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809B2BA9F0E000CCFFA4 /* PancakeLiquidityService.swift */; };
-		C89081072BA9F0E100CCFFA4 /* PancakeLiquidityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809C2BA9F0E000CCFFA4 /* PancakeLiquidityModule.swift */; };
-		C89081082BA9F0E100CCFFA4 /* PancakeLiquidityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809C2BA9F0E000CCFFA4 /* PancakeLiquidityModule.swift */; };
-		C89081092BA9F0E100CCFFA4 /* PancakeLiquidityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809D2BA9F0E000CCFFA4 /* PancakeLiquidityViewModel.swift */; };
-		C890810A2BA9F0E100CCFFA4 /* PancakeLiquidityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809D2BA9F0E000CCFFA4 /* PancakeLiquidityViewModel.swift */; };
-		C890810B2BA9F0E100CCFFA4 /* PancakeLiquidityDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809E2BA9F0E000CCFFA4 /* PancakeLiquidityDataSource.swift */; };
-		C890810C2BA9F0E100CCFFA4 /* PancakeLiquidityDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809E2BA9F0E000CCFFA4 /* PancakeLiquidityDataSource.swift */; };
-		C890810D2BA9F0E100CCFFA4 /* PancakeLiquidityTradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809F2BA9F0E000CCFFA4 /* PancakeLiquidityTradeService.swift */; };
-		C890810E2BA9F0E100CCFFA4 /* PancakeLiquidityTradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809F2BA9F0E000CCFFA4 /* PancakeLiquidityTradeService.swift */; };
+		C89081032BA9F0E100CCFFA4 /* LiquidityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809A2BA9F0E000CCFFA4 /* LiquidityProvider.swift */; };
+		C89081042BA9F0E100CCFFA4 /* LiquidityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809A2BA9F0E000CCFFA4 /* LiquidityProvider.swift */; };
+		C89081052BA9F0E100CCFFA4 /* LiquidityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809B2BA9F0E000CCFFA4 /* LiquidityService.swift */; };
+		C89081062BA9F0E100CCFFA4 /* LiquidityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809B2BA9F0E000CCFFA4 /* LiquidityService.swift */; };
+		C89081072BA9F0E100CCFFA4 /* LiquidityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809C2BA9F0E000CCFFA4 /* LiquidityModule.swift */; };
+		C89081082BA9F0E100CCFFA4 /* LiquidityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809C2BA9F0E000CCFFA4 /* LiquidityModule.swift */; };
+		C89081092BA9F0E100CCFFA4 /* LiquidityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809D2BA9F0E000CCFFA4 /* LiquidityViewModel.swift */; };
+		C890810A2BA9F0E100CCFFA4 /* LiquidityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809D2BA9F0E000CCFFA4 /* LiquidityViewModel.swift */; };
+		C890810B2BA9F0E100CCFFA4 /* LiquidityDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809E2BA9F0E000CCFFA4 /* LiquidityDataSource.swift */; };
+		C890810C2BA9F0E100CCFFA4 /* LiquidityDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809E2BA9F0E000CCFFA4 /* LiquidityDataSource.swift */; };
+		C890810D2BA9F0E100CCFFA4 /* LiquidityTradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809F2BA9F0E000CCFFA4 /* LiquidityTradeService.swift */; };
+		C890810E2BA9F0E100CCFFA4 /* LiquidityTradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890809F2BA9F0E000CCFFA4 /* LiquidityTradeService.swift */; };
 		C890810F2BA9F0E100CCFFA4 /* LiquidityInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080A12BA9F0E000CCFFA4 /* LiquidityInputCell.swift */; };
 		C89081102BA9F0E100CCFFA4 /* LiquidityInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080A12BA9F0E000CCFFA4 /* LiquidityInputCell.swift */; };
 		C89081112BA9F0E100CCFFA4 /* LiquidityCoinCardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080A22BA9F0E000CCFFA4 /* LiquidityCoinCardModule.swift */; };
@@ -2952,6 +2992,8 @@
 		C890814A2BA9F0E100CCFFA4 /* SendSafe2wsafeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C52BA9F0E000CCFFA4 /* SendSafe2wsafeViewController.swift */; };
 		C890814B2BA9F0E100CCFFA4 /* SafeInfoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C62BA9F0E000CCFFA4 /* SafeInfoManager.swift */; };
 		C890814C2BA9F0E100CCFFA4 /* SafeInfoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C62BA9F0E000CCFFA4 /* SafeInfoManager.swift */; };
+		C89C99262BE5E64300942C49 /* LiquidityV3TickService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89C99252BE5E64300942C49 /* LiquidityV3TickService.swift */; };
+		C89C99272BE5E64300942C49 /* LiquidityV3TickService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89C99252BE5E64300942C49 /* LiquidityV3TickService.swift */; };
 		C89CEFAD2BBDB0D100178788 /* BitcoinCore in Frameworks */ = {isa = PBXBuildFile; productRef = C89CEFAC2BBDB0D100178788 /* BitcoinCore */; };
 		C89CEFB02BBDB18E00178788 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89CEFAF2BBDB18E00178788 /* SafeCoinKit */; };
 		C89CEFB32BBDB3AE00178788 /* UniswapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89CEFB22BBDB3AE00178788 /* UniswapKit */; };
@@ -4766,7 +4808,27 @@
 		ABC9AFF7119B9AC0E32B2060 /* SendConfirmationModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendConfirmationModule.swift; sourceTree = "<group>"; };
 		ABC9AFF8093DEB7AFD7DBBCC /* WalletConnectMainPendingRequestService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WalletConnectMainPendingRequestService.swift; sourceTree = "<group>"; };
 		ABC9AFFD435E0C9FBE0E5E7C /* BackupDisclaimerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BackupDisclaimerView.swift; sourceTree = "<group>"; };
+		C82347B22C0E046F00D925CC /* LiquidityRecordDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityRecordDataSource.swift; sourceTree = "<group>"; };
 		C838DFCA2BB54A47006CC668 /* ProductionRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ProductionRelease.entitlements; sourceTree = "<group>"; };
+		C83EA5D32C02522800C9A644 /* LiquidityV3RecordService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3RecordService.swift; sourceTree = "<group>"; };
+		C83EA5D62C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTickInputAccessoryView.swift; sourceTree = "<group>"; };
+		C83EA5DA2C07380100C9A644 /* LiquidityInputAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityInputAccessoryView.swift; sourceTree = "<group>"; };
+		C83EA5E02C0771DE00C9A644 /* LiquidityV3RecordCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3RecordCell.swift; sourceTree = "<group>"; };
+		C83EA5E32C07723200C9A644 /* LiquidityV3RecordDetailHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3RecordDetailHeaderView.swift; sourceTree = "<group>"; };
+		C83EA5E62C07886500C9A644 /* LiquidityV3RecordViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3RecordViewModel.swift; sourceTree = "<group>"; };
+		C83EA5E92C0792E200C9A644 /* LiquidityRecordSendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityRecordSendService.swift; sourceTree = "<group>"; };
+		C83EA5EC2C08400500C9A644 /* LiquiditySliderWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquiditySliderWrapper.swift; sourceTree = "<group>"; };
+		C83EA5F12C09D14F00C9A644 /* LiquidityV3RecordDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3RecordDetailViewController.swift; sourceTree = "<group>"; };
+		C83EA5F42C09E15C00C9A644 /* LiquidityV3RecordDetailCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3RecordDetailCell.swift; sourceTree = "<group>"; };
+		C87952FE2BD94CFF00E9315A /* LiquidityV3Service.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityV3Service.swift; sourceTree = "<group>"; };
+		C87952FF2BD94CFF00E9315A /* LiquidityV3Provider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityV3Provider.swift; sourceTree = "<group>"; };
+		C87953002BD94CFF00E9315A /* LiquidityV3TradeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityV3TradeService.swift; sourceTree = "<group>"; };
+		C87953012BD94CFF00E9315A /* LiquidityV3ViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityV3ViewModel.swift; sourceTree = "<group>"; };
+		C87953022BD94CFF00E9315A /* LiquidityV3Module.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityV3Module.swift; sourceTree = "<group>"; };
+		C87953032BD94CFF00E9315A /* LiquidityV3DataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityV3DataSource.swift; sourceTree = "<group>"; };
+		C87953102BDA4DE800E9315A /* LiquidityTickInputCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTickInputCell.swift; sourceTree = "<group>"; };
+		C87953142BDA553C00E9315A /* LiquidityTickInputCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTickInputCardView.swift; sourceTree = "<group>"; };
+		C87953172BDB93DE00E9315A /* LiquidityTickInputCardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTickInputCardViewModel.swift; sourceTree = "<group>"; };
 		C889AC452BAAAB520077383F /* SafeDropDownListCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafeDropDownListCell.swift; sourceTree = "<group>"; };
 		C889AC482BAAACB30077383F /* SafeSendTimeLockErrorService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafeSendTimeLockErrorService.swift; sourceTree = "<group>"; };
 		C889AC492BAAACB30077383F /* SafeTimeLockDataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafeTimeLockDataSource.swift; sourceTree = "<group>"; };
@@ -4829,12 +4891,12 @@
 		C89080962BA9F0E000CCFFA4 /* LiquidityConfirmationModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityConfirmationModule.swift; sourceTree = "<group>"; };
 		C89080972BA9F0E000CCFFA4 /* LiquidityProviderMannager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityProviderMannager.swift; sourceTree = "<group>"; };
 		C89080992BA9F0E000CCFFA4 /* LiquidityViewItemHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityViewItemHelper.swift; sourceTree = "<group>"; };
-		C890809A2BA9F0E000CCFFA4 /* PancakeLiquidityProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PancakeLiquidityProvider.swift; sourceTree = "<group>"; };
-		C890809B2BA9F0E000CCFFA4 /* PancakeLiquidityService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PancakeLiquidityService.swift; sourceTree = "<group>"; };
-		C890809C2BA9F0E000CCFFA4 /* PancakeLiquidityModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PancakeLiquidityModule.swift; sourceTree = "<group>"; };
-		C890809D2BA9F0E000CCFFA4 /* PancakeLiquidityViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PancakeLiquidityViewModel.swift; sourceTree = "<group>"; };
-		C890809E2BA9F0E000CCFFA4 /* PancakeLiquidityDataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PancakeLiquidityDataSource.swift; sourceTree = "<group>"; };
-		C890809F2BA9F0E000CCFFA4 /* PancakeLiquidityTradeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PancakeLiquidityTradeService.swift; sourceTree = "<group>"; };
+		C890809A2BA9F0E000CCFFA4 /* LiquidityProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityProvider.swift; sourceTree = "<group>"; };
+		C890809B2BA9F0E000CCFFA4 /* LiquidityService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityService.swift; sourceTree = "<group>"; };
+		C890809C2BA9F0E000CCFFA4 /* LiquidityModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityModule.swift; sourceTree = "<group>"; };
+		C890809D2BA9F0E000CCFFA4 /* LiquidityViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityViewModel.swift; sourceTree = "<group>"; };
+		C890809E2BA9F0E000CCFFA4 /* LiquidityDataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityDataSource.swift; sourceTree = "<group>"; };
+		C890809F2BA9F0E000CCFFA4 /* LiquidityTradeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityTradeService.swift; sourceTree = "<group>"; };
 		C89080A12BA9F0E000CCFFA4 /* LiquidityInputCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityInputCell.swift; sourceTree = "<group>"; };
 		C89080A22BA9F0E000CCFFA4 /* LiquidityCoinCardModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityCoinCardModule.swift; sourceTree = "<group>"; };
 		C89080A32BA9F0E000CCFFA4 /* LiquidityInputCardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LiquidityInputCardView.swift; sourceTree = "<group>"; };
@@ -4866,6 +4928,7 @@
 		C89080C42BA9F0E000CCFFA4 /* SendSafeEvmViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendSafeEvmViewController.swift; sourceTree = "<group>"; };
 		C89080C52BA9F0E000CCFFA4 /* SendSafe2wsafeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendSafe2wsafeViewController.swift; sourceTree = "<group>"; };
 		C89080C62BA9F0E000CCFFA4 /* SafeInfoManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafeInfoManager.swift; sourceTree = "<group>"; };
+		C89C99252BE5E64300942C49 /* LiquidityV3TickService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3TickService.swift; sourceTree = "<group>"; };
 		D00267B82A57E6CE00D6B2D5 /* ResendPastInputCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResendPastInputCell.swift; sourceTree = "<group>"; };
 		D00267BB2A57E72700D6B2D5 /* ResendPasteInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResendPasteInputView.swift; sourceTree = "<group>"; };
 		D003297526CD2C67002EC21D /* TransactionLockInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionLockInfo.swift; sourceTree = "<group>"; };
@@ -8865,6 +8928,71 @@
 			path = WalletTokenBalance;
 			sourceTree = "<group>";
 		};
+		C83EA5D92C07362300C9A644 /* V3 */ = {
+			isa = PBXGroup;
+			children = (
+				C83EA5E62C07886500C9A644 /* LiquidityV3RecordViewModel.swift */,
+				C83EA5D32C02522800C9A644 /* LiquidityV3RecordService.swift */,
+				C83EA5E02C0771DE00C9A644 /* LiquidityV3RecordCell.swift */,
+				C83EA5EC2C08400500C9A644 /* LiquiditySliderWrapper.swift */,
+			);
+			path = V3;
+			sourceTree = "<group>";
+		};
+		C83EA5EF2C09C75C00C9A644 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				C89080812BA9F0DF00CCFFA4 /* LiquidityRecordTabViewController.swift */,
+				C89080862BA9F0E000CCFFA4 /* LiquidityRecordTabViewModel.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		C83EA5F02C09C7A900C9A644 /* Confirm */ = {
+			isa = PBXGroup;
+			children = (
+				C83EA5F72C0A26AD00C9A644 /* V3 */,
+				C89080822BA9F0DF00CCFFA4 /* LiquidityRemoveConfirmView.swift */,
+				C89080832BA9F0DF00CCFFA4 /* LiquidityRemoveConfirmViewController.swift */,
+			);
+			path = Confirm;
+			sourceTree = "<group>";
+		};
+		C83EA5F72C0A26AD00C9A644 /* V3 */ = {
+			isa = PBXGroup;
+			children = (
+				C83EA5F12C09D14F00C9A644 /* LiquidityV3RecordDetailViewController.swift */,
+				C83EA5E32C07723200C9A644 /* LiquidityV3RecordDetailHeaderView.swift */,
+				C83EA5F42C09E15C00C9A644 /* LiquidityV3RecordDetailCell.swift */,
+			);
+			path = V3;
+			sourceTree = "<group>";
+		};
+		C87952FD2BD94CFF00E9315A /* V3 */ = {
+			isa = PBXGroup;
+			children = (
+				C87952FE2BD94CFF00E9315A /* LiquidityV3Service.swift */,
+				C87952FF2BD94CFF00E9315A /* LiquidityV3Provider.swift */,
+				C87953002BD94CFF00E9315A /* LiquidityV3TradeService.swift */,
+				C87953012BD94CFF00E9315A /* LiquidityV3ViewModel.swift */,
+				C87953022BD94CFF00E9315A /* LiquidityV3Module.swift */,
+				C87953032BD94CFF00E9315A /* LiquidityV3DataSource.swift */,
+				C89C99252BE5E64300942C49 /* LiquidityV3TickService.swift */,
+			);
+			path = V3;
+			sourceTree = "<group>";
+		};
+		C87953132BDA550800E9315A /* V3 */ = {
+			isa = PBXGroup;
+			children = (
+				C87953102BDA4DE800E9315A /* LiquidityTickInputCell.swift */,
+				C87953142BDA553C00E9315A /* LiquidityTickInputCardView.swift */,
+				C87953172BDB93DE00E9315A /* LiquidityTickInputCardViewModel.swift */,
+				C83EA5D62C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift */,
+			);
+			path = V3;
+			sourceTree = "<group>";
+		};
 		C889AC4E2BAAE0AF0077383F /* FallbackBlock */ = {
 			isa = PBXGroup;
 			children = (
@@ -8925,19 +9053,19 @@
 		C89080762BA9F0DF00CCFFA4 /* Liquidity */ = {
 			isa = PBXGroup;
 			children = (
-				C89080772BA9F0DF00CCFFA4 /* Allowance */,
-				C890807C2BA9F0DF00CCFFA4 /* LiquidityMainModule.swift */,
-				C890807D2BA9F0DF00CCFFA4 /* Fee */,
-				C890807F2BA9F0DF00CCFFA4 /* Record */,
-				C89080892BA9F0E000CCFFA4 /* Util */,
-				C890808F2BA9F0E000CCFFA4 /* CoinSelect */,
-				C89080932BA9F0E000CCFFA4 /* LiquidityMainViewModel.swift */,
-				C89080942BA9F0E000CCFFA4 /* Confirmation */,
-				C89080972BA9F0E000CCFFA4 /* LiquidityProviderMannager.swift */,
 				C89080982BA9F0E000CCFFA4 /* Adapters */,
+				C89080772BA9F0DF00CCFFA4 /* Allowance */,
+				C890808F2BA9F0E000CCFFA4 /* CoinSelect */,
+				C89080942BA9F0E000CCFFA4 /* Confirmation */,
+				C890807D2BA9F0DF00CCFFA4 /* Fee */,
 				C89080A02BA9F0E000CCFFA4 /* InputCard */,
+				C890807C2BA9F0DF00CCFFA4 /* LiquidityMainModule.swift */,
 				C89080A62BA9F0E000CCFFA4 /* LiquidityMainViewController.swift */,
+				C89080932BA9F0E000CCFFA4 /* LiquidityMainViewModel.swift */,
+				C89080972BA9F0E000CCFFA4 /* LiquidityProviderMannager.swift */,
+				C890807F2BA9F0DF00CCFFA4 /* Record */,
 				C89080A72BA9F0E000CCFFA4 /* Send */,
+				C89080892BA9F0E000CCFFA4 /* Util */,
 			);
 			path = Liquidity;
 			sourceTree = "<group>";
@@ -8964,15 +9092,17 @@
 		C890807F2BA9F0DF00CCFFA4 /* Record */ = {
 			isa = PBXGroup;
 			children = (
+				C83EA5F02C09C7A900C9A644 /* Confirm */,
+				C83EA5EF2C09C75C00C9A644 /* Main */,
+				C83EA5D92C07362300C9A644 /* V3 */,
 				C89080802BA9F0DF00CCFFA4 /* LiquidityRecordViewModel.swift */,
-				C89080812BA9F0DF00CCFFA4 /* LiquidityRecordTabViewController.swift */,
-				C89080822BA9F0DF00CCFFA4 /* LiquidityRemoveConfirmView.swift */,
-				C89080832BA9F0DF00CCFFA4 /* LiquidityRemoveConfirmViewController.swift */,
 				C89080842BA9F0DF00CCFFA4 /* LiquidityRecordService.swift */,
 				C89080852BA9F0DF00CCFFA4 /* LiquidityRecordCell.swift */,
-				C89080862BA9F0E000CCFFA4 /* LiquidityRecordTabViewModel.swift */,
 				C89080872BA9F0E000CCFFA4 /* LiquidityRecordViewController.swift */,
 				C89080882BA9F0E000CCFFA4 /* LiquidityRecordModule.swift */,
+				C83EA5E92C0792E200C9A644 /* LiquidityRecordSendService.swift */,
+				C83EA5DA2C07380100C9A644 /* LiquidityInputAccessoryView.swift */,
+				C82347B22C0E046F00D925CC /* LiquidityRecordDataSource.swift */,
 			);
 			path = Record;
 			sourceTree = "<group>";
@@ -9025,13 +9155,14 @@
 		C89080982BA9F0E000CCFFA4 /* Adapters */ = {
 			isa = PBXGroup;
 			children = (
+				C87952FD2BD94CFF00E9315A /* V3 */,
 				C89080992BA9F0E000CCFFA4 /* LiquidityViewItemHelper.swift */,
-				C890809A2BA9F0E000CCFFA4 /* PancakeLiquidityProvider.swift */,
-				C890809B2BA9F0E000CCFFA4 /* PancakeLiquidityService.swift */,
-				C890809C2BA9F0E000CCFFA4 /* PancakeLiquidityModule.swift */,
-				C890809D2BA9F0E000CCFFA4 /* PancakeLiquidityViewModel.swift */,
-				C890809E2BA9F0E000CCFFA4 /* PancakeLiquidityDataSource.swift */,
-				C890809F2BA9F0E000CCFFA4 /* PancakeLiquidityTradeService.swift */,
+				C890809A2BA9F0E000CCFFA4 /* LiquidityProvider.swift */,
+				C890809B2BA9F0E000CCFFA4 /* LiquidityService.swift */,
+				C890809C2BA9F0E000CCFFA4 /* LiquidityModule.swift */,
+				C890809D2BA9F0E000CCFFA4 /* LiquidityViewModel.swift */,
+				C890809E2BA9F0E000CCFFA4 /* LiquidityDataSource.swift */,
+				C890809F2BA9F0E000CCFFA4 /* LiquidityTradeService.swift */,
 			);
 			path = Adapters;
 			sourceTree = "<group>";
@@ -9039,6 +9170,7 @@
 		C89080A02BA9F0E000CCFFA4 /* InputCard */ = {
 			isa = PBXGroup;
 			children = (
+				C87953132BDA550800E9315A /* V3 */,
 				C89080A12BA9F0E000CCFFA4 /* LiquidityInputCell.swift */,
 				C89080A22BA9F0E000CCFFA4 /* LiquidityCoinCardModule.swift */,
 				C89080A32BA9F0E000CCFFA4 /* LiquidityInputCardView.swift */,
@@ -9906,6 +10038,7 @@
 				D36DE0F0272FD89B000BC916 /* SwapSettingsViewController.swift in Sources */,
 				D05F132F2A31FE0D00C3193F /* AddTronTokenBlockchainService.swift in Sources */,
 				11B355B7E336EB3AED69FA38 /* AddressParserFactory.swift in Sources */,
+				C879530D2BD94CFF00E9315A /* LiquidityV3Module.swift in Sources */,
 				11B35D4E566D1F5D24825050 /* FeeRateProviderFactory.swift in Sources */,
 				3AF9F61B253EF555000626A8 /* ZcashTransactionPool.swift in Sources */,
 				D36DE0D0272FD864000BC916 /* UniswapDataSource.swift in Sources */,
@@ -9953,6 +10086,7 @@
 				11B3556C12B91FD86A72A193 /* LitecoinAdapter.swift in Sources */,
 				D3447DEB25E38300009928D9 /* WalletConnectManager.swift in Sources */,
 				11B35854532EEA0AE6AC2010 /* RateAppManager.swift in Sources */,
+				C87953052BD94CFF00E9315A /* LiquidityV3Service.swift in Sources */,
 				C889AC792BAB198F0077383F /* AppearanceModule.swift in Sources */,
 				58AAA393DF93EFFA5047589B /* FeeSlider.swift in Sources */,
 				58AAA1283FC7F83F62FC5961 /* FeeSliderValueView.swift in Sources */,
@@ -10046,6 +10180,7 @@
 				58AAA9053CD38F13CD944E2A /* SwapApproveAmountView.swift in Sources */,
 				58AAAFE644C1B236B9714B47 /* CoinSelectViewModel.swift in Sources */,
 				50701ACF25B041E600EDE51B /* JailbreakTestManager.swift in Sources */,
+				C83EA5E82C07886500C9A644 /* LiquidityV3RecordViewModel.swift in Sources */,
 				D36DE0C4272FD864000BC916 /* UniswapModule.swift in Sources */,
 				D05E968E2A25D6C6002CCD71 /* Trc20Adapter.swift in Sources */,
 				11B355F32686B8689B4EC105 /* WalletConnectRequest.swift in Sources */,
@@ -10072,6 +10207,7 @@
 				11B35B077A52041C9939C6E8 /* FaqCell.swift in Sources */,
 				11B35BF0FDB441A29B9467AF /* CoinSelectService.swift in Sources */,
 				D36DE0CD272FD864000BC916 /* UniswapTradeService.swift in Sources */,
+				C87953162BDA553C00E9315A /* LiquidityTickInputCardView.swift in Sources */,
 				58AAA98A15442365CFE776F3 /* KeyboardAwareViewController.swift in Sources */,
 				D36DE0CA272FD864000BC916 /* UniswapProvider.swift in Sources */,
 				D00267BA2A57E6CE00D6B2D5 /* ResendPastInputCell.swift in Sources */,
@@ -10162,6 +10298,7 @@
 				58AAA500CF271961FF2144E3 /* CoinOverviewViewItemFactory.swift in Sources */,
 				11B35D10A6A15EFA47FCE6D0 /* TextCell.swift in Sources */,
 				6BCD53012A161F4100993F20 /* BackupCloudModule.swift in Sources */,
+				C82347B42C0E046F00D925CC /* LiquidityRecordDataSource.swift in Sources */,
 				D36DE0E8272FD887000BC916 /* OneInchModule.swift in Sources */,
 				D0C226112A66A3BD007101F7 /* PersonalSupportModule.swift in Sources */,
 				58AAA1EC97682F9347B8CA32 /* ChartModule.swift in Sources */,
@@ -10197,6 +10334,7 @@
 				11B35E08C957B79CF373E9FB /* BackupVerifyWordsModule.swift in Sources */,
 				11B35F79E8B3DED443D2825A /* BottomMultiSelectorViewController.swift in Sources */,
 				D02A67C0272A7460009B2C1C /* TweetsProvider.swift in Sources */,
+				C83EA5F32C09D14F00C9A644 /* LiquidityV3RecordDetailViewController.swift in Sources */,
 				11B35E6A50BCA039A62EBEC7 /* ManageWalletsModule.swift in Sources */,
 				11B35DC1BFA21858AA46A1C4 /* ManageWalletsService.swift in Sources */,
 				11B35183F103B22537F9F9DF /* ManageWalletsViewModel.swift in Sources */,
@@ -10272,6 +10410,7 @@
 				C89081162BA9F0E100CCFFA4 /* LiquidityCoinCardViewModel.swift in Sources */,
 				D02A67C9272A7460009B2C1C /* CoinTweetsViewController.swift in Sources */,
 				D36DE0DF272FD887000BC916 /* OneInchViewModel.swift in Sources */,
+				C87953122BDA4DE800E9315A /* LiquidityTickInputCell.swift in Sources */,
 				D02A67C6272A7460009B2C1C /* CoinTweetsViewModel.swift in Sources */,
 				D09200C6293F21720091981A /* RestoreNonStandardViewModel.swift in Sources */,
 				11B35F20127C070137781ED5 /* AddTokenModule.swift in Sources */,
@@ -10282,7 +10421,8 @@
 				D0C2261A2A66A703007101F7 /* PersonalSupportViewModel.swift in Sources */,
 				58AAA52F2D68C5C4397C4D10 /* UniswapSettings.swift in Sources */,
 				58AAA81C7A95558DBD560C90 /* OneInchSettings.swift in Sources */,
-				C89081082BA9F0E100CCFFA4 /* PancakeLiquidityModule.swift in Sources */,
+				C89081082BA9F0E100CCFFA4 /* LiquidityModule.swift in Sources */,
+				C87953072BD94CFF00E9315A /* LiquidityV3Provider.swift in Sources */,
 				6BCD53092A161F4100993F20 /* ICloudBackupNameService.swift in Sources */,
 				58AAA5A70BBDBD3A9D572261 /* OneInchSettingsService.swift in Sources */,
 				58AAA8D086D1DCFADA9A0938 /* OneInchSettingsViewModel.swift in Sources */,
@@ -10307,10 +10447,11 @@
 				2FA5DA8B816A4B089A4F01AF /* BitcoinOutgoingTransactionRecord.swift in Sources */,
 				D0F132A52B6B98F500C7310E /* RbfViewModel.swift in Sources */,
 				2FA5DF5CF3AAC5AC79F18818 /* BitcoinTransactionRecord.swift in Sources */,
+				C83EA5E52C07723200C9A644 /* LiquidityV3RecordDetailHeaderView.swift in Sources */,
 				2FA5DBACDF09BE11FB7C40A7 /* ContractCallTransactionRecord.swift in Sources */,
 				2FA5D6BF7186A35B9A086231 /* ContractCreationTransactionRecord.swift in Sources */,
 				2FA5D4248B5AA0F0EDF131F4 /* EvmTransactionRecord.swift in Sources */,
-				C89081062BA9F0E100CCFFA4 /* PancakeLiquidityService.swift in Sources */,
+				C89081062BA9F0E100CCFFA4 /* LiquidityService.swift in Sources */,
 				2FA5D21790195F1083F7BB21 /* EvmTransactionConverter.swift in Sources */,
 				11B35A4E8657330B03FB2BCF /* SwitchAccountService.swift in Sources */,
 				11B352AE20E447BA1E9E890B /* SwitchAccountViewModel.swift in Sources */,
@@ -10367,7 +10508,7 @@
 				11B35FB28152F8881369DD9D /* AdapterManager.swift in Sources */,
 				11B350388CD7F33B10BD3F4B /* AdapterFactory.swift in Sources */,
 				D02A67D2272A7460009B2C1C /* TweetsPageResponse.swift in Sources */,
-				C89081042BA9F0E100CCFFA4 /* PancakeLiquidityProvider.swift in Sources */,
+				C89081042BA9F0E100CCFFA4 /* LiquidityProvider.swift in Sources */,
 				11B358362F756E91646878D0 /* CoinValue.swift in Sources */,
 				2FA5D7CDF884D2655E066C3E /* TransactionValue.swift in Sources */,
 				58AAA3F0AFD0D0F5FCD24DEF /* SelectorButton.swift in Sources */,
@@ -10496,8 +10637,10 @@
 				ABC9A4801E4964F6AED1E667 /* WalletConnectMainViewModel.swift in Sources */,
 				ABC9A251119A2486465B315E /* WalletConnectService.swift in Sources */,
 				ABC9AB86218564E4873F6428 /* WalletConnectUriHandler.swift in Sources */,
+				C87953092BD94CFF00E9315A /* LiquidityV3TradeService.swift in Sources */,
 				ABC9A9E3191338CD0D1DE8AE /* WalletConnectModule.swift in Sources */,
 				D09D76922A2E0753004311E6 /* SendTronConfirmationViewModel.swift in Sources */,
+				C83EA5F62C09E15C00C9A644 /* LiquidityV3RecordDetailCell.swift in Sources */,
 				C89080C82BA9F0E000CCFFA4 /* MainSafeZoneService.swift in Sources */,
 				ABC9A4566EA1995007490C0D /* SendFeeViewModel.swift in Sources */,
 				ABC9A6C0A45A33C83B632D58 /* SendFeeService.swift in Sources */,
@@ -10579,6 +10722,7 @@
 				11B35E87DDBCD81A36436A13 /* ExternalContractCallTransactionRecord.swift in Sources */,
 				ABC9AB4DF4CCEA2C51DD4AB6 /* SingleLineFormTextView.swift in Sources */,
 				C89081402BA9F0E100CCFFA4 /* LineLockInputService.swift in Sources */,
+				C83EA5D82C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift in Sources */,
 				ABC9ACEE45E455BA098231EE /* SendMemoInputCell.swift in Sources */,
 				ABC9A853E576B02141F75E1C /* SendMemoInputViewModel.swift in Sources */,
 				C89080FC2BA9F0E100CCFFA4 /* LiquidityConfirmationViewController.swift in Sources */,
@@ -10659,6 +10803,7 @@
 				11B359A4F6C0F8A705FDE18E /* Pool.swift in Sources */,
 				11B35E384019FD71D387C9A3 /* NonSpamPoolProvider.swift in Sources */,
 				11B35A81973F6FB70B24AF7A /* PoolProvider.swift in Sources */,
+				C83EA5EB2C0792E200C9A644 /* LiquidityRecordSendService.swift in Sources */,
 				11B3525DD29BC2286526669F /* PoolGroup.swift in Sources */,
 				C889ACAB2BABEC4E0077383F /* MarketDappService.swift in Sources */,
 				11B35AB989198F423D880695 /* PoolGroupFactory.swift in Sources */,
@@ -10935,6 +11080,7 @@
 				ABC9A8FAB37E2049DC58FF14 /* RestoreTypeViewModel.swift in Sources */,
 				ABC9A029AFF2F178AF5AD11B /* RestoreTypeViewController.swift in Sources */,
 				D04DD5422B68C0EF00219B87 /* HighlightedTiltledTextView.swift in Sources */,
+				C83EA5E22C0771DF00C9A644 /* LiquidityV3RecordCell.swift in Sources */,
 				ABC9A3C13073DDFABF8C0679 /* RestoreCloudViewModel.swift in Sources */,
 				ABC9A8A74C527C4E01EBB8A5 /* RestoreCloudModule.swift in Sources */,
 				ABC9A712F6389F5C2B0D63E3 /* RestoreCloudService.swift in Sources */,
@@ -10948,7 +11094,7 @@
 				11B355342F86DF79AE7000B9 /* Cex.swift in Sources */,
 				11B35DAC8D4C5DA2EC6D6E74 /* PasteInputView.swift in Sources */,
 				11B350A24C41C436EA7DC598 /* PasteInputCell.swift in Sources */,
-				C890810C2BA9F0E100CCFFA4 /* PancakeLiquidityDataSource.swift in Sources */,
+				C890810C2BA9F0E100CCFFA4 /* LiquidityDataSource.swift in Sources */,
 				11B354E72D9BDF04E75C8748 /* WalletHeaderCell.swift in Sources */,
 				11B3562D78E70F5F14B81B3A /* CexWithdrawNetwork.swift in Sources */,
 				C89080F62BA9F0E000CCFFA4 /* LiquidityCoinSelectViewController.swift in Sources */,
@@ -10958,6 +11104,7 @@
 				11B350BFC559991F9BA7A63F /* CexAssetRecordStorage.swift in Sources */,
 				C890813A2BA9F0E100CCFFA4 /* LineLockInputCell.swift in Sources */,
 				11B357EE5114E13940C0D631 /* CexAssetResponse.swift in Sources */,
+				C83EA5DC2C07380100C9A644 /* LiquidityInputAccessoryView.swift in Sources */,
 				11B35E163CB471C55269E7EB /* QrCodeCell.swift in Sources */,
 				ABC9AF9D42B60D05030D43F3 /* ChartIndicatorsViewController.swift in Sources */,
 				ABC9ACE255480B2D6E340611 /* ChartIndicatorsService.swift in Sources */,
@@ -10966,6 +11113,7 @@
 				ABC9AD41E7C88963F6512905 /* ChartIndicatorsRepository.swift in Sources */,
 				ABC9ABD7C7746ABF50DD646F /* ChartIndicatorFactory.swift in Sources */,
 				ABC9A54917CDA7F9EAE237C4 /* ChartIndicatorsModule.swift in Sources */,
+				C89C99272BE5E64300942C49 /* LiquidityV3TickService.swift in Sources */,
 				11B3530088E70831A648EC63 /* CexDepositNetworkRaw.swift in Sources */,
 				11B3506409ACA603EE8869A6 /* CexDepositNetwork.swift in Sources */,
 				ABC9A4D5326B3A85888140FE /* ChartIndicatorSettingsViewModel.swift in Sources */,
@@ -10999,6 +11147,7 @@
 				11B357D8164D8CFC8442FC1C /* CexCoinSelectModule.swift in Sources */,
 				11B35150D2CC1B062E098C52 /* CexCoinSelectService.swift in Sources */,
 				11B35D39722C76466D6397F3 /* CexCoinSelectViewModel.swift in Sources */,
+				C87953192BDB93DE00E9315A /* LiquidityTickInputCardViewModel.swift in Sources */,
 				11B3556B4E9B6E54C93205D6 /* CexCoinSelectViewController.swift in Sources */,
 				11B3507F2690EB4A67271333 /* CexWithdrawConfirmService.swift in Sources */,
 				11B35AB1DB6398B5C0ADF32A /* CexWithdrawConfirmModule.swift in Sources */,
@@ -11068,7 +11217,7 @@
 				C89080D22BA9F0E000CCFFA4 /* LiquidityPendingAllowanceService.swift in Sources */,
 				11B3501EA3658BFDC67DEB1F /* ThemeView.swift in Sources */,
 				ABC9A097A0BDD99777D5374D /* DonateDescriptionCell.swift in Sources */,
-				C890810E2BA9F0E100CCFFA4 /* PancakeLiquidityTradeService.swift in Sources */,
+				C890810E2BA9F0E100CCFFA4 /* LiquidityTradeService.swift in Sources */,
 				ABC9A02C18AACAA8CC930665 /* WalletTokenListDataSource.swift in Sources */,
 				ABC9A096B05E5491A40A327C /* DonateDescriptionDataSource.swift in Sources */,
 				ABC9AE9A8BECB2CE0EEF8271 /* DonateAddressViewController.swift in Sources */,
@@ -11123,6 +11272,7 @@
 				11B35E5EFE34BE1A3760F81D /* BiometryManager.swift in Sources */,
 				11B35ED81BCE008EE5A71DE8 /* LockManager.swift in Sources */,
 				11B358EC0A19773B1455CF62 /* LockoutManager.swift in Sources */,
+				C879530B2BD94CFF00E9315A /* LiquidityV3ViewModel.swift in Sources */,
 				11B353C7553F40CEEA28678B /* PasscodeManager.swift in Sources */,
 				11B35353A5C1E254839CD61B /* InteractiveDismiss.swift in Sources */,
 				11B3553AD73FD1179249F277 /* SecondaryButtonStyle.swift in Sources */,
@@ -11197,6 +11347,7 @@
 				11B3558A626C2E58C2656FF6 /* KeychainStorage.swift in Sources */,
 				C889AC602BAAE1000077383F /* SafeCoinPriceStorage.swift in Sources */,
 				11B354908D10B00AF7FF0AA3 /* UserDefaultsStorage.swift in Sources */,
+				C879530F2BD94CFF00E9315A /* LiquidityV3DataSource.swift in Sources */,
 				11B35993ADB991F644E5EE98 /* PasscodeLockState.swift in Sources */,
 				11B35F906F9708CFC86E53FB /* NoPasscodeViewController.swift in Sources */,
 				ABC9A5E5EFF9D46D036F52B9 /* ProposalChain.swift in Sources */,
@@ -11209,10 +11360,12 @@
 				ABC9AEAAB96049FCD4F4F67D /* WCEthereumTransactionHandler.swift in Sources */,
 				ABC9A2E2F6D884CC8444C029 /* WCSignMessageHandler.swift in Sources */,
 				ABC9A6424F39E24F7198B9DF /* WCSignMessagePayload.swift in Sources */,
+				C83EA5D52C02522800C9A644 /* LiquidityV3RecordService.swift in Sources */,
 				ABC9A436F7B4A40DED7F9164 /* WCEthereumTransactionPayload.swift in Sources */,
 				ABC9A4F144A81832F29C1216 /* WCWalletPayload.swift in Sources */,
 				ABC9A60C112A25A070D40C1C /* WCWalletHandler.swift in Sources */,
 				ABC9A784C59999B2F7D2DEAF /* WalletConnectChain.swift in Sources */,
+				C83EA5EE2C08400600C9A644 /* LiquiditySliderWrapper.swift in Sources */,
 				ABC9A48C20CE22D9BAF528F3 /* WalletConnectTransaction.swift in Sources */,
 				ABC9A6904E4DAE4C34EAEAE7 /* WCRequestPayload.swift in Sources */,
 				ABC9AF8BC668A989C34206BE /* AddressAppShowModule.swift in Sources */,
@@ -11284,7 +11437,7 @@
 				11B351581C801BF3A8415DBE /* TonAddressParserItem.swift in Sources */,
 				ABC9AA19453EBE2970EE6AE5 /* ReceiveAddressView.swift in Sources */,
 				ABC9AFBBB0042989EB4592E7 /* AlertView.swift in Sources */,
-				C890810A2BA9F0E100CCFFA4 /* PancakeLiquidityViewModel.swift in Sources */,
+				C890810A2BA9F0E100CCFFA4 /* LiquidityViewModel.swift in Sources */,
 				ABC9A57D1DA5481E44DEE8C0 /* PrimaryCircleButtonStyle.swift in Sources */,
 				ABC9AD8A956680AAC03DE7F1 /* Alert.swift in Sources */,
 				ABC9A22690729B58621A1BBA /* InformedModifier.swift in Sources */,
@@ -11491,6 +11644,7 @@
 				3AF9F61A253EF555000626A8 /* ZcashTransactionPool.swift in Sources */,
 				D05F132E2A31FE0D00C3193F /* AddTronTokenBlockchainService.swift in Sources */,
 				2FA5DD18B3869199E0BEF72A /* KitCleaner.swift in Sources */,
+				C879530C2BD94CFF00E9315A /* LiquidityV3Module.swift in Sources */,
 				D02A67C5272A7460009B2C1C /* CoinTweetsViewModel.swift in Sources */,
 				D36DE0C3272FD864000BC916 /* UniswapModule.swift in Sources */,
 				2FA5DDDD98533BAFCF3819C8 /* TimeInterval.swift in Sources */,
@@ -11538,6 +11692,7 @@
 				D3447DEA25E38300009928D9 /* WalletConnectManager.swift in Sources */,
 				11B35883290BAA462C0B8F9D /* RateAppManager.swift in Sources */,
 				58AAA3A5967BAB513DD4B33F /* FeeSlider.swift in Sources */,
+				C87953042BD94CFF00E9315A /* LiquidityV3Service.swift in Sources */,
 				C889AC782BAB198F0077383F /* AppearanceModule.swift in Sources */,
 				58AAAA534E94A3276B7F7EF2 /* FeeSliderValueView.swift in Sources */,
 				58AAAF3B68B9F64DF20FA5AB /* FeeSliderWrapper.swift in Sources */,
@@ -11631,6 +11786,7 @@
 				58AAACD7A57AA93736CDB54D /* SwapApproveAmountView.swift in Sources */,
 				58AAA29F80AC65D37BD1D289 /* CoinSelectViewModel.swift in Sources */,
 				50701ACE25B041E600EDE51B /* JailbreakTestManager.swift in Sources */,
+				C83EA5E72C07886500C9A644 /* LiquidityV3RecordViewModel.swift in Sources */,
 				D36DE0F6272FD92F000BC916 /* SwapSelectProviderViewController.swift in Sources */,
 				D05E968D2A25D6C6002CCD71 /* Trc20Adapter.swift in Sources */,
 				11B350D6CBB602F510882F1E /* WalletConnectRequest.swift in Sources */,
@@ -11657,6 +11813,7 @@
 				D008CA62267C8DFD00001E0A /* SwapTransactionRecord.swift in Sources */,
 				11B357DD946C13E58E69A0BE /* FaqCell.swift in Sources */,
 				11B358092D442440DAAE8AC0 /* CoinSelectService.swift in Sources */,
+				C87953152BDA553C00E9315A /* LiquidityTickInputCardView.swift in Sources */,
 				58AAA9A289DE179B76AFA99F /* KeyboardAwareViewController.swift in Sources */,
 				D00267B92A57E6CE00D6B2D5 /* ResendPastInputCell.swift in Sources */,
 				D0C226132A66A3DB007101F7 /* PersonalSupportViewController.swift in Sources */,
@@ -11747,6 +11904,7 @@
 				11B35D7420EF4FB9C4DDF0B9 /* BrandFooterView.swift in Sources */,
 				58AAA4F6DE67EE385EA955C6 /* CoinOverviewViewItemFactory.swift in Sources */,
 				6BCD53002A161F4100993F20 /* BackupCloudModule.swift in Sources */,
+				C82347B32C0E046F00D925CC /* LiquidityRecordDataSource.swift in Sources */,
 				D0C226102A66A3BC007101F7 /* PersonalSupportModule.swift in Sources */,
 				11B359A3D67610D8E2E07A0B /* TextCell.swift in Sources */,
 				58AAAB04DD6CB4DBEE62526C /* ChartModule.swift in Sources */,
@@ -11782,6 +11940,7 @@
 				11B354460024FA6EDB8B27DC /* BackupVerifyWordsService.swift in Sources */,
 				11B3508A67A63E5580A177FD /* BackupVerifyWordsViewController.swift in Sources */,
 				11B357F031383D358D4AC864 /* BackupVerifyWordsModule.swift in Sources */,
+				C83EA5F22C09D14F00C9A644 /* LiquidityV3RecordDetailViewController.swift in Sources */,
 				11B3597E4CCEF19A8E4D1222 /* BottomMultiSelectorViewController.swift in Sources */,
 				11B3565070D890657E004402 /* ManageWalletsModule.swift in Sources */,
 				11B35D45BA3D8B9C5E2AE4ED /* ManageWalletsService.swift in Sources */,
@@ -11857,6 +12016,7 @@
 				C89081152BA9F0E100CCFFA4 /* LiquidityCoinCardViewModel.swift in Sources */,
 				D36DE0C0272FD864000BC916 /* UniswapService.swift in Sources */,
 				11B35ED22837284580055F0A /* BalanceData.swift in Sources */,
+				C87953112BDA4DE800E9315A /* LiquidityTickInputCell.swift in Sources */,
 				11B3534B567884E30A871F32 /* AddTokenModule.swift in Sources */,
 				11B35758262A961566ABB87F /* AddBep2TokenBlockchainService.swift in Sources */,
 				58AAADEE16D9605E4FA0390A /* UniswapSettingsViewModel.swift in Sources */,
@@ -11867,7 +12027,8 @@
 				58AAAD97F2A1F00258CF9E00 /* OneInchSettings.swift in Sources */,
 				D0C226192A66A703007101F7 /* PersonalSupportViewModel.swift in Sources */,
 				58AAA126020F429D94D77A76 /* OneInchSettingsService.swift in Sources */,
-				C89081072BA9F0E100CCFFA4 /* PancakeLiquidityModule.swift in Sources */,
+				C89081072BA9F0E100CCFFA4 /* LiquidityModule.swift in Sources */,
+				C87953062BD94CFF00E9315A /* LiquidityV3Provider.swift in Sources */,
 				58AAAB67059E3F289F557860 /* OneInchSettingsViewModel.swift in Sources */,
 				58AAA71839C54D05E04BC2EC /* UniswapSettingsDataSource.swift in Sources */,
 				6BCD53082A161F4100993F20 /* ICloudBackupNameService.swift in Sources */,
@@ -11892,10 +12053,11 @@
 				2FA5D9ACFE04A94BF156FAD6 /* BitcoinTransactionRecord.swift in Sources */,
 				2FA5DA0DBBA1904CEF51F5F2 /* ContractCallTransactionRecord.swift in Sources */,
 				D0F132A42B6B98F500C7310E /* RbfViewModel.swift in Sources */,
+				C83EA5E42C07723200C9A644 /* LiquidityV3RecordDetailHeaderView.swift in Sources */,
 				2FA5D0588EFCA934B4CAC162 /* ContractCreationTransactionRecord.swift in Sources */,
 				2FA5DC0554CE24AE27663585 /* EvmTransactionRecord.swift in Sources */,
 				2FA5DE81BBA97B8B6F30A779 /* EvmTransactionConverter.swift in Sources */,
-				C89081052BA9F0E100CCFFA4 /* PancakeLiquidityService.swift in Sources */,
+				C89081052BA9F0E100CCFFA4 /* LiquidityService.swift in Sources */,
 				11B35286305AB7DA6114F1D0 /* SwitchAccountService.swift in Sources */,
 				11B35FE8D60BFF31C3104484 /* SwitchAccountViewModel.swift in Sources */,
 				11B351AF3AE7DC307974DD6B /* SwitchAccountViewController.swift in Sources */,
@@ -11952,7 +12114,7 @@
 				11B35D80D1A22BA2EB8F31B8 /* WalletStorage.swift in Sources */,
 				11B355A29CDAF16148F1C546 /* CoinManager.swift in Sources */,
 				D36DE0B0272FD689000BC916 /* SwapModule.swift in Sources */,
-				C89081032BA9F0E100CCFFA4 /* PancakeLiquidityProvider.swift in Sources */,
+				C89081032BA9F0E100CCFFA4 /* LiquidityProvider.swift in Sources */,
 				11B3580B9C21B55ACC07B043 /* AdapterManager.swift in Sources */,
 				11B35F25D1209C6DB33ADA55 /* AdapterFactory.swift in Sources */,
 				D02A67D4272A7460009B2C1C /* CoinTweetsService.swift in Sources */,
@@ -12081,8 +12243,10 @@
 				11B35349D234724EE34956A0 /* EvmBlockchainManager.swift in Sources */,
 				ABC9A3613C5477C07F37F48C /* WalletConnectListViewController.swift in Sources */,
 				ABC9A2E71264B12B7FFC3736 /* WalletConnectListService.swift in Sources */,
+				C87953082BD94CFF00E9315A /* LiquidityV3TradeService.swift in Sources */,
 				ABC9A3114AEA853305A33586 /* WalletConnectListModule.swift in Sources */,
 				ABC9A32176DC914BBB4E9BFF /* WalletConnectListViewModel.swift in Sources */,
+				C83EA5F52C09E15C00C9A644 /* LiquidityV3RecordDetailCell.swift in Sources */,
 				C89080C72BA9F0E000CCFFA4 /* MainSafeZoneService.swift in Sources */,
 				ABC9AB0F8FE5808DB889C081 /* WalletConnectScanQrViewModel.swift in Sources */,
 				ABC9A5DB0B5E6D82560A41D8 /* WalletConnectMainModule.swift in Sources */,
@@ -12164,6 +12328,7 @@
 				ABC9A8916A5DFA7A33F4FF79 /* SendBinanceViewController.swift in Sources */,
 				ABC9A67A87DFB11102AB607A /* SendBitcoinFactory.swift in Sources */,
 				C890813F2BA9F0E100CCFFA4 /* LineLockInputService.swift in Sources */,
+				C83EA5D72C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift in Sources */,
 				ABC9AD1C8D0CE88A604D5250 /* SendBinanceFactory.swift in Sources */,
 				ABC9AE014EA06F26956138FA /* SendBinanceFeeWarningViewModel.swift in Sources */,
 				C89080FB2BA9F0E100CCFFA4 /* LiquidityConfirmationViewController.swift in Sources */,
@@ -12244,6 +12409,7 @@
 				11B352E420B3FBCD85612E63 /* TransactionsViewController.swift in Sources */,
 				D09200BC293F21520091981A /* RestoreMnemonicNonStandardViewModel.swift in Sources */,
 				11B35AB0C3F757E23D249330 /* TransactionTypeFilter.swift in Sources */,
+				C83EA5EA2C0792E200C9A644 /* LiquidityRecordSendService.swift in Sources */,
 				11B35A3FD624D80C6D98A1CF /* TransactionSource.swift in Sources */,
 				C889ACAA2BABEC4E0077383F /* MarketDappService.swift in Sources */,
 				11B3515A1106B2AE8509263E /* Pool.swift in Sources */,
@@ -12520,6 +12686,7 @@
 				ABC9AA0E63188150CD9A8D03 /* RestoreTypeViewModel.swift in Sources */,
 				ABC9AB401FD98F99EF6B07C6 /* RestoreTypeViewController.swift in Sources */,
 				ABC9A1EC656488FF79F458EC /* RestoreCloudViewModel.swift in Sources */,
+				C83EA5E12C0771DF00C9A644 /* LiquidityV3RecordCell.swift in Sources */,
 				ABC9A4929EFBFAD0B595A4E8 /* RestoreCloudModule.swift in Sources */,
 				ABC9AFA5222E61F7999E2A88 /* RestoreCloudService.swift in Sources */,
 				D04DD5412B68C0EF00219B87 /* HighlightedTiltledTextView.swift in Sources */,
@@ -12533,7 +12700,7 @@
 				11B351637BF0F83315118A61 /* Cex.swift in Sources */,
 				11B352346D3565C7D6395D21 /* PasteInputView.swift in Sources */,
 				11B3555865BB7F4661A80DE1 /* PasteInputCell.swift in Sources */,
-				C890810B2BA9F0E100CCFFA4 /* PancakeLiquidityDataSource.swift in Sources */,
+				C890810B2BA9F0E100CCFFA4 /* LiquidityDataSource.swift in Sources */,
 				11B358622B30F9ED5B734A94 /* WalletHeaderCell.swift in Sources */,
 				11B3511098C99D7B7D5A492A /* CexWithdrawNetwork.swift in Sources */,
 				C89080F52BA9F0E000CCFFA4 /* LiquidityCoinSelectViewController.swift in Sources */,
@@ -12543,6 +12710,7 @@
 				6B2907212AF0CB8A006157D6 /* WalletConnectAppShowModule.swift in Sources */,
 				C89081392BA9F0E100CCFFA4 /* LineLockInputCell.swift in Sources */,
 				11B35C95EA77972246D5F3BD /* CexAssetRecordStorage.swift in Sources */,
+				C83EA5DB2C07380100C9A644 /* LiquidityInputAccessoryView.swift in Sources */,
 				11B35A5B8DC265D419E69B05 /* CexAssetResponse.swift in Sources */,
 				11B35CA25E02E397E167EEC3 /* QrCodeCell.swift in Sources */,
 				ABC9AE3F4B99ABE949945A3A /* ChartIndicatorsViewController.swift in Sources */,
@@ -12551,6 +12719,7 @@
 				ABC9A47D4666FA5115F98629 /* ChartIndicatorsRepository.swift in Sources */,
 				ABC9A4FF1E1964FB77700C4E /* ChartIndicatorFactory.swift in Sources */,
 				D0118E482B7C9A5200D55CE6 /* ResendBitcoinModule.swift in Sources */,
+				C89C99262BE5E64300942C49 /* LiquidityV3TickService.swift in Sources */,
 				ABC9AA4B0A6C33CAD5F3B050 /* ChartIndicatorsModule.swift in Sources */,
 				11B3516F3365B8FD8C21401F /* CexDepositNetworkRaw.swift in Sources */,
 				11B358B0A260AC250BFE65DE /* CexDepositNetwork.swift in Sources */,
@@ -12584,6 +12753,7 @@
 				11B352980B127688D7EB06C5 /* CexCoinSelectModule.swift in Sources */,
 				11B350FEA2D819F569B0308E /* CexCoinSelectService.swift in Sources */,
 				11B353F6D6B1944AE9EADF3C /* CexCoinSelectViewModel.swift in Sources */,
+				C87953182BDB93DE00E9315A /* LiquidityTickInputCardViewModel.swift in Sources */,
 				11B35BC7BBEFE0AB8D8FE405 /* CexCoinSelectViewController.swift in Sources */,
 				D009290D2B15EB2500C0861C /* ChooseWatchService.swift in Sources */,
 				11B350E3383E4435B0F919D7 /* CexWithdrawConfirmService.swift in Sources */,
@@ -12653,7 +12823,7 @@
 				C89080D12BA9F0E000CCFFA4 /* LiquidityPendingAllowanceService.swift in Sources */,
 				11B35EECB57465598F305C5B /* ListRow.swift in Sources */,
 				11B3538D0F8C037E40623A81 /* Text.swift in Sources */,
-				C890810D2BA9F0E100CCFFA4 /* PancakeLiquidityTradeService.swift in Sources */,
+				C890810D2BA9F0E100CCFFA4 /* LiquidityTradeService.swift in Sources */,
 				11B35503B3E84FEFCDF1AFED /* ThemeView.swift in Sources */,
 				ABC9A005F31836B4EBAB1C97 /* DonateDescriptionCell.swift in Sources */,
 				ABC9AD85EF6798DF4302FD0E /* WalletTokenListDataSource.swift in Sources */,
@@ -12708,6 +12878,7 @@
 				11B3585461729AD144448426 /* NumPadView.swift in Sources */,
 				11B356330572A72E56DC2FEA /* PasscodeView.swift in Sources */,
 				11B3580CD18A931ABAA6C122 /* BiometryType.swift in Sources */,
+				C879530A2BD94CFF00E9315A /* LiquidityV3ViewModel.swift in Sources */,
 				11B350EA36A2113C23047911 /* BiometryManager.swift in Sources */,
 				11B3568483AFF7864F050E0F /* LockManager.swift in Sources */,
 				11B35787F5BA973364784F3B /* LockoutManager.swift in Sources */,
@@ -12782,6 +12953,7 @@
 				11B35082449BDCDAF7CECC3E /* KeychainManager.swift in Sources */,
 				C889AC5F2BAAE1000077383F /* SafeCoinPriceStorage.swift in Sources */,
 				11B35CAD54059FA55DF81972 /* PasscodeLockManager.swift in Sources */,
+				C879530E2BD94CFF00E9315A /* LiquidityV3DataSource.swift in Sources */,
 				11B35051B85C51018A1C7A3A /* KeychainStorage.swift in Sources */,
 				11B35A81895CBF7E86C0C437 /* UserDefaultsStorage.swift in Sources */,
 				11B35259209EA0C688BB2EC9 /* PasscodeLockState.swift in Sources */,
@@ -12794,10 +12966,12 @@
 				ABC9A932AD114A779BF4EC16 /* Eip155RequestFactory.swift in Sources */,
 				ABC9AC5C5D51D703D7867211 /* WalletConnectRequestHandler.swift in Sources */,
 				ABC9AD900F508E6A1FD96662 /* WCEthereumTransactionHandler.swift in Sources */,
+				C83EA5D42C02522800C9A644 /* LiquidityV3RecordService.swift in Sources */,
 				ABC9A8CB0A676BEFF303E78B /* WCSignMessageHandler.swift in Sources */,
 				ABC9A449BE71D70D4A315333 /* WCSignMessagePayload.swift in Sources */,
 				ABC9AB27C7AA17FA3D38D912 /* WCEthereumTransactionPayload.swift in Sources */,
 				ABC9AC2A8C8117EBE76078DE /* WCWalletPayload.swift in Sources */,
+				C83EA5ED2C08400600C9A644 /* LiquiditySliderWrapper.swift in Sources */,
 				ABC9A6F265D51BD94CB43209 /* WCWalletHandler.swift in Sources */,
 				ABC9A41B8484D568EEAD72AE /* WalletConnectChain.swift in Sources */,
 				ABC9A82C93C9E266D1AFD1C3 /* WalletConnectTransaction.swift in Sources */,
@@ -12869,7 +13043,7 @@
 				11B358AFE8EC87CA1DEB4C22 /* SendTonService.swift in Sources */,
 				11B3564E05702B4253453F23 /* SendTonFactory.swift in Sources */,
 				11B3556CAD6FE74AB654E8B2 /* TonAddressParserItem.swift in Sources */,
-				C89081092BA9F0E100CCFFA4 /* PancakeLiquidityViewModel.swift in Sources */,
+				C89081092BA9F0E100CCFFA4 /* LiquidityViewModel.swift in Sources */,
 				ABC9A8787536855069557477 /* ReceiveAddressView.swift in Sources */,
 				ABC9A32EECAEB892927B996D /* AlertView.swift in Sources */,
 				ABC9AD530352E51084B1B4B7 /* PrimaryCircleButtonStyle.swift in Sources */,
@@ -13673,7 +13847,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/UniswapKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.0.0;
+				version = 3.0.1;
 			};
 		};
 		C8F6D4162BB3F44800832A69 /* XCRemoteSwiftPackageReference "DogecoinKit.Swift" */ = {

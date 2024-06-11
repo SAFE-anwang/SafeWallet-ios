@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import BigInt
 import RxSwift
 import RxRelay
@@ -9,11 +10,8 @@ import EvmKit
 import ComponentKit
 
 class LiquidityRecordViewModel {
-    private var viewItemsRelay = BehaviorRelay<[RecordItem]>(value: [])
-    private var loadingRelay = BehaviorRelay<Bool>(value: true)
-    private let syncErrorRelay = BehaviorRelay<Bool>(value: false)
-    private var errorRelay = BehaviorRelay<String?>(value: nil)
-    private var removeStatusRelay = BehaviorRelay<(Bool, String?)>(value: (false, nil))
+//    private var viewItemsRelay = BehaviorRelay<[RecordItem]>(value: [])
+    private var statusRelay = PublishRelay<LiquidityRecordService.State>()
     private let service: LiquidityRecordService
     private var disposeBag = DisposeBag()
 
@@ -21,73 +19,17 @@ class LiquidityRecordViewModel {
         self.service = service
         subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
     }
-    
     private func sync(state: LiquidityRecordService.State) {
-        switch state {
-        case .loading:
-            loadingRelay.accept(true)
-            syncErrorRelay.accept(false)
-            
-        case .completed(let datas):
-            viewItemsRelay.accept(datas)
-            loadingRelay.accept(false)
-            syncErrorRelay.accept(datas.count == 0)
-            
-        case .removeSuccess(let datas):
-            viewItemsRelay.accept(datas)
-            loadingRelay.accept(false)
-            syncErrorRelay.accept(datas.count == 0)
-            removeStatusRelay.accept((true, "liquidity.remove.succ".localized))
-            refresh()
-            
-        case .failed(error: let error):
-            errorRelay.accept(error.localizedDescription)
-            loadingRelay.accept(false)
-            syncErrorRelay.accept(true)
-            
-        case .removeFailed(error: let error, data: let data):
-            if case JsonRpcResponse.ResponseError.rpcError(_) = error {
-                var feeType: String = ""
-                switch data.tokenA.blockchainType {
-                case .binanceSmartChain:
-                    feeType = "BNB"
-                case .ethereum:
-                    feeType = "ETH"
-                default:
-                    feeType = ""
-                }
-                removeStatusRelay.accept((false, "liquidity.remove.error.insufficient".localized(feeType)))
-            }else {
-                removeStatusRelay.accept((false, error.localizedDescription))
-            }
-            loadingRelay.accept(false)
-            syncErrorRelay.accept(false)
-            
-        }
+        statusRelay.accept(state)
     }
 }
 
 extension LiquidityRecordViewModel {
-    var loadingDriver: Driver<Bool> {
-        loadingRelay.asDriver()
-    }
     
-    var syncErrorDriver: Driver<Bool> {
-        syncErrorRelay.asDriver()
+    var statusDriver: Observable<LiquidityRecordService.State> {
+        statusRelay.asObservable()
     }
-    
-    var errorDriver: Driver<String?> {
-        errorRelay.asDriver()
-    }
-    
-    var viewItemsDriver: Driver<[RecordItem]> {
-        viewItemsRelay.asDriver()
-    }
-    
-    var removeStatusDriver: Driver<(Bool, String?)> {
-        removeStatusRelay.asDriver()
-    }
-    
+
     func removeLiquidity(recordItem: RecordItem, ratio: BigUInt) {
         service.removeLiquidity(viewItem: recordItem, ratio: ratio)
     }
@@ -100,15 +42,35 @@ extension LiquidityRecordViewModel {
 extension LiquidityRecordViewModel {
     
     struct RecordItem {
-        let tokenA: MarketKit.Token
-        let tokenB: MarketKit.Token
-        let amountA: Decimal
-        let amountB: Decimal
-        let liquidity: Decimal
-        let shareRate: Decimal
-        let totalSupply: Decimal
+        let poolInfo: LiquidityRecordService.PoolInfo
         let pair: LiquidityPair
-         
+        
+        var tokenA: MarketKit.Token {
+            pair.item0.token
+        }
+        var tokenB: MarketKit.Token {
+            pair.item1.token
+        }
+
+        var amountA: Decimal {
+            Decimal(bigUInt: poolInfo.userToken0Amount, decimals: tokenA.decimals) ?? 0
+        }
+        var amountB: Decimal {
+            Decimal(bigUInt: poolInfo.userToken1Amount, decimals: tokenB.decimals) ?? 0
+        }
+        
+        var liquidity: Decimal {
+            Decimal(bigUInt: poolInfo.balanceOfAccount, decimals: 18) ?? 0
+        }
+        
+        var  shareRate: Decimal {
+            poolInfo.shareRate
+        }
+        
+        var totalSupply: Decimal {
+            Decimal(bigUInt: poolInfo.poolTokenTotalSupply, decimals: 16) ?? 0
+        }
+        
         var amountAStr: String {
             decimalNumberToInt(value: amountA, scale: 8)
         }
@@ -128,3 +90,5 @@ extension LiquidityRecordViewModel {
         }
     }
 }
+
+

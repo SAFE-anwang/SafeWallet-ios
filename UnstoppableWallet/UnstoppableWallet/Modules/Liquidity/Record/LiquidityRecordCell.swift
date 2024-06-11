@@ -12,10 +12,10 @@ class LiquidityRecordCell: UITableViewCell {
     private let liquidityNumLabel = UILabel()
     private let separatorView1 = UIView()
     private let separatorView2 = UIView()
-    private let separatorView3 = UIView()
-    private let sendButton = PrimaryButton()
+//    private let separatorView3 = UIView()
+//    private let sendButton = PrimaryButton()
     
-    private var onTapRemove: ((LiquidityRecordViewModel.RecordItem) -> ())?
+//    private var onTapRemove: ((LiquidityRecordViewModel.RecordItem) -> ())?
     private var viewItem: LiquidityRecordViewModel.RecordItem?
     
     override init(style: CellStyle, reuseIdentifier: String?) {
@@ -32,9 +32,9 @@ class LiquidityRecordCell: UITableViewCell {
         liquidityNumLabel.font = .headline2
         liquidityNumLabel.textColor = .themeLeah
         
-        sendButton.set(style: .yellow)
-        sendButton.setTitle("liquidity.remove".localized, for: .normal)
-        sendButton.addTarget(self, action: #selector(tapRemove), for: .touchUpInside)
+//        sendButton.set(style: .yellow)
+//        sendButton.setTitle("liquidity.remove".localized, for: .normal)
+//        sendButton.addTarget(self, action: #selector(tapRemove), for: .touchUpInside)
         
         cardView.contentView.addSubview(tokenAView)
         tokenAView.snp.makeConstraints { maker in
@@ -74,34 +74,33 @@ class LiquidityRecordCell: UITableViewCell {
             maker.height.equalTo(PairTokenView.height)
         }
 
-        cardView.contentView.addSubview(separatorView3)
-        separatorView3.snp.makeConstraints { maker in
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin12)
-            maker.top.equalTo(liquidityNumLabel.snp.bottom)
-            maker.height.equalTo(CGFloat.heightOneDp)
-        }
-        separatorView3.backgroundColor = .themeSteel20
-        
-        cardView.contentView.addSubview(sendButton)
-        sendButton.snp.makeConstraints { maker in
-            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin12)
-            maker.bottom.equalToSuperview().inset(CGFloat.margin12)
-            maker.height.equalTo(PairTokenView.height)
-        }
+//        cardView.contentView.addSubview(separatorView3)
+//        separatorView3.snp.makeConstraints { maker in
+//            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin12)
+//            maker.top.equalTo(liquidityNumLabel.snp.bottom)
+//            maker.height.equalTo(CGFloat.heightOneDp)
+//        }
+//        separatorView3.backgroundColor = .themeSteel20
+//        
+//        cardView.contentView.addSubview(sendButton)
+//        sendButton.snp.makeConstraints { maker in
+//            maker.leading.trailing.equalToSuperview().inset(CGFloat.margin12)
+//            maker.bottom.equalToSuperview().inset(CGFloat.margin12)
+//            maker.height.equalTo(PairTokenView.height)
+//        }
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("not implemented")
     }
     
-    @objc private func tapRemove() {
-        guard let item = viewItem else { return }
-        onTapRemove?(item)
-    }
+//    @objc private func tapRemove() {
+//        guard let item = viewItem else { return }
+//        onTapRemove?(item)
+//    }
     
-    func bind(viewItem: LiquidityRecordViewModel.RecordItem, onTapRemove: @escaping (LiquidityRecordViewModel.RecordItem) -> ()) {
+    func bind(viewItem: LiquidityRecordViewModel.RecordItem) {
         
-        self.onTapRemove = onTapRemove
         self.viewItem = viewItem
         tokenAView.bind(iconUrl: viewItem.tokenA.coin.imageUrl,
                         name: viewItem.tokenA.coin.code,
@@ -122,9 +121,9 @@ class LiquidityRecordCell: UITableViewCell {
     static func height() -> CGFloat {
         var height: CGFloat = margins.height
 
-        height += PairTokenView.height * 4 + 10
+        height += PairTokenView.height * 3 + 10
         
-        height += CGFloat.heightOneDp * 3
+        height += CGFloat.heightOneDp * 2
         
         return height
     }

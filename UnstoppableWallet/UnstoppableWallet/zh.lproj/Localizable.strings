@@ -1924,6 +1924,24 @@
 "liquidity.remove.error.insufficient" = "手续费%@余额不足";
 "liquidity.empty.description" = "你还没有添加流动性";
 "liquidity.remove.description" = "确定移除流动性吗？";
+"liquidity.tick.price.min" = "最低价格";
+"liquidity.tick.price.max" = "最高价格";
+"liquidity.tick.price.current" = "当前价格";
+"liquidity.tick.price.per" = "/";
+"liquidity.tick.full.range" = "全区间";
+"liquidity.tick.range.error" = "选择的区间范围无效。最低价格必须低于最高价格。";
+"liquidity.tick.range.less.error" = "选择的区间范围无效。最低价格必须低于当前价格";
+"liquidity.tick.range.greater.error" = "选择的区间范围无效。最高价格必须高于当前价格";
+"liquidity.tick.state.inactive" = "区间外";
+"liquidity.tick.state.active" = "区间内";
+"liquidity.tick.min" = "最低";
+"liquidity.tick.max" = "最高";
+"liquidity.remove.rate.title" = "要移除的流动性金额";
+"liquidity.remove.receive.title" = "你将获得";
+"liquidity.remove.pooled" = "资金池中";
+"liquidity.remove.feeEarned" = "已赚取手续费";
+"liquidity.record.error" = "获取流动性失败";
+"liquidity.add.success" = "已添加流动性，正在提交上链";
 
 // Cex Coin Select
 

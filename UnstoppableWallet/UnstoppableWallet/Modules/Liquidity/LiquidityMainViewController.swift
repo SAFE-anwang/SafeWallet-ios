@@ -40,16 +40,13 @@ class LiquidityMainViewController: ThemeViewController {
         navigationItem.largeTitleDisplayMode = .never
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onClose))
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
-        navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()
         }
 
-        if #available(iOS 15.0, *) {
-            tableView.sectionHeaderTopPadding = 0
-        }
+        tableView.sectionHeaderTopPadding = 0
         tableView.separatorStyle = .none
         tableView.backgroundColor = .clear
         tableView.sectionDataSource = self
@@ -120,7 +117,7 @@ class LiquidityMainViewController: ThemeViewController {
     }
 
     @objc func onOpenSelectProvider() {
-//        present(SwapSelectProviderModule.viewController(dexManager: viewModel.dexManager).toBottomSheet, animated: true)
+        present(SwapSelectProviderModule.viewController(dexManager: viewModel.dexManager).toBottomSheet, animated: true)
     }
 
     private func reloadTable() {

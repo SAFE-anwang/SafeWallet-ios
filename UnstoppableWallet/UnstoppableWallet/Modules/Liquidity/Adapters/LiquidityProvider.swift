@@ -3,7 +3,7 @@ import UniswapKit
 import EvmKit
 import MarketKit
 
-class PancakeLiquidityProvider {
+class LiquidityProvider {
     private let swapKit: UniswapKit.Kit
     private let evmKit: EvmKit.Kit
     private let rpcSource: RpcSource
@@ -24,7 +24,7 @@ class PancakeLiquidityProvider {
 
 }
 
-extension PancakeLiquidityProvider {
+extension LiquidityProvider {
 
     var routerAddress: EvmKit.Address {
         try! swapKit.routerAddress(chain: evmKit.chain)
@@ -56,7 +56,7 @@ extension PancakeLiquidityProvider {
 
 }
 
-extension PancakeLiquidityProvider {
+extension LiquidityProvider {
 
     enum TokenError: Error {
         case unsupportedToken

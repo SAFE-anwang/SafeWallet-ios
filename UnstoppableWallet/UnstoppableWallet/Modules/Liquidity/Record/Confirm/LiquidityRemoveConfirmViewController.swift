@@ -16,6 +16,7 @@ class LiquidityRemoveConfirmViewController: ThemeViewController {
     private let spinner = HUDActivityView.create(with: .medium24)
     private let recordItem: LiquidityRecordViewModel.RecordItem
     private let infoView = LiquidityRemoveConfirmView()
+    
     init(viewModel: LiquidityRecordViewModel, recordItem: LiquidityRecordViewModel.RecordItem) {
         self.viewModel = viewModel
         self.recordItem = recordItem
@@ -31,44 +32,58 @@ class LiquidityRemoveConfirmViewController: ThemeViewController {
         
         title = "liquidity.remove".localized
         navigationItem.backBarButtonItem = UIBarButtonItem(title: title, style: .plain, target: nil, action: nil)
-        
+
         view.addSubview(infoView)
         infoView.snp.makeConstraints { maker in
             maker.top.equalTo(view.safeAreaLayoutGuide)
-            maker.leading.trailing.equalToSuperview()
-            
-            maker.height.equalTo(LiquidityRemoveConfirmView.height())
+            maker.leading.trailing.bottom.equalToSuperview()
         }
-        
+                
         view.addSubview(spinner)
         spinner.snp.makeConstraints { maker in
             maker.center.equalToSuperview()
         }
+        spinner.isHidden = true
         spinner.startAnimating()
         
         infoView.bind(viewItem: recordItem) { [weak self] recordItem, ratio in
             self?.removeConfirmation(viewItem: recordItem, ratio: ratio)
         }
-        subscribe(disposeBag, viewModel.loadingDriver) { [weak self] loading in
-            self?.spinner.isHidden = !loading
-        }
         
-        subscribe(disposeBag, viewModel.removeStatusDriver) { [weak self] (status, message) in
-            if let msg = message {
-                self?.show(message: msg)
-            }
-            if status == true {
+        subscribe(disposeBag, viewModel.statusDriver) { [weak self] state in
+            self?.syncState(state: state)
+        }
+    }
+    
+    private func syncState(state: LiquidityRecordService.State) {
+        DispatchQueue.main.async { [weak self] in
+            self?.spinner.isHidden = true
+            switch state {
+            case let .failed(error):
+                self?.show(error: error)
+            case let .removeFailed(error):
+                self?.show(error: error)
+            case .removeSuccess:
+                self?.show(message: "liquidity.remove.succ".localized)
                 self?.navigationController?.popToRootViewController(animated: true)
+            default: ()
             }
         }
     }
     
     private func removeConfirmation(viewItem: LiquidityRecordViewModel.RecordItem, ratio: BigUInt) {
         let viewController = BottomSheetModule.removeLiquidityConfirmation { [weak self] in
+            DispatchQueue.main.async { [weak self] in
+                self?.spinner.isHidden = false
+            }
             self?.viewModel.removeLiquidity(recordItem: viewItem, ratio: ratio)
             self?.dismiss(animated: true)
         }
         present(viewController, animated: true)
+    }
+    
+    private func show(error: String) {
+        HudHelper.instance.show(banner: .error(string: error))
     }
     
     private func show(message: String) {
