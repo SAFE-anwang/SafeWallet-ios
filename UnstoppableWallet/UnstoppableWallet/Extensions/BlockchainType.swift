@@ -24,6 +24,7 @@ extension BlockchainType {
         .tron,
         .ton,
         .safe,
+        .safe4
     ]
 
     func placeholderImageName(tokenProtocol: TokenProtocol?) -> String {
@@ -35,7 +36,7 @@ extension BlockchainType {
     }
 
     var imageUrl: String {
-        if uid == safeCoinUid {
+        if uid == safeCoinUid || uid == safe4CoinUid {
             return "https://anwang.com/img/logos/safe.png"
         }else if uid == dogeCoinUid {
             let scale = Int(UIScreen.main.scale)
@@ -55,6 +56,8 @@ extension BlockchainType {
 
     var order: Int {
         let blockchainTypes: [BlockchainType] = [
+            .safe4,
+            .safe,
             .bitcoin,
             .ethereum,
             .binanceSmartChain,
@@ -178,7 +181,7 @@ extension BlockchainType {
 
     var defaultTokenQuery: TokenQuery {
         switch self {
-        case .bitcoin, .litecoin://, .dogecoin:
+        case .bitcoin, .litecoin:
             return TokenQuery(blockchainType: self, tokenType: .derived(derivation: MnemonicDerivation.default.derivation))
         case .bitcoinCash:
             return TokenQuery(blockchainType: self, tokenType: .addressType(type: BitcoinCashCoinType.default.addressType))

@@ -23,20 +23,29 @@ class SendEvmViewController: ThemeViewController {
     private let recipientCautionCell: RecipientAddressCautionCell
 
     private let buttonCell = PrimaryButtonCell()
-
+    
+    private var safeLockTimeCell: SafeDropDownListCell?
+    private var timeLockViewModel: TimeLockViewModel?
+    
     private var isLoaded = false
     private var keyboardShown = false
 
-    init(evmKitWrapper: EvmKitWrapper, viewModel: SendEvmViewModel, availableBalanceViewModel: ISendAvailableBalanceViewModel, amountViewModel: AmountInputViewModel, recipientViewModel: RecipientAddressViewModel) {
+    init(evmKitWrapper: EvmKitWrapper, viewModel: SendEvmViewModel, availableBalanceViewModel: ISendAvailableBalanceViewModel, amountViewModel: AmountInputViewModel, recipientViewModel: RecipientAddressViewModel, timeLockViewModel: TimeLockViewModel? = nil) {
         self.evmKitWrapper = evmKitWrapper
         self.viewModel = viewModel
-
+        self.timeLockViewModel = timeLockViewModel
+        
         availableBalanceCell = SendAvailableBalanceCell(viewModel: availableBalanceViewModel)
 
         amountCell = AmountInputCell(viewModel: amountViewModel)
 
         recipientCell = RecipientAddressInputCell(viewModel: recipientViewModel)
         recipientCautionCell = RecipientAddressCautionCell(viewModel: recipientViewModel)
+        
+        // timeLock cell
+        if  let timeLockViewModel {
+            safeLockTimeCell = SafeDropDownListCell(viewModel: timeLockViewModel, title: "fee_settings.time_lock".localized)
+        }
 
         super.init()
     }
@@ -95,6 +104,8 @@ class SendEvmViewController: ThemeViewController {
             self?.amountCautionCell.set(caution: caution)
         }
         subscribe(disposeBag, viewModel.proceedSignal) { [weak self] in self?.openConfirm(sendData: $0) }
+        
+        safeLockTimeCell?.showList = { [weak self] in self?.showList() }
 
         tableView.buildSections()
         isLoaded = true
@@ -133,6 +144,16 @@ class SendEvmViewController: ThemeViewController {
             return
         }
         navigationController?.pushViewController(viewController, animated: true)
+    }
+    
+    private func showList() {
+        let alertController: UIViewController = AlertRouter.module(
+                title: "fee_settings.time_lock".localized,
+                viewItems: timeLockViewModel?.itemsList ?? []
+        ) { [weak self] index in
+            self?.timeLockViewModel?.onSelect(index)
+        }
+        present(alertController, animated: true)
     }
 
 }
@@ -196,7 +217,21 @@ extension SendEvmViewController: SectionsDataSource {
                     )
             )
         }
-
+        if let safeLockTimeCell {
+            sections.append(
+                Section(
+                        id: "safe-time-lock",
+                        headerState: .margin(height: .margin12),
+                        rows: [
+                            StaticRow(
+                                    cell: safeLockTimeCell,
+                                    id: "safe-time-lock-cell",
+                                    height: .heightCell56
+                            )
+                        ]
+                )
+            )
+        }
         sections.append(
                 Section(
                         id: "button",

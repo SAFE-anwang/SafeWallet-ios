@@ -99,7 +99,6 @@ class App {
     let appManager: AppManager
 
     let safeInfoManager: SafeInfoManager
-    let safeCoinHistoricalPriceManager: SafeCoinHistoricalPriceManager
     let appEventHandler = EventHandler()
 
     init() throws {
@@ -216,11 +215,7 @@ class App {
 
         feeCoinProvider = FeeCoinProvider(marketKit: marketKit)
         feeRateProviderFactory = FeeRateProviderFactory()
-        
-        let safeCoinPriceProvider = SafeCoinPriceProvider(networkManager: networkManager)
-        let coinHistoricalPriceStorage = try! CoinHistoricalPriceStorage(dbPool: dbPool)
-        safeCoinHistoricalPriceManager = SafeCoinHistoricalPriceManager(storage: coinHistoricalPriceStorage, hsProvider: safeCoinPriceProvider)
-        
+                
         let safeProvider = SafeProvider(networkManager: networkManager)
         safeInfoManager = SafeInfoManager(evmBlockchainManager: evmBlockchainManager, safeProvider: safeProvider)
         safeInfoManager.startNet()

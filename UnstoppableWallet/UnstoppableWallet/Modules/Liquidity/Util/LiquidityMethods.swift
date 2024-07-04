@@ -45,8 +45,13 @@ class GetTotalSupplyMethod: ContractMethod {
     override var arguments: [Any] { [] }
 }
 
-class GetDomainSeparatorMethod: ContractMethod {
+class DomainSeparatorMethod: ContractMethod {
     override var methodSignature: String { "DOMAIN_SEPARATOR()" }
+    override var arguments: [Any] { [] }
+}
+
+class PermitTypeHashMethod: ContractMethod {
+    override var methodSignature: String { "PERMIT_TYPEHASH()" }
     override var arguments: [Any] { [] }
 }
 
@@ -115,4 +120,108 @@ class RemoveLiquidityWithPermitMethod: ContractMethod {
         [tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline, approveMax, v, r, s]
     }
 
+}
+
+class ApproveMethod: ContractMethod {
+    private let to: EvmKit.Address
+    private let tokenId: BigUInt
+    
+    init(to: EvmKit.Address, tokenId: BigUInt) {
+        self.to = to
+        self.tokenId = tokenId
+    }
+
+    override var methodSignature: String {
+        "approve(address,uint256)"
+    }
+
+    override var arguments: [Any] {
+        [to, tokenId]
+    }
+}
+
+class GetApprovedMethod: ContractMethod {
+    private let tokenId: BigUInt
+    
+    init(tokenId: BigUInt) {
+        self.tokenId = tokenId
+    }
+
+    override var methodSignature: String {
+        "getApproved(uint256)"
+    }
+
+    override var arguments: [Any] {
+        [tokenId]
+    }
+}
+
+class ApprovalForAllMethod: ContractMethod {
+    private let `operator`: EvmKit.Address
+    private let approved: BigUInt
+    
+    init(operator: EvmKit.Address, approved: BigUInt) {
+        self.operator = `operator`
+        self.approved = approved
+    }
+
+    override var methodSignature: String {
+        "setApprovalForAll(address,bool)"
+    }
+
+    override var arguments: [Any] {
+        [`operator`, approved]
+    }
+}
+
+class IsApprovalForAllMethod: ContractMethod {
+    private let owner: EvmKit.Address
+    private let `operator`: EvmKit.Address
+    
+    init(owner: EvmKit.Address, operator: EvmKit.Address) {
+        self.owner = owner
+        self.operator = `operator`
+    }
+
+    override var methodSignature: String {
+        "isApprovedForAll(address,address)"
+    }
+
+    override var arguments: [Any] {
+        [owner,`operator`]
+    }
+}
+
+class AllowanceMethod: ContractMethod {
+    private let owner: EvmKit.Address
+    private let spender: EvmKit.Address
+    
+    init(owner: EvmKit.Address, spender: EvmKit.Address) {
+        self.owner = owner
+        self.spender = spender
+    }
+
+    override var methodSignature: String {
+        "allowance(address,address)"
+    }
+
+    override var arguments: [Any] {
+        [owner, spender]
+    }
+}
+
+class OwnerOfMethod: ContractMethod {
+    private let tokenId: BigUInt
+    
+    init(tokenId: BigUInt) {
+        self.tokenId = tokenId
+    }
+
+    override var methodSignature: String {
+        "ownerOf(uint256)"
+    }
+
+    override var arguments: [Any] {
+        [tokenId]
+    }
 }

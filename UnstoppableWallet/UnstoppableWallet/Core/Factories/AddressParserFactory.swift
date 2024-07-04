@@ -83,7 +83,7 @@ enum AddressParserFactory {
             }
 
             return handlers
-        case .ethereum, .gnosis, .fantom, .polygon, .arbitrumOne, .avalanche, .optimism, .binanceSmartChain:
+        case .ethereum, .gnosis, .fantom, .polygon, .arbitrumOne, .avalanche, .optimism, .binanceSmartChain, .safe4:
             let evmAddressParserItem = EvmAddressParser(blockchainType: blockchainType)
 
             var handlers = [IAddressParserItem]()
@@ -121,6 +121,7 @@ enum AddressParserFactory {
         case .ton:
             return [TonAddressParserItem()]
         case .unsupported: return []
+
         }
     }
 

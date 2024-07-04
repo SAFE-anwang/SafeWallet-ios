@@ -31,7 +31,6 @@ enum SendModule {
         case let adapter as ISendTronAdapter:
             return SendTronModule.viewController(token: token, mode: mode, adapter: adapter)
         case let adapter as ISendTonAdapter:
-//            return SendModuleNew.view(adapter: adapter).toViewController()
             return Self.viewController(token: token, mode: mode, adapter: adapter)
         default: return nil
         }

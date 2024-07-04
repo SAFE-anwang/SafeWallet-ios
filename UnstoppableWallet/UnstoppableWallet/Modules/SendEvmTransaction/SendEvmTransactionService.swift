@@ -135,7 +135,8 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
             transactionData: transaction.transactionData,
             gasPrice: transaction.gasData.price,
             gasLimit: transaction.gasData.limit,
-            nonce: transaction.nonce
+            nonce: transaction.nonce,
+            lockDay: sendData.transactionData.lockTime
         )
         .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
         .subscribe(onSuccess: { [weak self] fullTransaction in
@@ -158,6 +159,7 @@ extension SendEvmTransactionService {
         let additionalInfo: SendEvmData.AdditionInfo?
         var decoration: TransactionDecoration?
         let nonce: Int?
+//        let lockTime: Int?
     }
 
     enum SendState {

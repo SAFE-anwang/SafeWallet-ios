@@ -38,6 +38,9 @@ class TransactionInfoService {
         var tokens = [Token?]()
 
         switch transactionRecord {
+        case let tx as Safe4DepositEvmIncomingTransactionRecord: tokens.append(tx.value.token)
+        case let tx as Safe4DepositEvmOutgoingTransactionRecord: tokens.append(tx.value.token)
+        case let tx as Safe4WithdrawTransactionRecord: tokens.append(tx.value.token)
         case let tx as EvmIncomingTransactionRecord: tokens.append(tx.value.token)
         case let tx as EvmOutgoingTransactionRecord: tokens.append(tx.value.token)
         case let tx as SwapTransactionRecord:

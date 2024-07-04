@@ -139,13 +139,13 @@ extension LiquidityV3RecordService {
         let eip20Kit1 = try Eip20Kit.Kit.instance(evmKit: evmKit, contractAddress: token1Address)
         
         let spenderAddress = uniswapKit.nonfungiblePositionAddress(chain: evmKit.chain)
-        let result0 = try await eip20Kit0.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
-        let result1 = try await eip20Kit1.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
+        async let result0 = try eip20Kit0.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
+        async let result1 = try eip20Kit1.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
         
         let (amount0, amount1, _) = try await uniswapKit.getAmountsForLiquidity(positions: item.positions, rpcSource: rpcSource, chain: chain, liquidity: item.positions.liquidity)
         
-        let allowance0 = BigUInt(result0) ?? 0
-        let allowance1 = BigUInt(result1) ?? 0
+        let allowance0 = try await BigUInt(result0) ?? 0
+        let allowance1 = try await BigUInt(result1) ?? 0
         
         if  allowance0 < amount0  {
             try await approve(tokenAddress: token0Address)
@@ -160,24 +160,24 @@ extension LiquidityV3RecordService {
         let evmKit = evmKitWrapper.evmKit
 
         guard let gasPrice = legacyGasPrice else { throw LiquidityV3RecordError.noGasPrice }
-        let nonce = try await evmKitWrapper.evmKit.nonce(defaultBlockParameter: .pending)
+        async let nonce = try evmKitWrapper.evmKit.nonce(defaultBlockParameter: .pending)
         let eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKit, contractAddress: tokenAddress)
         
         let spenderAddress = uniswapKit.nonfungiblePositionAddress(chain: evmKit.chain)
         let maxValue = BigUInt(Data(hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
         let transactionData = eip20Kit.approveTransactionData(spenderAddress: spenderAddress, amount:maxValue)
         
-        let gasLimit = try await evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
+        async let gasLimit = try evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
         let _ = try await evmKitWrapper.send(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
     }
     
     private func send(transactionData: TransactionData) async throws -> Single<FullTransaction> {
         
         guard let gasPrice = legacyGasPrice else { return Single.error( LiquidityV3RecordError.noGasPrice) }
-        let nonce = try await evmKitWrapper.evmKit.nonce(defaultBlockParameter: .pending)
-        let gasLimit = try await evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)// 500000
+        async let nonce = try evmKitWrapper.evmKit.nonce(defaultBlockParameter: .pending)
+        async let gasLimit = try evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)// 500000
     
-        return evmKitWrapper.sendSingle(
+        return try await evmKitWrapper.sendSingle(
                         transactionData: transactionData,
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,

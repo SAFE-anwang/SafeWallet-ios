@@ -198,9 +198,26 @@ extension EvmTransactionConverter {
                 from: decoration.from.eip55,
                 value: baseCoinValue(value: decoration.value, sign: .plus)
             )
+        case let decoration as Safe4DepositIncomingDecoration:
+            return Safe4DepositEvmIncomingTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                from: decoration.from.eip55,
+                value: baseCoinValue(value: decoration.value, sign: .plus)
+            )
 
         case let decoration as OutgoingDecoration:
             return EvmOutgoingTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                to: decoration.to.eip55,
+                value: baseCoinValue(value: decoration.value, sign: .minus),
+                sentToSelf: decoration.sentToSelf
+            )
+        case let decoration as Safe4DepositOutgoingDecoration:
+            return Safe4DepositEvmOutgoingTransactionRecord(
                 source: source,
                 transaction: transaction,
                 baseToken: baseToken,
@@ -300,7 +317,9 @@ extension EvmTransactionConverter {
                 ),
                 sentToSelf: decoration.sentToSelf
             )
-
+        case let decoration as Safe4WithdrawDecoration:
+            return Safe4WithdrawTransactionRecord(source: source, transaction: transaction, baseToken: baseToken, from: decoration.from.eip55, value: baseCoinValue(value: decoration.value, sign: .plus))
+            
         case let decoration as UnknownTransactionDecoration:
             let address = evmKit.address
 

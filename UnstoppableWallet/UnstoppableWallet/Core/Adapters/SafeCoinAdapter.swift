@@ -178,18 +178,19 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
                 let startBlockHeight = checkpoint.block.height
                 
                 guard let lastBlockHeight = safeCoinKit.lastBlockInfo?.height, startBlockHeight <= lastBlockHeight else { return }
+
                 let blocksList = safeCoinKit.bitcoinCore.storage.blocks(from: startBlockHeight, to: lastBlockHeight, ascending: false)
                 if blocksList.count > 0 {
                     safeCoinKit.stop()
                     safeCoinKit.bitcoinCore.stopDownload()
                     try safeCoinKit.bitcoinCore.storage.delete(blocks: blocksList)
-                    if let network = safeCoinKit.safeMainNet {
+                    if let network = self.safeCoinKit.safeMainNet {
                         safeCoinKit.updateLastBlockInfo(network: network, syncMode: .api, fallbackDate: date)
-
                     }
                     safeCoinKit.start()
                 }
             }catch {}
+
         }
     }
 }

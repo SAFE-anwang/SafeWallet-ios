@@ -6,11 +6,11 @@ import ThemeKit
 import UIKit
 
 struct SendEvmData {
-    let transactionData: TransactionData
+    var transactionData: TransactionData
     let additionalInfo: AdditionInfo?
     let warnings: [Warning]
     let errors: [Error]
-
+    
     init(transactionData: TransactionData, additionalInfo: AdditionInfo?, warnings: [Warning], errors: [Error] = []) {
         self.transactionData = transactionData
         self.additionalInfo = additionalInfo

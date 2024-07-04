@@ -1445,6 +1445,7 @@
 "chart.time_duration.halfyear" = "6个月";
 "chart.time_duration.year" = "1年";
 "chart.time_duration.year2" = "2年";
+"chart.time_duration.year5" = "5年";
 "chart.time_duration.all" = "所有";
 
 "chart.market_cap" = "市场价值";

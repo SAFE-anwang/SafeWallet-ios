@@ -8,6 +8,7 @@ import OneInchKit
 import RxRelay
 import RxSwift
 import UniswapKit
+import HsExtensions
 
 class EvmKitManager {
     let chain: Chain
@@ -71,7 +72,7 @@ class EvmKitManager {
         default:
             throw AdapterError.unsupportedAccount
         }
-
+        
         let evmKit = try EvmKit.Kit.instance(
             address: address,
             chain: chain,
@@ -154,36 +155,55 @@ class EvmKitWrapper {
         self.evmKit = evmKit
         self.nftKit = nftKit
         self.signer = signer
+        
+        if evmKit.chain == .SafeFour, let signer {
+            evmKit.withdraw(privateKey: signer.privateKey)
+        }
     }
 
-    func sendSingle(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) -> Single<FullTransaction> {
+    func sendSingle(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, lockDay: Int? = nil) -> Single<FullTransaction> {
         guard let signer else {
             return Single.error(SignerError.signerNotSupported)
         }
+        if let lockDay {
+            return evmKit.safe4RawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, lockDay: lockDay, nonce: nonce)
+                .flatMap { [weak self] rawTransaction in
+                    guard let strongSelf = self else {
+                        return Single.error(AppError.weakReference)
+                    }
 
-        return evmKit.rawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
-            .flatMap { [weak self] rawTransaction in
-                guard let strongSelf = self else {
-                    return Single.error(AppError.weakReference)
+                    do {
+                        let signature = try signer.signature(rawTransaction: rawTransaction)
+                        return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, lockDay: lockDay)
+                    } catch {
+                        return Single.error(error)
+                    }
                 }
+        }else {
+            return evmKit.rawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
+                .flatMap { [weak self] rawTransaction in
+                    guard let strongSelf = self else {
+                        return Single.error(AppError.weakReference)
+                    }
 
-                do {
-                    let signature = try signer.signature(rawTransaction: rawTransaction)
-                    return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature)
-                } catch {
-                    return Single.error(error)
+                    do {
+                        let signature = try signer.signature(rawTransaction: rawTransaction)
+                        return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, lockDay: lockDay)
+                    } catch {
+                        return Single.error(error)
+                    }
                 }
-            }
+        }
     }
 
-    func send(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) async throws -> FullTransaction {
+    func send(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, lockTime: Int? = nil) async throws -> FullTransaction {
         guard let signer else {
             throw SignerError.signerNotSupported
         }
 
         let rawTransaction = try await evmKit.fetchRawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
         let signature = try signer.signature(rawTransaction: rawTransaction)
-        return try await evmKit.send(rawTransaction: rawTransaction, signature: signature)
+        return try await evmKit.send(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey)
     }
 }
 

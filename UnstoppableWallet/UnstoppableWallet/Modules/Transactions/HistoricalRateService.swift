@@ -15,7 +15,7 @@ class HistoricalRateService {
 
     private let rateUpdatedRelay = PublishRelay<(RateKey, CurrencyValue)>()
     private let ratesChangedRelay = PublishRelay<Void>()
-
+    
     private let queue = DispatchQueue(label: "\(AppConfig.label).transactions-historical-rate-service-queue", qos: .userInitiated)
 
     init(marketKit: MarketKit.Kit, currencyManager: CurrencyManager) {
@@ -49,15 +49,8 @@ class HistoricalRateService {
 
     private func fetch(key: RateKey) {
         Task { [weak self, marketKit, currency] in
-            if key.token.coin.code == safeCoinCode {
-                let decimal = try await App.shared.safeCoinHistoricalPriceManager.coinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
-                if let amount = decimal {
-                    self?.handle(key: key, rate: amount)
-                }
-            }else {
-                let rate = try await marketKit.coinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
-                self?.handle(key: key, rate: rate)
-            }
+            let rate = try await marketKit.coinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970)
+            self?.handle(key: key, rate: rate)
         }.store(in: &tasks)
     }
 }
@@ -80,7 +73,6 @@ extension HistoricalRateService {
             guard !key.token.isCustom else {
                 return nil
             }
-
             if let value = marketKit.cachedCoinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970) {
                 let currencyValue = CurrencyValue(currency: currency, value: value)
                 rates[key] = currencyValue

@@ -4,6 +4,8 @@ import RxCocoa
 import SafeCoinKit
 import Checkpoints
 import Combine
+import MarketKit
+
 class FallbackBlockViewModel {
     
     private let disposeBag = DisposeBag()
@@ -27,15 +29,16 @@ class FallbackBlockViewModel {
     
     func fallbackBlock(item: FallbackBlockViewItem) {
         guard let wallet = walletManager.activeWallets.first(where: { $0.token.type == .native && $0.token.coin.uid == safeCoinUid } ) else { return }
-        if let adapter = adapterManager.adapter(for: wallet) as? SafeCoinAdapter {
+        if let adapter = adapterManager.depositAdapter(for: wallet) as? SafeCoinAdapter {
             adapter.fallbackBlock(date: item.date)
-            refreshWallet(wallet)
+//            adapterManager.preloadAdapters()
+//            refreshWallet(wallet)
         }
     }
     
-    func refreshWallet(_ wallet: Wallet) {
-        adapterManager.refresh(wallet: wallet)
-    }
+//    func refreshWallet(_ wallet: Wallet) {
+//        adapterManager.refresh(wallet: wallet)
+//    }
     
 }
 

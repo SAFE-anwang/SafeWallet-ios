@@ -4,6 +4,7 @@ import MarketKit
 
 class EvmBlockchainManager {
     static let blockchainTypes: [BlockchainType] = [
+        .safe4,
         .ethereum,
         .binanceSmartChain,
         .polygon,
@@ -11,7 +12,7 @@ class EvmBlockchainManager {
         .optimism,
         .arbitrumOne,
         .gnosis,
-        .fantom,
+        .fantom
     ]
 
     private let syncSourceManager: EvmSyncSourceManager
@@ -99,6 +100,7 @@ extension EvmBlockchainManager {
         case .arbitrumOne: return .arbitrumOne
         case .gnosis: return .gnosis
         case .fantom: return .fantom
+        case .safe4: return .SafeFour
         default: fatalError("Unsupported blockchain type")
         }
     }

@@ -3,6 +3,7 @@ import Foundation
 import MarketKit
 import RxCocoa
 import RxSwift
+import Hodler
 
 class SendEvmViewModel {
     private let service: SendEvmService
@@ -11,13 +12,16 @@ class SendEvmViewModel {
     private let proceedEnabledRelay = BehaviorRelay<Bool>(value: false)
     private let amountCautionRelay = BehaviorRelay<Caution?>(value: nil)
     private let proceedRelay = PublishRelay<SendEvmData>()
-
-    init(service: SendEvmService) {
+    private let timeLockService: TimeLockService?
+    
+    init(service: SendEvmService, timeLockService: TimeLockService? = nil) {
         self.service = service
-
+        self.timeLockService = timeLockService
+        
         subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
         subscribe(disposeBag, service.amountCautionObservable) { [weak self] in self?.sync(amountCaution: $0) }
-
+        subscribe(disposeBag, timeLockService?.pluginDataObservable) { [weak self] in self?.sync(pluginData: $0) }
+        
         sync(state: service.state)
     }
 
@@ -41,6 +45,15 @@ class SendEvmViewModel {
         }
 
         amountCautionRelay.accept(caution)
+    }
+    
+    private func sync(pluginData: [UInt8: IBitcoinPluginData]) {
+        if let data = pluginData[HodlerPlugin.id] as? HodlerData {
+            let days = data.lockTimeInterval.valueInSeconds / (24 * 60 * 60)
+            service.update(lockTime: days)
+        }else {
+            service.update(lockTime: nil)
+        }
     }
 }
 
@@ -79,7 +92,6 @@ extension SendEvmViewModel {
         guard case let .ready(sendData) = service.state else {
             return
         }
-
         proceedRelay.accept(sendData)
     }
 }

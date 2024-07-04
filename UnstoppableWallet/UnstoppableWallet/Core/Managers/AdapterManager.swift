@@ -175,6 +175,11 @@ extension AdapterManager {
             }
         }
     }
+    
+    func preloadAdapters() {
+        let activeWalletData = walletManager.activeWalletData
+        initAdapters(wallets: activeWalletData.wallets, account: activeWalletData.account)
+    }
 }
 
 extension AdapterManager {

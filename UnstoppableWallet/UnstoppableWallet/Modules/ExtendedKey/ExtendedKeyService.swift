@@ -250,6 +250,7 @@ extension ExtendedKeyService {
         case dogecoin
         case dash
         case safe
+        case safe4
         
         var title: String {
             switch self {
@@ -259,12 +260,13 @@ extension ExtendedKeyService {
             case .dogecoin: return "Doge"
             case .dash: return "Dash"
             case .safe: return "Safe"
+            case .safe4: return "Safe4"
             }
         }
 
         var extendedKeyCoinType: HDExtendedKeyVersion.ExtendedKeyCoinType {
             switch self {
-            case .bitcoin, .bitcoinCash, .dash, .safe: return .bitcoin
+            case .bitcoin, .bitcoinCash, .dash, .safe, .safe4: return .bitcoin
             case .dogecoin, .litecoin: return .litecoin
             }
         }
@@ -277,6 +279,7 @@ extension ExtendedKeyService {
             case .dogecoin: return DogecoinKit.MainNet().coinType
             case .dash: return DashKit.MainNet().coinType
             case .safe: return SafeCoinKit.MainNet().coinType
+            case .safe4: return 60
             }
         }
     }

@@ -128,7 +128,7 @@ class TransactionInfoViewItemFactory {
         }
     }
 
-    private func sendSection(source: TransactionSource, transactionValue: TransactionValue, to: String?, rates: [Coin: CurrencyValue], nftMetadata: [NftUid: NftAssetBriefMetadata] = [:], sentToSelf: Bool = false, balanceHidden: Bool) -> [TransactionInfoModule.ViewItem] {
+    private func sendSection(source: TransactionSource, transactionValue: TransactionValue, to: String?, rates: [Coin: CurrencyValue], nftMetadata: [NftUid: NftAssetBriefMetadata] = [:], sentToSelf: Bool = false, balanceHidden: Bool, input: String? = nil) -> [TransactionInfoModule.ViewItem] {
         let burn = to == zeroAddress
         let subTitle: String
         let amountViewItem: TransactionInfoModule.ViewItem
@@ -166,7 +166,14 @@ class TransactionInfoViewItemFactory {
         if !burn, let to {
             let contactData = contactLabelService.contactData(for: to)
             let valueTitle = contactData.name == nil ? evmLabelManager.addressLabel(address: to) : nil
-            toViewItem = .to(value: to, valueTitle: valueTitle, contactAddress: contactData.contactAddress)
+            
+            let realAddress: String
+            if let input {
+                realAddress = address(input: input.hs.hexData)?.hex ?? to
+            }else {
+                realAddress = to
+            }
+            toViewItem = .to(value: realAddress, valueTitle: valueTitle, contactAddress: contactData.contactAddress)
             contactNameViewItem = contactData.name.flatMap { .contactName(name: $0) }
         }
 
@@ -185,7 +192,7 @@ class TransactionInfoViewItemFactory {
 
         return viewItems.compactMap { $0 }
     }
-
+    
     private func type(value: TransactionValue, condition: Bool = true, _ trueType: AmountType, _ falseType: AmountType? = nil) -> AmountType {
         guard !value.zeroValue else {
             return .neutral
@@ -194,7 +201,7 @@ class TransactionInfoViewItemFactory {
         return condition ? trueType : (falseType ?? trueType)
     }
 
-    private func receiveSection(source: TransactionSource, transactionValue: TransactionValue, from: String?, rates: [Coin: CurrencyValue], nftMetadata: [NftUid: NftAssetBriefMetadata] = [:], balanceHidden: Bool) -> [TransactionInfoModule.ViewItem] {
+    private func receiveSection(source: TransactionSource, transactionValue: TransactionValue, from: String?, rates: [Coin: CurrencyValue], nftMetadata: [NftUid: NftAssetBriefMetadata] = [:], balanceHidden: Bool, input: String? = nil) -> [TransactionInfoModule.ViewItem] {
         let mint = from == zeroAddress
         let subTitle: String
         let amountViewItem: TransactionInfoModule.ViewItem
@@ -233,7 +240,13 @@ class TransactionInfoViewItemFactory {
         if !mint, let from {
             let contactData = contactLabelService.contactData(for: from)
             let valueTitle = contactData.name == nil ? evmLabelManager.addressLabel(address: from) : nil
-            fromViewItem = .from(value: from, valueTitle: valueTitle, contactAddress: contactData.contactAddress)
+            let realAddress: String
+            if let input {
+                realAddress = address(input: input.hs.hexData)?.hex ?? from
+            }else {
+                realAddress = from
+            }
+            fromViewItem = .from(value: realAddress, valueTitle: valueTitle, contactAddress: contactData.contactAddress)
             contactNameViewItem = contactData.name.flatMap { .contactName(name: $0) }
         }
 
@@ -301,10 +314,20 @@ class TransactionInfoViewItemFactory {
             if record.sentToSelf {
                 sections.append([.sentToSelf])
             }
-
+        case let record as Safe4DepositEvmOutgoingTransactionRecord:
+            sections.append(sendSection(source: record.source, transactionValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: record.sentToSelf, balanceHidden: balanceHidden, input: record.transaction.input?.hs.hexString))
+            if record.sentToSelf {
+                sections.append([.sentToSelf])
+            }
         case let record as EvmIncomingTransactionRecord:
             sections.append(receiveSection(source: record.source, transactionValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden))
-
+            
+        case let record as Safe4DepositEvmIncomingTransactionRecord:
+            sections.append(receiveSection(source: record.source, transactionValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden, input: record.transaction.input?.hs.hexString))
+            
+        case let record as Safe4WithdrawTransactionRecord:
+            sections.append(receiveSection(source: record.source, transactionValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden, input: record.transaction.input?.hs.hexString))
+            
         case let record as ApproveTransactionRecord:
             let transactionValue = record.value
             let rate = _rate(transactionValue)
@@ -623,5 +646,15 @@ class TransactionInfoViewItemFactory {
         ])
 
         return sections
+    }
+}
+
+extension  TransactionInfoViewItemFactory {
+    
+    private func address(input: Data?) -> EvmKit.Address? {
+        guard let input, input.count > 32 else { return nil }
+        let parsedArguments = ContractMethodHelper.decodeABI(inputArguments: Data(input.suffix(from: 4)), argumentTypes: [EvmKit.Address.self])
+        let owner = parsedArguments[0] as? EvmKit.Address
+        return owner
     }
 }

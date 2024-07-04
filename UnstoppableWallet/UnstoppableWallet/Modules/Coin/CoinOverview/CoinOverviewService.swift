@@ -120,8 +120,9 @@ extension CoinOverviewService {
 
         Task { [weak self, marketKit, coinUid, currencyManager, languageManager] in
             do {
+                let uid = coinUid.isSafeCoin ? "safe-anwang" : coinUid
                 let info = try await marketKit.marketInfoOverview(
-                    coinUid: coinUid,
+                    coinUid: uid,
                     currencyCode: currencyManager.baseCurrency.code,
                     languageCode: languageManager.currentLanguage,
                     apiTag: ""

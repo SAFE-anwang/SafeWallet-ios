@@ -85,7 +85,8 @@ enum AccountType {
             case (.optimism, .native), (.optimism, .eip20): return true
             case (.tron, .native), (.tron, .eip20): return true
             case (.ton, .native): return true
-            case (.safe, .native): return true
+            case (.safe, .native), (.safe, .eip20): return true
+            case (.safe4, .native): return true
             default: return false
             }
         case let .hdExtendedKey(key):
@@ -107,7 +108,7 @@ enum AccountType {
             }
         case .evmPrivateKey, .evmAddress:
             switch (token.blockchainType, token.type) {
-            case (.ethereum, .native), (.ethereum, .eip20): return true
+            case (.ethereum, .native), (.ethereum, .eip20), (.safe4, .native): return true
             case (.binanceSmartChain, .native), (.binanceSmartChain, .eip20): return true
             case (.polygon, .native), (.polygon, .eip20): return true
             case (.avalanche, .native), (.avalanche, .eip20): return true
@@ -115,8 +116,8 @@ enum AccountType {
             case (.fantom, .native), (.fantom, .eip20): return true
             case (.arbitrumOne, .native), (.arbitrumOne, .eip20): return true
             case (.optimism, .native), (.optimism, .eip20): return true
-            case (.safe, .native): return true
-            case (.dogecoin, .native): return true
+//            case (.safe, .native): return true
+//            case (.dogecoin, .native): return true
             default: return false
             }
         case .tronAddress:

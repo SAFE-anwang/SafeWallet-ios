@@ -57,7 +57,29 @@ public extension Kit {
     func transactionsSingle(tagQueries: [TransactionTagQuery], fromHash: Data? = nil, limit: Int? = nil) -> Single<[FullTransaction]> {
         Single.just(transactions(tagQueries: tagQueries, fromHash: fromHash, limit: limit))
     }
+    
+    func safe4RawTransaction(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, lockDay: Int, nonce: Int? = nil) -> Single<RawTransaction> {
+        Single<RawTransaction>.create { [weak self] observer in
+            guard let strongSelf = self else {
+                observer(.error(DisposedError()))
+                return Disposables.create()
+            }
+            let task = Task {
+                do {
+                    let result = try await strongSelf.safe4LockRawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, lockDay: lockDay, nonce: nonce)
+                    observer(.success(result))
+                } catch {
+                    observer(.error(error))
+                }
+            }
 
+            return Disposables.create {
+                task.cancel()
+            }
+            
+        }
+    }
+    
     func rawTransaction(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) -> Single<RawTransaction> {
         rawTransaction(address: transactionData.to, value: transactionData.value, transactionInput: transactionData.input, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
     }
@@ -106,7 +128,7 @@ public extension Kit {
         }
     }
 
-    func sendSingle(rawTransaction: RawTransaction, signature: Signature) -> Single<FullTransaction> {
+    func sendSingle(rawTransaction: RawTransaction, signature: Signature, privateKey: Data, lockDay: Int? = nil) -> Single<FullTransaction> {
         Single<FullTransaction>.create { [weak self] observer in
             guard let strongSelf = self else {
                 observer(.error(DisposedError()))
@@ -115,7 +137,7 @@ public extension Kit {
 
             let task = Task {
                 do {
-                    let result = try await strongSelf.send(rawTransaction: rawTransaction, signature: signature)
+                    let result = try await strongSelf.send(rawTransaction: rawTransaction, signature: signature, privateKey: privateKey, lockDay: lockDay)
                     observer(.success(result))
                 } catch {
                     observer(.error(error))

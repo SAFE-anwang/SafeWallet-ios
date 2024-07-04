@@ -5,13 +5,14 @@ import RxSwift
 
 class BtcBlockchainManager {
     static let blockchainTypes: [BlockchainType] = [
+        .safe,
         .bitcoin,
         .bitcoinCash,
         .ecash,
         .litecoin,
         .dogecoin,
-        .dash,
-        .safe
+        .dash
+        
     ]
 
     private let marketKit: MarketKit.Kit

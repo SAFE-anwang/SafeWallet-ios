@@ -210,6 +210,7 @@ extension ValueFormatter {
     }
 
     func formatShort(value: Decimal, decimalCount: Int, symbol: String? = nil, showSign: Bool = false) -> String? {
+        let value = value == .nan ? 0: value
         let (transformedValue, digits, suffix, tooSmall) = transformedShort(value: value, maxDigits: decimalCount)
 
         let string: String? = rawFormatterQueue.sync {
@@ -225,6 +226,7 @@ extension ValueFormatter {
     }
 
     func formatFull(value: Decimal, decimalCount: Int, symbol: String? = nil, showSign: Bool = false) -> String? {
+        let value = value == .nan ? 0: value
         let (transformedValue, digits) = transformedFull(value: value, maxDigits: decimalCount, minDigits: min(decimalCount, 4))
 
         let string: String? = rawFormatterQueue.sync {
@@ -248,6 +250,7 @@ extension ValueFormatter {
     }
 
     func formatShort(currency: Currency, value: Decimal, showSign: Bool = false) -> String? {
+        let value = value == .nan ? 0: value
         let (transformedValue, digits, suffix, tooSmall) = transformedShort(value: value)
 
         guard let string = formattedCurrency(value: transformedValue, digits: digits, code: currency.code, symbol: currency.symbol, suffix: suffix) else {
@@ -262,6 +265,7 @@ extension ValueFormatter {
     }
 
     func formatFull(currency: Currency, value: Decimal, showSign: Bool = false) -> String? {
+        let value = value == .nan ? 0: value
         let (transformedValue, digits) = transformedFull(value: value, maxDigits: 18)
 
         guard let string = formattedCurrency(value: transformedValue, digits: digits, code: currency.code, symbol: currency.symbol) else {

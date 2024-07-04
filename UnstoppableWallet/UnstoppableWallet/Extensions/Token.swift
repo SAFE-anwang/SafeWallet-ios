@@ -10,6 +10,7 @@ extension Token {
             switch blockchainType {
             case .ethereum, .binanceSmartChain, .safe, .dogecoin,.tron: return nil
             case .binanceChain: return "BEP2"
+            case .safe4: return "SAFE4 TestNet"
             default: return blockchain.name
             }
         case .eip20:

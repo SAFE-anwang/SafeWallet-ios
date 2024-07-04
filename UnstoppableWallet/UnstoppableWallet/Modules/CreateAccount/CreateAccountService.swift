@@ -35,6 +35,8 @@ class CreateAccountService {
 
     private func activateDefaultWallets(account: Account) throws {
         let tokenQueries = [
+            TokenQuery(blockchainType: .safe4, tokenType: .native),
+            TokenQuery(blockchainType: .safe, tokenType: .native),
             TokenQuery(blockchainType: .bitcoin, tokenType: .derived(derivation: .bip84)), // TODO: make derivation supports accountType
             TokenQuery(blockchainType: .ethereum, tokenType: .native),
             TokenQuery(blockchainType: .binanceSmartChain, tokenType: .native),

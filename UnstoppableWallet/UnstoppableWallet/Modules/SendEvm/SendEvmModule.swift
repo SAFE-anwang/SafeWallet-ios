@@ -33,8 +33,9 @@ enum SendEvmModule {
         switchService.add(toggleAllowedObservable: fiatService.toggleAvailableObservable)
 
         let coinService = CoinService(token: token, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
+        let timeLockService: TimeLockService? = token.coin.uid == safe4CoinUid ? TimeLockService() : nil
 
-        let viewModel = SendEvmViewModel(service: service)
+        let viewModel = SendEvmViewModel(service: service, timeLockService: timeLockService)
         let availableBalanceViewModel = SendAvailableBalanceViewModel(service: service, coinService: coinService, switchService: switchService)
 
         let amountViewModel = AmountInputViewModel(
@@ -46,13 +47,15 @@ enum SendEvmModule {
         addressService.amountPublishService = amountViewModel
 
         let recipientViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
+        let timeLockViewModel = timeLockService != nil ? TimeLockViewModel(service: timeLockService!) : nil
 
         let viewController = SendEvmViewController(
             evmKitWrapper: adapter.evmKitWrapper,
             viewModel: viewModel,
             availableBalanceViewModel: availableBalanceViewModel,
             amountViewModel: amountViewModel,
-            recipientViewModel: recipientViewModel
+            recipientViewModel: recipientViewModel,
+            timeLockViewModel: timeLockViewModel
         )
 
         return viewController

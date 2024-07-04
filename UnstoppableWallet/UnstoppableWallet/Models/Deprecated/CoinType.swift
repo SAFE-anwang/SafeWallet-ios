@@ -5,6 +5,7 @@ public enum CoinType: Decodable {
     case dogecoin
     case dash
     case safe
+    case safe4
     case zcash
     case ethereum
     case binanceSmartChain
@@ -46,6 +47,7 @@ public enum CoinType: Decodable {
         case "dogecoin": self = .dogecoin
         case "dash": self = .dash
         case "safe": self = .safe
+        case "safe4": self = .safe4
         case "zcash": self = .zcash
         case "ethereum": self = .ethereum
         case "binance-smart-chain": self = .binanceSmartChain
@@ -82,6 +84,7 @@ public enum CoinType: Decodable {
         case .dogecoin: return (type: "dogecoin", address: nil, symbol: nil)
         case .dash: return (type: "dash", address: nil, symbol: nil)
         case .safe: return (type: "safe", address: nil, symbol: nil)
+        case .safe4: return (type: "safe4", address: nil, symbol: nil)
         case .zcash: return (type: "zcash", address: nil, symbol: nil)
         case .ethereum: return (type: "ethereum", address: nil, symbol: nil)
         case .binanceSmartChain: return (type: "binance-smart-chain", address: nil, symbol: nil)
@@ -120,6 +123,7 @@ extension CoinType: Equatable {
         case (.dogecoin, .dogecoin): return true
         case (.dash, .dash): return true
         case (.safe, .safe): return true
+        case (.safe4, .safe4): return true
         case (.zcash, .zcash): return true
         case (.ethereum, .ethereum): return true
         case (.binanceSmartChain, .binanceSmartChain): return true
@@ -170,6 +174,7 @@ extension CoinType: Identifiable {
             case "dogecoin": self = .dogecoin
             case "dash": self = .dash
             case "safe-anwang": self = .safe
+            case "safe4-anwang": self = .safe4
             case "zcash": self = .zcash
             case "ethereum": self = .ethereum
             case "binanceSmartChain": self = .binanceSmartChain
@@ -212,6 +217,7 @@ extension CoinType: Identifiable {
         case .dogecoin: return "dogecoin"
         case .dash: return "dash"
         case .safe: return "safe-anwang"
+        case .safe4: return "safe4-anwang"
         case .zcash: return "zcash"
         case .ethereum: return "ethereum"
         case .binanceSmartChain: return "binanceSmartChain"
@@ -250,6 +256,7 @@ extension CoinType: CustomStringConvertible {
         case .dogecoin: return "dogecoin"
         case .dash: return "dash"
         case .safe: return "safe-anwang"
+        case .safe4: return "safe4-anwang"
         case .zcash: return "zcash"
         case .ethereum: return "ethereum"
         case .binanceSmartChain: return "binanceSmartChain"

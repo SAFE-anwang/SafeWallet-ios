@@ -1,6 +1,7 @@
 import ComponentKit
 import MarketKit
 import UIKit
+import EvmKit
 
 class TransactionsViewItemFactory {
     private let evmLabelManager: EvmLabelManager
@@ -185,7 +186,18 @@ class TransactionsViewItemFactory {
             if let currencyValue = item.currencyValue {
                 secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
             }
-
+            
+        case let record as Safe4DepositEvmIncomingTransactionRecord:
+            iconType = singleValueIconType(source: record.source, value: record.value)
+            title = "transactions.receive".localized
+            let address = address(input: record.transaction.input)?.hex ?? record.from
+            subTitle = "transactions.from".localized(mapped(address: address, blockchainType: item.record.source.blockchainType))
+            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .incoming))
+            if let currencyValue = item.currencyValue {
+                secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
+            }
+            locked = true
+            
         case let record as EvmOutgoingTransactionRecord:
             iconType = singleValueIconType(source: record.source, value: record.value, nftMetadata: item.nftMetadata)
             title = "transactions.send".localized
@@ -195,7 +207,28 @@ class TransactionsViewItemFactory {
             secondaryValue = singleValueSecondaryValue(value: record.value, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
 
             sentToSelf = record.sentToSelf
+        case let record as Safe4DepositEvmOutgoingTransactionRecord:
+            iconType = singleValueIconType(source: record.source, value: record.value, nftMetadata: item.nftMetadata)
+            title = "transactions.send".localized
+            let address = address(input: record.transaction.input)?.hex ?? record.to
+            subTitle = "transactions.to".localized(mapped(address: address, blockchainType: item.record.source.blockchainType))
 
+            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, showSign: !record.sentToSelf), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
+            secondaryValue = singleValueSecondaryValue(value: record.value, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
+            
+            sentToSelf = record.sentToSelf
+            locked = true
+            
+        case let record as Safe4WithdrawTransactionRecord:
+            iconType = singleValueIconType(source: record.source, value: record.value)
+            title = "Withdraw"
+            subTitle = "transactions.from".localized(mapped(address: record.from, blockchainType: item.record.source.blockchainType))
+            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .incoming))
+
+            if let currencyValue = item.currencyValue {
+                secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
+            }
+    
         case let record as SwapTransactionRecord:
             iconType = doubleValueIconType(source: record.source, primaryValue: record.valueOut, secondaryValue: record.valueIn)
             title = "transactions.swap".localized
@@ -234,7 +267,6 @@ class TransactionsViewItemFactory {
                     secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
                 }
             }
-
         case let record as ContractCallTransactionRecord:
             let (incomingValues, outgoingValues) = record.combinedValues
 
@@ -479,3 +511,12 @@ class TransactionsViewItemFactory {
         )
     }
 }
+extension TransactionsViewItemFactory {
+    private func address(input: Data?) -> EvmKit.Address? {
+        guard let input else { return nil }
+        let parsedArguments = ContractMethodHelper.decodeABI(inputArguments: Data(input.suffix(from: 4)), argumentTypes: [EvmKit.Address.self])
+        let owner = parsedArguments[0] as? EvmKit.Address
+        return owner
+    }
+}
+

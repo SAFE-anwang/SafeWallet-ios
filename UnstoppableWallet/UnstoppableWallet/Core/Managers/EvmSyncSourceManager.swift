@@ -28,19 +28,51 @@ class EvmSyncSourceManager {
         case .arbitrumOne: return .arbiscan(apiKey: AppConfig.arbiscanKey)
         case .gnosis: return .gnosis(apiKey: AppConfig.gnosisscanKey)
         case .fantom: return .fantom(apiKey: AppConfig.ftmscanKey)
+        case .safe4: return .safeFourscan(apiKey: AppConfig.ftmscanKey)
         default: fatalError("Non-supported EVM blockchain")
         }
     }
 }
 
 extension RpcSource {
+    
+    static func safeEthereumRpcHttp() -> RpcSource {
+        .http(urls: [URL(string: "https://ethereum-mainnet.core.chainstack.com/a1911ee247f4f8de22c1f4e55865f616")!], auth: nil)
+    }
+    
+    static func safeSolanaRpcHttp() -> RpcSource {
+        .http(urls: [URL(string: "https://solana-mainnet.core.chainstack.com/254981cd2d169be592ee9604c7d47446")!], auth: nil)
+    }
+    
     static func safeBscRpcHttp() -> RpcSource {
         .http(urls: [URL(string: "https://bsc-mainnet.core.chainstack.com/67f0d109c5c0b7f0aa251a89f12c0b7b")!], auth: nil)
     }
-}
-extension EvmSyncSourceManager {
+    static func safePolygonRpcHttp() -> RpcSource {
+        .http(urls: [URL(string: "https://polygon-mainnet.core.chainstack.com/e9c77e1e564c041e111132211eb0df0f")!], auth: nil)
+    }
     
+    static func safeAvaxNetworkHttp() -> RpcSource {
+        .http(urls: [URL(string: "https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0d78d62f3dc1baf5968e7bf78018ce02")!], auth: nil)
+    }
+    
+    static func safeOptimismRpcHttp() -> RpcSource {
+        .http(urls: [URL(string: "https://optimism-mainnet.core.chainstack.com/9f3d2000dae7846908ac871ef96e18fe")!], auth: nil)
+    }
+    
+    static func safeArbitrumOneRpcHttp() -> RpcSource {
+        .http(urls: [URL(string: "https://arbitrum-mainnet.core.chainstack.com/43d06a32450091e3da629e17f3d53a5e")!], auth: nil)
+    }
+    
+    static func safeGnosisRpcHttp() -> RpcSource {
+        .http(urls: [URL(string: "https://nd-786-294-051.p2pify.com/4c89e746f92af4af9f76befc8dd64e59")!], auth: nil)
+    }
+    
+    static func safeFantomRpcHttp() -> RpcSource {
+        .http(urls: [URL(string: "https://fantom-mainnet.core.chainstack.com/01d412d3dbe245ad17742e58fa017171")!], auth: nil)
+    }
+}
 
+extension EvmSyncSourceManager {
     
     var syncSourceObservable: Observable<BlockchainType> {
         syncSourceRelay.asObservable()
@@ -64,8 +96,8 @@ extension EvmSyncSourceManager {
 //                        )
 //                    ),
                     EvmSyncSource(
-                        name: "BlocksDecoded Sepolia",
-                        rpcSource: .http(urls: [URL(string: "\(AppConfig.marketApiUrl)/v1/ethereum-rpc/sepolia")!], auth: nil),
+                        name: "Infura Sepolia",
+                        rpcSource: .http(urls: [URL(string: "https://sepolia.infura.io/v3/\(AppConfig.infuraCredentials.id)")!], auth: AppConfig.infuraCredentials.secret),
                         transactionSource: EvmKit.TransactionSource(
                             name: "sepolia.etherscan.io",
                             type: .etherscan(apiBaseUrl: "https://api-sepolia.etherscan.io", txBaseUrl: "https://sepiloa.etherscan.io", apiKey: AppConfig.etherscanKey)
@@ -79,6 +111,11 @@ extension EvmSyncSourceManager {
 //                        rpcSource: .http(urls: [URL(string: "\(AppConfig.marketApiUrl)/v1/ethereum-rpc/mainnet")!], auth: nil),
 //                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
 //                    ),
+                    EvmSyncSource(
+                        name: "ETH RPC",
+                        rpcSource: .safeEthereumRpcHttp(),
+                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+                    ),
                     EvmSyncSource(
                         name: "Infura",
                         rpcSource: .ethereumInfuraWebsocket(projectId: AppConfig.infuraCredentials.id, projectSecret: AppConfig.infuraCredentials.secret),
@@ -131,7 +168,7 @@ extension EvmSyncSourceManager {
             return [
                 EvmSyncSource(
                     name: "Polygon RPC",
-                    rpcSource: .polygonRpcHttp(),
+                    rpcSource: .safePolygonRpcHttp(),//.polygonRpcHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
                 EvmSyncSource(
@@ -144,7 +181,7 @@ extension EvmSyncSourceManager {
             return [
                 EvmSyncSource(
                     name: "Avax Network",
-                    rpcSource: .avaxNetworkHttp(),
+                    rpcSource: .safeAvaxNetworkHttp(),//.avaxNetworkHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
                 EvmSyncSource(
@@ -157,7 +194,7 @@ extension EvmSyncSourceManager {
             return [
                 EvmSyncSource(
                     name: "Optimism",
-                    rpcSource: .optimismRpcHttp(),
+                    rpcSource: .safeOptimismRpcHttp(),//.optimismRpcHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
                 EvmSyncSource(
@@ -170,7 +207,7 @@ extension EvmSyncSourceManager {
             return [
                 EvmSyncSource(
                     name: "Arbitrum",
-                    rpcSource: .arbitrumOneRpcHttp(),
+                    rpcSource: .safeArbitrumOneRpcHttp(),//.arbitrumOneRpcHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
                 EvmSyncSource(
@@ -183,7 +220,7 @@ extension EvmSyncSourceManager {
             return [
                 EvmSyncSource(
                     name: "Gnosis Chain",
-                    rpcSource: .gnosisRpcHttp(),
+                    rpcSource: .safeGnosisRpcHttp(),//.gnosisRpcHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
                 EvmSyncSource(
@@ -196,7 +233,7 @@ extension EvmSyncSourceManager {
             return [
                 EvmSyncSource(
                     name: "Fantom Chain",
-                    rpcSource: .fantomRpcHttp(),
+                    rpcSource: .safeFantomRpcHttp(),//.fantomRpcHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
                 EvmSyncSource(
@@ -204,6 +241,14 @@ extension EvmSyncSourceManager {
                     rpcSource: .http(urls: [URL(string: "https://rpc.ankr.com/fantom")!], auth: nil),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
+            ]
+        case .safe4:
+            return [
+                EvmSyncSource(
+                    name: "SAFE4",
+                    rpcSource: .safeFourRpcHttp(),
+                    transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+                )
             ]
         default:
             return []

@@ -80,9 +80,11 @@ class CoinChartService {
     }
 
     private func fetchStartTime() {
+        guard !coinUid.isSafeCoin else { return }
         Task { [weak self, marketKit, coinUid] in
             do {
-                self?.startTime = try await marketKit.chartPriceStart(coinUid: coinUid)
+                let uid = coinUid.isSafeCoin ? "safe-anwang" : coinUid
+                self?.startTime = try await marketKit.chartPriceStart(coinUid: uid)
             } catch {
                 self?.state = .failed(error)
             }
@@ -92,7 +94,8 @@ class CoinChartService {
     private func fetchChartInfo() {
         Task { [weak self, marketKit, coinUid, currency, periodType] in
             do {
-                let (fromTimestamp, chartPoints) = try await marketKit.chartPoints(coinUid: coinUid, currencyCode: currency.code, periodType: periodType)
+                let uid = coinUid.isSafeCoin ? "safe-anwang" : coinUid
+                let (fromTimestamp, chartPoints) = try await marketKit.chartPoints(coinUid: uid, currencyCode: currency.code, periodType: periodType)
                 self?.handle(fromTimestamp: fromTimestamp, chartPoints: chartPoints, periodType: periodType)
             } catch {
                 self?.state = .failed(error)
@@ -151,7 +154,10 @@ extension CoinChartService {
     }
 
     var validIntervals: [HsTimePeriod] {
-        HsChartHelper.validIntervals(startTime: startTime)
+        HsChartHelper.validIntervals(startTime: startTime).filter{
+            guard coinUid.isSafeCoin else { return true }
+            return .year5 != $0
+        }
     }
 
     func setPeriodAll() {

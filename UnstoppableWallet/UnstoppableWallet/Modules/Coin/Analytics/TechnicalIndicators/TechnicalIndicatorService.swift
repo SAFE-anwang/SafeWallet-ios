@@ -43,8 +43,9 @@ class TechnicalIndicatorService {
         state = .loading
         Task { [weak self, marketKit, coinUid, currency, period] in
             do {
+                let uid = coinUid.isSafeCoin ? "safe-anwang" : coinUid
                 let points = try await marketKit.chartPoints(
-                    coinUid: coinUid,
+                    coinUid: uid,
                     currencyCode: currency.code,
                     interval: period,
                     pointCount: Self.pointCount + Self.additionalPoints
