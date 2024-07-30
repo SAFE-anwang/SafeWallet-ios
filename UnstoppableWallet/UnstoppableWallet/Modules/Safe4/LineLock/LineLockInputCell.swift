@@ -80,20 +80,6 @@ class LineLockInputCell: UITableViewCell {
         anInputView.becomeFirstResponder()
     }
     
-    private func handleChange(text: String?) {
-        switch inputType {
-        case .amount:
-            guard let text else { return set(amount: nil) }
-            set(amount: Decimal(string: text))
-        case .startMonth:
-            guard let text else { return set(startMonth: nil) }
-            set(startMonth: Int(text))
-        case .intervalMonth:
-            guard let text else { return set(intervalMonth: nil) }
-            set(intervalMonth: Int(text))
-        }
-    }
-    
     private func set(amount: Decimal?) {
         titleLabel.text = amount != nil ? "safe_lock.amount.unlock".localized : nil
         guard let amount = amount else { return anInputView.inputText = nil}

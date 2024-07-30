@@ -84,4 +84,8 @@ class DateHelper {
         }
         return DateFormatter.cachedFormatter(format: short ? "MM/dd/yy" : "MMMM d, yyyy")
     }
+    
+    func safe4Format(date: Date) -> String {
+        DateFormatter.cachedFormatter(format: "MM-dd-yy, HH:mm:ss").string(from: date)
+    }
 }

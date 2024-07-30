@@ -77,8 +77,6 @@ class MainSafeZoneViewController: ThemeViewController {
 
     }
     
-    
-    
     private func buildTitleImage(title: String, backgroundStyle: BaseSelectableThemeCell.BackgroundStyle, isFirst: Bool = false, isLast: Bool = false) -> BaseSelectableThemeCell {
         let cell = BaseSelectableThemeCell()
         cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
@@ -283,7 +281,7 @@ class MainSafeZoneViewController: ThemeViewController {
                     }
             ),
             StaticRow(
-                cell: buildTitleImage(title: "safe_zone.row.contract".localized, backgroundStyle: .lawrence),
+                cell: buildTitleImage(title: "safe_zone.row.contract".localized, backgroundStyle: .lawrence, isLast: true),
                     id: "crossChainBSC_Rows",
                     height: .heightCell48,
                     action: { [weak self] in
@@ -318,6 +316,38 @@ class MainSafeZoneViewController: ThemeViewController {
 //                        self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
                     }
             ),
+        ]
+    }
+    
+    private var safe4_Rows: [RowProtocol] {
+        [
+            StaticRow(
+                cell: buildTitleImage(title: "safe_zone.row.superNode".localized, backgroundStyle: .lawrence, isFirst: true),
+                    id: "superNode_Rows",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        guard let vc = SuperNodeModule.viewController() else{ return }
+                        self?.navigationController?.pushViewController(vc, animated: true)
+                    }
+            ),
+            StaticRow(
+                cell: buildTitleImage(title: "safe_zone.row.masterNode".localized, backgroundStyle: .lawrence),
+                    id: "masterNode_Rows",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        guard let vc = MasterNodeModule.viewController() else{ return }
+                        self?.navigationController?.pushViewController(vc, animated: true)
+                    }
+            ),
+            StaticRow(
+                cell: buildTitleImage(title: "safe_zone.row.proposal".localized, backgroundStyle: .lawrence, isLast: true),
+                    id: "proposal_Rows",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        guard let vc = ProposalModule.viewController() else { return }
+                        self?.navigationController?.pushViewController(vc, animated: true)
+                    }
+            )
         ]
     }
     
@@ -384,6 +414,7 @@ extension MainSafeZoneViewController: SectionsDataSource {
             Section(id: "crossChainBSC", headerState: .text(text: "safe_zone.section.cross_bsc".localized, topMargin: 25, bottomMargin: 15), rows: crossChainBSC_Rows),
             Section(id: "crossChainMatic", headerState: .text(text: "safe_zone.section.cross_matic".localized, topMargin: 25, bottomMargin: 15), rows: crossChainMatic_Rows),
             Section(id: "Locked", headerState: .text(text: "safe_zone.section.locked".localized, topMargin: 25, bottomMargin: 15), rows: locked_Rows),
+            Section(id: "Safe4", headerState: .text(text: "safe_zone.section.safe4".localized, topMargin: 25, bottomMargin: 15), rows: safe4_Rows),
             Section(id: "Basic", headerState: .text(text: "safe_zone.section.basic".localized, topMargin: 25, bottomMargin: 15), rows: basic_Rows),
         ]
     }
