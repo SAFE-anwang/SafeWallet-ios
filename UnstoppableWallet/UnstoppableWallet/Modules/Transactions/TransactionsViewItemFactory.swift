@@ -275,7 +275,10 @@ class TransactionsViewItemFactory {
             subTitle = mapped(address: record.contractAddress, blockchainType: item.record.source.blockchainType)
 
             (primaryValue, secondaryValue) = values(incomingValues: incomingValues, outgoingValues: outgoingValues, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
-
+            // safe4 super node vote
+            if record.contractAddress == "0x0000000000000000000000000000000000001040" {
+                locked = true
+            }
         case let record as ExternalContractCallTransactionRecord:
             let (incomingValues, outgoingValues) = record.combinedValues
 
