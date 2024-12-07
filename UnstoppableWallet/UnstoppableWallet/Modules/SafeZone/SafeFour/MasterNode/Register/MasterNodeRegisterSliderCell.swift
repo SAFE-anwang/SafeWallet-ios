@@ -21,12 +21,12 @@ class MasterNodeRegisterSliderCell: UITableViewCell {
         
         creatorLabel = UILabel(frame: .zero)
         creatorLabel.font = .subhead1
-        creatorLabel.textColor = .themeBlack
+        creatorLabel.textColor = .themeBlackAndWhite
         
         
         partnerLabel = UILabel(frame: .zero)
         partnerLabel.font = .subhead1
-        partnerLabel.textColor = .themeBlack
+        partnerLabel.textColor = .themeBlackAndWhite
         partnerLabel.textAlignment = .right
         
         slider = UISlider()
@@ -69,9 +69,9 @@ class MasterNodeRegisterSliderCell: UITableViewCell {
         slider.minimumValue = viewModel.masterNodeIncentive.sliderMinimumValue
         slider.maximumValue  = viewModel.masterNodeIncentive.sliderMaximumValue
         slider.value = viewModel.masterNodeIncentive.sliderValue
-        titleLabel.text = "挖矿奖励分配方案".localized
-        creatorLabel.text = "创建者 \(viewModel.masterNodeIncentive.creatorIncentive)%"
-        partnerLabel.text = "合伙人 \(viewModel.masterNodeIncentive.partnerIncentive)%"
+        titleLabel.text = "safe_zone.safe4.mining.plan".localized
+        creatorLabel.text = "safe_zone.safe4.node.creator".localized + "\(viewModel.masterNodeIncentive.creatorIncentive)%"
+        partnerLabel.text = "safe_zone.safe4.partner".localized + "\(viewModel.masterNodeIncentive.partnerIncentive)%"
     }
     
     required init?(coder: NSCoder) {
@@ -85,14 +85,15 @@ class MasterNodeRegisterSliderCell: UITableViewCell {
             sync()
             return
         }
-        slider.value = Float(Int(sender.value))
+        let value = Float(Int(sender.value))
+        slider.value = max(viewModel.masterNodeIncentive.creatorMinIncentive, value)
         sync()
     }
     
     func sync() {
         viewModel.update(sliderValue: slider.value)
         
-        creatorLabel.text = "创建者 \(viewModel.masterNodeIncentive.creatorIncentive)%"
-        partnerLabel.text = "合伙人 \(viewModel.masterNodeIncentive.partnerIncentive)%"
+        creatorLabel.text = "safe_zone.safe4.node.creator".localized + "\(viewModel.masterNodeIncentive.creatorIncentive)%"
+        partnerLabel.text = "safe_zone.safe4.partner".localized + "\(viewModel.masterNodeIncentive.partnerIncentive)%"
     }
 }

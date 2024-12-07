@@ -68,8 +68,8 @@ extension SuperNodeDetailVoteHeaderView {
         
         var title: String {
             switch self {
-            case .safe: return "SAFE投票".localized
-            case .lockRecord: return "锁仓记录投票".localized
+            case .safe: return "safe_zone.safe4.vote.type.safe".localized
+            case .lockRecord: return "safe_zone.safe4.vote.type.locked.recoard".localized
             }
         }
     }

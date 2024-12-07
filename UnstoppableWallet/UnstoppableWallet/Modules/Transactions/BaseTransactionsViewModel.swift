@@ -16,7 +16,7 @@ class BaseTransactionsViewModel {
     private var syncingRelay = BehaviorRelay<Bool>(value: false)
 
     private var sectionViewItems = [SectionViewItem]()
-
+    private var tempSectionViewItems = [SectionViewItem]()
     private let queue = DispatchQueue(label: "\(AppConfig.label).base_transactions_view_model", qos: .userInitiated)
 
     init(service: BaseTransactionsService, contactLabelService: TransactionsContactLabelService, factory: TransactionsViewItemFactory) {
@@ -55,8 +55,7 @@ class BaseTransactionsViewModel {
 
     private func _sync(itemData: TransactionsService.ItemData) {
         let viewItems = itemData.items.map { factory.viewItem(item: $0, balanceHidden: service.balanceHidden) }
-        sectionViewItems = sectionViewItems(viewItems: viewItems)
-
+        sectionViewItems = sectionViewItems(viewItems: viewItems)       
         _reportViewData(allLoaded: itemData.allLoaded)
         _sync(syncing: service.syncing)
     }
@@ -205,6 +204,8 @@ extension BaseTransactionsViewModel {
         let sentToSelf: Bool
         let locked: Bool?
         let spam: Bool
+        
+        let isSafe4Withdraw: Bool?
     }
 
     enum IconType {

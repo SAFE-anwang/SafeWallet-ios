@@ -11,6 +11,9 @@ class TransactionFilterViewModel: ObservableObject {
     @Published var scamFilterEnabled: Bool
     @Published var resetEnabled: Bool
     
+    @Published var safe4IncomeEnabled: Bool
+    @Published var safe4NodestatusEnabled: Bool
+
     init(service: TransactionsService) {
         self.service = service
         
@@ -19,6 +22,8 @@ class TransactionFilterViewModel: ObservableObject {
         contact = service.transactionFilter.contact
         scamFilterEnabled = service.transactionFilter.scamFilterEnabled
         resetEnabled = service.transactionFilter.hasChanges
+        safe4IncomeEnabled = service.transactionFilter.safe4IncomeEnabled
+        safe4NodestatusEnabled = service.transactionFilter.safe4NodestatusEnabled
         
         service.$transactionFilter
             .sink { [weak self] filter in
@@ -27,6 +32,8 @@ class TransactionFilterViewModel: ObservableObject {
                 self?.contact = filter.contact
                 self?.scamFilterEnabled = filter.scamFilterEnabled
                 self?.resetEnabled = filter.hasChanges
+                self?.safe4IncomeEnabled = filter.safe4IncomeEnabled
+                self?.safe4NodestatusEnabled = filter.safe4NodestatusEnabled
             }
             .store(in: &cancellables)
     }
@@ -56,6 +63,20 @@ class TransactionFilterViewModel: ObservableObject {
     func set(scamFilterEnabled: Bool) {
         var newFilter = service.transactionFilter
         newFilter.scamFilterEnabled = scamFilterEnabled
+        service.transactionFilter = newFilter
+    }
+    
+    func set(safe4IncomeEnabled: Bool) {
+        var newFilter = service.transactionFilter
+        newFilter.safe4IncomeEnabled = safe4IncomeEnabled
+        UserDefaultsStorage().set(value: safe4IncomeEnabled, for: safe4key_IncomeEnabled)
+        service.transactionFilter = newFilter
+    }
+    
+    func set(safe4NodestatusEnabled: Bool) {
+        var newFilter = service.transactionFilter
+        newFilter.safe4NodestatusEnabled = safe4NodestatusEnabled
+        UserDefaultsStorage().set(value: safe4NodestatusEnabled, for: safe4key_Nodestatus)
         service.transactionFilter = newFilter
     }
 

@@ -90,7 +90,6 @@ class ProposalCreateService {
     private let descCautionRelay = BehaviorRelay<Caution?>(value:nil)
     private let amountCautionRelay = BehaviorRelay<Caution?>(value:nil)
     private let startPayTimeCautionRelay = BehaviorRelay<Caution?>(value:nil)
-    private let endPayTimeCautionRelay = BehaviorRelay<Caution?>(value:nil)
     private let payTimesCautionRelay = BehaviorRelay<Caution?>(value: nil)
 
     init(privateKey: Data) {
@@ -105,8 +104,8 @@ class ProposalCreateService {
     }
     
     private func web3() async throws -> Web3 {
-        let chain = Chain.SafeFour
-        let url = RpcSource.safeFourRpcHttp().url
+        let chain = Chain.SafeFourTestNet
+        let url = RpcSource.safeFourTestNetRpcHttp().url
         return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
     }
 }
@@ -121,10 +120,9 @@ extension ProposalCreateService {
         return balance
     }
     
-    func create() async throws -> String? {
-        guard let title, let payTimes, let startPayTime, let endPayTime, let desc, let amount else{return nil}
-        let payAmount = BigUInt((amount * pow(10, safe4Decimals)).hs.roundedString(decimal: 0)) ?? 0
-        return try await web3().safe4.proposal.create(privateKey: privateKey, title: title, payAmount: payAmount, payTimes: BigUInt(payTimes), startPayTime: startPayTime, endPayTime: endPayTime, description: desc)
+    func create(sendData: ProposalSendData) async throws -> String? {
+        let payAmount = BigUInt((sendData.amount * pow(10, safe4Decimals)).hs.roundedString(decimal: 0)) ?? 0
+        return try await web3().safe4.proposal.create(privateKey: privateKey, title: sendData.title, payAmount: payAmount, payTimes: BigUInt(sendData.payTimes), startPayTime: sendData.startPayTime, endPayTime: sendData.endPayTime, description: sendData.desc)
     }
 }
 
@@ -154,57 +152,24 @@ extension ProposalCreateService {
     var startPayTimeCautionDriver: Driver<Caution?> {
         startPayTimeCautionRelay.asDriver()
     }
-    var endPayTimeCautionDriver: Driver<Caution?> {
-        endPayTimeCautionRelay.asDriver()
-    }
     var payTimesCautionDriver: Driver<Caution?> {
         payTimesCautionRelay.asDriver()
     }
-    
-    func syncCautionState() -> Bool {
-        var caution: Caution? = nil
         
-        caution = balanceWarning ? Caution(text: "资金池余额获取失败".localized, type: .error) : nil
-        balanceCautionRelay.accept(caution)
-        
-        caution = titleWarning ? Caution(text: "标题长度需要大于8且小于80".localized, type: .error) : nil
-        titleCautionRelay.accept(caution)
-        
-        caution = descWarning ? Caution(text: "描述长度需要大于8且小于600".localized, type: .error) : nil
-        descCautionRelay.accept(caution)
-        
-        caution = amountWarning ? Caution(text: "输入有效的SAFE数量".localized, type: .error) : nil
-        amountCautionRelay.accept(caution)
-
-        caution = payTimesWarning ? Caution(text: "分期次数为2至100".localized, type: .error) : nil
-        payTimesCautionRelay.accept(caution)
-
-        let startCaution = startPayTimeWarning
-        startPayTimeCautionRelay.accept(startCaution)
-        
-        if case .all = payType {
-            endPayTime = startPayTime
-            payTimes = 1
-        }
-        let endCaution = endPayTimeWarning
-        endPayTimeCautionRelay.accept(endCaution)
-        
-        return !(balanceWarning && titleWarning && descWarning && amountWarning && payTimesWarning)  && startCaution == nil && endCaution == nil
-    }
-    
     func getValidPayTimes(value: Int) -> Int {
+        let maxTimes = 100
         switch payType {
         case .all:
             return 1
         case .periodization:
-            if value < 2 {
-                return 2
-            }else if value > 100 {
-                return 100
-            }else {
-                return value
-            }
+            return min(max(2, value), maxTimes)
         }
+    }
+    
+    func getSendData() -> ProposalSendData? {
+        guard !syncCautionState() else { return nil }
+        guard let title, let desc, let amount, let startPayTime, let endPayTime, let payTimes else { return nil }
+        return ProposalSendData(title: title, desc: desc, amount: amount, startPayTime: startPayTime, endPayTime: endPayTime, payTimes: payTimes)
     }
 }
 
@@ -231,16 +196,13 @@ private extension ProposalCreateService {
     }
    
     var startPayTimeWarning: Caution? {
-        guard let startPayTime else { return Caution(text: "请选择付款日期".localized, type: .error)}
-        guard startPayTime > BigUInt(Date().timeIntervalSince1970) else { return Caution(text: "付款日期需大于当前时间".localized, type: .error)}
+        guard let startPayTime else { return Caution(text: "safe_zone.safe4.pay.time.choose".localized, type: .error)}
+        guard startPayTime > BigUInt(Date().timeIntervalSince1970) else { return Caution(text: "safe_zone.safe4.date.payment.error".localized, type: .error)}
+        guard  let endPayTime else { return Caution(text: "safe_zone.safe4.time.end.choose".localized, type: .error)}
+        guard endPayTime >= startPayTime else { return Caution(text: "safe_zone.safe4.time.end.error".localized, type: .error)}
         return nil
     }
-    
-    var endPayTimeWarning: Caution? {
-        guard  let endPayTime else { return Caution(text: "请选择结束时间".localized, type: .error)}
-        guard let startPayTime, endPayTime >= startPayTime else { return Caution(text: "结束时间应该大于开始时间".localized, type: .error)}
-        return nil
-    }
+
     
     var payTimesWarning: Bool {
         switch payType {
@@ -252,11 +214,62 @@ private extension ProposalCreateService {
             return false
         }
     }
+    
+    func syncCautionState() -> Bool {
+        var caution: Caution? = nil
+        
+        caution = balanceWarning ? Caution(text: "safe_zone.safe4.pool.balance.error".localized, type: .error) : nil
+        balanceCautionRelay.accept(caution)
+        
+        caution = titleWarning ? Caution(text: "safe_zone.safe4.proposal.title.count.error".localized, type: .error) : nil
+        titleCautionRelay.accept(caution)
+        
+        caution = descWarning ? Caution(text: "safe_zone.safe4.proposal.desc.count.error".localized, type: .error) : nil
+        descCautionRelay.accept(caution)
+        
+        caution = amountWarning ? Caution(text: "safe_zone.safe4.proposal.input.safe.error".localized, type: .error) : nil
+        amountCautionRelay.accept(caution)
+
+        caution = payTimesWarning ? Caution(text: "safe_zone.safe4.proposal.instalment.number.titps".localized, type: .error) : nil
+        payTimesCautionRelay.accept(caution)
+        
+        if case .all = payType {
+            endPayTime = startPayTime
+            payTimes = 1
+        }
+        let startCaution = startPayTimeWarning
+        startPayTimeCautionRelay.accept(startCaution)
+        
+        return balanceWarning || titleWarning || descWarning || amountWarning || payTimesWarning || startCaution != nil
+    }
 }
 
 extension ProposalCreateService {
     enum PayType {
         case all
         case periodization
+    }
+}
+
+struct ProposalSendData {
+    let title: String
+    let desc: String
+    let amount: Decimal
+    let startPayTime: BigUInt
+    let endPayTime: BigUInt
+    let payTimes: Int
+    
+    var payTypeDesc: String {
+        let start = Date(timeIntervalSince1970: Double(startPayTime))
+        let startDate = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? Date()// next day
+        let payDate = DateHelper().safe4Format(date: startDate)
+
+        if payTimes < 2 {
+            return "safe_zone.safe4.pay.method.disposabl.desc".localized("\(payDate)", "\(amount)")
+        }else {
+            let endDate = Date(timeIntervalSince1970: Double(endPayTime))
+            let end = endPayTime == startPayTime ? payDate : DateHelper().safe4Format(date: endDate)
+            return "safe_zone.safe4.pay.method.instalment.desc".localized("\(payDate)", "\(end)", "\(payTimes)", "\(amount)")
+        }
     }
 }

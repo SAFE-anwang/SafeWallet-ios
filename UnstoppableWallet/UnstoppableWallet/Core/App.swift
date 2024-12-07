@@ -20,7 +20,8 @@ class App {
     let userDefaultsStorage: UserDefaultsStorage
     let localStorage: LocalStorage
     let keychainStorage: KeychainStorage
-
+    let redeemStorage: RedeemStorage
+    
     let pasteboardManager: PasteboardManager
     let reachabilityManager: ReachabilityManager
     let appIconManager: AppIconManager
@@ -219,6 +220,8 @@ class App {
         let safeProvider = SafeProvider(networkManager: networkManager)
         safeInfoManager = SafeInfoManager(evmBlockchainManager: evmBlockchainManager, safeProvider: safeProvider)
         safeInfoManager.startNet()
+        
+        redeemStorage = try RedeemStorage(dbPool: dbPool)
 
         let nftDatabaseStorage = try NftDatabaseStorage(dbPool: dbPool)
         let nftStorage = NftStorage(marketKit: marketKit, storage: nftDatabaseStorage)

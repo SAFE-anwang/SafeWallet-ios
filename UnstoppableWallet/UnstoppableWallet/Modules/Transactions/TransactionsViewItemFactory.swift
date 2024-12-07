@@ -2,6 +2,9 @@ import ComponentKit
 import MarketKit
 import UIKit
 import EvmKit
+import BigInt
+import Web3Core
+import web3swift
 
 class TransactionsViewItemFactory {
     private let evmLabelManager: EvmLabelManager
@@ -26,8 +29,8 @@ class TransactionsViewItemFactory {
         contactLabelService.contactData(for: address, blockchainType: blockchainType).name ?? evmLabelManager.mapped(address: address)
     }
 
-    private func coinString(from transactionValue: TransactionValue, showSign: Bool = true) -> String {
-        guard let value = transactionValue.formattedShort(showSign: showSign) else {
+    private func coinString(from transactionValue: TransactionValue, signType: ValueFormatter.SignType = .always) -> String {
+        guard let value = transactionValue.formattedShort(signType: signType) else {
             return "n/a".localized
         }
 
@@ -168,13 +171,14 @@ class TransactionsViewItemFactory {
 
     func viewItem(item: TransactionsService.Item, balanceHidden: Bool) -> BaseTransactionsViewModel.ViewItem {
         var iconType: BaseTransactionsViewModel.IconType
-        let title: String
+        var title: String
         let subTitle: String
         var primaryValue: BaseTransactionsViewModel.Value?
         var secondaryValue: BaseTransactionsViewModel.Value?
         var sentToSelf = false
         var locked: Bool?
-
+        var isSafe4Withdraw : Bool?
+        
         switch item.record {
         case let record as EvmIncomingTransactionRecord:
             iconType = singleValueIconType(source: record.source, value: record.value)
@@ -203,7 +207,7 @@ class TransactionsViewItemFactory {
             title = "transactions.send".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
 
-            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, showSign: !record.sentToSelf), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
+            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, signType: record.sentToSelf ? .never : .always), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
             secondaryValue = singleValueSecondaryValue(value: record.value, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
 
             sentToSelf = record.sentToSelf
@@ -213,7 +217,7 @@ class TransactionsViewItemFactory {
             let address = address(input: record.transaction.input)?.hex ?? record.to
             subTitle = "transactions.to".localized(mapped(address: address, blockchainType: item.record.source.blockchainType))
 
-            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, showSign: !record.sentToSelf), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
+            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, signType: record.sentToSelf ? .never : .always), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
             secondaryValue = singleValueSecondaryValue(value: record.value, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
             
             sentToSelf = record.sentToSelf
@@ -221,14 +225,56 @@ class TransactionsViewItemFactory {
             
         case let record as Safe4WithdrawTransactionRecord:
             iconType = singleValueIconType(source: record.source, value: record.value)
-            title = "Withdraw"
+            title = "safe_zone.safe4.withdraw".localized
             subTitle = "transactions.from".localized(mapped(address: record.from, blockchainType: item.record.source.blockchainType))
             primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .incoming))
 
             if let currencyValue = item.currencyValue {
                 secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
             }
-    
+            isSafe4Withdraw = true
+            
+        case let record as Safe4RedeemTransactionRecoard:
+            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
+            subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
+            if !record.value.zeroValue {
+                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .neutral))
+            }
+            
+        case let record as Safe4VoteTransactionRecoard:
+            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
+            subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
+            if !record.value.zeroValue {
+                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .neutral))
+            }
+            
+        case let record as Safe4NodeRegisterTransactionRecoard:
+            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            title = "transactions.contract_call".localized
+            if let method = record.method {
+                if method == EvmKit.Safe4Methods.AppendRegister.title {
+                    if record.contractAddress == web3swift.Safe4ContractAddress.MasterNodeLogicContractAddr {
+                        title = "safe_zone.safe4.append.register.master".localized
+                    }else if record.contractAddress == web3swift.Safe4ContractAddress.SuperNodeLogicContractAddr {
+                        title = "safe_zone.safe4.append.register.super".localized
+                    }
+                } else {
+                    if method == EvmKit.Safe4Methods.MasterNodeRegister.title, (record.value.decimalValue ?? 0) == -masterNodeRegisterCrowdFundingSafeLockNum {
+                        title = "创建众筹主节点".localized
+                    }else if method == EvmKit.Safe4Methods.SuperNodeRegister.title, (record.value.decimalValue ?? 0) == -superNodeRegisterCrowdFundingSafeLockNum {
+                        title = "创建众筹超级节点".localized
+                    } else {
+                        title = method
+                    }
+                }
+            }
+            subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
+            if !record.value.zeroValue {
+                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .outgoing))
+            }
+
         case let record as SwapTransactionRecord:
             iconType = doubleValueIconType(source: record.source, primaryValue: record.valueOut, secondaryValue: record.valueIn)
             title = "transactions.swap".localized
@@ -261,7 +307,7 @@ class TransactionsViewItemFactory {
                 primaryValue = BaseTransactionsViewModel.Value(text: "∞ \(record.value.coinCode)", type: .neutral)
                 secondaryValue = BaseTransactionsViewModel.Value(text: "transactions.value.unlimited".localized, type: .secondary)
             } else {
-                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, showSign: false), type: .neutral)
+                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: .neutral)
 
                 if let currencyValue = item.currencyValue {
                     secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
@@ -276,9 +322,10 @@ class TransactionsViewItemFactory {
 
             (primaryValue, secondaryValue) = values(incomingValues: incomingValues, outgoingValues: outgoingValues, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
             // safe4 super node vote
-            if record.contractAddress == "0x0000000000000000000000000000000000001040" {
+            if record.contractAddress == web3swift.Safe4ContractAddress.SNVoteContractAddr {
                 locked = true
             }
+            
         case let record as ExternalContractCallTransactionRecord:
             let (incomingValues, outgoingValues) = record.combinedValues
 
@@ -323,7 +370,7 @@ class TransactionsViewItemFactory {
             title = "transactions.send".localized
             subTitle = record.to.flatMap { "transactions.to".localized(mapped(address: $0, blockchainType: item.record.source.blockchainType)) } ?? "---"
 
-            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, showSign: !record.sentToSelf), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
+            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, signType: record.sentToSelf ? .never : .always), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
 
             if let currencyValue = item.currencyValue {
                 secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
@@ -349,7 +396,7 @@ class TransactionsViewItemFactory {
             title = "transactions.send".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
 
-            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, showSign: !record.sentToSelf), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
+            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, signType: record.sentToSelf ? .never : .always), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
 
             if let currencyValue = item.currencyValue {
                 secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
@@ -373,7 +420,7 @@ class TransactionsViewItemFactory {
             title = "transactions.send".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
 
-            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, showSign: !record.sentToSelf), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
+            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, signType: record.sentToSelf ? .never : .always), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
             secondaryValue = singleValueSecondaryValue(value: record.value, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
 
             sentToSelf = record.sentToSelf
@@ -387,7 +434,7 @@ class TransactionsViewItemFactory {
                 primaryValue = BaseTransactionsViewModel.Value(text: "∞ \(record.value.coinCode)", type: .neutral)
                 secondaryValue = BaseTransactionsViewModel.Value(text: "transactions.value.unlimited".localized, type: .secondary)
             } else {
-                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, showSign: false), type: .neutral)
+                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: .neutral)
 
                 if let currencyValue = item.currencyValue {
                     secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
@@ -469,12 +516,24 @@ class TransactionsViewItemFactory {
             iconType = .localIcon(imageName: item.record.source.blockchainType.iconPlain32)
             title = "transactions.unknown_transaction.title".localized
             subTitle = "transactions.unknown_transaction.description".localized()
-
+            
+        case let record as EvmTransactionRecord:
+            if item.record.source.blockchainType == .safe4 {
+                iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+                title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
+                subTitle = "transactions.to".localized(mapped(address: record.transaction.to!.hex, blockchainType: item.record.source.blockchainType))
+            }else {
+                iconType = .localIcon(imageName: item.record.source.blockchainType.iconPlain32)
+                title = "transactions.unknown_transaction.title".localized
+                subTitle = "transactions.unknown_transaction.description".localized()
+            }
+            
         default:
             iconType = .localIcon(imageName: item.record.source.blockchainType.iconPlain32)
             title = "transactions.unknown_transaction.title".localized
             subTitle = "transactions.unknown_transaction.description".localized()
         }
+        
 
         let progress: Float?
 
@@ -510,7 +569,8 @@ class TransactionsViewItemFactory {
             secondaryValue: secondaryValue,
             sentToSelf: sentToSelf,
             locked: locked,
-            spam: item.record.spam
+            spam: item.record.spam,
+            isSafe4Withdraw: isSafe4Withdraw
         )
     }
 }

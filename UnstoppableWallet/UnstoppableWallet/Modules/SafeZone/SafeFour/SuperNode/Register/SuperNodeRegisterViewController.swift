@@ -9,12 +9,12 @@ import RxCocoa
 import ComponentKit
 import HUD
 
-class SuperNodeRegisterViewController: ThemeViewController {
+class SuperNodeRegisterViewController: KeyboardAwareViewController {
     private let disposeBag = DisposeBag()
+    private let enodeTips = "safe_zone.safe4.node.enode.tips".localized
     private let viewModel: SuperNodeRegisterViewModel
     private let tableView = SectionsTableView(style: .plain)
     private var isLoaded = false
-    
     private let balanceCautionCell = FormCautionCell()
     
     private let addressCell: SuperNodeRegisterCell
@@ -25,7 +25,8 @@ class SuperNodeRegisterViewController: ThemeViewController {
     
     private let enodeCell: SuperNodeRegisterCell
     private let enodeCautionCell = FormCautionCell()
-    
+    private let enodeTipsCell = DescriptionCell()
+
     private let descriptionCell: SuperNodeRegisterCell
     private let descriptionCautionCell = FormCautionCell()
     
@@ -43,7 +44,7 @@ class SuperNodeRegisterViewController: ThemeViewController {
 
         sliderCell = SuperNodeRegisterSliderCell(viewModel: viewModel)
         
-        super.init()
+        super.init(scrollViews: [tableView])
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -52,7 +53,7 @@ class SuperNodeRegisterViewController: ThemeViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "创建超级节点".localized
+        title = "safe_zone.safe4.SuperNodeRegister".localized
         
         view.addEndEditingTapGesture()
         
@@ -68,8 +69,9 @@ class SuperNodeRegisterViewController: ThemeViewController {
         
         buttonCell.set(style: .yellow)
         buttonCell.title = "send.next_button".localized
+        buttonCell.setDebounceInterval(3)
         buttonCell.onTap = { [weak self] in
-            self?.viewModel.send()
+            self?.toSendVc()
         }
         
         addressCell.onChangeHeight = { [weak self] in self?.reloadTable()}
@@ -80,6 +82,9 @@ class SuperNodeRegisterViewController: ThemeViewController {
         
         enodeCell.onChangeHeight = { [weak self] in self?.reloadTable()}
         enodeCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+        enodeTipsCell.label.font = .subhead2
+        enodeTipsCell.label.textColor = .themeGray
+        enodeTipsCell.label.text = enodeTips
         
         descriptionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
         descriptionCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
@@ -122,10 +127,23 @@ class SuperNodeRegisterViewController: ThemeViewController {
             self?.descriptionCautionCell.set(caution: $0)
             self?.reloadTable()
         }
-        
-        subscribe(disposeBag, viewModel.stateDriver) { [weak self] in self?.sync(state: $0) }
-        
+                
         didLoad()
+    }
+
+    func toSendVc() {
+        Task { [viewModel] in
+            do {
+               let isValid = try await viewModel.isValidInputParams()
+                guard isValid else { return }
+                guard let sendData = viewModel.sendData else { return }
+                if navigationController?.viewControllers.last is SuperNodeSendViewController {
+                    return
+                }
+                let vc = SuperNodeSendViewController(viewModel: viewModel, sendData: sendData)
+                navigationController?.pushViewController(vc, animated: true)
+            }catch{}
+        }
     }
 }
 
@@ -143,31 +161,6 @@ private extension SuperNodeRegisterViewController {
             self.tableView.endUpdates()
         }
     }
-    
-    func sync(state: SuperNodeRegisterViewModel.State) {
-        DispatchQueue.main.async { [weak self] in
-            switch state {
-            case .loading: ()
-            case .completed:
-                self?.showSuccess()
-            case let .failed(error):
-                self?.show(error: error)
-            }
-        }
-    }
-    
-    func showSuccess() {
-        show(message: "注册超级节点成功".localized)
-        navigationController?.popToRootViewController(animated: true)
-    }
-    
-    func show(error: String) {
-        HudHelper.instance.show(banner: .error(string: error))
-    }
-    
-    func show(message: String) {
-        HudHelper.instance.show(banner: .success(string: message))
-    }
 }
 private extension SuperNodeRegisterViewController {
     
@@ -182,7 +175,7 @@ private extension SuperNodeRegisterViewController {
                 component.font = .subhead1
                 component.textColor = .themeGray
                 component.setContentHuggingPriority(.required, for: .vertical)
-                component.text = "创建模式"
+                component.text = "safe_zone.safe4.node.create.mode".localized
             },
             .hStack([
                 .secondaryButton { (component: SecondaryButtonComponent) -> () in
@@ -192,7 +185,7 @@ private extension SuperNodeRegisterViewController {
                     component.button.setTitleColor(.themeLeah, for: .normal)
                     component.button.setImage(UIImage(named: "circle_radiooff_24")?.withTintColor(.themeIssykBlue), for: .normal)
                     component.button.setImage(UIImage(named: "circle_radioon_24")?.withTintColor(.themeIssykBlue), for: .selected)
-                    component.button.setTitle("独立", for: .normal)
+                    component.button.setTitle("safe_zone.safe4.node.create.mode.independence".localized, for: .normal)
                     component.button.isSelected = viewModel.createMode == .Independent
                     component.onTap = {
                         viewModel.update(mode: .Independent)
@@ -205,7 +198,7 @@ private extension SuperNodeRegisterViewController {
                     component.button.setTitleColor(.themeLeah, for: .normal)
                     component.button.setImage(UIImage(named: "circle_radiooff_24")?.withTintColor(.themeIssykBlue), for: .normal)
                     component.button.setImage(UIImage(named: "circle_radioon_24")?.withTintColor(.themeIssykBlue), for: .selected)
-                    component.button.setTitle("众筹", for: .normal)
+                    component.button.setTitle("safe_zone.safe4.node.create.mode.crowdfunding".localized, for: .normal)
                     component.button.isSelected = viewModel.createMode == .crowdFunding
                     component.onTap = {
                         viewModel.update(mode: .crowdFunding)
@@ -228,27 +221,27 @@ private extension SuperNodeRegisterViewController {
                     component.font = .subhead1
                     component.textColor = .themeGray
                     component.setContentHuggingPriority(.required, for: .vertical)
-                    component.text = "锁仓"
+                    component.text = "safe_zone.safe4.account.lock".localized
                 },
                 .text { (component: TextComponent) -> () in
                     component.font = .subhead1
                     component.textColor = .themeGray
                     component.textAlignment = .right
                     component.setContentHuggingPriority(.required, for: .vertical)
-                    component.text = "账户当前余额"
+                    component.text = "safe_zone.safe4.account.balance".localized
                 },
             ]),
             .margin8,
             .hStack([
                 .text { (component: TextComponent) -> () in
                     component.font = .subhead1
-                    component.textColor = .themeBlack
+                    component.textColor = .themeBlackAndWhite
                     component.setContentHuggingPriority(.required, for: .vertical)
                     component.text = "\(lockNum) SAFE"
                 },
                 .text { (component: TextComponent) -> () in
                     component.font = .subhead1
-                    component.textColor = .themeGray
+                    component.textColor = .themeBlackAndWhite
                     component.textAlignment = .right
                     component.setContentHuggingPriority(.required, for: .vertical)
                     component.text = balance
@@ -323,6 +316,13 @@ private extension SuperNodeRegisterViewController {
                     }
             ),
             StaticRow(
+                    cell: enodeTipsCell,
+                    id: "enode-tips",
+                    dynamicHeight: { [weak self] containerWidth in
+                        DescriptionCell.height(containerWidth: containerWidth, text: self?.enodeTips ?? "", font: self?.enodeTipsCell.label.font ?? .subhead2)
+                    }
+            ),
+            StaticRow(
                     cell: descriptionCell,
                     id: "desc-input",
                     dynamicHeight: { [weak self] containerWidth in
@@ -347,7 +347,6 @@ private extension SuperNodeRegisterViewController {
     var buttonSection: SectionProtocol {
         Section(
             id: "button",
-            footerState: .margin(height: .margin32),
             rows: [
                 StaticRow(
                     cell: buttonCell,

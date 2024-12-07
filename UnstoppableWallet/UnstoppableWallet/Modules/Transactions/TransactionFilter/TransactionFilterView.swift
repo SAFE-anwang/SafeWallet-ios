@@ -85,6 +85,26 @@ struct TransactionFilterView: View {
                     }
                     ListSectionFooter(text: "transaction_filter.hide_suspicious_txs.description".localized)
                 }
+                
+                ListSection {
+                    ListRow {
+                        Toggle(isOn: Binding(get: { viewModel.safe4IncomeEnabled }, set: { viewModel.set(safe4IncomeEnabled: $0) })) {
+                            Text("transaction_filter.hide_safe4_income".localized).textBody()
+                        }
+                        .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
+                    }
+                }
+                
+                ListSection {
+                    ListRow {
+                        Toggle(isOn: Binding(get: { viewModel.safe4NodestatusEnabled }, set: { viewModel.set(safe4NodestatusEnabled: $0) })) {
+                            Text("transaction_filter.hide_safe4_node.state".localized).textBody()
+                        }
+                        .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
+                    }
+                }
+
+
             }
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
         }

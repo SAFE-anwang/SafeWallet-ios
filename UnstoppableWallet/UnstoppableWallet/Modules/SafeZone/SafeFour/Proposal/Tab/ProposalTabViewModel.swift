@@ -2,11 +2,13 @@ import Foundation
 import RxSwift
 import RxRelay
 import RxCocoa
+import EvmKit
 
 class ProposalTabViewModel {
     private let currentTabRelay: BehaviorRelay<ProposalModule.Tab>
-
-    init() {
+    private let evmKit: EvmKit.Kit
+    init(evmKit: EvmKit.Kit) {
+        self.evmKit = evmKit
         currentTabRelay = BehaviorRelay<ProposalModule.Tab>(value: .all)
     }
 
@@ -24,6 +26,10 @@ extension ProposalTabViewModel {
 
     func onSelect(tab: ProposalModule.Tab) {
         currentTabRelay.accept(tab)
+    }
+    
+    var isEnabledAdd: Bool {
+        (evmKit.lastBlockHeight ?? 0) > 86400
     }
 
 }

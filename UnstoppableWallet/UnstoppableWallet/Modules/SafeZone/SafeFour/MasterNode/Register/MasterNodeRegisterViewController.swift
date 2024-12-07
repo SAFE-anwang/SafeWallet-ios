@@ -9,12 +9,13 @@ import RxCocoa
 import ComponentKit
 import HUD
 
-class MasterNodeRegisterViewController: ThemeViewController {
+class MasterNodeRegisterViewController: KeyboardAwareViewController {
     private let disposeBag = DisposeBag()
+    private let enodeTips = "safe_zone.safe4.node.enode.tips".localized
     private let viewModel: MasterNodeRegisterViewModel
     private let tableView = SectionsTableView(style: .plain)
     private var isLoaded = false
-    
+
     private let balanceCautionCell = FormCautionCell()
     
     private let addressCell: MasterNodeRegisterCell
@@ -22,6 +23,7 @@ class MasterNodeRegisterViewController: ThemeViewController {
     
     private let enodeCell: MasterNodeRegisterCell
     private let enodeCautionCell = FormCautionCell()
+    private let enodeTipsCell = DescriptionCell()
     
     private let descriptionCell: MasterNodeRegisterCell
     private let descriptionCautionCell = FormCautionCell()
@@ -39,7 +41,7 @@ class MasterNodeRegisterViewController: ThemeViewController {
 
         sliderCell = MasterNodeRegisterSliderCell(viewModel: viewModel)
         
-        super.init()
+        super.init(scrollViews: [tableView])
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -48,7 +50,7 @@ class MasterNodeRegisterViewController: ThemeViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "创建主节点".localized
+        title = "safe_zone.safe4.node.mater.create".localized
         
         view.addEndEditingTapGesture()
         
@@ -64,8 +66,9 @@ class MasterNodeRegisterViewController: ThemeViewController {
         
         buttonCell.set(style: .yellow)
         buttonCell.title = "send.next_button".localized
+        buttonCell.setDebounceInterval(2)
         buttonCell.onTap = { [weak self] in
-            self?.viewModel.send()
+            self?.toSendVc()
         }
         
         addressCell.onChangeHeight = { [weak self] in self?.reloadTable()}
@@ -73,6 +76,9 @@ class MasterNodeRegisterViewController: ThemeViewController {
         
         enodeCell.onChangeHeight = { [weak self] in self?.reloadTable()}
         enodeCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+        enodeTipsCell.label.font = .subhead2
+        enodeTipsCell.label.textColor = .themeGray
+        enodeTipsCell.label.text = enodeTips
         
         descriptionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
         descriptionCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
@@ -110,10 +116,23 @@ class MasterNodeRegisterViewController: ThemeViewController {
             self?.descriptionCautionCell.set(caution: $0)
             self?.reloadTable()
         }
-        
-        subscribe(disposeBag, viewModel.stateDriver) { [weak self] in self?.sync(state: $0) }
-        
+            
         didLoad()
+    }
+    
+    func toSendVc() {
+        Task {
+            do {
+                let isValid = try await viewModel.isValidInputParams()
+                guard isValid else { return }
+                guard let sendData = viewModel.sendData else { return }
+                let vc = MasterNodeSendViewController(viewModel: viewModel, sendData: sendData)
+                if navigationController?.viewControllers.last is MasterNodeSendViewController {
+                    return
+                }
+                navigationController?.pushViewController(vc, animated: true)
+            }catch{}
+        }
     }
 }
 
@@ -131,31 +150,6 @@ private extension MasterNodeRegisterViewController {
             self.tableView.endUpdates()
         }
     }
-    
-    func sync(state: MasterNodeRegisterViewModel.State) {
-        DispatchQueue.main.async { [weak self] in
-            switch state {
-            case .loading: ()
-            case .completed:
-                self?.showSuccess()
-            case let .failed(error):
-                self?.show(error: error)
-            }
-        }
-    }
-    
-    func showSuccess() {
-        show(message: "注册主节点成功".localized)
-        navigationController?.popToRootViewController(animated: true)
-    }
-    
-    func show(error: String) {
-        HudHelper.instance.show(banner: .error(string: error))
-    }
-    
-    func show(message: String) {
-        HudHelper.instance.show(banner: .success(string: message))
-    }
 }
 private extension MasterNodeRegisterViewController {
     
@@ -170,7 +164,7 @@ private extension MasterNodeRegisterViewController {
                 component.font = .subhead1
                 component.textColor = .themeGray
                 component.setContentHuggingPriority(.required, for: .vertical)
-                component.text = "创建模式"
+                component.text = "safe_zone.safe4.node.create.mode".localized
             },
             .hStack([
                 .secondaryButton { (component: SecondaryButtonComponent) -> () in
@@ -180,7 +174,7 @@ private extension MasterNodeRegisterViewController {
                     component.button.setTitleColor(.themeLeah, for: .normal)
                     component.button.setImage(UIImage(named: "circle_radiooff_24")?.withTintColor(.themeIssykBlue), for: .normal)
                     component.button.setImage(UIImage(named: "circle_radioon_24")?.withTintColor(.themeIssykBlue), for: .selected)
-                    component.button.setTitle("独立", for: .normal)
+                    component.button.setTitle("safe_zone.safe4.node.create.mode.independence".localized, for: .normal)
                     component.button.isSelected = viewModel.createMode == .Independent
                     component.onTap = {
                         viewModel.update(mode: .Independent)
@@ -193,7 +187,7 @@ private extension MasterNodeRegisterViewController {
                     component.button.setTitleColor(.themeLeah, for: .normal)
                     component.button.setImage(UIImage(named: "circle_radiooff_24")?.withTintColor(.themeIssykBlue), for: .normal)
                     component.button.setImage(UIImage(named: "circle_radioon_24")?.withTintColor(.themeIssykBlue), for: .selected)
-                    component.button.setTitle("众筹", for: .normal)
+                    component.button.setTitle("safe_zone.safe4.node.create.mode.crowdfunding".localized, for: .normal)
                     component.button.isSelected = viewModel.createMode == .crowdFunding
                     component.onTap = {
                         viewModel.update(mode: .crowdFunding)
@@ -216,27 +210,27 @@ private extension MasterNodeRegisterViewController {
                     component.font = .subhead1
                     component.textColor = .themeGray
                     component.setContentHuggingPriority(.required, for: .vertical)
-                    component.text = "锁仓"
+                    component.text = "safe_zone.safe4.account.lock".localized
                 },
                 .text { (component: TextComponent) -> () in
                     component.font = .subhead1
                     component.textColor = .themeGray
                     component.textAlignment = .right
                     component.setContentHuggingPriority(.required, for: .vertical)
-                    component.text = "账户当前余额"
+                    component.text = "safe_zone.safe4.account.balance".localized
                 },
             ]),
             .margin8,
             .hStack([
                 .text { (component: TextComponent) -> () in
                     component.font = .subhead1
-                    component.textColor = .themeBlack
+                    component.textColor = .themeBlackAndWhite
                     component.setContentHuggingPriority(.required, for: .vertical)
                     component.text = "\(lockNum) SAFE"
                 },
                 .text { (component: TextComponent) -> () in
                     component.font = .subhead1
-                    component.textColor = .themeGray
+                    component.textColor = .themeBlackAndWhite
                     component.textAlignment = .right
                     component.setContentHuggingPriority(.required, for: .vertical)
                     component.text = balance
@@ -297,6 +291,13 @@ private extension MasterNodeRegisterViewController {
                     }
             ),
             StaticRow(
+                    cell: enodeTipsCell,
+                    id: "enode-tips",
+                    dynamicHeight: { [weak self] containerWidth in
+                        DescriptionCell.height(containerWidth: containerWidth, text: self?.enodeTips ?? "", font: self?.enodeTipsCell.label.font ?? .subhead2)
+                    }
+            ),
+            StaticRow(
                     cell: descriptionCell,
                     id: "desc-input",
                     dynamicHeight: { [weak self] containerWidth in
@@ -326,7 +327,6 @@ private extension MasterNodeRegisterViewController {
     var buttonSection: SectionProtocol {
         Section(
             id: "button",
-            footerState: .margin(height: .margin32),
             rows: [
                 StaticRow(
                     cell: buttonCell,

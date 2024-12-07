@@ -26,7 +26,7 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         set(backgroundStyle: .lawrence, isFirst: false, isLast: true)
         addEndEditingTapGesture()
-        amountTitleLabel.text = "数量"
+        amountTitleLabel.text = "safe_zone.safe4.amount".localized
         amountTitleLabel.font = .subhead1
         wrapperView.addSubview(amountTitleLabel)
         amountTitleLabel.snp.makeConstraints { make in
@@ -54,7 +54,7 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
         deleteView.button.set(image: UIImage(named: "trash_20"))
         deleteView.onTapButton = { [weak self] in self?.onTapDelete() }
         
-        inputStackView.placeholder = "输入数量"
+        inputStackView.placeholder = "safe_zone.safe4.amont.input.tips".localized
         inputStackView.autocapitalizationType = .none
         inputStackView.autocorrectionType = .no
         inputStackView.keyboardType = .decimalPad
@@ -63,7 +63,7 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
         maxButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         maxButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         maxButton.setTitleColor(.themeIssykBlue, for: .normal)
-        maxButton.setTitle("最大", for: .normal)
+        maxButton.setTitle("safe_zone.safe4.amont.max".localized, for: .normal)
         maxButton.titleLabel?.font = .headline2
         maxButton.addTarget(self, action: #selector(maxValue), for: .touchUpInside)
         wrapperView.addSubview(maxButton)
@@ -76,7 +76,7 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
         inputWarningLabel.isHidden = true
         inputWarningLabel.font = .subhead2
         inputWarningLabel.textColor = .red
-        inputWarningLabel.text = "超出可用数量"
+        inputWarningLabel.text = "safe_zone.safe4.amont.max.error".localized
         wrapperView.addSubview(inputWarningLabel)
         inputWarningLabel.snp.makeConstraints { make in
             make.top.equalTo(formValidatedView.snp.bottom).offset(CGFloat.margin4)
@@ -106,10 +106,8 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
     
     private func addVoteButton() {
         voteButton.cornerRadius = 6
-        voteButton.setTitle("投票", for: .normal)
+        voteButton.setTitle("safe_zone.safe4.proposal.vote.title".localized, for: .normal)
         voteButton.titleLabel?.font = .headline2
-        voteButton.setTitleColor(.white, for: .normal)
-        voteButton.setTitleColor(.gray, for: .disabled)
         voteButton.contentEdgeInsets = UIEdgeInsets(top: 5, left: 20, bottom: 5, right: 20)
         voteButton.setBackgroundColor(.themeIssykBlue, for: .normal)
         voteButton.setBackgroundColor(.lightGray.withAlphaComponent(0.4) , for: .disabled)
@@ -140,7 +138,7 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
     
     func update(balance:Decimal?) {
         self.balance = balance
-        balanceLabel.text = "可用数量: \(balance?.safe4FormattedAmount ?? "0.00") SAFE"
+        balanceLabel.text = "safe_zone.safe4.use.amont".localized + ": \(balance?.safe4FormattedAmount ?? "0.00") SAFE"
     }
 }
 

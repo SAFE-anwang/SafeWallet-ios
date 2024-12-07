@@ -12,6 +12,7 @@ import HUD
 class SuperNodeDetailViewController: ThemeViewController {
     
     private let disposeBag = DisposeBag()
+    private let viewType: SuperNodeDetailViewModel.ViewType
     private let viewModel: SuperNodeDetailViewModel
     private let tableView = SectionsTableView(style: .plain)
     private var viewItems = [SuperNodeDetailViewModel.ViewItem]()
@@ -27,13 +28,18 @@ class SuperNodeDetailViewController: ThemeViewController {
         
     private let recordHeaderView = SuperNodeDetailRecordHeaderView(hasTopSeparator: true)
     private let voteHeaderView = SuperNodeDetailVoteHeaderView()
-    private var tab: SuperNodeDetailRecordHeaderView.Tab = .creator
+    private var _tab: SuperNodeDetailRecordHeaderView.Tab = .creator
     private var voteType: SuperNodeDetailVoteHeaderView.VoteType = .safe
     
     private let tipsCell = Safe4WarningCell()
+    
     weak var parentNavigationController: UINavigationController?
-    init(viewModel: SuperNodeDetailViewModel) {
+    
+    var needReload: (() -> Void)?
+    
+    init(viewModel: SuperNodeDetailViewModel, viewType: SuperNodeDetailViewModel.ViewType) {
         self.viewModel = viewModel
+        self.viewType = viewType
         super.init()
     }
     
@@ -44,9 +50,7 @@ class SuperNodeDetailViewController: ThemeViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "safe_zone.safe4.detail".localized
-        
-//        view.addEndEditingTapGesture()
-        
+                
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()
@@ -64,7 +68,7 @@ class SuperNodeDetailViewController: ThemeViewController {
         tableView.buildSections()
 
         recordHeaderView.onSelect = { [weak self] tab in
-            self?.tab = tab
+            self?._tab = tab
             switch tab {
             case .creator:
                 self?.emptyView.isHidden = (self?.viewItems.count ?? 0) > 0 ? true : false
@@ -93,33 +97,33 @@ class SuperNodeDetailViewController: ThemeViewController {
         subscribe(disposeBag, viewModel.balanceDriver) { [weak self] in
             if let strongSelf = self {
                 let maximumValue = Float(strongSelf.viewModel.detailInfo.foundersBalanceAmount.cgFloatValue)
-                let minValue = Float(strongSelf.viewModel.detailInfo.foundersTotalAmount.cgFloatValue)
-                strongSelf.joinPartnerCell.bind(minValue: 1000, step: 1000, minimumValue: 0, maximumValue: maximumValue, balance: $0)
+                strongSelf.joinPartnerCell.bind(minValue: 500, step: 500, minimumValue: 0, maximumValue: maximumValue, balance: $0)
                 strongSelf.safeVoteCell.update(balance: $0)
             }
         }
         
         joinPartnerCell.joinPartner = { [weak self] in
-                self?.viewModel.joinPartner(value: $0)
+                self?.onTapJoinPartner(sendAmount:  $0)
         }
 
-        tipsCell.bind(text: "必须同时满足如下条件的锁仓记录才可以进行投票\n1. 未关联超级节点的锁仓记录\n2. 未投票的锁仓记录\n3. 锁仓数量大于 1 SAFE", type: .normal)
-        safeVoteTipsCell.bind(text: "用于投票的SAFE将会在锁仓账户中创建一个新的锁仓记录", type: .normal)
+        tipsCell.bind(text: "safe_zone.safe4.node.super.vote.locked.tips".localized, type: .normal)
+        safeVoteTipsCell.bind(text: "safe_zone.safe4.node.super.vote.locked.recoard.tips".localized, type: .normal)
         
         lockRecordCell.loadMore = { [weak self] in
             self?.viewModel.loadMoreLockRecord()
         }
+        
         lockRecordCell.selectAll = { [weak self]  in
             self?.viewModel.selectAllLockRecord($0)
         }
 
         lockRecordCell.lockRecordVote = { [weak self] in
-            self?.viewModel.lockRecordVote()
+            guard let strongSelf = self else { return }
+            self?.onTapVote(type: .lockRecord(items: strongSelf.viewModel.selectedLockRecoardItems))
         }
         
         safeVoteCell.safeVote = { [weak self]  in
-            self?.viewModel.safeVote(amount: $0)
-            self?.tableView.reload()
+            self?.onTapVote(type:.safe(amount: $0))
         }
     }
     
@@ -135,13 +139,9 @@ class SuperNodeDetailViewController: ThemeViewController {
                 self?.emptyView.isHidden = datas.count > 0 ? true : false
                 self?.tableView.reload()
                 
-            case .voteCompleted:
-                self?.show(message: "投票成功")
-                self?.navigationController?.popViewController(animated: true)
-                
-            case .partnerCompleted:
-                self?.show(message: "加入合伙人成功！")
-                self?.navigationController?.popViewController(animated: true)
+            case .voteCompleted:()
+
+            case .partnerCompleted:()
                 
             case let .lockRecoardCompleted(datas):
                 self?.lockRecordCell.bind(viewItems: datas)
@@ -158,7 +158,27 @@ class SuperNodeDetailViewController: ThemeViewController {
         HudHelper.instance.show(banner: .success(string: message))
     }
 }
+extension SuperNodeDetailViewController {
+    
+    private func onTapJoinPartner(sendAmount: Float) {
+        let vc = SuperNodeDetailSendViewController(viewModel: viewModel, sendAmount: sendAmount)
+        vc.partnerCompleted = { [weak self] in
+            self?.tableView.reload()
+            self?.navigationController?.popToViewController(ofClass: SuperNodeTabViewController.self)
 
+        }
+        navigationController?.pushViewController(vc, animated: true)
+    }
+    
+    private func onTapVote(type: SuperNodeDetailViewModel.VoteType) {
+        let vc = SuperNodeDetailVoteSendViewController(viewModel: viewModel, type: type)
+        vc.partnerCompleted = { [weak self] in
+            self?.tableView.reload()
+            self?.navigationController?.popToViewController(ofClass: SuperNodeTabViewController.self)
+        }
+        navigationController?.pushViewController(vc, animated: true)
+    }
+}
 private extension SuperNodeDetailViewController {
     
     func buildRecordCell(viewItem: SuperNodeDetailViewModel.ViewItem) -> BaseSelectableThemeCell {
@@ -174,7 +194,7 @@ private extension SuperNodeDetailViewController {
             },
             .text { (component: TextComponent) -> () in
                 component.font = .subhead1
-                component.textColor = .themeGray
+                component.textColor = viewItem.isSelf ? .themeIssykBlue : .themeGray
                 component.numberOfLines = 0
                 component.setContentHuggingPriority(.defaultLow, for: .horizontal)
                 component.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -198,7 +218,7 @@ private extension SuperNodeDetailViewController {
         CellBuilderNew.buildStatic(cell: cell, rootElement: .hStack([
             .text { (component: TextComponent) -> () in
                 component.font = .subhead1
-                component.textColor = .themeGray
+                component.textColor = viewItem.isSelf ? .themeIssykBlue : .themeGray
                 component.numberOfLines = 0
                 component.setContentHuggingPriority(.defaultLow, for: .horizontal)
                 component.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -215,77 +235,10 @@ private extension SuperNodeDetailViewController {
         return cell
     }
     
-    func baseInfoCellRow(id: String, tableView: UITableView, title: String, value: String, isFirst: Bool = false, isLast: Bool = false) -> RowProtocol {
-        let backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence
-        let titleFont: UIFont = .subhead2
-        let valueFont: UIFont = .subhead1
-
-        return CellBuilderNew.row(
-            rootElement:  .hStack([
-                .text { (component: TextComponent) -> () in
-                    component.font = titleFont
-                    component.textColor = .themeGray
-                    component.setContentHuggingPriority(.required, for: .horizontal)
-                    component.text = title
-                },
-                .text { (component: TextComponent) -> () in
-                    component.font = valueFont
-                    component.setContentHuggingPriority(.defaultLow, for: .horizontal)
-                    component.text = value
-                }
-            ]),
-            tableView: tableView,
-            id: id,
-            hash: value,
-            height: .heightCell48,
-            bind: { cell in
-                cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
-            }
-        )
+    func baseInfoCellRow(id: String, title: String, value: String, isFirst: Bool = false, isLast: Bool = false) -> RowProtocol {
+        tableView.universalRow48(id: id, title: .subhead2(title, color: .themeGray), value: .subhead1(value), isFirst: isFirst, isLast: isLast)
     }
-    
-    func multilineInfoRow(id: String, tableView: UITableView, title: String, value: String, isFirst: Bool = false, isLast: Bool = false) -> RowProtocol {
-        let backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence
-        let layoutMargins = UIEdgeInsets(top: .margin8, left: .margin16, bottom: .margin12, right: .margin16)
-        let titleFont: UIFont = .subhead2
-        let valueFont: UIFont = .subhead1
-        return CellBuilderNew.row(
-            rootElement: .vStack([
-                .text { (component: TextComponent) -> () in
-                    component.font = titleFont
-                    component.textColor = .themeGray
-                    component.text = title
-                },
-                .margin4,
-                .text { (component: TextComponent) -> () in
-                    component.font = valueFont
-                    component.numberOfLines = 0
-                    component.text = value
-                }
-            ]),
-            layoutMargins: layoutMargins,
-            tableView: tableView,
-            id: id,
-            hash: value,
-            dynamicHeight: { containerWidth in
-                return CellBuilderNew.height(
-                    containerWidth: containerWidth,
-                    backgroundStyle: backgroundStyle,
-                    text: value,
-                    font: valueFont,
-                    elements: [
-                        .margin16,
-                        .margin16,
-                        .multiline,
-                    ]
-                ) + 30
-            },
-            bind: { cell in
-                cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
-            }
-        )
-    }
-    
+        
     func sectionHeaderCellRow(id: String, tableView: UITableView, title: String, isFirst: Bool = false, isLast: Bool = false) -> RowProtocol {
         let backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence
         let titleFont: UIFont = .headline2
@@ -294,7 +247,6 @@ private extension SuperNodeDetailViewController {
             rootElement:  .hStack([
                 .text { (component: TextComponent) -> () in
                     component.font = titleFont
-                    component.textColor = .themeBlack
                     component.setContentHuggingPriority(.required, for: .horizontal)
                     component.numberOfLines = 0
                     component.text = title
@@ -340,8 +292,8 @@ private extension SuperNodeDetailViewController {
     
     var joinPartnerRows: [RowProtocol] {
         [
-            sectionHeaderCellRow(id: "header", tableView: tableView, title: "通过锁仓SAFE来成为这个超级节点的合伙人", isFirst: true),
-            multilineInfoRow(id: "node_balance", tableView: tableView, title: "超级节点剩余份额".localized, value: viewModel.detailInfo.foundersBalanceAmount.safe4FormattedAmount + " SAFE"),
+            sectionHeaderCellRow(id: "header", tableView: tableView, title: "safe_zone.safe4.node.super.vote.locked.join".localized, isFirst: true),
+            tableView.multilineRow(id: "node_balance", title: "超级节点剩余份额".localized, value: viewModel.detailInfo.foundersBalanceAmount.safe4FormattedAmount + " SAFE"),
             StaticRow(
                     cell: joinPartnerCell,
                     id: "node_join",
@@ -353,7 +305,7 @@ private extension SuperNodeDetailViewController {
     
     var safeVoteRows: [RowProtocol] {
         [
-            sectionHeaderCellRow(id: "header", tableView: tableView, title: "使用账户中的SAFE余额进行投票", isFirst: true),
+            sectionHeaderCellRow(id: "header", tableView: tableView, title: "safe_zone.safe4.node.super.vote.safe".localized, isFirst: true),
             StaticRow(
                     cell: safeVoteTipsCell,
                     id: "safe_vote_tips",
@@ -371,7 +323,7 @@ private extension SuperNodeDetailViewController {
     
     var lockRecordVoteRows: [RowProtocol] {
         [
-            sectionHeaderCellRow(id: "header", tableView: tableView, title: "选择锁仓记录对超级节点进行投票", isFirst: true),
+            sectionHeaderCellRow(id: "header", tableView: tableView, title: "safe_zone.safe4.node.super.vote.locked.recoard.choose".localized, isFirst: true),
             StaticRow(
                     cell: tipsCell,
                     id: "locked_tips",
@@ -389,16 +341,22 @@ private extension SuperNodeDetailViewController {
     
     var nodeDetailInfoRows: [RowProtocol] {
         [
-            sectionHeaderCellRow(id: "header", tableView: tableView, title: "节点详情", isFirst: true),
-            baseInfoCellRow(id: "node_id", tableView: tableView, title: "节点ID: ".localized, value: viewModel.detailInfo.id),
-            baseInfoCellRow(id: "node_state", tableView: tableView, title: "节点状态:".localized, value: viewModel.detailInfo.nodeState.title),
-            multilineInfoRow(id: "node_address", tableView: tableView, title: "节点地址:".localized, value: viewModel.detailInfo.info.addr.address),
-            multilineInfoRow(id: "node_creater", tableView: tableView, title: "节点名称:".localized, value: viewModel.detailInfo.info.name),
-            multilineInfoRow(id: "node_creater", tableView: tableView, title: "创建者:".localized, value: viewModel.detailInfo.info.creator.address),
-            baseInfoCellRow(id: "node_amount", tableView: tableView, title: "创建质押:".localized, value: viewModel.detailInfo.pledgeNum.description + " SAFE"),
-            baseInfoCellRow(id: "node_vote", tableView: tableView, title: "投票质押:".localized, value: viewModel.detailInfo.totalAmount.safe4FomattedAmount + " SAFE"),
-            multilineInfoRow(id: "node_enode", tableView: tableView, title: "节点ENODE:".localized, value: viewModel.detailInfo.info.enode),
-            multilineInfoRow(id: "node_desc", tableView: tableView, title: "节点描述:".localized, value: viewModel.detailInfo.desc),
+            sectionHeaderCellRow(id: "header", tableView: tableView, title: "safe_zone.safe4.node.detail".localized, isFirst: true),
+            baseInfoCellRow(id: "node_id", title: "safe_zone.safe4.node.id".localized, value: viewModel.detailInfo.id),
+            baseInfoCellRow(id: "node_state", title: "safe_zone.safe4.node.status".localized, value: viewModel.detailInfo.nodeState.title),
+            tableView.multilineRow(id: "node_address", title: "safe_zone.safe4.node.address".localized, value: viewModel.detailInfo.info.addr.address, subTextColor: .themeIssykBlue, action: { [self] in
+                CopyHelper.copyAndNotify(value: viewModel.detailInfo.info.addr.address)
+            }),
+            tableView.multilineRow(id: "node_creater", title: "节点名称:".localized, value: viewModel.detailInfo.info.name),
+            tableView.multilineRow(id: "node_creater", title: "safe_zone.safe4.node.creator".localized + ": ", value: viewModel.detailInfo.info.creator.address, subTextColor: .themeIssykBlue, action: { [self] in
+                CopyHelper.copyAndNotify(value: viewModel.detailInfo.info.creator.address)
+            }),
+            baseInfoCellRow(id: "node_amount", title: "safe_zone.safe4.creator.pledge".localized, value: viewModel.detailInfo.foundersTotalAmount.safe4FormattedAmount + " SAFE"),
+            baseInfoCellRow(id: "node_vote", title: "safe_zone.safe4.vote.pledge".localized, value: viewModel.detailInfo.totalAmount.safe4FomattedAmount + " SAFE"),
+            tableView.multilineRow(id: "node_enode",  title: "safe_zone.safe4.node.enode".localized, value: viewModel.detailInfo.info.enode, subTextColor: .themeIssykBlue, action: { [self] in
+                CopyHelper.copyAndNotify(value: viewModel.detailInfo.info.enode)
+            }),
+            tableView.multilineRow(id: "node_desc", title: "safe_zone.safe4.node.desc".localized, value: viewModel.detailInfo.desc),
             StaticRow(cell: incentiveCell, id: "slider-info", height: SuperNodeDetailIncentiveCell.height())
         ]
     }
@@ -414,9 +372,9 @@ extension SuperNodeDetailViewController: SectionsDataSource {
         
         let joinPartnerSection = Section(id: "SuperNode_join",footerState: .margin(height: CGFloat.margin12), rows: joinPartnerRows)
 
-        if viewModel.nodeType != .superNode, viewModel.detailInfo.joinEnabled == false {
+        if viewModel.detailInfo.isEnabledVote, viewType == .Vote {
             sections.append(voteSection)
-        }else if viewModel.detailInfo.joinEnabled == true {
+        }else if viewModel.detailInfo.isEnabledJoin, viewType == .JoinPartner {
             sections.append(joinPartnerSection)
         }
         
@@ -424,15 +382,15 @@ extension SuperNodeDetailViewController: SectionsDataSource {
         
         let recordRows = viewItems.map{ row(viewItem: $0)}
         let voterRows = voterItems.map{ row(viewItem: $0)}
-        let isPaginating = tab == .voter
-        let recordSection = Section(id: "SuperNode_record", paginating: isPaginating, headerState: .static(view: recordHeaderView, height: SuperNodeDetailRecordHeaderView.height()), rows: tab == .voter ? voterRows : recordRows)
+        let isPaginating = _tab == .voter
+        let recordSection = Section(id: "SuperNode_record", paginating: isPaginating, headerState: .static(view: recordHeaderView, height: SuperNodeDetailRecordHeaderView.height()), rows: _tab == .voter ? voterRows : recordRows)
         sections.append(infoSection)
         sections.append(recordSection)
         return sections
     }
     
     func onBottomReached() {
-        if case .voter = tab {
+        if case .voter = _tab {
             viewModel.loadMore()
         }
     }

@@ -78,9 +78,17 @@ class BaseTransactionsService {
     var scamFilterEnabled: Bool {
         true
     }
+    
+    var safe4IncomeEnabled: Bool {
+        true
+    }
+
+    var safe4NodestatusEnabled: Bool {
+        true
+    }
 
     func _syncPoolGroup() {
-        poolGroup = poolGroupFactory.poolGroup(type: _poolGroupType, filter: typeFilter, contact: contact, scamFilterEnabled: scamFilterEnabled)
+        poolGroup = poolGroupFactory.poolGroup(type: _poolGroupType, filter: typeFilter, contact: contact, scamFilterEnabled: scamFilterEnabled, safe4IncomeEnabled: safe4IncomeEnabled, safe4NodestatusEnabled: safe4NodestatusEnabled)
         _initPoolGroup()
     }
 

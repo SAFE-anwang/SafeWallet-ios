@@ -103,7 +103,13 @@ enum AppConfig {
     }
 
     static var bscscanKey: String {
-        (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey") as? String) ?? ""
+        let apiKey = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey") as? String) ?? ""
+        let apiKey2 = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey_2") as? String) ?? ""
+        let apiKey3 = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey_3") as? String) ?? ""
+        let apiKey4 = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey_4") as? String) ?? ""
+        let array = [apiKey, apiKey2, apiKey3, apiKey4]
+        let randomIndex = Int.random(in: 0 ..< array.count)
+        return array[randomIndex]
     }
 
     static var polygonscanKey: String {

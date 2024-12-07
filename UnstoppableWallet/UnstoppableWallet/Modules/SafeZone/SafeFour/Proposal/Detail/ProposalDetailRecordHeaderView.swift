@@ -26,9 +26,9 @@ class ProposalDetailRecordHeaderView: UITableViewHeaderFooterView {
             separatorView.backgroundColor = .themeSteel20
         }
         
-        titleLabel.text = "提案投票记录".localized
+        titleLabel.text = "safe_zone.safe4.proposal.detail.info.vote.record".localized
         titleLabel.font = .headline2
-        titleLabel.textColor = .themeIssykBlue
+//        titleLabel.textColor = .themeIssykBlue
         contentView.addSubview(titleLabel)
         titleLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(CGFloat.margin4)

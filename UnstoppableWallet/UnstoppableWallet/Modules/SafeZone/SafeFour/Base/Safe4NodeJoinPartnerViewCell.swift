@@ -32,7 +32,7 @@ class Safe4NodeJoinPartnerViewCell: BaseThemeCell {
         
         set(backgroundStyle: .lawrence, isFirst: false, isLast: true)
         
-        amountTitleLabel.text = "数量"
+        amountTitleLabel.text = "safe_zone.safe4.amount".localized
         amountTitleLabel.font = .subhead1
         wrapperView.addSubview(amountTitleLabel)
         amountTitleLabel.snp.makeConstraints { make in
@@ -50,7 +50,7 @@ class Safe4NodeJoinPartnerViewCell: BaseThemeCell {
             make.height.equalTo(CGFloat.margin24)
         }
         
-        balanceTitleLabel.text = "账户余额"
+        balanceTitleLabel.text = "safe_zone.safe4..account.balance".localized
         balanceTitleLabel.font = .subhead1
         balanceTitleLabel.textAlignment = .right
         wrapperView.addSubview(balanceTitleLabel)
@@ -81,7 +81,7 @@ class Safe4NodeJoinPartnerViewCell: BaseThemeCell {
         balanceCautionLabel.isHidden = true
         balanceCautionLabel.font = .subhead2
         balanceCautionLabel.textColor = .red
-        balanceCautionLabel.text = "账户余额不足"
+        balanceCautionLabel.text = "safe_zone.safe4.account.balance.insufficient".localized
         wrapperView.addSubview(balanceCautionLabel)
         balanceCautionLabel.snp.makeConstraints { make in
             make.top.equalTo(slider.snp.bottom).inset(CGFloat.margin6)
@@ -106,7 +106,7 @@ class Safe4NodeJoinPartnerViewCell: BaseThemeCell {
     
     private func addJoinButton() {
         joinButton.cornerRadius = 6
-        joinButton.setTitle("成为合伙人", for: .normal)
+        joinButton.setTitle("safe_zone.safe4.partner.becoming".localized, for: .normal)
         joinButton.titleLabel?.font = .headline2
         joinButton.setTitleColor(.white, for: .normal)
         joinButton.setTitleColor(.gray, for: .disabled)

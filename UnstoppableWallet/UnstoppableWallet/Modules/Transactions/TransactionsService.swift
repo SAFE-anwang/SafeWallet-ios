@@ -55,4 +55,12 @@ class TransactionsService: BaseTransactionsService {
     override var scamFilterEnabled: Bool {
         transactionFilter.scamFilterEnabled
     }
+    
+    override var safe4IncomeEnabled: Bool {
+        transactionFilter.safe4IncomeEnabled
+    }
+    
+    override var safe4NodestatusEnabled: Bool {
+        transactionFilter.safe4NodestatusEnabled
+    }
 }

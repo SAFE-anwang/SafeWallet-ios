@@ -75,7 +75,6 @@ extension MarketDappService {
         case completed(data: (datas:[MarketDappViewModel.ViewItem], tab: MarketDappModule.Tab))
         case failed(error: Error)
     }
-
 }
 
 

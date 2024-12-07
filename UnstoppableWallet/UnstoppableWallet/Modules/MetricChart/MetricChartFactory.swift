@@ -18,7 +18,7 @@ class MetricChartFactory {
 
         switch valueType {
         case .percent:
-            return ValueFormatter.instance.format(percentValue: value, showSign: false)
+            return ValueFormatter.instance.format(percentValue: value, signType: .never)
         case let .currencyValue(currency):
             return ValueFormatter.instance.formatFull(currency: currency, value: value)
         case .counter:

@@ -1,29 +1,26 @@
 import UIKit
 import MarketKit
+import ComponentKit
 
 struct ProposalModule {
 
     static func viewController() -> UIViewController? {
-        guard let evmKit = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+            HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE4")))
             return nil
         }
-        guard let privateKey = evmKit.signer?.privateKey else {
+        guard let privateKey = evmKitWrapper.signer?.privateKey else {
             return nil
         }
-        
-//        let query = TokenQuery(blockchainType: .safe4, tokenType: .native)
-//        guard let token = try? App.shared.marketKit.token(query: query) else {
-//            return nil
-//        }
-
-        let viewModel = ProposalTabViewModel()
-        let viewController = ProposalTabViewController(viewModel: viewModel, privateKey: privateKey) 
+    
+        let viewModel = ProposalTabViewModel(evmKit: evmKitWrapper.evmKit)
+        let viewController = ProposalTabViewController(viewModel: viewModel, privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
         return viewController
     }
     
     static func subViewController(type: ProposalType) -> ProposalViewController {
         let service = ProposalService(type: type)
-        let viewModel = ProposalViewModel(servie: service)
+        let viewModel = ProposalViewModel(service: service)
         return ProposalViewController(viewModel: viewModel)
     }
     
@@ -41,6 +38,6 @@ struct ProposalModule {
     
     enum ProposalType {
         case All
-        case Mine(privateKey: Data)
+        case Mine(address: String)
     }
 }

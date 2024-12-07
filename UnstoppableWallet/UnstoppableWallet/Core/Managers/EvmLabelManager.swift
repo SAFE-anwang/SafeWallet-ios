@@ -73,7 +73,8 @@ extension EvmLabelManager {
 
     func methodLabel(input: Data) -> String? {
         let methodId = Data(input.prefix(4)).hs.hexString
-        return (try? storage.evmMethodLabel(methodId: methodId))?.label
+        let label = EvmKit.Safe4Methods.allCases.filter{$0.id == methodId}.first?.title
+        return label ?? (try? storage.evmMethodLabel(methodId: methodId))?.label
     }
 
     func addressLabel(address: String) -> String? {
@@ -86,5 +87,33 @@ extension EvmLabelManager {
         }
 
         return address.shortened
+    }
+}
+
+extension EvmKit.Safe4Methods {
+    
+    var title: String {
+        switch self {
+        case .AppendRegister: "safe_zone.safe4.appendRegister".localized
+        case .Withdraw: "safe_zone.safe4.withdraw".localized
+        case .WithdrawByID: "safe_zone.safe4.WithdrawByID".localized
+        case .CreateProposal: "safe_zone.safe4.CreateProposal".localized
+        case .VoteSuperNode: "safe_zone.safe4.VoteSuperNode".localized
+        case .MasterNodeRegister: "safe_zone.safe4.MasterNodeRegister".localized
+        case .SuperNodeRegister: "safe_zone.safe4.SuperNodeRegister".localized
+        case .NodeUpdateDesc: "safe_zone.safe4.NodeUpdate".localized
+        case .NodeUpdateEnode: "safe_zone.safe4.NodeUpdate".localized
+        case .NodeUpdateName: "safe_zone.safe4.NodeUpdate".localized
+        case .NodeUpdateAddress: "safe_zone.safe4.NodeUpdate".localized
+        case .LockVote: "safe_zone.safe4.lockVote".localized
+        case .Reward: "safe_zone.safe4.reward".localized
+        case .RedeemMsaternode: "safe_zone.safe4.redeem.msaternode".localized
+        case .RedeemLocked: "safe_zone.safe4.redeem.locked".localized
+        case .RedeemAvailable: "safe_zone.safe4.redeem.available".localized
+        case .NodeStateUpload: "safe_zone.safe4.node.state.upload".localized
+        case .ProposalVote: "safe_zone.safe4.ProposalVote".localized
+        case .ContractDeployment: "safe_zone.safe4.contract.deployment".localized
+        case .AddLockDay: "safe_zone.safe4.contract.addlockday".localized
+        }
     }
 }

@@ -11,7 +11,11 @@ enum CellComponent {
                 .image24 { component in
                     if let iconName {
                         component.isHidden = false
-                        component.imageView.image = UIImage(named: iconName)?.withTintColor(iconDimmed ? .themeGray : .themeLeah)
+                        if iconName.contains("safe") {
+                            component.imageView.image = UIImage(named: iconName)
+                        } else {
+                            component.imageView.image = UIImage(named: iconName)?.withTintColor(iconDimmed ? .themeGray : .themeLeah)
+                        }
                     } else {
                         component.isHidden = true
                     }
@@ -294,10 +298,17 @@ enum AmountType {
     case neutral
     case secondary
 
-    var showSign: Bool {
+//    var showSign: Bool {
+//        switch self {
+//        case .incoming, .outgoing, .secondary: return true
+//        case .neutral: return false
+//        }
+//    }
+    
+    var signType: ValueFormatter.SignType {
         switch self {
-        case .incoming, .outgoing, .secondary: return true
-        case .neutral: return false
+        case .incoming, .outgoing, .secondary: return .always
+        case .neutral: return .never
         }
     }
 

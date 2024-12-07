@@ -311,9 +311,6 @@ class MainSafeZoneViewController: ThemeViewController {
                     height: .heightCell48,
                     action: { [weak self] in
                         self?.openLineLockRecoard()
-//                        // to do ..
-//                        HudHelper.instance.show(banner: .attention(string: "safe_zone.Safe4_Coming_Soon".localized))
-//                        self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
                     }
             ),
         ]
@@ -340,14 +337,42 @@ class MainSafeZoneViewController: ThemeViewController {
                     }
             ),
             StaticRow(
-                cell: buildTitleImage(title: "safe_zone.row.proposal".localized, backgroundStyle: .lawrence, isLast: true),
+                cell: buildTitleImage(title: "safe_zone.row.proposal".localized, backgroundStyle: .lawrence),
                     id: "proposal_Rows",
                     height: .heightCell48,
                     action: { [weak self] in
                         guard let vc = ProposalModule.viewController() else { return }
                         self?.navigationController?.pushViewController(vc, animated: true)
                     }
+            ),
+            StaticRow(
+                cell: buildTitleImage(title: "safe_zone.row.rewards".localized, backgroundStyle: .lawrence),
+                    id: "rewards_Rows",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        guard let vc = RewardsModule.viewController() else { return }
+                        self?.navigationController?.pushViewController(vc, animated: true)
+                    }
+            ),
+            StaticRow(
+                cell: buildTitleImage(title: "SAFE3 -> SAFE4", backgroundStyle: .lawrence),
+                    id: "redeem_Rows",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        guard let vc = RedeemSafe3Module.viewController() else { return }
+                        self?.navigationController?.pushViewController(vc, animated: true)
+                    }
+            ),
+            StaticRow(
+                cell: buildTitleImage(title: "领取SAFE4".localized, backgroundStyle: .lawrence, isLast: true),
+                    id: "draw_safe4_Rows",
+                    height: .heightCell48,
+                    action: { [weak self] in
+                        guard let vc = DrawSafe4Module.viewController() else { return }
+                        self?.navigationController?.pushViewController(vc, animated: true)
+                    }
             )
+
         ]
     }
     

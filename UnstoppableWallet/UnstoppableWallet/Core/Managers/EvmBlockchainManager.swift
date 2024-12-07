@@ -100,7 +100,7 @@ extension EvmBlockchainManager {
         case .arbitrumOne: return .arbitrumOne
         case .gnosis: return .gnosis
         case .fantom: return .fantom
-        case .safe4: return .SafeFour
+        case .safe4: return .SafeFourTestNet
         default: fatalError("Unsupported blockchain type")
         }
     }

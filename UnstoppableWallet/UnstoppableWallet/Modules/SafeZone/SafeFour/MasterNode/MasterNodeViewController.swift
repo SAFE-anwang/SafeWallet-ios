@@ -20,6 +20,14 @@ class MasterNodeViewController: ThemeViewController {
     private let tipsCell = Safe4WarningCell()
     private let warningCell = Safe4WarningCell()
 
+    private let nodeSearchCell = Safe4NodeSearchCell()
+    private let nodeSearchCautionCell = FormCautionCell()
+
+    private var isLoaded = false
+    private var isSearch = false
+    
+    weak var parentNavigationController: UINavigationController?
+
     init(viewModel: MasterNodeViewModel) {
         self.viewModel = viewModel
         super.init()
@@ -32,9 +40,6 @@ class MasterNodeViewController: ThemeViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "safe_zone.row.masterNode".localized
-        navigationItem.largeTitleDisplayMode = .never
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "safe4_add_2_24"), style: .plain, target: self, action: #selector(add))
         
         refreshControl.tintColor = .themeLeah
         refreshControl.alpha = 0.6
@@ -50,16 +55,10 @@ class MasterNodeViewController: ThemeViewController {
         tableView.registerCell(forClass: MasterNodeCell.self)
         
         tableView.sectionDataSource = self
-        tableView.buildSections()
-        
-        view.addSubview(emptyView)
-        emptyView.snp.makeConstraints { maker in
-            maker.edges.equalTo(view.safeAreaLayoutGuide)
-        }
 
+        emptyView.frame = CGRect(x: 0, y: 0, width: view.width, height: 250)
         emptyView.image = UIImage(named: "safe4_empty")
         emptyView.text = "safe_zone.safe4.empty.description".localized
-        emptyView.isHidden = true
         
         view.addSubview(spinner)
         spinner.snp.makeConstraints { maker in
@@ -68,9 +67,24 @@ class MasterNodeViewController: ThemeViewController {
         spinner.startAnimating()
         viewModel.refresh()
         
-        tipsCell.bind(text: "注册成为主节点，则不能再注册成为超级节点", type: .normal)
+        tipsCell.bind(text: "safe_zone.safe4.node.register.tips".localized, type: .normal)
         
         subscribe(disposeBag, viewModel.stateDriver) { [weak self] in self?.sync(state: $0) }
+        
+        nodeSearchCell.setInput(keyboardType: .default, placeholder: "safe_zone.safe4.search.input.master.tips".localized)
+        nodeSearchCell.onChangeHeight = { [weak self] in self?.reloadTable()}
+        nodeSearchCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+
+        nodeSearchCell.onSearch = { [weak self] text in
+            self?.isSearch = (text?.count ?? 0) > 0
+            self?.view.endEditing(true)
+            self?.viewModel.search(text: text)
+        }
+        
+        subscribe(disposeBag, viewModel.searchCautionDriver) {  [weak self] in
+            self?.nodeSearchCautionCell.set(caution: $0)
+            self?.reloadTable()
+        }
     }
     
     private func sync(state: MasterNodeViewModel.State) {
@@ -78,19 +92,31 @@ class MasterNodeViewController: ThemeViewController {
             switch state {
             case .loading:
                 self?.spinner.isHidden = (self?.viewItems.count)! > 0 ? true : false
-                self?.emptyView.isHidden = true
+                self?.hiddenEmptyView(isHidden: true)
                 
             case let .completed(datas):
+                guard self?.isSearch == false else{ return }
                 self?.spinner.isHidden = true
-                self?.emptyView.isHidden =  datas.count > 0 ? true : false
+                self?.hiddenEmptyView(isHidden: datas.count > 0)
+                self?.viewItems = datas
+                self?.tableView.reload()
+                
+            case let .searchResults(datas):
+                self?.spinner.isHidden = true
+                self?.hiddenEmptyView(isHidden: datas.count > 0)
                 self?.viewItems = datas
                 self?.tableView.reload()
                 
             case .failed(_):
                 self?.spinner.isHidden = true
-                guard let count = self?.viewItems.count, count > 0 else { return (self?.emptyView.isHidden = false)! }
-                
+                guard let count = self?.viewItems.count, count > 0 else {
+                    self?.hiddenEmptyView(isHidden: false)
+                    return
+                }
             }
+            
+            self?.didLoad()
+
         }
     }
     
@@ -111,16 +137,31 @@ class MasterNodeViewController: ThemeViewController {
     private func add() {
         switch viewModel.nodeType {
         case .masterNode:
-            HudHelper.instance.show(banner: .error(string: "已经是主节点，不能再注册"))
+            HudHelper.instance.show(banner: .error(string: "safe_zone.safe4.account.node.state.master".localized))
         case .superNode:
-            HudHelper.instance.show(banner: .error(string: "已经是超级节点，不能再注册"))
+            HudHelper.instance.show(banner: .error(string: "safe_zone.safe4.account.node.state.super".localized))
         case .normal:
             guard let vc = MasterNodeRegisterModule.viewController() else { return }
             navigationController?.pushViewController(vc, animated: true)
         }
-
     }
     
+    func didLoad() {
+        tableView.buildSections()
+        isLoaded = true
+    }
+
+    func reloadTable() {
+        guard isLoaded else { return }
+        UIView.animate(withDuration: 0) {
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        }
+    }
+    
+    private func hiddenEmptyView(isHidden: Bool) {
+        tableView.tableFooterView = isHidden ? nil : emptyView
+    }
 }
 extension MasterNodeViewController {
     private func row(viewItem: MasterNodeViewModel.ViewItem) -> RowProtocol {
@@ -131,11 +172,33 @@ extension MasterNodeViewController {
             autoDeselect: true,
             bind: { cell, _ in
                 cell.bind(viewItem: viewItem)
-            },
-            action: { cell in
-                guard cell.joinEnabled else { return }
-                guard let vc = MasterNodeDetailModule.viewController(viewItem: viewItem) else { return }
-                self.navigationController?.pushViewController(vc, animated: true)
+                cell.toDetail = { [weak self] in
+                    guard let strongSelf = self, let vc = MasterNodeDetailModule.viewController(nodeType: strongSelf.viewModel.nodeType, viewItem: viewItem, viewType: .Detail) else { return }
+                    vc.needReload = {
+                        strongSelf.tableView.reload()
+                    }
+                    strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
+                }
+                cell.toJoin = { [weak self] in
+                    guard let strongSelf = self, let vc = MasterNodeDetailModule.viewController(nodeType: strongSelf.viewModel.nodeType, viewItem: viewItem, viewType: .JoinPartner) else { return }
+                    vc.needReload = {
+                        strongSelf.tableView.reload()
+                    }
+                    strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
+                }
+                cell.toEdit = { [weak self] in
+                    guard let strongSelf = self else { return }
+                    guard let vc = MasterNodeChangeModule.viewController(viewItem: viewItem) else { return }
+                    vc.needReload = {
+                        strongSelf.viewModel.refresh()
+                    }
+                    strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
+                }
+                cell.toAddLock = { [weak self] in
+                    guard let strongSelf = self else { return }
+                    guard let vc = AddLockDaysModule.viewController(type: .masterNode(info: viewItem.info)) else { return }
+                    strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
+                }
             }
         )
     }
@@ -159,11 +222,38 @@ extension MasterNodeViewController {
                 }
         )
     }
+    
+    var searchRow: RowProtocol {
+        StaticRow(
+                cell: nodeSearchCell,
+                id: "node-search",
+                separatorInset: UIEdgeInsets(top: CGFloat.margin2, left: 0, bottom: CGFloat.margin2, right: 0),
+                dynamicHeight: { [weak self] containerWidth in
+                        self?.nodeSearchCell.height(containerWidth: containerWidth) ?? 0
+                }
+        )
+    }
+    
+    var searchCautionRow: RowProtocol {
+        StaticRow(
+                cell: nodeSearchCautionCell,
+                id: "search-warning",
+                dynamicHeight: { [weak self] containerWidth in
+                    self?.nodeSearchCautionCell.height(containerWidth: containerWidth) ?? 0
+                }
+        )
+    }
 }
 extension MasterNodeViewController: SectionsDataSource {
     
     func buildSections() -> [SectionProtocol] {
         var waringRows = [RowProtocol]()
+        
+        if viewModel.type == .All {
+            waringRows.append(searchRow)
+            waringRows.append(searchCautionRow)
+        }
+        
         waringRows.append(tipsRow)
         if viewModel.nodeType != .normal {
             warningCell.bind(text: viewModel.nodeType.warnings, type: .warning)

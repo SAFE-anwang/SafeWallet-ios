@@ -14,8 +14,6 @@ class ProposalCreateViewModel {
         }
     }
     
-    private var isEnabledSend = true
-
     init(service: ProposalCreateService, decimalParser: AmountDecimalParser) {
         self.service = service
         self.decimalParser = decimalParser
@@ -38,27 +36,26 @@ class ProposalCreateViewModel {
             }
         }
     }
-
-    func send() {
-        guard service.syncCautionState() else { return }
+    
+    func send(data: ProposalSendData) {
         state = .loading
         Task {
             do{
-                guard isEnabledSend else { return }
-                isEnabledSend = false
-                if let txId = try await service.create() {
+                if let txId = try await service.create(sendData: data) {
                     state = .completed
                 }
-                isEnabledSend = true
             }catch {
-                isEnabledSend = true
-                state = .failed(error: "创建失败")
+                state = .failed(error: "safe_zone.safe4.craate.failed".localized)
             }
         }
     }
 }
 
 extension ProposalCreateViewModel {
+    
+    var sendData: ProposalSendData? {
+        service.getSendData()
+    }
     
     var balance: String? {
         guard let balance = service.balance else { return "--" }
@@ -103,9 +100,6 @@ extension ProposalCreateViewModel {
     var startPayTimeCautionDriver: Driver<Caution?> {
         service.startPayTimeCautionDriver
     }
-    var endPayTimeCautionDriver: Driver<Caution?> {
-        service.endPayTimeCautionDriver
-    }
     var payTimesCautionDriver: Driver<Caution?> {
         service.payTimesCautionDriver
     }
@@ -140,10 +134,20 @@ extension ProposalCreateViewModel {
         stateRelay.asObservable()
     }
     
+    var startMinimumDate: Date? {
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date())
+        return Calendar.current.startOfDay(for: tomorrow ?? Date())
+    }
+    
+    func endMinimumDate(_ start: Date) -> Date? {
+        Calendar.current.date(byAdding: .day, value: 1, to: start)
+    }
+
+    
     enum State {
         case loading
         case completed
         case failed(error: String)
     }
-    
+        
 }

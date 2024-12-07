@@ -9,7 +9,7 @@ import RxCocoa
 import ComponentKit
 import HUD
 
-class ProposalCreateViewController: ThemeViewController {
+class ProposalCreateViewController: KeyboardAwareViewController {
     private let disposeBag = DisposeBag()
     private let viewModel: ProposalCreateViewModel
     private let tableView = SectionsTableView(style: .plain)
@@ -30,6 +30,8 @@ class ProposalCreateViewController: ThemeViewController {
     private let payTimesCautionCell = FormCautionCell()
     private let datePickerCell: ProposalDatePickerCell
     
+    private let payTimeCautionCell = FormCautionCell()
+
     private let buttonCell = PrimaryButtonCell()
     
     init(viewModel: ProposalCreateViewModel) {
@@ -41,7 +43,7 @@ class ProposalCreateViewController: ThemeViewController {
         payTimesCell = ProposalInputCell(viewModel: viewModel, type: .payTimes)
         datePickerCell = ProposalDatePickerCell(viewModel: viewModel)
         
-        super.init()
+        super.init(scrollViews: [tableView])
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -50,7 +52,7 @@ class ProposalCreateViewController: ThemeViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "发起提案".localized
+        title = "safe_zone.safe4.create.proposal".localized
         
         view.addEndEditingTapGesture()
         
@@ -66,7 +68,7 @@ class ProposalCreateViewController: ThemeViewController {
         buttonCell.set(style: .yellow)
         buttonCell.title = "send.next_button".localized
         buttonCell.onTap = { [weak self] in
-            self?.viewModel.send()
+            self?.toSendVc()
         }
         
         titleCell.onChangeHeight = { [weak self] in self?.reloadTable()}
@@ -76,6 +78,8 @@ class ProposalCreateViewController: ThemeViewController {
         descriptionCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
         
         safeAmountCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+        
+        payTimeCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
         
         subscribe(disposeBag, viewModel.balanceDriver) {  [weak self] _ in
             self?.tableView.reload()
@@ -105,6 +109,11 @@ class ProposalCreateViewController: ThemeViewController {
             self?.tableView.reload()
         }
         
+        subscribe(disposeBag, viewModel.startPayTimeCautionDriver) {  [weak self] in
+            self?.payTimeCautionCell.set(caution: $0)
+            self?.tableView.reload()
+        }
+
         subscribe(disposeBag, viewModel.payTimesCautionDriver) {  [weak self] in
             self?.payTimesCautionCell.set(caution: $0)
             self?.reloadTable()
@@ -113,13 +122,8 @@ class ProposalCreateViewController: ThemeViewController {
             self?.payTimesCell.setInput(value: $0?.description)
             self?.reloadTable()
         }
-        
-        subscribe(disposeBag, viewModel.stateDriver) { [weak self] in self?.sync(state: $0) }
-        
         didLoad()
     }
-    
-
 }
 private extension ProposalCreateViewController {
     func didLoad() {
@@ -135,29 +139,10 @@ private extension ProposalCreateViewController {
         }
     }
     
-    func sync(state: ProposalCreateViewModel.State) {
-        DispatchQueue.main.async { [weak self] in
-            switch state {
-            case .loading: ()
-            case .completed:
-                self?.showSuccess()
-            case let .failed(error):
-                self?.show(error: error)
-            }
-        }
-    }
-    
-    func showSuccess() {
-        show(message: "创建成功".localized)
-        navigationController?.popToRootViewController(animated: true)
-    }
-    
-    func show(error: String) {
-        HudHelper.instance.show(banner: .error(string: error))
-    }
-    
-    func show(message: String) {
-        HudHelper.instance.show(banner: .success(string: message))
+    func toSendVc() {
+        guard let sendData = viewModel.sendData else { return }
+        let vc = ProposalSendViewController(viewModel: viewModel, sendData: sendData)
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
 
@@ -198,7 +183,7 @@ private extension ProposalCreateViewController {
                 component.font = .subhead1
                 component.textColor = .themeGray
                 component.setContentHuggingPriority(.required, for: .vertical)
-                component.text = "发放方式"
+                component.text = "safe_zone.safe4.pay.method".localized
             },
             .hStack([
                 .secondaryButton { (component: SecondaryButtonComponent) -> () in
@@ -221,7 +206,7 @@ private extension ProposalCreateViewController {
                     component.button.setTitleColor(.themeLeah, for: .normal)
                     component.button.setImage(UIImage(named: "circle_radiooff_24")?.withTintColor(.themeIssykBlue), for: .normal)
                     component.button.setImage(UIImage(named: "circle_radioon_24")?.withTintColor(.themeIssykBlue), for: .selected)
-                    component.button.setTitle("分期", for: .normal)
+                    component.button.setTitle("safe_zone.safe4.pay.method.instalment".localized, for: .normal)
                     component.button.isSelected = viewModel.payType == .periodization
                     component.onTap = {
                         viewModel.update(payType: .periodization)
@@ -235,7 +220,7 @@ private extension ProposalCreateViewController {
 }
 
 private extension ProposalCreateViewController {
-    var  proposalInputRows: [RowProtocol] {
+    var proposalInputRows: [RowProtocol] {
         [
             StaticRow(
                     cell: titleCell,
@@ -266,7 +251,7 @@ private extension ProposalCreateViewController {
                     }
             ),
             StaticRow(
-                cell: balanceCell(title: "提案资金池余额:", value: "\(viewModel.balance ?? "--")", backgroundStyle: .transparent),
+                cell: balanceCell(title: "safe_zone.safe4.proposal.pool.balance".localized, value: ": \(viewModel.balance ?? "--")", backgroundStyle: .transparent),
                 id: "safe-balance",
                 height: .heightSingleLineCell
             ),
@@ -301,11 +286,18 @@ private extension ProposalCreateViewController {
                     cell: datePickerCell,
                     id: "datePicker-input",
                     height: .heightDoubleLineCell
+            ),
+            StaticRow(
+                    cell: payTimeCautionCell,
+                    id: "startPayTime-warning",
+                    dynamicHeight: { [weak self] containerWidth in
+                        self?.payTimeCautionCell.height(containerWidth: containerWidth) ?? 0
+                    }
             )
         ]
     }
     
-    var  periodizationRows: [RowProtocol] {
+    var periodizationRows: [RowProtocol] {
         [
             StaticRow(
                     cell: payTimesCell,

@@ -62,16 +62,21 @@ struct TransactionFilter: Equatable {
     private(set) var token: Token?
     private(set) var contact: Contact?
     var scamFilterEnabled: Bool
-
+    
+    var safe4IncomeEnabled: Bool
+    var safe4NodestatusEnabled: Bool
+    
     init() {
         blockchain = nil
         token = nil
         contact = nil
         scamFilterEnabled = true
+        safe4IncomeEnabled = UserDefaultsStorage().value(for: safe4key_IncomeEnabled) ?? true
+        safe4NodestatusEnabled = UserDefaultsStorage().value(for: safe4key_Nodestatus) ?? true
     }
 
     var hasChanges: Bool {
-        blockchain != nil || token != nil || contact != nil || !scamFilterEnabled
+        blockchain != nil || token != nil || contact != nil || !scamFilterEnabled || !safe4IncomeEnabled || !safe4NodestatusEnabled
     }
 
     private mutating func updateContact() {
@@ -121,6 +126,8 @@ struct TransactionFilter: Equatable {
         token = nil
         contact = nil
         scamFilterEnabled = true
+        safe4IncomeEnabled = true
+        safe4NodestatusEnabled = true
     }
 }
 

@@ -164,7 +164,7 @@ class MarketViewController: ThemeSearchViewController {
         case .posts: return postViewController
         case .watchlist: return watchlistViewController
         case .twiitter: return twiitterViewController
-//        case .Dapp: return dappViewController
+        case .Dapp: return dappViewController
 
         }
     }

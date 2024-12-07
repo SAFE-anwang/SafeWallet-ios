@@ -104,8 +104,8 @@ extension SuperNodeDetailRecordHeaderView {
         
         var title: String {
             switch self {
-            case .creator: return "创建人 | 合伙人".localized
-            case .voter: return "投票人".localized
+            case .creator: return "safe_zone.safe4.creator&partner".localized
+            case .voter: return "safe_zone.safe4.node.record.voters".localized
             }
         }
     }

@@ -32,7 +32,11 @@ extension BlockchainType {
     }
 
     var iconPlain32: String {
-        "\(uid)_trx_32"
+        if uid == safeCoinUid || uid == safe4CoinUid {
+            return "safe_logo_24"
+        }else {
+            return "\(uid)_trx_32"
+        }
     }
 
     var imageUrl: String {

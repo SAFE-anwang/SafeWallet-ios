@@ -4,9 +4,7 @@ import SnapKit
 import ComponentKit
 import BigInt
 
-class SuperNodeDetailIncentiveCell: UITableViewCell {
-    private let margins = UIEdgeInsets(top: 1, left: .margin16, bottom: 0, right: .margin16)
-    private let cardView = UIView()
+class SuperNodeDetailIncentiveCell: BaseThemeCell {
     private let titleLabel = UILabel()
     private let creatorSliderView = SuperNodeSliderView()
     private let partnerSliderView = SuperNodeSliderView()
@@ -15,18 +13,12 @@ class SuperNodeDetailIncentiveCell: UITableViewCell {
     override init(style: CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
-        backgroundColor = .clear
         selectionStyle = .none
+        set(backgroundStyle: .lawrence, isLast: true)
         
-        cardView.backgroundColor = .white
-        contentView.addSubview(cardView)
-        cardView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(margins)
-        }
-        
-        titleLabel.text = "挖矿奖励分配:".localized
+        titleLabel.text = "safe_zone.safe4.mining.reward".localized
         titleLabel.font = .subhead1
-        cardView.addSubview(titleLabel)
+        wrapperView.addSubview(titleLabel)
         titleLabel.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(CGFloat.margin16)
             make.trailing.equalToSuperview().inset(CGFloat.margin16)
@@ -34,21 +26,21 @@ class SuperNodeDetailIncentiveCell: UITableViewCell {
             make.top.equalToSuperview().offset(CGFloat.margin12)
         }
         
-        cardView.addSubview(creatorSliderView)
+        wrapperView.addSubview(creatorSliderView)
         creatorSliderView.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(CGFloat.margin12)
             make.leading.equalToSuperview().offset(CGFloat.margin16)
             make.trailing.equalToSuperview().inset(CGFloat.margin16)
         }
         
-        cardView.addSubview(partnerSliderView)
+        wrapperView.addSubview(partnerSliderView)
         partnerSliderView.snp.makeConstraints { make in
             make.top.equalTo(creatorSliderView.snp.bottom).offset(CGFloat.margin12)
             make.leading.equalToSuperview().offset(CGFloat.margin16)
             make.trailing.equalToSuperview().inset(CGFloat.margin16)
         }
         
-        cardView.addSubview(voterSliderView)
+        wrapperView.addSubview(voterSliderView)
         voterSliderView.snp.makeConstraints { make in
             make.top.equalTo(partnerSliderView.snp.bottom).offset(CGFloat.margin12)
             make.leading.equalToSuperview().offset(CGFloat.margin16)
@@ -62,15 +54,15 @@ class SuperNodeDetailIncentiveCell: UITableViewCell {
     
     func bind(creator: BigUInt, partner: BigUInt, voter: BigUInt) {
         let creatorValue = Float(creator.description) ?? 0
-        creatorSliderView.setTitle(text: "创建者\(creatorValue)%")
+        creatorSliderView.setTitle(text: "safe_zone.safe4.node.creator".localized + "\(creatorValue)%")
         creatorSliderView.setSlider(value: creatorValue)
         
         let partnerValue = Float(partner.description) ?? 0
-        partnerSliderView.setTitle(text: "合伙人\(partnerValue)%")
+        partnerSliderView.setTitle(text: "safe_zone.safe4.partner".localized + "\(partnerValue)%")
         partnerSliderView.setSlider(value: partnerValue)
         
         let voterValue = Float(voter.description) ?? 0
-        voterSliderView.setTitle(text: "投票人\(voterValue)%")
+        voterSliderView.setTitle(text: "safe_zone.safe4.node.record.voters".localized + "\(voterValue)%")
         voterSliderView.setSlider(value: voterValue)
     }
     

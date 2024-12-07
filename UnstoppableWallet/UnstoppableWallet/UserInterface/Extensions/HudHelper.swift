@@ -151,11 +151,15 @@ extension HudHelper {
 
     func show(banner: BannerType) {
         var config = HUDConfig()
-
+        var height: CGFloat = 56
+        if case let .error(str) = banner {
+            let textHeight = str.height(forContainerWidth: 114, font: .subhead1) + 16
+            height = max(height,textHeight)
+        }
         config.style = .banner(.top)
         config.appearStyle = .moveOut
         config.userInteractionEnabled = banner.isUserInteractionEnabled
-        config.preferredSize = CGSize(width: 114, height: 56)
+        config.preferredSize = CGSize(width: 114, height: height)
 
         config.coverBlurEffectStyle = nil
         config.coverBlurEffectIntensity = nil

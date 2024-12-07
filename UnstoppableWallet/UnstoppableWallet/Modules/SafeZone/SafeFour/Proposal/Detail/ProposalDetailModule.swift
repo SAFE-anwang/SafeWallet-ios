@@ -1,7 +1,7 @@
 import UIKit
 
 struct ProposalDetailModule {
-    static func viewController(viewItem: ProposalViewModel.ViewItem) -> UIViewController? {
+    static func viewController(viewItem: ProposalViewModel.ViewItem) -> ProposalDetailViewController? {
         guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
             return nil
         }

@@ -59,7 +59,24 @@ class SafeCoinAdapter: BitcoinBaseAdapter {
     override func explorerUrl(address: String) -> String? {
         "https://chain.anwang.com/address/" + address
     }
-
+    
+    func masterPrivateKey(wallet: Wallet) throws -> HDPrivateKey {
+        guard let seed = wallet.account.type.mnemonicSeed else {
+            throw AdapterError.unsupportedAccount
+        }
+        let masterPrivateKey = HDPrivateKey(seed: seed, xPrivKey: Purpose.bip44.rawValue)
+        return masterPrivateKey
+    }
+    
+    func hdWallet(_ wallet: Wallet) throws -> HDWallet {
+        guard let seed = wallet.account.type.mnemonicSeed else {
+            throw AdapterError.unsupportedAccount
+        }
+        let masterPrivateKey = HDPrivateKey(seed: seed, xPrivKey: Purpose.bip44.rawValue)
+        let hdWallet = HDWallet(masterKey: masterPrivateKey, coinType: 5, purpose: Purpose.bip44)
+        return hdWallet
+    }
+    
 }
 
 extension SafeCoinAdapter: SafeCoinKitDelegate {

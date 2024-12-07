@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BscscanApiKey_2</key>
+	<string>${bscscan_api_key_2}</string>
+	<key>BscscanApiKey_3</key>
+	<string>${bscscan_api_key_3}</string>
+	<key>BscscanApiKey_4</key>
+	<string>${bscscan_api_key_4}</string>
 	<key>ArbiscanApiKey</key>
 	<string>${arbiscan_api_key}</string>
 	<key>BscscanApiKey</key>

@@ -7,6 +7,7 @@ import UIExtensions
 import RxSwift
 import RxCocoa
 import ComponentKit
+import EvmKit
 
 class ProposalTabViewController: ThemeViewController {
     private let disposeBag = DisposeBag()
@@ -19,11 +20,11 @@ class ProposalTabViewController: ThemeViewController {
     private var allViewController: ProposalViewController
     private var mineViewController: ProposalViewController
     
-    init(viewModel: ProposalTabViewModel, privateKey: Data) {
+    init(viewModel: ProposalTabViewModel, privateKey: Data, evmKit: EvmKit.Kit) {
         self.viewModel = viewModel
         self.privateKey = privateKey
         allViewController = ProposalModule.subViewController(type: .All)
-        mineViewController = ProposalModule.subViewController(type: .Mine(privateKey: privateKey))
+        mineViewController = ProposalModule.subViewController(type: .Mine(address: evmKit.receiveAddress.hex))
         
         super.init()
         
@@ -92,6 +93,10 @@ class ProposalTabViewController: ThemeViewController {
     }
     
     @objc private func add() {
+        guard viewModel.isEnabledAdd else {
+            HudHelper.instance.show(banner: .error(string: "无法创建，需区块高度大于86400".localized))
+            return
+        }
         let vc = ProposalCreateModule.viewController(privateKey: privateKey)
         navigationController?.pushViewController(vc, animated: true)
     }

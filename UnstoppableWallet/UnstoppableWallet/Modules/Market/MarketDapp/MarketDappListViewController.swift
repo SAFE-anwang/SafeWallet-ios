@@ -15,14 +15,14 @@ class MarketDappListViewController: ThemeViewController {
     private let errorView = PlaceholderViewModule.reachabilityView()
     private let refreshControl = UIRefreshControl()
     private var viewItems: [MarketDappViewModel.ViewItem]?
-    private let tab: MarketDappModule.Tab
+    private let _tab: MarketDappModule.Tab
     weak var parentNavigationController: UINavigationController?
     var headerView: UITableViewHeaderFooterView? { nil }
 
     init(viewModel: MarketDappViewModel, urlManager: UrlManager, tab: MarketDappModule.Tab) {
         self.viewModel = viewModel
         self.urlManager = urlManager
-        self.tab = tab
+        self._tab = tab
         super.init()
     }
 
@@ -70,7 +70,7 @@ class MarketDappListViewController: ThemeViewController {
             self?.errorView.isHidden = !visible
         }
 
-        viewModel.onLoad(tab: self.tab)
+        viewModel.onLoad(tab: self._tab)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -92,11 +92,11 @@ class MarketDappListViewController: ThemeViewController {
     }
 
     private func refresh() {
-        viewModel.refresh(tab: self.tab)
+        viewModel.refresh(tab: self._tab)
     }
 
     private func sync(data:([MarketDappViewModel.ViewItem], MarketDappModule.Tab)?) {
-        guard self.tab ==  data?.1 else { return }
+        guard self._tab ==  data?.1 else { return }
         self.viewItems = data?.0
 
         if viewItems != nil {

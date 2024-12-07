@@ -320,6 +320,24 @@ extension EvmTransactionConverter {
         case let decoration as Safe4WithdrawDecoration:
             return Safe4WithdrawTransactionRecord(source: source, transaction: transaction, baseToken: baseToken, from: decoration.from.eip55, value: baseCoinValue(value: decoration.value, sign: .plus))
             
+        case let decoration as Safe4RedeemDecoration:
+            let value = baseCoinValue(value: decoration.value, sign: .plus)
+            return Safe4RedeemTransactionRecoard(source: source, transaction: transaction, baseToken: baseToken, from: decoration.from?.eip55 ?? "", to: decoration.to?.eip55 ?? "", value: value)
+            
+        case let decoration as Safe4NodeVoteDecoration:
+            let value = baseCoinValue(value: decoration.value, sign: .minus)
+            return Safe4VoteTransactionRecoard(source: source, transaction: transaction, baseToken: baseToken, from: decoration.from?.eip55 ?? "", to: decoration.to?.eip55 ?? "", value: value)
+            
+        case let decoration as Safe4NodeRegisterDecoration:
+            let value = baseCoinValue(value: decoration.value, sign: .minus)
+            let method = transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) }
+            return Safe4NodeRegisterTransactionRecoard(source: source, transaction: transaction, baseToken: baseToken, method: method, from: decoration.from?.eip55 ?? "", to: decoration.to?.eip55 ?? "", value: value, contractAddress: decoration.contract?.eip55 ?? "")
+            
+        case let decoration as Safe4AddLockDayDecoration:
+            let method = transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) }
+            let value = baseCoinValue(value: decoration.value, sign: .minus)
+
+
         case let decoration as UnknownTransactionDecoration:
             let address = evmKit.address
 

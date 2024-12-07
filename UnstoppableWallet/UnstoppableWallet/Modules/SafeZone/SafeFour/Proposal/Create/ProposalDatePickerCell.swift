@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 import SnapKit
 import RxSwift
-
+import HsToolKit
 class ProposalDatePickerCell: UITableViewCell, UITextFieldDelegate {
     private let titleLabel: UILabel
     
@@ -16,24 +16,23 @@ class ProposalDatePickerCell: UITableViewCell, UITextFieldDelegate {
         self.viewModel = viewModel
         
         titleLabel = UILabel(frame: .zero)
-        titleLabel.text = "发放时间"
+        titleLabel.text = "safe_zone.safe4.proposal.create.pay.time".localized
         titleLabel.font = UIFont.systemFont(ofSize: 14)
         titleLabel.textColor = .themeGray
 
         startTimeField = DatePickerView()
         startTimeField.font  = .subhead2
-        startTimeField.placeholder = "开始日期"
+        startTimeField.placeholder = "safe_zone.safe4.proposal.create.time.start".localized
         startTimeField.borderStyle = .roundedRect
-        let calendar = Calendar.current
-        let now = Date().addingTimeInterval(10 * 60)
-        startTimeField.date = now
-        startTimeField.minimumDate = now
+        if let start = viewModel.startMinimumDate {
+            startTimeField.date = start
+            startTimeField.minimumDate = start
+        }
         
         endTimeField = DatePickerView()
         endTimeField.font  = .subhead2
-        endTimeField.placeholder = "结束日期"
+        endTimeField.placeholder = "safe_zone.safe4.proposal.create.time.end".localized
         endTimeField.borderStyle = .roundedRect
-        startTimeField.minimumDate = Date().addingTimeInterval(12 * 60)
         
         super.init(style: .default, reuseIdentifier: nil)
         backgroundColor = .clear
@@ -76,17 +75,20 @@ class ProposalDatePickerCell: UITableViewCell, UITextFieldDelegate {
             self?.viewModel.set(startDate: $0)
             if let end = self?.endTimeField.currentDate, $0 > end {
                 self?.endTimeField.update(date: nil)
+                self?.viewModel.set(endDate: nil)
             }else {
-                self?.endTimeField.update(date: $0)
+                self?.endTimeField.update(date: self?.viewModel.endMinimumDate($0))
+                self?.viewModel.set(endDate: self?.viewModel.endMinimumDate($0))
             }
-            self?.endTimeField.date = $0
-            self?.endTimeField.minimumDate = $0
+            self?.endTimeField.date = (self?.viewModel.endMinimumDate($0))!
+            self?.endTimeField.minimumDate = self?.viewModel.endMinimumDate($0)
         }
         
         endTimeField.onChangeDate = {[weak self] in
             self?.viewModel.set(endDate: $0)
             if self?.startTimeField.currentDate == nil {
                 self?.startTimeField.date = $0
+                self?.viewModel.set(startDate: $0)
                 self?.startTimeField.minimumDate = $0
             }
         }
@@ -94,10 +96,10 @@ class ProposalDatePickerCell: UITableViewCell, UITextFieldDelegate {
         subscribe(disposeBag, viewModel.payTypeDriver) {  [weak self] type in
             switch type {
             case .all:
-                self?.startTimeField.placeholder = "请选择日期"
+                self?.startTimeField.placeholder = "safe_zone.safe4.proposal.create.time.placeholder.choose".localized
                 self?.endTimeField.isHidden = true
             case .periodization:
-                self?.startTimeField.placeholder = "开始日期"
+                self?.startTimeField.placeholder = "safe_zone.safe4.proposal.create.time.start".localized
                 self?.endTimeField.isHidden = false
             }
         }

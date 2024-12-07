@@ -13,8 +13,6 @@ class MasterNodeRegisterViewModel {
             stateRelay.accept(state)
         }
     }
-    
-    private var isEnabledSend = true
 
     init(service: MasterNodeRegisterService, decimalParser: AmountDecimalParser) {
         self.service = service
@@ -23,7 +21,7 @@ class MasterNodeRegisterViewModel {
 }
 
 extension MasterNodeRegisterViewModel {
-    func onChange(text: String?, type: MasterNodeRegisterCell.InputType) {
+    func onChange(text: String?, type: MasterNodeInputType) {
         switch type {
         case .address:
             service.address = text
@@ -34,30 +32,37 @@ extension MasterNodeRegisterViewModel {
         }
     }
     
-    func send() {
+    func isValidInputParams() async throws -> Bool {
+        
         let existCaution = service.syncCautionState()
+        let isValidAddress = try await service.validateMasterNodeAddress()
+        let isValidEnode = try await service.validateMasterNodeEnode()
+        
+        guard !existCaution && isValidAddress && isValidEnode else{
+            return false
+        }
+        return true
+    }
+    
+    func send(data: MasterNodeSendData) {
         state = .loading
         Task {
             do{
-                let isValidAddress = try await service.validateSuperNodeAddress()
-                let isValidEnode = try await service.validateSuperNodeEnode()
-                
-                guard !existCaution && isValidAddress && isValidEnode else{ return }
-                guard isEnabledSend else { return }
-                isEnabledSend = false
-                if let _ = try await service.create() {
+                if let _ = try await service.create(sendData: data) {
                     state = .completed
                 }
-                isEnabledSend = true
             }catch {
-                isEnabledSend = true
-                state = .failed(error: "创建失败")
+                state = .failed(error: "safe_zone.safe4.craate.failed".localized)
             }
         }
     }
 }
 
 extension MasterNodeRegisterViewModel {
+    
+    var sendData: MasterNodeSendData? {
+        service.getSendData()
+    }
     
     var stateDriver: Observable<MasterNodeRegisterViewModel.State> {
         stateRelay.asObservable()

@@ -28,7 +28,7 @@ class EvmSyncSourceManager {
         case .arbitrumOne: return .arbiscan(apiKey: AppConfig.arbiscanKey)
         case .gnosis: return .gnosis(apiKey: AppConfig.gnosisscanKey)
         case .fantom: return .fantom(apiKey: AppConfig.ftmscanKey)
-        case .safe4: return .safeFourscan(apiKey: AppConfig.ftmscanKey)
+        case .safe4: return .safeFourscanTestNet(apiKey: AppConfig.etherscanKey)
         default: fatalError("Non-supported EVM blockchain")
         }
     }
@@ -47,6 +47,11 @@ extension RpcSource {
     static func safeBscRpcHttp() -> RpcSource {
         .http(urls: [URL(string: "https://bsc-mainnet.core.chainstack.com/67f0d109c5c0b7f0aa251a89f12c0b7b")!], auth: nil)
     }
+    
+    static func safeBscRpcHttp2() -> RpcSource {
+        .http(urls: [URL(string: "https://nd-981-064-010.p2pify.com/3abdd3b90f012f4427380b632deb4180")!], auth: nil)
+    }
+
     static func safePolygonRpcHttp() -> RpcSource {
         .http(urls: [URL(string: "https://polygon-mainnet.core.chainstack.com/e9c77e1e564c041e111132211eb0df0f")!], auth: nil)
     }
@@ -147,21 +152,26 @@ extension EvmSyncSourceManager {
                 ]
             } else {
                 return [
-                    EvmSyncSource(
-                        name: "Binance",
-                        rpcSource: .binanceSmartChainHttp(),
-                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
-                    ),
+//                    EvmSyncSource(
+//                        name: "Binance",
+//                        rpcSource: .binanceSmartChainHttp(),
+//                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+//                    ),
                     EvmSyncSource(
                         name: "BSC RPC",
                         rpcSource: .safeBscRpcHttp(),
                         transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                     ),
                     EvmSyncSource(
-                        name: "Omnia",
-                        rpcSource: .http(urls: [URL(string: "https://endpoints.omniatech.io/v1/bsc/mainnet/public")!], auth: nil),
+                        name: "BSC RPC",
+                        rpcSource: .safeBscRpcHttp2(),
                         transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                     ),
+//                    EvmSyncSource(
+//                        name: "Omnia",
+//                        rpcSource: .http(urls: [URL(string: "https://endpoints.omniatech.io/v1/bsc/mainnet/public")!], auth: nil),
+//                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+//                    ),
                 ]
             }
         case .polygon:
@@ -246,7 +256,7 @@ extension EvmSyncSourceManager {
             return [
                 EvmSyncSource(
                     name: "SAFE4",
-                    rpcSource: .safeFourRpcHttp(),
+                    rpcSource: .safeFourTestNetRpcHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 )
             ]

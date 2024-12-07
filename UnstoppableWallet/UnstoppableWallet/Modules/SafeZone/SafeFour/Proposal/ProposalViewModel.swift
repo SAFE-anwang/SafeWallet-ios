@@ -12,19 +12,20 @@ import HsExtensions
 import ThemeKit
 
 class ProposalViewModel {
-    private let servie: ProposalService
+    private let service: ProposalService
     private var safe4Page = Safe4PageControl(initCount: 25, totalNum: 0, page: 0, isReverse: true)
     private var stateRelay = PublishRelay<ProposalViewModel.State>()
     private var viewItems = [ProposalViewModel.ViewItem]()
     
+    private let searchCautionRelay = BehaviorRelay<Caution?>(value:nil)
     private(set) var state: ProposalViewModel.State = .loading {
         didSet {
             stateRelay.accept(state)
         }
     }
     
-    init(servie: ProposalService) {
-        self.servie = servie
+    init(service: ProposalService) {
+        self.service = service
     }
 }
 
@@ -32,23 +33,23 @@ extension ProposalViewModel {
 
     private func requestInfos(loadMore: Bool) {
         state = .loading
-        Task(priority: .userInitiated) { [servie] in
+        Task(priority: .userInitiated) { [service] in
             do{
                 if !loadMore {
-                   let totalNum = try await servie.getTotalNum()
+                   let totalNum = try await service.getTotalNum()
                     safe4Page.set(totalNum: totalNum)
                 }
                 guard safe4Page.totalNum > 0 else { return  state = .completed(datas: []) }
                 guard viewItems.count < safe4Page.totalNum else { return }
                 
-                let ids = try await servie.proposalIds(page: safe4Page)
+                let ids = try await service.proposalIds(page: safe4Page)
                 var results: [ViewItem] = []
                 var errors: [Error] = []
                 await withTaskGroup(of: Result<ViewItem, Error>.self) { taskGroup in
                     for id in ids {
                         taskGroup.addTask {
                             do {
-                                let info = try await servie.getInfo(id: id)
+                                let info = try await service.getInfo(id: id)
                                 let item = ViewItem(info: info)
                                 return .success(item)
                             }catch{
@@ -76,6 +77,44 @@ extension ProposalViewModel {
     }
 }
 
+// search
+extension ProposalViewModel {
+    func search(text: String?) {
+        searchCautionRelay.accept(nil)
+        guard let text, text.count > 0 else {
+            state = .completed(datas: viewItems)
+            return
+        }
+        state = .loading
+        Task {
+            do {
+                if let id = BigUInt(text) {
+                    let isExist = try await service.exist(id)
+                    guard isExist else {
+                        let caution = Caution(text: "safe_zone.safe4.proposal.create.ID.exist".localized, type: .error)
+                        searchCautionRelay.accept(caution)
+                        state = .searchResults(datas: [])
+                        return
+                    }
+                    let viewItem = try await proposalInfoBy(id: id)
+                    state = .searchResults(datas: [viewItem])
+                }else {
+                    let caution = Caution(text: "safe_zone.safe4.proposal.create.ID.input.tips".localized, type: .error)
+                    searchCautionRelay.accept(caution)
+                    state = .searchResults(datas: [])
+                }
+            }catch{
+                state = .searchResults(datas: [])
+            }
+        }
+    }
+    
+    private func proposalInfoBy(id: BigUInt) async throws -> ViewItem {
+        let info = try await service.getInfo(id: id)
+        return ViewItem(info: info)
+    }
+}
+
 extension ProposalViewModel {
     
     func refresh() {
@@ -92,8 +131,17 @@ extension ProposalViewModel {
 }
 
 extension ProposalViewModel {
+    
+    var type: ProposalModule.ProposalType {
+        service.type
+    }
+    
     var stateDriver: Observable<ProposalViewModel.State> {
         stateRelay.asObservable()
+    }
+    
+    var searchCautionDriver: Driver<Caution?> {
+        searchCautionRelay.asDriver()
     }
 }
 
@@ -102,6 +150,7 @@ extension ProposalViewModel {
     enum State {
         case loading
         case completed(datas: [ProposalViewModel.ViewItem])
+        case searchResults(datas: [ProposalViewModel.ViewItem])
         case failed(error: String)
     }
         
@@ -128,18 +177,21 @@ extension ProposalViewModel {
             return DateHelper().safe4Format(date: date)
         }
         
+        var payDateText: String {
+            let date = Date(timeIntervalSince1970: Double(info.startPayTime))
+            let start = Calendar.current.date(byAdding: .day, value: 1, to: date) ?? Date()// next day
+            return DateHelper().safe4Format(date: start)
+        }
+
         var distribution: String {
             if info.payTimes < 2 {
-                return "在 \(dateText)\n一次性发放 \(amount) SAFE"
+                return "safe_zone.safe4.pay.method.disposabl.desc".localized("\(payDateText)", "\(amount)")
             }
             let date = Date(timeIntervalSince1970: Double(info.endPayTime))
-            let end = DateHelper().safe4Format(date: date)
-            return "在\(dateText)到\(end)\n分期\(info.payTimes)次 合计发放 \(amount) SAFE"
+            let end = info.startPayTime == info.startPayTime ? payDateText : DateHelper().safe4Format(date: date)
+            return "safe_zone.safe4.pay.method.instalment.desc".localized("\(payDateText)", "\(end)", "\(info.payTimes)", "\(amount)")
         }
-        
-//        var ableVote: Bool {
-//            
-//        }
+
     }
     
     enum ProposalState {

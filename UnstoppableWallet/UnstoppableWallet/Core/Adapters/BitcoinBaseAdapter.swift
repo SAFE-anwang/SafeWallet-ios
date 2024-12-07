@@ -334,7 +334,11 @@ extension BitcoinBaseAdapter {
             changeAddress: info.changeAddress?.stringValue
         )
     }
-
+    
+    var bitcoinCore: BitcoinCore {
+        abstractKit.bitcoinCore
+    }
+    
     var unspentOutputs: [UnspentOutputInfo] {
         abstractKit.unspentOutputs
     }

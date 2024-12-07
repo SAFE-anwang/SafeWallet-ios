@@ -128,7 +128,7 @@ public extension NetworkManager {
                 observer(.error(NetworkManager.RequestError.disposed))
                 return Disposables.create()
             }
-
+            
             let task = Task {
                 do {
                     let result: T = try await manager.fetch(url: url, method: method, parameters: parameters, encoding: encoding, headers: headers, interceptor: interceptor, responseCacherBehavior: responseCacherBehavior, context: context)

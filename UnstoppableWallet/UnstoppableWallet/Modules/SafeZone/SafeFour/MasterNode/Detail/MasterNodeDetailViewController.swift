@@ -13,6 +13,7 @@ class MasterNodeDetailViewController: ThemeViewController {
     
     private let disposeBag = DisposeBag()
     private let viewModel: MasterNodeDetailViewModel
+    private let viewType: MasterNodeDetailViewModel.ViewType
     private let tableView = SectionsTableView(style: .plain)
     
     private var viewItems = [MasterNodeDetailViewModel.ViewItem]()
@@ -24,8 +25,11 @@ class MasterNodeDetailViewController: ThemeViewController {
     private let headerView = NodeDetailVoteRecordHeaderView(hasTopSeparator: true)
     
     weak var parentNavigationController: UINavigationController?
-    init(viewModel: MasterNodeDetailViewModel) {
+    var needReload: (() -> Void)?
+    
+    init(viewModel: MasterNodeDetailViewModel, viewType: MasterNodeDetailViewModel.ViewType) {
         self.viewModel = viewModel
+        self.viewType = viewType
         super.init()
     }
     
@@ -56,41 +60,28 @@ class MasterNodeDetailViewController: ThemeViewController {
 
         incentiveCell.bind(creator: viewModel.detailInfo.info.incentivePlan.creator, partner: viewModel.detailInfo.info.incentivePlan.partner)
         tableView.reload()
-        
-        subscribe(disposeBag, viewModel.stateDriver) { [weak self] in self?.sync(state: $0) }
-        
+                
         subscribe(disposeBag, viewModel.balanceDriver) { [weak self] in
             if let strongSelf = self {
                 let maximumValue = Float(strongSelf.viewModel.detailInfo.foundersBalanceAmount.cgFloatValue)
-                strongSelf.joinPartnerCell.bind(minValue: 200, step: 200, minimumValue: 0, maximumValue: maximumValue, balance: $0)
+                strongSelf.joinPartnerCell.bind(minValue: strongSelf.viewModel.minimumSafeValue, step: strongSelf.viewModel.minimumSafeValue, minimumValue: 0, maximumValue: maximumValue, balance: $0)
             }
         }
         
         joinPartnerCell.joinPartner = { [weak self] in
-                self?.viewModel.joinPartner(value: $0)
+            self?.onTapJoinPartner(sendAmount: $0)
         }
     }
+}
+extension MasterNodeDetailViewController {
     
-    private func sync(state: MasterNodeDetailViewModel.State) {
-        DispatchQueue.main.async { [weak self] in
-            switch state {
-            case .loading:()
-            case let .failed(error):
-                self?.show(error: error)
-                
-            case .partnerCompleted:
-                self?.show(message: "加入合伙人成功！")
-                self?.navigationController?.popViewController(animated: true)
-            }
+    private func onTapJoinPartner(sendAmount: Float) {
+        let vc = MasterNodeDetailSendViewController(viewModel: viewModel, sendAmount: sendAmount)
+        vc.partnerCompleted = { [weak self] in
+            self?.tableView.reload()
+            self?.navigationController?.popToViewController(ofClass: MasterNodeTabViewController.self)
         }
-    }
-        
-    private func show(error: String) {
-        HudHelper.instance.show(banner: .error(string: error))
-    }
-    
-    private func show(message: String) {
-        HudHelper.instance.show(banner: .success(string: message))
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
 
@@ -109,7 +100,7 @@ private extension MasterNodeDetailViewController {
             },
             .text { (component: TextComponent) -> () in
                 component.font = .subhead1
-                component.textColor = .themeGray
+                component.textColor = viewItem.isSelf ? .themeIssykBlue : .themeGray
                 component.numberOfLines = 0
                 component.setContentHuggingPriority(.defaultLow, for: .horizontal)
                 component.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -137,14 +128,14 @@ private extension MasterNodeDetailViewController {
                     component.font = .subhead1
                     component.textColor = .themeGray
                     component.setContentHuggingPriority(.required, for: .vertical)
-                    component.text = "主节点剩余份额"
+                    component.text = "safe_zone.safe4.node.mater.balance".localized
                 },
                 .text { (component: TextComponent) -> () in
                     component.font = .subhead1
                     component.textColor = .themeGray
                     component.textAlignment = .right
                     component.setContentHuggingPriority(.required, for: .vertical)
-                    component.text = "账户余额"
+                    component.text = "safe_zone.safe4..account.balance".localized
                 },
             ]),
             .margin8,
@@ -167,77 +158,10 @@ private extension MasterNodeDetailViewController {
         return cell
     }
     
-    func baseInfoCellRow(id: String, tableView: UITableView, title: String, value: String, isFirst: Bool = false, isLast: Bool = false) -> RowProtocol {
-        let backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence
-        let titleFont: UIFont = .subhead2
-        let valueFont: UIFont = .subhead1
-
-        return CellBuilderNew.row(
-            rootElement:  .hStack([
-                .text { (component: TextComponent) -> () in
-                    component.font = titleFont
-                    component.textColor = .themeGray
-                    component.setContentHuggingPriority(.required, for: .horizontal)
-                    component.text = title
-                },
-                .text { (component: TextComponent) -> () in
-                    component.font = valueFont
-                    component.setContentHuggingPriority(.defaultLow, for: .horizontal)
-                    component.text = value
-                }
-            ]),
-            tableView: tableView,
-            id: id,
-            hash: value,
-            height: .heightCell48,
-            bind: { cell in
-                cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
-            }
-        )
+    func baseInfoCellRow(id: String, title: String, value: String, isFirst: Bool = false, isLast: Bool = false) -> RowProtocol {
+        tableView.universalRow48(id: id, title: .subhead2(title, color: .themeGray), value: .subhead1(value), isFirst: isFirst, isLast: isLast)
     }
-    
-    func multilineInfoRow(id: String, tableView: UITableView, title: String, value: String, isFirst: Bool = false, isLast: Bool = false) -> RowProtocol {
-        let backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence
-        let layoutMargins = UIEdgeInsets(top: .margin8, left: .margin16, bottom: .margin12, right: .margin16)
-        let titleFont: UIFont = .subhead2
-        let valueFont: UIFont = .subhead1
-        return CellBuilderNew.row(
-            rootElement: .vStack([
-                .text { (component: TextComponent) -> () in
-                    component.font = titleFont
-                    component.textColor = .themeGray
-                    component.text = title
-                },
-                .margin4,
-                .text { (component: TextComponent) -> () in
-                    component.font = valueFont
-                    component.numberOfLines = 0
-                    component.text = value
-                }
-            ]),
-            layoutMargins: layoutMargins,
-            tableView: tableView,
-            id: id,
-            hash: value,
-            dynamicHeight: { containerWidth in
-                return CellBuilderNew.height(
-                    containerWidth: containerWidth,
-                    backgroundStyle: backgroundStyle,
-                    text: value,
-                    font: valueFont,
-                    elements: [
-                        .margin16,
-                        .margin16,
-                        .multiline,
-                    ]
-                ) + 27
-            },
-            bind: { cell in
-                cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
-            }
-        )
-    }
-    
+        
     func payTypeCell(viewModel: ProposalCreateViewModel, backgroundStyle: BaseSelectableThemeCell.BackgroundStyle) -> BaseSelectableThemeCell {
         let cell = BaseSelectableThemeCell()
         cell.set(backgroundStyle: backgroundStyle)
@@ -248,7 +172,7 @@ private extension MasterNodeDetailViewController {
                 component.font = .subhead1
                 component.textColor = .themeGray
                 component.setContentHuggingPriority(.required, for: .vertical)
-                component.text = "发放方式"
+                component.text = "safe_zone.safe4.pay.method".localized
             },
         ]), layoutMargins: UIEdgeInsets(top: .margin16, left: .margin16, bottom: .margin8, right: .margin16))
         return cell
@@ -262,7 +186,6 @@ private extension MasterNodeDetailViewController {
             rootElement:  .hStack([
                 .text { (component: TextComponent) -> () in
                     component.font = titleFont
-                    component.textColor = .themeBlack
                     component.setContentHuggingPriority(.required, for: .horizontal)
                     component.numberOfLines = 0
                     component.text = title
@@ -300,27 +223,32 @@ private extension MasterNodeDetailViewController {
     
     var joinPartnerRows: [RowProtocol] {
         [
-            sectionHeaderCellRow(id: "header", tableView: tableView, title: "通过锁仓SAFE来成为这个主节点的合伙人", isFirst: true),
-            multilineInfoRow(id: "node_balance", tableView: tableView, title: "主节点剩余份额".localized, value: viewModel.detailInfo.foundersBalanceAmount.safe4FormattedAmount + " SAFE"),
+            sectionHeaderCellRow(id: "header", tableView: tableView, title: "safe_zone.safe4.node.master.lock.tips".localized, isFirst: true),
+            tableView.multilineRow(id: "node_balance", title: "safe_zone.safe4.node.mater.balance".localized, value: viewModel.detailInfo.foundersBalanceAmount.safe4FormattedAmount + " SAFE"),
             StaticRow(
                     cell: joinPartnerCell,
                     id: "node_join",
                     height: joinPartnerCell.height()
             ),
-            
         ]
     }
 
     var nodeDetailInfoRows: [RowProtocol] {
         [
-            sectionHeaderCellRow(id: "header", tableView: tableView, title: "节点详情", isFirst: true),
-            baseInfoCellRow(id: "node_id", tableView: tableView, title: "节点ID: ".localized, value: viewModel.detailInfo.id),
-            baseInfoCellRow(id: "node_state", tableView: tableView, title: "节点状态:".localized, value: viewModel.detailInfo.nodeState.title),
-            multilineInfoRow(id: "node_address", tableView: tableView, title: "节点地址:".localized, value: viewModel.detailInfo.info.addr.address),
-            multilineInfoRow(id: "node_creater", tableView: tableView, title: "创建者:".localized, value: viewModel.detailInfo.info.creator.address),
-            baseInfoCellRow(id: "node_amount", tableView: tableView, title: "创建质押:".localized, value: viewModel.detailInfo.amount + " SAFE"),
-            multilineInfoRow(id: "node_enode", tableView: tableView, title: "节点ENODE:".localized, value: viewModel.detailInfo.info.enode),
-            multilineInfoRow(id: "node_desc", tableView: tableView, title: "节点描述:".localized, value: viewModel.detailInfo.info.description),
+            sectionHeaderCellRow(id: "header", tableView: tableView, title: "safe_zone.safe4.node.detail".localized, isFirst: true),
+            baseInfoCellRow(id: "node_id", title: "safe_zone.safe4.node.id".localized, value: viewModel.detailInfo.id),
+            baseInfoCellRow(id: "node_state", title: "safe_zone.safe4.node.status".localized, value: viewModel.detailInfo.nodeState.title),
+            tableView.multilineRow(id: "node_address", title: "safe_zone.safe4.node.address".localized, value: viewModel.detailInfo.info.addr.address, subTextColor: .themeIssykBlue, action: { [self] in
+                CopyHelper.copyAndNotify(value: viewModel.detailInfo.info.addr.address)
+            }),
+            tableView.multilineRow(id: "node_creater", title: "safe_zone.safe4.node.creator".localized + ": ", value: viewModel.detailInfo.info.creator.address, subTextColor: .themeIssykBlue, action: { [self] in
+                CopyHelper.copyAndNotify(value: viewModel.detailInfo.info.creator.address)
+            }),
+            baseInfoCellRow(id: "node_amount", title: "safe_zone.safe4.creator.pledge".localized, value: viewModel.detailInfo.amount + " SAFE"),
+            tableView.multilineRow(id: "node_enode", title: "safe_zone.safe4.node.enode".localized, value: viewModel.detailInfo.info.enode, subTextColor: .themeIssykBlue, action: { [self] in
+                CopyHelper.copyAndNotify(value: viewModel.detailInfo.info.enode)
+            }),
+            tableView.multilineRow(id: "node_desc", title: "safe_zone.safe4.node.desc".localized, value: viewModel.detailInfo.info.description),
             StaticRow(cell: incentiveCell, id: "slider-info", height: MasterNodeDetailIncentiveCell.height())
         ]
     }
@@ -331,8 +259,7 @@ extension MasterNodeDetailViewController: SectionsDataSource {
 
         var sections = [SectionProtocol]()
         let joinPartnerSection = Section(id: "Node_join",footerState: .margin(height: CGFloat.margin12), rows: joinPartnerRows)
-
-        if viewModel.detailInfo.joinEnabled == true {
+        if viewType == .JoinPartner, viewModel.detailInfo.isEnabledJoin == true {
            sections.append(joinPartnerSection)
        }
         

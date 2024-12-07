@@ -13,8 +13,6 @@ class SuperNodeRegisterViewModel {
             stateRelay.accept(state)
         }
     }
-    private var isEnabledSend = true
-    
     init(service: SuperNodeRegisterService, decimalParser: AmountDecimalParser) {
         self.service = service
         self.decimalParser = decimalParser
@@ -22,7 +20,7 @@ class SuperNodeRegisterViewModel {
 }
 
 extension SuperNodeRegisterViewModel {
-    func onChange(text: String?, type: SuperNodeRegisterCell.InputType) {
+    func onChange(text: String?, type: SuperNodeInputType) {
         switch type {
         case .address:
             service.address = text
@@ -35,31 +33,37 @@ extension SuperNodeRegisterViewModel {
         }
     }
     
-    func send() {
+    func isValidInputParams() async throws -> Bool {
         let existCaution = service.syncCautionState()
+        let isValidName = try await service.validateSuperNodeName()
+        let isValidAddress = try await service.validateSuperNodeAddress()
+        let isValidEnode = try await service.validateSuperNodeEnode()
+        
+        guard !existCaution && isValidName && isValidAddress && isValidEnode else{
+            return false
+        }
+        return true
+    }
+    
+    func send(data: SuperNodeSendData) {
         state = .loading
         Task {
             do{
-                let isValidName = try await service.validateSuperNodeName()
-                let isValidAddress = try await service.validateSuperNodeAddress()
-                let isValidEnode = try await service.validateSuperNodeEnode()
-                
-                guard !existCaution && isValidName && isValidAddress && isValidEnode else{ return }
-                guard isEnabledSend else { return }
-                isEnabledSend = false
-                if let txId = try await service.create() {
+                if let _ = try await service.create(sendData: data) {
                     state = .completed
                 }
-                isEnabledSend = true
             }catch {
-                isEnabledSend = true
-                state = .failed(error: "创建失败")
+                state = .failed(error: "safe_zone.safe4.craate.failed".localized)
             }
         }
     }
 }
 
 extension SuperNodeRegisterViewModel {
+    
+    var sendData: SuperNodeSendData? {
+        service.getSendData()
+    }
     
     var stateDriver: Observable<SuperNodeRegisterViewModel.State> {
         stateRelay.asObservable()

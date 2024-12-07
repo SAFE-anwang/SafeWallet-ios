@@ -12,7 +12,7 @@ class PrimaryButtonCell: UITableViewCell {
 
     override init(style: CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-
+        
         backgroundColor = .clear
         selectionStyle = .none
 
@@ -22,7 +22,7 @@ class PrimaryButtonCell: UITableViewCell {
             maker.centerY.equalToSuperview()
         }
 
-        button.addTarget(self, action: #selector(onTapButton), for: .touchUpInside)
+        button.addTarget(self, action: #selector(onTapButton(_:)), for: .touchUpInside)
     }
 
     @available(*, unavailable)
@@ -30,7 +30,7 @@ class PrimaryButtonCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    @objc private func onTapButton() {
+    @objc private func onTapButton(_ sender: UIButton) {
         onTap?()
     }
 
@@ -46,5 +46,9 @@ class PrimaryButtonCell: UITableViewCell {
 
     func set(style: PrimaryButton.Style) {
         button.set(style: style)
+    }
+    
+    func setDebounceInterval(_ interval: TimeInterval) {
+        button.setDebounceInterval(interval)
     }
 }

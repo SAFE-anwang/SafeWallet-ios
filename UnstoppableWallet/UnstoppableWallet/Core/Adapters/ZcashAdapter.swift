@@ -10,7 +10,7 @@ import UIKit
 import ZcashLightClientKit
 
 class ZcashAdapter {
-    private static let endPoint = "mainnet.lightwalletd.com" // "lightwalletd.electriccoin.co"
+    private static let endPoint = "zec.rocks" // "lightwalletd.electriccoin.co"
     private let queue = DispatchQueue(label: "\(AppConfig.label).zcash-adapter", qos: .userInitiated)
 
     private var cancellables: [AnyCancellable] = []
@@ -66,7 +66,8 @@ class ZcashAdapter {
     private(set) var syncing: Bool = true
 
     init(wallet: Wallet, restoreSettings: RestoreSettings) throws {
-        logger = App.shared.logger.scoped(with: "ZCashKit") // HsToolKit.Logger(minLogLevel: .debug) //
+        logger = App.shared.logger.scoped(with: "ZCashKit")
+//        logger = HsToolKit.Logger(minLogLevel: .debug)
 
         guard let seed = wallet.account.type.mnemonicSeed else {
             throw AdapterError.unsupportedAccount
@@ -174,8 +175,8 @@ class ZcashAdapter {
                     self?.transactionSubject.onNext(wrapped)
                 }
 
-                let shielded = await (try? synchronizer.getShieldedBalance(accountIndex: 0).decimalValue.decimalValue) ?? 0
-                let shieldedVerified = await (try? synchronizer.getShieldedVerifiedBalance(accountIndex: 0).decimalValue.decimalValue) ?? 0
+                let shielded = await (try? synchronizer.getAccountBalance(accountIndex: 0)?.saplingBalance.total().decimalValue.decimalValue) ?? 0
+                let shieldedVerified = await (try? synchronizer.getAccountBalance(accountIndex: 0)?.saplingBalance.spendableValue.decimalValue.decimalValue) ?? 0
                 self?.balanceSubject.onNext(
                     VerifiedBalanceData(
                         fullBalance: shielded,
@@ -296,7 +297,7 @@ class ZcashAdapter {
         switch event {
         case let .foundTransactions(transactions, inRange):
             logger?.log(level: .debug, message: "found \(transactions.count) mined txs in range: \(inRange)")
-            transactions.forEach { overview in
+            for overview in transactions {
                 logger?.log(level: .debug, message: "tx: v =\(overview.value.decimalValue.decimalString) : fee = \(overview.fee?.decimalString() ?? "N/A") : height = \(overview.minedHeight?.description ?? "N/A")")
             }
             let lastBlockHeight = max(inRange.upperBound, lastBlockHeight)
@@ -322,7 +323,7 @@ class ZcashAdapter {
         Task {
             let pending = await synchronizer.transactions.filter { overview in overview.minedHeight == nil }
             logger?.log(level: .debug, message: "Resync pending txs: \(pending.count)")
-            pending.forEach { entity in
+            for entity in pending {
                 logger?.log(level: .debug, message: "TX : \(entity.value.decimalValue.description)")
             }
             if !pending.isEmpty {
@@ -476,8 +477,8 @@ class ZcashAdapter {
         }
 
         return VerifiedBalanceData(
-            fullBalance: synchronizerState.shieldedBalance.total.decimalValue.decimalValue,
-            available: synchronizerState.shieldedBalance.verified.decimalValue.decimalValue
+            fullBalance: synchronizerState.accountBalance?.saplingBalance.total().decimalValue.decimalValue ?? 0,
+            available: synchronizerState.accountBalance?.saplingBalance.spendableValue.decimalValue.decimalValue ?? 0
         )
     }
 
@@ -501,7 +502,8 @@ extension ZcashAdapter {
             fsBlockDbRoot: fsBlockDbRootURL(uniqueId: uniqueId, network: network),
             generalStorageURL: generalStorageURL(uniqueId: uniqueId, network: network),
             dataDbURL: dataDbURL(uniqueId: uniqueId, network: network),
-            endpoint: LightWalletEndpoint(address: endPoint, port: 9067, secure: true, streamingCallTimeoutInMillis: 10 * 60 * 60 * 1000),
+            torDirURL: torDirURL(uniqueId: uniqueId, network: network),
+            endpoint: LightWalletEndpoint(address: endPoint, port: 443, secure: true, streamingCallTimeoutInMillis: 10 * 60 * 60 * 1000),
             network: network,
             spendParamsURL: spendParamsURL(uniqueId: uniqueId),
             outputParamsURL: outputParamsURL(uniqueId: uniqueId),
@@ -547,6 +549,10 @@ extension ZcashAdapter {
 
     private static func dataDbURL(uniqueId: String, network: ZcashNetwork) throws -> URL {
         try dataDirectoryUrl().appendingPathComponent(network.constants.defaultDbNamePrefix + uniqueId + ZcashSDK.defaultDataDbName, isDirectory: false)
+    }
+
+    private static func torDirURL(uniqueId: String, network: ZcashNetwork) throws -> URL {
+        try dataDirectoryUrl().appendingPathComponent(network.constants.defaultDbNamePrefix + uniqueId + ZcashSDK.defaultTorDirName, isDirectory: true)
     }
 
     private static func spendParamsURL(uniqueId: String) throws -> URL {
@@ -622,12 +628,10 @@ extension ZcashAdapter: IAdapter {
 
         if let status = synchronizerState {
             balanceState = """
-            shielded balance
-              total:  \(balanceData.balanceTotal.description)
-            verified:  \(balanceData.available)
-            transparent balance
-                 total: \(String(describing: status.transparentBalance.total))
-              verified: \(String(describing: status.transparentBalance.verified))
+            shielded balance (BalanceData)
+                total:  \(balanceData.balanceTotal.description)
+                verified:  \(balanceData.available)
+            unshielded balance: \(String(describing: status.accountBalance?.unshielded ?? Zatoshi(0)))
             """
         }
         return """
@@ -742,7 +746,7 @@ extension ZcashAdapter: ISendZcashAdapter {
             switch try Recipient(address, network: network.networkType) {
             case .transparent:
                 return .transparent
-            case .sapling, .unified: // I'm keeping changes to the minimum. Unified Address should be treated as a different address type which will include some shielded pool and possibly others as well.
+            case .sapling, .unified, .tex: // I'm keeping changes to the minimum. Unified Address should be treated as a different address type which will include some shielded pool and possibly others as well.
                 return .shielded
             }
         } catch {
@@ -778,6 +782,23 @@ extension ZcashAdapter: ISendZcashAdapter {
             }
             return Disposables.create()
         }
+    }
+
+    func send(amount: Decimal, address: Recipient, memo: Memo?) async throws {
+        guard let spendingKey else {
+            throw AppError.ZcashError.noReceiveAddress
+        }
+
+        let pendingEntity = try await synchronizer.sendToAddress(
+            spendingKey: spendingKey,
+            zatoshi: Zatoshi.from(decimal: amount),
+            toAddress: address,
+            memo: memo
+        )
+
+        logger?.log(level: .debug, message: "Successful send TX: : \(pendingEntity.value.decimalValue.description):")
+
+        reSyncPending()
     }
 
     func recipient(from stringEncodedAddress: String) -> ZcashLightClientKit.Recipient? {
@@ -842,7 +863,7 @@ enum ZCashAdapterState: Equatable {
         case let .downloadingSapling(progress):
             return .customSyncing(main: "balance.downloading_sapling".localized(progress), secondary: nil, progress: progress)
         case let .downloadingBlocks(progress, _):
-            let percentValue = ValueFormatter.instance.format(percentValue: Decimal(Double(progress * 100)), showSign: false)
+            let percentValue = ValueFormatter.instance.format(percentValue: Decimal(Double(progress * 100)), signType: .never)
             return .customSyncing(main: "balance.downloading_blocks".localized, secondary: percentValue, progress: Int(progress * 100))
         case let .notSynced(error): return .notSynced(error: error)
         }
@@ -856,7 +877,7 @@ enum ZCashAdapterState: Equatable {
         case let .syncing(progress, lastDate): return "Syncing: progress = \(progress?.description ?? "N/A"), lastBlockDate: \(lastDate?.description ?? "N/A")"
         case let .downloadingSapling(progress): return "downloadingSapling: progress = \(progress)"
         case let .downloadingBlocks(progress, _):
-            let percentValue = ValueFormatter.instance.format(percentValue: Decimal(Double(progress * 100)), showSign: false)
+            let percentValue = ValueFormatter.instance.format(percentValue: Decimal(Double(progress * 100)), signType: .never)
             return "Downloading Blocks: \(percentValue?.description ?? "N/A") : \(Int(progress * 100))"
         case let .notSynced(error): return "Not synced \(error.localizedDescription)"
         }

@@ -112,7 +112,7 @@ enum MarketModule {
 
             if let currencyValue, let diff {
                 let valueDiff = diff * currencyValue.value / 100
-                value = ValueFormatter.instance.formatShort(currency: currencyValue.currency, value: valueDiff, showSign: true) ?? "----"
+                value = ValueFormatter.instance.formatShort(currency: currencyValue.currency, value: valueDiff) ?? "----"
                 color = valueDiff.isSignMinus ? .themeLucian : .themeRemus
             } else {
                 value = "----"
@@ -146,7 +146,7 @@ extension MarketModule {
         case posts
         case watchlist
         case twiitter
-//        case Dapp
+        case Dapp
         
         var title: String {
             switch self {
@@ -154,7 +154,7 @@ extension MarketModule {
             case .posts: return "market.category.posts".localized
             case .watchlist: return "market.category.watchlist".localized
             case .twiitter: return "market.category.twiitter".localized
-//            case .Dapp: return "market.category.dapp".localized
+            case .Dapp: return "market.category.dapp".localized
             }
         }
     }

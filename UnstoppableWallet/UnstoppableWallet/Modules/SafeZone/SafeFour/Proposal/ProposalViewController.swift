@@ -18,6 +18,12 @@ class ProposalViewController: ThemeViewController {
     private let emptyView = PlaceholderView()
     
     weak var parentNavigationController: UINavigationController?
+    
+    private let nodeSearchCell = Safe4NodeSearchCell()
+    private let nodeSearchCautionCell = FormCautionCell()
+
+    private var isLoaded = false
+    private var isSearch = false
 
     init(viewModel: ProposalViewModel) {
         self.viewModel = viewModel
@@ -45,24 +51,34 @@ class ProposalViewController: ThemeViewController {
         tableView.registerCell(forClass: ProposalCell.self)
         
         tableView.sectionDataSource = self
-        tableView.buildSections()
-        
-        view.addSubview(emptyView)
-        emptyView.snp.makeConstraints { maker in
-            maker.edges.equalTo(view.safeAreaLayoutGuide)
-        }
 
+        emptyView.frame = CGRect(x: 0, y: 0, width: view.width, height: 250)
         emptyView.image = UIImage(named: "safe4_empty")
         emptyView.text = "safe_zone.safe4.empty.description".localized
-        emptyView.isHidden = true
-        
+
         view.addSubview(spinner)
         spinner.snp.makeConstraints { maker in
             maker.center.equalToSuperview()
         }
         spinner.startAnimating()
         viewModel.refresh()
+        
         subscribe(disposeBag, viewModel.stateDriver) { [weak self] in self?.sync(state: $0) }
+        
+        nodeSearchCell.setInput(keyboardType: .numberPad, placeholder: "safe_zone.safe4.node.proposal.id".localized)
+        nodeSearchCell.onChangeHeight = { [weak self] in self?.reloadTable()}
+        nodeSearchCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
+
+        nodeSearchCell.onSearch = { [weak self] text in
+            self?.isSearch = (text?.count ?? 0) > 0
+            self?.view.endEditing(true)
+            self?.viewModel.search(text: text)
+        }
+        
+        subscribe(disposeBag, viewModel.searchCautionDriver) {  [weak self] in
+            self?.nodeSearchCautionCell.set(caution: $0)
+            self?.reloadTable()
+        }
     }
     
     private func sync(state: ProposalViewModel.State) {
@@ -70,18 +86,29 @@ class ProposalViewController: ThemeViewController {
             switch state {
             case .loading:
                 self?.spinner.isHidden = (self?.viewItems.count)! > 0 ? true : false
-                self?.emptyView.isHidden = true
-                
+                self?.hiddenEmptyView(isHidden: true)
+
             case let .completed(datas):
+                guard self?.isSearch == false else{ return }
                 self?.spinner.isHidden = true
-                self?.emptyView.isHidden = datas.count > 0 ? true : false
                 self?.viewItems = datas
+                self?.hiddenEmptyView(isHidden: datas.count > 0)
+                self?.tableView.reload()
+                
+            case let .searchResults(datas):
+                self?.spinner.isHidden = true
+                self?.viewItems = datas
+                self?.hiddenEmptyView(isHidden: datas.count > 0)
                 self?.tableView.reload()
                 
             case .failed(_):
-                guard let count = self?.viewItems.count, count > 0 else { return (self?.emptyView.isHidden = false)! }
-                
+                self?.spinner.isHidden = true
+                guard let count = self?.viewItems.count, count > 0 else {
+                    self?.hiddenEmptyView(isHidden: false)
+                    return
+                }
             }
+            self?.didLoad()
         }
     }
     
@@ -97,6 +124,22 @@ class ProposalViewController: ThemeViewController {
         }
     }
     
+    func didLoad() {
+        tableView.buildSections()
+        isLoaded = true
+    }
+
+    func reloadTable() {
+        guard isLoaded else { return }
+        UIView.animate(withDuration: 0) {
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+        }
+    }
+    
+    private func hiddenEmptyView(isHidden: Bool) {
+        tableView.tableFooterView = isHidden ? nil : emptyView
+    }
 }
 
 extension ProposalViewController: SectionsDataSource {
@@ -115,13 +158,42 @@ extension ProposalViewController: SectionsDataSource {
                 }
         )
     }
+    
+    var searchRow: RowProtocol {
+        StaticRow(
+                cell: nodeSearchCell,
+                id: "node-search",
+                separatorInset: UIEdgeInsets(top: CGFloat.margin2, left: 0, bottom: CGFloat.margin2, right: 0),
+                dynamicHeight: { [weak self] containerWidth in
+                        self?.nodeSearchCell.height(containerWidth: containerWidth) ?? 0
+                }
+        )
+    }
+    
+    var searchCautionRow: RowProtocol {
+        StaticRow(
+                cell: nodeSearchCautionCell,
+                id: "search-warning",
+                dynamicHeight: { [weak self] containerWidth in
+                    self?.nodeSearchCautionCell.height(containerWidth: containerWidth) ?? 0
+                }
+        )
+    }
 
     func buildSections() -> [SectionProtocol] {
+        var proposalRows = [RowProtocol]()
+
+        if case .All = viewModel.type {
+            proposalRows.append(searchRow)
+            proposalRows.append(searchCautionRow)
+        }
         let rows = viewItems.map{ row(viewItem: $0)}
-        return [Section(id: "proposal", paginating: true, rows: rows)]
+        proposalRows.append(contentsOf: rows)
+        return [Section(id: "proposal", paginating: true, rows: proposalRows)]
     }
     
     func onBottomReached() {
+        guard isSearch == false else{ return }
         viewModel.loadMore()
     }
 }

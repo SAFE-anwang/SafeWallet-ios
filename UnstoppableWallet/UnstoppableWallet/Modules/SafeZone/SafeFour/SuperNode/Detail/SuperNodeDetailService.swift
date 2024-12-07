@@ -37,13 +37,18 @@ class SuperNodeDetailService {
     }
     
     private func web3() async throws -> Web3 {
-        let chain = Chain.SafeFour
-        let url = RpcSource.safeFourRpcHttp().url
+        let chain = Chain.SafeFourTestNet
+        let url = RpcSource.safeFourTestNetRpcHttp().url
         return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
     }
 }
 
 extension SuperNodeDetailService {
+    
+    var address: String {
+        evmKit.receiveAddress.hex
+    }
+    
     var balanceDriver: Driver<Decimal?> {
         balanceRelay.asDriver()
     }
@@ -87,6 +92,11 @@ extension SuperNodeDetailService {
         return try await web3().safe4.snvote.getVotedIDs4Voter(address, BigUInt(page.start), BigUInt(page.currentPageCount))
     }
     
+    func getVotedIDs4Voter(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.snvote.getVotedIDs4Voter(address, start, count)
+    }
+    
     func getTotalIDs(page: Safe4PageControl) async throws -> [BigUInt] {
         let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
         return try await web3().safe4.accountmanager.getTotalIDs(address, BigUInt(page.start), BigUInt(page.currentPageCount))
@@ -97,7 +107,7 @@ extension SuperNodeDetailService {
     }
     
     func appendRegister(value: BigUInt, dstAddr: Web3Core.EthereumAddress) async throws -> String {
-        try await web3().safe4.supernode.appendRegister(privateKey: privateKey, value: value, addr: dstAddr, lockDay: 360)
+        try await web3().safe4.supernode.appendRegister(privateKey: privateKey, value: value, addr: dstAddr, lockDay: 720)
     }
     
     func getRecordUseInfo(id: BigUInt) async throws -> RecordUseInfo {
@@ -113,13 +123,13 @@ extension SuperNodeDetailService {
         case Independent
         case crowdFunding
         
-        var lockAmount: BigUInt {
-            return  1000 // superNodeRegisterSafeLockNum * 10%
-        }
-        
-        var lockDay: BigUInt {
-            360 // appendRegister lock days
-        }
+//        var lockAmount: BigUInt {
+//            return  500 // superNodeRegisterSafeLockNum * 10%
+//        }
+//        
+//        var lockDay: BigUInt {
+//            720 // appendRegister lock days
+//        }
     }
 }
 

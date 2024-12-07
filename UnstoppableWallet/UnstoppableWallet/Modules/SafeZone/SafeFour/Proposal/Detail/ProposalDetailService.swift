@@ -16,33 +16,18 @@ class ProposalDetailService {
         evmKit.receiveAddress.hex
     }
     
-    var isAbleVote: Bool = false {
-        didSet {
-            if isAbleVote != oldValue {
-                isAbleVoteRelay.accept(isAbleVote)
-            }
-        }
-    }
-    
-    private var isAbleVoteRelay = BehaviorRelay<Bool>(value: false)
-    
     init(privateKey: Data, evmKit: EvmKit.Kit) {
         self.privateKey = privateKey
         self.evmKit = evmKit
     }
 
     private func web3() async throws -> Web3 {
-        let chain = Chain.SafeFour
-        let url = RpcSource.safeFourRpcHttp().url
+        let chain = Chain.SafeFourTestNet
+        let url = RpcSource.safeFourTestNetRpcHttp().url
         return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
     }
 }
-extension ProposalDetailService {
-    
-    var isAbleVoteDriver: Driver<Bool> {
-        isAbleVoteRelay.asDriver()
-    }
-}
+
 extension ProposalDetailService {
     
     func vote(id: BigUInt, voteResult: BigUInt) async throws -> String {
@@ -61,10 +46,17 @@ extension ProposalDetailService {
         try await web3().safe4.supernode.getTops()
     }
     
-    func isAbleVote() async throws {
-        let addressArray = try await getTops()
-        let isContains = addressArray.map{$0.address.lowercased()}.contains(address.lowercased())
-        isAbleVote = isContains
+    func isAbleVote() async throws -> Bool {
+        let creatorAddress = Web3Core.EthereumAddress(evmKit.address.hex)!
+        let array = try await getTops4Creator(address: creatorAddress)
+        return array.count > 0
+    }
+    
+    func getTops4Creator(address: Web3Core.EthereumAddress) async throws -> [Web3Core.EthereumAddress] {
+        try await web3().safe4.supernode.getTops4Creator(address)
+    }
+    func getInfo(address: Web3Core.EthereumAddress) async throws -> SuperNodeInfo {
+        try await web3().safe4.supernode.getInfo(address)
     }
 }
 

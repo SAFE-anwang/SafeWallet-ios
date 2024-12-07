@@ -29,16 +29,16 @@ class SuperNodeRegisterSliderCell: UITableViewCell {
         
         partnerLabel = UILabel(frame: .zero)
         partnerLabel.font = .subhead1
-        partnerLabel.textColor = .themeBlack
+        partnerLabel.textColor = .themeBlackAndWhite
         
         creatorLabel = UILabel(frame: .zero)
         creatorLabel.font = .subhead1
-        creatorLabel.textColor = .themeBlack
+        creatorLabel.textColor = .themeBlackAndWhite
         creatorLabel.textAlignment = .center
         
         voterLabel = UILabel(frame: .zero)
         voterLabel.font = .subhead1
-        voterLabel.textColor = .themeBlack
+        voterLabel.textColor = .themeBlackAndWhite
         voterLabel.textAlignment = .right
         
         super.init(style: .default, reuseIdentifier: nil)
@@ -101,10 +101,10 @@ class SuperNodeRegisterSliderCell: UITableViewCell {
         rightSlider.maximumValue  = viewModel.superNodeIncentive.sliderMaximumValue
         rightSlider.value = viewModel.superNodeIncentive.rightSliderValue
         
-        titleLabel.text = "挖矿奖励分配方案".localized
-        partnerLabel.text = "合伙人 \(viewModel.superNodeIncentive.partnerIncentive)%"
-        creatorLabel.text = "创建者 \(viewModel.superNodeIncentive.creatorIncentive)%"
-        voterLabel.text = "投票人 \(viewModel.superNodeIncentive.voterIncentive)%"
+        titleLabel.text = "safe_zone.safe4.mining.plan".localized
+        partnerLabel.text = "safe_zone.safe4.partner".localized + "  \(viewModel.superNodeIncentive.partnerIncentive)%"
+        creatorLabel.text = "safe_zone.safe4.node.creator".localized + "  \(viewModel.superNodeIncentive.creatorIncentive)%"
+        voterLabel.text = "safe_zone.safe4.node.record.voters".localized +  "  \(viewModel.superNodeIncentive.voterIncentive)%"
     }
     
     required init?(coder: NSCoder) {
@@ -113,6 +113,9 @@ class SuperNodeRegisterSliderCell: UITableViewCell {
     
     @objc
     private func leftSliderValueChanged(_ sender: UISlider) {
+//        let maxIncentive = viewModel.superNodeIncentive.creatorMaxIncentive
+//        leftSlider.value = min(maxIncentive, Float(Int(sender.value)))
+//        rightSlider.value = maxIncentive - leftSlider.value
         guard (sender.value + rightSlider.value) <= viewModel.superNodeIncentive.creatorMaxIncentive else {
              leftSlider.value = viewModel.superNodeIncentive.creatorMaxIncentive - rightSlider.value
             sync()
@@ -125,6 +128,9 @@ class SuperNodeRegisterSliderCell: UITableViewCell {
     
     @objc
     private func rightSliderValueChanged(_ sender: UISlider) {
+//        let maxIncentive = viewModel.superNodeIncentive.creatorMaxIncentive
+//        rightSlider.value = min(maxIncentive, Float(Int(sender.value)))
+//        leftSlider.value = maxIncentive - rightSlider.value
         guard (leftSlider.value + sender.value) <= viewModel.superNodeIncentive.creatorMaxIncentive else {
             rightSlider.value = viewModel.superNodeIncentive.creatorMaxIncentive - leftSlider.value
             sync()
@@ -137,9 +143,9 @@ class SuperNodeRegisterSliderCell: UITableViewCell {
     func sync() {
         viewModel.update(leftSliderValue: leftSlider.value)
         viewModel.update(rightSliderValue: rightSlider.value)
-        partnerLabel.text = "合伙人 \(viewModel.superNodeIncentive.partnerIncentive)%"
-        creatorLabel.text = "创建者 \(viewModel.superNodeIncentive.creatorIncentive)%"
-        voterLabel.text = "投票人 \(viewModel.superNodeIncentive.voterIncentive)%"
+        partnerLabel.text = "safe_zone.safe4.partner".localized + "  \(viewModel.superNodeIncentive.partnerIncentive)%"
+        creatorLabel.text = "safe_zone.safe4.node.creator".localized + "  \(viewModel.superNodeIncentive.creatorIncentive)%"
+        voterLabel.text = "safe_zone.safe4.node.record.voters".localized + "  \(viewModel.superNodeIncentive.voterIncentive)%"
     }
 }
 

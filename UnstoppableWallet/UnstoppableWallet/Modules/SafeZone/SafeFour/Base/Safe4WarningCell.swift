@@ -4,15 +4,12 @@ import SnapKit
 import RxSwift
 import ComponentKit
 
-class Safe4WarningCell: UITableViewCell {
-    private static let margins = UIEdgeInsets(top: 1, left: CGFloat.margin16, bottom: 1, right: CGFloat.margin16)
+class Safe4WarningCell: BaseThemeCell {
     private static let horizontalPadding: CGFloat = .margin16
     private static let verticalPadding: CGFloat = .margin12
     private static let imagPadding: CGFloat = .margin12
     private static let font: UIFont = .subhead2
     
-    let bgView = UIView()
-    let borderView = UIView()
     let imgView = UIImageView()
     let label = UILabel()
 
@@ -22,35 +19,24 @@ class Safe4WarningCell: UITableViewCell {
         backgroundColor = .clear
         selectionStyle = .none
         
-        bgView.backgroundColor = .white
-        contentView.addSubview(bgView)
-        bgView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(Self.margins)
+        set(backgroundStyle: .lawrence, isFirst: true, isLast: true)
+        wrapperView.snp.remakeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: .margin4, left: .margin16, bottom: .margin4, right: .margin16))
         }
-        
-        borderView.cornerRadius = 4
-        contentView.addSubview(borderView)
-        borderView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(Self.margins)
-        }
-        borderView.borderWidth = 1
-        contentView.addSubview(borderView)
-        borderView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(Self.margins)
-        }
-        
-        borderView.addSubview(imgView)
+
+        imgView.image = UIImage(named: "circle_information_20")?.withTintColor( .themeYellowL)
+        wrapperView.addSubview(imgView)
         imgView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Self.horizontalPadding)
-            make.top.equalToSuperview().offset(Self.verticalPadding)
+            make.centerY.equalToSuperview()
             make.size.equalTo(CGSize(width: 24, height: 24))
         }
         
-        borderView.addSubview(label)
+        wrapperView.addSubview(label)
         label.snp.makeConstraints { make in
-            make.top.equalTo(imgView)
+            make.top.equalToSuperview().offset(Self.verticalPadding)
             make.leading.equalTo(imgView.snp.trailing).offset(Self.verticalPadding)
-            make.trailing.equalToSuperview().inset(CGFloat.margin16)
+            make.trailing.equalToSuperview().inset(Self.horizontalPadding)
             make.bottom.equalToSuperview().inset(Self.verticalPadding)
         }
 
@@ -66,9 +52,7 @@ class Safe4WarningCell: UITableViewCell {
     
     func bind(text: String, type: WarningType) {
         label.text = text
-        borderView.borderColor = type.borderColor
-        borderView.backgroundColor = type.backgroundColor
-        imgView.image = UIImage(named: "circle_information_20")?.withTintColor(type.imageColor)
+        imgView.image = UIImage(named: "circle_information_20")?.withTintColor( .themeYellowL)
     }
 }
 
@@ -84,7 +68,7 @@ extension Safe4WarningCell {
             let text = label.text ?? "-"
             textHeight = text.height(forContainerWidth: containerWidth - 100, font: font ?? Self.font)
         }
-        return textHeight + (ignoreBottomMargin ? 1 : 2) * Self.verticalPadding + Self.margins.top + Self.margins.bottom
+        return textHeight + (ignoreBottomMargin ? 1 : 2) * Self.verticalPadding + 2 * .margin4
     }
 }
 extension Safe4WarningCell {

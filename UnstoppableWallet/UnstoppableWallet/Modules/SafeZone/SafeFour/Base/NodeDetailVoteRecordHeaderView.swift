@@ -30,9 +30,9 @@ class NodeDetailVoteRecordHeaderView: UITableViewHeaderFooterView {
             separatorView.backgroundColor = .themeSteel20
         }
         
-        titleLabel.text = "创建人 | 合伙人".localized
+        titleLabel.text = "safe_zone.safe4.creator&partner".localized
         titleLabel.font = .headline2
-        titleLabel.textColor = .themeIssykBlue
+//        titleLabel.textColor = .themeIssykBlue
         contentView.addSubview(titleLabel)
         titleLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(CGFloat.margin4)

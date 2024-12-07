@@ -12,20 +12,32 @@ import HsExtensions
 import ThemeKit
 
 class ProposalDetailViewModel {
+    private let catch_key = "voted_Key"
     private let servie: ProposalDetailService
     private var safe4Page = Safe4PageControl(initCount: 100)
     private var stateRelay = PublishRelay<ProposalDetailViewModel.State>()
     private var viewItems = [ProposalDetailViewModel.ViewItem]()
     private let infoItem: ProposalViewModel.ViewItem
+    private let userDefaultsStorage = UserDefaultsStorage()
     private(set) var state: ProposalDetailViewModel.State = .loading {
         didSet {
             stateRelay.accept(state)
         }
     }
     
+    var isAbleVote: Bool = false {
+        didSet {
+            if isAbleVote != oldValue {
+                isAbleVoteRelay.accept(isAbleVote)
+            }
+        }
+    }
+    private var isAbleVoteRelay = BehaviorRelay<Bool>(value: false)
+
     init(infoItem: ProposalViewModel.ViewItem, servie: ProposalDetailService) {
         self.infoItem = infoItem
         self.servie = servie
+        getAbleVote()
     }
 }
 
@@ -36,26 +48,27 @@ extension ProposalDetailViewModel {
             do {
                 let id = infoItem.info.id
                 let txId = try await servie.vote(id: id, voteResult: result.voteResult)
+                catchVoted(id: id.description)
                 state = .voteCompleted
             }catch {
                 if let nodeError = error as? Web3Core.Web3Error {
                     if case let .nodeError( desc) = nodeError {
-                        state = .failed(error: "当前账户不是排名前49且在线的超级节点，不能对提案进行投票")
+                        state = .failed(error: "safe_zone.safe4.proposal.vote.node.super.cannot".localized)
                     }
                 }
             }
         }
     }
     
-    func isAbleVote() {
+    func getAbleVote() {
         Task {
-            do{
-                guard infoItem.status == .voting else { return }
-                try await servie.isAbleVote()
-            }catch{}
+            do {
+                isAbleVote = try await servie.isAbleVote()
+            } catch {}
         }
     }
 }
+
 extension ProposalDetailViewModel {
 
     private func requestInfos(loadMore: Bool) {
@@ -87,11 +100,30 @@ extension ProposalDetailViewModel {
     }
 }
 
+private extension ProposalDetailViewModel {
+    
+    private var catchKey: String {
+        "\(infoItem.info.id)_proposal_Key"
+    }
+    
+    private func catchVoted(id: String) {
+        userDefaultsStorage.set(value: id, for: catchKey)
+    }
+    
+    private func votedIdCatch() -> String? {
+        userDefaultsStorage.value(for: catchKey)
+    }
+    
+    private func removeCatch() {
+        userDefaultsStorage.set(value: nil as String?, for: catchKey)
+    }
+
+}
 extension ProposalDetailViewModel {
     
     func refresh() {
         viewItems.removeAll()
-        isAbleVote()
+        getAbleVote()
         requestInfos(loadMore: false)
     }
     
@@ -120,8 +152,19 @@ extension ProposalDetailViewModel {
         viewItems.filter{ $0.info.voter.address.lowercased() == servie.address.lowercased()}.first?.voteState
     }
     
+    var catchVoted: Bool {
+        if let id = votedIdCatch(), id == infoItem.info.id.description {
+            return true
+        }
+        return false
+    }
+    
     var voteStateDesc: String {
-        "合计\(voteTotalNum)票 同意\(voteNum(state: .passed))票 拒绝\(voteNum(state: .abstain))票 弃权\(voteNum(state: .refuse))票"
+        "safe_zone.safe4.vote.info.desc".localized("\(voteTotalNum)", "\(voteNum(state: .passed))", "\(voteNum(state: .abstain))", "\(voteNum(state: .refuse))")
+    }
+    
+    var sendData: ProposalSendData {
+        ProposalSendData(title: infoItem.info.title, desc: infoItem.info.description, amount: infoItem.info.payAmount.safe4ToDecimal() ?? 0, startPayTime: infoItem.info.startPayTime, endPayTime: infoItem.info.endPayTime, payTimes: Int(infoItem.info.payTimes))
     }
 }
 
@@ -132,17 +175,27 @@ extension ProposalDetailViewModel {
     }
     
     var isAbleVoteDriver: Driver<Bool> {
-        servie.isAbleVoteDriver
+        isAbleVoteRelay.asDriver()
     }
 }
 
 extension ProposalDetailViewModel {
     
-    enum State {
+    enum State: Equatable {
         case loading
         case completed(datas: [ProposalDetailViewModel.ViewItem])
         case voteCompleted
         case failed(error: String)
+        
+        public static func == (lhs: State, rhs: State) -> Bool {
+            switch (lhs, rhs) {
+            case (.loading, .loading): return true
+//            case let (.completed(lhsValue), .completed(rhsValue)): return lhsDatas == rhsValue
+            case (.voteCompleted, .voteCompleted): return true
+            case let (.failed(lhsValue), .failed(rhsValue)): return lhsValue == rhsValue
+            default: return false
+            }
+        }
     }
     
     struct ViewItem {

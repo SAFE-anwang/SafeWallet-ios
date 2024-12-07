@@ -162,6 +162,22 @@ extension BottomSheetModule {
                 ]
         )
     }
+    
+    static func addLockDaysConfirmation(days: String, action: (() -> ())?) -> UIViewController {
+        viewController(
+            image: .warning,
+                title: "safe_zone.safe4.node.locked.days.add.title".localized,
+                items: [
+                    .highlightedDescription(text:  "safe_zone.safe4.node.locked.days.add.title".localized + ": \(days)" + "safe_zone.safe4.node.locked.days.title".localized.localized)
+                ],
+                buttons: [
+                    .init(style: .yellow, title: "button.ok".localized) {
+                        action?()
+                    },
+                    .init(style: .transparent, title: "button.cancel".localized)
+                ]
+        )
+    }
 
 }
 

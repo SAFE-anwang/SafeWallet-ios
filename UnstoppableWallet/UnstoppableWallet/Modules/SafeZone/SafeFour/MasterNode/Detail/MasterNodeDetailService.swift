@@ -37,8 +37,8 @@ class MasterNodeDetailService {
     }
     
     private func web3() async throws -> Web3 {
-        let chain = Chain.SafeFour
-        let url = RpcSource.safeFourRpcHttp().url
+        let chain = Chain.SafeFourTestNet
+        let url = RpcSource.safeFourTestNetRpcHttp().url
         return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
     }
 }
@@ -46,6 +46,10 @@ class MasterNodeDetailService {
 extension MasterNodeDetailService {
     var balanceDriver: Driver<Decimal?> {
         balanceRelay.asDriver()
+    }
+    
+    var address: String {
+        evmKit.address.hex
     }
 }
 
@@ -57,7 +61,7 @@ extension MasterNodeDetailService {
         return blance.toDecimal(decimals: 18)
     }
     
-    func appendRegister(value: BigUInt, dstAddr: Web3Core.EthereumAddress) async throws -> String {
-        try await web3().safe4.masternode.appendRegister(privateKey: privateKey, value: value, addr: dstAddr, lockDay: 360)
+    func appendRegister(value: BigUInt, dstAddr: Web3Core.EthereumAddress, lockDay: BigUInt) async throws -> String {
+        try await web3().safe4.masternode.appendRegister(privateKey: privateKey, value: value, addr: dstAddr, lockDay: lockDay)
     }
 }

@@ -9,7 +9,6 @@ import HsExtensions
 
 class MasterNodeRegisterService {
     private let descCountLimit = 12 ... 600
-    private let privateKey: Data
     
     var createMode: CreateMode = .Independent {
         didSet {
@@ -66,6 +65,7 @@ class MasterNodeRegisterService {
     private let descCautionRelay = BehaviorRelay<Caution?>(value:nil)
     
     private let evmKit: EvmKit.Kit
+    private let privateKey: Data
     
     init(privateKey: Data, evmKit: EvmKit.Kit) {
         self.privateKey = privateKey
@@ -74,13 +74,12 @@ class MasterNodeRegisterService {
     }
     
     private func web3() async throws -> Web3 {
-        let chain = Chain.SafeFour
-        let url = RpcSource.safeFourRpcHttp().url
+        let chain = Chain.SafeFourTestNet
+        let url = RpcSource.safeFourTestNetRpcHttp().url
         return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
     }
     
     private func sync() {
-        self.address = evmKit.receiveAddress.hex
         Task {
             do {
                 balance = try await availableBlance()
@@ -97,8 +96,13 @@ extension MasterNodeRegisterService {
     }
     
     func exist(address: String) async throws -> Bool {
-        let address = Web3Core.EthereumAddress(address)!
-        return try await web3().safe4.masternode.exist(address)
+        let targetAddress = Web3Core.EthereumAddress(address)!
+        async let existSuper = try web3().safe4.supernode.exist(targetAddress)
+        async let existMaster = try web3().safe4.masternode.exist(targetAddress)
+        async let isMasterNodeFounder = try web3().safe4.supernode.existFounder(targetAddress)
+        async let isSuperNodeFounder  = try web3().safe4.masternode.existFounder(targetAddress)
+        let result = try await (existSuper, existMaster, isMasterNodeFounder, isSuperNodeFounder)
+        return result.0 || result.1 || result.2 || result.3
     }
     
     func isValid(address: String) async throws -> Bool {
@@ -115,13 +119,14 @@ extension MasterNodeRegisterService {
         return try await web3().safe4.masternode.existLockID(address, LockID)
     }
     
-    func create() async throws -> String? {
+    func create(sendData: MasterNodeSendData) async throws -> String? {
         let amount = BigUInt((createMode.lockAmount * pow(10, safe4Decimals)).hs.roundedString(decimal: 0)) ?? 0
-        guard let address, let enode, let desc else{return nil}
-        let addr = Web3Core.EthereumAddress(address)!
-        return try await web3().safe4.masternode.register(privateKey: privateKey, value: amount, isUnion: false, addr: addr, lockDay: lockDays, enode: enode, description: desc, creatorIncentive: masterNodeIncentive.creatorIncentive, partnerIncentive: masterNodeIncentive.partnerIncentive)
+        let addr = Web3Core.EthereumAddress(sendData.address)!
+        let isUnion = createMode == .crowdFunding
+        return try await web3().safe4.masternode.register(privateKey: privateKey, value: amount, isUnion: isUnion, addr: addr, lockDay: lockDays, enode: sendData.ENODE, description: sendData.desc, creatorIncentive: masterNodeIncentive.creatorIncentive, partnerIncentive: masterNodeIncentive.partnerIncentive)
     }
 }
+
 
 extension MasterNodeRegisterService {
     
@@ -150,33 +155,39 @@ extension MasterNodeRegisterService {
     func syncCautionState() -> Bool {
         var caution: Caution? = nil
         
-        caution = balanceWarning ? Caution(text: "账户余额不足以锁仓来创建主节点".localized, type: .error) : nil
+        caution = balanceWarning ? Caution(text: "safe_zone.safe4.account.balance.tips".localized, type: .error) : nil
         balanceCautionRelay.accept(caution)
         
-        caution = descWarning ? Caution(text: "简介信息长度需要大于12且小于600".localized, type: .error) : nil
+        caution = descWarning ? Caution(text: "safe_zone.safe4.node.master.input.desc.count.error".localized, type: .error) : nil
         descCautionRelay.accept(caution)
         
         return balanceWarning || descWarning
     }
     
     
-    func validateSuperNodeAddress() async throws -> Bool {
+    func validateMasterNodeAddress() async throws -> Bool {
         var caution: Caution? = nil
         guard let address else {
-            caution = Caution(text: "请输入超级节点地址".localized, type: .error)
+            caution = Caution(text: "safe_zone.safe4.node.input.address.tips".localized, type: .error)
             addressCautionRelay.accept(caution)
             return false
         }
 
         guard isValidAddress(address) else {
-            caution = Caution(text: "请输入合法的钱包地址".localized, type: .error)
+            caution = Caution(text: "safe_zone.safe4.node.input.address.error".localized, type: .error)
+            addressCautionRelay.accept(caution)
+            return false
+        }
+        
+        guard address.lowercased() != evmKit.receiveAddress.hex.lowercased() else {
+            caution = Caution(text: "safe_zone.safe4.node.address.wallet.unuse".localized, type: .error)
             addressCautionRelay.accept(caution)
             return false
         }
         
         let isExist = try await exist(address: address)
         guard !isExist else {
-            let caution = Caution(text: "该地址已被使用".localized, type: .error)
+            let caution = Caution(text: "safe_zone.safe4.node.input.address.used".localized, type: .error)
             addressCautionRelay.accept(caution)
             return false
         }
@@ -185,23 +196,23 @@ extension MasterNodeRegisterService {
         return true
     }
     
-    func validateSuperNodeEnode() async throws -> Bool {
+    func validateMasterNodeEnode() async throws -> Bool {
         var caution: Caution? = nil
         guard let enode else {
-            caution = Caution(text: "请输入超级节点ENODE!".localized, type: .error)
+            caution = Caution(text: "safe_zone.safe4.node.master.input.endoe.tips".localized, type: .error)
             enodeCautionRelay.accept(caution)
             return false
         }
         
         guard isValidEnode(enode) else {
-            caution = Caution(text: "超级节点ENODE格式不正确!".localized, type: .error)
+            caution = Caution(text: "safe_zone.safe4.node.master.input.endoe.error".localized, type: .error)
             enodeCautionRelay.accept(caution)
             return false
         }
         
         let isExist = try await exist(enode: enode)
         guard !isExist else {
-            caution = Caution(text: "该ENODE已被使用".localized, type: .error)
+            caution = Caution(text: "safe_zone.safe4.node.master.input.endoe.used".localized, type: .error)
             enodeCautionRelay.accept(caution)
             return false
         }
@@ -236,6 +247,12 @@ private extension MasterNodeRegisterService {
 
 extension MasterNodeRegisterService {
     
+    func getSendData() -> MasterNodeSendData? {
+        guard !syncCautionState() else { return nil }
+        guard let address, let enode, let desc else { return nil }
+        return MasterNodeSendData(address: address, ENODE: enode, desc: desc, amount: createMode.lockAmount)
+    }
+    
     var lockDays: BigUInt {
         720
     }
@@ -247,6 +264,7 @@ extension MasterNodeRegisterService {
         private(set) var partnerIncentive: BigUInt = 0
         private(set) var sliderValue: Float = 50
         
+        let creatorMinIncentive: Float = 1
         let creatorMaxIncentive: Float = 50
         let totalIncentive: Float = 100
         
@@ -298,4 +316,11 @@ extension MasterNodeRegisterService {
             }
         }
     }
+}
+
+struct MasterNodeSendData {
+    let address: String
+    let ENODE: String
+    let desc: String
+    let amount: Decimal
 }

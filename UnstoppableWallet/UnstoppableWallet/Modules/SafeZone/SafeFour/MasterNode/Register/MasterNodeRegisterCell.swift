@@ -5,7 +5,7 @@ class MasterNodeRegisterCell: Safe4BaseInputCell {
     private let viewModel: MasterNodeRegisterViewModel
     private let disposeBag = DisposeBag()
 
-    init(viewModel: MasterNodeRegisterViewModel, type: InputType) {
+    init(viewModel: MasterNodeRegisterViewModel, type: MasterNodeInputType) {
         self.viewModel = viewModel
         super.init()
         
@@ -35,31 +35,5 @@ class MasterNodeRegisterCell: Safe4BaseInputCell {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-    
-    enum InputType {
-        case address
-        case ENODE
-        case desc
-        
-        var title: String {
-            switch self {
-            case .address: return "主节点钱包地址"
-            case .ENODE: return "ENODE"
-            case .desc: return "简介"
-            }
-        }
-        
-        var placeholder: String {
-            switch self {
-            case .address: return "输入主节点钱包地址"
-            case .ENODE: return "输入主节点ENODE"
-            case .desc: return "输入简介信息"
-            }
-        }
-        
-        var keyboardType: UIKeyboardType {
-            .default
-        }
     }
 }

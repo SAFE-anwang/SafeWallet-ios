@@ -156,7 +156,7 @@ class EvmKitWrapper {
         self.nftKit = nftKit
         self.signer = signer
         
-        if evmKit.chain == .SafeFour, let signer {
+        if evmKit.chain == .SafeFourTestNet, let signer {
             evmKit.withdraw(privateKey: signer.privateKey)
         }
     }

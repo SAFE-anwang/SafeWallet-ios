@@ -12,7 +12,8 @@ import RxCocoa
 
 class MasterNodeDetailViewModel {
     private(set) var viewItems = [MasterNodeDetailViewModel.ViewItem]()
-    private let nodeViewItem: MasterNodeViewModel.ViewItem
+    private(set) var nodeType: Safe4NodeType
+    private var nodeViewItem: MasterNodeViewModel.ViewItem
     private let service: MasterNodeDetailService
     
     private var stateRelay = PublishRelay<MasterNodeDetailViewModel.State>()
@@ -23,14 +24,23 @@ class MasterNodeDetailViewModel {
     }
     private var isEnabledSend = true
     
-    init(nodeViewItem: MasterNodeViewModel.ViewItem, service: MasterNodeDetailService) {
+    init(nodeType: Safe4NodeType, nodeViewItem: MasterNodeViewModel.ViewItem, service: MasterNodeDetailService) {
+        self.nodeType = nodeType
         self.service = service
         self.nodeViewItem = nodeViewItem
-        viewItems = nodeViewItem.info.founders.map {ViewItem(info: $0)}
+        viewItems = nodeViewItem.info.founders.map {ViewItem(info: $0, isSelf: service.address.lowercased() == $0.addr.address.lowercased())}
     }
 }
 
 extension MasterNodeDetailViewModel {
+    
+    var minimumSafeValue: Float {
+        100
+    }
+    
+    var lockDay: BigUInt {
+        720
+    }
     
     func joinPartner(value: Float){
         Task { [service] in
@@ -38,12 +48,13 @@ extension MasterNodeDetailViewModel {
                 let value = BigUInt((Decimal(Double(value)) * pow(10, safe4Decimals)).hs.roundedString(decimal: 0)) ?? 0
                 guard isEnabledSend else { return }
                 isEnabledSend = false
-                let _ = try await service.appendRegister(value: value, dstAddr: nodeViewItem.info.addr)
+                let _ = try await service.appendRegister(value: value, dstAddr: nodeViewItem.info.addr, lockDay: lockDay)
                 isEnabledSend = true
+                update(joinAmount: value)
                 state = .partnerCompleted
             }catch{
                 isEnabledSend = true
-                state = .failed(error: "成为合伙人失败！")
+                state = .failed(error: "safe_zone.safe4.partner.join.failed".localized)
             }
         }
     }
@@ -60,7 +71,7 @@ extension MasterNodeDetailViewModel {
     }
     
     var joinEnabled: Bool {
-        nodeViewItem.joinEnabled
+        nodeViewItem.isEnabledJoin
     }
     
     var stateDriver: Observable<MasterNodeDetailViewModel.State> {
@@ -73,6 +84,7 @@ extension MasterNodeDetailViewModel {
     
     struct ViewItem {
         let info: MasterNodeMemberInfo
+        let isSelf: Bool
         
         var id: String {
             info.lockID.description
@@ -86,6 +98,14 @@ extension MasterNodeDetailViewModel {
             return info.amount.safe4FomattedAmount + " SAFE"
         }
     }
+    
+    var sendData: MasterNodeSendData {
+        MasterNodeSendData(address: nodeViewItem.info.addr.address, ENODE: nodeViewItem.info.enode, desc: nodeViewItem.info.description, amount: 0)
+    }
+    
+    func update(joinAmount: BigUInt?) {
+        nodeViewItem.update(joinAmount: joinAmount)
+    }
 }
 
 extension MasterNodeDetailViewModel {
@@ -93,5 +113,11 @@ extension MasterNodeDetailViewModel {
         case loading
         case partnerCompleted
         case failed(error: String)
+    }
+    
+    
+    enum ViewType {
+        case Detail
+        case JoinPartner
     }
 }
