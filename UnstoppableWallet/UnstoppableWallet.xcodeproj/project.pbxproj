@@ -14080,7 +14080,7 @@
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
-				MARKETING_VERSION = 0.37.0.2.1205test;
+				MARKETING_VERSION = 0.38.0.1.1210;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
@@ -14103,7 +14103,7 @@
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
-				MARKETING_VERSION = 0.37.0.2.1205test;
+				MARKETING_VERSION = 0.38.0.1.1210;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = SafeWallet;
