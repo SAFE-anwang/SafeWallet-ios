@@ -111,9 +111,12 @@ enum AppConfig {
         let randomIndex = Int.random(in: 0 ..< array.count)
         return array[randomIndex]
     }
-
-    static var polygonscanKey: String {
-        (Bundle.main.object(forInfoDictionaryKey: "PolygonscanApiKey") as? String) ?? ""
+    
+    static var oneInchApiKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "OneInchApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+    static var polygonscanKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "PolygonscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var snowtraceKey: String {
@@ -148,16 +151,10 @@ enum AppConfig {
         (Bundle.main.object(forInfoDictionaryKey: "UnstoppableDomainsApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
     
-    private static let randomIndex = Int.random(in: 0...2)
     static var oneInchApiKey: String? {
-        
-        let apiKey = (Bundle.main.object(forInfoDictionaryKey: "oneInchApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
-        
-        let apiKey_2 = (Bundle.main.object(forInfoDictionaryKey: "oneInchApiKey_2") as? String).flatMap { $0.isEmpty ? nil : $0 }
-        
-        let apiKey_3 = (Bundle.main.object(forInfoDictionaryKey: "oneInchApiKey_3") as? String).flatMap { $0.isEmpty ? nil : $0 }
-        
-        return [apiKey, apiKey_2, apiKey_3][randomIndex]
+        let apiKeys = ((Bundle.main.object(forInfoDictionaryKey: "OneInchApiKeys") as? String) ?? "").components(separatedBy: ",")
+        let randomIndex = Int.random(in: 0 ..< apiKeys.count)
+        return apiKeys[randomIndex]
     }
     
     static var defaultWords: String {

@@ -69,7 +69,7 @@
 	<string>$(hs_provider_api_key)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>InfuraProjectId</key>
+	<key>InfuraProjectIds</key>
 	<string>${infura_project_id}</string>
 	<key>InfuraProjectId_2</key>
 	<string>${infura_project_id_2}</string>
@@ -136,8 +136,8 @@
 	<string>${open_sea_api_key}</string>
 	<key>OptimismEtherscanApiKey</key>
 	<string>${optimism_etherscan_api_key}</string>
-	<key>PolygonscanApiKey</key>
-	<string>${polygonscan_api_key}</string>
+	<key>PolygonscanApiKeys</key>
+	<string>${polygonscan_api_keys}</string>
 	<key>PrivateCloudContainerId</key>
 	<string>${private_cloud_container_id}</string>
 	<key>SharedCloudContainerId</key>
@@ -181,11 +181,7 @@
 	<string>${unstoppable_domains_api_key}</string>
 	<key>WallectConnectV2ProjectKey</key>
 	<string>${wallet_connect_v2_project_key}</string>
-	<key>oneInchApiKey</key>
-	<string>${one_inch_api_key}</string>
-	<key>oneInchApiKey_2</key>
-	<string>${one_inch_api_key_2}</string>
-	<key>oneInchApiKey_3</key>
-	<string>${one_inch_api_key_3}</string>
+	<key>OneInchApiKeys</key>
+	<string>${one_inch_api_keys}</string>
 </dict>
 </plist>
