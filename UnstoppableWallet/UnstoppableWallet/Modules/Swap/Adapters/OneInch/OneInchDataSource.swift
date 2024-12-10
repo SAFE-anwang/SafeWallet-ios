@@ -58,8 +58,8 @@ class OneInchDataSource {
             self?.viewModel.onTapSwitch()
         }
 
-        settingsHeaderView.bind(dropdownTitle: viewModel.dexName)
-        settingsHeaderView.onTapDropDown = { [weak self] in self?.onOpenSelectProvider?() }
+        settingsHeaderView.bind(dropdownTitle: nil)//viewModel.dexName)
+//        settingsHeaderView.onTapDropDown = { [weak self] in self?.onOpenSelectProvider?() }
         settingsHeaderView.onTapSettings = { [weak self] in self?.onOpenSettings?() }
 
         settingsHeaderView.onTapSelector = { [weak self] in self?.onChangeAmountType(index: $0) }
@@ -360,27 +360,27 @@ extension OneInchDataSource: ISwapDataSource {
         sections.append(infoSection)
 
         let hasAlert = warningCell.descriptionText != nil || error != nil
-        sections.append(Section(id: "error",
-                                headerState: .margin(height: hasAlert ? .margin12 : 0),
-                                rows: [
-                                    StaticRow(
-                                        cell: warningCell,
-                                        id: "warning",
-                                        dynamicHeight: { [weak self] width in
-                                            if self?.error != nil {
-                                                return 0
-                                            }
-                                            return self?.warningCell.height(containerWidth: width) ?? 0
-                                        }
-                                    ),
-                                    StaticRow(
-                                        cell: errorCell,
-                                        id: "error",
-                                        dynamicHeight: { [weak self] width in
-                                            self?.errorCell.cellHeight(containerWidth: width) ?? 0
-                                        }
-                                    ),
-                                ]))
+//        sections.append(Section(id: "error",
+//                                headerState: .margin(height: hasAlert ? .margin12 : 0),
+//                                rows: [
+//                                    StaticRow(
+//                                        cell: warningCell,
+//                                        id: "warning",
+//                                        dynamicHeight: { [weak self] width in
+//                                            if self?.error != nil {
+//                                                return 0
+//                                            }
+//                                            return self?.warningCell.height(containerWidth: width) ?? 0
+//                                        }
+//                                    ),
+//                                    StaticRow(
+//                                        cell: errorCell,
+//                                        id: "error",
+//                                        dynamicHeight: { [weak self] width in
+//                                            self?.errorCell.cellHeight(containerWidth: width) ?? 0
+//                                        }
+//                                    ),
+//                                ]))
         sections.append(Section(
             id: "buttons",
             headerState: .margin(height: .margin16),
