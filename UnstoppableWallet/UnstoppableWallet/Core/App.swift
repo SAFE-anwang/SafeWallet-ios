@@ -98,10 +98,10 @@ class App {
 
     let kitCleaner: KitCleaner
     let appManager: AppManager
+    let apiKeyManager: ApiKeyManager
 
     let safeInfoManager: SafeInfoManager
     let appEventHandler = EventHandler()
-
     init() throws {
         let databaseURL = try FileManager.default
             .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
@@ -222,6 +222,8 @@ class App {
         safeInfoManager.startNet()
         
         redeemStorage = try RedeemStorage(dbPool: dbPool)
+        
+        apiKeyManager = ApiKeyManager(networkManager: networkManager)
 
         let nftDatabaseStorage = try NftDatabaseStorage(dbPool: dbPool)
         let nftStorage = NftStorage(marketKit: marketKit, storage: nftDatabaseStorage)

@@ -22,8 +22,8 @@ class ProposalDetailService {
     }
 
     private func web3() async throws -> Web3 {
-        let chain = Chain.SafeFourTestNet
-        let url = RpcSource.safeFourTestNetRpcHttp().url
+        let chain = Chain.safeFourChain()
+        let url = RpcSource.safeFourRpcHttp().url
         return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
     }
 }

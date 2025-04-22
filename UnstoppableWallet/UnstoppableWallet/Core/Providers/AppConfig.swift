@@ -68,6 +68,12 @@ enum AppConfig {
     private static let randomNumber = Int.random(in: 0...2)
     
     static var infuraCredentials: (id: String, secret: String?) {
+        
+        if let infura = apiKey(.infura) {
+            let key = infura.components(separatedBy: "#")
+            return (id: key[0], secret: key[1])
+        }
+
         let id = (Bundle.main.object(forInfoDictionaryKey: "InfuraProjectId") as? String) ?? ""
         let secret = Bundle.main.object(forInfoDictionaryKey: "InfuraProjectSecret") as? String
         
@@ -83,26 +89,28 @@ enum AppConfig {
     }
 
     static var etherscanKey: String {
-        (Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKey") as? String) ?? ""
+        apiKey(.etherscan) ?? (Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKey") as? String) ?? ""
     }
 
     static var arbiscanKey: String {
-        (Bundle.main.object(forInfoDictionaryKey: "ArbiscanApiKey") as? String) ?? ""
+        apiKey(.arbiscan) ?? (Bundle.main.object(forInfoDictionaryKey: "ArbiscanApiKey") as? String) ?? ""
     }
 
     static var gnosisscanKey: String {
-        (Bundle.main.object(forInfoDictionaryKey: "GnosisscanApiKey") as? String) ?? ""
+        apiKey(.gnosisscan) ?? (Bundle.main.object(forInfoDictionaryKey: "GnosisscanApiKey") as? String) ?? ""
     }
 
     static var ftmscanKey: String {
-        (Bundle.main.object(forInfoDictionaryKey: "FtmscanApiKey") as? String) ?? ""
+        apiKey(.ftmscan) ?? (Bundle.main.object(forInfoDictionaryKey: "FtmscanApiKey") as? String) ?? ""
     }
 
     static var optimismEtherscanKey: String {
-        (Bundle.main.object(forInfoDictionaryKey: "OptimismEtherscanApiKey") as? String) ?? ""
+        apiKey(.optimisticEtherscan) ?? (Bundle.main.object(forInfoDictionaryKey: "OptimismEtherscanApiKey") as? String) ?? ""
     }
 
     static var bscscanKey: String {
+        if let key = apiKey(.bscscan) { return key }
+        
         let apiKey = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey") as? String) ?? ""
         let apiKey2 = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey_2") as? String) ?? ""
         let apiKey3 = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey_3") as? String) ?? ""
@@ -113,10 +121,10 @@ enum AppConfig {
     }
     
     static var oneInchApiKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "OneInchApiKeys") as? String) ?? "").components(separatedBy: ",")
+        apiKeys(.oneInch) ?? ((Bundle.main.object(forInfoDictionaryKey: "OneInchApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
     static var polygonscanKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "PolygonscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+        apiKeys(.polygonscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "PolygonscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var snowtraceKey: String {
@@ -132,7 +140,7 @@ enum AppConfig {
     }
 
     static var twitterBearerToken: String? {
-        (Bundle.main.object(forInfoDictionaryKey: "TwitterBearerToken") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        apiKey(.twitterBearerToken) ?? (Bundle.main.object(forInfoDictionaryKey: "TwitterBearerToken") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 
     static var hsProviderApiKey: String? {
@@ -144,7 +152,7 @@ enum AppConfig {
     }
 
     static var walletConnectV2ProjectKey: String? {
-        (Bundle.main.object(forInfoDictionaryKey: "WallectConnectV2ProjectKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        apiKey(.walletConnectV2) ?? (Bundle.main.object(forInfoDictionaryKey: "WallectConnectV2ProjectKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 
     static var unstoppableDomainsApiKey: String? {
@@ -152,6 +160,9 @@ enum AppConfig {
     }
     
     static var oneInchApiKey: String? {
+        if let key = apiKey(.oneInch) {
+            return key
+        }
         let apiKeys = ((Bundle.main.object(forInfoDictionaryKey: "OneInchApiKeys") as? String) ?? "").components(separatedBy: ",")
         let randomIndex = Int.random(in: 0 ..< apiKeys.count)
         return apiKeys[randomIndex]
@@ -184,4 +195,35 @@ enum AppConfig {
     static var donateEnabled: Bool {
         Bundle.main.object(forInfoDictionaryKey: "DonateEnabled") as? String == "true"
     }
+    
+    static var isSafe4TestNet: Bool {
+#if DEBUG
+        return true
+#else
+        return false
+#endif
+    }
+    
+    static func apiKeys(_ name: ApiKeyName) -> [String]? {
+        ApiKeyManager.getApiKey(name: name)
+    }
+    
+    static func apiKey(_ name: ApiKeyName) -> String? {
+        let list = ApiKeyManager.getApiKey(name: name)
+        guard let keys = list else { return nil }
+        let randomNumber = Int.random(in: 0..<keys.count)
+        return keys[randomNumber]
+    }
 }
+
+import EvmKit
+extension Chain {
+    static func safeFourChain() -> Chain {
+        if AppConfig.isSafe4TestNet {
+            return Chain.SafeFourTestNet
+        }else {
+            return Chain.SafeFour
+        }
+    }
+}
+

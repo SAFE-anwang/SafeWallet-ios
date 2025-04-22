@@ -37,44 +37,54 @@ class EvmSyncSourceManager {
 extension RpcSource {
     
     static func safeEthereumRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: "https://ethereum-mainnet.core.chainstack.com/a1911ee247f4f8de22c1f4e55865f616")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .eth) ?? "https://ethereum-mainnet.core.chainstack.com/a1911ee247f4f8de22c1f4e55865f616")!], auth: nil)
     }
     
     static func safeSolanaRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: "https://solana-mainnet.core.chainstack.com/254981cd2d169be592ee9604c7d47446")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .sol) ?? "https://solana-mainnet.core.chainstack.com/254981cd2d169be592ee9604c7d47446")!], auth: nil)
     }
     
     static func safeBscRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: "https://bsc-mainnet.core.chainstack.com/67f0d109c5c0b7f0aa251a89f12c0b7b")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .bsc) ?? "https://bsc-mainnet.core.chainstack.com/67f0d109c5c0b7f0aa251a89f12c0b7b")!], auth: nil)
     }
     
-    static func safeBscRpcHttp2() -> RpcSource {
-        .http(urls: [URL(string: "https://nd-981-064-010.p2pify.com/3abdd3b90f012f4427380b632deb4180")!], auth: nil)
-    }
+//    static func safeBscRpcHttp2() -> RpcSource {
+//        .http(urls: [URL(string: "https://nd-981-064-010.p2pify.com/3abdd3b90f012f4427380b632deb4180")!], auth: nil)
+//    }
 
     static func safePolygonRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: "https://polygon-mainnet.core.chainstack.com/e9c77e1e564c041e111132211eb0df0f")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .polygon) ?? "https://polygon-mainnet.core.chainstack.com/e9c77e1e564c041e111132211eb0df0f")!], auth: nil)
     }
     
     static func safeAvaxNetworkHttp() -> RpcSource {
-        .http(urls: [URL(string: "https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0d78d62f3dc1baf5968e7bf78018ce02")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .avax) ?? "https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0d78d62f3dc1baf5968e7bf78018ce02")!], auth: nil)
     }
     
     static func safeOptimismRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: "https://optimism-mainnet.core.chainstack.com/9f3d2000dae7846908ac871ef96e18fe")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .optimism) ?? "https://optimism-mainnet.core.chainstack.com/9f3d2000dae7846908ac871ef96e18fe")!], auth: nil)
     }
     
     static func safeArbitrumOneRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: "https://arbitrum-mainnet.core.chainstack.com/43d06a32450091e3da629e17f3d53a5e")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .arbitrum) ?? "https://arbitrum-mainnet.core.chainstack.com/43d06a32450091e3da629e17f3d53a5e")!], auth: nil)
     }
     
     static func safeGnosisRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: "https://nd-786-294-051.p2pify.com/4c89e746f92af4af9f76befc8dd64e59")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .gnosis) ?? "https://nd-786-294-051.p2pify.com/4c89e746f92af4af9f76befc8dd64e59")!], auth: nil)
     }
     
     static func safeFantomRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: "https://fantom-mainnet.core.chainstack.com/01d412d3dbe245ad17742e58fa017171")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .fantom) ?? "https://fantom-mainnet.core.chainstack.com/01d412d3dbe245ad17742e58fa017171")!], auth: nil)
     }
+    
+    static func safeFourRpcHttp() -> RpcSource {
+        if AppConfig.isSafe4TestNet {
+           return .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .safe4_testnet) ?? "https://safe4testnet.anwang.com/rpc")!], auth: nil)
+
+        }else {
+            return .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .safe4) ?? "https://safe4.anwang.com/rpc")!], auth: nil)
+        }
+    }
+
 }
 
 extension EvmSyncSourceManager {
@@ -162,11 +172,11 @@ extension EvmSyncSourceManager {
                         rpcSource: .safeBscRpcHttp(),
                         transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                     ),
-                    EvmSyncSource(
-                        name: "BSC RPC",
-                        rpcSource: .safeBscRpcHttp2(),
-                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
-                    ),
+//                    EvmSyncSource(
+//                        name: "BSC RPC",
+//                        rpcSource: .safeBscRpcHttp2(),
+//                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+//                    ),
 //                    EvmSyncSource(
 //                        name: "Omnia",
 //                        rpcSource: .http(urls: [URL(string: "https://endpoints.omniatech.io/v1/bsc/mainnet/public")!], auth: nil),
@@ -256,7 +266,7 @@ extension EvmSyncSourceManager {
             return [
                 EvmSyncSource(
                     name: "SAFE4",
-                    rpcSource: .safeFourTestNetRpcHttp(),
+                    rpcSource: .safeFourRpcHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 )
             ]
