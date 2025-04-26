@@ -8,9 +8,8 @@ extension Token {
         switch type {
         case .native:
             switch blockchainType {
-            case .ethereum, .binanceSmartChain, .safe, .dogecoin,.tron: return nil
+            case .ethereum, .binanceSmartChain, .safe, .dogecoin,.tron, .safe4: return nil
             case .binanceChain: return "BEP2"
-            case .safe4: return "SAFE4"
             default: return blockchain.name
             }
         case .eip20:
@@ -45,6 +44,7 @@ extension Token {
         case .arbitrumOne: return true
         case .gnosis: return true
         case .fantom: return true
+        case .safe4: return true
         default: return false
         }
     }
