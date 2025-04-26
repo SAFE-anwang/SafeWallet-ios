@@ -119,7 +119,7 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
         let amount = AmountDecimalParser().parseAnyDecimal(from: inputStackView.text)
         inputStackView.text = amount?.description
         guard let balance, let amount else{ return }
-        guard amount <= balance else{
+        guard amount <= balance, amount >= 1 else{
             inputWarningLabel.isHidden = false
             return
         }
