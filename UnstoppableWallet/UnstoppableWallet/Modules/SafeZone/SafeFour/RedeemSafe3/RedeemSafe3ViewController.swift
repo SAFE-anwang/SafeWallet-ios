@@ -60,7 +60,7 @@ class RedeemSafe3ViewController: ThemeViewController {
 
         tableView.separatorStyle = .none
         tableView.backgroundColor = .clear
-        tableView.allowsSelection = false
+//        tableView.allowsSelection = false
         tableView.keyboardDismissMode = .onDrag
         tableView.sectionDataSource = self
 
@@ -437,12 +437,20 @@ extension RedeemSafe3ViewController: SectionsDataSource {
                     )
                 )
                 if let safe4Address = viewModel.safe4Address {
+                    let isLocalWallet = viewModel.localWalletSafe4Address == viewModel.targetSafe4Address
                     sections.append(
                         Section(
                             id: "safe4-address",
-                            headerState: .margin(height: CGFloat.margin12),
+                            headerState: .text(text: "SAFE4钱包地址", topMargin: CGFloat.margin12, bottomMargin: CGFloat.margin12),
                             rows: [
-                                tableView.multilineRow(id: "safe4-address", title: "SAFE4钱包地址".localized, value: safe4Address, backgroundStyle: .transparent, isFirst: true, isLast: true)
+                                tableView.multilineRow(id: "local-address", title: "本地钱包地址".localized, value: viewModel.localWalletSafe4Address,  isFirst: true, isShowCheckbox: true, isChoosed: isLocalWallet, action: {
+                                    self.viewModel.choosed(address: self.viewModel.localWalletSafe4Address)
+                                    self.tableView.reload()
+                                }),
+                                tableView.multilineRow(id: "privateKey-address", title: "私钥对应地址".localized, value: safe4Address, isLast: true, isShowCheckbox: true, isChoosed: viewModel.targetSafe4Address == safe4Address,action: {
+                                    self.viewModel.choosed(address: safe4Address)
+                                    self.tableView.reload()
+                                })
                             ]
                         )
                     )

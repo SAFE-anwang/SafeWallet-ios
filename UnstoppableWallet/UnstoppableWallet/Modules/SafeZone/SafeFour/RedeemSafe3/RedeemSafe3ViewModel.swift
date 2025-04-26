@@ -51,9 +51,9 @@ class RedeemSafe3ViewModel {
         }
     }
 
-    private(set) var safe4Address: String? {
+    private(set) var targetSafe4Address: String? {
         didSet {
-            safe4AddressRelay.accept(safe4Address)
+            safe4AddressRelay.accept(targetSafe4Address)
         }
     }
     
@@ -85,7 +85,9 @@ class RedeemSafe3ViewModel {
     
     private let privateKeyRelay = BehaviorRelay<String?>(value:nil)
     private let privateKeyCautionRelay = BehaviorRelay<Caution?>(value:nil)
-
+    
+    private(set) var safe4Address: String?
+    
     init(service: RedeemSafe3Service, addressService: AddressService, safe4EvmKitWrapper: EvmKitWrapper, /*safe3Adapter: SafeCoinAdapter, safe3Wallet: Wallet, */redeemWalletType: RedeemSafe3Module.RedeemWalletType) {
         self.service = service
         self.safe4EvmKitWrapper = safe4EvmKitWrapper
@@ -190,7 +192,7 @@ extension RedeemSafe3ViewModel {
             self.privateKeyData = privateKeyData
             syncState()
         }else {
-            self.safe4Address = nil
+            self.targetSafe4Address = nil
             self.privateKeyData = nil
             self.safe3BalanceInfo = nil
         }
@@ -204,7 +206,7 @@ extension RedeemSafe3ViewModel {
     
     func validate(privateKey: String?) {
         guard (privateKey?.count ?? 0) > 0 else{ return }
-        self.safe4Address = nil
+        self.targetSafe4Address = nil
         guard let privateKeyData else {
             syncState()
             self.safe3BalanceInfo = nil
@@ -215,6 +217,7 @@ extension RedeemSafe3ViewModel {
         let safe3Address = privateKeyToSafe3Address(privateKey: privateKeyData)
         self.safe3Address = safe3Address
         self.safe4Address = privateKeyToSafe4Address(privateKey: privateKeyData)
+        self.targetSafe4Address = localWalletSafe4Address
         syncSafe3Info(safe3Address: safe3Address)
         syncState()
     }
@@ -225,17 +228,17 @@ extension RedeemSafe3ViewModel {
     }
     
     func redeem(privateKey: Data) {
-        guard let safe4Address else { return }
+        guard let targetSafe4Address else { return }
         state = .loading
         Task { [self, service] in
             do {
                 guard let callerPrivateKey = safe4EvmKitWrapper.signer?.privateKey else { return }
-                let results = try await service.redeemSafe3(callerPrivateKey: callerPrivateKey, privateKeys: [privateKey], targetAddr: safe4Address)
+                let results = try await service.redeemSafe3(callerPrivateKey: callerPrivateKey, privateKeys: [privateKey], targetAddr: targetSafe4Address)
                 guard let result = results.first, result.count > 0 else{
                     return state = .failed(error: "safe_zone.safe4.redeem.balance.fail".localized)
                 }
                 if existMasterNode {
-                    let result = try await service.redeemMasterNode(callerPrivateKey: callerPrivateKey, privateKeys: [privateKey], enodes: [""], targetAddr: safe4Address)
+                    let result = try await service.redeemMasterNode(callerPrivateKey: callerPrivateKey, privateKeys: [privateKey], enodes: [""], targetAddr: targetSafe4Address)
                     guard result.count > 0 else{
                         return state = .failed(error: "safe_zone.safe4.redeem.master.fail".localized)
                     }
@@ -247,6 +250,14 @@ extension RedeemSafe3ViewModel {
                 state = .failed(error: "safe_zone.safe4.redeem.fail".localized)
             }
         }
+    }
+    
+    var localWalletSafe4Address: String {
+        safe4EvmKitWrapper.evmKit.receiveAddress.hex
+    }
+    
+    func choosed(address: String) {
+        targetSafe4Address = address
     }
 }
 
@@ -319,7 +330,7 @@ extension RedeemSafe3ViewModel {
                     self.step = .redeem
                     self.privateKeyData = masterPrivateKey.raw
                     self.privateKey = masterPrivateKey.raw.hs.hex
-                    self.safe4Address = safe4EvmKitWrapper.evmKit.receiveAddress.hex
+                    self.targetSafe4Address = safe4EvmKitWrapper.evmKit.receiveAddress.hex
                     let isEnabled = results.filter{ $0.isEnabledRedeem }.count > 0
                     self.isEnabledSendRelay.accept(isEnabled)
                 }catch {
@@ -330,7 +341,7 @@ extension RedeemSafe3ViewModel {
     }
     
     func loalWalletRedeem(items: [LocalSafe3WalletBalanceInfoItem]) {
-        guard let safe4Address else { return }
+        guard let targetSafe4Address else { return }
         guard let callerPrivateKey = safe4EvmKitWrapper.signer?.privateKey else { return }
         let privateKeyArray = items.filter{ $0.isEnabledRedeem && !$0.existMasterNode }.map{ $0.privateKey}
         let masterNodeArray = items.filter{ $0.existMasterNode}.map{ $0.privateKey}
@@ -338,10 +349,10 @@ extension RedeemSafe3ViewModel {
         Task {[weak self, service] in
             guard let self = self else { return }
             do {
-                let results = try await service.redeemSafe3(callerPrivateKey: callerPrivateKey, privateKeys: privateKeyArray, targetAddr: safe4Address)
+                let results = try await service.redeemSafe3(callerPrivateKey: callerPrivateKey, privateKeys: privateKeyArray, targetAddr: targetSafe4Address)
                 if masterNodeArray.count > 0 {
                     let enodes = masterNodeArray.map{_ in ""}
-                    let result = try await service.redeemMasterNode(callerPrivateKey: callerPrivateKey, privateKeys: masterNodeArray, enodes: enodes, targetAddr: safe4Address)
+                    let result = try await service.redeemMasterNode(callerPrivateKey: callerPrivateKey, privateKeys: masterNodeArray, enodes: enodes, targetAddr: targetSafe4Address)
                 }
             }catch {
                 self.state = .failed(error: "资产迁移失败".localized)
