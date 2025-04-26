@@ -28,7 +28,7 @@ class EvmSyncSourceManager {
         case .arbitrumOne: return .arbiscan(apiKeys: [AppConfig.arbiscanKey])
         case .gnosis: return .gnosis(apiKeys: [AppConfig.gnosisscanKey])
         case .fantom: return .fantom(apiKeys: [AppConfig.ftmscanKey])
-        case .safe4: return .safeFourscanTestNet(apiKeys: [AppConfig.etherscanKey])
+        case .safe4: return AppConfig.isSafe4TestNet ? .safeFourscanTestNet(apiKeys: [AppConfig.etherscanKey]) : .safeFourscan(apiKeys: [AppConfig.etherscanKey])
         default: fatalError("Non-supported EVM blockchain")
         }
     }

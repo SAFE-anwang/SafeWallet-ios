@@ -6,7 +6,7 @@ import Alamofire
 
 class DrawSafe4Provider {
     
-    private let baseUrl = "https://safe4testnet.anwang.com"
+    private let baseUrl = AppConfig.isSafe4TestNet == true ? "https://safe4testnet.anwang.com" : "https://safe4.anwang.com" 
     private let networkManager: NetworkManager
 
     init(networkManager: NetworkManager) {

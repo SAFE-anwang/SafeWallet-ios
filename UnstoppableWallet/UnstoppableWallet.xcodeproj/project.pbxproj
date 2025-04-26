@@ -10400,6 +10400,7 @@
 				C89CEFB12BBDB3AE00178788 /* XCRemoteSwiftPackageReference "UniswapKit.Swift" */,
 				C891C3132C2B0FFF00D3C54C /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */,
 				C891C3162C2B109700D3C54C /* XCRemoteSwiftPackageReference "NftKit.Swift" */,
+				C8790B132DBB436600BABB22 /* XCRemoteSwiftPackageReference "EvmKit.Swift" */,
 			);
 			productRefGroup = D3285F4320BD158E00644076 /* Products */;
 			projectDirPath = "";
@@ -14106,7 +14107,7 @@
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
-				MARKETING_VERSION = 0.38.0.1.1210;
+				MARKETING_VERSION = 0.40.0.1.0430;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
@@ -14129,7 +14130,7 @@
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
-				MARKETING_VERSION = 0.38.0.1.1210;
+				MARKETING_VERSION = 0.40.0.1.0430;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = SafeWallet;
@@ -14370,6 +14371,14 @@
 				version = 4.2.0;
 			};
 		};
+		C8790B132DBB436600BABB22 /* XCRemoteSwiftPackageReference "EvmKit.Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SAFE-anwang/EvmKit.Swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.38;
+			};
+		};
 		C89080312BA9738200CCFFA4 /* XCRemoteSwiftPackageReference "web3swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SAFE-anwang/web3swift.git";
@@ -14487,7 +14496,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/UniswapKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.0.5;
+				version = 3.0.6;
 			};
 		};
 		C8F6D4162BB3F44800832A69 /* XCRemoteSwiftPackageReference "DogecoinKit.Swift" */ = {

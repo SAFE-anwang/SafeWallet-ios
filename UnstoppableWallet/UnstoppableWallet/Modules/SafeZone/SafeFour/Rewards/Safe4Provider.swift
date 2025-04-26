@@ -7,7 +7,7 @@ import RxSwift
 
 class Safe4Provider {
     private let networkManager: NetworkManager
-    private let apiUrl = "https://safe4.anwang.com/api/"
+    private let apiUrl = AppConfig.safe4ApiUrl
     private let headers: HTTPHeaders?
 
     init(networkManager: NetworkManager) {

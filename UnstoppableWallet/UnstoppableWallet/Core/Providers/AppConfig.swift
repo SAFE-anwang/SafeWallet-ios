@@ -89,7 +89,7 @@ enum AppConfig {
     }
 
     static var etherscanKey: String {
-        apiKey(.etherscan) ?? (Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKey") as? String) ?? ""
+       apiKey(.etherscan) ?? (Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKey") as? String) ?? ""
     }
 
     static var arbiscanKey: String {
@@ -213,6 +213,10 @@ enum AppConfig {
         guard let keys = list else { return nil }
         let randomNumber = Int.random(in: 0..<keys.count)
         return keys[randomNumber]
+    }
+    
+    static var safe4ApiUrl: String {
+        isSafe4TestNet == true ? "https://safe4testnet.anwang.com/api" : "https://safe4.anwang.com/api/"
     }
 }
 
