@@ -10,6 +10,7 @@ class AddLockDaysRecordCell: UITableViewCell {
     private let margins = UIEdgeInsets(top: .margin4, left: .margin16, bottom: .margin4, right: .margin16)
     private let cardView = CardView(insets: .zero)
     private let lockIdView = ItemView()
+    private let lockAmountView = ItemView()
     private let lockedDayView = ItemView()
     private let maxLockDayView = ItemView()
 
@@ -33,6 +34,7 @@ class AddLockDaysRecordCell: UITableViewCell {
         }
         
         lockIdView.titleLabel.text = "safe_zone.safe4.vote.record.id".localized
+        lockAmountView.titleLabel.text = "safe_zone.safe4.vote.record.amount".localized
         lockedDayView.titleLabel.text = "safe_zone.safe4.node.locked.days".localized
         maxLockDayView.titleLabel.text = "safe_zone.safe4.node.locked.days.max".localized
         
@@ -42,9 +44,15 @@ class AddLockDaysRecordCell: UITableViewCell {
             make.leading.trailing.equalToSuperview()
         }
         
+        cardView.addSubview(lockAmountView)
+        lockAmountView.snp.makeConstraints { make in
+            make.top.equalTo(lockIdView.snp.bottom).offset(CGFloat.margin8)
+            make.leading.trailing.equalToSuperview()
+        }
+        
         cardView.addSubview(lockedDayView)
         lockedDayView.snp.makeConstraints { make in
-            make.top.equalTo(lockIdView.snp.bottom).offset(CGFloat.margin8)
+            make.top.equalTo(lockAmountView.snp.bottom).offset(CGFloat.margin8)
             make.leading.trailing.equalToSuperview()
         }
         
@@ -98,6 +106,7 @@ class AddLockDaysRecordCell: UITableViewCell {
     
     func bind(info: AddLockDaysViewModel.LockInfo) {
         lockIdView.valueLabel.text = info.lockID.description
+        lockAmountView.valueLabel.text = info.lockedAmount.safe4FomattedAmount
         lockedDayView.valueLabel.text = info.lockedDays.description + "safe_zone.safe4.node.locked.days.title".localized
         maxLockDayView.valueLabel.text = info.maxLockDays.description + "safe_zone.safe4.node.locked.days.title".localized
         daysLabel.text = "\(info.selectedLockedDays.description)" + "safe_zone.safe4.node.locked.days.title".localized
@@ -116,7 +125,7 @@ class AddLockDaysRecordCell: UITableViewCell {
     }
         
     static func height() -> CGFloat {
-        200
+        250
     }
 }
 

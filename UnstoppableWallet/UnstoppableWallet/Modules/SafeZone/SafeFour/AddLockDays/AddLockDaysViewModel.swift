@@ -88,7 +88,7 @@ class AddLockDaysViewModel {
                                 }
                             }
                             let maxLockDay = self.maximumDays > lockedDays ? self.maximumDays - lockedDays : 0
-                            let item = LockInfo(lockID: id, lockedDays: lockedDays, maxLockDays: maxLockDay, selectedLockedDays: min(maxLockDay, self.step))
+                            let item = LockInfo(lockID: id, lockedAmount: record.amount, lockedDays: lockedDays, maxLockDays: maxLockDay, selectedLockedDays: min(maxLockDay, self.step))
                             return .success(item)
                         }catch{
                             return .failure(AddLockDaysError.getInfo)
@@ -128,12 +128,14 @@ extension AddLockDaysViewModel {
     
     class LockInfo {
         var lockID: BigUInt
+        var lockedAmount: BigUInt
         var lockedDays: BigUInt
         var maxLockDays: BigUInt
         var selectedLockedDays: BigUInt
         
-        init(lockID: BigUInt, lockedDays: BigUInt, maxLockDays: BigUInt, selectedLockedDays: BigUInt) {
+        init(lockID: BigUInt, lockedAmount: BigUInt, lockedDays: BigUInt, maxLockDays: BigUInt, selectedLockedDays: BigUInt) {
             self.lockID = lockID
+            self.lockedAmount = lockedAmount
             self.lockedDays = lockedDays
             self.maxLockDays = maxLockDays
             self.selectedLockedDays = selectedLockedDays
