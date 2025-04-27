@@ -155,10 +155,6 @@ class EvmKitWrapper {
         self.evmKit = evmKit
         self.nftKit = nftKit
         self.signer = signer
-        
-        if evmKit.chain == Chain.safeFourChain(), let signer {
-            evmKit.withdraw(privateKey: signer.privateKey)
-        }
     }
 
     func sendSingle(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, lockDay: Int? = nil) -> Single<FullTransaction> {
