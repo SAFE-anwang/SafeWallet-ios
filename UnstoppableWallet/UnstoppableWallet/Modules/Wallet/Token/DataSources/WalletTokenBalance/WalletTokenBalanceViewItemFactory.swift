@@ -26,7 +26,7 @@ class WalletTokenBalanceViewItemFactory {
 
                 if AppConfig.swapEnabled, wallet.token.swappable {
                     buttons[.swap] = sendButtonState
-                    if [.binanceSmartChain, .ethereum].contains(wallet.token.blockchainType) {
+                    if [.binanceSmartChain, .ethereum, .safe4].contains(wallet.token.blockchainType) {
                         buttons[.liquidity] = .enabled
                     }
                 }
