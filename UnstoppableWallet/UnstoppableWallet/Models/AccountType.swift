@@ -86,7 +86,7 @@ enum AccountType {
             case (.tron, .native), (.tron, .eip20): return true
             case (.ton, .native): return true
             case (.safe, .native), (.safe, .eip20): return true
-            case (.safe4, .native): return true
+            case (.safe4, .native), (.safe4, .eip20): return true
             default: return false
             }
         case let .hdExtendedKey(key):

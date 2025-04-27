@@ -10400,7 +10400,7 @@
 				C89CEFB12BBDB3AE00178788 /* XCRemoteSwiftPackageReference "UniswapKit.Swift" */,
 				C891C3132C2B0FFF00D3C54C /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */,
 				C891C3162C2B109700D3C54C /* XCRemoteSwiftPackageReference "NftKit.Swift" */,
-				C8790B132DBB436600BABB22 /* XCRemoteSwiftPackageReference "EvmKit.Swift" */,
+				C88417B32DBE0C9C00D78243 /* XCRemoteSwiftPackageReference "EvmKit.Swift" */,
 			);
 			productRefGroup = D3285F4320BD158E00644076 /* Products */;
 			projectDirPath = "";
@@ -14371,7 +14371,7 @@
 				version = 4.2.0;
 			};
 		};
-		C8790B132DBB436600BABB22 /* XCRemoteSwiftPackageReference "EvmKit.Swift" */ = {
+		C88417B32DBE0C9C00D78243 /* XCRemoteSwiftPackageReference "EvmKit.Swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SAFE-anwang/EvmKit.Swift.git";
 			requirement = {
@@ -14383,8 +14383,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SAFE-anwang/web3swift.git";
 			requirement = {
-				kind = exactVersion;
-				version = 2.0.16;
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.17;
 			};
 		};
 		C89080322BA9760400CCFFA4 /* XCRemoteSwiftPackageReference "MarketKit.Swift" */ = {
@@ -14392,7 +14392,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/MarketKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 2.5.3;
+				version = 2.5.4;
 			};
 		};
 		C89080352BA979BE00CCFFA4 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */ = {
@@ -14488,7 +14488,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/SafeCoinKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 2.2.3;
+				version = 2.2.5;
 			};
 		};
 		C89CEFB12BBDB3AE00178788 /* XCRemoteSwiftPackageReference "UniswapKit.Swift" */ = {
@@ -14496,7 +14496,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/UniswapKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.0.6;
+				version = 3.0.7;
 			};
 		};
 		C8F6D4162BB3F44800832A69 /* XCRemoteSwiftPackageReference "DogecoinKit.Swift" */ = {

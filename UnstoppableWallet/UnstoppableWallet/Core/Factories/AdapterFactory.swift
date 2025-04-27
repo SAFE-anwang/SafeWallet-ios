@@ -132,15 +132,14 @@ extension AdapterFactory {
         case (.native, .ethereum), (.native, .binanceSmartChain), (.native, .polygon), (.native, .avalanche), (.native, .optimism), (.native, .arbitrumOne), (.native, .gnosis), (.native, .fantom):
             return evmAdapter(wallet: wallet)
 
-        case let (.eip20(address), .ethereum), let (.eip20(address), .binanceSmartChain), let (.eip20(address), .polygon), let (.eip20(address), .avalanche), let (.eip20(address), .optimism), let (.eip20(address), .arbitrumOne), let (.eip20(address), .gnosis), let (.eip20(address), .fantom):
+        case let (.eip20(address), .ethereum), let (.eip20(address), .binanceSmartChain), let (.eip20(address), .polygon), let (.eip20(address), .avalanche), let (.eip20(address), .optimism), let (.eip20(address), .arbitrumOne), let (.eip20(address), .gnosis), let (.eip20(address), .fantom), let (.eip20(address), .safe4):
             return eip20Adapter(address: address, wallet: wallet, coinManager: coinManager)
             
         case (.native, .safe):
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .safe, accountOrigin: wallet.account.origin)
             return try? SafeCoinAdapter(wallet: wallet, syncMode: syncMode)
             
-        case (.native, .safe4):
-            let syncMode = btcBlockchainManager.syncMode(blockchainType: .safe4, accountOrigin: wallet.account.origin)
+        case  (.native, .safe4):
             return evmAdapter(wallet: wallet)
 
         case (.native, .tron):
