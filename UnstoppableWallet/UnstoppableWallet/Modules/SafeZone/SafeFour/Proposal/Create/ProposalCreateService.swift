@@ -237,6 +237,12 @@ private extension ProposalCreateService {
             endPayTime = startPayTime
             payTimes = 1
         }
+//        payAmount/payTimes >= 1SAFE才能通过
+        if ((amount ?? 0) as NSDecimalNumber).intValue / (payTimes ?? 1) >= 1 {
+            caution = Caution(text: "safe_zone.safe4.proposal.input.safe.error".localized, type: .error)
+            amountCautionRelay.accept(caution)
+
+        }
         let startCaution = startPayTimeWarning
         startPayTimeCautionRelay.accept(startCaution)
         
