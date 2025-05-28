@@ -159,6 +159,7 @@ extension BlockchainType {
         case .arbitrumOne: return [.oneInch, .uniswapV3]
         case .gnosis: return [.oneInch]
         case .fantom: return [.oneInch]
+        case .safe4: return [.safeSwap]
         default: return []
         }
     }
@@ -194,7 +195,7 @@ extension SwapModule.Dex {
             case .pancake: return [.binanceSmartChain]
             case .pancakeV3: return [.ethereum, .binanceSmartChain]
             case .quickSwap: return [.polygon]
-            case .safeSwap: return [.ethereum, .binanceSmartChain, .polygon]
+            case .safeSwap: return [.ethereum, .binanceSmartChain, .polygon, .safe4]
             }
         }
 

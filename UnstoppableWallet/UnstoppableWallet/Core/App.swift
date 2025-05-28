@@ -219,7 +219,7 @@ class App {
                 
         let safeProvider = SafeProvider(networkManager: networkManager)
         safeInfoManager = SafeInfoManager(evmBlockchainManager: evmBlockchainManager, safeProvider: safeProvider)
-        safeInfoManager.startNet()
+        safeInfoManager.startNet(blockchainType: .ethereum)
         
         redeemStorage = try RedeemStorage(dbPool: dbPool)
         

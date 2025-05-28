@@ -356,19 +356,25 @@ extension LiquidityViewModel {
             return
         }
         
+        guard  let token0 = tradeService.tokenIn, let token1 = tradeService.tokenOut  else {
+            return
+        }
+        
         let swapInfo = SendEvmData.LiquidityInfo(
-                estimatedOut: tradeService.amountOut,
-                estimatedIn: tradeService.amountIn,
-                slippage: viewItemHelper.slippage(tradeService.settings.allowedSlippage),
-                deadline: viewItemHelper.deadline(tradeService.settings.ttl),
-                recipientDomain: tradeService.settings.recipient?.domain,
-                price: viewItemHelper.sortedPrices(
-                        executionPrice: trade.tradeData.executionPrice,
-                        invertedPrice: trade.tradeData.executionPriceInverted,
-                        tokenIn: tradeService.tokenIn,
-                        tokenOut: tradeService.tokenOut)?.0,
-                priceImpact: viewItemHelper.priceImpactViewItem(priceImpact: trade.tradeData.priceImpact, impactLevel: trade.impactLevel),
-                gasPrice: nil
+            token0: token0,
+            token1: token1,
+            estimated0: tradeService.amountIn,
+            estimated1: tradeService.amountOut,
+            slippage: viewItemHelper.slippage(tradeService.settings.allowedSlippage),
+            deadline: viewItemHelper.deadline(tradeService.settings.ttl),
+            recipientDomain: tradeService.settings.recipient?.domain,
+            price: viewItemHelper.sortedPrices(
+                    executionPrice: trade.tradeData.executionPrice,
+                    invertedPrice: trade.tradeData.executionPriceInverted,
+                    tokenIn: tradeService.tokenIn,
+                    tokenOut: tradeService.tokenOut)?.0,
+            priceImpact: viewItemHelper.priceImpactViewItem(priceImpact: trade.tradeData.priceImpact, impactLevel: trade.impactLevel),
+            gasPrice: nil
         )
 
         var impactWarnings = [Warning]()

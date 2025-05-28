@@ -7,6 +7,7 @@ import BitcoinCore
 import MarketKit
 import HdWalletKit
 import Checkpoints
+import BigInt
 
 class SafeCoinAdapter: BitcoinBaseAdapter {
     private let feeRate = 10
@@ -211,7 +212,18 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
         }
     }
 }
-
+extension SafeCoinAdapter {
+    
+    func coinValue(value: BigUInt) -> CoinValue {
+        let decimalValue = Decimal(bigUInt: value, decimals: token.decimals) ?? 0
+        return coinValue(value: decimalValue)
+    }
+    
+    func coinValue(value: Decimal) -> CoinValue {
+        CoinValue(kind: .token(token: token), value: value)
+    }
+    
+}
 public struct BlockInfo {
     public let headerHash: String
     public let height: Int

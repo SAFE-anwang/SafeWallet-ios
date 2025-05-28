@@ -34,7 +34,7 @@ class BitcoinAddressParserItem {
 
     private func tokenType(scriptType: ScriptType) -> TokenType? {
         switch blockchainType {
-        case .dash, .safe:
+        case .dash, .safe, .safe4:
             return .native
 
         case .bitcoinCash, .ecash:

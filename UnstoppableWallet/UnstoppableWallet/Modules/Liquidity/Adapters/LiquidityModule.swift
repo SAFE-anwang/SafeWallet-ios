@@ -8,20 +8,22 @@ class LiquidityModule {
 
     private let allowanceService: LiquidityAllowanceService
     private let pendingAllowanceService: LiquidityPendingAllowanceService
+    private let isSafeSwap: Bool
 
-    init?(dex: LiquidityMainModule.Dex, dataSourceState: LiquidityMainModule.DataSourceState) {
+    init?(dex: LiquidityMainModule.Dex, dataSourceState: LiquidityMainModule.DataSourceState, isSafeSwap: Bool) {
+        self.isSafeSwap = isSafeSwap
 
         guard let evmKit = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
             return nil
         }
 
-        guard let swapKit = try? UniswapKit.Kit.instance(),
+        guard let swapKit = try? UniswapKit.Kit.instance(isSafeSwap: isSafeSwap),
               let rpcSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: dex.blockchainType)?.rpcSource
         else {
             return nil
         }
 
-        let liquidityRepository = LiquidityProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource)
+        let liquidityRepository = LiquidityProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource, isSafeSwap: isSafeSwap)
 
         tradeService = LiquidityTradeService(
                 liquidityProvider: liquidityRepository,

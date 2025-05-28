@@ -167,18 +167,7 @@ extension SwapInputCardView {
         guard amountTextView.text != amount, !amountInputViewModel.equalValue(lhs: amountTextView.text, rhs: amount) else { // avoid issue with point ("1" and "1.")
             return
         }
-        amountTextView.text = split(str: amount ?? "", decimal: 8) ?? amount //amount
-    }
-    
-    /// safe
-    private func split(str: String, decimal: Int) -> String? {
-        let components = str.split(separator: ".")
-        if let integerPart = components.first, let decimalPart = components.last, decimalPart.count > 8 {
-            let truncatedDecimalPart = String(decimalPart.prefix(decimal))
-            let result = integerPart + "." + truncatedDecimalPart
-            return result
-        }
-        return nil
+        amountTextView.text = amount
     }
 
     private func setBalance(multi: Decimal) {

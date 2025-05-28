@@ -20,10 +20,7 @@ class UniswapModule {
             return nil
         }
         
-//        guard let swapKit = try? UniswapKit.Kit.instance(evmKit: evmKit, isSafeSwap: isSafeSwap) else {
-//            return nil
-//        }
-        let uniswapRepository = UniswapProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource)
+        let uniswapRepository = UniswapProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource, isSafeSwap: isSafeSwap)
         print("OneInchProvider router Address: \(uniswapRepository.routerAddress.hex)")
 
         tradeService = UniswapTradeService(

@@ -80,6 +80,33 @@ class EvmTransactionConverter {
         case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
         }
     }
+    
+    private func convertToAmount(token: AddLiquidityDecoration.Token, amount: AddLiquidityDecoration.Amount, sign: FloatingPointSign) -> SwapTransactionRecord.Amount {
+        switch amount {
+        case let .exact(value): return .exact(value: convertToTransactionValue(token: token, value: value, sign: sign))
+        case let .extremum(value): return .extremum(value: convertToTransactionValue(token: token, value: value, sign: sign))
+        }
+    }
+    
+    private func convertToAmount(token: RemoveLiquidityDecoration.Token, amount: RemoveLiquidityDecoration.Amount, sign: FloatingPointSign) -> SwapTransactionRecord.Amount {
+        switch amount {
+        case let .exact(value): return .exact(value: convertToTransactionValue(token: token, value: value, sign: sign))
+        case let .extremum(value): return .extremum(value: convertToTransactionValue(token: token, value: value, sign: sign))
+        }
+    }
+    private func convertToTransactionValue(token: AddLiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> TransactionValue {
+        switch token {
+        case .evmCoin: return baseCoinValue(value: value, sign: sign)
+        case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
+        }
+    }
+    
+    private func convertToTransactionValue(token: RemoveLiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> TransactionValue {
+        switch token {
+        case .evmCoin: return baseCoinValue(value: value, sign: sign)
+        case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
+        }
+    }
 
     private func transferEvents(incomingEip20Transfers: [TransferEventInstance]) -> [ContractCallTransactionRecord.TransferEvent] {
         incomingEip20Transfers.map { transfer in
@@ -198,14 +225,6 @@ extension EvmTransactionConverter {
                 from: decoration.from.eip55,
                 value: baseCoinValue(value: decoration.value, sign: .plus)
             )
-        case let decoration as Safe4DepositIncomingDecoration:
-            return Safe4DepositEvmIncomingTransactionRecord(
-                source: source,
-                transaction: transaction,
-                baseToken: baseToken,
-                from: decoration.from.eip55,
-                value: baseCoinValue(value: decoration.value, sign: .plus)
-            )
 
         case let decoration as OutgoingDecoration:
             return EvmOutgoingTransactionRecord(
@@ -216,6 +235,16 @@ extension EvmTransactionConverter {
                 value: baseCoinValue(value: decoration.value, sign: .minus),
                 sentToSelf: decoration.sentToSelf
             )
+
+        case let decoration as Safe4DepositIncomingDecoration:
+            return Safe4DepositEvmIncomingTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                from: decoration.from.eip55,
+                value: baseCoinValue(value: decoration.value, sign: .plus)
+            )
+ 
         case let decoration as Safe4DepositOutgoingDecoration:
             return Safe4DepositEvmOutgoingTransactionRecord(
                 source: source,
@@ -317,6 +346,7 @@ extension EvmTransactionConverter {
                 ),
                 sentToSelf: decoration.sentToSelf
             )
+            
         case let decoration as Safe4WithdrawDecoration:
             return Safe4WithdrawTransactionRecord(source: source, transaction: transaction, baseToken: baseToken, from: decoration.from.eip55, value: baseCoinValue(value: decoration.value, sign: .plus))
             
@@ -334,93 +364,75 @@ extension EvmTransactionConverter {
             return Safe4NodeRegisterTransactionRecoard(source: source, transaction: transaction, baseToken: baseToken, method: method, from: decoration.from?.eip55 ?? "", to: decoration.to?.eip55 ?? "", value: value, contractAddress: decoration.contract?.eip55 ?? "")
             
         case let decoration as Safe4AddLockDayDecoration:
-            let method = transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) }
+            return EvmOutgoingTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                to: decoration.to?.eip55 ?? "",
+                value: baseCoinValue(value: decoration.value, sign: .minus),
+                sentToSelf: decoration.sentToSelf
+            )
+            
+        case let decoration as Safe4BatchRedeemDecoration:
+            return Safe4RedeemTransactionRecoard(source: source, transaction: transaction, baseToken: baseToken, from: decoration.from?.eip55 ?? "", to: decoration.to?.eip55 ?? "", value: .rawValue(value: 0))
+            
+        case let decoration as Safe4CrossChainIncomingDecoration:
+            let value = baseCoinValue(value: decoration.value, sign: .plus)
+            return Safe4CrossChainIncomingRecoard(source: source, transaction: transaction, baseToken: baseToken, from: decoration.from.eip55, to: decoration.to.eip55, value: value)
+            
+        case let decoration as Safe4CrossChainOutgoingDecoration:
             let value = baseCoinValue(value: decoration.value, sign: .minus)
+            return Safe4CrossChainOutgoingRecoard(source: source, transaction: transaction, baseToken: baseToken, from: decoration.from.eip55, to: decoration.to.eip55, value: value)
+            
+        case let decoration as RemoveLiquidityDecoration:
+            let address = evmKit.address
+            let amountA = convertToAmount(token: decoration.tokenA, amount: decoration.amountAMin, sign: .plus)
+            let amountB = convertToAmount(token: decoration.tokenB, amount: decoration.amountBMin, sign: .plus)
+            
+            if let contractAddress = transaction.to {
+                
+                let incomingEvents = [ContractCallTransactionRecord.TransferEvent(address: address.eip55, value: amountA.value),
+                                      ContractCallTransactionRecord.TransferEvent(address: address.eip55, value: amountB.value)
+                                    ]
+                
+                let amount = convertAmount(amount: decoration.liquidity, decimals: baseToken.decimals, sign: .minus)
+                let transactionValue = TransactionValue.tokenValue(tokenName: "safeswap-V2", tokenCode: "", tokenDecimals: baseToken.decimals, value: amount)
+                let outgoingEvents = [ContractCallTransactionRecord.TransferEvent(address: contractAddress.eip55, value: transactionValue)]
+                return ContractCallTransactionRecord(source: source,
+                                                  transaction: transaction,
+                                                  baseToken: baseToken,
+                                                  contractAddress: contractAddress.eip55,
+                                                  method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                                                  incomingEvents: incomingEvents,
+                                                  outgoingEvents: outgoingEvents
+                )
+            }
 
+        case let decoration as AddLiquidityDecoration:
+            let address = evmKit.address
+            let amountA = convertToAmount(token: decoration.tokenInA, amount: decoration.amountInA, sign: .minus)
+            let amountB = convertToAmount(token: decoration.tokenInB, amount: decoration.amountInB, sign: .minus)
+            
+            if let contractAddress = transaction.to {
+                let transactionValue = TransactionValue.tokenValue(tokenName: "safeswap-V2", tokenCode: "", tokenDecimals: baseToken.decimals, value: 0)
+                let incomingEvents: [ContractCallTransactionRecord.TransferEvent] = []//[ContractCallTransactionRecord.TransferEvent(address: contractAddress.eip55, value: transactionValue)]
+                
+                let outgoingEvents = [ContractCallTransactionRecord.TransferEvent(address: address.eip55, value: amountA.value),
+                                      ContractCallTransactionRecord.TransferEvent(address: address.eip55, value: amountB.value)
+                                    ]
+            
+                return ContractCallTransactionRecord(source: source,
+                                                  transaction: transaction,
+                                                  baseToken: baseToken,
+                                                  contractAddress: contractAddress.eip55,
+                                                  method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                                                  incomingEvents: incomingEvents,
+                                                  outgoingEvents: outgoingEvents
+                )
+            }
 
+            
         case let decoration as UnknownTransactionDecoration:
-            let address = evmKit.address
-
-            let internalTransactions = decoration.internalTransactions.filter { $0.to == address }
-
-            let eip20Transfers = decoration.eventInstances.compactMap { $0 as? TransferEventInstance }
-            let incomingEip20Transfers = eip20Transfers.filter { $0.to == address && $0.from != address }
-            let outgoingEip20Transfers = eip20Transfers.filter { $0.from == address }
-
-            let eip721Transfers = decoration.eventInstances.compactMap { $0 as? Eip721TransferEventInstance }
-            let incomingEip721Transfers = eip721Transfers.filter { $0.to == address && $0.from != address }
-            let outgoingEip721Transfers = eip721Transfers.filter { $0.from == address }
-
-            let eip1155Transfers = decoration.eventInstances.compactMap { $0 as? Eip1155TransferEventInstance }
-            let incomingEip1155Transfers = eip1155Transfers.filter { $0.to == address && $0.from != address }
-            let outgoingEip1155Transfers = eip1155Transfers.filter { $0.from == address }
-
-            if transaction.from == address, let contractAddress = transaction.to, let value = transaction.value {
-                return ContractCallTransactionRecord(
-                    source: source,
-                    transaction: transaction,
-                    baseToken: baseToken,
-                    contractAddress: contractAddress.eip55,
-                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
-                    incomingEvents: transferEvents(internalTransactions: internalTransactions) + transferEvents(incomingEip20Transfers: incomingEip20Transfers) +
-                        transferEvents(incomingEip721Transfers: incomingEip721Transfers) + transferEvents(incomingEip1155Transfers: incomingEip1155Transfers),
-                    outgoingEvents: transferEvents(contractAddress: contractAddress, value: value) + transferEvents(outgoingEip20Transfers: outgoingEip20Transfers) +
-                        transferEvents(outgoingEip721Transfers: outgoingEip721Transfers) + transferEvents(outgoingEip1155Transfers: outgoingEip1155Transfers)
-                )
-            } else if transaction.from != address, transaction.to != address {
-                return ExternalContractCallTransactionRecord(
-                    source: source,
-                    transaction: transaction,
-                    baseToken: baseToken,
-                    incomingEvents: transferEvents(internalTransactions: internalTransactions) + transferEvents(incomingEip20Transfers: incomingEip20Transfers) +
-                        transferEvents(incomingEip721Transfers: incomingEip721Transfers) + transferEvents(incomingEip1155Transfers: incomingEip1155Transfers),
-                    outgoingEvents: transferEvents(outgoingEip20Transfers: outgoingEip20Transfers) +
-                        transferEvents(outgoingEip721Transfers: outgoingEip721Transfers) + transferEvents(outgoingEip1155Transfers: outgoingEip1155Transfers)
-                )
-            }
-            
-        case let decoration as LiquidityDecoration:
-            let address = evmKit.address
-
-            let internalTransactions = decoration.internalTransactions.filter { $0.to == address }
-
-            let eip20Transfers = decoration.eventInstances.compactMap { $0 as? TransferEventInstance }
-            let incomingEip20Transfers = eip20Transfers.filter { $0.to == address && $0.from != address }
-            let outgoingEip20Transfers = eip20Transfers.filter { $0.from == address }
-
-            let eip721Transfers = decoration.eventInstances.compactMap { $0 as? Eip721TransferEventInstance }
-            let incomingEip721Transfers = eip721Transfers.filter { $0.to == address && $0.from != address }
-            let outgoingEip721Transfers = eip721Transfers.filter { $0.from == address }
-
-            let eip1155Transfers = decoration.eventInstances.compactMap { $0 as? Eip1155TransferEventInstance }
-            let incomingEip1155Transfers = eip1155Transfers.filter { $0.to == address && $0.from != address }
-            let outgoingEip1155Transfers = eip1155Transfers.filter { $0.from == address }
-
-            if transaction.from == address, let contractAddress = transaction.to, let value = transaction.value {
-                return ContractCallTransactionRecord(
-                    source: source,
-                    transaction: transaction,
-                    baseToken: baseToken,
-                    contractAddress: contractAddress.eip55,
-                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
-                    incomingEvents: transferEvents(internalTransactions: internalTransactions) + transferEvents(incomingEip20Transfers: incomingEip20Transfers) +
-                        transferEvents(incomingEip721Transfers: incomingEip721Transfers) + transferEvents(incomingEip1155Transfers: incomingEip1155Transfers),
-                    outgoingEvents: transferEvents(contractAddress: contractAddress, value: value) + transferEvents(outgoingEip20Transfers: outgoingEip20Transfers) +
-                        transferEvents(outgoingEip721Transfers: outgoingEip721Transfers) + transferEvents(outgoingEip1155Transfers: outgoingEip1155Transfers)
-                )
-            } else if transaction.from != address, transaction.to != address {
-                return ExternalContractCallTransactionRecord(
-                    source: source,
-                    transaction: transaction,
-                    baseToken: baseToken,
-                    incomingEvents: transferEvents(internalTransactions: internalTransactions) + transferEvents(incomingEip20Transfers: incomingEip20Transfers) +
-                        transferEvents(incomingEip721Transfers: incomingEip721Transfers) + transferEvents(incomingEip1155Transfers: incomingEip1155Transfers),
-                    outgoingEvents: transferEvents(outgoingEip20Transfers: outgoingEip20Transfers) +
-                        transferEvents(outgoingEip721Transfers: outgoingEip721Transfers) + transferEvents(outgoingEip1155Transfers: outgoingEip1155Transfers)
-                )
-            }
-            
-        case let decoration as LiquidityV3Decoration:
             let address = evmKit.address
 
             let internalTransactions = decoration.internalTransactions.filter { $0.to == address }

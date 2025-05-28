@@ -7,11 +7,13 @@ class UniswapProvider {
     private let swapKit: UniswapKit.Kit
     private let evmKit: EvmKit.Kit
     private let rpcSource: RpcSource
+    private let isSafeSwap: Bool
 
-    init(swapKit: UniswapKit.Kit, evmKit: EvmKit.Kit, rpcSource: RpcSource) {
+    init(swapKit: UniswapKit.Kit, evmKit: EvmKit.Kit, rpcSource: RpcSource, isSafeSwap: Bool) {
         self.swapKit = swapKit
         self.evmKit = evmKit
         self.rpcSource = rpcSource
+        self.isSafeSwap = isSafeSwap
     }
 
     private func uniswapToken(token: MarketKit.Token) throws -> UniswapKit.Token {
@@ -25,7 +27,7 @@ class UniswapProvider {
 
 extension UniswapProvider {
     var routerAddress: EvmKit.Address {
-        try! swapKit.routerAddress(chain: evmKit.chain)
+        try! swapKit.routerAddress(chain: evmKit.chain, isSafeSwap: isSafeSwap)
     }
 
     var wethAddress: EvmKit.Address {
