@@ -28,19 +28,28 @@ extension BlockchainType {
     ]
 
     func placeholderImageName(tokenProtocol: TokenProtocol?) -> String {
-        tokenProtocol.map { "\(uid)_\($0)_32" } ?? "placeholder_circle_32"
-    }
+        if isSafeChainUid {
+            return "safe-anwang_trx_32"
+        }else {
+            return tokenProtocol.map { "\(uid)_\($0)_32" } ?? "placeholder_circle_32"
 
+        }
+    }
+    
+    var isSafeChainUid: Bool {
+        uid.contains("custom-safe4-anwang") || uid.contains("custom-safe-anwang") || uid.isSafeCoin
+    }
+    
     var iconPlain32: String {
-        if uid == safeCoinUid || uid == safe4CoinUid {
-            return "safe_logo_24"
+        if isSafeChainUid {
+            return "safe-anwang_trx_32"
         }else {
             return "\(uid)_trx_32"
         }
     }
 
     var imageUrl: String {
-        if uid == safeCoinUid || uid == safe4CoinUid {
+        if isSafeChainUid {
             return "https://anwang.com/img/logos/safe.png"
         }else if uid == dogeCoinUid {
             let scale = Int(UIScreen.main.scale)

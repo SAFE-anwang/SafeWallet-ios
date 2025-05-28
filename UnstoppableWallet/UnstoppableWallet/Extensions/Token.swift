@@ -8,8 +8,10 @@ extension Token {
         switch type {
         case .native:
             switch blockchainType {
-            case .ethereum, .binanceSmartChain, .safe, .dogecoin,.tron, .safe4: return nil
+            case .ethereum, .binanceSmartChain, .dogecoin,.tron: return nil
             case .binanceChain: return "BEP2"
+            case .safe: return "SAFE3"
+            case .safe4: return nil//"SAFE4"
             default: return blockchain.name
             }
         case .eip20:
@@ -17,6 +19,7 @@ extension Token {
             case .ethereum: return "ERC20"
             case .binanceSmartChain: return "BEP20"
             case .tron: return "TRC20"
+            case .safe4: return "SRC20"
             default: return blockchain.name
             }
         case .bep2:
@@ -31,7 +34,11 @@ extension Token {
     }
 
     var placeholderImageName: String {
-        "\(blockchainType.uid)_\(type.tokenProtocol)_32"
+        if [.safe, .safe4].contains(blockchainType) {
+            "safe-anwang_trx_32"
+        }else {
+            "\(blockchainType.uid)_\(type.tokenProtocol)_32"
+        }
     }
 
     var swappable: Bool {
@@ -55,6 +62,10 @@ extension Token {
         case let .addressType(type): return type.bitcoinCashCoinType.title.uppercased()
         default: return protocolName?.uppercased()
         }
+    }
+    
+    var fullBadge: String {
+        (badge ?? "coin_platforms.native".localized).uppercased()
     }
 }
 

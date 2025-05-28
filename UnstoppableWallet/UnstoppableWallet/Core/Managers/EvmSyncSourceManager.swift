@@ -265,7 +265,7 @@ extension EvmSyncSourceManager {
         case .safe4:
             return [
                 EvmSyncSource(
-                    name: "SAFE4",
+                    name: "SAFE",
                     rpcSource: .safeFourRpcHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 )

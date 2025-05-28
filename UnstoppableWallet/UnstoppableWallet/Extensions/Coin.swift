@@ -4,6 +4,10 @@ import UIKit
 extension Coin {
     var imageUrl: String {
         let scale = Int(UIScreen.main.scale)
-        return uid.isSafeCoin ? "https://anwang.com/img/logos/safe.png" : "https://cdn.blocksdecoded.com/coin-icons/32px/\(uid)@\(scale)x.png"
+        if uid.contains("custom-safe4-anwang") || uid.contains("custom-safe-anwang") || uid.isSafeCoin {
+            return "https://anwang.com/img/logos/safe.png"
+        }else {
+            return "https://cdn.blocksdecoded.com/coin-icons/32px/\(uid)@\(scale)x.png"
+        }
     }
 }
