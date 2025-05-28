@@ -5,8 +5,8 @@ import EvmKit
 import MarketKit
 import ComponentKit
 
-class SendWsafeViewModel {
-    private let service: SendWsafeService
+class SendSafe4ToWSafeViewModel {
+    private let service: SendSafe4ToWSafeService
     private let disposeBag = DisposeBag()
 
     private let proceedEnabledRelay = BehaviorRelay<Bool>(value: false)
@@ -17,7 +17,7 @@ class SendWsafeViewModel {
     var isMatic: Bool = false
     var error: BinanceAdapter.AddressConversion?
     
-    init(service: SendWsafeService, isMatic: Bool) {
+    init(service: SendSafe4ToWSafeService, isMatic: Bool) {
         self.service = service
         self.isMatic = isMatic
         safeInfoManager = App.shared.safeInfoManager
@@ -30,7 +30,7 @@ class SendWsafeViewModel {
     }
     
 
-    private func sync(state: SendWsafeService.State) {
+    private func sync(state: SendSafe4ToWSafeService.State) {
         if case .ready = state {
             proceedEnabledRelay.accept(true)
         } else {
@@ -38,7 +38,7 @@ class SendWsafeViewModel {
         }
     }
 
-    private func sync(amountCaution: (error: Error?, warning: SendWsafeService.AmountWarning?)) {
+    private func sync(amountCaution: (error: Error?, warning: SendSafe4ToWSafeService.AmountWarning?)) {
         var caution: Caution? = nil
 
         if let error = amountCaution.error {
@@ -55,7 +55,7 @@ class SendWsafeViewModel {
 
 }
 
-extension SendWsafeViewModel {
+extension SendSafe4ToWSafeViewModel {
 
     var proceedEnableDriver: Driver<Bool> {
         proceedEnabledRelay.asDriver()
@@ -75,7 +75,7 @@ extension SendWsafeViewModel {
 
     func didTapProceed() {
         if let safeInfo = try? safeInfoManager.getSafeInfo() {
-            if (isMatic && safeInfo.matic?.matic2safe == false) || safeInfo.eth?.eth2safe == false {
+            if (isMatic && safeInfo.matic?.safe2matic == false) || safeInfo.eth?.safe2eth == false {
                 HudHelper.instance.show(banner: .error(string: "safe_zone.Safe4_Disabled".localized))
                 return
             }
@@ -93,11 +93,24 @@ extension SendWsafeViewModel {
         proceedRelay.accept(sendData)
     }
     
+    /// - Parameters:
+    ///   - wsafeWallet: 代币Wallet
+    ///   - safeWallet: safe Wallet
+    ///   - address: 跨链接收人 address
     func onEnterAddress(wsafeWallet: Wallet, safeWallet: Wallet, address: Address?) {
         if let depositAdapter = App.shared.adapterManager.depositAdapter(for: wsafeWallet) {
             let ethAddress = Address(raw: depositAdapter.receiveAddress.address, domain: nil)
+            // 设置钱包的ETH地址为交易的接收地址
             service.setRecipientAddress(address: ethAddress, to: address)
         }
     }
+    
+
+    
+    func validateSafe4(address: Address?) {
+        
+    }
+    
 
 }
+

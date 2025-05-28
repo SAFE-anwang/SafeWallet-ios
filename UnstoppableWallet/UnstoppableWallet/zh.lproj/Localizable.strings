@@ -1,6 +1,7 @@
 "button.ok" = "确定";
 "button.apply" = "应用";
 "button.cancel" = "取消";
+"button.all" = "全选";
 "button.close" = "关闭";
 "button.confirm" = "确认";
 "button.continue" = "继续";
@@ -571,18 +572,31 @@
 
 "swap.service" = "服务";
 "swap.service.title" = "服务";
+"swap.enter_amount" = "输入金额";
+"swap.insufficient_balance" = "可用余额不足";
 
 // Swap Approving
 
 "swap.approve.subtitle" = "交易互兑";
+"swap.safe4.title"  = "SAFE兑换";
 
 // Swap Confirmation
+
+"swap.confirmation.title" = "确认";
+"swap.confirmation.quoting" = "报价...";
+"swap.confirmation.invalid_quote" = "无效的报价";
+"swap.confirmation.please_wait" = "请稍候";
+"swap.confirmation.quote_expires_in" = "报价在 %@ 秒后失效";
+"swap.confirmation.quote_expired" = "报价已过期";
+"swap.confirmation.quote_failed" = "无法提供报价";
 
 "swap.confirmation.swap_button" = "互兑交易";
 "swap.confirmation.swap_button_liquidity" = "添加流动性";
 "swap.confirmation.impact_too_high" = "由于流动性极低，禁止SafeWallet进行该交换操作，因为您将获得非常不利的价格。\n如果您仍然想要交换，请使用%@网站。";
 "swap.confirmation.slide_to_swap" = "滑动切换";
 "swap.confirmation.swapping" = "交易";
+"swap.confirmation.refresh" = "刷新";
+"swap.confirmation.swapped" = "交易完成";
 "swap.confirmation.impact_too_high" = "%@ 已禁用此交易的掉期操作，因为您得到的价格极其不利。 这是由于流动性极低造成的。\n如果您仍想兑换，请使用 %@ 网站。";
 "swap.confirmation.impact_warning" = "重要提示！您正在以极其不利的价格进行交易。这是因为流动性非常低。";
 "swap.confirmation.minimum_received" = "收到的最小金额";
@@ -1842,8 +1856,9 @@
 "safe_zone.section.cross_eth" = "跨链(ETH)";
 "safe_zone.section.cross_bsc" = "跨链(BSC)";
 "safe_zone.section.cross_matic" = "跨链(MATIC)";
-"safe_zone.section.locked" = "锁仓";
-"safe_zone.section.safe4" = "SAFE4";
+"safe_zone.section.safe4SwapSrc" = "SAFE 兑换 SAFE SRC20";
+"safe_zone.section.locked" = "SAFE锁仓";
+"safe_zone.section.safe4" = "SAFE";
 "safe_zone.section.basic" = "基本信息";
 "safe_zone.row.contract" = "SAFE合约";
 "safe_zone.row.linear" = "线性锁仓";
@@ -1855,8 +1870,8 @@
 "safe_zone.rewards.title" = "我的收益";
 
 "safe_zone.row.homepage" = "SAFE官网";
-"safe_zone.row.blockExplorer" = "区块浏览器";
-"safe_zone.row.acrossExplorer" = "跨链浏览器";
+"safe_zone.row.blockExplorer" = "%@区块浏览器";
+"safe_zone.row.acrossExplorer" = "%@跨链浏览器";
 "safe_dapp.input" = "输入链接访问";
 "safe_zone.send.receiver" = "跨链接收人";
 "safe_zone.send.openCoin" = "请在钱包管理打开 %@";
@@ -2014,6 +2029,7 @@
 "safe_zone.safe4.node.super.vote.locked.recoard.choose.all" = "选择全部可用锁仓记录";
 "safe_zone.safe4.amont.input.tips" = "输入数量";
 "safe_zone.safe4.amont.max" = "最大";
+"safe_zone.safe4.amont.min.error" = "最小投票数应不少于 %@ SAFE";
 "safe_zone.safe4.amont.max.error" = "超出可用数量";
 "safe_zone.safe4.use.amont" = "可用数量";
 "safe_zone.safe4.vote.type.safe" = "SAFE投票";
@@ -2050,6 +2066,9 @@
 "safe_zone.safe4.reward" = "挖矿收益";
 "safe_zone.safe4.contract.deployment" = "合约部署";
 "safe_zone.safe4.contract.addlockday" = "追加锁定";
+"safe_zone.safe4.contract.batchRedeem.locked" = "锁仓余额迁移";
+"safe_zone.safe4.contract.batchRedeem.available" = "迁移余额";
+"safe_zone.safe4.contract.crossChain" = "跨链";
 
 "safe_zone.safe4.node.address.legal" = "请输入合法的节点地址";
 "safe_zone.safe4.node.address.notexist" = "节点地址不存在";
@@ -2108,6 +2127,11 @@
 
 "safe_lock.recoard.nav" = "锁仓记录";
 "safe_lock.recoard.title" = "总锁定：%@ SAFE";
+
+"safe_withdraw.amount.locked" = "锁定金额";
+"safe_withdraw.unlock.height" = "解锁高度";
+"safe_withdraw.release.height" = "投票释放高度";
+"safe_withdraw.votelocked.error" = "SAFE区块高度不足，无法提现";
 
 // Subscription Info
 

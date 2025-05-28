@@ -198,7 +198,7 @@ enum AppConfig {
     
     static var isSafe4TestNet: Bool {
 #if DEBUG
-        return true
+        return false
 #else
         return false
 #endif

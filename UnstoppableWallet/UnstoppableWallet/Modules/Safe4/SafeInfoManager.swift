@@ -6,6 +6,7 @@ import ComponentKit
 import EvmKit
 import SafeCoinKit
 import ObjectMapper
+import MarketKit
 
 class SafeInfoManager {
 
@@ -21,8 +22,8 @@ class SafeInfoManager {
         self.safeProvider = safeProvider
     }
     
-    func startNet() {
-        let chain = evmBlockchainManager.evmKitManager(blockchainType: .ethereum).evmKitWrapper?.evmKit.chain ?? Chain.ethereum
+    func startNet(blockchainType: BlockchainType) {
+        let chain = evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper?.evmKit.chain ?? Chain.ethereum
         let wsafeKit = WSafeKit(chain: chain)
         do {
             let safeNetType = try wsafeKit.getSafeNetType()
@@ -55,11 +56,11 @@ class SafeInfoManager {
 
         if chain == .ethereum {
 
-            let minNet = SafeChainInfo(safe_usdt: 0, minamount: 2,
+            let mainNet = SafeChainInfo(safe_usdt: 0, minamount: 0.1,
                                   eth: EthChainInfo(price: 0, gas_price_gwei: 0, safe_fee: 0.25, safe2eth: true, eth2safe: true),
                                   bsc: BscChainInfo(price: 0, gas_price_gwei: 0, safe_fee: 0.25, safe2bsc: true, bsc2safe: true),
                                   matic: MaticChainInfo(price: 0, gas_price_gwei: 0, safe_fee: 0.25, safe2matic: true, matic2safe: true))
-            return minNet
+            return mainNet
 
         }else if chain == .ethereumRopsten {
             let testNet = SafeChainInfo(safe_usdt: 0, minamount: 0.01,

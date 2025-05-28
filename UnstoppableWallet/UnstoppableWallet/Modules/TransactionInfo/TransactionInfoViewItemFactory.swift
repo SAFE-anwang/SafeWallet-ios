@@ -167,13 +167,13 @@ class TransactionInfoViewItemFactory {
             let contactData = contactLabelService.contactData(for: to)
             let valueTitle = contactData.name == nil ? evmLabelManager.addressLabel(address: to) : nil
             
-            let realAddress: String
-            if let input {
-                realAddress = address(input: input.hs.hexData)?.hex ?? to
-            }else {
-                realAddress = to
-            }
-            toViewItem = .to(value: realAddress, valueTitle: valueTitle, contactAddress: contactData.contactAddress)
+//            let realAddress: String
+//            if let input {
+//                realAddress = address(input: input.hs.hexData)?.hex ?? to
+//            }else {
+//                realAddress = to
+//            }
+            toViewItem = .to(value: to, valueTitle: valueTitle, contactAddress: contactData.contactAddress)
             contactNameViewItem = contactData.name.flatMap { .contactName(name: $0) }
         }
 
@@ -240,13 +240,13 @@ class TransactionInfoViewItemFactory {
         if !mint, let from {
             let contactData = contactLabelService.contactData(for: from)
             let valueTitle = contactData.name == nil ? evmLabelManager.addressLabel(address: from) : nil
-            let realAddress: String
-            if let input {
-                realAddress = address(input: input.hs.hexData)?.hex ?? from
-            }else {
-                realAddress = from
-            }
-            fromViewItem = .from(value: realAddress, valueTitle: valueTitle, contactAddress: contactData.contactAddress)
+//            let realAddress: String
+//            if let input {
+//                realAddress = address(input: input.hs.hexData)?.hex ?? from
+//            }else {
+//                realAddress = from
+//            }
+            fromViewItem = .from(value: from, valueTitle: valueTitle, contactAddress: contactData.contactAddress)
             contactNameViewItem = contactData.name.flatMap { .contactName(name: $0) }
         }
 
@@ -328,15 +328,31 @@ class TransactionInfoViewItemFactory {
         case let record as Safe4WithdrawTransactionRecord:
             sections.append(receiveSection(source: record.source, transactionValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden, input: record.transaction.input?.hs.hexString))
             
-        case let record as Safe4RedeemTransactionRecoard:
-            sections.append(receiveSection(source: record.source, transactionValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden, input: record.transaction.input?.hs.hexString))
-            
         case let record as Safe4VoteTransactionRecoard:
             sections.append(sendSection(source: record.source, transactionValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: false, balanceHidden: balanceHidden, input: record.transaction.input?.hs.hexString))
             
         case let record as Safe4NodeRegisterTransactionRecoard:
             sections.append(sendSection(source: record.source, transactionValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: false, balanceHidden: balanceHidden, input: record.transaction.input?.hs.hexString))
+        
+        case let record as Safe4CrossChainIncomingRecoard:
+            sections.append(receiveSection(source: record.source, transactionValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden))
 
+        case let record as Safe4CrossChainOutgoingRecoard:
+            sections.append(sendSection(source: record.source, transactionValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: false, balanceHidden: balanceHidden))
+            
+        case let record as LiquidityTransactionRecord:
+            sections.append([
+                .actionTitle(iconName: record.source.blockchainType.iconPlain32, iconDimmed: false, title: record.method ?? "transactions.contract_call".localized, subTitle: evmLabelManager.mapped(address: record.contractAddress)),
+            ])
+
+            for event in record.outgoingEvents {
+                sections.append(sendSection(source: record.source, transactionValue: event.value, to: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden))
+            }
+
+            for event in record.incomingEvents {
+                sections.append(receiveSection(source: record.source, transactionValue: event.value, from: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden))
+            }
+            
         case let record as ApproveTransactionRecord:
             let transactionValue = record.value
             let rate = _rate(transactionValue)

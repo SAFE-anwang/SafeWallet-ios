@@ -7,7 +7,7 @@ import BigInt
 import HsExtensions
 import HsToolKit
 
-class SendWsafeService {
+class SendSafe4ToWSafeService {
     let sendToken: Token
     private let disposeBag = DisposeBag()
     private let adapter: ISendEthereumAdapter
@@ -23,7 +23,8 @@ class SendWsafeService {
     private var evmAmount: BigUInt?
     private var addressData: AddressData?
     private var toSafeAddress: Address? // 跨链接收人Address
-
+    private let wsafeChainType: WSafeChainType
+    
     private let amountCautionRelay = PublishRelay<(error: Error?, warning: AmountWarning?)>()
     private var amountCaution: (error: Error?, warning: AmountWarning?) = (error: nil, warning: nil) {
         didSet {
@@ -31,8 +32,9 @@ class SendWsafeService {
         }
     }
         
-    init(token: Token, adapter: ISendEthereumAdapter, addressService: AddressService) {
+    init(token: Token, wsafeChainType: WSafeChainType, adapter: ISendEthereumAdapter, addressService: AddressService) {
         self.sendToken = token
+        self.wsafeChainType = wsafeChainType
         self.adapter = adapter
         self.addressService = addressService
         
@@ -50,22 +52,13 @@ class SendWsafeService {
 
     private func syncState() {
         if amountCaution.error == nil, case .success = addressService.state, let evmAmount = evmAmount, let addressData = addressData, let safeAddr = toSafeAddress?.raw {
-            let wsafeKit = WSafeKit(chain: adapter.evmKitWrapper.evmKit.chain)
-            let transactionData = wsafeKit.transactionData(amount: evmAmount, to: safeAddr)
+            let wsafeKit = WSafeKit(chain: wsafeChainType.chain)
+            let transactionData = wsafeKit.transactionDataSafe4(amount: evmAmount, to: receiveAddress(toHex: safeAddr))
             let sendInfo = SendEvmData.SendInfo(domain: addressData.domain)
             let sendData = SendEvmData(transactionData: transactionData, additionalInfo: .send(info: sendInfo), warnings: [])
             state = .ready(sendData: sendData)
         } else {
             state = .notReady
-        }
-    }
-    
-    private func receiveAddress(toHex: String) -> String {
-        switch sendToken.blockchainType {
-        case .binanceSmartChain: return "bsc:" + toHex
-        case .polygon: return "matic:" + toHex
-        case .ethereum: return "eth:" + toHex
-        default: return ""
         }
     }
     
@@ -80,10 +73,17 @@ class SendWsafeService {
 
         return evmAmount
     }
-
+    
+    private func receiveAddress(toHex: String) -> String {
+        switch wsafeChainType {
+        case .BSC: return "bsc:" + toHex
+        case .MATIC: return "matic:" + toHex
+        case .ETH: return "eth:" + toHex
+        }
+    }
 }
 
-extension SendWsafeService {
+extension SendSafe4ToWSafeService {
 
     var stateObservable: Observable<State> {
         stateRelay.asObservable()
@@ -95,7 +95,7 @@ extension SendWsafeService {
 
 }
 
-extension SendWsafeService: IAvailableBalanceService {
+extension SendSafe4ToWSafeService: IAvailableBalanceService {
 
     var availableBalance: DataStatus<Decimal> {
         .completed(adapter.balanceData.available)
@@ -106,7 +106,7 @@ extension SendWsafeService: IAvailableBalanceService {
     }
 
 }
-extension SendWsafeService {
+extension SendSafe4ToWSafeService {
     
     func setRecipientAddress(address: Address?, to: Address?) {
         if let address = address {
@@ -128,7 +128,7 @@ extension SendWsafeService {
     }
 }
 
-extension SendWsafeService: IAmountInputService {
+extension SendSafe4ToWSafeService: IAmountInputService {
 
     var amount: Decimal {
         0
@@ -182,7 +182,7 @@ extension SendWsafeService: IAmountInputService {
 
 }
 
-extension SendWsafeService {
+extension SendSafe4ToWSafeService {
 
     enum State {
         case ready(sendData: SendEvmData)
@@ -204,3 +204,4 @@ extension SendWsafeService {
     }
 
 }
+

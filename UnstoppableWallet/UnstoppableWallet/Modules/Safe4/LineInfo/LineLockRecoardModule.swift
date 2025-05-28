@@ -1,9 +1,10 @@
 import UIKit
 import MarketKit
 import ComponentKit
+import SwiftUI
+import ThemeKit
 
 struct LineLockRecoardModule {
-
     static func viewController() -> UIViewController? {
         guard let wallet = App.shared.walletManager.activeWallets.filter({ $0.coin.uid == safeCoinUid && $0.token.blockchain.type == .safe }).first else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
@@ -16,8 +17,19 @@ struct LineLockRecoardModule {
             return nil
         }
         let viewModel = LineLockRecoardViewModel(wallet: wallet, adapter: adapter)
-
         return LineLockRecoardViewController(lineLockRecoardViewModel: viewModel)
     }
+}
+
+struct LineLockRecoardView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        ThemeNavigationController(rootViewController: LineLockRecoardModule.viewController() ?? UIViewController())
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
+    
 
 }

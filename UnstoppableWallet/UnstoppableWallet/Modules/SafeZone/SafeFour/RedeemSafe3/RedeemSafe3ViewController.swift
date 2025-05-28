@@ -24,6 +24,7 @@ class RedeemSafe3ViewController: ThemeViewController {
 
     private let buttonCell = PrimaryButtonCell()
     private var viewItems = [ RedeemSafe3ViewModel.LocalSafe3WalletBalanceInfoItem]()
+    private var balanceInfo: RedeemSafe3ViewModel.LocalBalanceInfo?
     weak var parentNavigationController: UINavigationController?
     private let account: Account
     init(account: Account, viewModel: RedeemSafe3ViewModel) {
@@ -33,7 +34,7 @@ class RedeemSafe3ViewController: ThemeViewController {
  
         privateKeyInputCell.setTitle(text: "SAFE3钱包私钥".localized)
         privateKeyInputCell.setInput(keyboardType: .default, placeholder: "请输入钱包私钥".localized)
-        tipsCell.bind(text: "SAFE3网络的资产将会迁移到SAFE4网络".localized, type: .normal)
+        tipsCell.bind(text: "SAFE3网络的资产将会迁移到SAFE网络".localized, type: .normal)
         
         switch viewModel.redeemWalletType {
         case.local:
@@ -219,11 +220,12 @@ class RedeemSafe3ViewController: ThemeViewController {
             case .success:
                 self?.spinner.isHidden = true
                 
-            case let .complated(datas):
+            case let .complated(datas, balanceInfo):
                 self?.spinner.isHidden = true
                 self?.emptyView.isHidden = datas.count > 0
                 self?.syncStateView.isHidden = true
                 self?.viewItems = datas
+                self?.balanceInfo = balanceInfo
                 self?.tableView.reload()
                 
             case let .failed(error):
@@ -265,7 +267,7 @@ extension RedeemSafe3ViewController {
                     component.setContentHuggingPriority(.required, for: .vertical)
                     component.font = titleFont
                     component.textColor = .themeGray
-                    component.text = "SAFE3 钱包地址".localized
+                    component.text = "SAFE(SAFE3) 钱包地址".localized
                 },
                 .margin4,
                 .text { (component: TextComponent) -> () in
@@ -277,7 +279,7 @@ extension RedeemSafe3ViewController {
                     component.setContentHuggingPriority(.required, for: .vertical)
                     component.font = titleFont
                     component.textColor = .themeGray
-                    component.text = "safe_zone.safe4..account.balance".localized
+                    component.text = "safe_zone.safe4.account.balance".localized
                 },
                 .margin4,
                 .text { (component: TextComponent) -> () in
@@ -301,7 +303,7 @@ extension RedeemSafe3ViewController {
                 .margin4,
                 .text { (component: TextComponent) -> () in
                     component.font = valueFont
-                    let value = item.lockBalance.safe4FomattedAmount + " SAFE"
+                    let value = item.lockBalance.safe3FomattedAmount + " SAFE"
                     if !item.existLocked {
                         let attributeString: NSMutableAttributedString = NSMutableAttributedString(string: value)
                         attributeString.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: NSRange(location: 0, length: attributeString.length))
@@ -334,6 +336,46 @@ extension RedeemSafe3ViewController {
                 cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
             },
             action: action
+        )
+    }
+    
+    func balacneRow(id: String, balanceInfo: RedeemSafe3ViewModel.LocalBalanceInfo, backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence, layoutMargins: UIEdgeInsets? = nil, autoDeselect: Bool = false, isFirst: Bool = false, isLast: Bool = false, action: (() -> Void)? = nil) -> RowProtocol {
+        let layout: UIEdgeInsets = layoutMargins ?? UIEdgeInsets(top: .margin8, left: .margin16, bottom: .margin12, right: .margin16)
+        let titleFont: UIFont = .subhead2
+        return CellBuilderNew.row(
+            rootElement: .vStack([
+                .hStack([
+                    .text { (component: TextComponent) -> () in
+                        component.setContentHuggingPriority(.required, for: .horizontal)
+                        component.font = titleFont
+                        component.text = "可用余额: ".localized + "\(balanceInfo.availableValue)"
+                    },
+                    .text { (component: TextComponent) -> () in
+                        component.font = titleFont
+                        component.textAlignment = .right
+                        component.text = "可迁移余额: " + "\(balanceInfo.redeemableValue)"
+                    }
+                ]),
+                .hStack([
+                    .text { (component: TextComponent) -> () in
+                        component.setContentHuggingPriority(.required, for: .horizontal)
+                        component.font = titleFont
+                        component.text = "锁仓余额: ".localized + "\(balanceInfo.lockedValue)"
+                    },
+                    .text { (component: TextComponent) -> () in
+                        component.font = titleFont
+                        component.textAlignment = .right
+                        component.text = "可迁移余额: " + "\(balanceInfo.redeemableLockedValue)"
+                    },
+                ]),
+            ]),
+            layoutMargins: layout,
+            tableView: tableView,
+            id: id,
+            height: 80,
+            bind: { cell in
+                cell.set(backgroundStyle: backgroundStyle, isFirst: true, isLast: isLast)
+            }
         )
     }
 }
@@ -398,21 +440,25 @@ extension RedeemSafe3ViewController: SectionsDataSource {
         var sections = [SectionProtocol]()
         if viewModel.redeemWalletType == .local {
             var rows = [RowProtocol]()
+
             rows.append(contentsOf: [tipsRow, stepRow])
-            
+            if let balanceInfo {
+                let balacneRow = balacneRow(id: "balacneRow", balanceInfo: balanceInfo)
+                rows.append(balacneRow)
+            }
             let itemRows = viewItems.map{ localRow(id: "item", item: $0) }
             rows.append(contentsOf: itemRows)
             
             sections.append(Section(id: "items",rows: rows))
             
             if viewItems.count > 0 {
-                if let safe4Address = viewModel.safe4Address {
+                if let safe4Address = viewModel.targetSafe4Address {
                     sections.append(
                         Section(
                             id: "safe4-address",
                             headerState: .margin(height: CGFloat.margin12),
                             rows: [
-                                tableView.multilineRow(id: "safe4-address", title: "SAFE4钱包地址".localized, value: safe4Address, backgroundStyle: .transparent, isFirst: true, isLast: true)
+                                tableView.multilineRow(id: "safe4-address", title: "SAFE钱包地址".localized, value: safe4Address, backgroundStyle: .transparent, isFirst: true, isLast: true)
                             ]
                         )
                     )
@@ -441,7 +487,7 @@ extension RedeemSafe3ViewController: SectionsDataSource {
                     sections.append(
                         Section(
                             id: "safe4-address",
-                            headerState: .text(text: "SAFE4钱包地址", topMargin: CGFloat.margin12, bottomMargin: CGFloat.margin12),
+                            headerState: .text(text: "SAFE钱包地址", topMargin: CGFloat.margin12, bottomMargin: CGFloat.margin12),
                             rows: [
                                 tableView.multilineRow(id: "local-address", title: "本地钱包地址".localized, value: viewModel.localWalletSafe4Address,  isFirst: true, isShowCheckbox: true, isChoosed: isLocalWallet, action: {
                                     self.viewModel.choosed(address: self.viewModel.localWalletSafe4Address)

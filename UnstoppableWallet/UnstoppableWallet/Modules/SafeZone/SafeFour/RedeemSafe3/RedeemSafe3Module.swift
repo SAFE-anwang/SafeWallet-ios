@@ -18,13 +18,13 @@ struct RedeemSafe3Module {
         }
         
         guard let safe4Wallet else {
-            HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE4")))
+            HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
         guard let account = App.shared.accountManager.activeAccount else { return nil }
         
         guard let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: safe4Wallet), state == .synced else {
-            HudHelper.instance.show(banner: .error(string: "SAFE4" + "balance.syncing".localized))
+            HudHelper.instance.show(banner: .error(string: "SAFE" + "balance.syncing".localized))
             return nil
         }
         

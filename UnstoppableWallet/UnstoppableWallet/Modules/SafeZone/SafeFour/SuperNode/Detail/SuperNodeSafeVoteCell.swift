@@ -76,7 +76,6 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
         inputWarningLabel.isHidden = true
         inputWarningLabel.font = .subhead2
         inputWarningLabel.textColor = .red
-        inputWarningLabel.text = "safe_zone.safe4.amont.max.error".localized
         wrapperView.addSubview(inputWarningLabel)
         inputWarningLabel.snp.makeConstraints { make in
             make.top.equalTo(formValidatedView.snp.bottom).offset(CGFloat.margin4)
@@ -119,10 +118,18 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
         let amount = AmountDecimalParser().parseAnyDecimal(from: inputStackView.text)
         inputStackView.text = amount?.description
         guard let balance, let amount else{ return }
-        guard amount <= balance, amount >= 1 else{
+        guard amount <= balance else{
+            inputWarningLabel.text = "safe_zone.safe4.amont.max.error".localized
             inputWarningLabel.isHidden = false
             return
         }
+        
+        guard amount >= 1 else{
+            inputWarningLabel.text = "safe_zone.safe4.amont.min.error".localized("\(1)")
+            inputWarningLabel.isHidden = false
+            return
+        }
+        
         safeVote?(amount)
     }
     

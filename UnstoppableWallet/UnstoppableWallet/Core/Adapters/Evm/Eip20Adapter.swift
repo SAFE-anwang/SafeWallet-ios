@@ -34,7 +34,9 @@ extension Eip20Adapter: IAdapter {
         eip20Kit.stop()
     }
 
-    func refresh() {}
+    func refresh() {
+        start()
+    }
 }
 
 extension Eip20Adapter: IBalanceAdapter {

@@ -70,6 +70,10 @@ extension SuperNodeDetailService {
         try await web3().safe4.snvote.getVoters(address, BigUInt(page.start), BigUInt(page.currentPageCount))
     }
     
+    func getTotalVoteNum(address: Web3Core.EthereumAddress) async throws -> BigUInt {
+        try await web3().safe4.snvote.getTotalVoteNum(address)
+    }
+    
     func getVoterNum(address: Web3Core.EthereumAddress) async throws -> BigUInt {
         try await web3().safe4.snvote.getVoterNum(address)
     }

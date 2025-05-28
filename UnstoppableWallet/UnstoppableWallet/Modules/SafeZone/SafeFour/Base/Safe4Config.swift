@@ -31,13 +31,19 @@ extension BigUInt {
     var safe4FomattedAmount: String {
         Decimal(bigUInt: self, decimals: safe4Decimals)?.safe4FormattedAmount ??  "-"
     }
+    
+     
+    func safe4Amount(decimalCount: Int = 4) -> String {
+        guard let decimal = Decimal(bigUInt: self, decimals: safe4Decimals) else { return "n/a" }
+        return ValueFormatter.instance.formatShort(value: decimal, decimalCount: decimalCount) ?? "-"
+    }
 }
 extension Decimal {
     
     var safe4FormattedAmount: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 2
+        formatter.maximumFractionDigits = 4
         return formatter.string(from: self as NSDecimalNumber)!
     }
 }

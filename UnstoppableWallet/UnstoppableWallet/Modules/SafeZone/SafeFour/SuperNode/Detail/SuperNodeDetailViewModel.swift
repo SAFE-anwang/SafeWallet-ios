@@ -103,6 +103,8 @@ extension SuperNodeDetailViewModel {
         Task { [service] in
             do{
                 if !loadMore {
+                    let address = nodeViewItem.info.addr
+//                    let totalVoteNum = try await service.getTotalVoteNum(address: address)
                     lockRecordSafe4Page.set(totalNum: 1000)
                 }
                 let votedIDs = try await requestVotedIDs()
@@ -151,7 +153,7 @@ extension SuperNodeDetailViewModel {
                 }
                 lockRecordItems.append(contentsOf: results)
                 lockRecordItems.sort{$0.info.id > $1.info.id}
-                state = .lockRecoardCompleted(datas: lockRecordItems)
+                state = .lockRecoardCompleted(datas: lockRecordItems.filter{!$0.info.amount.isZero})
                 lockRecordIsLoading = false
             }catch{
                 state = .lockRecoardCompleted(datas: lockRecordItems)

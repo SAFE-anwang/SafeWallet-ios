@@ -48,7 +48,7 @@ extension RedeemSafe3Service {
        return try await web3().safe4.safe3.batchRedeemSafe3(callerPrivateKey: callerPrivateKey, privateKeys: privateKeys, targetAddr: address)
     }
 
-    func redeemMasterNode(callerPrivateKey: Data, privateKeys: [Data], enodes: [String], targetAddr: String) async throws  -> String {
+    func redeemMasterNode(callerPrivateKey: Data, privateKeys: [Data], enodes: [String], targetAddr: String) async throws  -> [String] {
         let address = Web3Core.EthereumAddress(targetAddr)!
         return try await web3().safe4.safe3.batchRedeemMasterNode(callerPrivateKey: callerPrivateKey, privateKeys: privateKeys, enodes: enodes, targetAddr: address)
     }

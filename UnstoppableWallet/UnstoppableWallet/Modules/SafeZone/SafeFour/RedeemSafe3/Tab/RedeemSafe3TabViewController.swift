@@ -35,7 +35,7 @@ class RedeemSafe3TabViewController: ThemeViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "SAFE3 -> SAFE4".localized
+        title = "SAFE3 -> SAFE".localized
         navigationItem.largeTitleDisplayMode = .never
         
         view.addSubview(tabsView)

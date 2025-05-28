@@ -60,21 +60,9 @@ enum SendEvmModule {
 
         return viewController
     }
-    
-    static func wsafeViewController(wallet: Wallet, data: Safe4Data) -> UIViewController? {
-        guard let adapter = App.shared.adapterManager.adapter(for: wallet) else {
-            return nil
-        }
-
-        switch adapter {
-        case let adapter as ISendEthereumAdapter:
-            return SendEvmModule.wsafeViewController(token: wallet.token, adapter: adapter, data: data)
-        default: return nil
-        }
-    }
-     
+         
     // 跨链： wsafe => safe
-    static func wsafeViewController(token: Token, adapter: ISendEthereumAdapter, data: Safe4Data) -> UIViewController {
+    static func wsafeViewController(token: Token, wsafeAdapter: ISendEthereumAdapter, crossChainInfo: SafeCrossChainInfo) -> UIViewController {
         let evmAddressParserItem = EvmAddressParser()
         let udnAddressParserItem = UdnAddressParserItem.item(rawAddressParserItem: evmAddressParserItem, coinCode: token.coin.code, token: token)
 
@@ -82,7 +70,7 @@ enum SendEvmModule {
                 .append(handler: evmAddressParserItem)
                 .append(handler: udnAddressParserItem)
 
-        if let httpSyncSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .ethereum),
+        if let httpSyncSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: token.blockchainType),
            let ensAddressParserItem = EnsAddressParserItem(rpcSource: httpSyncSource.rpcSource, rawAddressParserItem: evmAddressParserItem) {
             addressParserChain.append(handler: ensAddressParserItem)
         }
@@ -94,10 +82,10 @@ enum SendEvmModule {
                 marketKit: App.shared.marketKit,
                 contactBookManager: App.shared.contactManager,
                 blockchainType: token.blockchainType,
-                initialAddress: data.reciverAddress
+                initialAddress: crossChainInfo.reciverAddress
         )
 
-        let service = SendWsafeService(token: token, adapter: adapter, addressService: addressService)
+        let service = SendWsafeService(token: token, adapter: wsafeAdapter, addressService: addressService)
 
         let switchService = AmountTypeSwitchService(userDefaultsStorage: App.shared.userDefaultsStorage)
         let fiatService = FiatService(switchService: switchService, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
@@ -106,12 +94,9 @@ enum SendEvmModule {
 
         let coinService = CoinService(token: token, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
 
-        let viewModel = SendWsafeViewModel(service: service)
-        
-        if let wsafeWallet = data.wsafeWallet, let safeWallet = data.safeWallet {
-            viewModel.onEnterAddress(wsafeWallet: wsafeWallet, safeWallet: safeWallet, address: data.reciverAddress)
-        }
-        
+        let viewModel = SendWsafeViewModel(service: service, isMatic: crossChainInfo.isMatic)
+        viewModel.onEnterAddress(wsafeWallet: crossChainInfo.wsafeWallet, safeWallet: crossChainInfo.safeWallet, address: crossChainInfo.reciverAddress)
+
         let availableBalanceViewModel = SendAvailableBalanceViewModel(service: service, coinService: coinService, switchService: switchService)
 
         let amountViewModel = AmountInputViewModel(
@@ -124,25 +109,75 @@ enum SendEvmModule {
 
         let recipientViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
 
-        let viewController = SendSafeEvmViewController(
-                evmKitWrapper: adapter.evmKitWrapper,
+        let viewController = SendWSafeEvmViewController(
+                evmKitWrapper: wsafeAdapter.evmKitWrapper,
                 viewModel: viewModel,
                 availableBalanceViewModel: availableBalanceViewModel,
                 amountViewModel: amountViewModel,
                 recipientViewModel: recipientViewModel
         )
-        var title = ""
-        
-        if data.isETH {
-            title = "SAFE ERC20 => SAFE"
-        } else if data.isMatic {
-            title = "SAFE MATIC => SAFE"
-        }else {
-            title = "SAFE BEP20 => SAFE"
-        }
-        
-        viewController.title = title
+
+        viewController.title = crossChainInfo.navTitle
         return ThemeNavigationController(rootViewController: viewController)
     }
+    
+//     跨链：safe => wsafe
+    static func safe4ViewController(token: Token, wsafeChainType: WSafeChainType, safeAdapter: ISendEthereumAdapter, crossChainInfo: SafeCrossChainInfo) -> UIViewController {
+        let evmAddressParserItem = EvmAddressParser()
+        let udnAddressParserItem = UdnAddressParserItem.item(rawAddressParserItem: evmAddressParserItem, coinCode: token.coin.code, token: token)
 
+        let addressParserChain = AddressParserChain()
+                .append(handler: evmAddressParserItem)
+                .append(handler: udnAddressParserItem)
+
+        if let httpSyncSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: token.blockchainType),
+           let ensAddressParserItem = EnsAddressParserItem(rpcSource: httpSyncSource.rpcSource, rawAddressParserItem: evmAddressParserItem) {
+            addressParserChain.append(handler: ensAddressParserItem)
+        }
+
+        let addressUriParser = AddressParserFactory.parser(blockchainType: token.blockchainType, tokenType: token.type)
+        
+        let addressService = AddressService(
+                mode: .parsers(addressUriParser, addressParserChain),
+                marketKit: App.shared.marketKit,
+                contactBookManager: App.shared.contactManager,
+                blockchainType: token.blockchainType,
+                initialAddress: crossChainInfo.reciverAddress
+        )
+
+        let service = SendSafe4ToWSafeService(token: token, wsafeChainType: wsafeChainType, adapter: safeAdapter, addressService: addressService)
+
+        let switchService = AmountTypeSwitchService(userDefaultsStorage: App.shared.userDefaultsStorage)
+        let fiatService = FiatService(switchService: switchService, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
+
+        switchService.add(toggleAllowedObservable: fiatService.toggleAvailableObservable)
+
+        let coinService = CoinService(token: token, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
+
+        let viewModel = SendSafe4ToWSafeViewModel(service: service, isMatic: crossChainInfo.isMatic)
+        viewModel.onEnterAddress(wsafeWallet: crossChainInfo.wsafeWallet, safeWallet: crossChainInfo.safeWallet, address: crossChainInfo.reciverAddress)
+
+        let availableBalanceViewModel = SendAvailableBalanceViewModel(service: service, coinService: coinService, switchService: switchService)
+
+        let amountViewModel = AmountInputViewModel(
+                service: service,
+                fiatService: fiatService,
+                switchService: switchService,
+                decimalParser: AmountDecimalParser()
+        )
+        addressService.amountPublishService = amountViewModel
+
+        let recipientViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
+
+        let viewController = SendSafe4ToWSafeEvmViewController(
+                evmKitWrapper: safeAdapter.evmKitWrapper,
+                viewModel: viewModel,
+                availableBalanceViewModel: availableBalanceViewModel,
+                amountViewModel: amountViewModel,
+                recipientViewModel: recipientViewModel
+        )
+
+        viewController.title = crossChainInfo.navTitle
+        return ThemeNavigationController(rootViewController: viewController)
+    }
 }

@@ -105,7 +105,7 @@ class SendSafe2wsafeAdapterService {
             minimumSendAmount = adapter.minimumSendAmountSafe(address: address.raw)
         }
         
-        App.shared.safeInfoManager.startNet()
+//        App.shared.safeInfoManager.startNet()
         
         sync(feeRate: .completed(10))
         

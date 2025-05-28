@@ -71,7 +71,7 @@ class SuperNodeDetailVoteSendViewController: Safe4ConfirmBaseViewController {
         [
             tableView.universalRow62(id: "node_amount", image: .local(UIImage(named: "lock_48")), title: .custom("\(amount) SAFE", .title3, .themeBlackAndWhite), isFirst: true),
             tableView.multilineRow(id: "node_from", title: "safe_zone.safe4.send.from".localized, value: "safe_zone.safe4.account.regular".localized),
-            tableView.multilineRow(id: "node_to", title: "safe_zone.safe4.send.tosafe_zone.safe4.send.to".localized, value: "safe_zone.safe4.account.lock".localized),
+            tableView.multilineRow(id: "node_to", title: "safe_zone.safe4.send.to".localized, value: "safe_zone.safe4.account.lock".localized),
             tableView.multilineRow(id: "vote_to", title: "safe_zone.safe4.vote.to".localized, value: "safe_zone.safe4.node.super.title".localized, isLast: true)
         ]
     }

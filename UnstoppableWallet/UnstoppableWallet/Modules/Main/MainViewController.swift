@@ -12,7 +12,7 @@ class MainViewController: ThemeTabBarController {
     private var marketModule: UIViewController?
     private let balanceModule = ThemeNavigationController(rootViewController: WalletModule.viewController())
 //    private let transactionsModule = ThemeNavigationController(rootViewController: TransactionsModule.viewController())
-    private let safeZoneModule = ThemeNavigationController(rootViewController: MainSafeZoneModule.viewController())
+    private let safeZoneModule = MainSafeZoneModule.navigationController()
     private let settingsModule = ThemeNavigationController(rootViewController: MainSettingsModule.viewController())
 
     private var showAlerts = [() -> Void]()
@@ -35,7 +35,6 @@ class MainViewController: ThemeTabBarController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         subscribe(disposeBag, viewModel.balanceTabStateDriver) { [weak self] in self?.sync(balanceTabState: $0) }
         subscribe(disposeBag, viewModel.transactionsTabEnabledDriver) { [weak self] in self?.syncTransactionsTab(enabled: $0) }
         subscribe(disposeBag, viewModel.settingsBadgeDriver) { [weak self] in self?.setSettingsBadge(visible: $0.0, count: $0.1) }
@@ -86,7 +85,7 @@ class MainViewController: ThemeTabBarController {
         } else {
             marketModule = nil
         }
-
+        safeZoneModule.tabBarItem = UITabBarItem(title: "safe_zone.nav.title".localized, image: UIImage(named: "filled_settings_2_24"), tag: 0)
         viewControllers.append(contentsOf: [
             balanceModule,
 //            transactionsModule,

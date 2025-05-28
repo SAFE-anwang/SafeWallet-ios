@@ -31,10 +31,10 @@ class DrawSafe4ViewController: ThemeViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "领取SAFE4".localized
+        title = "SAFE领取".localized
         tipsCell.bind(text: "每个地址每天只能领取一次".localized, type: .normal)
         addressCell.setTitle(text: "SAFE4 钱包地址".localized)
-        addressCell.setInput(keyboardType: .default, placeholder: "请输入SAFE4地址".localized)
+        addressCell.setInput(keyboardType: .default, placeholder: "请输入SAFE地址".localized)
         addressCell.onChangeHeight = { [weak self] in self?.reloadTable()}
         addressCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
         

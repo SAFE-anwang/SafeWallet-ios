@@ -4,6 +4,9 @@ import HsExtensions
 import MarketKit
 import ThemeKit
 import UIKit
+import BigInt
+import web3swift
+import Web3Core
 
 struct SendEvmData {
     var transactionData: TransactionData
@@ -91,8 +94,10 @@ struct SendEvmData {
     }
     
     struct LiquidityInfo {
-        let estimatedOut: Decimal
-        let estimatedIn: Decimal
+        let token0: Token
+        let token1: Token
+        let estimated0: Decimal
+        let estimated1: Decimal
         let slippage: String?
         let deadline: String?
         let recipientDomain: String?

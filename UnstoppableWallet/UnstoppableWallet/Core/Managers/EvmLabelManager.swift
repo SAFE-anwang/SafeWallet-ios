@@ -73,7 +73,7 @@ extension EvmLabelManager {
 
     func methodLabel(input: Data) -> String? {
         let methodId = Data(input.prefix(4)).hs.hexString
-        let label = EvmKit.Safe4Methods.allCases.filter{$0.id == methodId}.first?.title
+        let label = EvmKit.Safe4Methods.allCases.filter{$0.id == methodId}.first?.title ?? EvmLabelManager.ExSafe4Methods.allCases.filter{$0.id == methodId}.first?.title
         return label ?? (try? storage.evmMethodLabel(methodId: methodId))?.label
     }
 
@@ -90,8 +90,33 @@ extension EvmLabelManager {
     }
 }
 
+extension EvmLabelManager {
+    enum ExSafe4Methods: CaseIterable {
+        case addLiquidity
+        case addEthLiquidity
+        case removeLiquidity
+        case removeLiquidityPermit
+        
+        var id: String {
+            switch self {
+            case .addLiquidity: "0xe8e33700"
+            case .addEthLiquidity: "0xf305d719"
+            case .removeLiquidity: "0xbaa2abde"
+            case .removeLiquidityPermit: "0x2195995c"
+            }
+        }
+        
+        var title: String {
+            switch self {
+            case .addLiquidity, .addEthLiquidity: "liquidity.title.add".localized
+            case .removeLiquidity, .removeLiquidityPermit: "liquidity.remove".localized
+            }
+        }
+    }
+}
+
 extension EvmKit.Safe4Methods {
-    
+
     var title: String {
         switch self {
         case .AppendRegister: "safe_zone.safe4.appendRegister".localized
@@ -114,6 +139,11 @@ extension EvmKit.Safe4Methods {
         case .ProposalVote: "safe_zone.safe4.ProposalVote".localized
         case .ContractDeployment: "safe_zone.safe4.contract.deployment".localized
         case .AddLockDay: "safe_zone.safe4.contract.addlockday".localized
+        case .BatchRedeemLocked: "safe_zone.safe4.contract.batchRedeem.locked".localized
+        case .BatchRedeemAvailable: "safe_zone.safe4.contract.batchRedeem.available".localized
+        case .Eth2safe: "safe_zone.safe4.contract.crossChain".localized
+        case .safe4ToBsc, .safe4ToEth, .safe4ToPol, .bscToSafe4, .ethToSafe4, .polToSafe4: "safe_zone.safe4.contract.crossChain".localized
+        case .Safe4SwapSrc, .SrcSwapSafe4: "swap.safe4.title".localized
         }
     }
 }

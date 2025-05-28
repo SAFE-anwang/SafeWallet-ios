@@ -17,6 +17,7 @@ import ComponentKit
 import CryptoKit
 import BitcoinKit
 import HsCryptoKit
+import HdWalletKit
 
 class RedeemSafe3ViewModel {
     private let base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
@@ -263,76 +264,60 @@ extension RedeemSafe3ViewModel {
 
 // localWallet
 extension RedeemSafe3ViewModel {
-    
+        
     func syncLocalWalletInfo(safe3Wallet: Wallet, safe3Adapter: SafeCoinAdapter) {
         self.step = .validated
         if case .local = redeemWalletType {
             state = .loading
-            Task {[weak self, service] in
+            Task {[weak self] in
                 guard let self = self else { return }
                 do {
                     let masterPrivateKey = try safe3Adapter.masterPrivateKey(wallet: safe3Wallet)
                     let hdWallet = try safe3Adapter.hdWallet(safe3Wallet)
 
                     self.step = .check
-                    let unspentOutputs = safe3Adapter.bitcoinCore.storage.unspentOutputs()
-                    let uniqueArray = unspentOutputs.reduce(into: [String: [UnspentOutput]]()) { result, output in
-                        if let key = output.transaction.blockHash?.hs.hexString {
-                            if result[key] == nil {
-                                result[key] = []
-                            }
-                            if !result[key]!.contains(where: { $0.transaction.blockHash?.hs.hexString == key }) {
-                                result[key]!.append(output)
-                            }
-                        }
-                    }.flatMap{$0.value}
+                    let unspentOutputs = safe3Adapter.bitcoinCore.unspentOutputs
+                    let availableAmount = BigUInt(unspentOutputs.map{$0.output.value}.reduce(0, +))
                     
-                    var results: [LocalSafe3WalletBalanceInfoItem] = []
-                    var errors: [Error] = []
-                    await withTaskGroup(of: Result<LocalSafe3WalletBalanceInfoItem, Error>.self) { taskGroup in
-                        for unspentOutput in uniqueArray {
-                            taskGroup.addTask {
-                                do {
-                                    let address = try safe3Adapter.bitcoinCore.address(from: unspentOutput.publicKey).stringValue
-                                    async let existAvailable = try service.existAvailableNeedToRedeem(safe3address: address)
-                                    async let existLocked = try service.existLockedNeedToRedeem(safe3Addr: address)
-                                    async let existMasterNode = try service.existMasterNodeNeedToRedeem(safe3Addr: address)
-                                    let info = try await service.safe3GetAvailableInfo(safe3address: address)
-                                    let (maxLockedCount, results) = try await self.getLockedSafe3Infos(safe3address: address)
-                                    let balance = info.amount
-                                    let lockBalance = results.map{$0.amount}.reduce(0, +)
-                                    let pubKey = unspentOutput.publicKey
-                                    guard let subPrivateKey = try? hdWallet.privateKey(account: pubKey.account, index: pubKey.index, chain: .external).raw else {
-                                        throw RedeemError.getBalanceInfoError
-                                    }
-                                    let subAddr = self.privateKeyToSafe3Address(privateKey: subPrivateKey)
-                                    
-                                    guard address == subAddr else { throw RedeemError.getBalanceInfoError }
-
-                                    let item = try await LocalSafe3WalletBalanceInfoItem(address: address, maxLockedCount: maxLockedCount, balance: balance, lockBalance: lockBalance, existAvailable: existAvailable, existLocked: existLocked, existMasterNode: existMasterNode, privateKey: subPrivateKey)
-                                    return .success(item)
-                                }catch{
-                                    return .failure(RedeemError.getBalanceInfoError)
-                                }
-                            }
-                        }
-                        for await result in taskGroup {
-                            switch result {
-                            case let .success(value):
-                                results.append(value)
-                            case let .failure(error):
-                                errors.append(error)
-                            }
-                        }
-                    }
+                    let spendableTimeLockUtxo = safe3Adapter.bitcoinCore.unspendableTimeLockedUtxo
+                    let lockedAmount = BigUInt(spendableTimeLockUtxo.map{$0.output.value}.reduce(0, +))
+                    
+                    var redeemableAmount: BigUInt = 0
+                    var redeemableLocked: BigUInt = 0
+                    let infos = try await redeemAddressInfo(hdWallet: hdWallet,
+                                                        safe3Adapter: safe3Adapter,
+                                                        outputs: unspentOutputs,
+                                                        isLock: false,
+                                                        redeemableAmount: &redeemableAmount,
+                                                        redeemableLocked: &redeemableLocked
+                    )
+                    
+                    let timeLockInfos = try await redeemAddressInfo(hdWallet: hdWallet,
+                                                                safe3Adapter: safe3Adapter,
+                                                                outputs: spendableTimeLockUtxo,
+                                                                isLock: true,
+                                                                redeemableAmount: &redeemableAmount,
+                                                                redeemableLocked: &redeemableLocked
+                    )
+                    
+                    var results = infos + timeLockInfos
                     results.sort{ ($0.address.hs.hexData ?? Data()) > ($1.address.hs.hexData ?? Data()) }
-                    self.state = .complated(datas: results)
+
+                    let balanceInfo = LocalBalanceInfo(token: safe3Adapter.token,
+                                                       availableAmount: availableAmount,
+                                                       redeemableAmount: redeemableAmount,
+                                                       lockedAmount: lockedAmount,
+                                                       redeemableLocked: redeemableLocked
+                    )
+                    
+                    self.state = .complated(datas: results, balanceInfo: balanceInfo)
                     self.step = .redeem
                     self.privateKeyData = masterPrivateKey.raw
                     self.privateKey = masterPrivateKey.raw.hs.hex
                     self.targetSafe4Address = safe4EvmKitWrapper.evmKit.receiveAddress.hex
                     let isEnabled = results.filter{ $0.isEnabledRedeem }.count > 0
                     self.isEnabledSendRelay.accept(isEnabled)
+                    
                 }catch {
                     self.state = .failed(error: "safe_zone.safe4.redeem.fund.query.fail".localized)
                 }
@@ -340,19 +325,126 @@ extension RedeemSafe3ViewModel {
         }
     }
     
+    func redeemAddressInfo(hdWallet: HDWallet, safe3Adapter: SafeCoinAdapter, outputs: [UnspentOutput], isLock: Bool, redeemableAmount: inout BigUInt, redeemableLocked: inout BigUInt) async throws -> [LocalSafe3WalletBalanceInfoItem] {
+        let uniqueArray = outputs.reduce(into: [String: [UnspentOutput]]()) { result, output in
+            if let key = output.transaction.blockHash?.hs.hexString {
+                if result[key] == nil {
+                    result[key] = []
+                }
+                if !result[key]!.contains(where: { $0.transaction.blockHash?.hs.hexString == key }) {
+                    result[key]!.append(output)
+                }
+            }
+        }.flatMap{$0.value}
+        
+        var results: [LocalSafe3WalletBalanceInfoItem] = []
+        var errors: [Error] = []
+        var redeemableTotalAmount: BigUInt = 0
+        var redeemableLockedTotal: BigUInt = 0
+        
+        await withTaskGroup(of: Result<LocalSafe3WalletBalanceInfoItem, Error>.self) { taskGroup in
+            for unspentOutput in uniqueArray {
+                taskGroup.addTask { [self, service] in
+                    do {
+                        let address = try safe3Adapter.bitcoinCore.address(from: unspentOutput.publicKey).stringValue
+                        let pubKey = unspentOutput.publicKey
+                        guard let privateKeyData = try? hdWallet.privateKeyData(account: pubKey.account, index: pubKey.index, external: pubKey.external) else {
+                            throw RedeemError.privateKeyError
+                        }
+                        
+                        let existAvailable = try await service.existAvailableNeedToRedeem(safe3address: address)
+                        let existLocked = try await service.existLockedNeedToRedeem(safe3Addr: address)
+                        let existMasterNode = try await service.existMasterNodeNeedToRedeem(safe3Addr: address)
+                        
+                        let isExist = existAvailable || existLocked || existMasterNode
+                        if isExist {
+                            let info = try await service.safe3GetAvailableInfo(safe3address: address)
+                            let (maxLockedCount, results) = try await getLockedSafe3Infos(safe3address: address)
+                            let balance = info.amount
+                            let lockBalance = results.map{$0.amount}.reduce(0, +)
+                            let masterNodeLockBalance = results.filter{$0.isMN}.map{$0.amount}.reduce(0, +)
+                            
+                            redeemableTotalAmount += info.amount
+                            redeemableLockedTotal += lockBalance
+                            
+                            let item = LocalSafe3WalletBalanceInfoItem(address: address,
+                                                                       maxLockedCount: maxLockedCount,
+                                                                       balance: balance,
+                                                                       lockBalance: lockBalance,
+                                                                       existAvailable: existAvailable,
+                                                                       existLocked: existLocked,
+                                                                       existMasterNode: existMasterNode,
+                                                                       privateKey: privateKeyData,
+                                                                       masterNodeLockBalance: masterNodeLockBalance,
+                                                                       isEnabledRedeem: true
+                            )
+                            return .success(item)
+                        }else {
+                            let value = outputs.filter{ $0.output.address == address}
+                                .map{$0.output.value}
+                                .reduce(0, +)
+                            let availableAmount = isLock ? 0 : value
+                            let lockedAmount = isLock ? value : 0
+                            let item = LocalSafe3WalletBalanceInfoItem(address: address,
+                                                                       maxLockedCount: 0,
+                                                                       balance: BigUInt(availableAmount),
+                                                                       lockBalance: BigUInt(lockedAmount),
+                                                                       existAvailable: existAvailable,
+                                                                       existLocked: existLocked,
+                                                                       existMasterNode: existMasterNode,
+                                                                       privateKey: privateKeyData,
+                                                                       masterNodeLockBalance: nil,
+                                                                       isEnabledRedeem: false
+                            )
+                            return .success(item)
+                        }
+
+                    }catch{
+                        return .failure(RedeemError.getBalanceInfoError)
+                    }
+                }
+            }
+            for await result in taskGroup {
+                switch result {
+                case let .success(value):
+                    results.append(value)
+                case let .failure(error):
+                    errors.append(error)
+                }
+            }
+        }
+        redeemableAmount += redeemableTotalAmount
+        redeemableLocked += redeemableLockedTotal
+        return results
+    }
+    
     func loalWalletRedeem(items: [LocalSafe3WalletBalanceInfoItem]) {
         guard let targetSafe4Address else { return }
+        let redeemableItems = items.filter{ $0.isEnabledRedeem}
         guard let callerPrivateKey = safe4EvmKitWrapper.signer?.privateKey else { return }
-        let privateKeyArray = items.filter{ $0.isEnabledRedeem && !$0.existMasterNode }.map{ $0.privateKey}
-        let masterNodeArray = items.filter{ $0.existMasterNode}.map{ $0.privateKey}
+        let masterNodeArray = redeemableItems.filter{ $0.existMasterNode}.map{ $0.privateKey}
         state = .loading
         Task {[weak self, service] in
             guard let self = self else { return }
             do {
-                let results = try await service.redeemSafe3(callerPrivateKey: callerPrivateKey, privateKeys: privateKeyArray, targetAddr: targetSafe4Address)
+                
+                let privateKeys = redeemableItems.filter{$0.existAvailable && !$0.existLocked}.map{ $0.privateKey}
+                _ = try await service.redeemSafe3(callerPrivateKey: callerPrivateKey, privateKeys: privateKeys, targetAddr: targetSafe4Address)
+                
+                let lockedArray = redeemableItems.filter{!$0.existLocked}
+//                let sum = lockedArray.map{$0.maxLockedCount}.reduce(0, +)
+//                if sum < 500 {
+//                    _ = try await service.redeemSafe3(callerPrivateKey: callerPrivateKey, privateKeys: lockedArray.map{ $0.privateKey}, targetAddr: targetSafe4Address)
+//                }else {
+//
+//                }
+                for array in lockedArray.chunked(into: 500) {
+                    _ = try await service.redeemSafe3(callerPrivateKey: callerPrivateKey, privateKeys: array.map{ $0.privateKey}, targetAddr: targetSafe4Address)
+                }
+                
                 if masterNodeArray.count > 0 {
                     let enodes = masterNodeArray.map{_ in ""}
-                    let result = try await service.redeemMasterNode(callerPrivateKey: callerPrivateKey, privateKeys: masterNodeArray, enodes: enodes, targetAddr: targetSafe4Address)
+                    _ = try await service.redeemMasterNode(callerPrivateKey: callerPrivateKey, privateKeys: masterNodeArray, enodes: enodes, targetAddr: targetSafe4Address)
                 }
             }catch {
                 self.state = .failed(error: "资产迁移失败".localized)
@@ -423,10 +515,8 @@ extension RedeemSafe3ViewModel {
         let existLocked: Bool
         let existMasterNode: Bool
         let privateKey: Data
-        
-        var isEnabledRedeem: Bool {
-            existAvailable || existLocked
-        }
+        var masterNodeLockBalance: BigUInt?
+        let isEnabledRedeem: Bool
     }
     
     struct Safe3BalanceInfo {
@@ -438,6 +528,31 @@ extension RedeemSafe3ViewModel {
         var hasBalance: Bool {
             balance + lockBalance + masterNodeLockBalance > 0
         }
+    }
+    
+    struct LocalBalanceInfo {
+        let token: Token
+        let availableAmount: BigUInt
+        let redeemableAmount: BigUInt
+        let lockedAmount: BigUInt
+        let redeemableLocked: BigUInt
+        
+        var availableValue: String {
+            availableAmount.safe3FomattedAmount
+        }
+        
+        var redeemableValue: String {
+            redeemableAmount.safe4FomattedAmount
+        }
+        
+        var lockedValue: String {
+            lockedAmount.safe3FomattedAmount
+        }
+        
+        var redeemableLockedValue: String {
+            redeemableLocked.safe4FomattedAmount
+        }
+        
     }
     
     enum RedeemStep: Int, Equatable {
@@ -460,7 +575,7 @@ extension RedeemSafe3ViewModel {
     enum SendState: Equatable {
         case loading
         case success
-        case complated(datas: [RedeemSafe3ViewModel.LocalSafe3WalletBalanceInfoItem])
+        case complated(datas: [RedeemSafe3ViewModel.LocalSafe3WalletBalanceInfoItem], balanceInfo: LocalBalanceInfo?)
         case sent
         case failed(error: String)
         
@@ -509,5 +624,36 @@ private extension RedeemSafe3ViewModel {
         guard decode.count >= 66 else { return nil }
         let privateKey = decode[2...65]
         return privateKey
+    }
+}
+let safe3Decimals: Int = 8
+
+extension BigUInt {
+
+    var safe3FomattedAmount: String {
+        Decimal(bigUInt: self, decimals: safe3Decimals)?.safe3FormattedAmount ??  "-"
+    }
+    
+    func safe3Amount(decimalCount: Int = 4) -> String {
+        guard let decimal = Decimal(bigUInt: self, decimals: safe3Decimals) else { return "n/a" }
+        return ValueFormatter.instance.formatShort(value: decimal, decimalCount: decimalCount) ?? "-"
+    }
+}
+extension Decimal {
+    
+    var safe3FormattedAmount: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 4
+        return formatter.string(from: self as NSDecimalNumber)!
+    }
+}
+extension Array {
+
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map { startIndex in
+            let endIndex = Swift.min(startIndex + size, count)
+            return Array(self[startIndex..<endIndex])
+        }
     }
 }

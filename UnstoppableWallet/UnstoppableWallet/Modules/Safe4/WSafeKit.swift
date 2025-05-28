@@ -1,8 +1,6 @@
 import Foundation
 import EvmKit
 import BigInt
-import web3swift
-import Web3Core
 import HsToolKit
 
 public class WSafeKit {
@@ -23,9 +21,14 @@ public class WSafeKit {
     
     public func transactionData(amount: BigUInt,
                                 to: String) -> TransactionData {
-        wsafeManager.transactionData(amount: amount, to: to)
+            wsafeManager.transactionData(amount: amount, to: to)
     }
     
+    public func transactionDataSafe4(amount: BigUInt,
+                                to: String) -> TransactionData {
+            wsafeManager.transactionDataSafe4(amount: amount, to: to)
+    }
+
     func getContractAddress() throws -> String {
         try wsafeManager.getContractAddress(chain: chain)
     }
@@ -42,7 +45,7 @@ public class WSafeKit {
 fileprivate class WSafeManager {
         
     private let chain: EvmKit.Chain
-    
+
     init(chain: EvmKit.Chain) {
         self.chain = chain
     }
@@ -53,25 +56,38 @@ fileprivate class WSafeManager {
     ///   - to: 跨链接收人 Address
     func transactionData(amount: BigUInt,
                          to: String) -> TransactionData {
-        let input = Web3jUtils.getEth2safeTransactionInput(amount: amount, to: to) ??  Data()
+        let input = Web3jUtils.getEth2safeTransactionInput(amount: amount, toAddressHex: to) ??  Data()
         let address = try! EvmKit.Address(hex: getContractAddress(chain: chain))
         return TransactionData(to: address, value: BigUInt.zero, input: input)
+    }
+    
+    func transactionDataSafe4(amount: BigUInt,
+                         to: String) -> TransactionData {
+        let toAddress = try! EvmKit.Address(hex: getSafe4ContractAddress(chain: chain))
+        return TransactionData(to: toAddress, value: amount, input: to.hs.data)
     }
 
     /**
      * 获取跨链eth合约地址
      */
     func getContractAddress(chain: EvmKit.Chain) throws -> String {
+
         switch chain {
             case .ethereum: return "0xee9c1ea4dcf0aaf4ff2d78b6ff83aa69797b65eb"
-//            case .ethereumRopsten: return "0x32885f2faf83aeee39e2cfe7f302e3bb884869f4" //eth测试环境
             case .binanceSmartChain: return "0x4d7fa587ec8e50bd0e9cd837cb4da796f47218a1" //BSC正式环境
-//           case .binanceSmartChain: return "0xa3d8077c3a447049164e60294c892e5e4c7f3ad2" //BSC测试环境
             case .polygon: return "0xb7Dd19490951339fE65E341Df6eC5f7f93FF2779"
-        default: throw WSafeKit.UnsupportedChainError.noWethAddress
+            default: throw WSafeKit.UnsupportedChainError.noWethAddress
         }
     }
-
+    
+    func getSafe4ContractAddress(chain: EvmKit.Chain) throws -> String {
+        switch chain {
+            case .ethereum: return "0x30728eBa408684D167CF59828261Db8A2A59E8C7"
+            case .binanceSmartChain: return "0x471B9eB32a6750b0356E0C80294Ee035C4bdF60B" //BSC正式环境
+            case .polygon: return "0x960Bb626aba915c242301EC47948Ba475CDeC090"
+            default: throw WSafeKit.UnsupportedChainError.noSafeAddress
+        }
+    }
     /**
      * 获取跨链safe地址
      */
@@ -82,7 +98,7 @@ fileprivate class WSafeManager {
             case .binanceSmartChain: return "XdyjRkZpyDdPD3uJAUC3MzJSoCtEZincFf" //BSC正式环境
 //            case .binanceSmartChain: return "Xm3DvW7ZpmCYtyhtPSu5iYQknpofseVxaF" //BSC测试环境
             case .polygon: return "XuPmDoaNb6rbNywefkTbESHXiYqNpYvaPU"
-        default: throw WSafeKit.UnsupportedChainError.noSafeAddress
+            default: throw WSafeKit.UnsupportedChainError.noSafeAddress
         }
     }
 
@@ -91,26 +107,36 @@ fileprivate class WSafeManager {
      */
     func getSafeNetType(chain: EvmKit.Chain) throws -> String {
         switch chain {
-            case .ethereum: return "mainnet"
-            case .ethereumRopsten: return "testnet"
-            case .binanceSmartChain: return "mainnet" //BSC正式环境
-            case .polygon: return "mainnet"
+            case .ethereum: return "mainnet4"
+            case .ethereumRopsten: return "mainnet4"
+            case .binanceSmartChain: return "mainnet4" //BSC正式环境
+            case .polygon: return "mainnet4"
+            case .SafeFour: return "mainnet4"
+            case .SafeFourTestNet: return "testnet4"
         default: throw WSafeKit.UnsupportedChainError.noSafeNetType
         }
     }
 }
 
-fileprivate class Web3jUtils {
+class Web3jUtils {
     
     static func getEth2safeTransactionInput(amount: BigUInt,
-                                            to: String) -> Data? {
-        let methodIDHex = "0xbc157d0c" // => "eth2safe"
-        
-        let types: [ABI.Element.ParameterType] = [.uint(bits: 256),
-                                                  .string]
-        let values: [Any] = [amount, to]
-        let parameterData = ABIEncoder.encode(types: types, values: values) ?? Data()
-                
-        return Data(hex: methodIDHex) + parameterData
+                                            toAddressHex: String) -> Data? {
+        let methodId = Safe4Methods.Eth2safe.id.hs.hexData ?? Data()
+        let data = ContractMethodHelper.encodedABI(methodId: methodId, arguments: [amount, toAddressHex])
+        return data
+    }
+    
+    static func getSafe4SwapSrcTransactionInput() -> Data? {
+        let methodId = "0xd0e30db0".hs.hexData ?? Data()
+        let data = ContractMethodHelper.encodedABI(methodId: methodId, arguments: [])
+        return data
+    }
+    
+    static func getSrcSwapSafe4TransactionInput(amount: BigUInt) -> Data? {
+        let methodId = "0x2e1a7d4d".hs.hexData ?? Data()
+        let data = ContractMethodHelper.encodedABI(methodId: methodId, arguments: [amount])
+        return data
     }
 }
+

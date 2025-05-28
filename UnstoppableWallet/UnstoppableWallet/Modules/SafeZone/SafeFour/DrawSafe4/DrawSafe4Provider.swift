@@ -27,8 +27,6 @@ class DrawSafe4Provider {
         request.httpBody = rawData
         let session = Session()
         return session.requestJSON(request: request)
-        return networkManager
-            .single(url: "\(baseUrl)/5005/get_test_coin", method: .post, parameters: [:], encoding: URLEncoding.httpBody, headers: nil)
     }
 }
 

@@ -1,6 +1,7 @@
 "button.ok" = "OK";
 "button.apply" = "Apply";
 "button.cancel" = "Cancel";
+"button.all" = "All";
 "button.close" = "Close";
 "button.confirm" = "Confirm";
 "button.continue" = "Continue";
@@ -627,11 +628,13 @@
 "swap.one_inch.error.cannotSwap" = "Can't swap these tikens";
 "swap.service" = "Service";
 "swap.service.title" = "Service";
+"swap.enter_amount" = "Enter amount";
+"swap.insufficient_balance" = "Insufficient Balance";
 
 // Swap Approving
 
 "swap.approve.subtitle" = "Swap";
-
+"swap.safe4.title"  = "SAFE Swap";
 // Swap Confirmation
 
 "swap.confirmation.title" = "Confirm";
@@ -1964,9 +1967,10 @@
 "safe_zone.section.cross_eth" = "Cross Chain(ETH)";
 "safe_zone.section.cross_bsc" = "Cross Chain(BSC)";
 "safe_zone.section.cross_matic" = "Cross Chain(MATIC)";
-"safe_zone.section.locked" = "Locked";
+"safe_zone.section.safe4SwapSrc" = "SAFE Swap SAFE SRC20";
+"safe_zone.section.locked" = "SAFE Locked";
 "safe_zone.section.basic" = "Basic information";
-"safe_zone.section.safe4" = "SAFE4";
+"safe_zone.section.safe4" = "SAFE";
 "safe_zone.row.contract" = "SAFE contract";
 "safe_zone.row.linear" = "Linear Locked";
 "safe_zone.row.lock" = "Lock up record";
@@ -1976,8 +1980,8 @@
 "safe_zone.row.rewards" = "Rewards";
 "safe_zone.rewards.title" = "Rewards";
 "safe_zone.row.homepage" = "SAFE Homepage";
-"safe_zone.row.blockExplorer" = "BlockExplorer";
-"safe_zone.row.acrossExplorer" = "Across Chain Explorer";
+"safe_zone.row.blockExplorer" = "%@BlockExplorer";
+"safe_zone.row.acrossExplorer" = "%@Across Chain Explorer";
 "safe_dapp.input" = "Enter Link Access";
 "safe_zone.send.receiver" = "Receiver";
 "safe_zone.send.openCoin" = "Please open it in wallet manager %@";
@@ -2147,6 +2151,7 @@
 "safe_zone.safe4.node.super.vote.locked.recoard.choose.all" = "Select all available lock up records";
 "safe_zone.safe4.amont.input.tips" = "Enter quantity";
 "safe_zone.safe4.amont.max" = "Max";
+"safe_zone.safe4.amont.min.error" = "The minimum number of votes shall not be less than %@ SAFE";
 "safe_zone.safe4.amont.max.error" = "Exceeding the available quantity";
 "safe_zone.safe4.use.amont" = "Available quantity";
 "safe_zone.safe4.vote.type.safe" = "SAFE Voting";
@@ -2183,7 +2188,9 @@
 "safe_zone.safe4.reward" = "Reward";
 "safe_zone.safe4.contract.deployment" = "Contract Deployment";
 "safe_zone.safe4.contract.addlockday" = "Add Lock Day";
-
+"safe_zone.safe4.contract.batchRedeem.locked" = "Batch Redeem Locked";
+"safe_zone.safe4.contract.batchRedeem.available" = "Batch Redeem Available";
+"safe_zone.safe4.contract.crossChain" = "Cross Chain";
 "safe_zone.safe4.node.address.legal" = "Please enter a valid node address";
 "safe_zone.safe4.node.address.notexist" = "Node address does not exist";
 "safe_zone.safe4.node.id.notexist" = "Node ID does not exist";
@@ -2239,6 +2246,11 @@
 
 "safe_lock.recoard.nav" = "Lock up record";
 "safe_lock.recoard.title" = "%@ SAFE locked in total";
+
+"safe_withdraw.amount.locked" = "Locked Amount";
+"safe_withdraw.unlock.height" = "Unlock Height";
+"safe_withdraw.release.height" = "Release Height";
+"safe_withdraw.votelocked.error" = "SAFE block height is insufficient, unable to withdraw funds";
 
 // Subscription Info
 

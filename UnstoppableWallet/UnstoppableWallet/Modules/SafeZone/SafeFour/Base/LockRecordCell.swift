@@ -25,7 +25,7 @@ class LockRecordCell: UICollectionViewCell {
         contentBUtton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 5, bottom: 0, right: -5)
         contentBUtton.titleLabel?.font = .subhead2
         contentBUtton.titleLabel?.numberOfLines = 0
-        contentBUtton.setTitleColor(.themeBlackAndWhite, for: .normal)
+        contentBUtton.setTitleColor(.themeBlue, for: .normal)
 //        contentBUtton.setTitleColor(.black, for: .selected)
         contentBUtton.setTitleColor(.lightGray, for: .disabled)
         contentView.addSubview(contentBUtton)
@@ -64,12 +64,13 @@ class LockRecordCell: UICollectionViewCell {
     func bind(item: SuperNodeDetailViewModel.LockRecoardItem) {
         contentBUtton.isEnabled = item.isEnabled
         contentBUtton.isSelected = item.isSlected
-        let title = "锁仓记录ID:\(item.info.id)\n\(item.info.amount.safe4FomattedAmount) SAFE"
+        let title = "ID:\(item.info.id)\n\(item.info.amount.safe4FomattedAmount) SAFE"
         contentBUtton.setTitle(title, for: .normal)
     }
 }
 extension UIColor {
     static var themeBlackAndWhite: UIColor { color(dark: .themeWhite, light: .themeBlack) }
+    static var themeBlue: UIColor { color(dark: .themeIssykBlue.withAlphaComponent(0.5), light: .themeIssykBlue) }
     static func color(dark: UIColor, light: UIColor) -> UIColor {
         UIColor { traits in
             switch ThemeManager.shared.themeMode {

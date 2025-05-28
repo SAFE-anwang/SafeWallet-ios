@@ -1,11 +1,6 @@
-import RxSwift
-import RxRelay
-import RxCocoa
+import Foundation
+import Combine
 
-class MainSafeZoneViewModel {
-    private let disposeBag = DisposeBag()
-    init() {}
-
+class MainSafeZoneViewModel: ObservableObject {
     
 }
-

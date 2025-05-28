@@ -8,7 +8,7 @@ struct AddLockDaysModule {
     
     static func viewController(type: LockNodeType) -> UIViewController? {
         guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
-            HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE4")))
+            HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
         guard let privateKey = evmKitWrapper.signer?.privateKey else {
