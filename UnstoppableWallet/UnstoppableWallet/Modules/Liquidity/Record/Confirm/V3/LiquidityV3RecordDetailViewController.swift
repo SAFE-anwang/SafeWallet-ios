@@ -44,7 +44,6 @@ class LiquidityV3RecordDetailViewController: ThemeViewController {
         tableView.separatorStyle = .none
         tableView.backgroundColor = .clear
         tableView.registerHeaderFooter(forClass: LiquidityV3RecordDetailHeaderView.self)
-        tableView.registerCell(forClass: LiquidityV3RecordDetailCell.self)
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()

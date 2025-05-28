@@ -15,12 +15,13 @@ class LiquidityRecordTabViewController: ThemeViewController {
     private let viewModel: LiquidityRecordTabViewModel
     private let pageViewController = UIPageViewController(transitionStyle: .scroll, navigationOrientation: .horizontal)
     
+    private var safeViewController: LiquidityRecordViewController
     private var bscViewController: LiquidityRecordViewController
     private var ethViewController: LiquidityRecordViewController
     
     init?(viewModel: LiquidityRecordTabViewModel) {
         self.viewModel = viewModel
-        
+        safeViewController = LiquidityRecordModule.subViewController(dexType: .uniswap, blockchainType: .safe4)
         bscViewController = LiquidityRecordModule.subViewController(dexType: .pancakeSwap, blockchainType: .binanceSmartChain)
         ethViewController = LiquidityRecordModule.subViewController(dexType: .uniswap, blockchainType: .ethereum)
         
@@ -60,7 +61,7 @@ class LiquidityRecordTabViewController: ThemeViewController {
             self?.onSelectTab(index: index)
         }
         subscribe(disposeBag, viewModel.currentTabDriver) { [weak self] in self?.sync(currentTab: $0) }
-        
+        safeViewController.parentNavigationController = navigationController
         bscViewController.parentNavigationController = navigationController
         ethViewController.parentNavigationController = navigationController
         
@@ -84,6 +85,7 @@ class LiquidityRecordTabViewController: ThemeViewController {
 
     private func viewController(tab: LiquidityRecordModule.Tab) -> UIViewController {
         switch tab {
+        case .safe: return safeViewController
         case .bsc: return bscViewController
         case .eth: return ethViewController
         }

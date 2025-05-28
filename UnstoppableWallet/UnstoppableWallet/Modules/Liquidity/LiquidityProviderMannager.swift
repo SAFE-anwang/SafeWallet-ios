@@ -62,9 +62,11 @@ class LiquidityProviderMannager {
 
         switch dex.provider {
         case .uniswap, .pancake:
-            return LiquidityModule(dex: dex, dataSourceState: state)
+            return LiquidityModule(dex: dex, dataSourceState: state, isSafeSwap: false)
         case .uniswapV3, .pancakeV3:
             return LiquidityV3Module(dex: dex, dataSourceState: state)
+        case .safeSwap:
+            return LiquidityModule(dex: dex, dataSourceState: state, isSafeSwap: true)
         default: return nil
         }
     }

@@ -51,13 +51,17 @@ class LiquidityRecordService {
     func refresh() {
         syncItems()
     }
-    
-    private func syncItems() {        
-        let tokenQuerys = activeWallets.compactMap { TokenQuery(blockchainType: $0.token.blockchainType, tokenType: $0.token.type) }
-        guard let tokens = try? marketKit.tokens(queries: tokenQuerys) else { return }
-        
+
+    private func syncItems() {
         state = .loading
         viewItems.removeAll()
+
+        let tokens = activeWallets.compactMap{$0.token}
+        
+        guard tokens.count > 0 else {
+            return state = .completed(datas: [])
+        }
+                
         let allPairs = getAllPair(activeWallets: activeWallets)
         
         Task {
@@ -108,6 +112,7 @@ extension LiquidityRecordService {
         case .polygon: return "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"
         case .avalanche: return "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
         case .arbitrumOne: return "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        case .safe4: return "0x0000000000000000000000000000000000001101"
         default: throw UnsupportedChainError.noWethAddress
         }
     }
@@ -120,6 +125,7 @@ extension LiquidityRecordService {
         switch currentBlockchainType {
         case .binanceSmartChain: return "Cake-LP"
         case .ethereum: return "UNI-V2"
+        case .safe4: return "UNI-V2"
         default: return ""
         }
     }
@@ -159,7 +165,6 @@ extension LiquidityRecordService {
         let (reserve0, reserve1) = try await getReserves(evmKit: evmKit, contractAddress: pairAddress)
         let poolTokenTotalSupply = try await getTotalSupply(evmKit: evmKit, contractAddress: pairAddress)
         let balanceOfAccount = try await getBalanceOf(evmKit: evmKit, contractAddress: pairAddress, walletAddress: receiveAddress)
-        print("balanceOfAccount:\(balanceOfAccount.description)")
         return PoolInfo(pooltToken0Amount: reserve0, pooltToken1Amount: reserve1, balanceOfAccount: balanceOfAccount, poolTokenTotalSupply: poolTokenTotalSupply)
     }
 }
@@ -305,6 +310,8 @@ extension LiquidityRecordService {
                 feeType = "BNB"
             case .ethereum:
                 feeType = "ETH"
+            case .safe4:
+                feeType = "SAFE"
             default:
                 feeType = ""
             }

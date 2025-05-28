@@ -25,7 +25,7 @@ struct LiquidityConfirmationModule {
         switch dex.provider {
         case .uniswapV3, .pancakeV3:
             predefinedGasLimit = 650000
-        case .uniswap, .pancake:
+        case .uniswap, .pancake, .safeSwap:
             predefinedGasLimit = 500000
         default:
             predefinedGasLimit = nil

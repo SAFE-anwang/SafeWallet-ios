@@ -16,6 +16,8 @@ class Constants {
         case .binanceSmartChain: return "0x10ED43C718714eb63d5aA57B78B54704E256024E"
         case .polygon: return "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"
         case .avalanche: return "0x60aE616a2155Ee3d9A68541Ba4544862310933d4"
+        case .SafeFour: return "0x6476008C612dF9F8Db166844fFE39D24aEa12271"
+        case .SafeFourTestNet: return "0x6476008C612dF9F8Db166844fFE39D24aEa12271"
         default: throw UnsupportedChainError.noRouterAddress
         }
     }
@@ -26,6 +28,8 @@ class Constants {
         case .binanceSmartChain: return "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
         case .polygon: return "0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32"
         case .avalanche: return "0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10"
+        case .SafeFour: return "0xB3c827077312163c53E3822defE32cAffE574B42"
+        case .SafeFourTestNet: return "0xB3c827077312163c53E3822defE32cAffE574B42"
         default: throw UnsupportedChainError.noFactoryAddress
         }
     }
@@ -36,6 +40,8 @@ class Constants {
         case .binanceSmartChain: return "0x00fb7f630766e6a796048ea87d01acd3068e8ff67d078148a3fa3f4a84f69bd5"
         case .polygon: return "0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f"
         case .avalanche: return "0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f"
+        case .SafeFour: return "0xad0e51aa7a058efb9eb40fd6385473f0175ee7419e8d4f91a4e0294ec12b2d13"
+        case .SafeFourTestNet: return "0xad0e51aa7a058efb9eb40fd6385473f0175ee7419e8d4f91a4e0294ec12b2d13"
         default: throw UnsupportedChainError.noInitCodeHash
         }
     }

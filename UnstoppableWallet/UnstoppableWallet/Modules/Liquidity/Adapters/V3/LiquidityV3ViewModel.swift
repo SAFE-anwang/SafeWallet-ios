@@ -358,9 +358,16 @@ extension LiquidityV3ViewModel {
             return
         }
 
+        
+        guard  let token0 = tradeService.tokenIn, let token1 = tradeService.tokenOut  else {
+            return
+        }
+        
         let swapInfo = SendEvmData.LiquidityInfo(
-            estimatedOut: tradeService.amountOut,
-            estimatedIn: tradeService.amountIn,
+            token0: token0,
+            token1: token1,
+            estimated0: tradeService.amountIn,
+            estimated1: tradeService.amountOut,
             slippage: viewItemHelper.slippage(tradeService.settings.allowedSlippage),
             deadline: viewItemHelper.deadline(tradeService.settings.ttl),
             recipientDomain: tradeService.settings.recipient?.domain,

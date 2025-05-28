@@ -43,7 +43,9 @@ class LiquidityV3RecordService {
     init?(dexType: DexType, marketKit: MarketKit.Kit, walletManager: WalletManager, adapterManager: AdapterManager, blockchainType: BlockchainType) {
         
         guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else { return nil }
+        
         guard let rpcSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: blockchainType)?.rpcSource else { return nil }
+        
         let uniswapKit = try! UniswapKit.KitV3.instance(dexType: dexType)
         let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKitWrapper.evmKit)
         
@@ -71,7 +73,9 @@ class LiquidityV3RecordService {
                 let chain = evmKitWrapper.evmKit.chain
                 let owner = evmKitWrapper.evmKit.receiveAddress
                 let tokenQuerys = activeWallets.compactMap { TokenQuery(blockchainType: $0.token.blockchainType, tokenType: $0.token.type) }
-                guard let tokens = try? marketKit.tokens(queries: tokenQuerys) else { return }
+                guard let tokens = try? marketKit.tokens(queries: tokenQuerys), tokens.count > 0 else {
+                    return state = .completed(datas: [])
+                }
                 let datas = try await uniswapKit.ownedLiquidity(rpcSource: rpcSource, chain: chain, owner: owner)
                 let ownedDatas = datas.filter{$0.liquidity > 0}
                 var items = [LiquidityV3RecordViewModel.V3RecordItem]()

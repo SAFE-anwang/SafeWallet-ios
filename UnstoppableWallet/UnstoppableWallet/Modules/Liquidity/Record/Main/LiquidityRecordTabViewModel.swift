@@ -8,7 +8,7 @@ class LiquidityRecordTabViewModel {
     private let currentTabRelay: BehaviorRelay<LiquidityRecordModule.Tab>
 
     init() {
-        currentTabRelay = BehaviorRelay<LiquidityRecordModule.Tab>(value: .bsc)
+        currentTabRelay = BehaviorRelay<LiquidityRecordModule.Tab>(value: .safe)
     }
 
 }

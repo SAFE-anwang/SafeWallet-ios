@@ -191,6 +191,16 @@ class TransactionsViewItemFactory {
                 secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
             }
             
+        case let record as EvmOutgoingTransactionRecord:
+            iconType = singleValueIconType(source: record.source, value: record.value, nftMetadata: item.nftMetadata)
+            title = "transactions.send".localized
+            subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
+
+            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, signType: record.sentToSelf ? .never : .always), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
+            secondaryValue = singleValueSecondaryValue(value: record.value, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
+
+            sentToSelf = record.sentToSelf
+            
         case let record as Safe4DepositEvmIncomingTransactionRecord:
             iconType = singleValueIconType(source: record.source, value: record.value)
             title = "transactions.receive".localized
@@ -201,16 +211,7 @@ class TransactionsViewItemFactory {
                 secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
             }
             locked = true
-            
-        case let record as EvmOutgoingTransactionRecord:
-            iconType = singleValueIconType(source: record.source, value: record.value, nftMetadata: item.nftMetadata)
-            title = "transactions.send".localized
-            subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
-
-            primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, signType: record.sentToSelf ? .never : .always), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
-            secondaryValue = singleValueSecondaryValue(value: record.value, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
-
-            sentToSelf = record.sentToSelf
+                        
         case let record as Safe4DepositEvmOutgoingTransactionRecord:
             iconType = singleValueIconType(source: record.source, value: record.value, nftMetadata: item.nftMetadata)
             title = "transactions.send".localized
@@ -247,7 +248,8 @@ class TransactionsViewItemFactory {
             title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
-                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .neutral))
+                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .outgoing))
+                locked = true
             }
             
         case let record as Safe4NodeRegisterTransactionRecoard:
@@ -273,6 +275,22 @@ class TransactionsViewItemFactory {
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
                 primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .outgoing))
+            }
+            
+        case let record as Safe4CrossChainIncomingRecoard:
+            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
+            subTitle = "transactions.from".localized(mapped(address: record.from, blockchainType: item.record.source.blockchainType))
+            if !record.value.zeroValue {
+                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .incoming))
+            }
+            
+        case let record as Safe4CrossChainOutgoingRecoard:
+            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
+            subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
+            if !record.value.zeroValue {
+                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: record.value, signType: .always), type: type(value: record.value, condition: false, .outgoing, .outgoing))
             }
 
         case let record as SwapTransactionRecord:
@@ -313,23 +331,50 @@ class TransactionsViewItemFactory {
                     secondaryValue = BaseTransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
                 }
             }
+        case let record as LiquidityTransactionRecord:
+            let (incomingValues, outgoingValues) = record.combinedValues
+            if [.safe, .safe4].contains(record.source.blockchainType) {
+                iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            }else {
+                iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
+            }
+            title = record.method ?? "transactions.contract_call".localized
+            subTitle = mapped(address: record.contractAddress, blockchainType: item.record.source.blockchainType)
+            if incomingValues.count == 2, outgoingValues.count == 1 {
+                let outgoingValue = coinString(from: outgoingValues[0])//outgoingValues[0]
+                primaryValue = BaseTransactionsViewModel.Value(text: "\(outgoingValue) safeswap-V2", type: .outgoing)
+                let incomingCoinCodes = incomingValues.map(\.coinCode).joined(separator: ", ")
+                secondaryValue = BaseTransactionsViewModel.Value(text: incomingCoinCodes, type: .incoming)
+                
+            }else if incomingValues.count == 2 {
+                primaryValue = BaseTransactionsViewModel.Value(text: coinString(from: incomingValues[0]), type: .outgoing)
+                secondaryValue = BaseTransactionsViewModel.Value(text: coinString(from: incomingValues[1]), type: .outgoing)
+            }
+
+            
         case let record as ContractCallTransactionRecord:
             let (incomingValues, outgoingValues) = record.combinedValues
-
-            iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
+            if [.safe, .safe4].contains(record.source.blockchainType) {
+                iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            }else {
+                iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
+            }
             title = record.method ?? "transactions.contract_call".localized
             subTitle = mapped(address: record.contractAddress, blockchainType: item.record.source.blockchainType)
 
             (primaryValue, secondaryValue) = values(incomingValues: incomingValues, outgoingValues: outgoingValues, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
-            // safe4 super node vote
+//             safe4 super node vote
             if record.contractAddress == web3swift.Safe4ContractAddress.SNVoteContractAddr {
                 locked = true
             }
             
         case let record as ExternalContractCallTransactionRecord:
             let (incomingValues, outgoingValues) = record.combinedValues
-
-            iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
+            if [.safe, .safe4].contains(record.source.blockchainType) {
+                iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            }else {
+                iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
+            }
 
             if record.outgoingEvents.isEmpty {
                 title = "transactions.receive".localized
@@ -516,18 +561,7 @@ class TransactionsViewItemFactory {
             iconType = .localIcon(imageName: item.record.source.blockchainType.iconPlain32)
             title = "transactions.unknown_transaction.title".localized
             subTitle = "transactions.unknown_transaction.description".localized()
-            
-        case let record as EvmTransactionRecord:
-            if item.record.source.blockchainType == .safe4 {
-                iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
-                title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
-                subTitle = "transactions.to".localized(mapped(address: record.transaction.to!.hex, blockchainType: item.record.source.blockchainType))
-            }else {
-                iconType = .localIcon(imageName: item.record.source.blockchainType.iconPlain32)
-                title = "transactions.unknown_transaction.title".localized
-                subTitle = "transactions.unknown_transaction.description".localized()
-            }
-            
+
         default:
             iconType = .localIcon(imageName: item.record.source.blockchainType.iconPlain32)
             title = "transactions.unknown_transaction.title".localized

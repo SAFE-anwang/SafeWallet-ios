@@ -44,6 +44,8 @@ class TransactionInfoService {
         case let tx as Safe4RedeemTransactionRecoard: tokens.append(tx.value.token)
         case let tx as Safe4VoteTransactionRecoard: tokens.append(tx.value.token)
         case let tx as Safe4NodeRegisterTransactionRecoard: tokens.append(tx.value.token)
+        case let tx as Safe4CrossChainIncomingRecoard: tokens.append(tx.value.token)
+        case let tx as Safe4CrossChainOutgoingRecoard: tokens.append(tx.value.token)
         case let tx as EvmIncomingTransactionRecord: tokens.append(tx.value.token)
         case let tx as EvmOutgoingTransactionRecord: tokens.append(tx.value.token)
         case let tx as SwapTransactionRecord:
@@ -166,7 +168,12 @@ extension TransactionInfoService {
         Item(
             record: transactionRecord,
             lastBlockInfo: adapter.lastBlockInfo,
-            rates: Dictionary(uniqueKeysWithValues: rates.map { key, value in (key.token.coin, value) }),
+            rates: Dictionary(
+                rates.map { (key: $0.key.token.coin, value: $0.value) },
+                uniquingKeysWith: { old, new in
+                    return new 
+                }
+            ),//Dictionary(uniqueKeysWithValues: rates.map { key, value in (key.token.coin, value) }),
             nftMetadata: nftMetadata,
             explorerTitle: adapter.explorerTitle,
             explorerUrl: adapter.explorerUrl(transactionHash: transactionRecord.transactionHash)

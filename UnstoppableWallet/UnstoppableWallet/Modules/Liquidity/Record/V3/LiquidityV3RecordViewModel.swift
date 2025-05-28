@@ -33,7 +33,11 @@ extension LiquidityV3RecordViewModel {
     }
     
     func refresh() {
-        service?.refresh()
+        guard let service else {
+            statusRelay.accept(.completed(datas: []))
+            return
+        }
+        service.refresh()
     }
 }
 

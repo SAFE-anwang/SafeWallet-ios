@@ -7,11 +7,13 @@ class LiquidityProvider {
     private let swapKit: UniswapKit.Kit
     private let evmKit: EvmKit.Kit
     private let rpcSource: RpcSource
-    
-    init(swapKit: UniswapKit.Kit, evmKit: EvmKit.Kit, rpcSource: RpcSource) {
+    private let isSafeSwap: Bool
+
+    init(swapKit: UniswapKit.Kit, evmKit: EvmKit.Kit, rpcSource: RpcSource, isSafeSwap: Bool) {
         self.swapKit = swapKit
         self.evmKit = evmKit
         self.rpcSource = rpcSource
+        self.isSafeSwap = isSafeSwap
     }
 
     private func liquidityToken(token: MarketKit.Token) throws -> UniswapKit.Token {
@@ -27,7 +29,7 @@ class LiquidityProvider {
 extension LiquidityProvider {
 
     var routerAddress: EvmKit.Address {
-        try! swapKit.routerAddress(chain: evmKit.chain)
+        try! swapKit.routerAddress(chain: evmKit.chain, isSafeSwap: isSafeSwap)
     }
 
     var wethAddress: EvmKit.Address {
@@ -41,13 +43,8 @@ extension LiquidityProvider {
         return try await swapKit.swapData(rpcSource: rpcSource, chain: evmKit.chain, tokenIn: liquidityTokenIn, tokenOut: liquidityTokenOut)
     }
 
-    func tradeData(swapData: SwapData, amount: Decimal, /* tradeType: TradeType,*/ tradeOptions: TradeOptions) throws -> TradeData {
-//        switch tradeType {
-//        case .exactIn:
-            return try swapKit.bestTradeExactIn(swapData: swapData, amountIn: amount, options: tradeOptions)
-//        case .exactOut:
-//            return try swapKit.bestTradeExactOut(swapData: swapData, amountOut: amount, options: tradeOptions)
-//        }
+    func tradeData(swapData: SwapData, amount: Decimal, tradeOptions: TradeOptions) throws -> TradeData {
+        return try swapKit.bestTradeExactIn(swapData: swapData, amountIn: amount, options: tradeOptions)
     }
 
     func transactionData(tradeData: TradeData, type: LiquidityHandleType) throws -> TransactionData {

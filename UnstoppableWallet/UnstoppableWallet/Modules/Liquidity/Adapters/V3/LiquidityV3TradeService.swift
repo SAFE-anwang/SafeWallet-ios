@@ -166,17 +166,6 @@ class LiquidityV3TradeService: ISwapSettingProvider {
                     state = .notReady(errors: [UniswapModule.TradeError.lessTickRangeError])//.notReady(errors: [UniswapModule.TradeError.tickRangeError])
                     return false
                 }
-//                if let tickCurrent = bestTrade?.tickInfo?.tickCurrent {
-//                    guard tickCurrent > lower else {
-//                        state = .notReady(errors: [UniswapModule.TradeError.lessTickRangeError])
-//                        return false
-//                    }
-//                    
-//                    guard upper > tickCurrent else {
-//                        state = .notReady(errors: [UniswapModule.TradeError.greaterTickRangeError])
-//                        return false
-//                    }
-//                }
             }
         }
 

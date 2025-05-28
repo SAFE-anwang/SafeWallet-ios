@@ -46,22 +46,16 @@ class LiquidityRecordModule {
     }
     
     enum Tab: Int, CaseIterable {
+        case safe
         case bsc
         case eth
         
         var title: String {
             switch self {
+            case .safe: return "SAFE"
             case .bsc: return "BSC".localized
             case .eth: return "ETH".localized
             }
-        }
-    }
-    
-    private func dexType(blockchainType: BlockchainType) -> DexType? {
-        switch blockchainType {
-        case .binanceSmartChain: return .pancakeSwap
-        case .ethereum: return .uniswap
-        default: return nil
         }
     }
 }

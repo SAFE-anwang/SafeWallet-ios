@@ -10,7 +10,6 @@ import EvmKit
 import ComponentKit
 
 class LiquidityRecordViewModel {
-//    private var viewItemsRelay = BehaviorRelay<[RecordItem]>(value: [])
     private var statusRelay = PublishRelay<LiquidityRecordService.State>()
     private let service: LiquidityRecordService
     private var disposeBag = DisposeBag()

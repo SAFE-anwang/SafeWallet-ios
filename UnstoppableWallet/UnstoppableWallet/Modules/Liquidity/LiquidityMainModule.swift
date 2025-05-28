@@ -120,6 +120,7 @@ extension BlockchainType {
         switch self {
         case .binanceSmartChain: return [.pancake, .pancakeV3]
         case .ethereum: return [.uniswap]//, .uniswapV3]
+        case .safe4: return [.safeSwap]
         default: return []
         }
     }
