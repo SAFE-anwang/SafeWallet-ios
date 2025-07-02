@@ -7,6 +7,7 @@ import UIKit
 import BigInt
 import web3swift
 import Web3Core
+import SwiftUI
 
 struct SendEvmData {
     var transactionData: TransactionData
@@ -218,4 +219,16 @@ extension SendEvmConfirmationModule {
 enum ResendTransactionType {
     case speedUp
     case cancel
+}
+
+struct SendEvmConfirmationView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+    var viewController: UIViewController?
+    
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        viewController ?? UIViewController()
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

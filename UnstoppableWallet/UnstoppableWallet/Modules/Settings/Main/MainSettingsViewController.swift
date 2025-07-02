@@ -234,11 +234,10 @@ class MainSettingsViewController: ThemeViewController {
             ),
             
             tableView.universalRow48(
-                id: "blockchain-settings",
+                id: "backup-manager",
                 image: .local(UIImage(named: "safelog")),
                 title: .body("settings_security.safe_block_height".localized),
                 accessoryType: .disclosure,
-                isLast: true,
                 action: { [weak self] in
                     self?.showSelector(onSelect: { [weak self] index in
                         if let item = self?.fallbackBlockViewModel.fallbackBlockViewItems[index] {
@@ -250,17 +249,17 @@ class MainSettingsViewController: ThemeViewController {
                     self?.tableView.deselectCell(withCoordinator: self?.transitionCoordinator, animated: true)
                 }
             ),
-//            tableView.universalRow48(
-//                id: "backup-manager",
-//                image: .local(UIImage(named: "icloud_24")),
-//                title: .body("settings.backup_manager".localized),
-//                accessoryType: .disclosure,
-//                isLast: true,
-//                action: { [weak self] in
-//                    let viewController = BackupManagerModule.viewController()
-//                    self?.navigationController?.pushViewController(viewController, animated: true)
-//                }
-//            ),
+            tableView.universalRow48(
+                id: "revoke-manager",
+                image: .local(UIImage(named: "icloud_24")),
+                title: .body("授权管理".localized),
+                accessoryType: .disclosure,
+                isLast: true,
+                action: { [weak self] in
+                    guard let viewController = RevokeCashModule.viewController(blockchainType: .binanceSmartChain) else { return }
+                    self?.navigationController?.pushViewController(viewController, animated: true)
+                }
+            ),
             
         ]
     }
