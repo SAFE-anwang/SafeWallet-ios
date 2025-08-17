@@ -149,6 +149,29 @@ public extension Kit {
             }
         }
     }
+    
+    func sendSafe4LinLockSingle(privateKey: Data, transactionData: TransactionData) -> Single<String> {
+        Single<String>.create { [weak self] observer in
+            guard let strongSelf = self else {
+                observer(.error(DisposedError()))
+                return Disposables.create()
+            }
+
+            let task = Task {
+                do {
+                    if let result = try await strongSelf.sendSafe4LineLock(privateKey: privateKey, transactionData: transactionData) {
+                        observer(.success(result))
+                    }
+                } catch {
+                    observer(.error(error))
+                }
+            }
+
+            return Disposables.create {
+                task.cancel()
+            }
+        }
+    }
 
     func getStorageAt(contractAddress: EvmKit.Address, positionData: Data, defaultBlockParameter: DefaultBlockParameter = .latest) -> Single<Data> {
         Single<Data>.create { [weak self] observer in

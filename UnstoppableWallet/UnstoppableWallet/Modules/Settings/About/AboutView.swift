@@ -10,7 +10,7 @@ struct AboutView: View {
         ScrollableThemeView {
             VStack(spacing: .margin24) {
                 HStack(spacing: .margin16) {
-                    Image(uiImage: UIImage(named: AppIcon.main.imageName) ?? UIImage())
+                    Image(uiImage: UIImage(named: "safelog") ?? UIImage())
                         .resizable()
                         .scaledToFit()
                         .clipShape(RoundedRectangle(cornerRadius: .cornerRadius16, style: .continuous))

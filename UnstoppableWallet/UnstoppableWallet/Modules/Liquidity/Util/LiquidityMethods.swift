@@ -123,21 +123,20 @@ class RemoveLiquidityWithPermitMethod: ContractMethod {
 }
 
 class ApproveMethod: ContractMethod {
-    private let to: EvmKit.Address
-    private let tokenId: BigUInt
-    
-    init(to: EvmKit.Address, tokenId: BigUInt) {
-        self.to = to
-        self.tokenId = tokenId
+    static let methodSignature = "approve(address,uint256)"
+
+    let spender: EvmKit.Address
+    let value: BigUInt
+
+    init(spender: EvmKit.Address, value: BigUInt) {
+        self.spender = spender
+        self.value = value
+
+        super.init()
     }
 
-    override var methodSignature: String {
-        "approve(address,uint256)"
-    }
-
-    override var arguments: [Any] {
-        [to, tokenId]
-    }
+    override var methodSignature: String { ApproveMethod.methodSignature }
+    override var arguments: [Any] { [spender, value] }
 }
 
 class GetApprovedMethod: ContractMethod {
@@ -157,10 +156,10 @@ class GetApprovedMethod: ContractMethod {
 }
 
 class ApprovalForAllMethod: ContractMethod {
-    private let `operator`: EvmKit.Address
-    private let approved: BigUInt
+    let `operator`: EvmKit.Address
+    let approved: Bool
     
-    init(operator: EvmKit.Address, approved: BigUInt) {
+    init(operator: EvmKit.Address, approved: Bool) {
         self.operator = `operator`
         self.approved = approved
     }
@@ -223,5 +222,22 @@ class OwnerOfMethod: ContractMethod {
 
     override var arguments: [Any] {
         [tokenId]
+    }
+}
+
+class MulticallMethod: ContractMethod {
+    static let methodSignature = "multicall(bytes[])"
+
+    let methods: [ContractMethod]
+
+    init(methods: [ContractMethod]) {
+        self.methods = methods
+        super.init()
+    }
+
+    override var methodSignature: String { MulticallMethod.methodSignature }
+
+    override var arguments: [Any] {
+        [ContractMethodHelper.MulticallParameters(methods.map { $0.encodedABI() })]
     }
 }

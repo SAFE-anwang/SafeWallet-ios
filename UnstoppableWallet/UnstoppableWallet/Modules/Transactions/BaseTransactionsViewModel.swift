@@ -3,6 +3,7 @@ import Foundation
 import MarketKit
 import RxCocoa
 import RxSwift
+import BigInt
 
 class BaseTransactionsViewModel {
     private let service: BaseTransactionsService
@@ -204,7 +205,8 @@ extension BaseTransactionsViewModel {
         let sentToSelf: Bool
         let locked: Bool?
         let spam: Bool
-        
+        let input: Data?
+        let value: BigUInt?
         let isSafe4Withdraw: Bool?
     }
 

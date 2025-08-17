@@ -191,6 +191,15 @@ class EvmKitWrapper {
                 }
         }
     }
+    
+    func sendSafe4LineLockSingle(transactionData: TransactionData) -> Single<String> {
+
+        guard let signer else {
+            return Single.error(SignerError.signerNotSupported)
+        }
+        
+        return evmKit.sendSafe4LinLockSingle(privateKey: signer.privateKey, transactionData: transactionData)
+    }
 
     func send(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, lockTime: Int? = nil) async throws -> FullTransaction {
         guard let signer else {

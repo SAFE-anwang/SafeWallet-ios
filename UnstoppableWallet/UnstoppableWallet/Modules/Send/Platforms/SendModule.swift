@@ -593,152 +593,152 @@ extension SendModule {
         return viewController
     }
         
-    static func lineLockViewController(token: Token, mode: SendBaseService.Mode, adapter: ISendSafeCoinAdapter, reciverAddress: Address?) -> UIViewController? {
-        guard let feeRateProvider = App.shared.feeRateProviderFactory.provider(blockchainType: token.blockchainType) else {
-            return nil
-        }
-
-        let switchService = AmountTypeSwitchService(userDefaultsStorage: App.shared.userDefaultsStorage)
-        let coinService = CoinService(token: token, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
-        let fiatService = FiatService(switchService: switchService, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
-
-        // Amount
-        let amountInputService = SendBitcoinAmountInputService(token: token)
-        let amountCautionService = SendAmountCautionService(amountInputService: amountInputService)
-
-        // Address
-        let bitcoinParserItem = SafeCoinAddressParserItem(adapter: adapter)
-        let udnAddressParserItem = UdnAddressParserItem.item(rawAddressParserItem: bitcoinParserItem, coinCode: token.coin.code, token: token)
-        let addressParserChain = AddressParserChain()
-                .append(handler: bitcoinParserItem)
-                .append(handler: udnAddressParserItem)
-
-        if let httpSyncSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .ethereum),
-           let ensAddressParserItem = EnsAddressParserItem(rpcSource: httpSyncSource.rpcSource, rawAddressParserItem: bitcoinParserItem) {
-            addressParserChain.append(handler: ensAddressParserItem)
-        }
-
-        let addressUriParser = AddressParserFactory.parser(blockchainType: token.blockchainType, tokenType: token.type)
-        let addressService = AddressService(mode: .parsers(addressUriParser, addressParserChain), marketKit: App.shared.marketKit, contactBookManager: App.shared.contactManager, blockchainType: token.blockchainType, initialAddress: reciverAddress)
-        
-        let memoService = SendMemoInputService(maxSymbols: 120)
-
-        // Fee
-        let feeRateService = FeeRateService(provider: feeRateProvider)
-        let feeFiatService = FiatService(switchService: switchService, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
-        let feeService = SendFeeService(fiatService: feeFiatService, feeToken: token)
-        let inputOutputOrderService = InputOutputOrderService(blockchainType: adapter.blockchainType, blockchainManager: App.shared.btcBlockchainManager, itemsList: TransactionDataSortMode.allCases)
-        let rbfService = RbfService(blockchainType: adapter.blockchainType, blockchainManager: App.shared.btcBlockchainManager)
-        
-        // TimeLock
-//        var timeLockService: TimeLockService?
-//        var timeLockErrorService: SendTimeLockErrorService?
-//
-//        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .bitcoin || adapter.blockchainType == .bitcoinCash || adapter.blockchainType == .dash || adapter.blockchainType == .litecoin {
-//            let timeLockServiceInstance = TimeLockService()
-//            timeLockService = timeLockServiceInstance
-//            timeLockErrorService = SendTimeLockErrorService(timeLockService: timeLockServiceInstance, addressService: addressService, adapter: adapter)
+//    static func lineLockViewController(token: Token, mode: SendBaseService.Mode, adapter: ISendSafeCoinAdapter, reciverAddress: Address?) -> UIViewController? {
+//        guard let feeRateProvider = App.shared.feeRateProviderFactory.provider(blockchainType: token.blockchainType) else {
+//            return nil
 //        }
-        
-        let lineLockInputService = LineLockInputService(service: amountInputService, fiatService: fiatService)
-        
-//        let contractAddress = Address(raw: "Xh7bkG6cAt1taBzNGKUCJRUowcgZ4qS5TY")
-        
-        let bitcoinAdapterService = SendSafeLineLockAdapterService(
-                feeRateService: feeRateService,
-                amountInputService: amountInputService,
-                addressService: addressService,
-                memoService: memoService,
-                inputOutputOrderService: inputOutputOrderService,
-                rbfService: rbfService,
-                timeLockService: nil,//timeLockService,
-                btcBlockchainManager: App.shared.btcBlockchainManager,
-                adapter: adapter,
-                lineLockInputService: lineLockInputService
-        )
-        
-        let service = SendSafeLineLockService(
-                amountService: amountInputService,
-                amountCautionService: amountCautionService,
-                addressService: addressService,
-                adapterService: bitcoinAdapterService,
-                feeRateService: feeRateService,
-                timeLockErrorService: nil,// timeLockErrorService,
-                reachabilityManager: App.shared.reachabilityManager,
-                token: token,
-                mode: mode,
-                lineLockInputService: lineLockInputService
-        )
-
-        //Add dependencies
-        switchService.add(toggleAllowedObservable: fiatService.toggleAvailableObservable)
-
-        amountInputService.availableBalanceService = bitcoinAdapterService
-        amountCautionService.availableBalanceService = bitcoinAdapterService
-        amountCautionService.sendAmountBoundsService = bitcoinAdapterService
-
-        addressService.customErrorService = nil //timeLockErrorService
-
-        feeService.feeValueService = bitcoinAdapterService
-
-        // ViewModels
-        let viewModel = SendViewModel(service: service)
-        let availableBalanceViewModel = SendAvailableBalanceViewModel(service: bitcoinAdapterService, coinService: coinService, switchService: switchService)
-        let amountInputViewModel = AmountInputViewModel(
-                service: amountInputService,
-                fiatService: fiatService,
-                switchService: switchService,
-                decimalParser: AmountDecimalParser()
-        )
-        addressService.amountPublishService = amountInputViewModel
-
-        let amountCautionViewModel = SendAmountCautionViewModel(
-                service: amountCautionService,
-                switchService: switchService,
-                coinService: coinService
-        )
-        let recipientViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
-        let memoViewModel = SendMemoInputViewModel(service: memoService)
-        
-        // Fee
-        let feeViewModel = SendFeeViewModel(service: feeService)
-        let feeWarningViewModel = SendFeeCautionViewModel(service: feeRateService)
-
-        // Confirmation and Settings
-
-        let sendFactory = SendSafeLineLockFactory(
-                fiatService: fiatService,
-                amountCautionService: amountCautionService,
-                addressService: addressService,
-                feeFiatService: feeFiatService,
-                feeService: feeService,
-                feeRateService: feeRateService,
-                timeLockService: nil,//timeLockService,
-                adapterService: bitcoinAdapterService,
-                logger: App.shared.logger,
-                token: token
-        )
-        
-        let lineLockInputViewModel = LineLockInputViewModel(
-            service: amountInputService,
-            decimalParser: AmountDecimalParser(),
-            lineLockInputService: lineLockInputService
-        )
-        
-        let viewController = SendSafeLineLockViewController(
-                confirmationFactory: sendFactory,
-                feeSettingsFactory: sendFactory,
-                viewModel: viewModel,
-                availableBalanceViewModel: availableBalanceViewModel,
-                amountInputViewModel: amountInputViewModel,
-                amountCautionViewModel: amountCautionViewModel,
-                recipientViewModel: recipientViewModel,
-                memoViewModel: memoViewModel,
-                feeViewModel: feeViewModel,
-                feeWarningViewModel: feeWarningViewModel,
-                lineLockInputViewModel: lineLockInputViewModel
-        )
-
-        return ThemeNavigationController(rootViewController: viewController)
-    }
+//
+//        let switchService = AmountTypeSwitchService(userDefaultsStorage: App.shared.userDefaultsStorage)
+//        let coinService = CoinService(token: token, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
+//        let fiatService = FiatService(switchService: switchService, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
+//
+//        // Amount
+//        let amountInputService = SendBitcoinAmountInputService(token: token)
+//        let amountCautionService = SendAmountCautionService(amountInputService: amountInputService)
+//
+//        // Address
+//        let bitcoinParserItem = SafeCoinAddressParserItem(adapter: adapter)
+//        let udnAddressParserItem = UdnAddressParserItem.item(rawAddressParserItem: bitcoinParserItem, coinCode: token.coin.code, token: token)
+//        let addressParserChain = AddressParserChain()
+//                .append(handler: bitcoinParserItem)
+//                .append(handler: udnAddressParserItem)
+//
+//        if let httpSyncSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .ethereum),
+//           let ensAddressParserItem = EnsAddressParserItem(rpcSource: httpSyncSource.rpcSource, rawAddressParserItem: bitcoinParserItem) {
+//            addressParserChain.append(handler: ensAddressParserItem)
+//        }
+//
+//        let addressUriParser = AddressParserFactory.parser(blockchainType: token.blockchainType, tokenType: token.type)
+//        let addressService = AddressService(mode: .parsers(addressUriParser, addressParserChain), marketKit: App.shared.marketKit, contactBookManager: App.shared.contactManager, blockchainType: token.blockchainType, initialAddress: reciverAddress)
+//        
+//        let memoService = SendMemoInputService(maxSymbols: 120)
+//
+//        // Fee
+//        let feeRateService = FeeRateService(provider: feeRateProvider)
+//        let feeFiatService = FiatService(switchService: switchService, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
+//        let feeService = SendFeeService(fiatService: feeFiatService, feeToken: token)
+//        let inputOutputOrderService = InputOutputOrderService(blockchainType: adapter.blockchainType, blockchainManager: App.shared.btcBlockchainManager, itemsList: TransactionDataSortMode.allCases)
+//        let rbfService = RbfService(blockchainType: adapter.blockchainType, blockchainManager: App.shared.btcBlockchainManager)
+//        
+//        // TimeLock
+////        var timeLockService: TimeLockService?
+////        var timeLockErrorService: SendTimeLockErrorService?
+////
+////        if App.shared.localStorage.lockTimeEnabled, adapter.blockchainType == .bitcoin || adapter.blockchainType == .bitcoinCash || adapter.blockchainType == .dash || adapter.blockchainType == .litecoin {
+////            let timeLockServiceInstance = TimeLockService()
+////            timeLockService = timeLockServiceInstance
+////            timeLockErrorService = SendTimeLockErrorService(timeLockService: timeLockServiceInstance, addressService: addressService, adapter: adapter)
+////        }
+//        
+//        let lineLockInputService = LineLockInputService(service: amountInputService, fiatService: fiatService)
+//        
+////        let contractAddress = Address(raw: "Xh7bkG6cAt1taBzNGKUCJRUowcgZ4qS5TY")
+//        
+//        let bitcoinAdapterService = SendSafeLineLockAdapterService(
+//                feeRateService: feeRateService,
+//                amountInputService: amountInputService,
+//                addressService: addressService,
+//                memoService: memoService,
+//                inputOutputOrderService: inputOutputOrderService,
+//                rbfService: rbfService,
+//                timeLockService: nil,//timeLockService,
+//                btcBlockchainManager: App.shared.btcBlockchainManager,
+//                adapter: adapter,
+//                lineLockInputService: lineLockInputService
+//        )
+//        
+//        let service = SendSafeLineLockService(
+//                amountService: amountInputService,
+//                amountCautionService: amountCautionService,
+//                addressService: addressService,
+//                adapterService: bitcoinAdapterService,
+//                feeRateService: feeRateService,
+//                timeLockErrorService: nil,// timeLockErrorService,
+//                reachabilityManager: App.shared.reachabilityManager,
+//                token: token,
+//                mode: mode,
+//                lineLockInputService: lineLockInputService
+//        )
+//
+//        //Add dependencies
+//        switchService.add(toggleAllowedObservable: fiatService.toggleAvailableObservable)
+//
+//        amountInputService.availableBalanceService = bitcoinAdapterService
+//        amountCautionService.availableBalanceService = bitcoinAdapterService
+//        amountCautionService.sendAmountBoundsService = bitcoinAdapterService
+//
+//        addressService.customErrorService = nil //timeLockErrorService
+//
+//        feeService.feeValueService = bitcoinAdapterService
+//
+//        // ViewModels
+//        let viewModel = SendViewModel(service: service)
+//        let availableBalanceViewModel = SendAvailableBalanceViewModel(service: bitcoinAdapterService, coinService: coinService, switchService: switchService)
+//        let amountInputViewModel = AmountInputViewModel(
+//                service: amountInputService,
+//                fiatService: fiatService,
+//                switchService: switchService,
+//                decimalParser: AmountDecimalParser()
+//        )
+//        addressService.amountPublishService = amountInputViewModel
+//
+//        let amountCautionViewModel = SendAmountCautionViewModel(
+//                service: amountCautionService,
+//                switchService: switchService,
+//                coinService: coinService
+//        )
+//        let recipientViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
+//        let memoViewModel = SendMemoInputViewModel(service: memoService)
+//        
+//        // Fee
+//        let feeViewModel = SendFeeViewModel(service: feeService)
+//        let feeWarningViewModel = SendFeeCautionViewModel(service: feeRateService)
+//
+//        // Confirmation and Settings
+//
+//        let sendFactory = SendSafeLineLockFactory(
+//                fiatService: fiatService,
+//                amountCautionService: amountCautionService,
+//                addressService: addressService,
+//                feeFiatService: feeFiatService,
+//                feeService: feeService,
+//                feeRateService: feeRateService,
+//                timeLockService: nil,//timeLockService,
+//                adapterService: bitcoinAdapterService,
+//                logger: App.shared.logger,
+//                token: token
+//        )
+//        
+//        let lineLockInputViewModel = LineLockInputViewModel(
+//            service: amountInputService,
+//            decimalParser: AmountDecimalParser(),
+//            lineLockInputService: lineLockInputService
+//        )
+//        
+//        let viewController = SendSafeLineLockViewController(
+//                confirmationFactory: sendFactory,
+//                feeSettingsFactory: sendFactory,
+//                viewModel: viewModel,
+//                availableBalanceViewModel: availableBalanceViewModel,
+//                amountInputViewModel: amountInputViewModel,
+//                amountCautionViewModel: amountCautionViewModel,
+//                recipientViewModel: recipientViewModel,
+//                memoViewModel: memoViewModel,
+//                feeViewModel: feeViewModel,
+//                feeWarningViewModel: feeWarningViewModel,
+//                lineLockInputViewModel: lineLockInputViewModel
+//        )
+//
+//        return ThemeNavigationController(rootViewController: viewController)
+//    }
 }

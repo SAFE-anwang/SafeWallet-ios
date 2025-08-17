@@ -24,7 +24,7 @@ class EvmNetworkService {
         syncState()
     }
 
-    private var currentSyncSource: EvmSyncSource {
+    var currentSyncSource: EvmSyncSource {
         evmSyncSourceManager.syncSource(blockchainType: blockchain.type)
     }
 

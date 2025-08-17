@@ -130,21 +130,32 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
         let transaction = fallibleTransaction.data
 
         sendState = .sending
-
-        evmKitWrapper.sendSingle(
-            transactionData: transaction.transactionData,
-            gasPrice: transaction.gasData.price,
-            gasLimit: transaction.gasData.limit,
-            nonce: transaction.nonce,
-            lockDay: sendData.transactionData.lockTime
-        )
-        .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-        .subscribe(onSuccess: { [weak self] fullTransaction in
-            self?.sendState = .sent(transactionHash: fullTransaction.transaction.hash)
-        }, onError: { error in
-            self.sendState = .failed(error: error)
-        })
-        .disposed(by: disposeBag)
+        
+        if transaction.transactionData.times != -1 {
+            evmKitWrapper.sendSafe4LineLockSingle(transactionData: transaction.transactionData)
+                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                .subscribe(onSuccess: { [weak self] hashStr in
+                    self?.sendState = .sent(transactionHash: hashStr.hs.data)
+                }, onError: { error in
+                    self.sendState = .failed(error: error)
+                })
+                .disposed(by: disposeBag)
+        }else {
+            evmKitWrapper.sendSingle(
+                transactionData: transaction.transactionData,
+                gasPrice: transaction.gasData.price,
+                gasLimit: transaction.gasData.limit,
+                nonce: transaction.nonce,
+                lockDay: sendData.transactionData.lockTime
+            )
+            .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+            .subscribe(onSuccess: { [weak self] fullTransaction in
+                self?.sendState = .sent(transactionHash: fullTransaction.transaction.hash)
+            }, onError: { error in
+                self.sendState = .failed(error: error)
+            })
+            .disposed(by: disposeBag)
+        }
     }
 }
 

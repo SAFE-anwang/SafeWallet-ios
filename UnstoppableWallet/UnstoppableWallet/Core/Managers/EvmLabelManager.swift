@@ -96,6 +96,7 @@ extension EvmLabelManager {
         case addEthLiquidity
         case removeLiquidity
         case removeLiquidityPermit
+        case lineLock
         
         var id: String {
             switch self {
@@ -103,6 +104,7 @@ extension EvmLabelManager {
             case .addEthLiquidity: "0xf305d719"
             case .removeLiquidity: "0xbaa2abde"
             case .removeLiquidityPermit: "0x2195995c"
+            case .lineLock: "0x9c4ee6bf"
             }
         }
         
@@ -110,6 +112,7 @@ extension EvmLabelManager {
             switch self {
             case .addLiquidity, .addEthLiquidity: "liquidity.title.add".localized
             case .removeLiquidity, .removeLiquidityPermit: "liquidity.remove".localized
+            case .lineLock: "safe_zone.row.linear".localized
             }
         }
     }

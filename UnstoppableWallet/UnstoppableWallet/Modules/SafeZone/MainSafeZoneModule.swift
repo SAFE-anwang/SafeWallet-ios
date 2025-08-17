@@ -9,7 +9,7 @@ struct MainSafeZoneModule {
     }
     
     static func viewController() -> UIViewController {
-        return MainSafeZoneView().toViewController()//MainSafeZoneViewController(viewModel: viewModel, urlManager: UrlManager(inApp: true))
+        return MainSafeZoneView().toViewController()
     }
     
     static func navigationController() -> UIViewController {

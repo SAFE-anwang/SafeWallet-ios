@@ -15,6 +15,7 @@ struct MainSafeZoneView: View {
         ScrollableThemeView {
             VStack(spacing: .margin8) {
                 SectionLockView()
+                SectionSafe3LockView()
                 SectionNodeView()
                 SectionCrossETHView()
                 SectionCrossBSCView()
@@ -25,6 +26,7 @@ struct MainSafeZoneView: View {
             }
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
         }
+        .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("safe_zone.nav.title".localized)
         .sheet(item: $presentDestination) { reason in
             switch reason {
@@ -46,6 +48,26 @@ struct MainSafeZoneView: View {
     }
 
     @ViewBuilder private func SectionLockView() -> some View {
+        SafeListSectionHeader(text: "SAFE")
+        ListSection {
+            ClickableRow(action: {
+                if let vc = SafeLineLockModule.viewController() {
+                    navController?.pushViewController(vc, animated: true)
+                }
+            }) {
+                ItemView(title: "safe_zone.row.linear".localized)
+            }
+            ClickableRow(action: {
+                if let vc = SafeLineLockRecoardModule.viewController() {
+                    navController?.pushViewController(vc, animated: true)
+                }
+            }) {
+                ItemView(title: "safe_zone.row.lock".localized)
+            }
+        }
+    }
+    
+    @ViewBuilder private func SectionSafe3LockView() -> some View {
         HStack(){
             TagCoinView(name: "SAFE",
                         nameFont: .themeSubhead1,
@@ -56,7 +78,7 @@ struct MainSafeZoneView: View {
                 .themeSubhead1(color: .themeLeah)
                 .fixedSize()
             Spacer()
-        }
+        }.padding(EdgeInsets(top: .margin12, leading: 0, bottom: 0, trailing: 0))
         ListSection {
             ClickableRow(action: {
                 if let vc = LineLockRecoardModule.viewController() {
@@ -88,6 +110,14 @@ struct MainSafeZoneView: View {
                 navController?.pushViewController(vc, animated: true)
             }) {
                 ItemView(title: "safe_zone.row.proposal".localized)
+            }
+            ClickableRow(action: {
+                guard let nav = navController else { return }
+                guard let vc = LockedRecoardModule.viewController(nav: nav) else { return }
+                vc.hidesBottomBarWhenPushed = true
+                navController?.pushViewController(vc, animated: true)
+            }) {
+                ItemView(title: "safe_zone.safe4.account.lock".localized)
             }
             ClickableRow(action: {
                 guard let vc = RedeemSafe3Module.viewController() else { return }
@@ -230,6 +260,13 @@ struct MainSafeZoneView: View {
                 navController?.pushViewController(vc, animated: true)
             }) {
                 ItemView(title: SafeWithdrawType.superNode.title)
+            }
+            ClickableRow(action: {
+                guard let vc = WithdrawModule.viewController(type: .proposal) else { return }
+                vc.hidesBottomBarWhenPushed = true
+                navController?.pushViewController(vc, animated: true)
+            }) {
+                ItemView(title: SafeWithdrawType.proposal.title)
             }
             ClickableRow(action: {
                 guard let vc = RewardsModule.viewController() else { return }

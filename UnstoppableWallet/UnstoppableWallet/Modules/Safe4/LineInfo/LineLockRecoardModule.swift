@@ -10,12 +10,13 @@ struct LineLockRecoardModule {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
-        guard let adapter = App.shared.adapterManager.adapter(for: wallet) as? SafeCoinAdapter else { return nil }
         guard let account = App.shared.accountManager.activeAccount else { return nil }
         guard let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: wallet), state == .synced else {
             HudHelper.instance.show(banner: .error(string: "balance.syncing".localized))
             return nil
         }
+        guard let adapter = App.shared.adapterManager.adapter(for: wallet) as? SafeCoinAdapter else { return nil }
+
         let viewModel = LineLockRecoardViewModel(wallet: wallet, adapter: adapter)
         return LineLockRecoardViewController(lineLockRecoardViewModel: viewModel)
     }

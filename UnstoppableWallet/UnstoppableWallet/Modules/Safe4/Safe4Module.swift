@@ -91,43 +91,43 @@ class Safe4Module {
     
     
     
-    static func handlerLineLock() -> UIViewController? {
-        let walletList = App.shared.walletManager.activeWallets
-        var safeWallet: Wallet?
-        
-        for wallet in walletList {
-            if wallet.coin.uid == safeCoinUid {
-                if wallet.token.blockchain.type == .safe, wallet.token.coin.uid == safeCoinUid {
-                    safeWallet = wallet
-                }
-            }
-        }
-        
-        guard let safeWallet else {
-            HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
-            return nil
-        }
-        guard let account = App.shared.accountManager.activeAccount else { return nil }
-        guard let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: safeWallet), state == .synced else {
-            HudHelper.instance.show(banner: .error(string: "balance.syncing".localized))
-            return nil
-        }
-        
-        guard let adapter = App.shared.adapterManager.adapter(for: safeWallet) else { return nil }
-        
-        var reciverAddress: Address?
-
-        if  let depositAdapter = App.shared.adapterManager.depositAdapter(for: safeWallet) {
-            reciverAddress = Address(raw: depositAdapter.receiveAddress.address)
-        }
-        
-        switch adapter {
-        case let adapter as ISendSafeCoinAdapter:
-            return SendModule.lineLockViewController(token: safeWallet.token, mode: .send, adapter: adapter, reciverAddress: reciverAddress)
-        default: return nil
-        }
-        
-    }
+//    static func handlerLineLock() -> UIViewController? {
+//        let walletList = App.shared.walletManager.activeWallets
+//        var safeWallet: Wallet?
+//        
+//        for wallet in walletList {
+//            if wallet.coin.uid == safe4CoinUid {
+//                if wallet.token.blockchain.type == .safe4, wallet.token.coin.uid == safe4CoinUid {
+//                    safeWallet = wallet
+//                }
+//            }
+//        }
+//        
+//        guard let safeWallet else {
+//            HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
+//            return nil
+//        }
+//        guard let account = App.shared.accountManager.activeAccount else { return nil }
+//        guard let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: safeWallet), state == .synced else {
+//            HudHelper.instance.show(banner: .error(string: "balance.syncing".localized))
+//            return nil
+//        }
+//        
+//        guard let adapter = App.shared.adapterManager.adapter(for: safeWallet) else { return nil }
+//        
+//        var reciverAddress: Address?
+//
+//        if  let depositAdapter = App.shared.adapterManager.depositAdapter(for: safeWallet) {
+//            reciverAddress = Address(raw: depositAdapter.receiveAddress.address)
+//        }
+//        
+//        switch adapter {
+//        case let adapter as ISendSafeCoinAdapter:
+//            return SendModule.lineLockViewController(token: safeWallet.token, mode: .send, adapter: adapter, reciverAddress: reciverAddress)
+//        default: return nil
+//        }
+//        
+//    }
     
 }
 

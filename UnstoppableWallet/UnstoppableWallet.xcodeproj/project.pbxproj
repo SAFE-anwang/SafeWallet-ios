@@ -1445,6 +1445,10 @@
 		C8462B3B2C71A712008581A6 /* Redeem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8462B3A2C71A712008581A6 /* Redeem.swift */; };
 		C8462B3D2C71F868008581A6 /* RedeemSafe3Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8462B3C2C71F868008581A6 /* RedeemSafe3Module.swift */; };
 		C84930BB2C33D01200ABDCD3 /* Safe4WithdrawTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84930BA2C33D01200ABDCD3 /* Safe4WithdrawTransactionRecord.swift */; };
+		C84A45982E254045004D5F59 /* SafeLineLockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84A45972E254045004D5F59 /* SafeLineLockViewModel.swift */; };
+		C84A45992E254045004D5F59 /* SafeLineLockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84A45972E254045004D5F59 /* SafeLineLockViewModel.swift */; };
+		C84A459B2E25453B004D5F59 /* SafeLineLockModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84A459A2E25453B004D5F59 /* SafeLineLockModule.swift */; };
+		C84A459C2E25453B004D5F59 /* SafeLineLockModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84A459A2E25453B004D5F59 /* SafeLineLockModule.swift */; };
 		C84B6CCF2C2D45FA00D9C275 /* Safe4DepositEvmIncomingTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84B6CCE2C2D45FA00D9C275 /* Safe4DepositEvmIncomingTransactionRecord.swift */; };
 		C84B6CD12C2D461A00D9C275 /* Safe4DepositEvmOutgoingTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84B6CD02C2D461A00D9C275 /* Safe4DepositEvmOutgoingTransactionRecord.swift */; };
 		C84F27752CC28E9800604993 /* Safe4VoteTransactionRecoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84F27742CC28E9800604993 /* Safe4VoteTransactionRecoard.swift */; };
@@ -1546,7 +1550,6 @@
 		C87CE7642DE0941F0099FAFE /* BitcoinBaseAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A56450DA6DF97C9E1FFE987 /* BitcoinBaseAdapter.swift */; };
 		C87CE7652DE0941F0099FAFE /* BitcoinCashAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A564BF724C69C237E309C07 /* BitcoinCashAdapter.swift */; };
 		C87CE7662DE0941F0099FAFE /* ChartIndicatorSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B146A932A52A69400648C10 /* ChartIndicatorSettingsViewController.swift */; };
-		C87CE7672DE0941F0099FAFE /* SendSafeLineLockFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C12BA9F0E000CCFFA4 /* SendSafeLineLockFactory.swift */; };
 		C87CE7682DE0941F0099FAFE /* DashAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B358CA18471A93188933B4 /* DashAdapter.swift */; };
 		C87CE7692DE0941F0099FAFE /* EnabledWallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35BDC2E3F845A52C442AD /* EnabledWallet.swift */; };
 		C87CE76A2DE0941F0099FAFE /* RedeemSafe3StepCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8DC8EB92C80AF4A006EB568 /* RedeemSafe3StepCell.swift */; };
@@ -2277,7 +2280,6 @@
 		C87CEA422DE0941F0099FAFE /* NftCollectionOverviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35BAABF1F6A9EFF769C47 /* NftCollectionOverviewViewController.swift */; };
 		C87CEA432DE0941F0099FAFE /* NftCollectionAssetsModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35100DD6E2DBF905FD19B /* NftCollectionAssetsModule.swift */; };
 		C87CEA442DE0941F0099FAFE /* NftCollectionAssetsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35340910590E6FCF05A90 /* NftCollectionAssetsViewController.swift */; };
-		C87CEA452DE0941F0099FAFE /* SendSafeLineLockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080BE2BA9F0E000CCFFA4 /* SendSafeLineLockService.swift */; };
 		C87CEA462DE0941F0099FAFE /* NftCollectionAssetsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B3573B3FE1FD8B476375E6 /* NftCollectionAssetsViewModel.swift */; };
 		C87CEA472DE0941F0099FAFE /* RbfDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F132A62B6B990500C7310E /* RbfDataSource.swift */; };
 		C87CEA482DE0941F0099FAFE /* Safe4SwapModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8885CA22DC945A800D21B6A /* Safe4SwapModule.swift */; };
@@ -2296,7 +2298,6 @@
 		C87CEA552DE0941F0099FAFE /* MarketOverviewCategoryDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A564A6D161EAD22626332C1 /* MarketOverviewCategoryDataSource.swift */; };
 		C87CEA562DE0941F0099FAFE /* MarketOverviewCategoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A564ADD13E597F423249CA3 /* MarketOverviewCategoryViewModel.swift */; };
 		C87CEA572DE0941F0099FAFE /* MarketOverviewCategoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A5645B1C5FD344967B1F4B7 /* MarketOverviewCategoryCell.swift */; };
-		C87CEA582DE0941F0099FAFE /* SendSafeLineLockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080BD2BA9F0E000CCFFA4 /* SendSafeLineLockViewController.swift */; };
 		C87CEA592DE0941F0099FAFE /* MarketOverviewTopCoinsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A564D661F3AE561D7FE9FAA /* MarketOverviewTopCoinsService.swift */; };
 		C87CEA5A2DE0941F0099FAFE /* MarketOverviewGlobalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A564EDF0FD6A1D1575D1EFB /* MarketOverviewGlobalService.swift */; };
 		C87CEA5B2DE0941F0099FAFE /* MarketOverviewGlobalViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A5649C48B3AABC56D2512ED /* MarketOverviewGlobalViewModel.swift */; };
@@ -2313,7 +2314,6 @@
 		C87CEA662DE0941F0099FAFE /* Safe4Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8984ED62C4610D900BC8B6A /* Safe4Config.swift */; };
 		C87CEA672DE0941F0099FAFE /* SendBitcoinFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9A3DC5DA5B7BFDBF72B5D /* SendBitcoinFactory.swift */; };
 		C87CEA682DE0941F0099FAFE /* MasterNodeDetailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C878611B2C5789C200C018AC /* MasterNodeDetailService.swift */; };
-		C87CEA692DE0941F0099FAFE /* LineLockInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080BF2BA9F0E000CCFFA4 /* LineLockInputService.swift */; };
 		C87CEA6A2DE0941F0099FAFE /* LiquidityTickInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5D62C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift */; };
 		C87CEA6B2DE0941F0099FAFE /* SendBinanceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9AD0DD32AB4B9BAB79F11 /* SendBinanceFactory.swift */; };
 		C87CEA6C2DE0941F0099FAFE /* SendBinanceFeeWarningViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9A2C2D1331E91D666AB3E /* SendBinanceFeeWarningViewModel.swift */; };
@@ -2549,7 +2549,6 @@
 		C87CEB532DE0941F0099FAFE /* Blockchain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B3595BAB29E195A1317DD1 /* Blockchain.swift */; };
 		C87CEB542DE0941F0099FAFE /* BlockchainType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B357B185E8FECB3924FDF2 /* BlockchainType.swift */; };
 		C87CEB552DE0941F0099FAFE /* Coin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35F3FBFB1F4BE93B796DF /* Coin.swift */; };
-		C87CEB562DE0941F0099FAFE /* LineLockRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080AD2BA9F0E000CCFFA4 /* LineLockRecoardModule.swift */; };
 		C87CEB572DE0941F0099FAFE /* CoinCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B357C17104792A20769560 /* CoinCategory.swift */; };
 		C87CEB582DE0941F0099FAFE /* ProposalDetailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8984ED82C4613A900BC8B6A /* ProposalDetailService.swift */; };
 		C87CEB592DE0941F0099FAFE /* MasterNodeDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D9402C4775CC0020074D /* MasterNodeDetailViewController.swift */; };
@@ -2725,7 +2724,6 @@
 		C87CEC032DE0941F0099FAFE /* CexWithdrawNetworkRaw.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35EC03BB5316524050518 /* CexWithdrawNetworkRaw.swift */; };
 		C87CEC042DE0941F0099FAFE /* CexAssetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B356DBFFBD17DA5DA5D0E0 /* CexAssetManager.swift */; };
 		C87CEC052DE0941F0099FAFE /* WalletConnectAppShowModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B2907192AF0CB8A006157D6 /* WalletConnectAppShowModule.swift */; };
-		C87CEC062DE0941F0099FAFE /* LineLockInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080BC2BA9F0E000CCFFA4 /* LineLockInputCell.swift */; };
 		C87CEC072DE0941F0099FAFE /* CexAssetRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35AD211091A7C8619CEA2 /* CexAssetRecordStorage.swift */; };
 		C87CEC082DE0941F0099FAFE /* LiquidityInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83EA5DA2C07380100C9A644 /* LiquidityInputAccessoryView.swift */; };
 		C87CEC092DE0941F0099FAFE /* CexAssetResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B357C67623035CDF98B540 /* CexAssetResponse.swift */; };
@@ -2842,7 +2840,6 @@
 		C87CEC792DE0941F0099FAFE /* TokenTransactionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35DB5445B83B51C69D7AE /* TokenTransactionsService.swift */; };
 		C87CEC7A2DE0941F0099FAFE /* TransactionsTableViewDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B3579EDE4F5BC0170FB711 /* TransactionsTableViewDataSource.swift */; };
 		C87CEC7B2DE0941F0099FAFE /* WalletTokenBalanceCustomAmountCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9AD448DC071D8800C6B12 /* WalletTokenBalanceCustomAmountCell.swift */; };
-		C87CEC7C2DE0941F0099FAFE /* SendSafeLineLockAdapterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C02BA9F0E000CCFFA4 /* SendSafeLineLockAdapterService.swift */; };
 		C87CEC7D2DE0941F0099FAFE /* ListSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35AA43C4832521D428799 /* ListSection.swift */; };
 		C87CEC7E2DE0941F0099FAFE /* HorizontalDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35D0EBAF33901578520E1 /* HorizontalDivider.swift */; };
 		C87CEC7F2DE0941F0099FAFE /* LiquidityPendingAllowanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080792BA9F0DF00CCFFA4 /* LiquidityPendingAllowanceService.swift */; };
@@ -3014,7 +3011,6 @@
 		C87CED252DE0941F0099FAFE /* AddressAppShowModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9AF20587F41DED26BAE51 /* AddressAppShowModule.swift */; };
 		C87CED262DE0941F0099FAFE /* WCSendEthereumTransactionRequestModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9A6F0F47E2EF665381BFC /* WCSendEthereumTransactionRequestModule.swift */; };
 		C87CED272DE0941F0099FAFE /* WCSendEthereumTransactionRequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9A363B3AD4E8759B29FB0 /* WCSendEthereumTransactionRequestService.swift */; };
-		C87CED282DE0941F0099FAFE /* LineLockInputViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C22BA9F0E000CCFFA4 /* LineLockInputViewModel.swift */; };
 		C87CED292DE0941F0099FAFE /* WCSendEthereumTransactionRequestViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9AEAEB368B269FF9713D0 /* WCSendEthereumTransactionRequestViewModel.swift */; };
 		C87CED2A2DE0941F0099FAFE /* WCSignMessageRequestViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC9A0576B804ABA38EF9843 /* WCSignMessageRequestViewModel.swift */; };
 		C87CED2B2DE0941F0099FAFE /* SendWsafeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080B82BA9F0E000CCFFA4 /* SendWsafeViewModel.swift */; };
@@ -3354,7 +3350,6 @@
 		C890811B2BA9F0E100CCFFA4 /* AddLiquidityTransactionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080A82BA9F0E000CCFFA4 /* AddLiquidityTransactionViewModel.swift */; };
 		C890811D2BA9F0E100CCFFA4 /* AddLiquidityTransactionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080A92BA9F0E000CCFFA4 /* AddLiquidityTransactionViewController.swift */; };
 		C890811F2BA9F0E100CCFFA4 /* AddLiquidityTransactionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080AA2BA9F0E000CCFFA4 /* AddLiquidityTransactionService.swift */; };
-		C89081212BA9F0E100CCFFA4 /* LineLockRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080AD2BA9F0E000CCFFA4 /* LineLockRecoardModule.swift */; };
 		C89081232BA9F0E100CCFFA4 /* LineLockRecoardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080AE2BA9F0E000CCFFA4 /* LineLockRecoardViewModel.swift */; };
 		C89081252BA9F0E100CCFFA4 /* LineLockRecoardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080AF2BA9F0E000CCFFA4 /* LineLockRecoardViewController.swift */; };
 		C89081272BA9F0E100CCFFA4 /* WSafeKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080B02BA9F0E000CCFFA4 /* WSafeKit.swift */; };
@@ -3366,16 +3361,17 @@
 		C89081332BA9F0E100CCFFA4 /* SendWsafeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080B82BA9F0E000CCFFA4 /* SendWsafeViewModel.swift */; };
 		C89081352BA9F0E100CCFFA4 /* SendWsafeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080B92BA9F0E000CCFFA4 /* SendWsafeService.swift */; };
 		C89081372BA9F0E100CCFFA4 /* SafeInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080BA2BA9F0E000CCFFA4 /* SafeInfo.swift */; };
-		C89081392BA9F0E100CCFFA4 /* LineLockInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080BC2BA9F0E000CCFFA4 /* LineLockInputCell.swift */; };
-		C890813B2BA9F0E100CCFFA4 /* SendSafeLineLockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080BD2BA9F0E000CCFFA4 /* SendSafeLineLockViewController.swift */; };
-		C890813D2BA9F0E100CCFFA4 /* SendSafeLineLockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080BE2BA9F0E000CCFFA4 /* SendSafeLineLockService.swift */; };
-		C890813F2BA9F0E100CCFFA4 /* LineLockInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080BF2BA9F0E000CCFFA4 /* LineLockInputService.swift */; };
-		C89081412BA9F0E100CCFFA4 /* SendSafeLineLockAdapterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C02BA9F0E000CCFFA4 /* SendSafeLineLockAdapterService.swift */; };
-		C89081432BA9F0E100CCFFA4 /* SendSafeLineLockFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C12BA9F0E000CCFFA4 /* SendSafeLineLockFactory.swift */; };
-		C89081452BA9F0E100CCFFA4 /* LineLockInputViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C22BA9F0E000CCFFA4 /* LineLockInputViewModel.swift */; };
 		C89081472BA9F0E100CCFFA4 /* SendWSafeEvmViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C42BA9F0E000CCFFA4 /* SendWSafeEvmViewController.swift */; };
 		C89081492BA9F0E100CCFFA4 /* SendSafe2wsafeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C52BA9F0E000CCFFA4 /* SendSafe2wsafeViewController.swift */; };
 		C890814B2BA9F0E100CCFFA4 /* SafeInfoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C89080C62BA9F0E000CCFFA4 /* SafeInfoManager.swift */; };
+		C890D1702E330B690075DBCF /* SafeLineLockRecoardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D16F2E330B690075DBCF /* SafeLineLockRecoardViewModel.swift */; };
+		C890D1712E330B690075DBCF /* SafeLineLockRecoardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D16F2E330B690075DBCF /* SafeLineLockRecoardViewModel.swift */; };
+		C890D1732E330BAF0075DBCF /* LineLockRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D1722E330BAF0075DBCF /* LineLockRecoardModule.swift */; };
+		C890D1742E330BAF0075DBCF /* LineLockRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D1722E330BAF0075DBCF /* LineLockRecoardModule.swift */; };
+		C890D1762E330BCD0075DBCF /* SafeLineLockRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D1752E330BCD0075DBCF /* SafeLineLockRecoardModule.swift */; };
+		C890D1772E330BCD0075DBCF /* SafeLineLockRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D1752E330BCD0075DBCF /* SafeLineLockRecoardModule.swift */; };
+		C890D1792E330D740075DBCF /* SafeLineLockRecoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D1782E330D740075DBCF /* SafeLineLockRecoardView.swift */; };
+		C890D17A2E330D740075DBCF /* SafeLineLockRecoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D1782E330D740075DBCF /* SafeLineLockRecoardView.swift */; };
 		C890D9412C4775CC0020074D /* MasterNodeDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D9402C4775CC0020074D /* MasterNodeDetailViewController.swift */; };
 		C890D9432C4775DD0020074D /* MasterNodeDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D9422C4775DD0020074D /* MasterNodeDetailViewModel.swift */; };
 		C890D9452C4775F10020074D /* MasterNodeDetailModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C890D9442C4775F10020074D /* MasterNodeDetailModule.swift */; };
@@ -3416,6 +3412,8 @@
 		C8A6C46B2C418ADC00D1D2BB /* MasterNodeCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A6C46A2C418ADC00D1D2BB /* MasterNodeCell.swift */; };
 		C8A6C46D2C418AF000D1D2BB /* MasterNodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A6C46C2C418AF000D1D2BB /* MasterNodeViewController.swift */; };
 		C8B92BB12DAA729E006C74BE /* ApiKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B92BAF2DAA729E006C74BE /* ApiKeyManager.swift */; };
+		C8BE0FBF2E251AA20009217A /* SafeLineLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8BE0FBE2E251AA20009217A /* SafeLineLockView.swift */; };
+		C8BE0FC02E251AA20009217A /* SafeLineLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8BE0FBE2E251AA20009217A /* SafeLineLockView.swift */; };
 		C8C7CDF52C8B174700A92F7B /* Safe4RedeemTransactionRecoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C7CDF42C8B174700A92F7B /* Safe4RedeemTransactionRecoard.swift */; };
 		C8CC679B2D8BBF0D00170BAA /* ApiKeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CC67992D8BBF0D00170BAA /* ApiKeyService.swift */; };
 		C8CC679E2D8BBF6E00170BAA /* ApiKeyProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CC679C2D8BBF6E00170BAA /* ApiKeyProvider.swift */; };
@@ -5115,6 +5113,8 @@
 		C8462B3A2C71A712008581A6 /* Redeem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Redeem.swift; sourceTree = "<group>"; };
 		C8462B3C2C71F868008581A6 /* RedeemSafe3Module.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeemSafe3Module.swift; sourceTree = "<group>"; };
 		C84930BA2C33D01200ABDCD3 /* Safe4WithdrawTransactionRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4WithdrawTransactionRecord.swift; sourceTree = "<group>"; };
+		C84A45972E254045004D5F59 /* SafeLineLockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeLineLockViewModel.swift; sourceTree = "<group>"; };
+		C84A459A2E25453B004D5F59 /* SafeLineLockModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeLineLockModule.swift; sourceTree = "<group>"; };
 		C84B6CCE2C2D45FA00D9C275 /* Safe4DepositEvmIncomingTransactionRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4DepositEvmIncomingTransactionRecord.swift; sourceTree = "<group>"; };
 		C84B6CD02C2D461A00D9C275 /* Safe4DepositEvmOutgoingTransactionRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4DepositEvmOutgoingTransactionRecord.swift; sourceTree = "<group>"; };
 		C84F27742CC28E9800604993 /* Safe4VoteTransactionRecoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4VoteTransactionRecoard.swift; sourceTree = "<group>"; };
@@ -5242,7 +5242,6 @@
 		C89080A82BA9F0E000CCFFA4 /* AddLiquidityTransactionViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddLiquidityTransactionViewModel.swift; sourceTree = "<group>"; };
 		C89080A92BA9F0E000CCFFA4 /* AddLiquidityTransactionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddLiquidityTransactionViewController.swift; sourceTree = "<group>"; };
 		C89080AA2BA9F0E000CCFFA4 /* AddLiquidityTransactionService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddLiquidityTransactionService.swift; sourceTree = "<group>"; };
-		C89080AD2BA9F0E000CCFFA4 /* LineLockRecoardModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineLockRecoardModule.swift; sourceTree = "<group>"; };
 		C89080AE2BA9F0E000CCFFA4 /* LineLockRecoardViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineLockRecoardViewModel.swift; sourceTree = "<group>"; };
 		C89080AF2BA9F0E000CCFFA4 /* LineLockRecoardViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineLockRecoardViewController.swift; sourceTree = "<group>"; };
 		C89080B02BA9F0E000CCFFA4 /* WSafeKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WSafeKit.swift; sourceTree = "<group>"; };
@@ -5254,16 +5253,13 @@
 		C89080B82BA9F0E000CCFFA4 /* SendWsafeViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendWsafeViewModel.swift; sourceTree = "<group>"; };
 		C89080B92BA9F0E000CCFFA4 /* SendWsafeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendWsafeService.swift; sourceTree = "<group>"; };
 		C89080BA2BA9F0E000CCFFA4 /* SafeInfo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafeInfo.swift; sourceTree = "<group>"; };
-		C89080BC2BA9F0E000CCFFA4 /* LineLockInputCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineLockInputCell.swift; sourceTree = "<group>"; };
-		C89080BD2BA9F0E000CCFFA4 /* SendSafeLineLockViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendSafeLineLockViewController.swift; sourceTree = "<group>"; };
-		C89080BE2BA9F0E000CCFFA4 /* SendSafeLineLockService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendSafeLineLockService.swift; sourceTree = "<group>"; };
-		C89080BF2BA9F0E000CCFFA4 /* LineLockInputService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineLockInputService.swift; sourceTree = "<group>"; };
-		C89080C02BA9F0E000CCFFA4 /* SendSafeLineLockAdapterService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendSafeLineLockAdapterService.swift; sourceTree = "<group>"; };
-		C89080C12BA9F0E000CCFFA4 /* SendSafeLineLockFactory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendSafeLineLockFactory.swift; sourceTree = "<group>"; };
-		C89080C22BA9F0E000CCFFA4 /* LineLockInputViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineLockInputViewModel.swift; sourceTree = "<group>"; };
 		C89080C42BA9F0E000CCFFA4 /* SendWSafeEvmViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendWSafeEvmViewController.swift; sourceTree = "<group>"; };
 		C89080C52BA9F0E000CCFFA4 /* SendSafe2wsafeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SendSafe2wsafeViewController.swift; sourceTree = "<group>"; };
 		C89080C62BA9F0E000CCFFA4 /* SafeInfoManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafeInfoManager.swift; sourceTree = "<group>"; };
+		C890D16F2E330B690075DBCF /* SafeLineLockRecoardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeLineLockRecoardViewModel.swift; sourceTree = "<group>"; };
+		C890D1722E330BAF0075DBCF /* LineLockRecoardModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineLockRecoardModule.swift; sourceTree = "<group>"; };
+		C890D1752E330BCD0075DBCF /* SafeLineLockRecoardModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeLineLockRecoardModule.swift; sourceTree = "<group>"; };
+		C890D1782E330D740075DBCF /* SafeLineLockRecoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeLineLockRecoardView.swift; sourceTree = "<group>"; };
 		C890D9402C4775CC0020074D /* MasterNodeDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterNodeDetailViewController.swift; sourceTree = "<group>"; };
 		C890D9422C4775DD0020074D /* MasterNodeDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterNodeDetailViewModel.swift; sourceTree = "<group>"; };
 		C890D9442C4775F10020074D /* MasterNodeDetailModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterNodeDetailModule.swift; sourceTree = "<group>"; };
@@ -5299,6 +5295,7 @@
 		C8A6C46A2C418ADC00D1D2BB /* MasterNodeCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterNodeCell.swift; sourceTree = "<group>"; };
 		C8A6C46C2C418AF000D1D2BB /* MasterNodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterNodeViewController.swift; sourceTree = "<group>"; };
 		C8B92BAF2DAA729E006C74BE /* ApiKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiKeyManager.swift; sourceTree = "<group>"; };
+		C8BE0FBE2E251AA20009217A /* SafeLineLockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeLineLockView.swift; sourceTree = "<group>"; };
 		C8C7CDF42C8B174700A92F7B /* Safe4RedeemTransactionRecoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4RedeemTransactionRecoard.swift; sourceTree = "<group>"; };
 		C8CC67992D8BBF0D00170BAA /* ApiKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiKeyService.swift; sourceTree = "<group>"; };
 		C8CC679C2D8BBF6E00170BAA /* ApiKeyProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiKeyProvider.swift; sourceTree = "<group>"; };
@@ -9729,7 +9726,7 @@
 		C89080AC2BA9F0E000CCFFA4 /* LineInfo */ = {
 			isa = PBXGroup;
 			children = (
-				C89080AD2BA9F0E000CCFFA4 /* LineLockRecoardModule.swift */,
+				C890D1722E330BAF0075DBCF /* LineLockRecoardModule.swift */,
 				C89080AE2BA9F0E000CCFFA4 /* LineLockRecoardViewModel.swift */,
 				C89080AF2BA9F0E000CCFFA4 /* LineLockRecoardViewController.swift */,
 			);
@@ -9761,13 +9758,10 @@
 		C89080BB2BA9F0E000CCFFA4 /* LineLock */ = {
 			isa = PBXGroup;
 			children = (
-				C89080BC2BA9F0E000CCFFA4 /* LineLockInputCell.swift */,
-				C89080BD2BA9F0E000CCFFA4 /* SendSafeLineLockViewController.swift */,
-				C89080BE2BA9F0E000CCFFA4 /* SendSafeLineLockService.swift */,
-				C89080BF2BA9F0E000CCFFA4 /* LineLockInputService.swift */,
-				C89080C02BA9F0E000CCFFA4 /* SendSafeLineLockAdapterService.swift */,
-				C89080C12BA9F0E000CCFFA4 /* SendSafeLineLockFactory.swift */,
-				C89080C22BA9F0E000CCFFA4 /* LineLockInputViewModel.swift */,
+				C890D16B2E330B1A0075DBCF /* Recoard */,
+				C8BE0FBE2E251AA20009217A /* SafeLineLockView.swift */,
+				C84A45972E254045004D5F59 /* SafeLineLockViewModel.swift */,
+				C84A459A2E25453B004D5F59 /* SafeLineLockModule.swift */,
 			);
 			path = LineLock;
 			sourceTree = "<group>";
@@ -9779,6 +9773,16 @@
 				C89080C52BA9F0E000CCFFA4 /* SendSafe2wsafeViewController.swift */,
 			);
 			path = SafeSend;
+			sourceTree = "<group>";
+		};
+		C890D16B2E330B1A0075DBCF /* Recoard */ = {
+			isa = PBXGroup;
+			children = (
+				C890D1752E330BCD0075DBCF /* SafeLineLockRecoardModule.swift */,
+				C890D16F2E330B690075DBCF /* SafeLineLockRecoardViewModel.swift */,
+				C890D1782E330D740075DBCF /* SafeLineLockRecoardView.swift */,
+			);
+			path = Recoard;
 			sourceTree = "<group>";
 		};
 		C890D9392C475A8F0020074D /* Register */ = {
@@ -10752,6 +10756,7 @@
 				C87CE74C2DE0941F0099FAFE /* EvmAdapter.swift in Sources */,
 				C87CE74D2DE0941F0099FAFE /* PasteboardManager.swift in Sources */,
 				C87CE74E2DE0941F0099FAFE /* PaymentRequestAddress.swift in Sources */,
+				C890D1772E330BCD0075DBCF /* SafeLineLockRecoardModule.swift in Sources */,
 				C87CE74F2DE0941F0099FAFE /* UIImage.swift in Sources */,
 				C87CE7502DE0941F0099FAFE /* BarsProgressView.swift in Sources */,
 				C87CE7512DE0941F0099FAFE /* FeeRateState.swift in Sources */,
@@ -10776,7 +10781,6 @@
 				C87CE7642DE0941F0099FAFE /* BitcoinBaseAdapter.swift in Sources */,
 				C87CE7652DE0941F0099FAFE /* BitcoinCashAdapter.swift in Sources */,
 				C87CE7662DE0941F0099FAFE /* ChartIndicatorSettingsViewController.swift in Sources */,
-				C87CE7672DE0941F0099FAFE /* SendSafeLineLockFactory.swift in Sources */,
 				C87CE7682DE0941F0099FAFE /* DashAdapter.swift in Sources */,
 				C87CE7692DE0941F0099FAFE /* EnabledWallet.swift in Sources */,
 				C87CE76A2DE0941F0099FAFE /* RedeemSafe3StepCell.swift in Sources */,
@@ -10807,6 +10811,7 @@
 				C87CE7832DE0941F0099FAFE /* AddTronTokenBlockchainService.swift in Sources */,
 				C87CE7842DE0941F0099FAFE /* Redeem.swift in Sources */,
 				C87CE7852DE0941F0099FAFE /* KitCleaner.swift in Sources */,
+				C84A459C2E25453B004D5F59 /* SafeLineLockModule.swift in Sources */,
 				C87CE7862DE0941F0099FAFE /* LiquidityV3Module.swift in Sources */,
 				C87CE7872DE0941F0099FAFE /* CoinTweetsViewModel.swift in Sources */,
 				C8162F702E0153B500A30E11 /* RevokeCashView.swift in Sources */,
@@ -10897,6 +10902,7 @@
 				C87CE7DB2DE0941F0099FAFE /* OneInchViewModel.swift in Sources */,
 				C87CE7DC2DE0941F0099FAFE /* BalanceErrorService.swift in Sources */,
 				C87CE7DD2DE0941F0099FAFE /* BalanceErrorModule.swift in Sources */,
+				C890D1792E330D740075DBCF /* SafeLineLockRecoardView.swift in Sources */,
 				C87CE7DE2DE0941F0099FAFE /* GuidesModule.swift in Sources */,
 				C87CE7DF2DE0941F0099FAFE /* GuidesViewModel.swift in Sources */,
 				C8E1A7572DE35654007F071D /* MainSafeZoneView.swift in Sources */,
@@ -11303,6 +11309,7 @@
 				C87CE96D2DE0941F0099FAFE /* SwapStepCell.swift in Sources */,
 				C87CE96E2DE0941F0099FAFE /* TronAdapter.swift in Sources */,
 				C87CE96F2DE0941F0099FAFE /* String.swift in Sources */,
+				C84A45982E254045004D5F59 /* SafeLineLockViewModel.swift in Sources */,
 				C87CE9702DE0941F0099FAFE /* WalletConnectAppShowViewModel.swift in Sources */,
 				C87CE9712DE0941F0099FAFE /* CoinMajorHoldersModule.swift in Sources */,
 				C87CE9722DE0941F0099FAFE /* CoinMajorHoldersViewModel.swift in Sources */,
@@ -11429,6 +11436,7 @@
 				C87CE9EA2DE0941F0099FAFE /* AddressService.swift in Sources */,
 				C87CE9EB2DE0941F0099FAFE /* UnknownSwapTransactionRecord.swift in Sources */,
 				C87CE9EC2DE0941F0099FAFE /* AcademyMarkdownConfig.swift in Sources */,
+				C890D1702E330B690075DBCF /* SafeLineLockRecoardViewModel.swift in Sources */,
 				C87CE9ED2DE0941F0099FAFE /* ReleaseNotesMarkdownConfig.swift in Sources */,
 				C87CE9EE2DE0941F0099FAFE /* EvmAccountManager.swift in Sources */,
 				C87CE9EF2DE0941F0099FAFE /* UnlinkWatchViewController.swift in Sources */,
@@ -11516,7 +11524,6 @@
 				C87CEA422DE0941F0099FAFE /* NftCollectionOverviewViewController.swift in Sources */,
 				C87CEA432DE0941F0099FAFE /* NftCollectionAssetsModule.swift in Sources */,
 				C87CEA442DE0941F0099FAFE /* NftCollectionAssetsViewController.swift in Sources */,
-				C87CEA452DE0941F0099FAFE /* SendSafeLineLockService.swift in Sources */,
 				C87CEA462DE0941F0099FAFE /* NftCollectionAssetsViewModel.swift in Sources */,
 				C87CEA472DE0941F0099FAFE /* RbfDataSource.swift in Sources */,
 				C87CEA482DE0941F0099FAFE /* Safe4SwapModule.swift in Sources */,
@@ -11535,7 +11542,6 @@
 				C87CEA552DE0941F0099FAFE /* MarketOverviewCategoryDataSource.swift in Sources */,
 				C87CEA562DE0941F0099FAFE /* MarketOverviewCategoryViewModel.swift in Sources */,
 				C87CEA572DE0941F0099FAFE /* MarketOverviewCategoryCell.swift in Sources */,
-				C87CEA582DE0941F0099FAFE /* SendSafeLineLockViewController.swift in Sources */,
 				C87CEA592DE0941F0099FAFE /* MarketOverviewTopCoinsService.swift in Sources */,
 				C87CEA5A2DE0941F0099FAFE /* MarketOverviewGlobalService.swift in Sources */,
 				C87CEA5B2DE0941F0099FAFE /* MarketOverviewGlobalViewModel.swift in Sources */,
@@ -11552,7 +11558,6 @@
 				C87CEA662DE0941F0099FAFE /* Safe4Config.swift in Sources */,
 				C87CEA672DE0941F0099FAFE /* SendBitcoinFactory.swift in Sources */,
 				C87CEA682DE0941F0099FAFE /* MasterNodeDetailService.swift in Sources */,
-				C87CEA692DE0941F0099FAFE /* LineLockInputService.swift in Sources */,
 				C87CEA6A2DE0941F0099FAFE /* LiquidityTickInputAccessoryView.swift in Sources */,
 				C87CEA6B2DE0941F0099FAFE /* SendBinanceFactory.swift in Sources */,
 				C87CEA6C2DE0941F0099FAFE /* SendBinanceFeeWarningViewModel.swift in Sources */,
@@ -11789,7 +11794,6 @@
 				C87CEB532DE0941F0099FAFE /* Blockchain.swift in Sources */,
 				C87CEB542DE0941F0099FAFE /* BlockchainType.swift in Sources */,
 				C87CEB552DE0941F0099FAFE /* Coin.swift in Sources */,
-				C87CEB562DE0941F0099FAFE /* LineLockRecoardModule.swift in Sources */,
 				C87CEB572DE0941F0099FAFE /* CoinCategory.swift in Sources */,
 				C87CEB582DE0941F0099FAFE /* ProposalDetailService.swift in Sources */,
 				C87CEB592DE0941F0099FAFE /* MasterNodeDetailViewController.swift in Sources */,
@@ -11963,9 +11967,9 @@
 				C87CEC012DE0941F0099FAFE /* LiquidityCoinSelectViewController.swift in Sources */,
 				C87CEC022DE0941F0099FAFE /* CexAssetRecord.swift in Sources */,
 				C87CEC032DE0941F0099FAFE /* CexWithdrawNetworkRaw.swift in Sources */,
+				C890D1732E330BAF0075DBCF /* LineLockRecoardModule.swift in Sources */,
 				C87CEC042DE0941F0099FAFE /* CexAssetManager.swift in Sources */,
 				C87CEC052DE0941F0099FAFE /* WalletConnectAppShowModule.swift in Sources */,
-				C87CEC062DE0941F0099FAFE /* LineLockInputCell.swift in Sources */,
 				C87CEC072DE0941F0099FAFE /* CexAssetRecordStorage.swift in Sources */,
 				C87CEC082DE0941F0099FAFE /* LiquidityInputAccessoryView.swift in Sources */,
 				C87CEC092DE0941F0099FAFE /* CexAssetResponse.swift in Sources */,
@@ -12046,6 +12050,7 @@
 				C87CEC532DE0941F0099FAFE /* ReceiveBitcoinCashCoinTypeViewModel.swift in Sources */,
 				C87CEC542DE0941F0099FAFE /* CoinProvider.swift in Sources */,
 				C87CEC552DE0941F0099FAFE /* ReceiveSelectCoinService.swift in Sources */,
+				C8BE0FC02E251AA20009217A /* SafeLineLockView.swift in Sources */,
 				C87CEC562DE0941F0099FAFE /* ReceiveSelectCoinViewModel.swift in Sources */,
 				C87CEC572DE0941F0099FAFE /* ReceiveSelectCoinViewController.swift in Sources */,
 				C87CEC582DE0941F0099FAFE /* ReceiveModule.swift in Sources */,
@@ -12084,7 +12089,6 @@
 				C87CEC792DE0941F0099FAFE /* TokenTransactionsService.swift in Sources */,
 				C87CEC7A2DE0941F0099FAFE /* TransactionsTableViewDataSource.swift in Sources */,
 				C87CEC7B2DE0941F0099FAFE /* WalletTokenBalanceCustomAmountCell.swift in Sources */,
-				C87CEC7C2DE0941F0099FAFE /* SendSafeLineLockAdapterService.swift in Sources */,
 				C87CEC7D2DE0941F0099FAFE /* ListSection.swift in Sources */,
 				C87CEC7E2DE0941F0099FAFE /* HorizontalDivider.swift in Sources */,
 				C87CEC7F2DE0941F0099FAFE /* LiquidityPendingAllowanceService.swift in Sources */,
@@ -12256,7 +12260,6 @@
 				C87CED252DE0941F0099FAFE /* AddressAppShowModule.swift in Sources */,
 				C87CED262DE0941F0099FAFE /* WCSendEthereumTransactionRequestModule.swift in Sources */,
 				C87CED272DE0941F0099FAFE /* WCSendEthereumTransactionRequestService.swift in Sources */,
-				C87CED282DE0941F0099FAFE /* LineLockInputViewModel.swift in Sources */,
 				C87CED292DE0941F0099FAFE /* WCSendEthereumTransactionRequestViewModel.swift in Sources */,
 				C87CED2A2DE0941F0099FAFE /* WCSignMessageRequestViewModel.swift in Sources */,
 				C87CED2B2DE0941F0099FAFE /* SendWsafeViewModel.swift in Sources */,
@@ -12492,6 +12495,7 @@
 				11B351C81028727569851233 /* EvmAdapter.swift in Sources */,
 				11B35A801504D47FBE31CF40 /* PasteboardManager.swift in Sources */,
 				58AAA4E1C32E0B48A4CFECCD /* PaymentRequestAddress.swift in Sources */,
+				C890D1762E330BCD0075DBCF /* SafeLineLockRecoardModule.swift in Sources */,
 				11B35D0542ACB56A31C61143 /* UIImage.swift in Sources */,
 				11B350E923A4E51AAF9D2828 /* BarsProgressView.swift in Sources */,
 				D31C4764238BF176008CB818 /* FeeRateState.swift in Sources */,
@@ -12516,7 +12520,6 @@
 				1A564D2917CF5C38C84C031B /* BitcoinBaseAdapter.swift in Sources */,
 				1A564C11B7785DCEA2472065 /* BitcoinCashAdapter.swift in Sources */,
 				6B146A972A52A69400648C10 /* ChartIndicatorSettingsViewController.swift in Sources */,
-				C89081432BA9F0E100CCFFA4 /* SendSafeLineLockFactory.swift in Sources */,
 				11B3507DDEBA587C023CE898 /* DashAdapter.swift in Sources */,
 				11B3577193A4BD719E12CE2E /* EnabledWallet.swift in Sources */,
 				C8DC8EBA2C80AF4A006EB568 /* RedeemSafe3StepCell.swift in Sources */,
@@ -12547,6 +12550,7 @@
 				D05F132E2A31FE0D00C3193F /* AddTronTokenBlockchainService.swift in Sources */,
 				C8462B3B2C71A712008581A6 /* Redeem.swift in Sources */,
 				2FA5DD18B3869199E0BEF72A /* KitCleaner.swift in Sources */,
+				C84A459B2E25453B004D5F59 /* SafeLineLockModule.swift in Sources */,
 				C879530C2BD94CFF00E9315A /* LiquidityV3Module.swift in Sources */,
 				D02A67C5272A7460009B2C1C /* CoinTweetsViewModel.swift in Sources */,
 				C8162F712E0153B500A30E11 /* RevokeCashView.swift in Sources */,
@@ -12637,6 +12641,7 @@
 				D36DE0DE272FD887000BC916 /* OneInchViewModel.swift in Sources */,
 				1A5649926B0064083045BEEB /* BalanceErrorService.swift in Sources */,
 				1A564001701A1E77AF7A651B /* BalanceErrorModule.swift in Sources */,
+				C890D17A2E330D740075DBCF /* SafeLineLockRecoardView.swift in Sources */,
 				11B35E8E0F5E5F43E65B8A98 /* GuidesModule.swift in Sources */,
 				11B353EDF27AB81FCF2A36EE /* GuidesViewModel.swift in Sources */,
 				C8E1A7582DE35654007F071D /* MainSafeZoneView.swift in Sources */,
@@ -13043,6 +13048,7 @@
 				58AAAA3E05FEB10822DFC8EE /* SwapStepCell.swift in Sources */,
 				D023D2712A25CF61004F65B0 /* TronAdapter.swift in Sources */,
 				11B3517B2CB1A05BA5FEDB1F /* String.swift in Sources */,
+				C84A45992E254045004D5F59 /* SafeLineLockViewModel.swift in Sources */,
 				6B2907232AF0CB8A006157D6 /* WalletConnectAppShowViewModel.swift in Sources */,
 				11B3517A67227ECCDE817036 /* CoinMajorHoldersModule.swift in Sources */,
 				11B35990CB6691F679D241C8 /* CoinMajorHoldersViewModel.swift in Sources */,
@@ -13169,6 +13175,7 @@
 				58AAAE6BA98DC60C11D3AA6F /* AddressService.swift in Sources */,
 				2FA5DEFAABB33E826E2DA4B9 /* UnknownSwapTransactionRecord.swift in Sources */,
 				1A564A1CA02CF6F6DC37B50A /* AcademyMarkdownConfig.swift in Sources */,
+				C890D1712E330B690075DBCF /* SafeLineLockRecoardViewModel.swift in Sources */,
 				1A5646632409BBC2A8790807 /* ReleaseNotesMarkdownConfig.swift in Sources */,
 				11B35B10C473B24F3AD2F1D3 /* EvmAccountManager.swift in Sources */,
 				11B35CFD84BE04CC93DE7DF9 /* UnlinkWatchViewController.swift in Sources */,
@@ -13256,7 +13263,6 @@
 				11B3596F09D52300F7F0067D /* NftCollectionOverviewViewController.swift in Sources */,
 				11B3562466F0ADD109244158 /* NftCollectionAssetsModule.swift in Sources */,
 				11B351FD918D612D27EB6D08 /* NftCollectionAssetsViewController.swift in Sources */,
-				C890813D2BA9F0E100CCFFA4 /* SendSafeLineLockService.swift in Sources */,
 				11B35DA4CB435537AD4148D7 /* NftCollectionAssetsViewModel.swift in Sources */,
 				D0F132A72B6B990500C7310E /* RbfDataSource.swift in Sources */,
 				C8885CA32DC945A900D21B6A /* Safe4SwapModule.swift in Sources */,
@@ -13275,7 +13281,6 @@
 				1A5649ADA72E39CE24BB64FC /* MarketOverviewCategoryDataSource.swift in Sources */,
 				1A56470F4D18CCC43B85DEB3 /* MarketOverviewCategoryViewModel.swift in Sources */,
 				1A564FC84916FF6D6224FB33 /* MarketOverviewCategoryCell.swift in Sources */,
-				C890813B2BA9F0E100CCFFA4 /* SendSafeLineLockViewController.swift in Sources */,
 				1A56405220ED225C0B973A7F /* MarketOverviewTopCoinsService.swift in Sources */,
 				1A564A4CF522A7A959482AA6 /* MarketOverviewGlobalService.swift in Sources */,
 				1A564F3C50FC28F2AF4AF4ED /* MarketOverviewGlobalViewModel.swift in Sources */,
@@ -13292,7 +13297,6 @@
 				C8984ED72C4610D900BC8B6A /* Safe4Config.swift in Sources */,
 				ABC9A67A87DFB11102AB607A /* SendBitcoinFactory.swift in Sources */,
 				C878611C2C5789C200C018AC /* MasterNodeDetailService.swift in Sources */,
-				C890813F2BA9F0E100CCFFA4 /* LineLockInputService.swift in Sources */,
 				C83EA5D72C059C4F00C9A644 /* LiquidityTickInputAccessoryView.swift in Sources */,
 				ABC9AD1C8D0CE88A604D5250 /* SendBinanceFactory.swift in Sources */,
 				ABC9AE014EA06F26956138FA /* SendBinanceFeeWarningViewModel.swift in Sources */,
@@ -13529,7 +13533,6 @@
 				11B3536884FEE247C144B395 /* Blockchain.swift in Sources */,
 				11B35E5F3C6070DF6E1F6BAD /* BlockchainType.swift in Sources */,
 				11B35D94B4E92789F681E293 /* Coin.swift in Sources */,
-				C89081212BA9F0E100CCFFA4 /* LineLockRecoardModule.swift in Sources */,
 				11B35F4C8D665F1264832FCC /* CoinCategory.swift in Sources */,
 				C8984ED92C4613A900BC8B6A /* ProposalDetailService.swift in Sources */,
 				C890D9412C4775CC0020074D /* MasterNodeDetailViewController.swift in Sources */,
@@ -13703,9 +13706,9 @@
 				C89080F52BA9F0E000CCFFA4 /* LiquidityCoinSelectViewController.swift in Sources */,
 				11B350C214D423CE2DCD6853 /* CexAssetRecord.swift in Sources */,
 				11B355B56270FCD8A17A49B5 /* CexWithdrawNetworkRaw.swift in Sources */,
+				C890D1742E330BAF0075DBCF /* LineLockRecoardModule.swift in Sources */,
 				11B35841E0B353B727DCD9CF /* CexAssetManager.swift in Sources */,
 				6B2907212AF0CB8A006157D6 /* WalletConnectAppShowModule.swift in Sources */,
-				C89081392BA9F0E100CCFFA4 /* LineLockInputCell.swift in Sources */,
 				11B35C95EA77972246D5F3BD /* CexAssetRecordStorage.swift in Sources */,
 				C83EA5DB2C07380100C9A644 /* LiquidityInputAccessoryView.swift in Sources */,
 				11B35A5B8DC265D419E69B05 /* CexAssetResponse.swift in Sources */,
@@ -13786,6 +13789,7 @@
 				11B35E2C07D04A795AD96220 /* ReceiveBitcoinCashCoinTypeViewModel.swift in Sources */,
 				11B35D95692647EB9F73D9DB /* CoinProvider.swift in Sources */,
 				11B35DFF8F15AA74356061A0 /* ReceiveSelectCoinService.swift in Sources */,
+				C8BE0FBF2E251AA20009217A /* SafeLineLockView.swift in Sources */,
 				11B35F09A49A90BF058CA500 /* ReceiveSelectCoinViewModel.swift in Sources */,
 				11B3573B753DB244EEBAAA35 /* ReceiveSelectCoinViewController.swift in Sources */,
 				11B35EBE688A7C4F9B92F865 /* ReceiveModule.swift in Sources */,
@@ -13824,7 +13828,6 @@
 				11B359DBC1A8C5226C025E0D /* TokenTransactionsService.swift in Sources */,
 				11B356757D1E8F12B4FE981B /* TransactionsTableViewDataSource.swift in Sources */,
 				ABC9A2CA505DB49DE0FB28DD /* WalletTokenBalanceCustomAmountCell.swift in Sources */,
-				C89081412BA9F0E100CCFFA4 /* SendSafeLineLockAdapterService.swift in Sources */,
 				11B35A80AB419A754EF9955A /* ListSection.swift in Sources */,
 				11B35F91E53BA1F835DD4B4F /* HorizontalDivider.swift in Sources */,
 				C89080D12BA9F0E000CCFFA4 /* LiquidityPendingAllowanceService.swift in Sources */,
@@ -13996,7 +13999,6 @@
 				ABC9A735B9F27756B046AF9F /* AddressAppShowModule.swift in Sources */,
 				ABC9A3345E4D8A354AEBB574 /* WCSendEthereumTransactionRequestModule.swift in Sources */,
 				ABC9AFFE5C166606FD561A21 /* WCSendEthereumTransactionRequestService.swift in Sources */,
-				C89081452BA9F0E100CCFFA4 /* LineLockInputViewModel.swift in Sources */,
 				ABC9A0F2D481BBE31568347F /* WCSendEthereumTransactionRequestViewModel.swift in Sources */,
 				ABC9A23C433DC06FB7791285 /* WCSignMessageRequestViewModel.swift in Sources */,
 				C89081332BA9F0E100CCFFA4 /* SendWsafeViewModel.swift in Sources */,
@@ -14292,18 +14294,19 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 0.38.0621;
+				CURRENT_PROJECT_VERSION = 0.38.0817;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = UnstoppableWallet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15;
-				MARKETING_VERSION = 0.38.0621;
+				MARKETING_VERSION = 0.38.0817;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = SafeWalletProd;
+				STRIP_INSTALLED_PRODUCT = NO;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -14318,17 +14321,18 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 0.38.0621;
+				CURRENT_PROJECT_VERSION = 0.38.0817;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = UnstoppableWallet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15;
-				MARKETING_VERSION = 0.38.0621;
+				MARKETING_VERSION = 0.38.0817;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = SafeWalletProd;
+				STRIP_INSTALLED_PRODUCT = NO;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;

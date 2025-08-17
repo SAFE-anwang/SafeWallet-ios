@@ -2119,7 +2119,7 @@
 "safe_lock.amount.unlock" = "每次锁仓金额";
 "safe_lock.month.start" = "起始月份";
 "safe_lock.month.interval" = "间隔月份";
-"safe_lock.desc" = "从第%d个月开始，每隔%d个月解锁%@个SAFE，总共使用%@个SAFE.";
+"safe_lock.desc" = "从%@开始每间隔%d个月锁定%@ SAFE，共锁定%@ 次，合计锁定%@ SAFE.";
 "safe_lock.amount.unlock.error" = "每次锁仓金额不能大于待锁仓的总金额";
 "safe_lock.amount.error" = "请设置有效值，范围1~120";
 "safe_lock.amount.locked" = "%@个月";

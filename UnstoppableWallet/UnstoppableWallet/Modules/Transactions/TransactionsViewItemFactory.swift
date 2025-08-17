@@ -81,7 +81,7 @@ class TransactionsViewItemFactory {
         let backType: TransactionImageComponent.ImageType
         let backUrl: String?
         let backPlaceholder: String
-
+        
         if let primaryValue {
             switch primaryValue {
             case let .nftValue(nftUid, _, _, _):
@@ -178,6 +178,8 @@ class TransactionsViewItemFactory {
         var sentToSelf = false
         var locked: Bool?
         var isSafe4Withdraw : Bool?
+        var input: Data?
+        var value: BigUInt?
         
         switch item.record {
         case let record as EvmIncomingTransactionRecord:
@@ -356,6 +358,9 @@ class TransactionsViewItemFactory {
             let (incomingValues, outgoingValues) = record.combinedValues
             if [.safe, .safe4].contains(record.source.blockchainType) {
                 iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+                if record.method == EvmLabelManager.ExSafe4Methods.lineLock.title {
+                    locked = true
+                }
             }else {
                 iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
             }
@@ -367,6 +372,9 @@ class TransactionsViewItemFactory {
             if record.contractAddress == web3swift.Safe4ContractAddress.SNVoteContractAddr {
                 locked = true
             }
+
+            input = record.transaction.input
+            value = record.transaction.value ?? .zero
             
         case let record as ExternalContractCallTransactionRecord:
             let (incomingValues, outgoingValues) = record.combinedValues
@@ -604,6 +612,8 @@ class TransactionsViewItemFactory {
             sentToSelf: sentToSelf,
             locked: locked,
             spam: item.record.spam,
+            input: input,
+            value: value,
             isSafe4Withdraw: isSafe4Withdraw
         )
     }

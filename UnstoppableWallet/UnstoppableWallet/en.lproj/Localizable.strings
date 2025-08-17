@@ -2239,7 +2239,7 @@
 "safe_lock.amount.unlock" = "Every time lock amount";
 "safe_lock.month.start" = "Starting month";
 "safe_lock.month.interval" = "Interval month";
-"safe_lock.desc" = "From starting month %d, every %d months unlock %@ safes, and use %@ safe in total.";
+"safe_lock.desc" = "From starting month %@, every %d months unlock %@ safes, and use %@ safe in total.";
 "safe_lock.amount.unlock.error" = "Each lockdown amount cannot be greater than the total amount to be locked";
 "safe_lock.amount.error" = "Exceeding valid values of 1-120";
 "safe_lock.amount.locked" = "%@ months";
