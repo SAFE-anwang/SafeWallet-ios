@@ -199,7 +199,10 @@ extension SuperNodeViewController {
                     }
                     cell.toAddLock = { [weak self] in
                         guard let strongSelf = self else { return }
-                        guard let vc = AddLockDaysModule.viewController(type: .superNode(info: viewItem.info)) else { return }
+                        let ids = viewItem.info.founders
+                            .filter { $0.addr.address.lowercased() == strongSelf.viewModel.address.lowercased() }
+                            .map{ $0.lockID }
+                        guard let vc = AddLockDaysModule.viewController(ids: ids) else { return }
                         strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
                     }
                 }

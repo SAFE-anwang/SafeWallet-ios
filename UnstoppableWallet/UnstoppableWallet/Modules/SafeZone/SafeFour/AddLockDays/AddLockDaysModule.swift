@@ -1,12 +1,15 @@
 import UIKit
+import SwiftUI
 import EvmKit
 import ComponentKit
 import BigInt
 import Web3Core
 import web3swift
+import ThemeKit
+
 struct AddLockDaysModule {
     
-    static func viewController(type: LockNodeType) -> UIViewController? {
+    static func viewController(ids: [BigUInt]) -> UIViewController? {
         guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
@@ -15,13 +18,15 @@ struct AddLockDaysModule {
             return nil
         }
         let service = AddLockDaysService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
-        let viewModel = AddLockDaysViewModel(service: service, type: type)
-        let viewController = AddLockDaysViewController(viewModel: viewModel)
+        let viewModel = AddLockDaysViewModel(service: service, ids: ids)
+        
+        let viewController = AddLockDaysView(viewModel: viewModel).toViewController()
         return viewController
     }
 }
 
-enum LockNodeType {
-    case masterNode(info: MasterNodeInfo)
-    case superNode(info: SuperNodeInfo)
+enum AddLockType {
+    case address(String)
+    case ids([BigUInt])
 }
+

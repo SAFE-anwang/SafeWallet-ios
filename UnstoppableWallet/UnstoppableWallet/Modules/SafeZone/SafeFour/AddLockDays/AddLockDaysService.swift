@@ -38,4 +38,26 @@ class AddLockDaysService {
     func getRecordByID(id: BigUInt) async throws -> web3swift.AccountRecord {
         try await web3().safe4.accountmanager.getRecordByID(id)
     }
+    
+    func getMasterNodeInfo(address: Web3Core.EthereumAddress) async throws -> MasterNodeInfo {
+        try await web3().safe4.masternode.getInfo(address)
+    }
+    
+    func getSuperNodeInfo(address: Web3Core.EthereumAddress) async throws -> SuperNodeInfo {
+        try await web3().safe4.supernode.getInfo(address)
+    }
+    
+    func getNodeType(address: String) async throws ->  Safe4NodeType {
+        let address = Web3Core.EthereumAddress(address)!
+        async let isMasterNode = try web3().safe4.masternode.exist(address)
+        async let isSuperNode = try web3().safe4.supernode.exist(address)
+        let nodeType = try await (isMasterNode, isSuperNode)
+        if nodeType.0 {
+            return .masterNode
+        }else if nodeType.1 {
+            return .superNode
+        }else {
+            return .normal
+        }
+    }
 }

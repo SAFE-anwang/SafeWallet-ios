@@ -4,38 +4,18 @@ import RxSwift
 import RxRelay
 import Web3Core
 import web3swift
+import Combine
 
-class AddLockDaysViewModel {
+class AddLockDaysViewModel: ObservableObject {
     private let service: AddLockDaysService
-    private let type: LockNodeType
-    
-    private let stateRelay = PublishRelay<State>()
-    
+    @Published private(set) var state: State = .loading
+    @Published private(set) var viewItems: [LockInfo] = []
     private var ids = [BigUInt]()
-    private(set) var state: State = .loading {
-        didSet {
-            stateRelay.accept(state)
-        }
-    }
     
-    init(service: AddLockDaysService, type: LockNodeType) {
+    init(service: AddLockDaysService, ids: [BigUInt]) {
         self.service = service
-        self.type = type
-        
-        switch type {
-        case let .masterNode(info):
-            let ids = info.founders
-                .filter { $0.addr.address.lowercased() == service.address.lowercased() }
-                .map{ $0.lockID }
-            self.ids = ids
-            
-        case let .superNode(info):
-            let ids = info.founders
-                .filter { $0.addr.address.lowercased() == service.address.lowercased() }
-                .map{ $0.lockID }
-            self.ids = ids
-
-        }
+        self.ids = ids
+        requestLockRecoardInfos()
     }
     
     func addLock(info: LockInfo) {
@@ -44,9 +24,13 @@ class AddLockDaysViewModel {
             do {
                 let _ = try await service.addLock(id: info.lockID, day: info.selectedLockedDays)
                 info.updateInfo()
-                state = .success(message: "追加成功".localized)
+                DispatchQueue.main.async { [self] in
+                    state = .success(message: "追加成功".localized)
+                }
             }catch{
-                state = .failed(error: "追加失败！".localized)
+                DispatchQueue.main.async { [self] in
+                    state = .failed(error: "追加失败！".localized)
+                }
             }
         }
     }
@@ -70,6 +54,7 @@ class AddLockDaysViewModel {
     }
     
     func requestLockRecoardInfos() {
+        state = .loading
         Task { [service, ids] in
             var results: [LockInfo] = []
             var errors: [Error] = []
@@ -104,34 +89,46 @@ class AddLockDaysViewModel {
                     }
                 }
             }
-            state = .dataArray(infos: results)
+            DispatchQueue.main.async { [self] in
+                viewItems = results
+                state = .completed
+            }
         }
     }
 }
-extension AddLockDaysViewModel {
-    var stateObservable: Observable<State> {
-        stateRelay.asObservable()
-    }
-}
+
 extension AddLockDaysViewModel {
 
-    enum State {
+    enum State: Equatable {
         case loading
-        case dataArray(infos: [LockInfo])
+        case completed
         case success(message: String?)
         case failed(error: String?)
+        
+        static func == (lhs: State, rhs: State) -> Bool {
+            switch (lhs, rhs) {
+            case (.loading, .loading): return true
+            case (.completed, .completed): return true
+            case (.success(let lhsMsg), .success(let rhsMsg)):
+                return lhsMsg == rhsMsg
+            case (.failed(let lhsError), .failed(let rhsError)):
+                return lhsError == rhsError
+            default:
+                return false
+            }
+        }
     }
     
     enum AddLockDaysError: Error {
         case getInfo
     }
     
-    class LockInfo {
+    class LockInfo: Identifiable, ObservableObject{
         var lockID: BigUInt
         var lockedAmount: BigUInt
         var lockedDays: BigUInt
         var maxLockDays: BigUInt
-        var selectedLockedDays: BigUInt
+        @Published var selectedLockedDays: BigUInt
         
         init(lockID: BigUInt, lockedAmount: BigUInt, lockedDays: BigUInt, maxLockDays: BigUInt, selectedLockedDays: BigUInt) {
             self.lockID = lockID
