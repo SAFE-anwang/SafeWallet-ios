@@ -57,8 +57,25 @@ extension WithdrawViewService {
     func isSuperNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
         try await web3().safe4.supernode.existFounder(addr)
     }
+}
+
+// proposal
+extension WithdrawViewService {
+    func mineProposalNum() async throws -> BigUInt {
+        return try await web3().safe4.proposal.getMineNum(userAddress)
+    }
     
+    func mineProposalIds(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        return try await web3().safe4.proposal.getMines(userAddress, start, count)
+    }
     
+    func getProposalRewardIDs(id: BigUInt) async throws -> [BigUInt] {
+        try await web3().safe4.proposal.getRewardIDs(id)
+    }
+    
+    func getInfo(id: BigUInt) async throws -> ProposalInfo {
+        try await web3().safe4.proposal.getInfo(id)
+    }
 }
 
 // locked
@@ -73,15 +90,6 @@ extension WithdrawViewService {
         let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
         return try await web3().safe4.snvote.getVotedIDs4Voter(address, start, count)
     }
-    
-//    func totalLockedNum() async throws -> BigUInt {
-//        try await web3().safe4.accountmanager.getLockedAmount(userAddress).num
-//    }
-//    
-//    func getLockedIDs(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
-//        try await web3().safe4.accountmanager.getLockedIDs(userAddress, start, count)
-//        
-//    }
 }
 
 // info

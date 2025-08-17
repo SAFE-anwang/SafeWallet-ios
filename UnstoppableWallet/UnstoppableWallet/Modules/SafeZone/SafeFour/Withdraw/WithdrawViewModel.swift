@@ -111,27 +111,32 @@ extension WithdrawViewModel {
                     let tempArray = infos.filter{$0.1.frozenAddr.address != nullAddress}
                     let array = await node(nodeType: .superNode, records: tempArray)
                     results = array
-                    
-                case .proposal:
-                    let proposalArray = infos.filter{$0.1.votedAddr.address == nullAddress && $0.1.frozenAddr.address == nullAddress}
-                    results = proposalArray
-                    
+                                        
                 case .voteLocked:
                     let voteArray = infos.filter{$0.1.votedAddr.address != nullAddress}
                     results = voteArray
+                    
+                case .proposal:
+                    items = try await mineProposalWithdrawItems(ids: ids)
+                    DispatchQueue.main.async { [self] in
+                        dataState = .completed(items.sorted(by:{ Int($0.id) < Int($1.id) }))
+                    }
+                    
+                    return
                 }
                 
+        
                 let datas = results.map { WithdrawItem(id: $0.0.id,
                                                        amount: $0.0.amount.safe4FomattedAmount + " SAFE",
                                                        unlockHeight: $0.0.unlockHeight,
                                                        releaseHeight: $0.1.releaseHeight,
                                                        address: $0.1.votedAddr.address,
-                                                       isEnable: ($0.0.unlockHeight.isZero ? $0.1.releaseHeight : $0.0.unlockHeight) < (service.lastBlockHeight ?? 0)
+                                                       isEnable: ($0.1.releaseHeight.isZero ?  $0.0.unlockHeight : $0.1.releaseHeight ) < (service.lastBlockHeight ?? 0)
                                                        )
                     }
                 items = datas
                 DispatchQueue.main.async { [self] in
-                    dataState = .completed(datas)
+                    dataState = .completed(items.sorted(by:{ Int($0.id) < Int($1.id) }))
                 }
             }catch{
                 
@@ -205,9 +210,10 @@ extension WithdrawViewModel {
         let totalNum: BigUInt
         
         switch service.type {
-        case .masterNode, .superNode, .proposal:
+        case .masterNode, .superNode:
             totalNum = try await service.totalNum()
-            
+        case .proposal:
+            totalNum = try await service.mineProposalNum()
         case .voteLocked:
             totalNum = try await service.getVotedIDNum4Voter()
         }
@@ -216,17 +222,41 @@ extension WithdrawViewModel {
         return pageControl
     }
     
+    private func mineProposalWithdrawItems(ids: [BigUInt]) async throws -> [WithdrawItem] {
+        var items = [WithdrawItem]()
+        for id in ids {
+            let info = try await service.getInfo(id: id)
+            let rewardIDs =  try await service.getProposalRewardIDs(id: id)
+            for rewardId in rewardIDs {
+                let item = WithdrawItem(id: rewardId,
+                             amount: (info.payAmount / info.payTimes).safe4FomattedAmount + " SAFE",
+                             unlockHeight: info.updateHeight,
+                             releaseHeight: .zero,
+                             address: nullAddress,
+                             isEnable: true
+                )
+                items.append(item)
+            }
+        }
+        return items
+    }
+    
     private func ids(start: Int, count: Int) async throws -> [BigUInt] {
-        let ids: [BigUInt]
+        var ids: [BigUInt] = []
         switch service.type {
-        case .masterNode, .superNode, .proposal:
+        case .masterNode, .superNode:
             ids = try await service.getAvailableIDs(start: BigUInt(start), count: BigUInt(count))
+            
+        case .proposal:
+            ids = try await service.mineProposalIds(start: BigUInt(start), count: BigUInt(count))
             
         case .voteLocked:
             ids = try await service.getVotedIDs4Voter(start: BigUInt(start), count: BigUInt(count))
         }
         return ids
     }
+
+
     
     private func node(nodeType: WithdrawViewService.NodeType, records: [(web3swift.AccountRecord, RecordUseInfo)]) async -> [(web3swift.AccountRecord, RecordUseInfo)] {
         var results: [(web3swift.AccountRecord, RecordUseInfo)] = []
