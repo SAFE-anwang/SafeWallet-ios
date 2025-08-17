@@ -15,8 +15,8 @@ class SuperNodeViewModel {
     let type: SuperNodeModule.SuperNodeType
     private let service: SuperNodeService
     private let disposeBag = DisposeBag()
-    private var safe4Page = Safe4PageControl(initCount: 25, totalNum: 0, page: 0, isReverse: false)
-    private var partnerSafe4Page = Safe4PageControl(initCount: 25, totalNum: 0, page: 0, isReverse: false)
+    private var safe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: false)
+    private var partnerSafe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: false)
     private var partnerAddressArray = [EthereumAddress]()
 
     private var stateRelay = PublishRelay<SuperNodeViewModel.State>()
@@ -28,7 +28,11 @@ class SuperNodeViewModel {
         }
     }
     private let searchCautionRelay = BehaviorRelay<Caution?>(value:nil)
-
+    
+    var address: String {
+        service.receiveAddress
+    }
+    
     init(service: SuperNodeService, type: SuperNodeModule.SuperNodeType) {
         self.service = service
         self.type = type

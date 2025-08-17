@@ -13,8 +13,8 @@ import ThemeKit
 
 class MasterNodeViewModel {
     private let service: MasterNodeService
-    private var safe4Page = Safe4PageControl(initCount: 25, totalNum: 0, page: 0, isReverse: true)
-    private var partnerSafe4Page = Safe4PageControl(initCount: 25, totalNum: 0, page: 0, isReverse: false)
+    private var safe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: true)
+    private var partnerSafe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: false)
 
     private var stateRelay = PublishRelay<MasterNodeViewModel.State>()
     private var viewItems = [MasterNodeViewModel.ViewItem]()
@@ -29,7 +29,11 @@ class MasterNodeViewModel {
     }
     
     private let searchCautionRelay = BehaviorRelay<Caution?>(value:nil)
-
+    
+    var address: String {
+        service.receiveAddress
+    }
+    
     init(service: MasterNodeService, type: MasterNodeModule.MasterNodeType) {
         self.service = service
         self.type = type

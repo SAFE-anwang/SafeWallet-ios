@@ -13,7 +13,7 @@ import ThemeKit
 
 class ProposalViewModel {
     private let service: ProposalService
-    private var safe4Page = Safe4PageControl(initCount: 25, totalNum: 0, page: 0, isReverse: true)
+    private var safe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: true)
     private var stateRelay = PublishRelay<ProposalViewModel.State>()
     private var viewItems = [ProposalViewModel.ViewItem]()
     
