@@ -25,10 +25,7 @@ class RevokeCashMessageHandler: NSObject, WKScriptMessageHandler {
             }
         }
     }
-    private func handleRPCRequest(webView: WKWebView) {
-        
-    }
-    
+ 
     private func handleRPCRequest(_ payload: [String: Any]?) {
         guard let methodName = payload?["method"] as? String,
               let id = payload?["id"] as? Int,
