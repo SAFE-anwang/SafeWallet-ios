@@ -184,7 +184,7 @@ extension BottomSheetModule {
             image: .warning,
             title: "safe_zone.safe4.withdraw".localized,
                 items: [
-                    .description(text:  "锁仓投票提现后将不再产生收益，确定提取吗？".localized)
+                    .description(text:  "提现后将不再产生收益，确定提取吗？".localized)
                 ],
                 buttons: [
                     .init(style: .yellow, title: "button.ok".localized) {

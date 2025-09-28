@@ -65,8 +65,10 @@ extension RewardsService {
         fetch(address: address)
     }
     
-    func withdrawByID() async throws -> String {
-        try await web3().safe4.accountmanager.withdrawByID(privateKey: privateKey, ids: [0])
+    func withdrawByID() async throws {
+        _ = try await web3().safe4.accountmanager(type: .native).withdrawByID(privateKey: privateKey, ids: [0])
+        _ = try await web3().safe4.accountmanager(type: .smallAmount_01).withdrawByID(privateKey: privateKey, ids: [0])
+        _ = try await web3().safe4.accountmanager(type: .smallAmount_02).withdrawByID(privateKey: privateKey, ids: [0])
     }
 
 }

@@ -87,7 +87,7 @@ extension RewardsViewModel {
         sendState = .loading
         Task {
             do{
-                let _ = try await service.withdrawByID()
+                try await service.withdrawByID()
                 let dateFormatter = DateFormatter.cachedFormatter(format: "yyyy-MM-dd")
                 let date = dateFormatter.string(from: Date())
                 lastTimestamp = dateFormatter.date(from: date)?.timeIntervalSince1970

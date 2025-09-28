@@ -238,7 +238,7 @@ class TransactionsViewItemFactory {
             isSafe4Withdraw = true
             
         case let record as Safe4RedeemTransactionRecoard:
-            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            iconType = .icon(imageUrl: record.imageUrl, placeholderImageName: "safe-anwang_trx_32")
             title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
@@ -246,7 +246,7 @@ class TransactionsViewItemFactory {
             }
             
         case let record as Safe4VoteTransactionRecoard:
-            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            iconType = .icon(imageUrl: record.imageUrl, placeholderImageName: "safe-anwang_trx_32")
             title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
@@ -255,7 +255,7 @@ class TransactionsViewItemFactory {
             }
             
         case let record as Safe4NodeRegisterTransactionRecoard:
-            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            iconType = .icon(imageUrl: record.imageUrl, placeholderImageName: "safe-anwang_trx_32")
             title = "transactions.contract_call".localized
             if let method = record.method {
                 if method == EvmKit.Safe4Methods.AppendRegister.title {
@@ -280,7 +280,7 @@ class TransactionsViewItemFactory {
             }
             
         case let record as Safe4CrossChainIncomingRecoard:
-            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            iconType = .icon(imageUrl: record.imageUrl, placeholderImageName: "safe-anwang_trx_32")
             title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
             subTitle = "transactions.from".localized(mapped(address: record.from, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
@@ -288,7 +288,7 @@ class TransactionsViewItemFactory {
             }
             
         case let record as Safe4CrossChainOutgoingRecoard:
-            iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+            iconType = .icon(imageUrl: record.imageUrl, placeholderImageName: "safe-anwang_trx_32")
             title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
@@ -336,7 +336,7 @@ class TransactionsViewItemFactory {
         case let record as LiquidityTransactionRecord:
             let (incomingValues, outgoingValues) = record.combinedValues
             if [.safe, .safe4].contains(record.source.blockchainType) {
-                iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+                iconType = .icon(imageUrl: record.imageUrl, placeholderImageName: "safe-anwang_trx_32")
             }else {
                 iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
             }
@@ -357,7 +357,8 @@ class TransactionsViewItemFactory {
         case let record as ContractCallTransactionRecord:
             let (incomingValues, outgoingValues) = record.combinedValues
             if [.safe, .safe4].contains(record.source.blockchainType) {
-                iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
+                let coinUid = "custom-safe4-anwang|eip20:\(record.contractAddress)"
+                iconType = .icon(imageUrl: record.imageUrl(coinUid: coinUid), placeholderImageName: "safe-anwang_trx_32")
                 if record.method == EvmLabelManager.ExSafe4Methods.lineLock.title {
                     locked = true
                 }
@@ -378,12 +379,8 @@ class TransactionsViewItemFactory {
             
         case let record as ExternalContractCallTransactionRecord:
             let (incomingValues, outgoingValues) = record.combinedValues
-            if [.safe, .safe4].contains(record.source.blockchainType) {
-                iconType = .icon(imageUrl: "https://anwang.com/img/logos/safe.png", placeholderImageName: "safe-anwang_trx_32")
-            }else {
-                iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
-            }
-
+            iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
+            
             if record.outgoingEvents.isEmpty {
                 title = "transactions.receive".localized
                 let addresses = Array(Set(record.incomingEvents.map(\.address)))

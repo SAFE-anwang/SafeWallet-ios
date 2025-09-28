@@ -34,20 +34,24 @@ class WithdrawViewService {
 
 extension WithdrawViewService {
     
-    func withdrawByID(ids:[BigUInt]) async throws -> String {
-        try await web3().safe4.accountmanager.withdrawByID(privateKey: privateKey, ids: ids)
+    func withdrawByID(type: web3swift.AccountManager.ContractType, ids:[BigUInt]) async throws -> String {
+        try await web3().safe4.accountmanager(type: type).withdrawByID(privateKey: privateKey, ids: ids)
+    }
+    
+    func removeVoteOrApproval(recordIDs: [BigUInt]) async throws -> String {
+        try await web3().safe4.snvote.removeVoteOrApproval(privateKey: privateKey, recordIDs: recordIDs)
     }
 }
 
 // node
 extension WithdrawViewService {
     
-    func totalNum() async throws -> BigUInt {
-        try await web3().safe4.accountmanager.getAvailableAmount(userAddress).num
+    func totalNum(type: web3swift.AccountManager.ContractType) async throws -> BigUInt {
+        try await web3().safe4.accountmanager(type: type).getAvailableAmount(userAddress).num
     }
     
-    func getAvailableIDs(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
-        try await web3().safe4.accountmanager.getAvailableIDs(userAddress, start, count)
+    func getAvailableIDs(type: web3swift.AccountManager.ContractType, start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        try await web3().safe4.accountmanager(type: type).getAvailableIDs(userAddress, start, count)
     }
     
     func isMasterNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
@@ -78,7 +82,7 @@ extension WithdrawViewService {
     }
 }
 
-// locked
+// voted
 extension WithdrawViewService {
     
     func getVotedIDNum4Voter() async throws -> BigUInt {
@@ -90,6 +94,16 @@ extension WithdrawViewService {
         let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
         return try await web3().safe4.snvote.getVotedIDs4Voter(address, start, count)
     }
+    
+//    func totalLockedNum(type: web3swift.AccountManager.ContractType) async throws -> BigUInt {
+//        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+//        return try await web3().safe4.accountmanager(type: type).getLockedAmount(address).num
+//    }
+//    
+//    func getLockedIDs(type: web3swift.AccountManager.ContractType, start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+//        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+//        return try await web3().safe4.accountmanager(type: type).getLockedIDs(address, start, count)
+//    }
 }
 
 // info

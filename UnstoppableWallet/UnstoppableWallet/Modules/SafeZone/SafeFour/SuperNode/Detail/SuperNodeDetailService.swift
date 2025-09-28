@@ -101,9 +101,9 @@ extension SuperNodeDetailService {
         return try await web3().safe4.snvote.getVotedIDs4Voter(address, start, count)
     }
     
-    func getTotalIDs(page: Safe4PageControl) async throws -> [BigUInt] {
+    func getTotalIDs(type: web3swift.AccountManager.ContractType, page: Safe4PageControl) async throws -> [BigUInt] {
         let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
-        return try await web3().safe4.accountmanager.getTotalIDs(address, BigUInt(page.start), BigUInt(page.currentPageCount))
+        return try await web3().safe4.accountmanager(type: type).getTotalIDs(address, BigUInt(page.start), BigUInt(page.currentPageCount))
     }
     
     func getRecordByID(id: BigUInt) async throws -> web3swift.AccountRecord {
@@ -122,18 +122,59 @@ extension SuperNodeDetailService {
         try await web3().safe4.supernode.exist(address)
     }
 }
+
+extension SuperNodeDetailService {
+    
+    func totalLockedNum(type: web3swift.AccountManager.ContractType) async throws -> BigUInt {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.accountmanager(type: type).getLockedAmount(address).num
+    }
+    
+    func getLockedIDs(type: web3swift.AccountManager.ContractType, start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.accountmanager(type: type).getLockedIDs(address, start, count)
+    }
+    
+//    func mineProposalNum() async throws -> BigUInt {
+//        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+//        return try await web3().safe4.proposal.getMineNum(address)
+//    }
+//    
+//    func mineProposalIds(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+//        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+//        return try await web3().safe4.proposal.getMines(address, start, count)
+//    }
+//    
+//    func getProposalRewardIDs(id: BigUInt) async throws -> [BigUInt] {
+//        try await web3().safe4.proposal.getRewardIDs(id)
+//    }
+}
+
+// proposal
+extension SuperNodeDetailService {
+    func mineProposalNum() async throws -> BigUInt {
+        let userAddress = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.proposal.getMineNum(userAddress)
+    }
+    
+    func mineProposalIds(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        let userAddress = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.proposal.getMines(userAddress, start, count)
+    }
+    
+    func getProposalRewardIDs(id: BigUInt) async throws -> [BigUInt] {
+        try await web3().safe4.proposal.getRewardIDs(id)
+    }
+    
+    func getInfo(id: BigUInt) async throws -> ProposalInfo {
+        try await web3().safe4.proposal.getInfo(id)
+    }
+}
+
 extension SuperNodeDetailService {
     enum CreateMode {
         case Independent
         case crowdFunding
-        
-//        var lockAmount: BigUInt {
-//            return  500 // superNodeRegisterSafeLockNum * 10%
-//        }
-//        
-//        var lockDay: BigUInt {
-//            720 // appendRegister lock days
-//        }
     }
 }
 

@@ -50,6 +50,9 @@ extension BlockchainType {
 
     var imageUrl: String {
         if isSafeChainUid {
+            if let logoUrl = SRC20SyncManager.logo(coinUid: uid.lowercased()) {
+                return logoUrl
+            }
             return "https://anwang.com/img/logos/safe.png"
         }else if uid == dogeCoinUid {
             let scale = Int(UIScreen.main.scale)

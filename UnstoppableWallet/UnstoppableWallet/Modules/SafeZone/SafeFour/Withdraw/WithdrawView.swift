@@ -5,6 +5,7 @@ import MarketKit
 import SwiftUI
 import ComponentKit
 import HUD
+import AdvancedList
 
 struct WithdrawView: View {
     @StateObject var viewModel: WithdrawViewModel
@@ -16,42 +17,13 @@ struct WithdrawView: View {
     
     var body: some View {
         ThemeView {
-            switch viewModel.dataState {
-            case .loading:
-                ProgressView()
-                
-            case let .completed(items):
-                
-                if items.isEmpty {
-                    PlaceholderViewNew(image: Image("no_data_48"), text: "coin_markets.empty".localized)
-                }else {
-                    BottomGradientWrapper {
-                        VStack(spacing: .margin32) {
-                            ListSection {
-                                ForEach(items, id: \.id) { item in
-                                    ClickableRow(action: {
-                                        if item.isEnable {
-                                            viewModel.choose(item: item)
-                                        }else {
-                                            HudHelper.instance.show(banner: .error(string: "safe_withdraw.votelocked.error".localized))
-                                        }
-                                    }) {
-                                        ItemView(id: item.idStr,
-                                                 amount: item.amount,
-                                                 unlockHeight: item.unlockHeight.description,
-                                                 releaseHeight: item.releaseHeight.description,
-                                                 address: item.address,
-                                                 isSelected: viewModel.isSelected(item: item),
-                                                 isEnable: item.isEnable,
-                                                 isVoteLock: viewModel.withdrawType == .voteLocked
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
-                            
-                    } bottomContent: {
+            ZStack {
+                VStack{
+                    list(items: viewModel.viewItems)
+                    if case .loading = viewModel.dataState, !viewModel.viewItems.isEmpty {
+                        ProgressView()
+                    }
+                    if /*case .items = viewModel.dataState, */!viewModel.viewItems.isEmpty {
                         Button(action: {
                             viewModel.onSuccess = { sendState in
                                 switch sendState {
@@ -66,10 +38,7 @@ struct WithdrawView: View {
                                     HudHelper.instance.show(banner: .error(string: "transactions.failed".localized))
                                 }
                             }
-                            
                             viewModel.withdraw()
-                            
-                            
                         }) {
                             HStack {
                                 if case .loading = viewModel.sendState {
@@ -78,14 +47,22 @@ struct WithdrawView: View {
                                 Text("safe_zone.safe4.withdraw".localized)
                             }
                         }
+                        .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
                         .buttonStyle(PrimaryButtonStyle(style: .yellow))
                         .disabled(!viewModel.withdrawEnabled)
                     }
                 }
+
+                if case .loading = viewModel.dataState, viewModel.viewItems.isEmpty {
+                    ProgressView()
+                }
                 
-            case .failed(_):
-                SyncErrorView {
-                    viewModel.withdrawItems()
+                if case .items = viewModel.dataState, viewModel.viewItems.isEmpty {
+                    PlaceholderViewNew(image: Image("no_data_48"), text: "coin_markets.empty".localized)
+                }
+                
+                if case .loading = viewModel.sendState {
+                    loadingHud()
                 }
             }
         }
@@ -93,7 +70,7 @@ struct WithdrawView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                if case .completed(_) = viewModel.dataState, viewModel.enableItems.count > 0 {
+                if case .items = viewModel.dataState, viewModel.enableItems.count > 0 {
                     if viewModel.isChoosedAll {
                         Button("button.cancel".localized) {
                             viewModel.cancelAll()
@@ -106,6 +83,44 @@ struct WithdrawView: View {
                 }
             }
         }
+    }
+    
+    @ViewBuilder
+    private func loadingHud() ->  some View {
+        Color.white.opacity(0.01)
+            .edgesIgnoringSafeArea(.all)
+            .onTapGesture {}
+        ProgressView()
+    }
+    
+    @ViewBuilder
+    private func list(items: [WithdrawItem]) -> some View {
+        AdvancedList(items, content: { item in
+            ClickableRow(action: {
+                if item.isSelEnable {
+                    viewModel.choose(item: item)
+                }else {
+                    HudHelper.instance.show(banner: .error(string: "safe_withdraw.votelocked.error".localized))
+                }
+            }) {
+                ItemView(id: item.idStr,
+                         amount: item.amount,
+                         unlockHeight: item.unlockHeight.description,
+                         releaseHeight: item.releaseHeight.description,
+                         address: item.address,
+                         isSelected: viewModel.isSelected(item: item),
+                         isEnable: item.isSelEnable,
+                         isVoteLock: viewModel.withdrawType == .voteLocked
+                )
+            }
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+        }, emptyStateView: {}, errorStateView: {_ in }, loadingStateView: {})
+        .pagination(.init(type: .lastItem, shouldLoadNextPage: loadNextItems) {})
+    }
+    
+    private func loadNextItems() {
+        guard viewModel.hasMoreItems, viewModel.viewItems.count > 0, viewModel.dataState != .loading else { return }
+        viewModel.loadMore()
     }
     
     struct ItemView: View {

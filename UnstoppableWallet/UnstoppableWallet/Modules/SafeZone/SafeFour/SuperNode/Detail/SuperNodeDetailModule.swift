@@ -8,7 +8,7 @@ struct SuperNodeDetailModule {
         guard let privateKey = evmKitWrapper.signer?.privateKey else {
             return nil
         }
-        let viewModel = SuperNodeDetailViewModel(nodeViewItem: viewItem, service: SuperNodeDetailService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit))
+        let viewModel = SuperNodeDetailViewModel(nodeViewItem: viewItem, service: SuperNodeDetailService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit), superNodeLockRecordStorage: App.shared.safe4StorageManager.superNodeLockRecordStorage)
         return SuperNodeDetailViewController(viewModel: viewModel, viewType: viewType)
     }
 }

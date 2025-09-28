@@ -11,7 +11,7 @@ extension Token {
             case .ethereum, .binanceSmartChain, .dogecoin,.tron: return nil
             case .binanceChain: return "BEP2"
             case .safe: return "SAFE3"
-            case .safe4: return nil//"SAFE4"
+            case .safe4: return nil
             default: return blockchain.name
             }
         case .eip20:
@@ -30,14 +30,14 @@ extension Token {
     }
 
     var isCustom: Bool {
-        coin.uid == tokenQuery.customCoinUid
+        !coin.uid.contains("safe4-anwang") && coin.uid == tokenQuery.customCoinUid
     }
 
     var placeholderImageName: String {
         if [.safe, .safe4].contains(blockchainType) {
-            "safe-anwang_trx_32"
+            return "safe-anwang_trx_32"
         }else {
-            "\(blockchainType.uid)_\(type.tokenProtocol)_32"
+            return "\(blockchainType.uid)_\(type.tokenProtocol)_32"
         }
     }
 

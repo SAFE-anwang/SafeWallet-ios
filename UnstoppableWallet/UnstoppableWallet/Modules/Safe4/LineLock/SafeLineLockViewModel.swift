@@ -151,6 +151,7 @@ class SafeLineLockViewModel: ObservableObject {
                 lockNum = nil
             }
             syncLockNumCautionState()
+            syncAmountCautionState()
             guard lockNum != self.lockNum else {
                 return
             }
@@ -310,8 +311,8 @@ extension SafeLineLockViewModel {
             return Caution(text: "未获取到余额".localized, type: .error)
         }
         if let amount, !amount.isZero {
-            if amount < 1 {
-                caution = Caution(text: "每次锁仓金额至少一个币".localized, type: .error)
+            if amount < 0.01 {
+                caution = Caution(text: "每次锁仓金额至少 0.01 SAFE".localized, type: .error)
                 
             }else if amount > availableBalance {
                 caution = Caution(text: "safe_zone.send.insufficientBalance".localized, type: .error)
@@ -320,7 +321,7 @@ extension SafeLineLockViewModel {
                 caution = Caution(text: "send.amount_warning.coin_needed_for_fee".localized(token.coin.code), type: .warning)
             }
         }else {
-            caution = Caution(text: "每次锁仓金额至少一个币".localized, type: .error)
+            caution = Caution(text: "每次锁仓金额至少 0.01 SAFE".localized, type: .error)
         }
         
         return caution
@@ -340,8 +341,8 @@ extension SafeLineLockViewModel {
     }
     
     private func validateLockNum() -> Caution? {
-        guard let lockNum, 1...120 ~= lockNum else {
-            return Caution(text: "safe_lock.amount.error".localized, type: .error)
+        guard let lockNum, 1...360 ~= lockNum else {
+            return Caution(text: "safe_lock.amount.error".localized("1-360"), type: .error)
         }
         return nil
     }
@@ -361,7 +362,7 @@ extension SafeLineLockViewModel {
     
     private func validateIntervalMonth() -> Caution? {
         guard let intervalMonth, 1...120 ~= intervalMonth else {
-            return Caution(text: "safe_lock.amount.error".localized, type: .error)
+            return Caution(text: "safe_lock.amount.error".localized("1-120"), type: .error)
         }
         return nil
     }

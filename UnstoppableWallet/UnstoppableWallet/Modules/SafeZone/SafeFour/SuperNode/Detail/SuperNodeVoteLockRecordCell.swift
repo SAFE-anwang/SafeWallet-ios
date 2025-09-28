@@ -11,6 +11,8 @@ class SuperNodeVoteLockRecordCell: BaseThemeCell {
     private let disposeBag = DisposeBag()
     private let selectAllButton = UIButton(type: .custom)
     private let voteButton = UIButton(type: .custom)
+    private let loadMoreButton = UIButton(type: .custom)
+
     private let sideMargin: CGFloat = .margin16
     private static let gridRowHeight: CGFloat = .heightSingleLineCell
     private let emptyView = PlaceholderView()
@@ -18,6 +20,7 @@ class SuperNodeVoteLockRecordCell: BaseThemeCell {
     private let itemsPerRow: CGFloat = 2
     private let collectionView: UICollectionView
     private var viewItems = [SuperNodeDetailViewModel.LockRecoardItem]()
+    private var hasMore: Bool = true
     
     var loadMore: (() -> Void)?
     var selectAll: ((Bool) -> Void)?
@@ -28,9 +31,10 @@ class SuperNodeVoteLockRecordCell: BaseThemeCell {
         layout.scrollDirection = .vertical
         layout.sectionInset = .zero
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
+        collectionView.delegate = self
+    
         set(backgroundStyle: .lawrence, isFirst: false, isLast: true)
         
         addSelectAllButton()
@@ -68,10 +72,18 @@ class SuperNodeVoteLockRecordCell: BaseThemeCell {
         emptyView.text = "safe_zone.safe4.empty.description".localized
         emptyView.isHidden = true
         
+        addLoadMoreButton()
+        wrapperView.addSubview(loadMoreButton)
+        loadMoreButton.snp.makeConstraints { make in
+            make.top.equalTo(collectionView.snp.bottom)
+            make.height.equalTo(32)
+            make.leading.trailing.equalToSuperview()//.offset(CGFloat.margin16)
+        }
+        
         addVoteButton()
         wrapperView.addSubview(voteButton)
         voteButton.snp.makeConstraints { make in
-            make.top.equalTo(collectionView.snp.bottom)
+            make.top.equalTo(loadMoreButton.snp.bottom)
             make.bottom.equalToSuperview().inset(CGFloat.margin12)
             make.height.equalTo(32)
             make.leading.equalToSuperview().offset(CGFloat.margin16)
@@ -96,6 +108,16 @@ class SuperNodeVoteLockRecordCell: BaseThemeCell {
         selectAllButton.addTarget(self, action: #selector(selAll(_:)), for: .touchUpInside)
     }
     
+    private func addLoadMoreButton() {
+        loadMoreButton.cornerRadius = 6
+        loadMoreButton.setTitle("".localized, for: .normal)
+        loadMoreButton.setTitle("没有更多了".localized, for: .disabled)
+        loadMoreButton.titleLabel?.font = .subhead2
+        loadMoreButton.setTitleColor(.themeIssykBlue, for: .normal)
+        loadMoreButton.setTitleColor(.themeBlackAndWhite, for: .disabled)
+        loadMoreButton.addTarget(self, action: #selector(loadMore(_:)), for: .touchUpInside)
+    }
+    
     private func addVoteButton() {
         voteButton.cornerRadius = 6
         voteButton.setTitle("safe_zone.safe4.proposal.vote.title".localized, for: .normal)
@@ -116,12 +138,19 @@ class SuperNodeVoteLockRecordCell: BaseThemeCell {
         lockRecordVote?()
     }
     
+    @objc private func loadMore(_ sender: UIButton) {
+        guard spinner.isHidden else { return }
+        loading(true)
+        loadMore?()
+    }
+    
     func height() -> CGFloat {
         if viewItems.count == 0 {
             return 250
         }else {
-            let numberOfRows = Int(ceil(Double(viewItems.count) / Double(2)))
-            return CGFloat(numberOfRows) * SuperNodeVoteLockRecordCell.gridRowHeight + 92// - 20
+            let numberOfRows = min(10, Int(ceil(Double(viewItems.count) / Double(2))))
+            let height = CGFloat(numberOfRows) * SuperNodeVoteLockRecordCell.gridRowHeight + 92
+            return height
         }
     }
     
@@ -129,12 +158,19 @@ class SuperNodeVoteLockRecordCell: BaseThemeCell {
         spinner.isHidden = !isLoading
     }
     
-    func bind(viewItems: [SuperNodeDetailViewModel.LockRecoardItem]) {
+    func bind(hasMore: Bool, viewItems: [SuperNodeDetailViewModel.LockRecoardItem]) {
+        self.hasMore = hasMore
         self.viewItems = viewItems
+        if viewItems.filter({$0.isEnabledSlect && !$0.isSlected}).count > 0 {
+            selectAllButton.isSelected = false
+        }
         spinner.isHidden = true
         emptyView.isHidden = viewItems.count > 0
         voteButton.isEnabled = viewItems.filter{$0.isSlected}.count > 0
         collectionView.reloadData()
+        
+        loadMoreButton.isHidden = viewItems.count == 0
+        loadMoreButton.isEnabled = hasMore
     }
 }
 extension SuperNodeVoteLockRecordCell: UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UICollectionViewDelegate {
@@ -168,20 +204,18 @@ extension SuperNodeVoteLockRecordCell: UICollectionViewDelegateFlowLayout, UICol
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let item = viewItems[indexPath.item]
-        guard item.isEnabled else { return }
+        guard item.isEnabledSlect else { return }
         item.update(isSelected: !item.isSlected)
         voteButton.isEnabled = viewItems.filter{$0.isSlected}.count > 0
         collectionView.reloadData()
     }
-    
-
 }
 extension SuperNodeVoteLockRecordCell: UIScrollViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let offsetY = scrollView.contentOffset.y
         let contentHeight = scrollView.contentSize.height
         let height = scrollView.frame.size.height
-        
+        guard hasMore else { return }
         if offsetY > contentHeight - height - 100 {
             loading(true)
             loadMore?()

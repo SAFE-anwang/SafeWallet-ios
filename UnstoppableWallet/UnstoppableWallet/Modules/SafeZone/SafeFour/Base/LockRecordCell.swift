@@ -62,9 +62,9 @@ class LockRecordCell: UICollectionViewCell {
     }
     
     func bind(item: SuperNodeDetailViewModel.LockRecoardItem) {
-        contentBUtton.isEnabled = item.isEnabled
+        contentBUtton.isEnabled = item.isEnabledSlect
         contentBUtton.isSelected = item.isSlected
-        let title = "ID:\(item.info.id)\n\(item.info.amount.safe4FomattedAmount) SAFE"
+        let title = "ID:\(item.record.id)\n\(item.record.amount.safe4FomattedAmount) SAFE"
         contentBUtton.setTitle(title, for: .normal)
     }
 }

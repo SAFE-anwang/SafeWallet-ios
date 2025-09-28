@@ -16,18 +16,17 @@ class SuperNodeDetailViewModel {
     private(set) var voterItems = [SuperNodeDetailViewModel.VoterInfoItem]()
     private(set) var lockRecordItems = [SuperNodeDetailViewModel.LockRecoardItem]()
     private let userDefaultsStorage = UserDefaultsStorage()
-    
-    private(set) var totalIDs = [BigUInt]()
-
+    private let superNodeLockRecordStorage: SuperNodeLockRecordStorage
     private(set) var lockRecordIsLoading = false
+    private(set) var hasMoreRecords: Bool = true
 
     private var safe4Page = Safe4PageControl(initCount: 25, totalNum: 0, page: 0, isReverse: false)
-    private var votedIDsSafe4Page = Safe4PageControl(initCount: 100, totalNum: 0, page: 0, isReverse: false)
-    private var lockRecordSafe4Page = Safe4PageControl(initCount: 100, totalNum: 0, page: 0, isReverse: false)
+    private var votedPageControl = Safe4PageControl(initCount: 30, totalNum: 0, page: 0, isReverse: false)
+    private var lockedPageControl = Safe4PageControl(initCount: 30, totalNum: 0, page: 0, isReverse: false)
+    private var proposalPageControl = Safe4PageControl(initCount: 30, totalNum: 0, page: 0, isReverse: false)
     
     private let nodeViewItem: SuperNodeViewModel.ViewItem
     private let service: SuperNodeDetailService
-    
     private var isEnabledSend = true
 
     private var stateRelay = PublishRelay<SuperNodeDetailViewModel.State>()
@@ -37,9 +36,10 @@ class SuperNodeDetailViewModel {
         }
     }
     
-    init(nodeViewItem: SuperNodeViewModel.ViewItem, service: SuperNodeDetailService) {
+    init(nodeViewItem: SuperNodeViewModel.ViewItem, service: SuperNodeDetailService, superNodeLockRecordStorage: SuperNodeLockRecordStorage) {
         self.nodeViewItem = nodeViewItem
         self.service = service
+        self.superNodeLockRecordStorage = superNodeLockRecordStorage
         viewItems = nodeViewItem.info.founders.map {ViewItem(info: $0, isSelf: service.address.lowercased() == $0.addr.address.lowercased())}
     }
 }
@@ -66,21 +66,153 @@ extension SuperNodeDetailViewModel {
         }
     }
     
-    private func requestVotedIDs() async throws -> [BigUInt] {
-        let totalNum = try await service.getVotedIDNum4Voter()
-        votedIDsSafe4Page.set(totalNum: Int(totalNum))
-        guard totalNum > 0 else {return [] }
-        guard votedIDsSafe4Page.totalNum > 0 else { return []}
+    @MainActor
+    private func showCache() {
+        do {
+            let items = try superNodeLockRecordStorage.allRecords().map {
+                recordItem(isExist: $0.isSuperNode, isVoted: $0.isVoted, record: $0.record.transform(), info: ($0.info?.transform())!)
+            }
+            if items.count > 0 {
+                showLockRecoard(tempItems: items)
+            }
+        }catch{
+            print("")
+        }
         
-        var results: [BigUInt] = []
+    }
+    
+    func requestLockRecords(loadMore: Bool) {
+        
+        Task { [service] in
+            do{
+                if !loadMore {
+                    await showCache()
+                    lockRecordIsLoading = true
+                    let cacheCount = try superNodeLockRecordStorage.allRecords().count
+                    async let lockedTotalNum = service.totalLockedNum(type: .native)
+                    async let votedTotalNum = service.getVotedIDNum4Voter()
+                    async let proposalTotalNum = service.mineProposalNum()
+                    
+                    try await lockedPageControl.set(totalNum: Int(lockedTotalNum))
+                    try await votedPageControl.set(totalNum: Int(votedTotalNum))
+                    try await proposalPageControl.set(totalNum: Int(proposalTotalNum))
+                    
+                    let total = try await( lockedTotalNum + votedTotalNum + proposalTotalNum )
+                    if total > 0, cacheCount == total {
+                        hasMoreRecords = false
+                    }else if total > 0 {
+                        hasMoreRecords = true
+                    }
+                }
+                
+                guard lockedPageControl.isAbleLoadMore || votedPageControl.isAbleLoadMore || proposalPageControl.isAbleLoadMore else {
+                    await showLockRecoard(tempItems: [])
+                    lockRecordIsLoading = false
+                    hasMoreRecords = false
+                    return
+                }
+                
+                lockRecordIsLoading = true
+                
+                var tempItems = [SuperNodeDetailViewModel.LockRecoardItem]()
+                                
+                async let items_0 = locked()
+                async let items_1 = voted()
+                async let items_2 = proposal()
+                tempItems = try await (items_0 + items_1 + items_2)
+                
+
+                await showLockRecoard(tempItems: tempItems)
+            }catch{
+                await showLockRecoard(tempItems: [])
+                lockRecordIsLoading = false
+            }
+        }
+    }
+    
+    @MainActor
+    private func showLockRecoard(tempItems: [SuperNodeDetailViewModel.LockRecoardItem]) {
+
+        var tempArray = tempItems.filter{!$0.record.amount.isZero}
+        tempArray.append(contentsOf: lockRecordItems)
+        
+        var uniqueItems = tempArray.reduce(into: [LockRecoardItem]()) { result, item in
+            if !result.contains(where: { $0.record.id == item.record.id }) {
+                 result.append(item)
+             }
+         }
+        
+        uniqueItems.sort {
+            if $0.isEnabledSlect != $1.isEnabledSlect {
+                return $0.isEnabledSlect
+            } else {
+                return $0.record.id < $1.record.id
+            }
+        }
+        lockRecordItems = uniqueItems
+        state = .lockRecoardCompleted(datas: uniqueItems)
+        lockRecordIsLoading = false
+    }
+    
+    private func locked() async throws -> [LockRecoardItem] {
+        if lockedPageControl.isAbleLoadMore {
+            let lockedIds = try await service.getLockedIDs(type: .native, start: BigUInt(lockedPageControl.start), count: BigUInt(lockedPageControl.currentPageCount))
+            let results = try await getRecordInfo(ids: lockedIds, isVoted: false)
+            if results.count > 0 {
+                lockedPageControl.plusPage()
+            }
+            return results
+        }
+        return []
+    }
+    
+    private func voted() async throws -> [LockRecoardItem] {
+        if votedPageControl.isAbleLoadMore {
+            let votedIds = try await service.getVotedIDs4Voter(start: BigUInt(votedPageControl.start), count: BigUInt(votedPageControl.currentPageCount))
+            let results = try await getRecordInfo(ids: votedIds, isVoted: true)
+            if results.count > 0 {
+                votedPageControl.plusPage()
+            }
+            return results
+        }
+        return []
+    }
+
+    private func proposal() async throws -> [LockRecoardItem] {
+        if proposalPageControl.isAbleLoadMore {
+            let proposalIds = try await service.mineProposalIds(start: BigUInt(proposalPageControl.start), count: BigUInt(proposalPageControl.currentPageCount))
+            var ids = [BigUInt]()
+            for id in proposalIds {
+                let rewardIDs =  try await service.getProposalRewardIDs(id: id)
+                ids.append(contentsOf: rewardIDs)
+            }
+            let results = try await getRecordInfo(ids: ids, isVoted: false)
+            if results.count > 0 {
+                proposalPageControl.plusPage()
+            }
+            return results
+        }
+        return []
+    }
+    
+    private func getRecordInfo(ids: [BigUInt], isVoted: Bool) async throws  -> [LockRecoardItem] {
+        var results: [LockRecoardItem] = []
         var errors: [Error] = []
-        await withTaskGroup(of: Result<[BigUInt], Error>.self) { taskGroup in
-            for page in votedIDsSafe4Page.pageArray {
-                taskGroup.addTask { [self] in
+        
+        await withTaskGroup(of: Result<LockRecoardItem, Error>.self) { taskGroup in
+            for id in ids {
+                taskGroup.addTask { [self, service] in
                     do {
-                        guard let start = page.first else{ return .failure(LockRecoardError.getInfo) }
-                        let ids = try await service.getVotedIDs4Voter(start: BigUInt(start), count: BigUInt(page.count))
-                        return .success(ids)
+                        let record = try await service.getRecordByID(id: id)
+                        let info = try await service.getRecordUseInfo(id: id)
+                        var isExist: Bool = false
+                        if !isVoted {
+                            isExist = try await service.exist(address: info.frozenAddr)
+                        }
+                        let cacheItem = SuperNodeLockRecord(isSuperNode: isExist, isVoted: isVoted, record: record, info: info)
+                        superNodeLockRecordStorage.save(recoard: cacheItem)
+                        let item = recordItem(isExist: isExist, isVoted: isVoted, record: record, info: info)
+                        return .success(item)
                     }catch{
                         return .failure(LockRecoardError.getInfo)
                     }
@@ -89,7 +221,7 @@ extension SuperNodeDetailViewModel {
             for await result in taskGroup {
                 switch result {
                 case let .success(value):
-                    results.append(contentsOf: value)
+                    results.append(value)
                 case let .failure(error):
                     errors.append(error)
                 }
@@ -98,68 +230,28 @@ extension SuperNodeDetailViewModel {
         return results
     }
     
-    private func requestLockRecords(loadMore: Bool) {
-        lockRecordIsLoading = true
-        Task { [service] in
-            do{
-                if !loadMore {
-                    let address = nodeViewItem.info.addr
-//                    let totalVoteNum = try await service.getTotalVoteNum(address: address)
-                    lockRecordSafe4Page.set(totalNum: 1000)
-                }
-                let votedIDs = try await requestVotedIDs()
-                let totalIDs = try await service.getTotalIDs(page: lockRecordSafe4Page)
-                guard totalIDs.count > 0 else{ return state = .lockRecoardCompleted(datas: [])}
-                lockRecordSafe4Page.plusPage()
-                
-                var results: [LockRecoardItem] = []
-                var errors: [Error] = []
-                let catchVotedIds = votedIdsCatch()
-                if let ids = catchVotedIds {
-                    if Set(ids).isSubset(of: Set(votedIDs.map{$0.description})) {
-                        removeCatch()
-                    }
-                }
-                await withTaskGroup(of: Result<LockRecoardItem, Error>.self) { taskGroup in
-                    for id in totalIDs {
-                        taskGroup.addTask {
-                            do {
-                                let info = try await service.getRecordByID(id: id)
-                                var isVoted = votedIDs.contains(id)
-                                if let catchVotedIds, catchVotedIds.contains(id.description) {
-                                    isVoted = true
-                                }
-                                let recordUseInfo = try await service.getRecordUseInfo(id: id)
-                                let isExist = try await service.exist(address: recordUseInfo.frozenAddr)
-                                var isHigher = false
-                                if let heihgt = service.lastBlockHeight() {
-                                    isHigher = heihgt > recordUseInfo.releaseHeight
-                                }
-                                let item = LockRecoardItem(info: info, isHigher: isHigher, isVoted: isVoted, isSuperNode: isExist, recordUseInfo: recordUseInfo)
-                                return .success(item)
-                            }catch{
-                                return .failure(LockRecoardError.getInfo)
-                            }
-                        }
-                    }
-                    for await result in taskGroup {
-                        switch result {
-                        case let .success(value):
-                            results.append(value)
-                        case let .failure(error):
-                            errors.append(error)
-                        }
-                    }
-                }
-                lockRecordItems.append(contentsOf: results)
-                lockRecordItems.sort{$0.info.id > $1.info.id}
-                state = .lockRecoardCompleted(datas: lockRecordItems.filter{!$0.info.amount.isZero})
-                lockRecordIsLoading = false
-            }catch{
-                state = .lockRecoardCompleted(datas: lockRecordItems)
-                lockRecordIsLoading = false
-            }
+    private func recordItem(isExist: Bool, isVoted: Bool, record: web3swift.AccountRecord, info: RecordUseInfo) -> LockRecoardItem {
+        let catchVotedIds = votedIdsCatch()
+        var isUsed: Bool = false
+        if let catchVotedIds, catchVotedIds.contains(record.id.description) {
+            isUsed = true
         }
+        let lastBlockHeight = service.lastBlockHeight() ?? .zero
+        let isHigher = lastBlockHeight > info.releaseHeight
+        let releaseHeight = info.releaseHeight
+        let unlockHeight = record.unlockHeight
+        let withdrawEnable = isVoted ? (releaseHeight.isZero && (unlockHeight < lastBlockHeight)) || (unlockHeight.isZero && (releaseHeight < lastBlockHeight)) : false
+        let isRemoveVoteEnable = isVoted ? (releaseHeight.isZero ? false : releaseHeight < lastBlockHeight) : false
+
+        let isValid = (record.amount.safe4ToDecimal() ?? 0) >= 1
+        let isEnabledSlect: Bool
+        if isVoted {
+            isEnabledSlect = isUsed ? false : isValid && (withdrawEnable || isRemoveVoteEnable)
+        }else {
+            isEnabledSlect = isUsed ? false : isValid && !isExist && isHigher
+        }
+        let item = LockRecoardItem(record: record, info: info, isEnabledSlect: isEnabledSlect)
+        return item
     }
 }
 extension SuperNodeDetailViewModel {
@@ -181,7 +273,7 @@ extension SuperNodeDetailViewModel {
     }
     
     func lockRecordVote() {
-        let ids = lockRecordItems.filter{$0.isSlected == true}.map{$0.info.id}
+        let ids = lockRecordItems.filter{$0.isSlected == true}.map{$0.record.id}
         Task { [service] in
             do{
                 guard isEnabledSend else { return }
@@ -249,11 +341,12 @@ extension SuperNodeDetailViewModel {
         requestLockRecords(loadMore: true)
     }
     
+    @MainActor
     func selectAllLockRecord(_ iselected: Bool) {
         for item in lockRecordItems {
             item.update(isSelected: iselected)
         }
-        state = .lockRecoardCompleted(datas: lockRecordItems)
+        showLockRecoard(tempItems:[])
     }
 }
 
@@ -325,34 +418,20 @@ extension SuperNodeDetailViewModel {
     }
     
     class LockRecoardItem {
-        let info: web3swift.AccountRecord
-        var isHigher: Bool = false
-        var isVoted: Bool = false
+        let record: web3swift.AccountRecord
+        var info: RecordUseInfo
         var isSlected: Bool = false
-        var isSuperNode: Bool = false
-        var recordUseInfo: RecordUseInfo
-        
-        init(info: web3swift.AccountRecord, isHigher: Bool, isVoted: Bool, isSuperNode: Bool, recordUseInfo: RecordUseInfo) {
+        var isEnabledSlect: Bool
+
+        init(record: web3swift.AccountRecord, info: RecordUseInfo, isEnabledSlect: Bool) {
+            self.record = record
             self.info = info
-            self.isHigher = isHigher
-            self.isVoted = isVoted
-            self.isSuperNode = isSuperNode
-            self.recordUseInfo = recordUseInfo
-        }
-        
-        func update(isVoted: Bool) {
-            self.isVoted = isVoted
+            self.isEnabledSlect = isEnabledSlect
         }
         
         func update(isSelected: Bool) {
-            guard isEnabled else { return }
+            guard isEnabledSlect else { return }
             self.isSlected = isSelected
-        }
-        
-        var isEnabled: Bool {
-            let isValid = (info.amount.safe4ToDecimal() ?? 0) >= 1
-            guard !isVoted && isValid && !isSuperNode && isHigher else {return false}
-            return true
         }
     }
     
@@ -371,3 +450,5 @@ extension SuperNodeDetailViewModel {
         case getInfo
     }
 }
+
+

@@ -144,7 +144,7 @@ class SuperNodeDetailViewController: ThemeViewController {
             case .partnerCompleted:()
                 
             case let .lockRecoardCompleted(datas):
-                self?.lockRecordCell.bind(viewItems: datas)
+                self?.lockRecordCell.bind(hasMore: (self?.viewModel.hasMoreRecords)!, viewItems: datas)
                 self?.tableView.reload()
             }
         }

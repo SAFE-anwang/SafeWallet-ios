@@ -7,9 +7,6 @@ let RPC_ENDPOINT_KEY = "rpc_endpoint_key"
 let API_KEY_KEY = "api_key_key"
 
 class ApiKeyService {
-    
-
-    
     private var disposeBag = DisposeBag()
     private let apiKeyProvider: ApiKeyProvider
     private let userDefaultsStorage: UserDefaultsStorage

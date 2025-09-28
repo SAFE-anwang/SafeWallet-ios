@@ -14,14 +14,17 @@ class WithdrawModule {
             return nil
         }
         let service = WithdrawViewService(type: type, privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
-        let viewModel = WithdrawViewModel(service: service)
+        let viewModel = WithdrawViewModel(service: service,
+                                          withdrawLockedStorage: App.shared.safe4StorageManager.withdrawLockedStorage,
+                                          withdrawProposalStorage: App.shared.safe4StorageManager.withdrawProposalStorage
+        )
         let viewController = WithdrawView(viewModel: viewModel).toViewController()
         return viewController
     }
     
 }
 
-enum SafeWithdrawType {
+enum SafeWithdrawType: Int {
     case masterNode
     case superNode
     case proposal

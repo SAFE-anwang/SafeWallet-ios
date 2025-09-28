@@ -93,7 +93,7 @@ class SuperNodeDetailVoteSendViewController: Safe4ConfirmBaseViewController {
             
         case let .lockRecord(items):
             lockRecordCell.bind(viewItems: items)
-            let total = items.map{$0.info.amount}.reduce(0, +).safe4FomattedAmount
+            let total = items.map{$0.record.amount}.reduce(0, +).safe4FomattedAmount
             rows = lockRecordVoteRows(amount: total)
         }
         

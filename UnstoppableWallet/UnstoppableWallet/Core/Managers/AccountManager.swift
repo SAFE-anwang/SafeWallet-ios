@@ -99,7 +99,10 @@ extension AccountManager {
         guard storage.activeAccount?.id != activeAccountId else {
             return
         }
-
+        do {
+            try App.shared.safe4StorageManager.superNodeLockRecordStorage.clear()
+        }catch{}
+        
         storage.set(activeAccountId: activeAccountId)
         activeAccountRelay.accept(storage.activeAccount)
     }
