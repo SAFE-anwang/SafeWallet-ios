@@ -9,6 +9,7 @@ import RxRelay
 import RxSwift
 import UniswapKit
 import HsExtensions
+import web3swift
 
 class EvmKitManager {
     let chain: Chain
@@ -192,13 +193,13 @@ class EvmKitWrapper {
         }
     }
     
-    func sendSafe4LineLockSingle(transactionData: TransactionData) -> Single<String> {
+    func sendSafe4LineLockSingle(type: web3swift.AccountManager.ContractType, transactionData: TransactionData) -> Single<String> {
 
         guard let signer else {
             return Single.error(SignerError.signerNotSupported)
         }
         
-        return evmKit.sendSafe4LinLockSingle(privateKey: signer.privateKey, transactionData: transactionData)
+        return evmKit.sendSafe4LinLockSingle(type: type, privateKey: signer.privateKey, transactionData: transactionData)
     }
 
     func send(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, lockTime: Int? = nil) async throws -> FullTransaction {

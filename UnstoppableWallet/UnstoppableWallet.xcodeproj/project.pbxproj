@@ -1395,14 +1395,14 @@
 		C8162F7D2E02536F00A30E11 /* WKWebViewConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8162F7B2E02536F00A30E11 /* WKWebViewConfiguration.swift */; };
 		C816CDC12DE5B34600596618 /* LiquidityTransactionRecoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC02DE5B34600596618 /* LiquidityTransactionRecoard.swift */; };
 		C816CDC22DE5B34600596618 /* LiquidityTransactionRecoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC02DE5B34600596618 /* LiquidityTransactionRecoard.swift */; };
-		C816CDC52DED374200596618 /* LockedRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC42DED374200596618 /* LockedRecoardModule.swift */; };
-		C816CDC62DED374300596618 /* LockedRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC42DED374200596618 /* LockedRecoardModule.swift */; };
-		C816CDC82DED376400596618 /* LockedRecoardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC72DED376400596618 /* LockedRecoardService.swift */; };
-		C816CDC92DED376400596618 /* LockedRecoardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC72DED376400596618 /* LockedRecoardService.swift */; };
-		C816CDCB2DED377200596618 /* LockedRecoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDCA2DED377200596618 /* LockedRecoardView.swift */; };
-		C816CDCC2DED377200596618 /* LockedRecoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDCA2DED377200596618 /* LockedRecoardView.swift */; };
-		C816CDCE2DED378300596618 /* LockedRecoardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDCD2DED378300596618 /* LockedRecoardViewModel.swift */; };
-		C816CDCF2DED378300596618 /* LockedRecoardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDCD2DED378300596618 /* LockedRecoardViewModel.swift */; };
+		C816CDC52DED374200596618 /* LockedRecordModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC42DED374200596618 /* LockedRecordModule.swift */; };
+		C816CDC62DED374300596618 /* LockedRecordModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC42DED374200596618 /* LockedRecordModule.swift */; };
+		C816CDC82DED376400596618 /* LockedRecordService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC72DED376400596618 /* LockedRecordService.swift */; };
+		C816CDC92DED376400596618 /* LockedRecordService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDC72DED376400596618 /* LockedRecordService.swift */; };
+		C816CDCB2DED377200596618 /* LockedRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDCA2DED377200596618 /* LockedRecordView.swift */; };
+		C816CDCC2DED377200596618 /* LockedRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDCA2DED377200596618 /* LockedRecordView.swift */; };
+		C816CDCE2DED378300596618 /* LockedRecordViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDCD2DED378300596618 /* LockedRecordViewModel.swift */; };
+		C816CDCF2DED378300596618 /* LockedRecordViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C816CDCD2DED378300596618 /* LockedRecordViewModel.swift */; };
 		C81720322C4D6E0700FE5061 /* Safe4BaseInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C81720312C4D6E0700FE5061 /* Safe4BaseInputCell.swift */; };
 		C81720342C4D742F00FE5061 /* ProposalInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C81720332C4D742F00FE5061 /* ProposalInputCell.swift */; };
 		C81720362C4D748800FE5061 /* ProposalCreateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C81720352C4D748800FE5061 /* ProposalCreateViewModel.swift */; };
@@ -1424,6 +1424,30 @@
 		C81720562C51020500FE5061 /* SuperNodeRegisterSliderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C81720552C51020500FE5061 /* SuperNodeRegisterSliderCell.swift */; };
 		C81720582C51022600FE5061 /* SuperNodeRegisterModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C81720572C51022600FE5061 /* SuperNodeRegisterModule.swift */; };
 		C82100672C75685000B4AA07 /* RedeemSafe3ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82100662C75685000B4AA07 /* RedeemSafe3ViewController.swift */; };
+		C82297E42E76EBA20050BDD9 /* AdvancedList in Frameworks */ = {isa = PBXBuildFile; productRef = C82297E32E76EBA20050BDD9 /* AdvancedList */; };
+		C82297E62E76EBB20050BDD9 /* AdvancedList in Frameworks */ = {isa = PBXBuildFile; productRef = C82297E52E76EBB20050BDD9 /* AdvancedList */; };
+		C82297E92E8400040050BDD9 /* Safe4LockedRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297E82E8400030050BDD9 /* Safe4LockedRecord.swift */; };
+		C82297EA2E8400040050BDD9 /* Safe4LockedRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297E82E8400030050BDD9 /* Safe4LockedRecord.swift */; };
+		C82297EC2E842F450050BDD9 /* Safe4LockedRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297EB2E842F450050BDD9 /* Safe4LockedRecordStorage.swift */; };
+		C82297ED2E842F450050BDD9 /* Safe4LockedRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297EB2E842F450050BDD9 /* Safe4LockedRecordStorage.swift */; };
+		C82297EF2E8435040050BDD9 /* Safe4StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297EE2E8435040050BDD9 /* Safe4StorageManager.swift */; };
+		C82297F02E8435040050BDD9 /* Safe4StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297EE2E8435040050BDD9 /* Safe4StorageManager.swift */; };
+		C82297F22E843DB50050BDD9 /* Safe4AccountRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297F12E843DB50050BDD9 /* Safe4AccountRecord.swift */; };
+		C82297F32E843DB50050BDD9 /* Safe4AccountRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297F12E843DB50050BDD9 /* Safe4AccountRecord.swift */; };
+		C82297F52E8446AA0050BDD9 /* Safe4RecordUseInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297F42E8446AA0050BDD9 /* Safe4RecordUseInfo.swift */; };
+		C82297F62E8446AA0050BDD9 /* Safe4RecordUseInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297F42E8446AA0050BDD9 /* Safe4RecordUseInfo.swift */; };
+		C82297F82E8453DA0050BDD9 /* Safe4ProposalReward.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297F72E8453DA0050BDD9 /* Safe4ProposalReward.swift */; };
+		C82297F92E8453DA0050BDD9 /* Safe4ProposalReward.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297F72E8453DA0050BDD9 /* Safe4ProposalReward.swift */; };
+		C82298022E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298012E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift */; };
+		C82298032E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298012E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift */; };
+		C82298052E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298042E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift */; };
+		C82298062E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298042E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift */; };
+		C82298082E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298072E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift */; };
+		C82298092E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298072E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift */; };
+		C822980E2E86A4120050BDD9 /* SuperNodeLockRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C822980D2E86A4120050BDD9 /* SuperNodeLockRecord.swift */; };
+		C822980F2E86A4120050BDD9 /* SuperNodeLockRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C822980D2E86A4120050BDD9 /* SuperNodeLockRecord.swift */; };
+		C82298112E86A5570050BDD9 /* SuperNodeLockRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298102E86A5570050BDD9 /* SuperNodeLockRecordStorage.swift */; };
+		C82298122E86A5570050BDD9 /* SuperNodeLockRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298102E86A5570050BDD9 /* SuperNodeLockRecordStorage.swift */; };
 		C82339C92C7C10BD0097EB8C /* MasterNodeDetailSendViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82339C82C7C10BD0097EB8C /* MasterNodeDetailSendViewController.swift */; };
 		C82339CB2C7C31440097EB8C /* SuperNodeDetailSendViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82339CA2C7C31440097EB8C /* SuperNodeDetailSendViewController.swift */; };
 		C82339CD2C7C315D0097EB8C /* SuperNodeDetailVoteSendViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82339CC2C7C315D0097EB8C /* SuperNodeDetailVoteSendViewController.swift */; };
@@ -3424,6 +3448,48 @@
 		C8DC8EB52C8003FA006EB568 /* RedeemSafe3TabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8DC8EB42C8003FA006EB568 /* RedeemSafe3TabViewController.swift */; };
 		C8DC8EB72C80046B006EB568 /* RedeemSafe3TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8DC8EB62C80046B006EB568 /* RedeemSafe3TabViewModel.swift */; };
 		C8DC8EBA2C80AF4A006EB568 /* RedeemSafe3StepCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8DC8EB92C80AF4A006EB568 /* RedeemSafe3StepCell.swift */; };
+		C8E026C12E51C72D00A0D202 /* DeployView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026C02E51C72D00A0D202 /* DeployView.swift */; };
+		C8E026C22E51C72D00A0D202 /* DeployView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026C02E51C72D00A0D202 /* DeployView.swift */; };
+		C8E026C42E51E63A00A0D202 /* DeployViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026C32E51E63A00A0D202 /* DeployViewModel.swift */; };
+		C8E026C52E51E63A00A0D202 /* DeployViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026C32E51E63A00A0D202 /* DeployViewModel.swift */; };
+		C8E026CA2E52124F00A0D202 /* DeployModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026C92E52124F00A0D202 /* DeployModule.swift */; };
+		C8E026CB2E52124F00A0D202 /* DeployModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026C92E52124F00A0D202 /* DeployModule.swift */; };
+		C8E026CD2E52147800A0D202 /* SRC20Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026CC2E52147800A0D202 /* SRC20Service.swift */; };
+		C8E026CE2E52147800A0D202 /* SRC20Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026CC2E52147800A0D202 /* SRC20Service.swift */; };
+		C8E026D02E5957E800A0D202 /* SRC20ManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026CF2E5957E800A0D202 /* SRC20ManagerView.swift */; };
+		C8E026D12E5957E800A0D202 /* SRC20ManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026CF2E5957E800A0D202 /* SRC20ManagerView.swift */; };
+		C8E026D32E595B8700A0D202 /* SyncSafe4TokensService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026D22E595B8700A0D202 /* SyncSafe4TokensService.swift */; };
+		C8E026D42E595B8700A0D202 /* SyncSafe4TokensService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026D22E595B8700A0D202 /* SyncSafe4TokensService.swift */; };
+		C8E026D92E59C62F00A0D202 /* SyncSafe4TokensProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026D82E59C62F00A0D202 /* SyncSafe4TokensProvider.swift */; };
+		C8E026DA2E59C62F00A0D202 /* SyncSafe4TokensProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026D82E59C62F00A0D202 /* SyncSafe4TokensProvider.swift */; };
+		C8E026DC2E59E58C00A0D202 /* SRC20ManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026DB2E59E58C00A0D202 /* SRC20ManagerViewModel.swift */; };
+		C8E026DD2E59E58C00A0D202 /* SRC20ManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026DB2E59E58C00A0D202 /* SRC20ManagerViewModel.swift */; };
+		C8E026DF2E59ED4400A0D202 /* Safe4CustomTokenStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026DE2E59ED4400A0D202 /* Safe4CustomTokenStorage.swift */; };
+		C8E026E02E59ED4400A0D202 /* Safe4CustomTokenStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026DE2E59ED4400A0D202 /* Safe4CustomTokenStorage.swift */; };
+		C8E026E22E5A020100A0D202 /* ItemPrimaryButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026E12E5A020100A0D202 /* ItemPrimaryButtonStyle.swift */; };
+		C8E026E32E5A020100A0D202 /* ItemPrimaryButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026E12E5A020100A0D202 /* ItemPrimaryButtonStyle.swift */; };
+		C8E026E52E5BF2B600A0D202 /* SRC20ManagerModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026E42E5BF2B600A0D202 /* SRC20ManagerModule.swift */; };
+		C8E026E62E5BF2B600A0D202 /* SRC20ManagerModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026E42E5BF2B600A0D202 /* SRC20ManagerModule.swift */; };
+		C8E026E82E5C4EBA00A0D202 /* SRC20EditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026E72E5C4EBA00A0D202 /* SRC20EditView.swift */; };
+		C8E026E92E5C4EBA00A0D202 /* SRC20EditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026E72E5C4EBA00A0D202 /* SRC20EditView.swift */; };
+		C8E026EB2E5C4EDD00A0D202 /* SRC20DestroyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026EA2E5C4EDD00A0D202 /* SRC20DestroyView.swift */; };
+		C8E026EC2E5C4EDD00A0D202 /* SRC20DestroyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026EA2E5C4EDD00A0D202 /* SRC20DestroyView.swift */; };
+		C8E026EE2E5C4EF600A0D202 /* SRC20PromotionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026ED2E5C4EF600A0D202 /* SRC20PromotionView.swift */; };
+		C8E026EF2E5C4EF600A0D202 /* SRC20PromotionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026ED2E5C4EF600A0D202 /* SRC20PromotionView.swift */; };
+		C8E026F12E5C4F2100A0D202 /* SRC20AdditionalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026F02E5C4F2100A0D202 /* SRC20AdditionalView.swift */; };
+		C8E026F22E5C4F2100A0D202 /* SRC20AdditionalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026F02E5C4F2100A0D202 /* SRC20AdditionalView.swift */; };
+		C8E026F42E5C544800A0D202 /* SRC20EditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026F32E5C544800A0D202 /* SRC20EditViewModel.swift */; };
+		C8E026F52E5C544800A0D202 /* SRC20EditViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026F32E5C544800A0D202 /* SRC20EditViewModel.swift */; };
+		C8E026F72E5C545800A0D202 /* SRC20DestroyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026F62E5C545800A0D202 /* SRC20DestroyViewModel.swift */; };
+		C8E026F82E5C545800A0D202 /* SRC20DestroyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026F62E5C545800A0D202 /* SRC20DestroyViewModel.swift */; };
+		C8E026FA2E5C546700A0D202 /* SRC20PromotionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026F92E5C546700A0D202 /* SRC20PromotionViewModel.swift */; };
+		C8E026FB2E5C546700A0D202 /* SRC20PromotionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026F92E5C546700A0D202 /* SRC20PromotionViewModel.swift */; };
+		C8E026FD2E5C547500A0D202 /* SRC20AdditionalViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026FC2E5C547500A0D202 /* SRC20AdditionalViewModel.swift */; };
+		C8E026FE2E5C547600A0D202 /* SRC20AdditionalViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026FC2E5C547500A0D202 /* SRC20AdditionalViewModel.swift */; };
+		C8E027002E632A6E00A0D202 /* SRC20SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026FF2E632A6E00A0D202 /* SRC20SyncManager.swift */; };
+		C8E027012E632A6E00A0D202 /* SRC20SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E026FF2E632A6E00A0D202 /* SRC20SyncManager.swift */; };
+		C8E027032E6457EB00A0D202 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E027022E6457EB00A0D202 /* ImagePicker.swift */; };
+		C8E027042E6457EB00A0D202 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E027022E6457EB00A0D202 /* ImagePicker.swift */; };
 		C8E1A7572DE35654007F071D /* MainSafeZoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E1A7562DE35654007F071D /* MainSafeZoneView.swift */; };
 		C8E1A7582DE35654007F071D /* MainSafeZoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E1A7562DE35654007F071D /* MainSafeZoneView.swift */; };
 		C8E1A75A2DE46EED007F071D /* MainSafeZoneViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E1A7592DE46EED007F071D /* MainSafeZoneViewModel.swift */; };
@@ -5066,10 +5132,10 @@
 		C8162F752E01891D00A30E11 /* RevokeCashModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevokeCashModule.swift; sourceTree = "<group>"; };
 		C8162F7B2E02536F00A30E11 /* WKWebViewConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKWebViewConfiguration.swift; sourceTree = "<group>"; };
 		C816CDC02DE5B34600596618 /* LiquidityTransactionRecoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTransactionRecoard.swift; sourceTree = "<group>"; };
-		C816CDC42DED374200596618 /* LockedRecoardModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedRecoardModule.swift; sourceTree = "<group>"; };
-		C816CDC72DED376400596618 /* LockedRecoardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedRecoardService.swift; sourceTree = "<group>"; };
-		C816CDCA2DED377200596618 /* LockedRecoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedRecoardView.swift; sourceTree = "<group>"; };
-		C816CDCD2DED378300596618 /* LockedRecoardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedRecoardViewModel.swift; sourceTree = "<group>"; };
+		C816CDC42DED374200596618 /* LockedRecordModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedRecordModule.swift; sourceTree = "<group>"; };
+		C816CDC72DED376400596618 /* LockedRecordService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedRecordService.swift; sourceTree = "<group>"; };
+		C816CDCA2DED377200596618 /* LockedRecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedRecordView.swift; sourceTree = "<group>"; };
+		C816CDCD2DED378300596618 /* LockedRecordViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockedRecordViewModel.swift; sourceTree = "<group>"; };
 		C81720312C4D6E0700FE5061 /* Safe4BaseInputCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4BaseInputCell.swift; sourceTree = "<group>"; };
 		C81720332C4D742F00FE5061 /* ProposalInputCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProposalInputCell.swift; sourceTree = "<group>"; };
 		C81720352C4D748800FE5061 /* ProposalCreateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProposalCreateViewModel.swift; sourceTree = "<group>"; };
@@ -5091,6 +5157,17 @@
 		C81720552C51020500FE5061 /* SuperNodeRegisterSliderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeRegisterSliderCell.swift; sourceTree = "<group>"; };
 		C81720572C51022600FE5061 /* SuperNodeRegisterModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeRegisterModule.swift; sourceTree = "<group>"; };
 		C82100662C75685000B4AA07 /* RedeemSafe3ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeemSafe3ViewController.swift; sourceTree = "<group>"; };
+		C82297E82E8400030050BDD9 /* Safe4LockedRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4LockedRecord.swift; sourceTree = "<group>"; };
+		C82297EB2E842F450050BDD9 /* Safe4LockedRecordStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4LockedRecordStorage.swift; sourceTree = "<group>"; };
+		C82297EE2E8435040050BDD9 /* Safe4StorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4StorageManager.swift; sourceTree = "<group>"; };
+		C82297F12E843DB50050BDD9 /* Safe4AccountRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4AccountRecord.swift; sourceTree = "<group>"; };
+		C82297F42E8446AA0050BDD9 /* Safe4RecordUseInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4RecordUseInfo.swift; sourceTree = "<group>"; };
+		C82297F72E8453DA0050BDD9 /* Safe4ProposalReward.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4ProposalReward.swift; sourceTree = "<group>"; };
+		C82298012E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4ProposalLockedStorage.swift; sourceTree = "<group>"; };
+		C82298042E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4WithdrawProposalStorage.swift; sourceTree = "<group>"; };
+		C82298072E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4WithdrawLockedStorage.swift; sourceTree = "<group>"; };
+		C822980D2E86A4120050BDD9 /* SuperNodeLockRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeLockRecord.swift; sourceTree = "<group>"; };
+		C82298102E86A5570050BDD9 /* SuperNodeLockRecordStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeLockRecordStorage.swift; sourceTree = "<group>"; };
 		C82339C82C7C10BD0097EB8C /* MasterNodeDetailSendViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterNodeDetailSendViewController.swift; sourceTree = "<group>"; };
 		C82339CA2C7C31440097EB8C /* SuperNodeDetailSendViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeDetailSendViewController.swift; sourceTree = "<group>"; };
 		C82339CC2C7C315D0097EB8C /* SuperNodeDetailVoteSendViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeDetailVoteSendViewController.swift; sourceTree = "<group>"; };
@@ -5306,6 +5383,27 @@
 		C8DC8EB42C8003FA006EB568 /* RedeemSafe3TabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeemSafe3TabViewController.swift; sourceTree = "<group>"; };
 		C8DC8EB62C80046B006EB568 /* RedeemSafe3TabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeemSafe3TabViewModel.swift; sourceTree = "<group>"; };
 		C8DC8EB92C80AF4A006EB568 /* RedeemSafe3StepCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeemSafe3StepCell.swift; sourceTree = "<group>"; };
+		C8E026C02E51C72D00A0D202 /* DeployView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeployView.swift; sourceTree = "<group>"; };
+		C8E026C32E51E63A00A0D202 /* DeployViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeployViewModel.swift; sourceTree = "<group>"; };
+		C8E026C92E52124F00A0D202 /* DeployModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeployModule.swift; sourceTree = "<group>"; };
+		C8E026CC2E52147800A0D202 /* SRC20Service.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20Service.swift; sourceTree = "<group>"; };
+		C8E026CF2E5957E800A0D202 /* SRC20ManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20ManagerView.swift; sourceTree = "<group>"; };
+		C8E026D22E595B8700A0D202 /* SyncSafe4TokensService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSafe4TokensService.swift; sourceTree = "<group>"; };
+		C8E026D82E59C62F00A0D202 /* SyncSafe4TokensProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSafe4TokensProvider.swift; sourceTree = "<group>"; };
+		C8E026DB2E59E58C00A0D202 /* SRC20ManagerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20ManagerViewModel.swift; sourceTree = "<group>"; };
+		C8E026DE2E59ED4400A0D202 /* Safe4CustomTokenStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4CustomTokenStorage.swift; sourceTree = "<group>"; };
+		C8E026E12E5A020100A0D202 /* ItemPrimaryButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemPrimaryButtonStyle.swift; sourceTree = "<group>"; };
+		C8E026E42E5BF2B600A0D202 /* SRC20ManagerModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20ManagerModule.swift; sourceTree = "<group>"; };
+		C8E026E72E5C4EBA00A0D202 /* SRC20EditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20EditView.swift; sourceTree = "<group>"; };
+		C8E026EA2E5C4EDD00A0D202 /* SRC20DestroyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20DestroyView.swift; sourceTree = "<group>"; };
+		C8E026ED2E5C4EF600A0D202 /* SRC20PromotionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20PromotionView.swift; sourceTree = "<group>"; };
+		C8E026F02E5C4F2100A0D202 /* SRC20AdditionalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20AdditionalView.swift; sourceTree = "<group>"; };
+		C8E026F32E5C544800A0D202 /* SRC20EditViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20EditViewModel.swift; sourceTree = "<group>"; };
+		C8E026F62E5C545800A0D202 /* SRC20DestroyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20DestroyViewModel.swift; sourceTree = "<group>"; };
+		C8E026F92E5C546700A0D202 /* SRC20PromotionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20PromotionViewModel.swift; sourceTree = "<group>"; };
+		C8E026FC2E5C547500A0D202 /* SRC20AdditionalViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20AdditionalViewModel.swift; sourceTree = "<group>"; };
+		C8E026FF2E632A6E00A0D202 /* SRC20SyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20SyncManager.swift; sourceTree = "<group>"; };
+		C8E027022E6457EB00A0D202 /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 		C8E1A7562DE35654007F071D /* MainSafeZoneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSafeZoneView.swift; sourceTree = "<group>"; };
 		C8E1A7592DE46EED007F071D /* MainSafeZoneViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSafeZoneViewModel.swift; sourceTree = "<group>"; };
 		C8E85BDA2C3D3C3E00DF2A7A /* SuperNodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeViewController.swift; sourceTree = "<group>"; };
@@ -5506,6 +5604,7 @@
 				C87CEE032DE0941F0099FAFE /* DeepDiff in Frameworks */,
 				C87CEE042DE0941F0099FAFE /* ZcashLightClientKit in Frameworks */,
 				C87CEE052DE0941F0099FAFE /* TronKit in Frameworks */,
+				C82297E42E76EBA20050BDD9 /* AdvancedList in Frameworks */,
 				C87CEE062DE0941F0099FAFE /* IDNSDK in Frameworks */,
 				C87CEE072DE0941F0099FAFE /* UniswapKit in Frameworks */,
 				C87CEE082DE0941F0099FAFE /* SafeCoinKit in Frameworks */,
@@ -5556,6 +5655,7 @@
 				D3BF1E63274CBBCE00229A00 /* DeepDiff in Frameworks */,
 				D3993DA528F4229F008720FB /* ZcashLightClientKit in Frameworks */,
 				D023D2632A249E59004F65B0 /* TronKit in Frameworks */,
+				C82297E62E76EBB20050BDD9 /* AdvancedList in Frameworks */,
 				D0DA740D272A6EFC0072BE86 /* IDNSDK in Frameworks */,
 				C89CEFB32BBDB3AE00178788 /* UniswapKit in Frameworks */,
 				C89CEFB02BBDB18E00178788 /* SafeCoinKit in Frameworks */,
@@ -6101,6 +6201,8 @@
 				11B354E3FDE8CA30D8983EB4 /* ThemeList.swift */,
 				11B356EF92FFD23F4385A991 /* ThemeListStyle.swift */,
 				11B35E7E7A5DBB09A2A5197D /* ThemeView.swift */,
+				C8E026E12E5A020100A0D202 /* ItemPrimaryButtonStyle.swift */,
+				C8E027022E6457EB00A0D202 /* ImagePicker.swift */,
 			);
 			path = SwiftUI;
 			sourceTree = "<group>";
@@ -6760,6 +6862,7 @@
 				11B35BFA410F267D3A9B8E43 /* KeychainStorage.swift */,
 				11B35847887E070CA535F890 /* UserDefaultsStorage.swift */,
 				C8462B382C71A5B2008581A6 /* RedeemStorage.swift */,
+				C8E026DE2E59ED4400A0D202 /* Safe4CustomTokenStorage.swift */,
 			);
 			path = Storage;
 			sourceTree = "<group>";
@@ -9340,15 +9443,38 @@
 			path = RevokeManager;
 			sourceTree = "<group>";
 		};
-		C816CDC32DED36D500596618 /* LockedRecoard */ = {
+		C816CDC32DED36D500596618 /* LockedRecord */ = {
 			isa = PBXGroup;
 			children = (
-				C816CDC42DED374200596618 /* LockedRecoardModule.swift */,
-				C816CDC72DED376400596618 /* LockedRecoardService.swift */,
-				C816CDCA2DED377200596618 /* LockedRecoardView.swift */,
-				C816CDCD2DED378300596618 /* LockedRecoardViewModel.swift */,
+				C816CDC42DED374200596618 /* LockedRecordModule.swift */,
+				C816CDC72DED376400596618 /* LockedRecordService.swift */,
+				C816CDCA2DED377200596618 /* LockedRecordView.swift */,
+				C816CDCD2DED378300596618 /* LockedRecordViewModel.swift */,
 			);
-			path = LockedRecoard;
+			path = LockedRecord;
+			sourceTree = "<group>";
+		};
+		C82297E72E82AA2B0050BDD9 /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				C82297EE2E8435040050BDD9 /* Safe4StorageManager.swift */,
+				C82297EB2E842F450050BDD9 /* Safe4LockedRecordStorage.swift */,
+				C82298012E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift */,
+				C82298042E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift */,
+				C82298072E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		C82297FA2E8532120050BDD9 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				C82297E82E8400030050BDD9 /* Safe4LockedRecord.swift */,
+				C82297F12E843DB50050BDD9 /* Safe4AccountRecord.swift */,
+				C82297F42E8446AA0050BDD9 /* Safe4RecordUseInfo.swift */,
+				C82297F72E8453DA0050BDD9 /* Safe4ProposalReward.swift */,
+			);
+			path = Model;
 			sourceTree = "<group>";
 		};
 		C83EA5D92C07362300C9A644 /* V3 */ = {
@@ -9813,6 +9939,8 @@
 				C87861192C5717EE00C018AC /* SuperNodeDetailVoteHeaderView.swift */,
 				C82339CA2C7C31440097EB8C /* SuperNodeDetailSendViewController.swift */,
 				C82339CC2C7C315D0097EB8C /* SuperNodeDetailVoteSendViewController.swift */,
+				C822980D2E86A4120050BDD9 /* SuperNodeLockRecord.swift */,
+				C82298102E86A5570050BDD9 /* SuperNodeLockRecordStorage.swift */,
 			);
 			path = Detail;
 			sourceTree = "<group>";
@@ -9872,7 +10000,10 @@
 		C8A6C4452C3E82DE00D1D2BB /* SafeFour */ = {
 			isa = PBXGroup;
 			children = (
-				C816CDC32DED36D500596618 /* LockedRecoard */,
+				C82297FA2E8532120050BDD9 /* Model */,
+				C82297E72E82AA2B0050BDD9 /* Storage */,
+				C8E026BF2E51C51800A0D202 /* SRC20 */,
+				C816CDC32DED36D500596618 /* LockedRecord */,
 				C8885D8B2DD6D2CB00D21B6A /* Withdraw */,
 				C89787E92CCCA67F007E943A /* AddLockDays */,
 				C872A7582CCC1D72001A07D7 /* DrawSafe4 */,
@@ -9969,6 +10100,31 @@
 				C8DC8EB62C80046B006EB568 /* RedeemSafe3TabViewModel.swift */,
 			);
 			path = Tab;
+			sourceTree = "<group>";
+		};
+		C8E026BF2E51C51800A0D202 /* SRC20 */ = {
+			isa = PBXGroup;
+			children = (
+				C8E026C92E52124F00A0D202 /* DeployModule.swift */,
+				C8E026C02E51C72D00A0D202 /* DeployView.swift */,
+				C8E026C32E51E63A00A0D202 /* DeployViewModel.swift */,
+				C8E026F02E5C4F2100A0D202 /* SRC20AdditionalView.swift */,
+				C8E026FC2E5C547500A0D202 /* SRC20AdditionalViewModel.swift */,
+				C8E026EA2E5C4EDD00A0D202 /* SRC20DestroyView.swift */,
+				C8E026F62E5C545800A0D202 /* SRC20DestroyViewModel.swift */,
+				C8E026E72E5C4EBA00A0D202 /* SRC20EditView.swift */,
+				C8E026F32E5C544800A0D202 /* SRC20EditViewModel.swift */,
+				C8E026E42E5BF2B600A0D202 /* SRC20ManagerModule.swift */,
+				C8E026CF2E5957E800A0D202 /* SRC20ManagerView.swift */,
+				C8E026DB2E59E58C00A0D202 /* SRC20ManagerViewModel.swift */,
+				C8E026ED2E5C4EF600A0D202 /* SRC20PromotionView.swift */,
+				C8E026F92E5C546700A0D202 /* SRC20PromotionViewModel.swift */,
+				C8E026CC2E52147800A0D202 /* SRC20Service.swift */,
+				C8E026D82E59C62F00A0D202 /* SyncSafe4TokensProvider.swift */,
+				C8E026D22E595B8700A0D202 /* SyncSafe4TokensService.swift */,
+				C8E026FF2E632A6E00A0D202 /* SRC20SyncManager.swift */,
+			);
+			path = SRC20;
 			sourceTree = "<group>";
 		};
 		C8E85BD92C3D1F7B00DF2A7A /* SuperNode */ = {
@@ -10459,6 +10615,7 @@
 				C87CE71E2DE0941F0099FAFE /* UniswapKit */,
 				C87CE7202DE0941F0099FAFE /* SafeSwapKit */,
 				C87CE7222DE0941F0099FAFE /* NftKit */,
+				C82297E32E76EBA20050BDD9 /* AdvancedList */,
 			);
 			productName = Wallet;
 			productReference = C87CEE1F2DE0941F0099FAFE /* SafeWallet Beta.app */;
@@ -10520,6 +10677,7 @@
 				C89CEFB22BBDB3AE00178788 /* UniswapKit */,
 				C891C3142C2B0FFF00D3C54C /* SafeSwapKit */,
 				C891C3172C2B109700D3C54C /* NftKit */,
+				C82297E52E76EBB20050BDD9 /* AdvancedList */,
 			);
 			productName = Wallet;
 			productReference = D38406BE21831B3D007D50AD /* SafeWallet.app */;
@@ -10645,6 +10803,7 @@
 				C891C3132C2B0FFF00D3C54C /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */,
 				C891C3162C2B109700D3C54C /* XCRemoteSwiftPackageReference "NftKit.Swift" */,
 				C88417B32DBE0C9C00D78243 /* XCRemoteSwiftPackageReference "EvmKit.Swift" */,
+				C82297E22E76EA230050BDD9 /* XCRemoteSwiftPackageReference "AdvancedList" */,
 			);
 			productRefGroup = D3285F4320BD158E00644076 /* Products */;
 			projectDirPath = "";
@@ -10749,6 +10908,7 @@
 				C87CE7452DE0941F0099FAFE /* ZcashAdapter.swift in Sources */,
 				C87CE7462DE0941F0099FAFE /* UIAlertController.swift in Sources */,
 				C87CE7472DE0941F0099FAFE /* DateHelper.swift in Sources */,
+				C8E026C42E51E63A00A0D202 /* DeployViewModel.swift in Sources */,
 				C87CE7482DE0941F0099FAFE /* SystemInfoManager.swift in Sources */,
 				C87CE7492DE0941F0099FAFE /* PermissionsHelper.swift in Sources */,
 				C87CE74A2DE0941F0099FAFE /* ValueFormatter.swift in Sources */,
@@ -10772,6 +10932,7 @@
 				C87CE75B2DE0941F0099FAFE /* BaseEvmAdapter.swift in Sources */,
 				C87CE75C2DE0941F0099FAFE /* Decimal.swift in Sources */,
 				C87CE75D2DE0941F0099FAFE /* UnlinkViewController.swift in Sources */,
+				C8E027012E632A6E00A0D202 /* SRC20SyncManager.swift in Sources */,
 				C87CE75E2DE0941F0099FAFE /* UnlinkModule.swift in Sources */,
 				C87CE75F2DE0941F0099FAFE /* MarketWatchlistModule.swift in Sources */,
 				C87CE7602DE0941F0099FAFE /* UnlinkViewModel.swift in Sources */,
@@ -10868,7 +11029,7 @@
 				C87CE7BA2DE0941F0099FAFE /* RateAppManager.swift in Sources */,
 				C87CE7BB2DE0941F0099FAFE /* FeeSlider.swift in Sources */,
 				C87CE7BC2DE0941F0099FAFE /* LiquidityV3Service.swift in Sources */,
-				C816CDC92DED376400596618 /* LockedRecoardService.swift in Sources */,
+				C816CDC92DED376400596618 /* LockedRecordService.swift in Sources */,
 				C87CE7BD2DE0941F0099FAFE /* ProposalDetailModule.swift in Sources */,
 				C87CE7BE2DE0941F0099FAFE /* AppearanceModule.swift in Sources */,
 				C87CE7BF2DE0941F0099FAFE /* FeeSliderValueView.swift in Sources */,
@@ -10993,6 +11154,7 @@
 				C87CE8362DE0941F0099FAFE /* ThemeActionSheetController.swift in Sources */,
 				C87CE8372DE0941F0099FAFE /* MarkdownModule.swift in Sources */,
 				C87CE8382DE0941F0099FAFE /* FaqModule.swift in Sources */,
+				C8E026CA2E52124F00A0D202 /* DeployModule.swift in Sources */,
 				C87CE8392DE0941F0099FAFE /* FaqRepository.swift in Sources */,
 				C87CE83A2DE0941F0099FAFE /* FaqViewController.swift in Sources */,
 				C87CE83B2DE0941F0099FAFE /* FaqService.swift in Sources */,
@@ -11076,6 +11238,7 @@
 				C87CE8892DE0941F0099FAFE /* ReadMoreTextCell.swift in Sources */,
 				C87CE88A2DE0941F0099FAFE /* MultilineInputView.swift in Sources */,
 				C87CE88B2DE0941F0099FAFE /* LiquidityInputCardView.swift in Sources */,
+				C8E027042E6457EB00A0D202 /* ImagePicker.swift in Sources */,
 				C87CE88C2DE0941F0099FAFE /* EvmCoinServiceFactory.swift in Sources */,
 				C87CE88D2DE0941F0099FAFE /* HighlightedDescriptionBaseView.swift in Sources */,
 				C87CE88E2DE0941F0099FAFE /* TitledHighlightedDescriptionView.swift in Sources */,
@@ -11153,6 +11316,7 @@
 				C87CE8D42DE0941F0099FAFE /* DrawSafe4Service.swift in Sources */,
 				C87CE8D52DE0941F0099FAFE /* BottomMultiSelectorViewController.swift in Sources */,
 				C87CE8D62DE0941F0099FAFE /* ManageWalletsModule.swift in Sources */,
+				C8E026E82E5C4EBA00A0D202 /* SRC20EditView.swift in Sources */,
 				C87CE8D72DE0941F0099FAFE /* ManageWalletsService.swift in Sources */,
 				C87CE8D82DE0941F0099FAFE /* ManageWalletsViewModel.swift in Sources */,
 				C87CE8D92DE0941F0099FAFE /* ManageWalletsViewController.swift in Sources */,
@@ -11161,6 +11325,7 @@
 				C87CE8DC2DE0941F0099FAFE /* EnabledWallet_v_0_20.swift in Sources */,
 				C87CE8DD2DE0941F0099FAFE /* RestoreSettingRecord.swift in Sources */,
 				C87CE8DE2DE0941F0099FAFE /* RestoreSettingsManager.swift in Sources */,
+				C8E026D02E5957E800A0D202 /* SRC20ManagerView.swift in Sources */,
 				C87CE8DF2DE0941F0099FAFE /* RestoreSettingsViewModel.swift in Sources */,
 				C87CE8E02DE0941F0099FAFE /* RestoreSettingsView.swift in Sources */,
 				C87CE8E12DE0941F0099FAFE /* ProposalDetailViewModel.swift in Sources */,
@@ -11231,6 +11396,7 @@
 				C87CE9202DE0941F0099FAFE /* SuperNodeService.swift in Sources */,
 				C87CE9212DE0941F0099FAFE /* LiquidityCoinCardViewModel.swift in Sources */,
 				C87CE9222DE0941F0099FAFE /* UniswapService.swift in Sources */,
+				C8E026F82E5C545800A0D202 /* SRC20DestroyViewModel.swift in Sources */,
 				C87CE9232DE0941F0099FAFE /* BalanceData.swift in Sources */,
 				C87CE9242DE0941F0099FAFE /* LiquidityTickInputCell.swift in Sources */,
 				C87CE9252DE0941F0099FAFE /* AddTokenModule.swift in Sources */,
@@ -11281,6 +11447,7 @@
 				C87CE9512DE0941F0099FAFE /* SwitchAccountViewModel.swift in Sources */,
 				C87CE9522DE0941F0099FAFE /* SwitchAccountViewController.swift in Sources */,
 				C87CE9532DE0941F0099FAFE /* LiquidityMainModule.swift in Sources */,
+				C8E026EB2E5C4EDD00A0D202 /* SRC20DestroyView.swift in Sources */,
 				C87CE9542DE0941F0099FAFE /* SwitchAccountModule.swift in Sources */,
 				C87CE9552DE0941F0099FAFE /* SwapConfirmationModule.swift in Sources */,
 				C87CE9562DE0941F0099FAFE /* SwapConfirmationViewController.swift in Sources */,
@@ -11310,6 +11477,7 @@
 				C87CE96E2DE0941F0099FAFE /* TronAdapter.swift in Sources */,
 				C87CE96F2DE0941F0099FAFE /* String.swift in Sources */,
 				C84A45982E254045004D5F59 /* SafeLineLockViewModel.swift in Sources */,
+				C8E026E62E5BF2B600A0D202 /* SRC20ManagerModule.swift in Sources */,
 				C87CE9702DE0941F0099FAFE /* WalletConnectAppShowViewModel.swift in Sources */,
 				C87CE9712DE0941F0099FAFE /* CoinMajorHoldersModule.swift in Sources */,
 				C87CE9722DE0941F0099FAFE /* CoinMajorHoldersViewModel.swift in Sources */,
@@ -11337,6 +11505,7 @@
 				C87CE9882DE0941F0099FAFE /* LiquidityProvider.swift in Sources */,
 				C87CE9892DE0941F0099FAFE /* AdapterManager.swift in Sources */,
 				C87CE98A2DE0941F0099FAFE /* AdapterFactory.swift in Sources */,
+				C82298082E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift in Sources */,
 				C87CE98B2DE0941F0099FAFE /* CoinTweetsService.swift in Sources */,
 				C87CE98C2DE0941F0099FAFE /* CoinValue.swift in Sources */,
 				C87CE98D2DE0941F0099FAFE /* SendSafecoinViewController.swift in Sources */,
@@ -11434,6 +11603,7 @@
 				C87CE9E82DE0941F0099FAFE /* MultiSelectorViewController.swift in Sources */,
 				C87CE9E92DE0941F0099FAFE /* AddressUriParser.swift in Sources */,
 				C87CE9EA2DE0941F0099FAFE /* AddressService.swift in Sources */,
+				C8E026CE2E52147800A0D202 /* SRC20Service.swift in Sources */,
 				C87CE9EB2DE0941F0099FAFE /* UnknownSwapTransactionRecord.swift in Sources */,
 				C87CE9EC2DE0941F0099FAFE /* AcademyMarkdownConfig.swift in Sources */,
 				C890D1702E330B690075DBCF /* SafeLineLockRecoardViewModel.swift in Sources */,
@@ -11454,6 +11624,7 @@
 				C87CE9FB2DE0941F0099FAFE /* SendEvmCautionsFactory.swift in Sources */,
 				C87CE9FC2DE0941F0099FAFE /* FeeCell.swift in Sources */,
 				C87CE9FD2DE0941F0099FAFE /* NftAssetTitleCell.swift in Sources */,
+				C8E026FE2E5C547600A0D202 /* SRC20AdditionalViewModel.swift in Sources */,
 				C87CE9FE2DE0941F0099FAFE /* NftAssetImageCell.swift in Sources */,
 				C87CE9FF2DE0941F0099FAFE /* AlertViewControllerNew.swift in Sources */,
 				C87CEA002DE0941F0099FAFE /* TraitsCell.swift in Sources */,
@@ -11632,6 +11803,7 @@
 				C87CEAB12DE0941F0099FAFE /* EnsAddressParserItem.swift in Sources */,
 				C87CEAB22DE0941F0099FAFE /* PredefinedBlockchainService.swift in Sources */,
 				C87CEAB32DE0941F0099FAFE /* PlaceholderView.swift in Sources */,
+				C82298112E86A5570050BDD9 /* SuperNodeLockRecordStorage.swift in Sources */,
 				C87CEAB42DE0941F0099FAFE /* ReachabilityService.swift in Sources */,
 				C87CEAB52DE0941F0099FAFE /* ReachabilityViewModel.swift in Sources */,
 				C87CEAB62DE0941F0099FAFE /* PlaceholderViewModule.swift in Sources */,
@@ -11677,7 +11849,7 @@
 				C87CEADF2DE0941F0099FAFE /* InputSecondaryCircleButtonWrapperView.swift in Sources */,
 				C87CEAE02DE0941F0099FAFE /* RecoveryPhraseModule.swift in Sources */,
 				C87CEAE12DE0941F0099FAFE /* RecoveryPhraseViewController.swift in Sources */,
-				C816CDC52DED374200596618 /* LockedRecoardModule.swift in Sources */,
+				C816CDC52DED374200596618 /* LockedRecordModule.swift in Sources */,
 				C87CEAE22DE0941F0099FAFE /* RecoveryPhraseViewModel.swift in Sources */,
 				C87CEAE32DE0941F0099FAFE /* RecoveryPhraseService.swift in Sources */,
 				C87CEAE42DE0941F0099FAFE /* EvmPrivateKeyModule.swift in Sources */,
@@ -11719,6 +11891,7 @@
 				C87CEB082DE0941F0099FAFE /* RestoreMnemonicNonStandardService.swift in Sources */,
 				C87CEB092DE0941F0099FAFE /* NftKey.swift in Sources */,
 				C87CEB0A2DE0941F0099FAFE /* NftMetadataSyncRecord.swift in Sources */,
+				C82297F32E843DB50050BDD9 /* Safe4AccountRecord.swift in Sources */,
 				C87CEB0B2DE0941F0099FAFE /* NftCollectionMetadata.swift in Sources */,
 				C87CEB0C2DE0941F0099FAFE /* NftEventMetadata.swift in Sources */,
 				C87CEB0D2DE0941F0099FAFE /* MarketCardView.swift in Sources */,
@@ -11744,6 +11917,7 @@
 				C87CEB212DE0941F0099FAFE /* IntegerAmountInputCell.swift in Sources */,
 				C87CEB222DE0941F0099FAFE /* IntegerAmountInputView.swift in Sources */,
 				C87CEB232DE0941F0099FAFE /* IntegerFormAmountInputView.swift in Sources */,
+				C82297EA2E8400040050BDD9 /* Safe4LockedRecord.swift in Sources */,
 				C87CEB242DE0941F0099FAFE /* RestoreModule.swift in Sources */,
 				C87CEB252DE0941F0099FAFE /* RestoreViewController.swift in Sources */,
 				C87CEB262DE0941F0099FAFE /* RedeemSafe3ViewModel.swift in Sources */,
@@ -11768,6 +11942,7 @@
 				C87CEB392DE0941F0099FAFE /* CellElement.swift in Sources */,
 				C87CEB3A2DE0941F0099FAFE /* BlockchainSettingsModule.swift in Sources */,
 				C87CEB3B2DE0941F0099FAFE /* BlockchainSettingsViewModel.swift in Sources */,
+				C8E026EF2E5C4EF600A0D202 /* SRC20PromotionView.swift in Sources */,
 				C87CEB3C2DE0941F0099FAFE /* CreateAccountSimpleViewController.swift in Sources */,
 				C87CEB3D2DE0941F0099FAFE /* SingleSelectorViewController.swift in Sources */,
 				C87CEB3E2DE0941F0099FAFE /* RestoreService.swift in Sources */,
@@ -11775,6 +11950,7 @@
 				C87CEB402DE0941F0099FAFE /* AddEvmSyncSourceViewController.swift in Sources */,
 				C87CEB412DE0941F0099FAFE /* SendTronViewController.swift in Sources */,
 				C87CEB422DE0941F0099FAFE /* AddEvmSyncSourceViewModel.swift in Sources */,
+				C8E026E22E5A020100A0D202 /* ItemPrimaryButtonStyle.swift in Sources */,
 				C87CEB432DE0941F0099FAFE /* AddEvmSyncSourceService.swift in Sources */,
 				C87CEB442DE0941F0099FAFE /* EvmSyncSourceRecord.swift in Sources */,
 				C87CEB452DE0941F0099FAFE /* EvmSyncSourceStorage.swift in Sources */,
@@ -11825,6 +12001,7 @@
 				C87CEB732DE0941F0099FAFE /* PublicKeysService.swift in Sources */,
 				C87CEB742DE0941F0099FAFE /* LiquidityCoinSelectViewModel.swift in Sources */,
 				C87CEB752DE0941F0099FAFE /* PublicKeysViewModel.swift in Sources */,
+				C8E026F12E5C4F2100A0D202 /* SRC20AdditionalView.swift in Sources */,
 				C87CEB762DE0941F0099FAFE /* PublicKeysViewController.swift in Sources */,
 				C87CEB772DE0941F0099FAFE /* ShimmerEffect.swift in Sources */,
 				C87CEB782DE0941F0099FAFE /* PrivateKeysViewModel.swift in Sources */,
@@ -11879,6 +12056,7 @@
 				C87CEBA92DE0941F0099FAFE /* SafeCoinAdapter.swift in Sources */,
 				C87CEBAA2DE0941F0099FAFE /* ContactBookSettingsService.swift in Sources */,
 				C87CEBAB2DE0941F0099FAFE /* ContactBookSettingsViewModel.swift in Sources */,
+				C822980E2E86A4120050BDD9 /* SuperNodeLockRecord.swift in Sources */,
 				C87CEBAC2DE0941F0099FAFE /* ContactBookSettingsViewController.swift in Sources */,
 				C87CEBAD2DE0941F0099FAFE /* ContactBookSettingsModule.swift in Sources */,
 				C87CEBAE2DE0941F0099FAFE /* ContactBookHelper.swift in Sources */,
@@ -11951,6 +12129,7 @@
 				C87CEBF12DE0941F0099FAFE /* RestoreCloudModule.swift in Sources */,
 				C87CEBF22DE0941F0099FAFE /* RestoreCloudService.swift in Sources */,
 				C87CEBF32DE0941F0099FAFE /* HighlightedTiltledTextView.swift in Sources */,
+				C8E026F52E5C544800A0D202 /* SRC20EditViewModel.swift in Sources */,
 				C87CEBF42DE0941F0099FAFE /* RestoreCloudViewController.swift in Sources */,
 				C87CEBF52DE0941F0099FAFE /* WalletService.swift in Sources */,
 				C87CEBF62DE0941F0099FAFE /* ContactBookManager.swift in Sources */,
@@ -11962,7 +12141,9 @@
 				C87CEBFC2DE0941F0099FAFE /* PasteInputView.swift in Sources */,
 				C87CEBFD2DE0941F0099FAFE /* PasteInputCell.swift in Sources */,
 				C87CEBFE2DE0941F0099FAFE /* LiquidityDataSource.swift in Sources */,
+				C82297ED2E842F450050BDD9 /* Safe4LockedRecordStorage.swift in Sources */,
 				C87CEBFF2DE0941F0099FAFE /* WalletHeaderCell.swift in Sources */,
+				C82297F82E8453DA0050BDD9 /* Safe4ProposalReward.swift in Sources */,
 				C87CEC002DE0941F0099FAFE /* CexWithdrawNetwork.swift in Sources */,
 				C87CEC012DE0941F0099FAFE /* LiquidityCoinSelectViewController.swift in Sources */,
 				C87CEC022DE0941F0099FAFE /* CexAssetRecord.swift in Sources */,
@@ -12013,7 +12194,7 @@
 				C87CEC2E2DE0941F0099FAFE /* ProposalSendViewController.swift in Sources */,
 				C87CEC2F2DE0941F0099FAFE /* CexDepositNetworkSelectViewModel.swift in Sources */,
 				C87CEC302DE0941F0099FAFE /* SuperNodeRegisterService.swift in Sources */,
-				C816CDCC2DED377200596618 /* LockedRecoardView.swift in Sources */,
+				C816CDCC2DED377200596618 /* LockedRecordView.swift in Sources */,
 				C87CEC312DE0941F0099FAFE /* CexDepositNetworkSelectService.swift in Sources */,
 				C87CEC322DE0941F0099FAFE /* CexCoinSelectModule.swift in Sources */,
 				C87CEC332DE0941F0099FAFE /* CexCoinSelectService.swift in Sources */,
@@ -12072,9 +12253,11 @@
 				C87CEC682DE0941F0099FAFE /* WalletTokenViewController.swift in Sources */,
 				C87CEC692DE0941F0099FAFE /* WalletTokenModule.swift in Sources */,
 				C87CEC6A2DE0941F0099FAFE /* WalletTokenViewModel.swift in Sources */,
+				C8E026C22E51C72D00A0D202 /* DeployView.swift in Sources */,
 				C87CEC6B2DE0941F0099FAFE /* WalletTokenService.swift in Sources */,
 				C87CEC6C2DE0941F0099FAFE /* SuperNodeSendViewController.swift in Sources */,
 				C87CEC6D2DE0941F0099FAFE /* DataSourceChain.swift in Sources */,
+				C82297F02E8435040050BDD9 /* Safe4StorageManager.swift in Sources */,
 				C87CEC6E2DE0941F0099FAFE /* SuperNodeRegisterViewController.swift in Sources */,
 				C87CEC6F2DE0941F0099FAFE /* WalletTokenBalanceDataSource.swift in Sources */,
 				C87CEC702DE0941F0099FAFE /* WalletTokenBalanceViewModel.swift in Sources */,
@@ -12111,6 +12294,7 @@
 				C87CEC902DE0941F0099FAFE /* FallbackBlockViewModel.swift in Sources */,
 				C87CEC912DE0941F0099FAFE /* RowButtonStyle.swift in Sources */,
 				C87CEC922DE0941F0099FAFE /* Image.swift in Sources */,
+				C82298022E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift in Sources */,
 				C87CEC932DE0941F0099FAFE /* NoAccountWalletTokenListService.swift in Sources */,
 				C87CEC942DE0941F0099FAFE /* WalletConnectPairingModule.swift in Sources */,
 				C87CEC952DE0941F0099FAFE /* WithdrawView.swift in Sources */,
@@ -12200,6 +12384,7 @@
 				C87CECE92DE0941F0099FAFE /* RestorePassphraseService.swift in Sources */,
 				C87CECEA2DE0941F0099FAFE /* RestorePassphraseViewController.swift in Sources */,
 				C87CECEB2DE0941F0099FAFE /* RestorePassphraseModule.swift in Sources */,
+				C82297F52E8446AA0050BDD9 /* Safe4RecordUseInfo.swift in Sources */,
 				C87CECEC2DE0941F0099FAFE /* RestoreFileConfigurationModule.swift in Sources */,
 				C87CECED2DE0941F0099FAFE /* RestoreFileConfigurationViewModel.swift in Sources */,
 				C87CECEE2DE0941F0099FAFE /* RawFullBackup.swift in Sources */,
@@ -12230,6 +12415,7 @@
 				C87CED072DE0941F0099FAFE /* LanguageSettingsView.swift in Sources */,
 				C87CED082DE0941F0099FAFE /* ScanQrView.swift in Sources */,
 				C87CED092DE0941F0099FAFE /* ScanQrBlurView.swift in Sources */,
+				C8E026FA2E5C546700A0D202 /* SRC20PromotionViewModel.swift in Sources */,
 				C87CED0A2DE0941F0099FAFE /* ScanQrAlertView.swift in Sources */,
 				C87CED0B2DE0941F0099FAFE /* KeychainManager.swift in Sources */,
 				C87CED0C2DE0941F0099FAFE /* PasscodeLockManager.swift in Sources */,
@@ -12258,6 +12444,7 @@
 				C87CED232DE0941F0099FAFE /* WalletConnectTransaction.swift in Sources */,
 				C87CED242DE0941F0099FAFE /* WCRequestPayload.swift in Sources */,
 				C87CED252DE0941F0099FAFE /* AddressAppShowModule.swift in Sources */,
+				C8E026DF2E59ED4400A0D202 /* Safe4CustomTokenStorage.swift in Sources */,
 				C87CED262DE0941F0099FAFE /* WCSendEthereumTransactionRequestModule.swift in Sources */,
 				C87CED272DE0941F0099FAFE /* WCSendEthereumTransactionRequestService.swift in Sources */,
 				C87CED292DE0941F0099FAFE /* WCSendEthereumTransactionRequestViewModel.swift in Sources */,
@@ -12272,7 +12459,7 @@
 				C87CED322DE0941F0099FAFE /* WCSendEthereumTransactionRequestViewController.swift in Sources */,
 				C87CED332DE0941F0099FAFE /* WCSignEthereumTransactionRequestViewController.swift in Sources */,
 				C87CED342DE0941F0099FAFE /* CoinMarketsViewModel.swift in Sources */,
-				C816CDCE2DED378300596618 /* LockedRecoardViewModel.swift in Sources */,
+				C816CDCE2DED378300596618 /* LockedRecordViewModel.swift in Sources */,
 				C87CED352DE0941F0099FAFE /* CoinMarketsView.swift in Sources */,
 				C87CED362DE0941F0099FAFE /* ThemeList.swift in Sources */,
 				C87CED372DE0941F0099FAFE /* SelectorButtonStyle.swift in Sources */,
@@ -12331,6 +12518,7 @@
 				C87CED6C2DE0941F0099FAFE /* SendTonFactory.swift in Sources */,
 				C87CED6D2DE0941F0099FAFE /* TonAddressParserItem.swift in Sources */,
 				C87CED6E2DE0941F0099FAFE /* LiquidityViewModel.swift in Sources */,
+				C82298052E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift in Sources */,
 				C87CED6F2DE0941F0099FAFE /* MasterNodeTabViewModel.swift in Sources */,
 				C87CED702DE0941F0099FAFE /* ReceiveAddressView.swift in Sources */,
 				C87CED712DE0941F0099FAFE /* SuperNodeDetailVoteHeaderView.swift in Sources */,
@@ -12370,6 +12558,7 @@
 				C87CED932DE0941F0099FAFE /* MultiSwapQuotesView.swift in Sources */,
 				C87CED942DE0941F0099FAFE /* MultiSwapModule.swift in Sources */,
 				C87CED952DE0941F0099FAFE /* MultiSwapButtonState.swift in Sources */,
+				C8E026DD2E59E58C00A0D202 /* SRC20ManagerViewModel.swift in Sources */,
 				C87CED962DE0941F0099FAFE /* MultiSwapConfirmationView.swift in Sources */,
 				C87CED972DE0941F0099FAFE /* MultiSwapSettingStorage.swift in Sources */,
 				C87CED982DE0941F0099FAFE /* ResendBitcoinService.swift in Sources */,
@@ -12395,6 +12584,7 @@
 				C87CEDAD2DE0941F0099FAFE /* SendSafe2wsafeAdapterService.swift in Sources */,
 				C87CEDAE2DE0941F0099FAFE /* BaseMultiSwapSettingsViewModel.swift in Sources */,
 				C87CEDAF2DE0941F0099FAFE /* AddressMultiSwapSettingsViewModel.swift in Sources */,
+				C8E026D42E595B8700A0D202 /* SyncSafe4TokensService.swift in Sources */,
 				C87CEDB02DE0941F0099FAFE /* SlippageMultiSwapSettingsViewModel.swift in Sources */,
 				C87CEDB12DE0941F0099FAFE /* MultiSwapAddressView.swift in Sources */,
 				C87CEDB22DE0941F0099FAFE /* MultiSwapRecipientView.swift in Sources */,
@@ -12418,6 +12608,7 @@
 				C87CEDC42DE0941F0099FAFE /* TechnicalIndicatorCell.swift in Sources */,
 				C87CEDC52DE0941F0099FAFE /* IMultiSwapQuote.swift in Sources */,
 				C87CEDC62DE0941F0099FAFE /* LiquidityMainViewController.swift in Sources */,
+				C8E026DA2E59C62F00A0D202 /* SyncSafe4TokensProvider.swift in Sources */,
 				C87CEDC72DE0941F0099FAFE /* IMultiSwapConfirmationQuote.swift in Sources */,
 				C87CEDC82DE0941F0099FAFE /* ISendConfirmationData.swift in Sources */,
 				C87CEDC92DE0941F0099FAFE /* SendDataNew.swift in Sources */,
@@ -12488,6 +12679,7 @@
 				3AF9F61D253EF555000626A8 /* ZcashAdapter.swift in Sources */,
 				D384069121831B3D007D50AD /* UIAlertController.swift in Sources */,
 				D384069421831B3D007D50AD /* DateHelper.swift in Sources */,
+				C8E026C52E51E63A00A0D202 /* DeployViewModel.swift in Sources */,
 				D384069521831B3D007D50AD /* SystemInfoManager.swift in Sources */,
 				D384069621831B3D007D50AD /* PermissionsHelper.swift in Sources */,
 				11B3541F6B5316F3B373D1EA /* ValueFormatter.swift in Sources */,
@@ -12511,6 +12703,7 @@
 				58AAAF011B2E9CDF8455CA7B /* BaseEvmAdapter.swift in Sources */,
 				1A56491DC545ED4F8A6E6D40 /* Decimal.swift in Sources */,
 				11B35DE3E7E6EB3CFAB81329 /* UnlinkViewController.swift in Sources */,
+				C8E027002E632A6E00A0D202 /* SRC20SyncManager.swift in Sources */,
 				11B350E34285A392F34198D0 /* UnlinkModule.swift in Sources */,
 				3A73FC9B258B1AF700FE4D34 /* MarketWatchlistModule.swift in Sources */,
 				11B3555CA9B2F01358E055BE /* UnlinkViewModel.swift in Sources */,
@@ -12607,7 +12800,7 @@
 				11B35883290BAA462C0B8F9D /* RateAppManager.swift in Sources */,
 				58AAA3A5967BAB513DD4B33F /* FeeSlider.swift in Sources */,
 				C87953042BD94CFF00E9315A /* LiquidityV3Service.swift in Sources */,
-				C816CDC82DED376400596618 /* LockedRecoardService.swift in Sources */,
+				C816CDC82DED376400596618 /* LockedRecordService.swift in Sources */,
 				C8984EDB2C46338A00BC8B6A /* ProposalDetailModule.swift in Sources */,
 				C889AC782BAB198F0077383F /* AppearanceModule.swift in Sources */,
 				58AAAA534E94A3276B7F7EF2 /* FeeSliderValueView.swift in Sources */,
@@ -12732,6 +12925,7 @@
 				1A564BA5366D4F0B921F5EE8 /* ThemeActionSheetController.swift in Sources */,
 				11B3529B3DD134BC0770BD20 /* MarkdownModule.swift in Sources */,
 				11B35BB591BABB0963BA462F /* FaqModule.swift in Sources */,
+				C8E026CB2E52124F00A0D202 /* DeployModule.swift in Sources */,
 				11B35BEB44EE680693F9EB2C /* FaqRepository.swift in Sources */,
 				11B35249B578809A019A2327 /* FaqViewController.swift in Sources */,
 				11B3535EF39FCD22171AC21C /* FaqService.swift in Sources */,
@@ -12815,6 +13009,7 @@
 				1A564D69A570D801AF59FF58 /* ReadMoreTextCell.swift in Sources */,
 				C817203E2C4E0C5800FE5061 /* MultilineInputView.swift in Sources */,
 				C89081132BA9F0E100CCFFA4 /* LiquidityInputCardView.swift in Sources */,
+				C8E027032E6457EB00A0D202 /* ImagePicker.swift in Sources */,
 				11B35B5B8F3FEED445647E56 /* EvmCoinServiceFactory.swift in Sources */,
 				1A56405DB1540DEC70FD5CFA /* HighlightedDescriptionBaseView.swift in Sources */,
 				1A564058DB366C810AC3C47A /* TitledHighlightedDescriptionView.swift in Sources */,
@@ -12892,6 +13087,7 @@
 				C872A75C2CCC1DD6001A07D7 /* DrawSafe4Service.swift in Sources */,
 				11B3597E4CCEF19A8E4D1222 /* BottomMultiSelectorViewController.swift in Sources */,
 				11B3565070D890657E004402 /* ManageWalletsModule.swift in Sources */,
+				C8E026E92E5C4EBA00A0D202 /* SRC20EditView.swift in Sources */,
 				11B35D45BA3D8B9C5E2AE4ED /* ManageWalletsService.swift in Sources */,
 				11B354EE16A63DAD95DE3861 /* ManageWalletsViewModel.swift in Sources */,
 				11B358657FCC50C9B3A10294 /* ManageWalletsViewController.swift in Sources */,
@@ -12900,6 +13096,7 @@
 				11B3524401E294D8A919186E /* EnabledWallet_v_0_20.swift in Sources */,
 				11B3512E20E90C3332EFCC1B /* RestoreSettingRecord.swift in Sources */,
 				11B3504F9DECABF08D8C82BC /* RestoreSettingsManager.swift in Sources */,
+				C8E026D12E5957E800A0D202 /* SRC20ManagerView.swift in Sources */,
 				11B3588A5791AB25FA1BBEE0 /* RestoreSettingsViewModel.swift in Sources */,
 				11B35BC2641349F06DF6B6FF /* RestoreSettingsView.swift in Sources */,
 				C8A6C4632C4189CC00D1D2BB /* ProposalDetailViewModel.swift in Sources */,
@@ -12970,6 +13167,7 @@
 				C8E85BDE2C3D418C00DF2A7A /* SuperNodeService.swift in Sources */,
 				C89081152BA9F0E100CCFFA4 /* LiquidityCoinCardViewModel.swift in Sources */,
 				D36DE0C0272FD864000BC916 /* UniswapService.swift in Sources */,
+				C8E026F72E5C545800A0D202 /* SRC20DestroyViewModel.swift in Sources */,
 				11B35ED22837284580055F0A /* BalanceData.swift in Sources */,
 				C87953112BDA4DE800E9315A /* LiquidityTickInputCell.swift in Sources */,
 				11B3534B567884E30A871F32 /* AddTokenModule.swift in Sources */,
@@ -13020,6 +13218,7 @@
 				11B35FE8D60BFF31C3104484 /* SwitchAccountViewModel.swift in Sources */,
 				11B351AF3AE7DC307974DD6B /* SwitchAccountViewController.swift in Sources */,
 				C89080D72BA9F0E000CCFFA4 /* LiquidityMainModule.swift in Sources */,
+				C8E026EC2E5C4EDD00A0D202 /* SRC20DestroyView.swift in Sources */,
 				11B358C3281DE0A34D192CF0 /* SwitchAccountModule.swift in Sources */,
 				58AAA926E1D95F61CA06EFB8 /* SwapConfirmationModule.swift in Sources */,
 				58AAA1152EEEBC93FCC3CAAC /* SwapConfirmationViewController.swift in Sources */,
@@ -13049,6 +13248,7 @@
 				D023D2712A25CF61004F65B0 /* TronAdapter.swift in Sources */,
 				11B3517B2CB1A05BA5FEDB1F /* String.swift in Sources */,
 				C84A45992E254045004D5F59 /* SafeLineLockViewModel.swift in Sources */,
+				C8E026E52E5BF2B600A0D202 /* SRC20ManagerModule.swift in Sources */,
 				6B2907232AF0CB8A006157D6 /* WalletConnectAppShowViewModel.swift in Sources */,
 				11B3517A67227ECCDE817036 /* CoinMajorHoldersModule.swift in Sources */,
 				11B35990CB6691F679D241C8 /* CoinMajorHoldersViewModel.swift in Sources */,
@@ -13076,6 +13276,7 @@
 				C89081032BA9F0E100CCFFA4 /* LiquidityProvider.swift in Sources */,
 				11B3580B9C21B55ACC07B043 /* AdapterManager.swift in Sources */,
 				11B35F25D1209C6DB33ADA55 /* AdapterFactory.swift in Sources */,
+				C82298092E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift in Sources */,
 				D02A67D4272A7460009B2C1C /* CoinTweetsService.swift in Sources */,
 				11B351909FE0FA637B5B1EC5 /* CoinValue.swift in Sources */,
 				C889AC7B2BAB2D470077383F /* SendSafecoinViewController.swift in Sources */,
@@ -13173,6 +13374,7 @@
 				11B35A949C780AD4E30CCDB7 /* MultiSelectorViewController.swift in Sources */,
 				58AAA9AAB91A30A18A1F724E /* AddressUriParser.swift in Sources */,
 				58AAAE6BA98DC60C11D3AA6F /* AddressService.swift in Sources */,
+				C8E026CD2E52147800A0D202 /* SRC20Service.swift in Sources */,
 				2FA5DEFAABB33E826E2DA4B9 /* UnknownSwapTransactionRecord.swift in Sources */,
 				1A564A1CA02CF6F6DC37B50A /* AcademyMarkdownConfig.swift in Sources */,
 				C890D1712E330B690075DBCF /* SafeLineLockRecoardViewModel.swift in Sources */,
@@ -13193,6 +13395,7 @@
 				2FA5D7E8805931F9F566668E /* SendEvmCautionsFactory.swift in Sources */,
 				2FA5D5189F8BE0AD6E10BA6B /* FeeCell.swift in Sources */,
 				11B353F671EA70F8BE7F02F0 /* NftAssetTitleCell.swift in Sources */,
+				C8E026FD2E5C547500A0D202 /* SRC20AdditionalViewModel.swift in Sources */,
 				11B352C2F7B31D4F5801332A /* NftAssetImageCell.swift in Sources */,
 				11B358A8C0BE6B957BDE1776 /* AlertViewControllerNew.swift in Sources */,
 				1A564D02348C91416FD011FC /* TraitsCell.swift in Sources */,
@@ -13371,6 +13574,7 @@
 				ABC9A860DBA4615581451967 /* EnsAddressParserItem.swift in Sources */,
 				ABC9A07A1D93791D09BEA9AF /* PredefinedBlockchainService.swift in Sources */,
 				1A56440AD78BD32AEAE2A2EA /* PlaceholderView.swift in Sources */,
+				C82298122E86A5570050BDD9 /* SuperNodeLockRecordStorage.swift in Sources */,
 				1A56483DCD5E1942AFAC0A1C /* ReachabilityService.swift in Sources */,
 				1A564B1C354CEC471841AEB9 /* ReachabilityViewModel.swift in Sources */,
 				1A564E69BA99DF8CD4562902 /* PlaceholderViewModule.swift in Sources */,
@@ -13416,7 +13620,7 @@
 				11B35B3C7A60FEE011EFBF73 /* InputSecondaryCircleButtonWrapperView.swift in Sources */,
 				11B35C1ACD5B3874921CEFDE /* RecoveryPhraseModule.swift in Sources */,
 				11B354FF8C01ADB837FBAC82 /* RecoveryPhraseViewController.swift in Sources */,
-				C816CDC62DED374300596618 /* LockedRecoardModule.swift in Sources */,
+				C816CDC62DED374300596618 /* LockedRecordModule.swift in Sources */,
 				11B356DC58C5312D5034D30E /* RecoveryPhraseViewModel.swift in Sources */,
 				11B35C3418D6E7D94CB5C2AF /* RecoveryPhraseService.swift in Sources */,
 				11B3585E88319E5BBBB9CD3F /* EvmPrivateKeyModule.swift in Sources */,
@@ -13458,6 +13662,7 @@
 				D09200B3293F21520091981A /* RestoreMnemonicNonStandardService.swift in Sources */,
 				11B35A378CD86AC6C55AE874 /* NftKey.swift in Sources */,
 				11B3505A7E4B89E9A23C19F5 /* NftMetadataSyncRecord.swift in Sources */,
+				C82297F22E843DB50050BDD9 /* Safe4AccountRecord.swift in Sources */,
 				11B3554B34C3A01745AC473B /* NftCollectionMetadata.swift in Sources */,
 				11B35970257A865B76C0BBB9 /* NftEventMetadata.swift in Sources */,
 				ABC9AF4D82ACDFBFBDC2D23C /* MarketCardView.swift in Sources */,
@@ -13483,6 +13688,7 @@
 				ABC9AE2C026D04B679644279 /* IntegerAmountInputCell.swift in Sources */,
 				ABC9ADD1A3E8C0B54E0B5014 /* IntegerAmountInputView.swift in Sources */,
 				ABC9A4045F498EE345B998D8 /* IntegerFormAmountInputView.swift in Sources */,
+				C82297E92E8400040050BDD9 /* Safe4LockedRecord.swift in Sources */,
 				11B35EB5359DB0EA8058A75C /* RestoreModule.swift in Sources */,
 				11B354FE5CD0F5658C7CCC69 /* RestoreViewController.swift in Sources */,
 				C8462B372C719F58008581A6 /* RedeemSafe3ViewModel.swift in Sources */,
@@ -13507,6 +13713,7 @@
 				ABC9A7584EFCD56C3AC586D2 /* CellElement.swift in Sources */,
 				11B354A3BC2968C083771FC1 /* BlockchainSettingsModule.swift in Sources */,
 				11B352841C5901ABCC0096C2 /* BlockchainSettingsViewModel.swift in Sources */,
+				C8E026EE2E5C4EF600A0D202 /* SRC20PromotionView.swift in Sources */,
 				11B3540CF7A5AA26C196D796 /* CreateAccountSimpleViewController.swift in Sources */,
 				11B357C5FC1B7FDE86244DA5 /* SingleSelectorViewController.swift in Sources */,
 				11B35BE5E6974F580927CAFA /* RestoreService.swift in Sources */,
@@ -13514,6 +13721,7 @@
 				11B35F72D67DB96FA83C9004 /* AddEvmSyncSourceViewController.swift in Sources */,
 				D07157E42A2DDAA6006F141F /* SendTronViewController.swift in Sources */,
 				11B357BADA228BE93B8451E7 /* AddEvmSyncSourceViewModel.swift in Sources */,
+				C8E026E32E5A020100A0D202 /* ItemPrimaryButtonStyle.swift in Sources */,
 				11B3509F4BE82888A15D88E8 /* AddEvmSyncSourceService.swift in Sources */,
 				11B3561E7DF566A274210E01 /* EvmSyncSourceRecord.swift in Sources */,
 				11B3559EF99DB1F9703547D5 /* EvmSyncSourceStorage.swift in Sources */,
@@ -13564,6 +13772,7 @@
 				11B35E70BF95197591A052EF /* PublicKeysService.swift in Sources */,
 				C89080F32BA9F0E000CCFFA4 /* LiquidityCoinSelectViewModel.swift in Sources */,
 				11B35281808DE30B8D717B73 /* PublicKeysViewModel.swift in Sources */,
+				C8E026F22E5C4F2100A0D202 /* SRC20AdditionalView.swift in Sources */,
 				11B3550E1FD46B02F0154CBC /* PublicKeysViewController.swift in Sources */,
 				6BAAF3472B9B245C00EFE5B2 /* ShimmerEffect.swift in Sources */,
 				11B353EAF32244B06E44FAD1 /* PrivateKeysViewModel.swift in Sources */,
@@ -13618,6 +13827,7 @@
 				C890805F2BA9BBC000CCFFA4 /* SafeCoinAdapter.swift in Sources */,
 				ABC9ADF1896A4AA4FAF0275A /* ContactBookSettingsService.swift in Sources */,
 				ABC9AC79ACCB69BF97A01B53 /* ContactBookSettingsViewModel.swift in Sources */,
+				C822980F2E86A4120050BDD9 /* SuperNodeLockRecord.swift in Sources */,
 				ABC9A133A6BF0FC9A87FA14A /* ContactBookSettingsViewController.swift in Sources */,
 				ABC9A359DB8C1A89269236CC /* ContactBookSettingsModule.swift in Sources */,
 				ABC9ABE2B6B19113D7C5EDA3 /* ContactBookHelper.swift in Sources */,
@@ -13690,6 +13900,7 @@
 				ABC9A4929EFBFAD0B595A4E8 /* RestoreCloudModule.swift in Sources */,
 				ABC9AFA5222E61F7999E2A88 /* RestoreCloudService.swift in Sources */,
 				D04DD5412B68C0EF00219B87 /* HighlightedTiltledTextView.swift in Sources */,
+				C8E026F42E5C544800A0D202 /* SRC20EditViewModel.swift in Sources */,
 				ABC9A324BB7E7FF8758A92C3 /* RestoreCloudViewController.swift in Sources */,
 				11B35E276D1C91193B687718 /* WalletService.swift in Sources */,
 				11B359E7632FC042278ED912 /* ContactBookManager.swift in Sources */,
@@ -13701,7 +13912,9 @@
 				11B352346D3565C7D6395D21 /* PasteInputView.swift in Sources */,
 				11B3555865BB7F4661A80DE1 /* PasteInputCell.swift in Sources */,
 				C890810B2BA9F0E100CCFFA4 /* LiquidityDataSource.swift in Sources */,
+				C82297EC2E842F450050BDD9 /* Safe4LockedRecordStorage.swift in Sources */,
 				11B358622B30F9ED5B734A94 /* WalletHeaderCell.swift in Sources */,
+				C82297F92E8453DA0050BDD9 /* Safe4ProposalReward.swift in Sources */,
 				11B3511098C99D7B7D5A492A /* CexWithdrawNetwork.swift in Sources */,
 				C89080F52BA9F0E000CCFFA4 /* LiquidityCoinSelectViewController.swift in Sources */,
 				11B350C214D423CE2DCD6853 /* CexAssetRecord.swift in Sources */,
@@ -13752,7 +13965,7 @@
 				C852F37A2C5B97C400EF92B3 /* ProposalSendViewController.swift in Sources */,
 				11B358DC90F3372DB98BD4A5 /* CexDepositNetworkSelectViewModel.swift in Sources */,
 				C81720542C5101ED00FE5061 /* SuperNodeRegisterService.swift in Sources */,
-				C816CDCB2DED377200596618 /* LockedRecoardView.swift in Sources */,
+				C816CDCB2DED377200596618 /* LockedRecordView.swift in Sources */,
 				11B3544A8CB646621B14DBAA /* CexDepositNetworkSelectService.swift in Sources */,
 				11B352980B127688D7EB06C5 /* CexCoinSelectModule.swift in Sources */,
 				11B350FEA2D819F569B0308E /* CexCoinSelectService.swift in Sources */,
@@ -13811,9 +14024,11 @@
 				ABC9A802418438F6BD1FC1E3 /* WalletTokenViewController.swift in Sources */,
 				ABC9A86937792D2BE777B431 /* WalletTokenModule.swift in Sources */,
 				ABC9AF6C4612BAFF25DF3560 /* WalletTokenViewModel.swift in Sources */,
+				C8E026C12E51C72D00A0D202 /* DeployView.swift in Sources */,
 				ABC9A338C63FEB1DF42D3D6E /* WalletTokenService.swift in Sources */,
 				C8FC91922C6095EA00B9240A /* SuperNodeSendViewController.swift in Sources */,
 				ABC9AFAB3BB4A1D2BFD4283B /* DataSourceChain.swift in Sources */,
+				C82297EF2E8435040050BDD9 /* Safe4StorageManager.swift in Sources */,
 				C81720502C5101C700FE5061 /* SuperNodeRegisterViewController.swift in Sources */,
 				ABC9A30A4C740609D0898809 /* WalletTokenBalanceDataSource.swift in Sources */,
 				ABC9A427B3166B8A0630EC8A /* WalletTokenBalanceViewModel.swift in Sources */,
@@ -13850,6 +14065,7 @@
 				C889AC562BAAE0B00077383F /* FallbackBlockViewModel.swift in Sources */,
 				11B35631BD5C6570C9359BEC /* RowButtonStyle.swift in Sources */,
 				11B3541ED37746BAFF1832BA /* Image.swift in Sources */,
+				C82298032E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift in Sources */,
 				ABC9AC5671A5EA9BF5ACBC5D /* NoAccountWalletTokenListService.swift in Sources */,
 				ABC9A9CDDC14BA6259450ECA /* WalletConnectPairingModule.swift in Sources */,
 				C8885D912DD6E6F100D21B6A /* WithdrawView.swift in Sources */,
@@ -13939,6 +14155,7 @@
 				ABC9A6EFD77E59AA6B4C5070 /* RestorePassphraseService.swift in Sources */,
 				ABC9AE2131780654A7139081 /* RestorePassphraseViewController.swift in Sources */,
 				ABC9A414F0F0AEA6E4DD4E9D /* RestorePassphraseModule.swift in Sources */,
+				C82297F62E8446AA0050BDD9 /* Safe4RecordUseInfo.swift in Sources */,
 				ABC9A372F53F1F1D59BF8969 /* RestoreFileConfigurationModule.swift in Sources */,
 				ABC9A2F6D2A2AAFA31C64BAB /* RestoreFileConfigurationViewModel.swift in Sources */,
 				ABC9A37FB71FA7DA14553EFC /* RawFullBackup.swift in Sources */,
@@ -13969,6 +14186,7 @@
 				11B35A40665567C6CE6EEBCC /* LanguageSettingsView.swift in Sources */,
 				11B355DC588C28E0FDC55DBD /* ScanQrView.swift in Sources */,
 				11B3520B4589E8C57FD4774F /* ScanQrBlurView.swift in Sources */,
+				C8E026FB2E5C546700A0D202 /* SRC20PromotionViewModel.swift in Sources */,
 				11B3542290A3C8B680AA1943 /* ScanQrAlertView.swift in Sources */,
 				11B35082449BDCDAF7CECC3E /* KeychainManager.swift in Sources */,
 				11B35CAD54059FA55DF81972 /* PasscodeLockManager.swift in Sources */,
@@ -13997,6 +14215,7 @@
 				ABC9A82C93C9E266D1AFD1C3 /* WalletConnectTransaction.swift in Sources */,
 				ABC9A43B0EDD9BB6291F2E46 /* WCRequestPayload.swift in Sources */,
 				ABC9A735B9F27756B046AF9F /* AddressAppShowModule.swift in Sources */,
+				C8E026E02E59ED4400A0D202 /* Safe4CustomTokenStorage.swift in Sources */,
 				ABC9A3345E4D8A354AEBB574 /* WCSendEthereumTransactionRequestModule.swift in Sources */,
 				ABC9AFFE5C166606FD561A21 /* WCSendEthereumTransactionRequestService.swift in Sources */,
 				ABC9A0F2D481BBE31568347F /* WCSendEthereumTransactionRequestViewModel.swift in Sources */,
@@ -14011,7 +14230,7 @@
 				11B354B551E301C652D67319 /* WCSendEthereumTransactionRequestViewController.swift in Sources */,
 				11B35B99BA314135CB139D02 /* WCSignEthereumTransactionRequestViewController.swift in Sources */,
 				11B3530E911B6F8B121BF174 /* CoinMarketsViewModel.swift in Sources */,
-				C816CDCF2DED378300596618 /* LockedRecoardViewModel.swift in Sources */,
+				C816CDCF2DED378300596618 /* LockedRecordViewModel.swift in Sources */,
 				11B359330CB6A60E5960CEC2 /* CoinMarketsView.swift in Sources */,
 				11B3545B6D4BA7CC76ACB9D2 /* ThemeList.swift in Sources */,
 				11B359CF6F464D59295B7B31 /* SelectorButtonStyle.swift in Sources */,
@@ -14070,6 +14289,7 @@
 				11B3564E05702B4253453F23 /* SendTonFactory.swift in Sources */,
 				11B3556CAD6FE74AB654E8B2 /* TonAddressParserItem.swift in Sources */,
 				C89081092BA9F0E100CCFFA4 /* LiquidityViewModel.swift in Sources */,
+				C82298062E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift in Sources */,
 				C852F3782C5B3D5A00EF92B3 /* MasterNodeTabViewModel.swift in Sources */,
 				ABC9A8787536855069557477 /* ReceiveAddressView.swift in Sources */,
 				C878611A2C5717EE00C018AC /* SuperNodeDetailVoteHeaderView.swift in Sources */,
@@ -14109,6 +14329,7 @@
 				11B356A34BC00A9BEB4C13C2 /* MultiSwapQuotesView.swift in Sources */,
 				11B353F68FC9A5BB2C0FE21F /* MultiSwapModule.swift in Sources */,
 				11B355D89EADD907D4FC3273 /* MultiSwapButtonState.swift in Sources */,
+				C8E026DC2E59E58C00A0D202 /* SRC20ManagerViewModel.swift in Sources */,
 				11B35CA3524A5FEA07135535 /* MultiSwapConfirmationView.swift in Sources */,
 				11B356075F51B38338958A4A /* MultiSwapSettingStorage.swift in Sources */,
 				D0740B1B2B87585000B085F9 /* ResendBitcoinService.swift in Sources */,
@@ -14134,6 +14355,7 @@
 				C890812F2BA9F0E100CCFFA4 /* SendSafe2wsafeAdapterService.swift in Sources */,
 				ABC9ADED4F2601F68604A180 /* BaseMultiSwapSettingsViewModel.swift in Sources */,
 				ABC9A06464454A2E0D2E4CD5 /* AddressMultiSwapSettingsViewModel.swift in Sources */,
+				C8E026D32E595B8700A0D202 /* SyncSafe4TokensService.swift in Sources */,
 				ABC9AA7EF428BA17CC53A7B1 /* SlippageMultiSwapSettingsViewModel.swift in Sources */,
 				ABC9A529895ECA82E309EFBB /* MultiSwapAddressView.swift in Sources */,
 				ABC9AFFCAC47238A626A97C3 /* MultiSwapRecipientView.swift in Sources */,
@@ -14157,6 +14379,7 @@
 				ABC9A0A78E18F832D2549CB2 /* TechnicalIndicatorCell.swift in Sources */,
 				11B3546D0D2F891FC9AE372C /* IMultiSwapQuote.swift in Sources */,
 				C89081192BA9F0E100CCFFA4 /* LiquidityMainViewController.swift in Sources */,
+				C8E026D92E59C62F00A0D202 /* SyncSafe4TokensProvider.swift in Sources */,
 				11B3584A053BC5DAE6E434F8 /* IMultiSwapConfirmationQuote.swift in Sources */,
 				11B3557AF8D64E9897965526 /* ISendConfirmationData.swift in Sources */,
 				11B3594FF624369050E43F8F /* SendDataNew.swift in Sources */,
@@ -14294,12 +14517,12 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 0.38.0817;
+				CURRENT_PROJECT_VERSION = 0.38.092806;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = UnstoppableWallet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15;
-				MARKETING_VERSION = 0.38.0817;
+				MARKETING_VERSION = 0.38.092806;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
@@ -14321,12 +14544,12 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 0.38.0817;
+				CURRENT_PROJECT_VERSION = 0.38.092806;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = UnstoppableWallet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15;
-				MARKETING_VERSION = 0.38.0817;
+				MARKETING_VERSION = 0.38.092806;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -14495,19 +14718,19 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Production.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 15;
-				MARKETING_VERSION = 0.38.0.1.0625;
+				MARKETING_VERSION = 0.38.0.1.0929;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = SafeWallet;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = safewalletDev;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = SafeWalletProd;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -14526,7 +14749,7 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 15;
-				MARKETING_VERSION = 0.38.0.1.0625;
+				MARKETING_VERSION = 0.38.0.1.0929;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = SafeWallet;
@@ -14765,6 +14988,14 @@
 			requirement = {
 				kind = exactVersion;
 				version = 4.2.0;
+			};
+		};
+		C82297E22E76EA230050BDD9 /* XCRemoteSwiftPackageReference "AdvancedList" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/chris-swift-dev/AdvancedList.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
 			};
 		};
 		C87CE6D82DE0941F0099FAFE /* XCRemoteSwiftPackageReference "UnicodeURL" */ = {
@@ -15068,7 +15299,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/EvmKit.Swift.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.38;
+				minimumVersion = 2.0.50;
 			};
 		};
 		C89080312BA9738200CCFFA4 /* XCRemoteSwiftPackageReference "web3swift" */ = {
@@ -15076,7 +15307,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/web3swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 2.0.22;
+				version = 2.0.27;
 			};
 		};
 		C89080322BA9760400CCFFA4 /* XCRemoteSwiftPackageReference "MarketKit.Swift" */ = {
@@ -15084,7 +15315,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/MarketKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 2.5.5;
+				version = 2.5.8;
 			};
 		};
 		C89080352BA979BE00CCFFA4 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */ = {
@@ -15371,6 +15602,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6B55E3392AF26D6400616B60 /* XCRemoteSwiftPackageReference "Starscream" */;
 			productName = Starscream;
+		};
+		C82297E32E76EBA20050BDD9 /* AdvancedList */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C82297E22E76EA230050BDD9 /* XCRemoteSwiftPackageReference "AdvancedList" */;
+			productName = AdvancedList;
+		};
+		C82297E52E76EBB20050BDD9 /* AdvancedList */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C82297E22E76EA230050BDD9 /* XCRemoteSwiftPackageReference "AdvancedList" */;
+			productName = AdvancedList;
 		};
 		C87CE6D72DE0941F0099FAFE /* IDNSDK */ = {
 			isa = XCSwiftPackageProductDependency;

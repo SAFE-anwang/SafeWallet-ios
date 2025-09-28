@@ -97,6 +97,11 @@ extension EvmLabelManager {
         case removeLiquidity
         case removeLiquidityPermit
         case lineLock
+        case promotion
+        case deploy_0
+        case deploy_1
+        case destroy
+        case removeVote
         
         var id: String {
             switch self {
@@ -105,6 +110,11 @@ extension EvmLabelManager {
             case .removeLiquidity: "0xbaa2abde"
             case .removeLiquidityPermit: "0x2195995c"
             case .lineLock: "0x9c4ee6bf"
+            case .promotion: "0x198581a5"
+            case .deploy_0: "0x40c10f19"
+            case .deploy_1: "0x61016060"
+            case .destroy: "0x42966c68"
+            case .removeVote : "0x9fbe5cc5"
             }
         }
         
@@ -113,6 +123,10 @@ extension EvmLabelManager {
             case .addLiquidity, .addEthLiquidity: "liquidity.title.add".localized
             case .removeLiquidity, .removeLiquidityPermit: "liquidity.remove".localized
             case .lineLock: "safe_zone.row.linear".localized
+            case .promotion: "SRC20_Info_Promotion".localized
+            case .deploy_0, .deploy_1: "SRC20_Deploy_Title".localized
+            case .destroy: "SRC20_Info_Destroy".localized
+            case .removeVote: "取消投票和委托".localized
             }
         }
     }

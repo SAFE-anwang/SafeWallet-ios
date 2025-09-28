@@ -74,12 +74,16 @@ class ManageWalletsService {
                 } else {
                     tokenQueries = BlockchainType.supported.map(\.defaultTokenQuery)
                 }
-
+                let safe4CustomTokenQueries = App.shared.safe4CustomTokenStorage.allTokens().map{
+                    TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: $0.address))
+                }
+                let safe4CustomTokens = try marketKit.tokens(queries: safe4CustomTokenQueries)
+                
                 let tokens = try marketKit.tokens(queries: tokenQueries)
                 let featuredTokens = tokens.filter { account.type.supports(token: $0) }
                 let enabledTokens = wallets.map(\.token)
 
-                return (enabledTokens + featuredTokens).removeDuplicates()
+                return (enabledTokens + featuredTokens + safe4CustomTokens).removeDuplicates()
             } else if let ethAddress = try? EvmKit.Address(hex: filter) {
                 let address = ethAddress.hex
                 let tokens = try marketKit.tokens(reference: address)

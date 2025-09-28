@@ -6,6 +6,7 @@ import OneInchKit
 import RxCocoa
 import RxSwift
 import UniswapKit
+import web3swift
 
 protocol ISendEvmTransactionService {
     var state: SendEvmTransactionService.State { get }
@@ -132,7 +133,12 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
         sendState = .sending
         
         if transaction.transactionData.times != -1 {
-            evmKitWrapper.sendSafe4LineLockSingle(transactionData: transaction.transactionData)
+            guard let value = (transaction.transactionData.value / BigUInt(transaction.transactionData.times)).safe4ToDecimal(),
+                    let type = web3swift.AccountManager.ContractType.contractType(value: value) else {
+                return
+            }
+            
+            evmKitWrapper.sendSafe4LineLockSingle(type: type, transactionData: transaction.transactionData)
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
                 .subscribe(onSuccess: { [weak self] hashStr in
                     self?.sendState = .sent(transactionHash: hashStr.hs.data)

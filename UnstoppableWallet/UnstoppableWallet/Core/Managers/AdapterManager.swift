@@ -16,7 +16,8 @@ class AdapterManager {
     private let queue = DispatchQueue(label: "\(AppConfig.label).adapter_manager", qos: .userInitiated)
     private let initAdaptersQueue = DispatchQueue(label: "\(AppConfig.label).adapter_manager.init_adapters", qos: .userInitiated)
     private var _adapterData = AdapterData(adapterMap: [:], account: nil)
-
+    private(set) var src20SyncManager: SRC20SyncManager?
+    
     init(adapterFactory: AdapterFactory, walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager,
          tronKitManager: TronKitManager, btcBlockchainManager: BtcBlockchainManager)
     {
@@ -52,6 +53,9 @@ class AdapterManager {
                 continue
             }
             if let adapter = adapterFactory.adapter(wallet: wallet) {
+                if wallet.token.blockchain.type == .safe4, wallet.token.type == .native {
+                    src20SyncManager = SRC20SyncManager(wallet: wallet, adapter: adapter)
+                }
                 newAdapterMap[wallet] = adapter
                 adapter.start()
             }
@@ -75,7 +79,7 @@ class AdapterManager {
 
         removedAdapters.forEach { adapter in
             adapter.stop()
-        }
+        }        
     }
 
     private func handleUpdatedEvmKit(blockchain: Blockchain) {

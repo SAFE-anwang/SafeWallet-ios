@@ -16,8 +16,7 @@ class CoinProvider {
 
         custom = walletManager.activeWallets
             .filter { wallet in wallet.token.isCustom }
-            .map { FullCoin(coin: $0.coin, tokens: [$0.token]) }
-
+            .map { FullCoin(coin: $0.coin, tokens: [$0.token])}
         predefined = predefinedCoins
     }
 

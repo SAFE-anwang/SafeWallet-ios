@@ -4,6 +4,7 @@ import EvmKit
 import MarketKit
 import ComponentKit
 import SwiftUI
+import web3swift
 
 class Safe4Module {
     
@@ -233,4 +234,18 @@ struct Safe4CrossChainView: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_: UIViewController, context _: Context) {}
+}
+
+extension web3swift.AccountManager.ContractType {
+    
+    static func contractType(value: Decimal) -> web3swift.AccountManager.ContractType? {
+        if 0.1 ..< 1 ~= value {
+            return .smallAmount_01
+        }else if 0.01 ..< 0.1 ~= value {
+            return .smallAmount_02
+        }else if value >= 1 {
+            return .native
+        }
+        return nil
+    }
 }

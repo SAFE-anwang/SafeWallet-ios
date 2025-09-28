@@ -22,6 +22,7 @@ struct MainSafeZoneView: View {
                 SectionCrossMATICView()
                 SectionSafeSwapView()
                 SectionWithdrawView()
+                SectionSRC20View()
                 SectionBasicInfoView()
             }
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
@@ -113,7 +114,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let nav = navController else { return }
-                guard let vc = LockedRecoardModule.viewController(nav: nav) else { return }
+                guard let vc = LockedRecordModule.viewController(nav: nav) else { return }
                 vc.hidesBottomBarWhenPushed = true
                 navController?.pushViewController(vc, animated: true)
             }) {
@@ -281,6 +282,27 @@ struct MainSafeZoneView: View {
                 navController?.pushViewController(vc, animated: true)
             }) {
                 ItemView(title: SafeWithdrawType.voteLocked.title)
+            }
+        }
+    }
+    
+    @ViewBuilder private func SectionSRC20View() -> some View {
+        SafeListSectionHeader(text: "SRC20_Deploy_Title".localized)
+        ListSection {
+            ClickableRow(action: {
+                guard let vc = DeployModule.viewController() else { return }
+                vc.hidesBottomBarWhenPushed = true
+                navController?.pushViewController(vc, animated: true)
+            }) {
+                ItemView(title: "SRC20_Deploy_One_Click_Issu".localized)
+            }
+            ClickableRow(action: {
+                guard let nav = navController else { return }
+                guard let vc = SRC20ManagerModule.viewController(nav: nav) else { return }
+                vc.hidesBottomBarWhenPushed = true
+                navController?.pushViewController(vc, animated: true)
+            }) {
+                ItemView(title: "SRC20_Deploy_Promotion".localized)
             }
         }
     }

@@ -13,7 +13,7 @@ struct RevokeCashView: View {
         ThemeView {
             Web3WebView(viewModel: viewModel, reloadTrigger: $reloadTrigger)
         }
-        .navigationTitle("合约授权管理")
+        .navigationTitle("Revoke_Manager".localized)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $viewModel.presentDestination, onDismiss: {
             reloadTrigger += 1

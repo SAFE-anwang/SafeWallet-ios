@@ -6,7 +6,7 @@ import BigInt
 import RxSwift
 import RxCocoa
 
-class LockedRecoardService {
+class LockedRecordService {
     private let privateKey: Data
     private let evmKit: EvmKit.Kit
 
@@ -30,27 +30,26 @@ class LockedRecoardService {
     }
 }
 
-extension LockedRecoardService {
+extension LockedRecordService {
     
-    func withdrawByID(id: BigUInt) async throws -> String {
-        try await web3().safe4.accountmanager.withdrawByID(privateKey: privateKey, ids: [id])
+    func withdrawByID(type: web3swift.AccountManager.ContractType, id: BigUInt) async throws -> String {
+        try await web3().safe4.accountmanager(type: type).withdrawByID(privateKey: privateKey, ids: [id])
     }
 }
 
 // locked
-extension LockedRecoardService {
+extension LockedRecordService {
     
-    func totalLockedNum() async throws -> BigUInt {
-        try await web3().safe4.accountmanager.getLockedAmount(userAddress).num
+    func totalLockedNum(type: web3swift.AccountManager.ContractType) async throws -> BigUInt {
+        try await web3().safe4.accountmanager(type: type).getLockedAmount(userAddress).num
     }
     
-    func getLockedIDs(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
-        try await web3().safe4.accountmanager.getLockedIDs(userAddress, start, count)
+    func getLockedIDs(type: web3swift.AccountManager.ContractType, start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        try await web3().safe4.accountmanager(type: type).getLockedIDs(userAddress, start, count)
     }
 }
-
 // proposal
-extension LockedRecoardService {
+extension LockedRecordService {
     func mineProposalNum() async throws -> BigUInt {
         return try await web3().safe4.proposal.getMineNum(userAddress)
     }
@@ -69,7 +68,7 @@ extension LockedRecoardService {
 }
 
 // voted
-extension LockedRecoardService {
+extension LockedRecordService {
     func getVotedIDNum4Voter() async throws -> BigUInt {
         let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
         return try await web3().safe4.snvote.getVotedIDNum4Voter(address)
@@ -82,13 +81,13 @@ extension LockedRecoardService {
 }
 
 // info
-extension LockedRecoardService {
+extension LockedRecordService {
     
-    func getRecordByID(id: BigUInt) async throws -> web3swift.AccountRecord {
-        try await web3().safe4.accountmanager.getRecordByID(id)
+    func getRecordByID(type: web3swift.AccountManager.ContractType, id: BigUInt) async throws -> web3swift.AccountRecord {
+        try await web3().safe4.accountmanager(type: type).getRecordByID(id)
     }
     
-    func getRecordUseInfo(id: BigUInt) async throws -> RecordUseInfo {
-        try await web3().safe4.accountmanager.getRecordUseInfo(id)
+    func getRecordUseInfo(type: web3swift.AccountManager.ContractType, id: BigUInt) async throws -> RecordUseInfo {
+        try await web3().safe4.accountmanager(type: type).getRecordUseInfo(id)
     }
 }

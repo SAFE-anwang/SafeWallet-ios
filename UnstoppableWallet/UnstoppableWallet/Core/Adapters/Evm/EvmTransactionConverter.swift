@@ -364,13 +364,14 @@ extension EvmTransactionConverter {
             return Safe4NodeRegisterTransactionRecoard(source: source, transaction: transaction, baseToken: baseToken, method: method, from: decoration.from?.eip55 ?? "", to: decoration.to?.eip55 ?? "", value: value, contractAddress: decoration.contract?.eip55 ?? "")
             
         case let decoration as Safe4AddLockDayDecoration:
-            return EvmOutgoingTransactionRecord(
+            return ContractCallTransactionRecord(
                 source: source,
                 transaction: transaction,
                 baseToken: baseToken,
-                to: decoration.to?.eip55 ?? "",
-                value: baseCoinValue(value: decoration.value, sign: .minus),
-                sentToSelf: decoration.sentToSelf
+                contractAddress: decoration.to?.eip55 ?? "",
+                method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                incomingEvents: [],
+                outgoingEvents: []
             )
             
         case let decoration as Safe4BatchRedeemDecoration:

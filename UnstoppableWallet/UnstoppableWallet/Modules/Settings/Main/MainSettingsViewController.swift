@@ -252,7 +252,7 @@ class MainSettingsViewController: ThemeViewController {
             tableView.universalRow48(
                 id: "revoke-manager",
                 image: .local(UIImage(named: "icloud_24")),
-                title: .body("合约授权管理".localized),
+                title: .body("Revoke_Manager".localized),
                 accessoryType: .disclosure,
                 isLast: true,
                 action: { [weak self] in

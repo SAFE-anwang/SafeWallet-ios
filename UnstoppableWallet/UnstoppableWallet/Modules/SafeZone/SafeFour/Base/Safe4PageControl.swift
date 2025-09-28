@@ -5,7 +5,8 @@ struct Safe4PageControl {
     private(set) var totalNum: Int
     private var page: Int = 0
     private let isReverse: Bool
-        
+    private var isExceed: Bool = false
+    
     init(initCount: Int, totalNum: Int = 0, page: Int = 0, isReverse: Bool = false) {
         self.initCount = initCount
         self.totalNum = totalNum
@@ -20,6 +21,7 @@ struct Safe4PageControl {
     
     mutating func plusPage() {
         let next = page + 1
+        isExceed = next > maxPageNum
         page = min(next, maxPageNum)
     }
     
@@ -49,5 +51,13 @@ struct Safe4PageControl {
         }else {
             return pageArray[page].first ?? 0
         }
+    }
+    
+    var isLastPage: Bool {
+        page == maxPageNum
+    }
+    
+    var isAbleLoadMore: Bool {
+        totalNum > 0 && !isExceed
     }
 }

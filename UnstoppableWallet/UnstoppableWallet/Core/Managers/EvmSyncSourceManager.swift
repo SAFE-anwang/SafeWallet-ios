@@ -21,11 +21,11 @@ class EvmSyncSourceManager {
     private func defaultTransactionSource(blockchainType: BlockchainType) -> EvmKit.TransactionSource {
         switch blockchainType {
         case .ethereum: return .ethereumEtherscan(apiKeys: [AppConfig.etherscanKey])
-        case .binanceSmartChain: return .bscscan(apiKeys: [AppConfig.bscscanKey])
-        case .polygon: return .polygonscan(apiKeys: AppConfig.polygonscanKeys)
+        case .binanceSmartChain: return .ethereumEtherscan(apiKeys: [AppConfig.etherscanKey])
+        case .polygon: return .ethereumEtherscan(apiKeys: [AppConfig.etherscanKey])
         case .avalanche: return .snowtrace(apiKeys: [AppConfig.snowtraceKey])
         case .optimism: return .optimisticEtherscan(apiKeys: [AppConfig.optimismEtherscanKey])
-        case .arbitrumOne: return .arbiscan(apiKeys: [AppConfig.arbiscanKey])
+        case .arbitrumOne: return .ethereumEtherscan(apiKeys: [AppConfig.etherscanKey])
         case .gnosis: return .gnosis(apiKeys: [AppConfig.gnosisscanKey])
         case .fantom: return .fantom(apiKeys: [AppConfig.ftmscanKey])
         case .safe4: return AppConfig.isSafe4TestNet ? .safeFourscanTestNet(apiKeys: [AppConfig.etherscanKey]) : .safeFourscan(apiKeys: [AppConfig.etherscanKey])

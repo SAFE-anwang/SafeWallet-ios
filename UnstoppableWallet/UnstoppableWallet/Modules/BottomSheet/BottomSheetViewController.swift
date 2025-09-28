@@ -169,7 +169,7 @@ class BottomSheetViewController: ThemeActionSheetController {
                         .imageElement(image: .url(imageUrl, placeholder: "placeholder_rectangle_32"), size: .image32),
                         .text { component in
                             component.font = textFont
-                            component.textColor = .themeLeah
+                            component.textColor = .themeBlue
                             component.text = value
                             component.numberOfLines = 0
                         },
@@ -185,6 +185,7 @@ class BottomSheetViewController: ThemeActionSheetController {
                     ]),
                     tableView: tableView,
                     id: "copyable-value-\(index)",
+                    autoDeselect: true,
                     dynamicHeight: { width in
                         let height = CellBuilderNew.height(
                             containerWidth: width,
@@ -197,8 +198,13 @@ class BottomSheetViewController: ThemeActionSheetController {
 
                         return max(height, .heightCell56)
                     },
+                    
                     bind: { cell in
                         cell.set(backgroundStyle: backgroundStyle, isFirst: true, isLast: true)
+                    },
+                    
+                    action: {
+                        CopyHelper.copyAndNotify(value: value)
                     }
                 ),
             ]

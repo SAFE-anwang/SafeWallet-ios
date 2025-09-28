@@ -259,8 +259,8 @@ extension ExtendedKeyService {
             case .litecoin: return "Litecoin"
             case .dogecoin: return "Doge"
             case .dash: return "Dash"
-            case .safe: return "Safe"
-            case .safe4: return "Safe4"
+            case .safe: return "Safe3"
+            case .safe4: return "Safe"
             }
         }
 

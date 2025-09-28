@@ -139,7 +139,7 @@ extension AdapterFactory {
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .safe, accountOrigin: wallet.account.origin)
             return try? SafeCoinAdapter(wallet: wallet, syncMode: syncMode)
             
-        case  (.native, .safe4):
+        case (.native, .safe4):
             return evmAdapter(wallet: wallet)
 
         case (.native, .tron):

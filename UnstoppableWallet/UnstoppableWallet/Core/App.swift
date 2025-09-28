@@ -99,9 +99,11 @@ class App {
     let kitCleaner: KitCleaner
     let appManager: AppManager
     let apiKeyManager: ApiKeyManager
-
+    let safe4CustomTokenStorage: Safe4CustomTokenStorage
+    let safe4StorageManager: Safe4StorageManager
     let safeInfoManager: SafeInfoManager
     let appEventHandler = EventHandler()
+    
     init() throws {
         let databaseURL = try FileManager.default
             .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
@@ -200,7 +202,6 @@ class App {
 
         let evmAccountManagerFactory = EvmAccountManagerFactory(accountManager: accountManager, walletManager: walletManager, evmAccountRestoreStateManager: evmAccountRestoreStateManager, marketKit: marketKit)
         evmBlockchainManager = EvmBlockchainManager(syncSourceManager: evmSyncSourceManager, testNetManager: testNetManager, marketKit: marketKit, accountManagerFactory: evmAccountManagerFactory)
-
         let hsLabelProvider = HsLabelProvider(networkManager: networkManager)
         let evmLabelStorage = EvmLabelStorage(dbPool: dbPool)
         let syncerStateStorage = SyncerStateStorage(dbPool: dbPool)
@@ -224,7 +225,8 @@ class App {
         redeemStorage = try RedeemStorage(dbPool: dbPool)
         
         apiKeyManager = ApiKeyManager(networkManager: networkManager)
-
+        safe4CustomTokenStorage = try Safe4CustomTokenStorage(dbPool: dbPool)
+        safe4StorageManager = try Safe4StorageManager(dbPool: dbPool)
         let nftDatabaseStorage = try NftDatabaseStorage(dbPool: dbPool)
         let nftStorage = NftStorage(marketKit: marketKit, storage: nftDatabaseStorage)
         nftMetadataManager = NftMetadataManager(networkManager: networkManager, marketKit: marketKit, storage: nftStorage)
@@ -314,7 +316,6 @@ class App {
         )
 
         kitCleaner = KitCleaner(accountManager: accountManager)
-
         appManager = AppManager(
             accountManager: accountManager,
             walletManager: walletManager,
