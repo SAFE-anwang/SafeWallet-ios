@@ -282,7 +282,7 @@ struct DatePickerTextField: UIViewRepresentable {
         datePicker.minimumDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
         datePicker.datePickerMode = .date
         datePicker.preferredDatePickerStyle = .wheels
-        datePicker.backgroundColor = .white
+        datePicker.backgroundColor = .themeTyler
         datePicker.addTarget(
             context.coordinator,
             action: #selector(Coordinator.dateChanged(_:)),
