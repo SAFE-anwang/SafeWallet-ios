@@ -52,7 +52,7 @@ class SyncSafe4TokensService {
         data.tokens
             .filter({$0.creator.lowercased() != evmKit.receiveAddress.eip55.lowercased()})
             .forEach { token in
-            if token.logoURI != nil { // 已推广
+                if let url = token.logoURI, url.count > 0 { // 已推广
                 addToken(tokenInfo: token)
             }
         }
