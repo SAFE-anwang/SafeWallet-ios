@@ -1438,10 +1438,6 @@
 		C82297F62E8446AA0050BDD9 /* Safe4RecordUseInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297F42E8446AA0050BDD9 /* Safe4RecordUseInfo.swift */; };
 		C82297F82E8453DA0050BDD9 /* Safe4ProposalReward.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297F72E8453DA0050BDD9 /* Safe4ProposalReward.swift */; };
 		C82297F92E8453DA0050BDD9 /* Safe4ProposalReward.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82297F72E8453DA0050BDD9 /* Safe4ProposalReward.swift */; };
-		C82298022E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298012E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift */; };
-		C82298032E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298012E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift */; };
-		C82298052E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298042E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift */; };
-		C82298062E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298042E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift */; };
 		C82298082E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298072E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift */; };
 		C82298092E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82298072E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift */; };
 		C822980E2E86A4120050BDD9 /* SuperNodeLockRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C822980D2E86A4120050BDD9 /* SuperNodeLockRecord.swift */; };
@@ -5163,8 +5159,6 @@
 		C82297F12E843DB50050BDD9 /* Safe4AccountRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4AccountRecord.swift; sourceTree = "<group>"; };
 		C82297F42E8446AA0050BDD9 /* Safe4RecordUseInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4RecordUseInfo.swift; sourceTree = "<group>"; };
 		C82297F72E8453DA0050BDD9 /* Safe4ProposalReward.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4ProposalReward.swift; sourceTree = "<group>"; };
-		C82298012E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4ProposalLockedStorage.swift; sourceTree = "<group>"; };
-		C82298042E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4WithdrawProposalStorage.swift; sourceTree = "<group>"; };
 		C82298072E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4WithdrawLockedStorage.swift; sourceTree = "<group>"; };
 		C822980D2E86A4120050BDD9 /* SuperNodeLockRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeLockRecord.swift; sourceTree = "<group>"; };
 		C82298102E86A5570050BDD9 /* SuperNodeLockRecordStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeLockRecordStorage.swift; sourceTree = "<group>"; };
@@ -9459,8 +9453,6 @@
 			children = (
 				C82297EE2E8435040050BDD9 /* Safe4StorageManager.swift */,
 				C82297EB2E842F450050BDD9 /* Safe4LockedRecordStorage.swift */,
-				C82298012E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift */,
-				C82298042E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift */,
 				C82298072E8621270050BDD9 /* Safe4WithdrawLockedStorage.swift */,
 			);
 			path = Storage;
@@ -12294,7 +12286,6 @@
 				C87CEC902DE0941F0099FAFE /* FallbackBlockViewModel.swift in Sources */,
 				C87CEC912DE0941F0099FAFE /* RowButtonStyle.swift in Sources */,
 				C87CEC922DE0941F0099FAFE /* Image.swift in Sources */,
-				C82298022E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift in Sources */,
 				C87CEC932DE0941F0099FAFE /* NoAccountWalletTokenListService.swift in Sources */,
 				C87CEC942DE0941F0099FAFE /* WalletConnectPairingModule.swift in Sources */,
 				C87CEC952DE0941F0099FAFE /* WithdrawView.swift in Sources */,
@@ -12518,7 +12509,6 @@
 				C87CED6C2DE0941F0099FAFE /* SendTonFactory.swift in Sources */,
 				C87CED6D2DE0941F0099FAFE /* TonAddressParserItem.swift in Sources */,
 				C87CED6E2DE0941F0099FAFE /* LiquidityViewModel.swift in Sources */,
-				C82298052E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift in Sources */,
 				C87CED6F2DE0941F0099FAFE /* MasterNodeTabViewModel.swift in Sources */,
 				C87CED702DE0941F0099FAFE /* ReceiveAddressView.swift in Sources */,
 				C87CED712DE0941F0099FAFE /* SuperNodeDetailVoteHeaderView.swift in Sources */,
@@ -14065,7 +14055,6 @@
 				C889AC562BAAE0B00077383F /* FallbackBlockViewModel.swift in Sources */,
 				11B35631BD5C6570C9359BEC /* RowButtonStyle.swift in Sources */,
 				11B3541ED37746BAFF1832BA /* Image.swift in Sources */,
-				C82298032E854B4B0050BDD9 /* Safe4ProposalLockedStorage.swift in Sources */,
 				ABC9AC5671A5EA9BF5ACBC5D /* NoAccountWalletTokenListService.swift in Sources */,
 				ABC9A9CDDC14BA6259450ECA /* WalletConnectPairingModule.swift in Sources */,
 				C8885D912DD6E6F100D21B6A /* WithdrawView.swift in Sources */,
@@ -14289,7 +14278,6 @@
 				11B3564E05702B4253453F23 /* SendTonFactory.swift in Sources */,
 				11B3556CAD6FE74AB654E8B2 /* TonAddressParserItem.swift in Sources */,
 				C89081092BA9F0E100CCFFA4 /* LiquidityViewModel.swift in Sources */,
-				C82298062E861E5F0050BDD9 /* Safe4WithdrawProposalStorage.swift in Sources */,
 				C852F3782C5B3D5A00EF92B3 /* MasterNodeTabViewModel.swift in Sources */,
 				ABC9A8787536855069557477 /* ReceiveAddressView.swift in Sources */,
 				C878611A2C5717EE00C018AC /* SuperNodeDetailVoteHeaderView.swift in Sources */,
@@ -14517,12 +14505,12 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 0.38.092806;
+				CURRENT_PROJECT_VERSION = 0.38.092901;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = UnstoppableWallet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15;
-				MARKETING_VERSION = 0.38.092806;
+				MARKETING_VERSION = 0.38.092901;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
@@ -14544,12 +14532,12 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 0.38.092806;
+				CURRENT_PROJECT_VERSION = 0.38.092901;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = UnstoppableWallet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15;
-				MARKETING_VERSION = 0.38.092806;
+				MARKETING_VERSION = 0.38.092901;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -15307,7 +15295,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/web3swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 2.0.27;
+				version = 2.0.28;
 			};
 		};
 		C89080322BA9760400CCFFA4 /* XCRemoteSwiftPackageReference "MarketKit.Swift" */ = {

@@ -28,6 +28,10 @@ struct LockedRecordView: View {
                     if case .loading = viewModel.dataState, !viewModel.viewItems.isEmpty {
                         ProgressView()
                     }
+                    if !viewModel.hasMoreItems {
+                        Text("loadData.nomore".localized)
+                            .themeSubhead1(color: .themeLeah, alignment: .center)
+                    }
                 }
 
                 if case .loading = viewModel.dataState, viewModel.viewItems.isEmpty {

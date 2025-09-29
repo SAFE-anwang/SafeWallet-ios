@@ -11,7 +11,6 @@ class LockedRecordViewModel: ObservableObject {
     private let nullAddress = "0x0000000000000000000000000000000000000000"
     private let service: LockedRecordService
     private let lockedRecoardStorage: Safe4LockedRecordStorage
-    private let proposalStorage: Safe4ProposalLockedStorage
     private var votedPageControl = Safe4PageControl(initCount: 20, totalNum: 0, page: 0, isReverse: false)
     private var lockedPageControl = Safe4PageControl(initCount: 20, totalNum: 0, page: 0, isReverse: false)
     private var lockedPageControl_01 = Safe4PageControl(initCount: 20, totalNum: 0, page: 0, isReverse: false)
@@ -27,10 +26,9 @@ class LockedRecordViewModel: ObservableObject {
     @Published private(set) var hasMoreItems = true
     @Published private(set) var viewItems: [WithdrawItemRecord] = []
 
-    init(service: LockedRecordService, lockedStorage: Safe4LockedRecordStorage, proposalStorage: Safe4ProposalLockedStorage) {
+    init(service: LockedRecordService, lockedStorage: Safe4LockedRecordStorage) {
         self.service = service
         self.lockedRecoardStorage = lockedStorage
-        self.proposalStorage = proposalStorage
         showCache()
         requestItems(loadMore: false)
     }
@@ -72,13 +70,11 @@ extension LockedRecordViewModel {
     
      private func showCache() {
          do{
-             let items_0 = try lockedRecoardStorage.allRecords().map{ item in
+             let items = try lockedRecoardStorage.allRecords().map{ item in
                  let lastBlockHeight = BigUInt(service.lastBlockHeight ?? 0)
                  return WithdrawItemRecord(lastBlockHeight: lastBlockHeight, record: item.record, info: item.info)
              }
-             
-             let items_1 = try proposalStorage.allRecords().flatMap{ proposalWithdrawItems(reward: $0) }
-             viewItems = items_0 + items_1
+             viewItems = items
              sortItems()
          }catch{}
     }
@@ -91,7 +87,6 @@ extension LockedRecordViewModel {
             do{
                 if !loadMore {
                     try lockedRecoardStorage.clear()
-                    try proposalStorage.clear()
                     lockedIds.removeAll()
                     lockedIds_01.removeAll()
                     lockedIds_02.removeAll()
@@ -109,14 +104,13 @@ extension LockedRecordViewModel {
                     try await proposalPageControl.set(totalNum: Int(proposalTotalNum))
                 }
                 
-                guard lockedPageControl.isAbleLoadMore || lockedPageControl_01.isAbleLoadMore || lockedPageControl_02.isAbleLoadMore || votedPageControl.isAbleLoadMore || proposalPageControl.totalNum > 0 else {
-                    await MainActor.run {
-                        hasMoreItems = false
-                          dataState = .items
+                guard lockedPageControl.isAbleLoadMore || lockedPageControl_01.isAbleLoadMore || lockedPageControl_02.isAbleLoadMore || votedPageControl.isAbleLoadMore || proposalPageControl.isAbleLoadMore else {
+                    DispatchQueue.main.async {
+                        self.hasMoreItems = false
+                        self.dataState = .items
                     }
                     return
                 }
-                
                 var tempItems = [WithdrawItemRecord]()
                 
                 async let items_0 = Locked_native()
@@ -217,8 +211,10 @@ extension LockedRecordViewModel {
     private func proposal() async throws -> [WithdrawItemRecord] {
         if proposalPageControl.isAbleLoadMore {
             let proposalIds = try await service.mineProposalIds(start: BigUInt(proposalPageControl.start), count: BigUInt(proposalPageControl.currentPageCount))
-            let items = try await mineProposalWithdrawItems(ids: proposalIds)
-            if items.count > 0 {
+            let lockIds = try await mineProposalLockIds(ids: proposalIds)
+            let results = try await getRecordInfos(type: .native, ids: lockIds)
+            let items = viewItems(results: results.filter{$0.1?.frozenAddr.address != nullAddress}, type: .native)
+            if results.count > 0 {
                 proposalPageControl.plusPage()
             }
             return items
@@ -275,39 +271,14 @@ extension LockedRecordViewModel {
         return results
     }
     
-    private func mineProposalWithdrawItems(ids: [BigUInt]) async throws -> [WithdrawItemRecord] {
-        var items = [WithdrawItemRecord]()
+    private func mineProposalLockIds(ids: [BigUInt]) async throws -> [BigUInt] {
+        var lockIds = [BigUInt]()
         for id in ids {
-            let info = try await service.getInfo(id: id)
             let rewardIDs =  try await service.getProposalRewardIDs(id: id)
-            let reward = Safe4ProposalReward(info: info, ids: rewardIDs)
-            proposalStorage.save(record: reward)
-            items = proposalWithdrawItems(reward: reward)
+            lockIds.append(contentsOf: rewardIDs)
         }
-        return items
+        return lockIds
     }
-    
-    private func proposalWithdrawItems(reward: Safe4ProposalReward) -> [WithdrawItemRecord] {
-        var items = [WithdrawItemRecord]()
-        let payAmount = BigUInt(reward.info.payAmount) ?? 0
-        let payTimes = BigUInt(reward.info.payTimes)
-        let amount = ( payAmount / payTimes).safe4FomattedAmount + " SAFE"
-        let unlockHeight = Int(reward.info.updateHeight) ?? 0
-        for id in reward.ids {
-            let item = WithdrawItemRecord(
-                                    id: id,
-                                    amount: amount,
-                                    unlockHeight: unlockHeight,
-                                    releaseHeight: nil,
-                                    address: nil,
-                                    withdrawEnable: true,
-                                    addLockDayEnable: false
-            )
-            items.append(item)
-        }
-        return items
-    }
-    
 }
 extension LockedRecordViewModel {
     enum RequestError: Error {

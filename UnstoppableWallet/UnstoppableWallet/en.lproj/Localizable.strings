@@ -2441,3 +2441,4 @@
 "SRC20_No_Deploy" = "You don\'t have deploy asset.";
 "Super_Node_Modify_IncentivePlan" = "Update incentive plan";
 "Revoke_Manager" = "Revoke Manager";
+"loadData.nomore" = "No more data";

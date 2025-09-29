@@ -9,7 +9,6 @@ import AdvancedList
 class WithdrawViewModel: ObservableObject {
     private let nullAddress = "0x0000000000000000000000000000000000000000"
     private let service: WithdrawViewService
-    private let withdrawProposalStorage: Safe4WithdrawProposalStorage
     private let withdrawLockedStorage: Safe4WithdrawLockedStorage
     
     @Published private(set) var sendState: SendStatus = .normal
@@ -28,10 +27,9 @@ class WithdrawViewModel: ObservableObject {
     
     var onSuccess: ((SendStatus) -> Void)?
         
-    init(service: WithdrawViewService, withdrawLockedStorage: Safe4WithdrawLockedStorage, withdrawProposalStorage: Safe4WithdrawProposalStorage) {
+    init(service: WithdrawViewService, withdrawLockedStorage: Safe4WithdrawLockedStorage) {
         self.service = service
         self.withdrawLockedStorage = withdrawLockedStorage
-        self.withdrawProposalStorage = withdrawProposalStorage
         
         showCache()
         withdrawItems(loadMore: false)
@@ -145,8 +143,14 @@ extension WithdrawViewModel {
                     )
                 }.filter{$0.isSelEnable}
             case .proposal:
-                let records = try withdrawProposalStorage.allRecords()
-                viewItems = records.flatMap { proposalWithdrawItems(reward: $0)}.filter{$0.isSelEnable}
+                let records = try withdrawLockedStorage.allRecords(by: .proposal)
+                viewItems = records.map{
+                    WithdrawItem(type: service.type,
+                                 lastBlockHeight: BigUInt(service.lastBlockHeight ?? 0),
+                                 record: $0.record,
+                                 info: $0.info
+                    )
+                }.filter{$0.isSelEnable}
                 
             }
             
@@ -177,11 +181,11 @@ extension WithdrawViewModel {
                     }
                     return
                 }
+                let infos = try await getRecordInfos(ids: ids)
                 
                 var results: [Safe4WithdrawLockedRecord] = []
                 switch service.type {
                 case .masterNode:
-                    let infos = try await getRecordInfos(ids: ids)
                     let tempArray = infos.filter{$0.1.frozenAddr.address != nullAddress}
                     let array = await node(nodeType: .masterNode, records: tempArray)
                     let recoards = array.map{Safe4WithdrawLockedRecord(type: .masterNode, record: Safe4AccountRecord(record: $0.0), info: Safe4RecordUseInfo(info: $0.1))}
@@ -189,7 +193,6 @@ extension WithdrawViewModel {
                     results = recoards
                     
                 case .superNode:
-                    let infos = try await getRecordInfos(ids: ids)
                     let tempArray = infos.filter{$0.1.frozenAddr.address != nullAddress}
                     let array = await node(nodeType: .superNode, records: tempArray)
                     let recoards = array.map{Safe4WithdrawLockedRecord(type: .superNode, record: Safe4AccountRecord(record: $0.0), info: Safe4RecordUseInfo(info: $0.1))}
@@ -197,26 +200,19 @@ extension WithdrawViewModel {
                     results = recoards
                                         
                 case .voteLocked:
-                    let infos = try await getRecordInfos(ids: ids)
                     let voteArray = infos.filter{$0.1.votedAddr.address != nullAddress}
                     let recoards = voteArray.map{Safe4WithdrawLockedRecord(type: .voteLocked, record: Safe4AccountRecord(record: $0.0), info: Safe4RecordUseInfo(info: $0.1))}
                     withdrawLockedStorage.save(type: .voteLocked, recoards: recoards)
                     results = recoards
                     
                 case .proposal:
-                    let array = try await mineProposalWithdrawItems(ids: ids)
-                    if array.count > 0 {
-                        pageControl.plusPage()
-                    }
-                    await MainActor.run {
-                        viewItems.append(contentsOf: array)
-                        viewItems.sort(by:{ Int($0.id) < Int($1.id) })
-                        dataState = .items
-                    }
-                    return
+                    let tempArray = infos.filter{$0.1.frozenAddr.address != nullAddress}
+                    let recoards = tempArray.map{Safe4WithdrawLockedRecord(type: .proposal, record: Safe4AccountRecord(record: $0.0), info: Safe4RecordUseInfo(info: $0.1))}
+                    withdrawLockedStorage.save(type: .voteLocked, recoards: recoards)
+                    results = recoards
                 }
                 
-                if results.count > 0 {
+                if infos.count > 0 {
                     pageControl.plusPage()
                 }
                 
@@ -259,7 +255,7 @@ extension WithdrawViewModel {
             case .voteLocked:
                 try withdrawLockedStorage.clear(type: .voteLocked)
             case .proposal:
-                try withdrawProposalStorage.clear()
+                try withdrawLockedStorage.clear(type: .proposal)
             }
             
             try await pageControl(type: type)
@@ -314,37 +310,13 @@ extension WithdrawViewModel {
         pageControl.set(totalNum: Int(totalNum))
     }
     
-    private func mineProposalWithdrawItems(ids: [BigUInt]) async throws -> [WithdrawItem] {
-        var items = [WithdrawItem]()
+    private func mineProposalLockIds(ids: [BigUInt]) async throws -> [BigUInt] {
+        var lockIds = [BigUInt]()
         for id in ids {
-            let info = try await service.getInfo(id: id)
             let rewardIDs =  try await service.getProposalRewardIDs(id: id)
-            let reward = Safe4WithdrawProposalReward(info: info, ids: rewardIDs)
-            withdrawProposalStorage.save(record: reward)
-            items = proposalWithdrawItems(reward: reward)
+            lockIds.append(contentsOf: rewardIDs)
         }
-        return items
-    }
-    
-    private func proposalWithdrawItems(reward: Safe4WithdrawProposalReward) -> [WithdrawItem] {
-        var items = [WithdrawItem]()
-        let payAmount = BigUInt(reward.info.payAmount) ?? 0
-        let payTimes = BigUInt(reward.info.payTimes)
-        let amount = ( payAmount / payTimes).safe4FomattedAmount + " SAFE"
-        let unlockHeight = Int(reward.info.updateHeight) ?? 0
-        for id in reward.ids {
-            let item = WithdrawItem(
-                                    id: BigUInt(id),
-                                    amount: amount,
-                                    unlockHeight: BigUInt(unlockHeight),
-                                    releaseHeight: .zero,
-                                    address: nullAddress,
-                                    isWithdrawEnable: true,
-                                    isRemoveVoteEnable: false
-            )
-            items.append(item)
-        }
-        return items
+        return lockIds
     }
     
     private func ids(type: web3swift.AccountManager.ContractType, start: Int, count: Int) async throws -> [BigUInt] {
@@ -354,7 +326,8 @@ extension WithdrawViewModel {
             ids = try await service.getAvailableIDs(type: type, start: BigUInt(start), count: BigUInt(count))
             
         case .proposal:
-            ids = try await service.mineProposalIds(start: BigUInt(start), count: BigUInt(count))
+            let proposalIds = try await service.mineProposalIds(start: BigUInt(start), count: BigUInt(count))
+            ids = try await mineProposalLockIds(ids: proposalIds)
             
         case .voteLocked:
             ids = try await service.getVotedIDs4Voter(start: BigUInt(start), count: BigUInt(count))

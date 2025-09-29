@@ -85,4 +85,5 @@ enum LockedRecordSourceType: Int {
     case superNode
     case masterNode
     case voteLocked
+    case proposal
 }

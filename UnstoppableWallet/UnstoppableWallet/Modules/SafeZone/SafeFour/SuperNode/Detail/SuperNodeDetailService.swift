@@ -134,20 +134,6 @@ extension SuperNodeDetailService {
         let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
         return try await web3().safe4.accountmanager(type: type).getLockedIDs(address, start, count)
     }
-    
-//    func mineProposalNum() async throws -> BigUInt {
-//        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
-//        return try await web3().safe4.proposal.getMineNum(address)
-//    }
-//    
-//    func mineProposalIds(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
-//        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
-//        return try await web3().safe4.proposal.getMines(address, start, count)
-//    }
-//    
-//    func getProposalRewardIDs(id: BigUInt) async throws -> [BigUInt] {
-//        try await web3().safe4.proposal.getRewardIDs(id)
-//    }
 }
 
 // proposal
@@ -166,9 +152,9 @@ extension SuperNodeDetailService {
         try await web3().safe4.proposal.getRewardIDs(id)
     }
     
-    func getInfo(id: BigUInt) async throws -> ProposalInfo {
-        try await web3().safe4.proposal.getInfo(id)
-    }
+//    func getInfo(id: BigUInt) async throws -> ProposalInfo {
+//        try await web3().safe4.proposal.getInfo(id)
+//    }
 }
 
 extension SuperNodeDetailService {

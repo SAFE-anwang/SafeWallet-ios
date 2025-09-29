@@ -17,8 +17,7 @@ class LockedRecordModule {
         
         let service = LockedRecordService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
         let viewModel = LockedRecordViewModel(service: service,
-                                              lockedStorage: App.shared.safe4StorageManager.lockedRecoardStorage,
-                                              proposalStorage: App.shared.safe4StorageManager.proposalLockedStorage
+                                              lockedStorage: App.shared.safe4StorageManager.lockedRecoardStorage
         )
         
         let viewController = LockedRecordView(viewModel: viewModel, uiNavController: nav)

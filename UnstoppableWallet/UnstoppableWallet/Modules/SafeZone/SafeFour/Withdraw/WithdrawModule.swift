@@ -15,8 +15,7 @@ class WithdrawModule {
         }
         let service = WithdrawViewService(type: type, privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
         let viewModel = WithdrawViewModel(service: service,
-                                          withdrawLockedStorage: App.shared.safe4StorageManager.withdrawLockedStorage,
-                                          withdrawProposalStorage: App.shared.safe4StorageManager.withdrawProposalStorage
+                                          withdrawLockedStorage: App.shared.safe4StorageManager.withdrawLockedStorage
         )
         let viewController = WithdrawView(viewModel: viewModel).toViewController()
         return viewController

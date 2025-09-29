@@ -111,7 +111,7 @@ class SuperNodeVoteLockRecordCell: BaseThemeCell {
     private func addLoadMoreButton() {
         loadMoreButton.cornerRadius = 6
         loadMoreButton.setTitle("".localized, for: .normal)
-        loadMoreButton.setTitle("没有更多了".localized, for: .disabled)
+        loadMoreButton.setTitle("loadData.nomore".localized, for: .disabled)
         loadMoreButton.titleLabel?.font = .subhead2
         loadMoreButton.setTitleColor(.themeIssykBlue, for: .normal)
         loadMoreButton.setTitleColor(.themeBlackAndWhite, for: .disabled)

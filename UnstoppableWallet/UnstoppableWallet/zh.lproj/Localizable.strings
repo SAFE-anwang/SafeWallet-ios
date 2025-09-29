@@ -2320,3 +2320,4 @@
 "SRC20_No_Deploy" = "您还没有发行资产";
 "Super_Node_Modify_IncentivePlan" = "修改分红比例";
 "Revoke_Manager" = "合约授权管理（BrowserWallet连接）";
+"loadData.nomore" = "没有更多了";

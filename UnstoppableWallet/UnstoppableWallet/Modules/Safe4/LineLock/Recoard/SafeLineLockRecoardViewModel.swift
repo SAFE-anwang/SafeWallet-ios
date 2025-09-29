@@ -89,10 +89,7 @@ extension SafeLineLockRecoardViewModel {
         var lockedSafe: String {
             "\(value.safe4FomattedAmount)"
         }
-        
-        var id: Self {
-            self
-        }
+        let id = UUID()
     }
 }
 
