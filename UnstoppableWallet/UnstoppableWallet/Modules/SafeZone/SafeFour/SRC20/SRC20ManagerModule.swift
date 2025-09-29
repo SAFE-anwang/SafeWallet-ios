@@ -38,7 +38,7 @@ class SRC20ManagerModule {
             viewController = SRC20EditView(viewModel: viewModel).toViewController()
             
         case .promotion:
-            guard let safeWallet = walletList.filter({$0.coin.uid == safe4CoinUid && $0.token.blockchain.type == .safe4 && $0.token.type == .native}).first else {
+            guard let safeWallet = walletList.filter({$0.coin.uid.lowercased() == safe4CoinUid.lowercased() && $0.token.blockchain.type == .safe4 && $0.token.type == .native}).first else {
                 HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
                 return nil
             }
@@ -51,9 +51,14 @@ class SRC20ManagerModule {
             viewController = SRC20AdditionalView(viewModel: viewModel).toViewController()
             
         case .destroy:
-            
-            let tokenQuery = TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: token.address))
-            guard let wsafeWallet = walletList.filter({$0.coin.uid == tokenQuery.customCoinUid && $0.token.blockchain.type == .safe4 }).first else {
+            guard let wsafeWallet = walletList.filter({ wallet in
+                guard wallet.token.blockchain.type == .safe4 else {return false}
+                switch wallet.token.type {
+                case let .eip20(address):
+                    return address.lowercased() == token.address.lowercased()
+                default: return false
+                }
+            }).first else {
                 HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized(token.symbol)))
                 return nil
             }

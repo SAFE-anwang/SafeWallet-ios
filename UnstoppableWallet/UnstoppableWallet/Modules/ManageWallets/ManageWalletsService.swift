@@ -78,12 +78,18 @@ class ManageWalletsService {
                     TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: $0.address))
                 }
                 let safe4CustomTokens = try marketKit.tokens(queries: safe4CustomTokenQueries)
-                
+
                 let tokens = try marketKit.tokens(queries: tokenQueries)
                 let featuredTokens = tokens.filter { account.type.supports(token: $0) }
                 let enabledTokens = wallets.map(\.token)
-
-                return (enabledTokens + featuredTokens + safe4CustomTokens).removeDuplicates()
+                
+                let featuredUids = featuredTokens.map{$0.coin.uid.lowercased()}
+                let enabledUids = enabledTokens.map{$0.coin.uid.lowercased()}
+                let result = safe4CustomTokens.filter({
+                    !featuredUids.contains($0.coin.uid.lowercased()) &&
+                    !enabledUids.contains($0.coin.uid.lowercased())
+                })
+                return (enabledTokens + featuredTokens + result).removeDuplicates()
             } else if let ethAddress = try? EvmKit.Address(hex: filter) {
                 let address = ethAddress.hex
                 let tokens = try marketKit.tokens(reference: address)

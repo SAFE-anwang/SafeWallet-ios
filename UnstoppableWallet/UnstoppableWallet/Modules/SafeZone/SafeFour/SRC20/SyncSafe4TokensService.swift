@@ -71,6 +71,7 @@ class SyncSafe4TokensService {
         
         // update logo
         filter.forEach { token in
+            addToken(tokenInfo: token)
             if let url = token.logoURI, !url.isEmpty {
                 storage.update(logo: url, address: token.address)
             }
@@ -96,7 +97,7 @@ class SyncSafe4TokensService {
                 taskGroup.addTask { [weak self] in
                     do {
                         let record = try self?.storage.asset(address: token.address)
-                        if record == nil || record?.version == nil  {
+                        if record == nil || record?.version?.count == 0 {
                             if let version = try await self?.srC20Service.version(chainId: token.chainId, contract: token.address) {
                                 token.version = version
                                 self?.storage.update(token: token)
@@ -123,10 +124,12 @@ class SyncSafe4TokensService {
 
     private func addToken(tokenInfo: Safe4CustomTokenRecord) {
         let tokenQuery = TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: tokenInfo.address))
-        let coin = Coin(uid: tokenQuery.customCoinUid, name: tokenInfo.name, code: tokenInfo.symbol)
+        
         do{
             try marketKit.removeToken(coinUid: tokenQuery.customCoinUid, reference: tokenInfo.address)
+            try marketKit.removeCoin(uid: tokenQuery.customCoinUid)
             if try marketKit.token(query: tokenQuery) == nil {
+                let coin = Coin(uid: tokenQuery.customCoinUid, name: tokenInfo.name, code: tokenInfo.symbol)
                 try marketKit.insertCoin(coin: coin)
                 try marketKit.insertToken(coinUid: tokenQuery.customCoinUid, blockchainUid: BlockchainType.safe4.uid, type: "eip20", decimals: tokenInfo.decimals, reference: tokenInfo.address)
             }
@@ -138,12 +141,9 @@ class SyncSafe4TokensService {
             }
             
             if let account = App.shared.accountManager.activeAccount {
-                let walletList = App.shared.walletManager.activeWallets
-                if  walletList.filter({$0.token.coin.uid.lowercased() == tokenQuery.customCoinUid.lowercased()}).count == 0 {
-                    if let token = try marketKit.token(query: tokenQuery), tokenInfo.creator.lowercased() == evmKit.receiveAddress.eip55.lowercased() {
-                        let wallet = Wallet(token: token, account: account)
-                        App.shared.walletManager.save(wallets: [wallet])
-                    }
+                let uids = App.shared.walletManager.activeWallets.map{$0.token.coin.uid.lowercased()}
+                if !uids.contains(tokenQuery.customCoinUid.lowercased()) {
+                    App.shared.walletManager.preloadWallets()
                 }
             }
         }catch{}
