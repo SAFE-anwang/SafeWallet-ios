@@ -82,7 +82,7 @@ class WalletViewItemFactory {
 
     private func rateValue(rateItem: WalletCoinPriceService.Item?) -> (text: String?, dimmed: Bool) {
         guard let rateItem else {
-            return (text: "n/a".localized, dimmed: true)
+            return (text: ""/*"n/a".localized*/, dimmed: true)
         }
 
         let formattedValue = ValueFormatter.instance.formatFull(currencyValue: rateItem.price)
@@ -124,7 +124,7 @@ class WalletViewItemFactory {
 
     private func currencyValue(value: Decimal, state: AdapterState, priceItem: WalletCoinPriceService.Item?, expanded: Bool = false) -> (text: String?, dimmed: Bool) {
         guard let priceItem else {
-            return (text: "---", dimmed: true)
+            return (text: "", dimmed: true)
         }
 
         let price = priceItem.price

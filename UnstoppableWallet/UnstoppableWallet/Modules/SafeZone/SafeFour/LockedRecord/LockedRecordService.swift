@@ -41,11 +41,13 @@ extension LockedRecordService {
 extension LockedRecordService {
     
     func totalLockedNum(type: web3swift.AccountManager.ContractType) async throws -> BigUInt {
-        try await web3().safe4.accountmanager(type: type).getLockedAmount(userAddress).num
+        try await web3().safe4.accountmanager(type: type).getTotalAmount(userAddress).num
+//        try await web3().safe4.accountmanager(type: type).getLockedAmount(userAddress).num
     }
     
     func getLockedIDs(type: web3swift.AccountManager.ContractType, start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
-        try await web3().safe4.accountmanager(type: type).getLockedIDs(userAddress, start, count)
+        try await web3().safe4.accountmanager(type: type).getTotalIDs(userAddress, start, count)
+//        try await web3().safe4.accountmanager(type: type).getLockedIDs(userAddress, start, count)
     }
 }
 // proposal
