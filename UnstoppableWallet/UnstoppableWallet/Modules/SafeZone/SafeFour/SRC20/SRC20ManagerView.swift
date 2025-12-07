@@ -1,63 +1,89 @@
 import Foundation
 import SwiftUI
-import ComponentKit
-import HUD
 import Kingfisher
 
 struct SRC20ManagerView: View {
-    @Environment(\.presentationMode) private var presentationMode
     @StateObject var viewModel: SRC20ManagerViewModel
     @State private var presentDestination: PresentDestination?
-    @State private var editType: SRC20EditType? = nil
-    private var uiNavController: UINavigationController
-    init(viewModel: SRC20ManagerViewModel, uiNavController: UINavigationController) {
+    @State private var selectedViewModel: (any ObservableObject)? = nil
+    @State private var path = NavigationPath()
+    
+    init(viewModel: SRC20ManagerViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
-        self.uiNavController = uiNavController
     }
     
     var body: some View {
-        ThemeView {
-            switch viewModel.dataState {
-            case .loading:
-                ProgressView()
-            case let .completed(items):
-                if items.isEmpty {
-                    PlaceholderViewNew(image: Image("no_data_48"), text: "暂无发行资产".localized)
-                }else {
-                    ScrollableThemeView {
-                        VStack(spacing: .margin8) {
-                            ListSection {
-                                ForEach(items, id: \.id) { item in
-                                
-                                    ClickableRow(action: {}) {
-                                        ItemView(token: item.token) {
-                                            guard let vc = SRC20ManagerModule.editViewController(token: item.token, type: .edit) else { return }
-                                            self.uiNavController.pushViewController(vc, animated: true)
-                                        } promotionAction: {
-                                            guard let vc = SRC20ManagerModule.editViewController(token: item.token, type: .promotion) else { return }
-                                            self.uiNavController.pushViewController(vc, animated: true)
-                                        } addAction: {
-                                            guard let vc = SRC20ManagerModule.editViewController(token: item.token, type: .additional) else { return }
-                                            self.uiNavController.pushViewController(vc, animated: true)
-                                        } destroyAction: {
-                                            guard let vc = SRC20ManagerModule.editViewController(token: item.token, type: .destroy) else { return }
-                                            self.uiNavController.pushViewController(vc, animated: true)
+        ThemeNavigationStack(path: $path) {
+            ThemeView {
+                switch viewModel.dataState {
+                case .loading:
+                    ProgressView()
+                case let .completed(items):
+                    if items.isEmpty {
+                        PlaceholderViewNew(icon: "no_data_48", title: "暂无发行资产".localized)
+                    }else {
+                        ScrollableThemeView {
+                            VStack(spacing: .margin8) {
+                                ListSection {
+                                    ForEach(items, id: \.id) { item in
+                                        ClickableRow(action: {}) {
+                                            ItemView(token: item.token) {
+                                                guard let viewMoel = SRC20ManagerModule.detailViewModel(token: item.token, type: .edit) as? SRC20EditViewModel else { return }
+                                                selectedViewModel = viewMoel
+                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .edit))
+                                            } promotionAction: {
+                                                guard let viewMoel = SRC20ManagerModule.detailViewModel(token: item.token, type: .promotion) as? SRC20PromotionViewModel else { return }
+                                                selectedViewModel = viewMoel
+                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .promotion))
+                                            } addAction: {
+                                                guard let viewMoel = SRC20ManagerModule.detailViewModel(token: item.token, type: .additional) as? SRC20AdditionalViewModel else { return }
+                                                selectedViewModel = viewMoel
+                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .additional))
+                                            } destroyAction: {
+                                                guard let viewMoel = SRC20ManagerModule.detailViewModel(token: item.token, type: .destroy) as? SRC20DestroyViewModel else { return }
+                                                selectedViewModel = viewMoel
+                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .destroy))
+                                            }
                                         }
-
                                     }
                                 }
                             }
+                            .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
                         }
-                        .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
-                    }
-                }
 
-            case .failed(_):
-                SyncErrorView {}
+                        .navigationDestination(for: SRC20ManagerViewModel.DetailViewType.self) { type in
+                            switch type.editType {
+                            case .edit:
+                                if let viewModel = selectedViewModel as? SRC20EditViewModel {
+                                    SRC20EditView(viewModel: viewModel)
+                                }
+                                
+                            case .promotion:
+                                if let viewModel = selectedViewModel as? SRC20PromotionViewModel {
+                                    SRC20PromotionView(viewModel: viewModel)
+                                }
+                                
+                            case .additional:
+                                if let viewModel = selectedViewModel as? SRC20AdditionalViewModel {
+                                    SRC20AdditionalView(viewModel: viewModel)
+                                }
+                                
+                            case .destroy:
+                                if let viewModel = selectedViewModel as? SRC20DestroyViewModel {
+                                    SRC20DestroyView(viewModel: viewModel)
+                                }
+                            }
+                        }
+
+                    }
+
+                case .failed(_):
+                    SyncErrorView {}
+                }
             }
+            .navigationBarTitle("SRC20_Deploy_Promotion".localized)
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .navigationBarTitle("SRC20_Deploy_Promotion".localized)
-        .navigationBarTitleDisplayMode(.inline)
     }
     
     struct ItemView: View {
@@ -81,7 +107,7 @@ struct SRC20ManagerView: View {
                 KFImage.url(URL(string: logoUrl))
                     .resizable()
                     .placeholder {
-                        Image("safe-anwang_trx_32")//Circle().fill(Color.themeSteel20)
+                        Image("safe-anwang_trx_32")
                     }
                     .clipShape(Circle())
                     .frame(width: .iconSize32, height: .iconSize32)

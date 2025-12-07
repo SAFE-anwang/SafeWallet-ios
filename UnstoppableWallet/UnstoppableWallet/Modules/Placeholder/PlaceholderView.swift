@@ -1,7 +1,7 @@
-import ComponentKit
+
 import RxSwift
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class PlaceholderView: UIView {
@@ -59,7 +59,7 @@ class PlaceholderView: UIView {
 
         imageView.contentMode = .center
         imageView.cornerRadius = 50
-        imageView.backgroundColor = .themeSteel10
+        imageView.backgroundColor = .themeBlade
 
         stackView.addArrangedSubview(label)
 

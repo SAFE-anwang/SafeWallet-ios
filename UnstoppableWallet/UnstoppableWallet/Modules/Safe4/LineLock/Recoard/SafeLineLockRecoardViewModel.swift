@@ -10,64 +10,47 @@ import BitcoinCore
 import EvmKit
 
 class SafeLineLockRecoardViewModel: ObservableObject {
+    
     @Published var totalLockedSafe: BigUInt = 0
     @Published private(set) var viewItems: [LineLockRecoard] = []
-    private var index: Int = 0
-    private var tempItemDatas = [TransactionsService.ItemData]()
-    private let service: TokenTransactionsService
-    private let factory: TransactionsViewItemFactory
+//    private var viewModel: TransactionsViewModel
     private let disposeBag = DisposeBag()
-    private let queue = DispatchQueue(label: "\(AppConfig.label).base_transactions_view_model", qos: .userInitiated)
-
-    init(service: TokenTransactionsService, factory: TransactionsViewItemFactory) {
-        self.service = service
-        self.factory = factory
-    
-        subscribe(disposeBag, service.itemDataObservable) { [weak self] in self?.sync(itemData: $0) }
-    }
-    
-    private func sync(itemData: TransactionsService.ItemData) {
-        queue.async {
-            self._sync(itemData: itemData)
+//    private let queue = DispatchQueue(label: "\(AppConfig.label).line_lock_recoard_view_model", qos: .userInitiated)
+    private let adapter: ITransactionsAdapter
+    init(adapter: ITransactionsAdapter) {
+        self.adapter = adapter
+//        sync(items: viewModel.__items)
+        
+        subscribe(disposeBag, adapter.transactionsObservable(token: nil, filter: .all, address: nil)) { [weak self] records in
+//            self?.logger?.log(level: .debug, message: "Handle NEW \(records.count) records. For \(source.blockchainType.uid)")
+//            self?.serialSync(source: source)
         }
     }
     
-    private func _sync(itemData: TransactionsService.ItemData) {
-        index += itemData.items.count
-        tempItemDatas.append(itemData)
-        if itemData.items.count == 20 {
-            service.loadMoreIfRequired(index: index)
-            service.fetchRate(index: index)
-        }
-        let items = tempItemDatas
-            .flatMap{ $0.items }
+//    private func sync(items: [TransactionsViewModel.Item]) {
+//        queue.async {
+//            self._sync(items: items)
+//        }
+//    }
+    private func _sync(items: [TransactionsViewModel.Item]) {
+        let itemArray = items
             .unique(by: \.transactionItem.record.uid)
-            .filter{ $0.record is ContractCallTransactionRecord }
-            .map { factory.viewItem(item: $0, balanceHidden: service.balanceHidden) }
-
+            .map{$0.record as? ContractCallTransactionRecord}
+            .filter{$0 != nil}
+        
         var total: BigUInt = 0
         var tempViewItems: [LineLockRecoard] = []
-        for item in items {
-            if let input = item.input {
-                let methodId = Data(input.prefix(4)).hs.hexString
-                if methodId == EvmLabelManager.ExSafe4Methods.lineLock.id {
-                    let inputArguments = Data(input.suffix(from: 4))
-                    let parsedArguments = ContractMethodHelper.decodeABI(inputArguments: inputArguments, argumentTypes: [EvmKit.Address.self, BigUInt.self, BigUInt.self, BigUInt.self])
-                    guard let address = parsedArguments[0] as? EvmKit.Address,
-                          let times = parsedArguments[1] as? BigUInt,
-                          let spaceDay = parsedArguments[2] as? BigUInt,
-                          let startDay = parsedArguments[3] as? BigUInt else {
-                            return
-                    }
-                    if let value = item.value {
+        for item in itemArray {
+            if let input = item?.transaction.input  {
+                if let method = try? Safe4LineLockMethod.createMethod(inputArguments: input) as? Safe4LineLockMethod {
+                    if let value = item?.transaction.value {
                         total += value
-                        let lockedValue = value / times
-                        for i in 1 ... times {
-                            let month = (startDay + i * spaceDay) / 30
-                            let item = LineLockRecoard(value: lockedValue, month: Int(month), address: address.eip55)
+                        let lockedValue = value / method.times
+                        for i in 1 ... method.times {
+                            let month = (method.startDay + i * method.spaceDay) / 30
+                            let item = LineLockRecoard(value: lockedValue, month: Int(month), address: method.address.eip55)
                             tempViewItems.append(item)
                         }
-
                     }
                 }
             }

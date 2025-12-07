@@ -3,16 +3,6 @@ import SwiftUI
 import UIKit
 
 enum ReceiveAddressModule {
-    static func view(wallet: Wallet, onDismiss: (() -> Void)? = nil) -> some View {
-        let service = ReceiveAddressService(wallet: wallet, adapterManager: App.shared.adapterManager)
-        let depositViewItemFactory = ReceiveAddressViewItemFactory()
-
-        let viewModel = ReceiveAddressViewModel(service: service, viewItemFactory: depositViewItemFactory, decimalParser: AmountDecimalParser())
-        return ReceiveAddressView<ReceiveAddressService, ReceiveAddressViewItemFactory>(viewModel: viewModel, onDismiss: onDismiss)
-    }
-}
-
-extension ReceiveAddressModule {
     struct ErrorItem: Error {
         let icon: String
         let text: String
@@ -33,13 +23,13 @@ extension ReceiveAddressModule {
 
     struct DescriptionItem {
         let text: String
-        let style: HighlightedDescriptionBaseView.Style
+        let style: HighlightedTextView.Style
     }
 
     struct PopupWarningItem: Equatable, Identifiable {
         let title: String
         let description: DescriptionItem
-        let doneButtonTitle: String
+        let mode: Mode
 
         static func == (lhs: PopupWarningItem, rhs: PopupWarningItem) -> Bool {
             lhs.title == rhs.title &&
@@ -48,6 +38,11 @@ extension ReceiveAddressModule {
 
         public var id: String {
             title + description.text
+        }
+
+        enum Mode {
+            case done(title: String)
+            case activateStellarAsset
         }
     }
 
@@ -64,8 +59,8 @@ extension ReceiveAddressModule {
         var title: String {
             switch self {
             case .amount: return "deposit.set_amount".localized
-            case .share: return "cex_deposit.share_address".localized
-            case .copy: return "cex_deposit.copy_address".localized
+            case .share: return "deposit.share_address".localized
+            case .copy: return "deposit.copy_address".localized
             }
         }
 
@@ -103,7 +98,27 @@ extension ReceiveAddressModule {
         let qrItem: QrItem
         let amount: String?
         let active: Bool
+        let assetActivated: Bool
         let memo: String?
         let usedAddresses: [AddressType: [UsedAddress]]?
+
+        static func empty(address: String) -> Self {
+            .init(
+                copyValue: address,
+                highlightedDescription: nil,
+                qrItem: .init(address: address, uri: nil, networkName: nil),
+                amount: nil,
+                active: true,
+                assetActivated: true,
+                memo: nil,
+                usedAddresses: nil
+            )
+        }
+    }
+}
+
+extension ReceiveAddressModule {
+    static func addressProvider(wallet: Wallet) -> ICurrentAddressProvider {
+        ReceiveAddressService(wallet: wallet, adapterManager: Core.shared.adapterManager)
     }
 }

@@ -1,6 +1,4 @@
 import Foundation
-import RxRelay
-import RxSwift
 
 class ReleaseNotesService {
     private static let releaseUrl = "https://api.github.com/repos/\(AppConfig.appGitHubAccount)/\(AppConfig.appGitHubRepository)/releases/tags/"

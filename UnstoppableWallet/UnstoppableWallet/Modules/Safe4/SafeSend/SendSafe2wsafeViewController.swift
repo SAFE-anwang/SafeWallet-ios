@@ -1,7 +1,5 @@
 
 import UIKit
-import ThemeKit
-import ComponentKit
 import SectionsTableView
 import RxSwift
 import RxCocoa
@@ -22,7 +20,7 @@ class SendSafe2wsafeViewController: BaseSendViewController {
 
     init(confirmationFactory: ISendConfirmationFactory,
          feeSettingsFactory: ISendFeeSettingsFactory,
-         viewModel: SendViewModel,
+         viewModel: SendViewModelOld,
          availableBalanceViewModel: SendAvailableBalanceViewModel,
          amountInputViewModel: AmountInputViewModel,
          amountCautionViewModel: SendAmountCautionViewModel,

@@ -1,380 +1,286 @@
-import ComponentKit
 import Foundation
-import Kingfisher
 import MarketKit
-import SectionsTableView
-import ThemeKit
-import UIKit
-
-enum RowActionType {
-    case additive
-    case destructive
-
-    var iconColor: UIColor {
-        switch self {
-        case .additive: return .themeDark
-        case .destructive: return .themeClaude
-        }
-    }
-
-    var backgroundColor: UIColor {
-        switch self {
-        case .additive: return .themeYellowD
-        case .destructive: return .themeRedD
-        }
-    }
-}
 
 enum MarketModule {
-    static func viewController() -> UIViewController {
-        MarketViewController()
-    }
-
-    static func marketListCell(tableView: UITableView, backgroundStyle: BaseThemeCell.BackgroundStyle, listViewItem: MarketModule.ListViewItem, isFirst: Bool, isLast: Bool, rowActionProvider: (() -> [RowAction])?, action: (() -> Void)?) -> RowProtocol {
-        CellBuilderNew.row(
-            rootElement: .hStack([
-                .image32 { component in
-                    component.imageView.contentMode = .scaleAspectFill
-                    component.imageView.clipsToBounds = true
-                    component.imageView.cornerRadius = listViewItem.iconShape.radius
-                    component.imageView.layer.cornerCurve = .continuous
-                    component.imageView.kf.setImage(
-                        with: listViewItem.iconUrl.flatMap { URL(string: $0) },
-                        placeholder: UIImage(named: listViewItem.iconPlaceholderName),
-                        options: [.onlyLoadFirstFrame]
-                    )
-                },
-                .vStackCentered([
-                    .hStack([
-                        .text { component in
-                            component.font = .body
-                            component.textColor = .themeLeah
-                            component.text = listViewItem.leftPrimaryValue
-                        },
-                        .text { component in
-                            component.font = .body
-                            component.textColor = .themeLeah
-                            component.textAlignment = .right
-                            component.setContentCompressionResistancePriority(.required, for: .horizontal)
-                            component.text = listViewItem.rightPrimaryValue
-                        },
-                    ]),
-                    .margin(1),
-                    .hStack([
-                        .badge { component in
-                            if let badge = listViewItem.badge {
-                                component.isHidden = false
-                                component.badgeView.set(style: .small)
-                                component.badgeView.text = badge
-                                component.badgeView.change = listViewItem.badgeSecondaryValue
-                            } else {
-                                component.isHidden = true
-                            }
-                        },
-                        .margin4,
-                        .text { component in
-                            component.font = .subhead2
-                            component.textColor = .themeGray
-                            component.text = listViewItem.leftSecondaryValue
-                        },
-                        .text { component in
-                            component.setContentCompressionResistancePriority(.required, for: .horizontal)
-                            component.setContentHuggingPriority(.required, for: .horizontal)
-                            component.textAlignment = .right
-                            let marketFieldData = marketFieldPreference(dataValue: listViewItem.rightSecondaryValue)
-                            component.font = .subhead2
-                            component.textColor = marketFieldData.color
-                            component.text = marketFieldData.value
-                        },
-                    ]),
-                ]),
-            ]),
-            tableView: tableView,
-            id: "\(listViewItem.uid ?? "")-\(listViewItem.leftPrimaryValue)",
-            height: .heightDoubleLineCell,
-            autoDeselect: true,
-            rowActionProvider: rowActionProvider,
-            bind: { cell in
-                cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
-            },
-            action: action
-        )
-    }
-
-    static func marketFieldPreference(dataValue: MarketDataValue) -> (title: String?, value: String?, color: UIColor) {
-        let title: String?
-        let value: String?
-        let color: UIColor
-
-        switch dataValue {
-        case let .valueDiff(currencyValue, diff):
-            title = nil
-
-            if let currencyValue, let diff {
-                let valueDiff = diff * currencyValue.value / 100
-                value = ValueFormatter.instance.formatShort(currency: currencyValue.currency, value: valueDiff) ?? "----"
-                color = valueDiff.isSignMinus ? .themeLucian : .themeRemus
-            } else {
-                value = "----"
-                color = .themeGray50
-            }
-        case let .diff(diff):
-            title = nil
-            value = diff.flatMap { ValueFormatter.instance.format(percentValue: $0) } ?? "----"
-            if let diff {
-                color = diff.isSignMinus ? .themeLucian : .themeRemus
-            } else {
-                color = .themeGray50
-            }
-        case let .volume(volume):
-            title = "market.top.volume.title".localized
-            value = volume
-            color = .themeGray
-        case let .marketCap(marketCap):
-            title = "market.top.market_cap.title".localized
-            value = marketCap
-            color = .themeGray
-        }
-
-        return (title: title, value: value, color: color)
-    }
-}
-
-extension MarketModule {
-    enum Tab: Int, CaseIterable {
-        case overview
-        case posts
-        case watchlist
-        case twiitter
-        case Dapp
-        
-        var title: String {
-            switch self {
-            case .overview: return "market.category.overview".localized
-            case .posts: return "market.category.posts".localized
-            case .watchlist: return "market.category.watchlist".localized
-            case .twiitter: return "market.category.twiitter".localized
-            case .Dapp: return "market.category.dapp".localized
-            }
-        }
-    }
-
-    enum SortingField: Int, CaseIterable {
+    enum SortBy: String, CaseIterable {
         case highestCap
         case lowestCap
+        case gainers
+        case losers
         case highestVolume
         case lowestVolume
-        case topGainers
-        case topLosers
 
         var title: String {
             switch self {
-            case .highestCap: return "market.top.highest_cap".localized
-            case .lowestCap: return "market.top.lowest_cap".localized
-            case .highestVolume: return "market.top.highest_volume".localized
-            case .lowestVolume: return "market.top.lowest_volume".localized
-            case .topGainers: return "market.top.top_gainers".localized
-            case .topLosers: return "market.top.top_losers".localized
-            }
-        }
-
-        var raw: String {
-            switch self {
-            case .highestCap: return "highestCap"
-            case .lowestCap: return "lowestCap"
-            case .highestVolume: return "highestVolume"
-            case .lowestVolume: return "lowestVolume"
-            case .topGainers: return "topGainers"
-            case .topLosers: return "topLosers"
+            case .highestCap: return "market.sort_by.highest_cap".localized
+            case .lowestCap: return "market.sort_by.lowest_cap".localized
+            case .gainers: return "market.sort_by.gainers".localized
+            case .losers: return "market.sort_by.losers".localized
+            case .highestVolume: return "market.sort_by.highest_volume".localized
+            case .lowestVolume: return "market.sort_by.lowest_volume".localized
             }
         }
     }
 
-    enum MarketField: Int, CaseIterable {
-        case price
-        case marketCap
-        case volume
+    enum SortOrder {
+        case asc
+        case desc
 
-        var title: String {
+        mutating func toggle() {
             switch self {
-            case .price: return "price".localized
-            case .marketCap: return "market.market_field.mcap".localized
-            case .volume: return "market.market_field.vol".localized
+            case .asc: self = .desc
+            case .desc: self = .asc
             }
         }
 
-        var raw: String {
-            switch self {
-            case .price: return "price"
-            case .marketCap: return "marketCap"
-            case .volume: return "volume"
-            }
-        }
+        var isAsc: Bool { self == .asc }
     }
 
-    enum MarketTop: Int, CaseIterable {
+    enum Top: Int, CaseIterable, Identifiable {
+        static let `default` = Top.top100
+
         case top100 = 100
         case top200 = 200
         case top300 = 300
+        case top500 = 500
+        case top1000 = 1000
+        case top1500 = 1500
+        case top2000 = 2000
+        case top2500 = 2500
 
         var title: String {
-            "\(rawValue)"
+            "market.top_coins".localized("\(rawValue)")
+        }
+
+        var description: String {
+            let result = "market.advanced_search.top.m_cap".localized + " "
+            switch self {
+            case .top100: return result + "market.advanced_search.top.more_1_b".localized
+            case .top200: return result + "market.advanced_search.top.more_500_m".localized
+            case .top300: return result + "market.advanced_search.top.more_250_m".localized
+            case .top500: return result + "market.advanced_search.top.more_100_m".localized
+            case .top1000: return result + "market.advanced_search.top.more_25_m".localized
+            case .top1500: return result + "market.advanced_search.top.more_10_m".localized
+            case .top2000: return result + "market.advanced_search.top.more_5_m".localized
+            case .top2500: return result + "market.advanced_search.top.more_1_m".localized
+            }
+        }
+
+        var id: Int {
+            rawValue
         }
     }
 
-    enum PriceChangeType: Int, CaseIterable {
-        static let sortingTypes: [Self] = [.day, .week, .month]
-
-        case day
-        case week
-        case week2
-        case month
-        case month6
-        case year
-
+    enum Tab: String, CaseIterable {
+        case coins
+        case watchlist
+        case vaults
+        case sectors
+        case news
+        case platforms
+        case pairs
+        case dapp
+//        case twiitter
+        
         var title: String {
             switch self {
-            case .day: return "market.advanced_search.day".localized
-            case .week: return "market.advanced_search.week".localized
-            case .week2: return "market.advanced_search.week2".localized
-            case .month: return "market.advanced_search.month".localized
-            case .month6: return "market.advanced_search.month6".localized
-            case .year: return "market.advanced_search.year".localized
-            }
-        }
-
-        var shortTitle: String {
-            switch self {
-            case .week: return "market.advanced_search.week.short".localized
-            case .month: return "market.advanced_search.month.short".localized
-            default: return "market.advanced_search.day.short".localized
-            }
-        }
-    }
-
-    enum MarketTvlField: Int, CaseIterable {
-        case diff
-        case value
-
-        var title: String {
-            switch self {
-            case .value: return "market.tvl.market_field.value".localized
-            case .diff: return "market.tvl.market_field.diff".localized
-            }
-        }
-    }
-
-    enum MarketPlatformField: Int, CaseIterable {
-        case all
-        case ethereum
-        case solana
-        case binance
-        case avalanche
-        case terra
-        case fantom
-        case arbitrum
-        case polygon
-
-        var chain: String {
-            switch self {
-            case .all: return ""
-            case .ethereum: return "Ethereum"
-            case .solana: return "Solana"
-            case .binance: return "Binance"
-            case .avalanche: return "Avalanche"
-            case .terra: return "Terra"
-            case .fantom: return "Fantom"
-            case .arbitrum: return "Arbitrum"
-            case .polygon: return "Polygon"
-            }
-        }
-
-        var title: String {
-            switch self {
-            case .all: return "market.tvl.platform_field.all".localized
-            default: return chain
+            case .coins: return "market.tab.coins".localized
+            case .watchlist: return "market.tab.watchlist".localized
+            case .vaults: return "market.tab.vaults".localized
+            case .sectors: return "market.tab.sectors".localized
+            case .news: return "market.tab.news".localized
+            case .platforms: return "market.tab.platforms".localized
+            case .pairs: return "market.tab.pairs".localized
+            case .dapp: return "Dapp".localized
+//            case .twiitter: return "Twiitter".localized
             }
         }
     }
 }
 
 extension MarketKit.MarketInfo {
-    func priceChangeValue(type: MarketModule.PriceChangeType) -> Decimal? {
-        switch type {
-        case .day: return priceChange24h
-        case .week: return priceChange7d
+    func priceChangeValue(timePeriod: HsTimePeriod) -> Decimal? {
+        switch timePeriod {
+        case .hour24: return priceChange24h
+        case .day1: return priceChange1d
+        case .week1: return priceChange7d
         case .week2: return priceChange14d
-        case .month: return priceChange30d
+        case .month1: return priceChange30d
+        case .month3: return priceChange90d
         case .month6: return priceChange200d
-        case .year: return priceChange1y
+        case .year1: return priceChange1y
+        case .year2: return priceChange2y
+        case .year3: return priceChange3y
+        case .year4: return priceChange4y
+        case .year5: return priceChange5y
+        }
+    }
+
+    func priceChangeValue(timePeriod: WatchlistTimePeriod) -> Decimal? {
+        switch timePeriod {
+        case .hour24: return priceChange24h
+        case .day1: return priceChange1d
+        case .week1: return priceChange7d
+        case .month1: return priceChange30d
+        case .month3: return priceChange90d
+        }
+    }
+}
+
+extension StockInfo {
+    func priceChangeValue(timePeriod: HsTimePeriod) -> Decimal? {
+        switch timePeriod {
+        case .hour24: return priceChange1d
+        case .day1: return priceChange1d
+        case .week1: return priceChange7d
+        case .week2: return priceChange14d
+        case .month1: return priceChange30d
+        case .month3: return priceChange90d
+        case .month6: return priceChange200d
+        case .year1: return priceChange1y
+        case .year2: return priceChange2y
+        case .year3: return priceChange3y
+        case .year4: return priceChange4y
+        case .year5: return priceChange5y
+        }
+    }
+}
+
+extension MarketKit.DefiCoin {
+    func tvlChangeValue(timePeriod: HsTimePeriod) -> Decimal? {
+        switch timePeriod {
+        case .day1: return tvlChange1d
+        case .week1: return tvlChange1w
+        case .week2: return tvlChange2w
+        case .month1: return tvlChange1m
+        case .month3: return tvlChange6m
+        case .month6: return tvlChange6m
+        case .year1: return tvlChange1y
+        default: return nil
         }
     }
 }
 
 extension [MarketKit.MarketInfo] {
-    func sorted(sortingField: MarketModule.SortingField, priceChangeType: MarketModule.PriceChangeType) -> [MarketKit.MarketInfo] {
-        sorted { lhsMarketInfo, rhsMarketInfo in
-            switch sortingField {
-            case .highestCap: return lhsMarketInfo.marketCap ?? 0 > rhsMarketInfo.marketCap ?? 0
-            case .lowestCap: return lhsMarketInfo.marketCap ?? 0 < rhsMarketInfo.marketCap ?? 0
-            case .highestVolume: return lhsMarketInfo.totalVolume ?? 0 > rhsMarketInfo.totalVolume ?? 0
-            case .lowestVolume: return lhsMarketInfo.totalVolume ?? 0 < rhsMarketInfo.totalVolume ?? 0
-            case .topGainers, .topLosers:
-                guard let rhsPriceChange = rhsMarketInfo.priceChangeValue(type: priceChangeType) else {
-                    return true
-                }
-                guard let lhsPriceChange = lhsMarketInfo.priceChangeValue(type: priceChangeType) else {
+    func sorted(sortBy: WatchlistSortBy, timePeriod: WatchlistTimePeriod) -> [MarketKit.MarketInfo] {
+        switch sortBy {
+        case .manual: return self
+        case .highestCap: return sorted { $0.marketCap ?? 0 > $1.marketCap ?? 0 }
+        case .lowestCap: return sorted { $0.marketCap ?? 0 < $1.marketCap ?? 0 }
+        case .gainers, .losers: return sorted {
+                guard let lhsPriceChange = $0.priceChangeValue(timePeriod: timePeriod) else {
                     return false
                 }
+                guard let rhsPriceChange = $1.priceChangeValue(timePeriod: timePeriod) else {
+                    return true
+                }
 
-                return sortingField == .topGainers ? lhsPriceChange > rhsPriceChange : lhsPriceChange < rhsPriceChange
+                return sortBy == .gainers ? lhsPriceChange > rhsPriceChange : lhsPriceChange < rhsPriceChange
+            }
+        }
+    }
+
+    func sorted(sortBy: MarketModule.SortBy, timePeriod: HsTimePeriod) -> [MarketKit.MarketInfo] {
+        switch sortBy {
+        case .highestCap: return sorted { $0.marketCap ?? 0 > $1.marketCap ?? 0 }
+        case .lowestCap: return sorted { $0.marketCap ?? 0 < $1.marketCap ?? 0 }
+        case .highestVolume: return sorted { $0.totalVolume ?? 0 > $1.totalVolume ?? 0 }
+        case .lowestVolume: return sorted { $0.totalVolume ?? 0 < $1.totalVolume ?? 0 }
+        case .gainers, .losers: return sorted {
+                guard let lhsPriceChange = $0.priceChangeValue(timePeriod: timePeriod) else {
+                    return false
+                }
+                guard let rhsPriceChange = $1.priceChangeValue(timePeriod: timePeriod) else {
+                    return true
+                }
+
+                return sortBy == .gainers ? lhsPriceChange > rhsPriceChange : lhsPriceChange < rhsPriceChange
             }
         }
     }
 }
 
-extension MarketModule { // ViewModel Items
-    enum MarketDataValue {
-        case valueDiff(CurrencyValue?, Decimal?)
-        case diff(Decimal?)
-        case volume(String)
-        case marketCap(String)
+extension [MarketKit.TopPlatform] {
+    func sorted(sortBy: MarketModule.SortBy, timePeriod: HsTimePeriod) -> [TopPlatform] {
+        sorted { lhsPlatform, rhsPlatform in
+            let lhsCap = lhsPlatform.marketCap
+            let rhsCap = rhsPlatform.marketCap
+
+            let lhsChange = lhsPlatform.changes[timePeriod]
+            let rhsChange = rhsPlatform.changes[timePeriod]
+
+            switch sortBy {
+            case .highestCap, .lowestCap:
+                guard let lhsCap else {
+                    return true
+                }
+                guard let rhsCap else {
+                    return false
+                }
+
+                return sortBy == .highestCap ? lhsCap > rhsCap : lhsCap < rhsCap
+            case .gainers, .losers:
+                guard let lhsChange else {
+                    return false
+                }
+                guard let rhsChange else {
+                    return true
+                }
+
+                return sortBy == .gainers ? lhsChange > rhsChange : lhsChange < rhsChange
+            default: return true
+            }
+        }
     }
+}
 
-    struct ListViewItem {
-        let uid: String?
-        let iconUrl: String?
-        let iconShape: IconShape
-        let iconPlaceholderName: String
-        let leftPrimaryValue: String
-        let leftSecondaryValue: String
-        let badge: String?
-        let badgeSecondaryValue: BadgeView.Change?
-        let rightPrimaryValue: String
-        let rightSecondaryValue: MarketDataValue
-    }
-
-    struct ListViewItemData {
-        let viewItems: [ListViewItem]
-        let softUpdate: Bool
-        let scrollToTop: Bool
-
-        init(viewItems: [ListViewItem], softUpdate: Bool = false, scrollToTop: Bool = false) {
-            self.viewItems = viewItems
-            self.softUpdate = softUpdate
-            self.scrollToTop = scrollToTop
+extension HsTimePeriod {
+    var title: String {
+        switch self {
+        case .hour24: return "market.time_period.1d".localized
+        default: return "market.time_period.\(rawValue)".localized
         }
     }
 
-    enum IconShape {
-        case square, round, full
+    var shortTitle: String {
+        switch self {
+        case .hour24: return "market.time_period.1d.short".localized
+        default: return "market.time_period.\(rawValue).short".localized
+        }
+    }
 
-        var radius: CGFloat {
-            switch self {
-            case .square: return .cornerRadius8
-            case .round: return .cornerRadius16
-            case .full: return 0
-            }
+    init?(_ periodType: HsPeriodType) {
+        guard case let .byPeriod(timePeriod) = periodType else {
+            return nil
+        }
+        self = timePeriod
+    }
+}
+
+extension WatchlistTimePeriod {
+    var title: String {
+        switch self {
+        case .hour24: return "market.time_period.1d".localized
+        default: return "market.time_period.\(rawValue)".localized
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .hour24: return "market.time_period.1d.short".localized
+        default: return "market.time_period.\(rawValue).short".localized
+        }
+    }
+}
+
+extension WatchlistSortBy {
+    var title: String {
+        switch self {
+        case .manual: return "market.sort_by.manual".localized
+        case .highestCap: return "market.sort_by.highest_cap".localized
+        case .lowestCap: return "market.sort_by.lowest_cap".localized
+        case .gainers: return "market.sort_by.gainers".localized
+        case .losers: return "market.sort_by.losers".localized
         }
     }
 }

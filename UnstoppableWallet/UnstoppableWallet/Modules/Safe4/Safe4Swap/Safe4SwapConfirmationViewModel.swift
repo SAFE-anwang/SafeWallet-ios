@@ -6,12 +6,16 @@ import EvmKit
 import BigInt
 import Web3Core
 import web3swift
-
+import Combine
+import Foundation
+import HsExtensions
+import MarketKit
+/*
 class Safe4SwapConfirmationViewModel: ObservableObject {
     let quoteExpirationDuration: Int = 10
-    let evmBlockchainManager = App.shared.evmBlockchainManager
-    private let currencyManager = App.shared.currencyManager
-    private let marketKit = App.shared.marketKit
+    let evmBlockchainManager = Core.shared.evmBlockchainManager
+    private let currencyManager = Core.shared.currencyManager
+    private let marketKit = Core.shared.marketKit
     
     private var quoteTask: AnyTask?
     private var timer: AnyCancellable?
@@ -94,12 +98,12 @@ extension Safe4SwapConfirmationViewModel {
             do {
                 let gasLimit = Safe4SwapModule.gasLimit
 
-                guard let evmKit = evmBlockchainManager.evmKitManager(blockchainType: tokenIn.blockchainType).evmKitWrapper?.evmKit else { throw SwapError.noEvmKitWrapper }
+                guard let evmKit = try? evmBlockchainManager.evmKitManager(blockchainType: tokenIn.blockchainType).evmKitWrapper?.evmKit else { throw SwapError.noEvmKitWrapper }
                 let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKit)
                 async let gasPrice = try gasPriceProvider.gasPrice()
                 async let nonce = try evmKit.nonce(defaultBlockParameter: .pending)
                 
-                let data = try await SendData(transactionData: transactionData, evmFeeData: EvmFeeData(gasLimit: gasLimit), gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
+                let data = try await SendData(transactionData: transactionData, evmFeeData: EvmFeeData(gasLimit: gasLimit, surchargedGasLimit: gasLimit), gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
                 self?.syncAmountData(data: data)
                 state = .success(data)
 
@@ -133,7 +137,7 @@ extension Safe4SwapConfirmationViewModel {
 
             await set(swapping: true)
 
-            guard let evmKitWrapper = evmBlockchainManager.evmKitManager(blockchainType: tokenIn.blockchainType).evmKitWrapper else {
+            guard let evmKitWrapper = try? evmBlockchainManager.evmKitManager(blockchainType: tokenIn.blockchainType).evmKitWrapper else {
                 throw SwapError.noEvmKitWrapper
             }
 
@@ -141,6 +145,7 @@ extension Safe4SwapConfirmationViewModel {
                 transactionData: quote.transactionData,
                 gasPrice: quote.gasPrice,
                 gasLimit: quote.gasLimit,
+                privateSend: false,
                 nonce: quote.nonce
             )
         } catch {
@@ -151,7 +156,7 @@ extension Safe4SwapConfirmationViewModel {
     }
     
     func syncAmountData(data: SendData) {
-        let evmFeeData = EvmFeeData(gasLimit: Safe4SwapModule.gasLimit)
+        let evmFeeData = EvmFeeData(gasLimit: Safe4SwapModule.gasLimit, surchargedGasLimit: Safe4SwapModule.gasLimit)
         guard let feeToken, let feeTokenRate else { return amountData = nil }
         amountData = evmFeeData.totalAmountData(gasPrice: data.gasPrice , feeToken: feeToken, currency: currency, feeTokenRate: feeTokenRate)
     }
@@ -193,7 +198,7 @@ extension Safe4SwapConfirmationViewModel {
         let gasPrice: GasPrice
         let gasLimit: Int
         let nonce: Int
-        
     }
 }
 
+*/

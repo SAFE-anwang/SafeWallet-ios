@@ -1,11 +1,12 @@
 import UIKit
+import SwiftUI
 import MarketKit
-import ComponentKit
+import EvmKit
 
 struct ProposalModule {
-
-    static func viewController() -> UIViewController? {
-        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+    
+    static func tabViewModel() -> ProposalTabViewModel? {
+        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
@@ -13,9 +14,14 @@ struct ProposalModule {
             return nil
         }
     
-        let viewModel = ProposalTabViewModel(evmKit: evmKitWrapper.evmKit)
-        let viewController = ProposalTabViewController(viewModel: viewModel, privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
-        return viewController
+        let viewModel = ProposalTabViewModel(evmKit: evmKitWrapper.evmKit, privateKey: privateKey)
+        return viewModel
+    }
+    
+    static func viewModel(type: ProposalType) -> ProposalViewModel {
+        let service = ProposalService(type: type)
+        let viewModel = ProposalViewModel(service: service)
+        return viewModel
     }
     
     static func subViewController(type: ProposalType) -> ProposalViewController {
@@ -40,4 +46,16 @@ struct ProposalModule {
         case All
         case Mine(address: String)
     }
+}
+
+struct ProposalView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+    let viewModel: ProposalViewModel
+    
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        return  ProposalViewController(viewModel: viewModel)
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

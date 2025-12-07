@@ -4,17 +4,12 @@ import UIKit
 
 struct RevokeCashModule {
     
-    static func viewController(blockchainType: BlockchainType) -> UIViewController? {
-        let chain = App.shared.evmBlockchainManager.chain(blockchainType: blockchainType)
-        guard let account = App.shared.accountManager.activeAccount else { return nil }
-        do {
-            let address = try App.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper(account: account, blockchainType: blockchainType).evmKit.address
-            let viewModel = RevokeCashViewModel(walletAddress: address, chain: chain, account: account)
-            let viewController = RevokeCashView(viewModel: viewModel).toViewController()
-            viewController.hidesBottomBarWhenPushed = true
-            return viewController
-        }catch {
-            return nil
-        }
+    static func viewModel(blockchainType: BlockchainType) -> RevokeCashViewModel? {
+        guard let chain = try? Core.shared.evmBlockchainManager.chain(blockchainType: blockchainType) else { return nil }
+        guard let account = Core.shared.accountManager.activeAccount else { return nil }
+        guard let address = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper(account: account, blockchainType: blockchainType).evmKit.address else { return nil }
+        let viewModel = RevokeCashViewModel(walletAddress: address, chain: chain, account: account)
+        return viewModel
     }
+    
 }

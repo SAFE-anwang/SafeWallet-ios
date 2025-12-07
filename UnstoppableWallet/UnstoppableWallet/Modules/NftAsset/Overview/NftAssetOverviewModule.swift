@@ -2,19 +2,15 @@ import UIKit
 
 enum NftAssetOverviewModule {
     static func viewController(providerCollectionUid: String, nftUid: NftUid) -> NftAssetOverviewViewController {
-        let coinPriceService = WalletCoinPriceService(
-            tag: "nft-asset-overview",
-            currencyManager: App.shared.currencyManager,
-            marketKit: App.shared.marketKit
-        )
+        let coinPriceService = WalletCoinPriceService()
 
         let service = NftAssetOverviewService(
             providerCollectionUid: providerCollectionUid,
             nftUid: nftUid,
-            accountManager: App.shared.accountManager,
-            nftAdapterManager: App.shared.nftAdapterManager,
-            nftMetadataManager: App.shared.nftMetadataManager,
-            marketKit: App.shared.marketKit,
+            accountManager: Core.shared.accountManager,
+            nftAdapterManager: Core.shared.nftAdapterManager,
+            nftMetadataManager: Core.shared.nftMetadataManager,
+            marketKit: Core.shared.marketKit,
             coinPriceService: coinPriceService
         )
 

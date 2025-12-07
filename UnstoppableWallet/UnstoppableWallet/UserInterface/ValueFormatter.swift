@@ -111,7 +111,7 @@ class ValueFormatter {
         return (value: value, digits: digits, suffix: suffix, tooSmall: tooSmall)
     }
 
-    private func transformedFull(value: Decimal, maxDigits: Int, minDigits: Int = 0) -> (value: Decimal, digits: Int) {
+    private func transformedFull(value: Decimal, maxDigits: Int, minDigits: Int = 0, maxFractionNonZeroDigits: Int = 8) -> (value: Decimal, digits: Int) {
         let value = abs(value)
         let digits: Int
 
@@ -121,7 +121,7 @@ class ValueFormatter {
 
         case 0 ..< 1:
             let zeroCount = fractionZeroCount(value: value, maxCount: maxDigits - 1)
-            digits = min(maxDigits, zeroCount + 4)
+            digits = min(maxDigits, zeroCount + maxFractionNonZeroDigits)
 
         case 1 ..< 1.01:
             digits = 4
@@ -196,6 +196,20 @@ class ValueFormatter {
 }
 
 extension ValueFormatter {
+    func formatWith(rounding: Bool, currencyValue: CurrencyValue) -> String? {
+        if rounding {
+            return formatShort(currencyValue: currencyValue)
+        }
+        return formatFull(currencyValue: currencyValue)
+    }
+
+    func formatWith(rounding: Bool, value: Decimal, decimalCount: Int, symbol: String? = nil, signType: SignType = .never) -> String? {
+        if rounding {
+            return formatShort(value: value, decimalCount: decimalCount, symbol: symbol, signType: signType)
+        }
+        return formatFull(value: value, decimalCount: decimalCount, symbol: symbol, signType: signType)
+    }
+
     func formatShort(value: Decimal) -> String? {
         let (transformedValue, digits, suffix, tooSmall) = transformedShort(value: value)
 
@@ -241,14 +255,6 @@ extension ValueFormatter {
         return decorated(string: string, symbol: symbol, signType: signType, signValue: value)
     }
 
-    func formatShort(coinValue: CoinValue, showCode: Bool = true, signType: SignType = .never) -> String? {
-        formatShort(value: coinValue.value, decimalCount: coinValue.decimals, symbol: showCode ? coinValue.symbol : nil, signType: signType)
-    }
-
-    func formatFull(coinValue: CoinValue, showCode: Bool = true, signType: SignType = .never) -> String? {
-        formatFull(value: coinValue.value, decimalCount: coinValue.decimals, symbol: showCode ? coinValue.symbol : nil, signType: signType)
-    }
-
     func formatShort(currency: Currency, value: Decimal, signType: SignType = .never) -> String? {
         let (transformedValue, digits, suffix, tooSmall) = transformedShort(value: value)
 
@@ -264,7 +270,7 @@ extension ValueFormatter {
     }
 
     func formatFull(currency: Currency, value: Decimal, signType: SignType = .never) -> String? {
-        let (transformedValue, digits) = transformedFull(value: value, maxDigits: 18)
+        let (transformedValue, digits) = transformedFull(value: value, maxDigits: 18, maxFractionNonZeroDigits: 4)
 
         guard let string = formattedCurrency(value: transformedValue, digits: digits, code: currency.code, symbol: currency.symbol) else {
             return nil
@@ -278,11 +284,9 @@ extension ValueFormatter {
     }
 
     func format(percentValue: Decimal, signType: SignType = .always) -> String? {
-        let (transformedValue, digits) = transformedFull(value: percentValue, maxDigits: 2)
-
         let string: String? = rawFormatterQueue.sync {
-            rawFormatter.maximumFractionDigits = digits
-            return rawFormatter.string(from: transformedValue as NSDecimalNumber)
+            rawFormatter.maximumFractionDigits = 2
+            return rawFormatter.string(from: abs(percentValue) as NSDecimalNumber)
         }
 
         guard let string else {

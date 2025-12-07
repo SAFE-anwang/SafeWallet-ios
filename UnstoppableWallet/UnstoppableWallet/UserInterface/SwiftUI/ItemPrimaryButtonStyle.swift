@@ -1,4 +1,3 @@
-import ComponentKit
 import SwiftUI
 
 struct ItemPrimaryButtonStyle: ButtonStyle {
@@ -42,9 +41,9 @@ struct ItemPrimaryButtonStyle: ButtonStyle {
 
         func backgroundColor(isEnabled: Bool, isPressed: Bool) -> Color {
             switch self {
-            case .yellow: return isEnabled ? (isPressed ? .themeYellow50 : .themeYellow) : .themeSteel20
-            case .red: return isEnabled ? (isPressed ? .themeRed50 : .themeLucian) : .themeSteel20
-            case .gray: return isEnabled ? (isPressed ? .themeNina : .themeLeah) : .themeSteel20
+            case .yellow: return isEnabled ? (isPressed ? .themeYellow50 : .themeYellow) : .themeSteel
+            case .red: return isEnabled ? (isPressed ? .themeRed50 : .themeLucian) : .themeSteel
+            case .gray: return isEnabled ? (isPressed ? .themeNina : .themeLeah) : .themeSteel
             case .transparent: return .clear
             }
         }

@@ -48,6 +48,7 @@ enum MetricChartModule {
 
     enum ItemType {
         case regular
+        case etf
         case aggregated(value: Decimal?)
     }
 
@@ -74,7 +75,7 @@ enum MetricChartModule {
 extension HsPeriodType {
     var title: String {
         switch self {
-        case let .byPeriod(interval): return interval.title
+        case let .byPeriod(interval): return interval.shortTitle
         default: return "chart.time_duration.all".localized
         }
     }

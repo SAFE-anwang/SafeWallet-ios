@@ -17,10 +17,11 @@ class MultiSwapViewModel: ObservableObject {
     private var balanceDisposeBag = DisposeBag()
 
     private let providers: [IMultiSwapProvider]
-    private let currencyManager = App.shared.currencyManager
-    private let marketKit = App.shared.marketKit
-    private let walletManager = App.shared.walletManager
-    private let adapterManager = App.shared.adapterManager
+    private let currencyManager = Core.shared.currencyManager
+    private let marketKit = Core.shared.marketKit
+    private let walletManager = Core.shared.walletManager
+    private let adapterManager = Core.shared.adapterManager
+    private let decimalParser = AmountDecimalParser()
 
     @Published var currency: Currency
 
@@ -41,12 +42,12 @@ class MultiSwapViewModel: ObservableObject {
             }
 
             if let internalTokenIn {
-                rateIn = marketKit.coinPrice(coinUid: internalTokenIn.coin.uid, currencyCode: currency.code)?.value
-                rateInCancellable = marketKit.coinPricePublisher(tag: "swap", coinUid: internalTokenIn.coin.uid, currencyCode: currency.code)
+                coinPriceIn = marketKit.coinPrice(coinUid: internalTokenIn.coin.uid, currencyCode: currency.code)
+                rateInCancellable = marketKit.coinPricePublisher(coinUid: internalTokenIn.coin.uid, currencyCode: currency.code)
                     .receive(on: DispatchQueue.main)
-                    .sink { [weak self] price in self?.rateIn = price.value }
+                    .sink { [weak self] price in self?.coinPriceIn = price }
             } else {
-                rateIn = nil
+                coinPriceIn = nil
                 rateInCancellable = nil
             }
 
@@ -60,14 +61,16 @@ class MultiSwapViewModel: ObservableObject {
                 availableBalance = adapter.balanceData.available
 
                 adapter.balanceStateUpdatedObservable
-                    .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .observeOn(MainScheduler.instance)
                     .subscribe { [weak self] state in
                         self?.adapterState = state
                     }
                     .disposed(by: balanceDisposeBag)
 
                 adapter.balanceDataUpdatedObservable
-                    .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .observeOn(MainScheduler.instance)
                     .subscribe { [weak self] balanceData in
                         self?.availableBalance = balanceData.available
                     }
@@ -85,7 +88,12 @@ class MultiSwapViewModel: ObservableObject {
                 return
             }
 
-            amountIn = nil
+            if enteringFiat {
+                fiatAmountIn = nil
+            } else {
+                amountIn = nil
+            }
+
             internalTokenIn = tokenIn
 
             if internalTokenOut == tokenIn {
@@ -113,7 +121,7 @@ class MultiSwapViewModel: ObservableObject {
 
             if let internalTokenOut {
                 rateOut = marketKit.coinPrice(coinUid: internalTokenOut.coin.uid, currencyCode: currency.code)?.value
-                rateOutCancellable = marketKit.coinPricePublisher(tag: "swap", coinUid: internalTokenOut.coin.uid, currencyCode: currency.code)
+                rateOutCancellable = marketKit.coinPricePublisher(coinUid: internalTokenOut.coin.uid, currencyCode: currency.code)
                     .receive(on: DispatchQueue.main)
                     .sink { [weak self] price in self?.rateOut = price.value }
             } else {
@@ -146,7 +154,7 @@ class MultiSwapViewModel: ObservableObject {
     @Published var adapterState: AdapterState?
     @Published var availableBalance: Decimal?
 
-    @Published var rateIn: Decimal? {
+    @Published var coinPriceIn: CoinPrice? {
         didSet {
             syncFiatAmountIn()
         }
@@ -165,7 +173,7 @@ class MultiSwapViewModel: ObservableObject {
             syncQuotes()
             syncFiatAmountIn()
 
-            let amount = Decimal(string: amountString)
+            let amount = decimalParser.parseAnyDecimal(from: amountString)
 
             if amount != amountIn {
                 amountString = amountIn?.description ?? ""
@@ -175,7 +183,7 @@ class MultiSwapViewModel: ObservableObject {
 
     @Published var amountString: String = "" {
         didSet {
-            let amount = Decimal(string: amountString)
+            let amount = decimalParser.parseAnyDecimal(from: amountString)
 
             guard amount != amountIn else {
                 return
@@ -191,7 +199,7 @@ class MultiSwapViewModel: ObservableObject {
         didSet {
             syncAmountIn()
 
-            let amount = Decimal(string: fiatAmountString)?.rounded(decimal: 2)
+            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             if amount != fiatAmountIn {
                 fiatAmountString = fiatAmountIn?.description ?? ""
@@ -201,7 +209,7 @@ class MultiSwapViewModel: ObservableObject {
 
     @Published var fiatAmountString: String = "" {
         didSet {
-            let amount = Decimal(string: fiatAmountString)?.rounded(decimal: 2)
+            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             guard amount != fiatAmountIn else {
                 return
@@ -248,7 +256,12 @@ class MultiSwapViewModel: ObservableObject {
 
     @Published var quotes: [Quote] = [] {
         didSet {
-            bestQuote = quotes.max { $0.quote.amountOut < $1.quote.amountOut }
+            if let featuredQuote = quotes.first(where: { $0.provider is OneInchMultiSwapProvider }) {
+                bestQuote = featuredQuote
+            } else {
+                bestQuote = quotes.max { $0.quote.amountOut < $1.quote.amountOut }
+            }
+
             syncCurrentQuote()
 
             timer?.invalidate()
@@ -285,6 +298,7 @@ class MultiSwapViewModel: ObservableObject {
 
         defer {
             internalTokenIn = token
+            internalTokenOut = MultiSwapDefaultTokenResolver.default(for: token)
         }
 
         currencyManager.$baseCurrency.sink { [weak self] in self?.currency = $0 }.store(in: &cancellables)
@@ -314,12 +328,12 @@ class MultiSwapViewModel: ObservableObject {
             return
         }
 
-        guard let rateIn, let fiatAmountIn else {
+        guard let coinPriceIn, let fiatAmountIn else {
             amountIn = nil
             return
         }
 
-        amountIn = fiatAmountIn / rateIn
+        amountIn = fiatAmountIn / coinPriceIn.value
     }
 
     private func syncFiatAmountIn() {
@@ -327,12 +341,12 @@ class MultiSwapViewModel: ObservableObject {
             return
         }
 
-        guard let rateIn, let amountIn else {
+        guard let coinPriceIn, let amountIn else {
             fiatAmountIn = nil
             return
         }
 
-        fiatAmountIn = (amountIn * rateIn).rounded(decimal: 2)
+        fiatAmountIn = (amountIn * coinPriceIn.value).rounded(decimal: 2)
     }
 
     private func syncFiatAmountOut() {
@@ -345,7 +359,7 @@ class MultiSwapViewModel: ObservableObject {
     }
 
     func syncPriceImpact() {
-        guard let fiatAmountIn, let fiatAmountOut else {
+        guard let fiatAmountIn, let fiatAmountOut, fiatAmountIn != 0 else {
             priceImpact = nil
             return
         }
@@ -382,10 +396,26 @@ class MultiSwapViewModel: ObservableObject {
                 for provider in validProviders {
                     group.addTask {
                         do {
-                            let quote = try await provider.quote(tokenIn: internalTokenIn, tokenOut: internalTokenOut, amountIn: amountIn)
-                            return Quote(provider: provider, quote: quote)
+                            let quoteTask = Task {
+                                try await provider.quote(tokenIn: internalTokenIn, tokenOut: internalTokenOut, amountIn: amountIn)
+                            }
+
+                            let timeoutTask = Task {
+                                try await Task.sleep(nanoseconds: 5_000_000_000)
+                                quoteTask.cancel()
+                            }
+
+                            return try await withTaskCancellationHandler {
+                                let quote = try await quoteTask.value
+                                timeoutTask.cancel()
+
+                                return Quote(provider: provider, quote: quote)
+                            } onCancel: {
+                                quoteTask.cancel()
+                                timeoutTask.cancel()
+                            }
                         } catch {
-//                            print("QUOTE ERROR: \(provider.id): \(error)")
+                            print("QUOTE ERROR: \(provider.id): \(error)")
                             return nil
                         }
                     }
@@ -435,10 +465,18 @@ class MultiSwapViewModel: ObservableObject {
 
 extension MultiSwapViewModel {
     func interchange() {
+        let currentFiatAmountOut = fiatAmountOut
+        let currentAmountOut = currentQuote?.quote.amountOut
+
         let internalTokenIn = internalTokenIn
         self.internalTokenIn = internalTokenOut
         internalTokenOut = internalTokenIn
-        amountIn = currentQuote?.quote.amountOut
+
+        if enteringFiat {
+            fiatAmountIn = currentFiatAmountOut
+        } else {
+            amountIn = currentAmountOut
+        }
     }
 
     func flipPrice() {
@@ -447,13 +485,18 @@ extension MultiSwapViewModel {
     }
 
     func setAmountIn(percent: Int) {
-        guard let availableBalance else {
+        guard let tokenIn, let availableBalance else {
             return
         }
 
         enteringFiat = false
 
-        amountIn = availableBalance * Decimal(percent) / 100
+        amountIn = (availableBalance * Decimal(percent) / 100).rounded(decimal: tokenIn.decimals)
+    }
+
+    func clearAmountIn() {
+        enteringFiat = false
+        amountIn = nil
     }
 
     func stopAutoQuoting() {
@@ -470,6 +513,7 @@ extension MultiSwapViewModel {
         if now > nextQuoteTime {
             syncQuotes()
         } else {
+            timer?.invalidate()
             timer = Timer.scheduledTimer(withTimeInterval: nextQuoteTime - now, repeats: false) { [weak self] _ in
                 self?.syncQuotes()
             }

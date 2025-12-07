@@ -1,11 +1,9 @@
 import UIKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import RxSwift
 import RxCocoa
 import MarketKit
-import HUD
 
 class ProposalViewController: ThemeViewController {
     
@@ -153,8 +151,10 @@ extension ProposalViewController: SectionsDataSource {
                     cell.bind(viewItem: viewItem)
                 },
                 action: { _ in
-                    guard let vc = ProposalDetailModule.viewController(viewItem: viewItem) else{ return }
-                    self.parentNavigationController?.pushViewController(vc, animated: true)
+                    guard let viewModel = ProposalDetailModule.viewModel(viewItem: viewItem) else{ return }
+                    Coordinator.shared.present { _ in
+                        ProposalDetailView(viewModel: viewModel)
+                    }
                 }
         )
     }

@@ -1,34 +1,24 @@
 import Foundation
-import RxSwift
-import RxRelay
-import RxCocoa
+import Combine
+import EvmKit
 
-class SuperNodeTabViewModel {
-    private let service: SuperNodeService
-    private let currentTabRelay: BehaviorRelay<SuperNodeModule.Tab>
+class SuperNodeTabViewModel: ObservableObject {
+    let service: SuperNodeService
+    @Published var currentTab: SuperNodeModule.Tab = .all
 
     init(service: SuperNodeService) {
         self.service = service
-        currentTabRelay = BehaviorRelay<SuperNodeModule.Tab>(value: .all)
     }
-}
-
-extension SuperNodeTabViewModel {
+    
+    var evmKit: EvmKit.Kit{
+        service.evmKit
+    }
+    
+    var privateKey: Data {
+        service.privateKey
+    }
     
     var nodeType: Safe4NodeType {
         service.nodeType
     }
-    
-    var currentTabDriver: Driver<SuperNodeModule.Tab> {
-        currentTabRelay.asDriver()
-    }
-
-    var tabs: [SuperNodeModule.Tab] {
-        SuperNodeModule.Tab.allCases
-    }
-
-    func onSelect(tab: SuperNodeModule.Tab) {
-        currentTabRelay.accept(tab)
-    }
-
 }

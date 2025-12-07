@@ -1,10 +1,10 @@
-import ComponentKit
+
 import Foundation
 import RxCocoa
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
+
 import UIExtensions
 import UIKit
 
@@ -20,7 +20,7 @@ class RestoreNonStandardViewController: KeyboardAwareViewController {
 
     private let nameCell = TextFieldCell()
 
-    private let mnemonicInputCell = MnemonicInputCell()
+    private let mnemonicInputCell = MnemonicInputCell(statPage: .importWalletNonStandard, statEntity: .recoveryPhrase)
     private let mnemonicCautionCell = FormCautionCell()
     private let wordListCell = BaseSelectableThemeCell()
 
@@ -34,12 +34,12 @@ class RestoreNonStandardViewController: KeyboardAwareViewController {
     private var inputsVisible = false
     private var isLoaded = false
 
-    private weak var returnViewController: UIViewController?
+    private let onRestore: () -> Void
 
-    init(viewModel: RestoreNonStandardViewModel, mnemonicViewModel: RestoreMnemonicNonStandardViewModel, returnViewController: UIViewController?) {
+    init(viewModel: RestoreNonStandardViewModel, mnemonicViewModel: RestoreMnemonicNonStandardViewModel, onRestore: @escaping () -> Void) {
         self.viewModel = viewModel
         self.mnemonicViewModel = mnemonicViewModel
-        self.returnViewController = returnViewController
+        self.onRestore = onRestore
 
         super.init(scrollViews: [tableView], accessoryView: hintView)
     }
@@ -56,7 +56,7 @@ class RestoreNonStandardViewController: KeyboardAwareViewController {
 
         navigationItem.largeTitleDisplayMode = .never
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.next".localized, style: .done, target: self, action: #selector(onTapNext))
-
+        navigationItem.rightBarButtonItem?.tintColor = .themeJacob
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()
@@ -112,7 +112,7 @@ class RestoreNonStandardViewController: KeyboardAwareViewController {
         passphraseCell.onChangeText = { [weak self] in self?.mnemonicViewModel.onChange(passphrase: $0 ?? "") }
 
         passphraseCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
-        passphraseDescriptionCell.descriptionText = "restore.passphrase_description".localized
+        passphraseDescriptionCell.descriptionText = "restore.wallet.passphrase_description".localized
 
         view.addSubview(hintView)
         hintView.snp.makeConstraints { maker in
@@ -195,7 +195,7 @@ class RestoreNonStandardViewController: KeyboardAwareViewController {
     }
 
     private func openSelectCoins(accountName: String, accountType: AccountType) {
-        let viewController = RestoreSelectModule.viewController(accountName: accountName, accountType: accountType, returnViewController: returnViewController)
+        let viewController = RestoreSelectModule.viewController(accountName: accountName, accountType: accountType, statPage: .importWalletNonStandard, onRestore: onRestore)
         navigationController?.pushViewController(viewController, animated: true)
     }
 

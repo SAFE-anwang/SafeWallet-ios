@@ -1,10 +1,7 @@
-import ComponentKit
-import HUD
 import RxCocoa
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIKit
 
 class NftCollectionOverviewViewController: ThemeViewController {
@@ -148,7 +145,9 @@ extension NftCollectionOverviewViewController: SectionsDataSource {
     private func logoHeaderRow(viewItem: NftCollectionOverviewViewModel.ViewItem) -> RowProtocol {
         Row<LogoHeaderCell>(
             id: "logo-header",
-            height: LogoHeaderCell.height,
+            dynamicHeight: { width in
+                LogoHeaderCell.height(title: viewItem.name, url: nil, width: width)
+            },
             bind: { cell, _ in
                 cell.set(imageUrl: viewItem.logoImageUrl)
                 cell.title = viewItem.name
@@ -176,7 +175,7 @@ extension NftCollectionOverviewViewController: SectionsDataSource {
         }
 
         let chunks = marketCards.chunks(2)
-        chunks.enumerated().forEach { index, marketCards in
+        for (index, marketCards) in chunks.enumerated() {
             let isLast = index == chunks.count - 1
             sections.append(
                 Section(
@@ -188,8 +187,8 @@ extension NftCollectionOverviewViewController: SectionsDataSource {
                             height: MarketCardView.height,
                             bind: { cell, _ in
                                 cell.clear()
-                                marketCards.forEach {
-                                    cell.append(viewItem: $0)
+                                for marketCard in marketCards {
+                                    cell.append(viewItem: marketCard)
                                 }
                             }
                         ),
@@ -402,7 +401,7 @@ extension NftCollectionOverviewViewController: SectionsDataSource {
                 sections.append(contentsOf: linksSections(viewItems: viewItem.links))
             }
 
-            sections.append(poweredBySection(text: "Powered by OpenSea API"))
+            sections.append(poweredBySection(text: "powered_by".localized("OpenSea API")))
         }
 
         return sections

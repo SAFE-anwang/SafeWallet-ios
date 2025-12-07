@@ -1,3 +1,4 @@
+import MarketKit
 import RxCocoa
 import RxRelay
 import RxSwift
@@ -35,22 +36,14 @@ class SendConfirmationViewModel {
         var primaryViewItems = [ViewItem]()
         var secondaryViewItems = [ViewItem]()
 
-        primaryViewItems.append(
-            .subhead(
-                iconName: "arrow_medium_2_up_right_24",
-                title: "send.confirmation.you_send".localized,
-                value: service.token.coin.name
-            )
-        )
-
         for item in service.items {
             switch item {
             case let item as SendConfirmationAmountViewItem:
                 primaryViewItems.append(
                     .amount(
-                        iconUrl: service.token.coin.imageUrl,
-                        iconPlaceholderImageName: service.token.placeholderImageName,
-                        coinAmount: ValueFormatter.instance.formatFull(coinValue: item.coinValue) ?? "n/a".localized,
+                        title: "send.confirmation.you_send".localized,
+                        token: service.token,
+                        coinAmount: item.appValue.formattedFull() ?? "n/a".localized,
                         currencyAmount: item.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) },
                         type: .neutral
                     )
@@ -63,7 +56,8 @@ class SendConfirmationViewModel {
                         title: "send.confirmation.to".localized,
                         value: item.receiver.raw,
                         valueTitle: item.receiver.title,
-                        contactAddress: contactData.contactAddress
+                        contactAddress: contactData.contactAddress,
+                        statSection: .addressTo
                     )
                 )
                 if let contactName = contactData.name {
@@ -86,7 +80,7 @@ class SendConfirmationViewModel {
                     )
                 )
             case let item as SendConfirmationFeeViewItem:
-                let value = [ValueFormatter.instance.formatFull(coinValue: item.coinValue), item.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) }]
+                let value = [item.appValue.formattedFull(), item.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) }]
                     .compactMap { $0 }
                     .joined(separator: " | ")
 
@@ -116,7 +110,6 @@ class SendConfirmationViewModel {
                         type: .regular
                     )
                 )
-
             default: ()
             }
         }
@@ -169,9 +162,8 @@ extension SendConfirmationViewModel {
 
 extension SendConfirmationViewModel {
     enum ViewItem {
-        case subhead(iconName: String, title: String, value: String)
-        case amount(iconUrl: String?, iconPlaceholderImageName: String, coinAmount: String, currencyAmount: String?, type: AmountType)
-        case address(title: String, value: String, valueTitle: String?, contactAddress: ContactAddress?)
+        case amount(title: String, token: Token, coinAmount: String, currencyAmount: String?, type: AmountType)
+        case address(title: String, value: String, valueTitle: String?, contactAddress: ContactAddress?, statSection: StatSection)
         case value(iconName: String?, title: String, value: String, type: ValueType)
     }
 }

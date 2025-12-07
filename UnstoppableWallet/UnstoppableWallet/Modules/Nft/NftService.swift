@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import MarketKit
 import RxRelay
@@ -13,6 +14,7 @@ class NftService {
     private let coinPriceService: WalletCoinPriceService
     private let disposeBag = DisposeBag()
     private var adapterDisposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
 
     var mode: Mode = .lastSale {
         didSet {
@@ -52,7 +54,7 @@ class NftService {
         self.coinPriceService = coinPriceService
 
         subscribe(disposeBag, nftAdapterManager.adaptersUpdatedObservable) { [weak self] in self?.handle(adapterMap: $0) }
-        subscribe(disposeBag, balanceConversionManager.conversionTokenObservable) { [weak self] _ in self?.syncTotalItem() }
+        balanceConversionManager.$conversionToken.sink { [weak self] _ in self?.syncTotalItem() }.store(in: &cancellables)
 
         _handle(adapterMap: nftAdapterManager.adapterMap)
     }
@@ -237,11 +239,11 @@ class NftService {
             }
         }
 
-        var convertedValue: CoinValue?
+        var convertedValue: AppValue?
         var convertedValueExpired = false
 
         if let conversionToken = balanceConversionManager.conversionToken, let priceItem = coinPriceService.item(coinUid: conversionToken.coin.uid) {
-            convertedValue = CoinValue(kind: .token(token: conversionToken), value: total / priceItem.price.value)
+            convertedValue = AppValue(token: conversionToken, value: total / priceItem.price.value)
             convertedValueExpired = priceItem.expired
         }
 
@@ -261,17 +263,16 @@ class NftService {
 }
 
 extension NftService: IWalletCoinPriceServiceDelegate {
-    func didUpdateBaseCurrency() {
+    func didUpdate(itemsMap: [String: WalletCoinPriceService.Item]?) {
         queue.async {
-            self.updatePriceItems(items: self.items, map: self.coinPriceService.itemMap(coinUids: Array(self.allCoinUids(items: self.items))))
-            self.items = self.sort(items: self.items)
-            self.syncTotalItem()
-        }
-    }
+            let _itemsMap: [String: WalletCoinPriceService.Item]
+            if let itemsMap {
+                _itemsMap = itemsMap
+            } else {
+                _itemsMap = self.coinPriceService.itemMap(coinUids: Array(self.allCoinUids(items: self.items)))
+            }
 
-    func didUpdate(itemsMap: [String: WalletCoinPriceService.Item]) {
-        queue.async {
-            self.updatePriceItems(items: self.items, map: itemsMap)
+            self.updatePriceItems(items: self.items, map: _itemsMap)
             self.items = self.sort(items: self.items)
             self.syncTotalItem()
         }
@@ -359,7 +360,7 @@ extension NftService {
     struct TotalItem {
         let currencyValue: CurrencyValue
         let expired: Bool
-        let convertedValue: CoinValue?
+        let convertedValue: AppValue?
         let convertedValueExpired: Bool
     }
 

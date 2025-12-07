@@ -1,7 +1,5 @@
 import UIKit
-import ThemeKit
 import SnapKit
-import ComponentKit
 import BigInt
 
 class MasterNodeCell: UITableViewCell {

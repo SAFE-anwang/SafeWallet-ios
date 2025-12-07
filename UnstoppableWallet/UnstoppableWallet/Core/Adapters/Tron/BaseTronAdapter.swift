@@ -34,7 +34,7 @@ class BaseTronAdapter {
     func convertToAdapterState(tronSyncState: TronKit.SyncState) -> AdapterState {
         switch tronSyncState {
         case .synced: return .synced
-        case let .notSynced(error): return .notSynced(error: error.convertedError)
+        case let .notSynced(error): return .notSynced(error: error.convertedError.localizedDescription)
         case .syncing: return .syncing(progress: nil, lastBlockDate: nil)
         }
     }
@@ -44,7 +44,7 @@ class BaseTronAdapter {
     }
 
     func balanceData(balance: BigUInt?) -> BalanceData {
-        BalanceData(available: balanceDecimal(kitBalance: balance, decimals: decimals))
+        BalanceData(balance: balanceDecimal(kitBalance: balance, decimals: decimals))
     }
 
     func accountActive(address: TronKit.Address) async -> Bool {
@@ -80,5 +80,23 @@ extension BaseTronAdapter: IDepositAdapter {
             receiveAddress: tronKit.receiveAddress.base58,
             isActive: tronKit.accountActive
         )
+    }
+}
+
+public extension Array where Array.Element == Fee {
+    func calculateTotalFees() -> Int {
+        var totalFees = 0
+        for fee in self {
+            switch fee {
+            case let .bandwidth(points, price):
+                totalFees += points * price
+            case let .energy(required, price):
+                totalFees += required * price
+            case let .accountActivation(amount):
+                totalFees += amount
+            }
+        }
+
+        return totalFees
     }
 }

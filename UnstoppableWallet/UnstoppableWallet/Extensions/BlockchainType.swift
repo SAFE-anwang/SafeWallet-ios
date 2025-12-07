@@ -1,6 +1,7 @@
 import EvmKit
 import MarketKit
 import NftKit
+import SwiftUI
 import UIKit
 
 extension BlockchainType {
@@ -12,6 +13,7 @@ extension BlockchainType {
         .dogecoin,
         .dash,
         .zcash,
+        .monero,
         .ethereum,
         .polygon,
         .avalanche,
@@ -19,20 +21,42 @@ extension BlockchainType {
         .arbitrumOne,
         .gnosis,
         .fantom,
+        .base,
+        .zkSync,
         .binanceSmartChain,
-        .binanceChain,
         .tron,
         .ton,
         .safe,
-        .safe4
+        .safe4,
+        .stellar,
     ]
-
+    
+    static let swappable: [BlockchainType] = [
+        .arbitrumOne,
+        .avalanche,
+        .base,
+        .binanceSmartChain,
+        .bitcoin,
+        .bitcoinCash,
+        .dash,
+        .ethereum,
+        .fantom,
+        .gnosis,
+        .litecoin,
+        .optimism,
+        .polygon,
+        .stellar,
+        .tron,
+        .zkSync,
+        .safe4,
+        // .zcash,
+    ]
+    
     func placeholderImageName(tokenProtocol: TokenProtocol?) -> String {
         if isSafeChainUid {
             return "safe-anwang_trx_32"
         }else {
             return tokenProtocol.map { "\(uid)_\($0)_32" } ?? "placeholder_circle_32"
-
         }
     }
     
@@ -65,7 +89,7 @@ extension BlockchainType {
 
     var restoreSettingTypes: [RestoreSettingType] {
         switch self {
-        case .zcash: return [.birthdayHeight]
+        case .zcash, .monero: return [.birthdayHeight]
         default: return []
         }
     }
@@ -76,21 +100,24 @@ extension BlockchainType {
             .safe,
             .bitcoin,
             .ethereum,
-            .binanceSmartChain,
+            .monero,
             .tron,
-            .ton,
-            .polygon,
-            .avalanche,
             .zcash,
-            .bitcoinCash,
-            .ecash,
-            .litecoin,
             .dash,
-            .binanceChain,
-            .gnosis,
-            .fantom,
+            .litecoin,
+            .binanceSmartChain,
+            .polygon,
+            .base,
             .arbitrumOne,
             .optimism,
+            .avalanche,
+            .stellar,
+            .gnosis,
+            .zkSync,
+            .ton,
+            .bitcoinCash,
+            .fantom,
+            .ecash,
         ]
 
         return blockchainTypes.firstIndex(of: self) ?? Int.max
@@ -98,14 +125,15 @@ extension BlockchainType {
 
     var resendable: Bool {
         switch self {
-        case .optimism, .arbitrumOne: return false
+        case .optimism, .arbitrumOne, .base: return false
         default: return true
         }
     }
 
     var rollupFeeContractAddress: EvmKit.Address? {
         switch self {
-        case .optimism: return try? EvmKit.Address(hex: "0x420000000000000000000000000000000000000F")
+        case .optimism, .base:
+            return try? EvmKit.Address(hex: "0x420000000000000000000000000000000000000F")
         default: return nil
         }
     }
@@ -113,6 +141,7 @@ extension BlockchainType {
     // used for EVM blockchains only
     var feePriceScale: FeePriceScale {
         switch self {
+        case .bitcoin, .bitcoinCash, .dash, .litecoin, .ecash: return .satoshi
         case .avalanche: return .nAvax
         default: return .gwei
         }
@@ -121,7 +150,7 @@ extension BlockchainType {
     // used for EVM blockchains only
     var supportedNftTypes: [NftType] {
         switch self {
-        case .ethereum: return [.eip721, .eip1155]
+        // case .ethereum: return [.eip721, .eip1155]
         default: return []
         }
     }
@@ -135,22 +164,35 @@ extension BlockchainType {
             switch self {
             case .bitcoin: return key.coinTypes.contains(where: { $0 == .bitcoin })
             case .litecoin: return key.coinTypes.contains(where: { $0 == .litecoin })
-            case .bitcoinCash, .ecash, .dash: return key.coinTypes.contains(where: { $0 == .bitcoin }) && key.purposes.contains(where: { $0 == .bip44 })
+            case .bitcoinCash, .ecash, .dash:
+                return key.coinTypes.contains(where: { $0 == .bitcoin })
+                    && key.purposes.contains(where: { $0 == .bip44 })
             default: return false
             }
         case .evmPrivateKey, .evmAddress:
             switch self {
-            case .ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom: return true
+            case .ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne,
+                 .gnosis, .fantom, .base, .zkSync:
+                return true
             default: return false
             }
+        case .stellarSecretKey, .stellarAccount:
+            return self == .stellar
         case .tronAddress:
             return self == .tron
         case .tonAddress:
             return self == .ton
         case let .btcAddress(_, blockchainType, _):
             return self == blockchainType
-        default:
-            return false
+        case .moneroWatchAccount:
+            return self == .monero
+        }
+    }
+
+    var isEvm: Bool {
+        switch self {
+        case .arbitrumOne, .avalanche, .base, .binanceSmartChain, .ethereum, .fantom, .gnosis, .optimism, .polygon, .zkSync: return true
+        default: return false
         }
     }
 
@@ -169,16 +211,19 @@ extension BlockchainType {
         case .gnosis: return "xDAI, ERC20 tokens"
         case .fantom: return "FTM, ERC20 tokens"
         case .optimism: return "L2 chain"
+        case .base: return "L2 chain"
+        case .zkSync: return "L2 chain"
         case .arbitrumOne: return "L2 chain"
         case .zcash: return "ZEC"
+        case .monero: return "XMR"
         case .dash: return "DASH"
         case .bitcoinCash: return "BCH (Legacy, CashAddress)"
         case .ecash: return "XEC"
         case .litecoin: return "LTC (BIP44, BIP49, BIP84, BIP86)"
-        case .binanceChain: return "BNB, BEP2 tokens"
         case .tron: return "TRX, TRC20 tokens"
         case .ton: return "TON"
         case .dogecoin: return "Dogecoin"
+        case .stellar: return "Stellar"
         default: return ""
         }
     }
@@ -190,7 +235,21 @@ extension BlockchainType {
         case .polygon: return UIColor(hex: 0x8247E5)
         case .avalanche: return UIColor(hex: 0xD74F49)
         case .optimism: return UIColor(hex: 0xEB3431)
+        case .base: return UIColor(hex: 0x2759F6)
         case .arbitrumOne: return UIColor(hex: 0x96BEDC)
+        default: return nil
+        }
+    }
+
+    var brandColorNew: Color? {
+        switch self {
+        case .ethereum: return Color(hex: 0x6B7196)
+        case .binanceSmartChain: return Color(hex: 0xF3BA2F)
+        case .polygon: return Color(hex: 0x8247E5)
+        case .avalanche: return Color(hex: 0xD74F49)
+        case .optimism: return Color(hex: 0xEB3431)
+        case .base: return Color(hex: 0x2759F6)
+        case .arbitrumOne: return Color(hex: 0x96BEDC)
         default: return nil
         }
     }
@@ -198,9 +257,15 @@ extension BlockchainType {
     var defaultTokenQuery: TokenQuery {
         switch self {
         case .bitcoin, .litecoin:
-            return TokenQuery(blockchainType: self, tokenType: .derived(derivation: MnemonicDerivation.default.derivation))
+            return TokenQuery(
+                blockchainType: self,
+                tokenType: .derived(derivation: MnemonicDerivation.default.derivation)
+            )
         case .bitcoinCash:
-            return TokenQuery(blockchainType: self, tokenType: .addressType(type: BitcoinCashCoinType.default.addressType))
+            return TokenQuery(
+                blockchainType: self,
+                tokenType: .addressType(type: BitcoinCashCoinType.default.addressType)
+            )
         default:
             return TokenQuery(blockchainType: self, tokenType: .native)
         }
@@ -229,14 +294,16 @@ extension BlockchainType {
         }
 
         switch self {
-        case .bitcoin, .bitcoinCash: return true
+        case .bitcoin, .bitcoinCash, .litecoin: return true
         default: return false
         }
     }
 }
 
-extension BlockchainType: Comparable {
-    public static func < (lhs: BlockchainType, rhs: BlockchainType) -> Bool {
-        lhs.order < rhs.order
+extension Array where Array.Element == BlockchainType {
+    func ordered() -> [BlockchainType] {
+        sorted { lhs, rhs in
+            lhs.order < rhs.order
+        }
     }
 }

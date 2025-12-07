@@ -1,6 +1,6 @@
-import ComponentKit
+
 import SectionsTableView
-import ThemeKit
+
 import UIKit
 
 class BottomSheetViewController: ThemeActionSheetController {
@@ -156,6 +156,27 @@ class BottomSheetViewController: ThemeActionSheetController {
         )
     }
 
+    private func valueSection(index: Int, title: String, value: String) -> SectionProtocol {
+        Section(
+            id: "section-\(index)",
+            headerState: .margin(height: .margin12),
+            rows: [
+                CellBuilderNew.row(
+                    rootElement: .hStack([
+                        .textElement(text: .subhead2(title)),
+                        .textElement(text: .subhead1(value)),
+                    ]),
+                    tableView: tableView,
+                    id: "value-\(index)",
+                    height: .heightCell48,
+                    bind: { cell in
+                        cell.set(backgroundStyle: .bordered, isFirst: true, isLast: true)
+                    }
+                ),
+            ]
+        )
+    }
+
     private func contractAddressSection(index: Int, imageUrl: String, value: String, explorerUrl: String?) -> SectionProtocol {
         let backgroundStyle: BaseThemeCell.BackgroundStyle = .bordered
         let textFont: UIFont = .subhead1
@@ -169,7 +190,7 @@ class BottomSheetViewController: ThemeActionSheetController {
                         .imageElement(image: .url(imageUrl, placeholder: "placeholder_rectangle_32"), size: .image32),
                         .text { component in
                             component.font = textFont
-                            component.textColor = .themeBlue
+                            component.textColor = .themeLeah
                             component.text = value
                             component.numberOfLines = 0
                         },
@@ -185,7 +206,6 @@ class BottomSheetViewController: ThemeActionSheetController {
                     ]),
                     tableView: tableView,
                     id: "copyable-value-\(index)",
-                    autoDeselect: true,
                     dynamicHeight: { width in
                         let height = CellBuilderNew.height(
                             containerWidth: width,
@@ -198,13 +218,8 @@ class BottomSheetViewController: ThemeActionSheetController {
 
                         return max(height, .heightCell56)
                     },
-                    
                     bind: { cell in
                         cell.set(backgroundStyle: backgroundStyle, isFirst: true, isLast: true)
-                    },
-                    
-                    action: {
-                        CopyHelper.copyAndNotify(value: value)
                     }
                 ),
             ]

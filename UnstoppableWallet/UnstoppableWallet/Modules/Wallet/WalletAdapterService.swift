@@ -16,7 +16,7 @@ class WalletAdapterService {
     private let disposeBag = DisposeBag()
     private var adaptersDisposeBag = DisposeBag()
 
-    private var adapterMap: [Wallet: IBalanceAdapter]
+    private var adapterMap: [Wallet: IBalanceAdapter] = [:]
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).wallet-adapter-service", qos: .userInitiated)
 
@@ -24,16 +24,18 @@ class WalletAdapterService {
         self.account = account
         self.adapterManager = adapterManager
 
+        adapterManager.adapterDataReadyObservable
+            .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+            .subscribe(onNext: { [weak self] adapterData in
+                guard adapterData.account == self?.account else {
+                    return
+                }
+                self?.handleAdaptersReady(adapterMap: adapterData.adapterMap)
+            })
+            .disposed(by: disposeBag)
+
         adapterMap = adapterManager.adapterData.adapterMap.compactMapValues { $0 as? IBalanceAdapter }
         subscribeToAdapters()
-
-        subscribe(disposeBag, adapterManager.adapterDataReadyObservable) { [weak self] adapterData in
-            guard adapterData.account == self?.account else {
-                return
-            }
-
-            self?.handleAdaptersReady(adapterMap: adapterData.adapterMap)
-        }
     }
 
     private func handleAdaptersReady(adapterMap: [Wallet: IAdapter]) {

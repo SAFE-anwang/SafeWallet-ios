@@ -15,7 +15,7 @@ class SafeCoinAdapter: BitcoinBaseAdapter {
         
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
         let networkType: SafeCoinKit.Kit.NetworkType = .mainNet
-        let logger = App.shared.logger.scoped(with: "SafeCoinKit")
+        let logger = Core.shared.logger.scoped(with: "SafeCoinKit")
 
         switch wallet.account.type {
         case .mnemonic:
@@ -105,7 +105,9 @@ extension SafeCoinAdapter {
 
 extension SafeCoinAdapter: ISendSafeCoinAdapter {
     func availableBalanceSafe(feeRate: Int, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:]) -> Decimal {
-        availableBalance(feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
+        let params = SendParameters(address: address, feeRate: feeRate, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
+        return availableBalance(params: params)
+//        availableBalance(feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
     }
 
     func validateSafe(address: String) throws {
@@ -113,7 +115,9 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
     }
 
     func sendInfoSafe(amount: Decimal, feeRate: Int, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:]) throws -> SendInfo {
-        return try sendInfo(amount: amount, feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
+        let satoshiAmount = convertToSatoshi(value: amount)
+        let params = SendParameters(address: address, value: satoshiAmount, feeRate: feeRate, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
+        return try sendInfo(params: params)//sendInfo(amount: amount, feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
     }
 
     var blockchainType: BlockchainType {
@@ -125,14 +129,17 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
     }
     
     func minimumSendAmountSafe(address: String?) -> Decimal {
-        minimumSendAmount(address: address)
+        minimumSendAmount(params: SendParameters(address: address))
+//        minimumSendAmount(address: address)
     }
         
     func convertFeeSafe(amount: Decimal, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:]) throws -> SendInfo {
         // 增加兑换WSAFE流量手续费
         var convertFeeRate = feeRate
         convertFeeRate += 50
-        return try sendInfo(amount: Decimal(convertFeeRate), feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
+        let satoshiAmount = convertToSatoshi(value: amount)
+        let params = SendParameters(address: address, value: satoshiAmount, feeRate: feeRate, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
+        return try sendInfo(params: params)//sendInfo(amount: Decimal(convertFeeRate), feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
     }
     
     func sendSingle(amount: Decimal, address: String, memo: String?, feeRate: Int, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData] = [:], sortMode: TransactionDataSortMode, rbfEnabled: Bool, logger: Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> Single<Void> {
@@ -164,7 +171,8 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
 
                 }
                 if let adapter = self {
-                    _ = try adapter.safeCoinKit.sendSafe(to: address, memo: memo, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, rbfEnabled: rbfEnabled, unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
+                    let params = SendParameters(address: address, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, rbfEnabled: rbfEnabled, memo: memo, unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
+                    _ = try adapter.safeCoinKit.sendSafe(params: params)//sendSafe(to: address, memo: memo, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, rbfEnabled: rbfEnabled, unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
                 }
                 observer(.success(()))
             } catch {
@@ -176,18 +184,18 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
 
     }
     
-    private func convertToSatoshi(value: Decimal) -> Int {
-        let coinValue: Decimal = value * coinRate
-        let handler = NSDecimalNumberHandler(roundingMode: .plain, scale: Int16(truncatingIfNeeded: 0), raiseOnExactness: false, raiseOnOverflow: false, raiseOnUnderflow: false, raiseOnDivideByZero: false)
-        return NSDecimalNumber(decimal: coinValue).rounding(accordingToBehavior: handler).intValue
-    }
+//    private func convertToSatoshi(value: Decimal) -> Int {
+//        let coinValue: Decimal = value * coinRate
+//        let handler = NSDecimalNumberHandler(roundingMode: .plain, scale: Int16(truncatingIfNeeded: 0), raiseOnExactness: false, raiseOnOverflow: false, raiseOnUnderflow: false, raiseOnDivideByZero: false)
+//        return NSDecimalNumber(decimal: coinValue).rounding(accordingToBehavior: handler).intValue
+//    }
 
-    private func convertToKitSortMode(sort: TransactionDataSortMode) -> TransactionDataSortType {
-        switch sort {
-        case .shuffle: return .shuffle
-        case .bip69: return .bip69
-        }
-    }
+//    private func convertToKitSortMode(sort: TransactionDataSortMode) -> TransactionDataSortType {
+//        switch sort {
+//        case .shuffle: return .shuffle
+//        case .bip69: return .bip69
+//        }
+//    }
     
     public func fallbackBlock(date: CheckpointData.FallbackDate) {
         if let _ = safeCoinKit.lastBlockInfo {
@@ -214,13 +222,13 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
 }
 extension SafeCoinAdapter {
     
-    func coinValue(value: BigUInt) -> CoinValue {
+    func coinValue(value: BigUInt) -> AppValue {
         let decimalValue = Decimal(bigUInt: value, decimals: token.decimals) ?? 0
         return coinValue(value: decimalValue)
     }
     
-    func coinValue(value: Decimal) -> CoinValue {
-        CoinValue(kind: .token(token: token), value: value)
+    func coinValue(value: Decimal) -> AppValue {
+        AppValue(kind: .token(token: token), value: value)
     }
     
 }

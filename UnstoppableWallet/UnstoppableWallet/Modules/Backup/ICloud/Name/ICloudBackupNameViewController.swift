@@ -1,8 +1,7 @@
 import Combine
-import ComponentKit
+
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIExtensions
 import UIKit
 
@@ -39,6 +38,7 @@ class ICloudBackupNameViewController: KeyboardAwareViewController {
 
         title = "backup.cloud.name.title".localized
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.next".localized, style: .done, target: self, action: #selector(onTapNext))
+        navigationItem.rightBarButtonItem?.tintColor = .themeJacob
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
         navigationItem.largeTitleDisplayMode = .never
 

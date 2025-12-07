@@ -1,8 +1,8 @@
 import UIKit
+import SwiftUI
 import MarketKit
 import EvmKit
 import SectionsTableView
-import ThemeKit
 import RxSwift
 import RxCocoa
 
@@ -45,7 +45,7 @@ protocol ILiquidityDataSource: AnyObject {
 enum LiquidityMainModule {
 
     static func viewController(tokenFrom: Token? = nil) -> UIViewController? {
-        let swapDexManager = LiquidityProviderMannager(localStorage: App.shared.localStorage, evmBlockchainManager: App.shared.evmBlockchainManager, tokenFrom: tokenFrom)
+        let swapDexManager = LiquidityProviderMannager(localStorage: Core.shared.localStorage, evmBlockchainManager: Core.shared.evmBlockchainManager, tokenFrom: tokenFrom)
 
         let viewModel =  LiquidityMainViewModel(dexManager: swapDexManager)
         let viewController = LiquidityMainViewController(
@@ -54,6 +54,25 @@ enum LiquidityMainModule {
         )
         return viewController
     }
+}
+
+struct LiquidityMainView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+    let tokenFrom: Token?
+    
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        let swapDexManager = LiquidityProviderMannager(localStorage: Core.shared.localStorage, evmBlockchainManager: Core.shared.evmBlockchainManager, tokenFrom: tokenFrom)
+
+        let viewModel =  LiquidityMainViewModel(dexManager: swapDexManager)
+        let viewController = LiquidityMainViewController(
+                viewModel: viewModel,
+                dataSourceManager: swapDexManager
+        )
+        return ThemeNavigationController(rootViewController: viewController)
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }
 
 extension LiquidityMainModule {

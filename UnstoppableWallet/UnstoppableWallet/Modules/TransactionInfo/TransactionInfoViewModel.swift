@@ -1,3 +1,4 @@
+import Combine
 import MarketKit
 import RxCocoa
 import RxSwift
@@ -9,7 +10,7 @@ class TransactionInfoViewModel {
     private let factory: TransactionInfoViewItemFactory
     private let contactLabelService: ContactLabelService
 
-    private var viewItemsRelay = PublishRelay<[[TransactionInfoModule.ViewItem]]>()
+    private var viewItemsRelay = PublishRelay<[TransactionInfoModule.SectionViewItem]>()
 
     init(service: TransactionInfoService, factory: TransactionInfoViewItemFactory, contactLabelService: ContactLabelService) {
         self.service = service
@@ -31,11 +32,11 @@ class TransactionInfoViewModel {
 }
 
 extension TransactionInfoViewModel {
-    var viewItems: [[TransactionInfoModule.ViewItem]] {
+    var viewItems: [TransactionInfoModule.SectionViewItem] {
         factory.items(item: service.item, balanceHidden: service.balanceHidden)
     }
 
-    var viewItemsDriver: Signal<[[TransactionInfoModule.ViewItem]]> {
+    var viewItemsDriver: Signal<[TransactionInfoModule.SectionViewItem]> {
         viewItemsRelay.asSignal()
     }
 
@@ -49,5 +50,12 @@ extension TransactionInfoViewModel {
 
     var transactionRecord: TransactionRecord {
         service.item.record
+    }
+
+    func togglePrice() {
+        factory.priceReversed.toggle()
+        reSyncServiceItem()
+
+        stat(page: .transactionInfo, event: .togglePrice)
     }
 }

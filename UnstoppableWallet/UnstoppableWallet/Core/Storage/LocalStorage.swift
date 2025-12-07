@@ -19,7 +19,12 @@ class LocalStorage {
     private let keyUserChartIndicatorsSync = "user-chart-indicators"
     private let keyIndicatorsShown = "indicators-shown"
     private let keyTelegramSupportRequested = "telegram-support-requested"
-    private let keyMultiSwapEnabled = "multi-swap-enabled"
+    private let keyEmulatePurchase = "emulate-purchase"
+    private let keyPurchaseData = "emulate-purchase-data"
+    private let keyPurchaseCancelled = "emulate-purchase-cancelled"
+    private let keyHasBep2Token = "has-bep2-token"
+    private let keyAmountRounding = "amount-rounding"
+    private let keyUseMevProtection = "use-mev-protection"
 
     private let userDefaultsStorage: UserDefaultsStorage
 
@@ -111,15 +116,56 @@ extension LocalStorage {
         set { userDefaultsStorage.set(value: newValue, for: keyTelegramSupportRequested) }
     }
 
-    var multiSwapEnabled: Bool {
-        get { userDefaultsStorage.value(for: keyMultiSwapEnabled) ?? false }
-        set { userDefaultsStorage.set(value: newValue, for: keyMultiSwapEnabled) }
+    var emulatePurchase: Bool {
+        get { userDefaultsStorage.value(for: keyEmulatePurchase) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyEmulatePurchase) }
+    }
+
+    var purchase: PurchaseManager.PurchaseData? {
+        get {
+            if let data: Data = userDefaultsStorage.value(for: keyPurchaseData) {
+                return try? JSONDecoder().decode(PurchaseManager.PurchaseData.self, from: data)
+            }
+            return nil
+        }
+        set {
+            guard let newValue else {
+                userDefaultsStorage.set(value: newValue, for: keyPurchaseData)
+                return
+            }
+            if let encodedData = try? JSONEncoder().encode(newValue) {
+                userDefaultsStorage.set(value: encodedData, for: keyPurchaseData)
+            } else {
+                print("Can't encode test data for Purchase!!!")
+            }
+        }
+    }
+
+    var purchaseCancelled: Bool {
+        get { userDefaultsStorage.value(for: keyPurchaseCancelled) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyPurchaseCancelled) }
+    }
+
+    var hasBep2Token: Bool {
+        get { userDefaultsStorage.value(for: keyHasBep2Token) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyHasBep2Token) }
+    }
+
+    var useAmountRounding: Bool {
+        get { userDefaultsStorage.value(for: keyAmountRounding) ?? true }
+        set { userDefaultsStorage.set(value: newValue, for: keyAmountRounding) }
+    }
+
+    var useMevProtection: Bool {
+        get { userDefaultsStorage.value(for: keyUseMevProtection) ?? false }
+        set {
+            userDefaultsStorage.set(value: newValue, for: keyUseMevProtection)
+        }
     }
 }
 
 extension LocalStorage {
     func restore(backup: SettingsBackup) {
-        lockTimeEnabled = backup.lockTimeEnabled
         remoteContactsSync = backup.remoteContactsSync ?? false
         indicatorsShown = backup.indicatorsShown
         backup.swapProviders.forEach { provider in

@@ -3,8 +3,6 @@ import Foundation
 import UIKit
 import RxSwift
 import SnapKit
-import ThemeKit
-import ComponentKit
 import MarketKit
 
 class LiquidityInputCardView: UIView {

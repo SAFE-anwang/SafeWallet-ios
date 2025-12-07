@@ -79,6 +79,7 @@ open class AmountInputViewModel {
         subscribe(disposeBag, fiatService.primaryInfoObservable) { [weak self] in self?.sync(primaryInfo: $0) }
         subscribe(disposeBag, fiatService.secondaryAmountInfoObservable) { [weak self] in self?.syncSecondary(amountInfo: $0) }
         subscribe(disposeBag, switchService.toggleAvailableObservable) { [weak self] in self?.switchEnabledRelay.accept($0) }
+
         sync(amount: service.amount)
         sync(token: service.token)
     }
@@ -111,6 +112,8 @@ open class AmountInputViewModel {
             }else {
                 self?.coinDecimals = token?.decimals ?? AmountInputViewModel.fallbackCoinDecimals
             }
+//            self?.coinDecimals = token?.decimals ?? AmountInputViewModel.fallbackCoinDecimals
+
             self?.fiatService.set(token: token)
             self?.updateMaxEnabled()
         }

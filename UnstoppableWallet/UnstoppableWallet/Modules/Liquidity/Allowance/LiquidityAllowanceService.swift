@@ -40,12 +40,12 @@ class LiquidityAllowanceService {
     private func sync() {
         allowanceDisposeBag = DisposeBag()
 
-        guard let tokenA = tokenA, let adapterA = adapterManager.adapter(for: tokenA) as? IErc20Adapter else {
+        guard let tokenA = tokenA, let adapterA = adapterManager.adapter(for: tokenA) as? IAllowanceAdapter else {
             state = nil
             return
         }
         
-        guard let tokenB = tokenB, let adapterB = adapterManager.adapter(for: tokenB) as? IErc20Adapter else {
+        guard let tokenB = tokenB, let adapterB = adapterManager.adapter(for: tokenB) as? IAllowanceAdapter else {
             state = nil
             return
         }
@@ -55,16 +55,22 @@ class LiquidityAllowanceService {
         } else {
             state = .loading
         }
-        
-        Single.zip( adapterA.allowanceSingle(spenderAddress: spenderAddress, defaultBlockParameter: .latest),
-                        adapterB.allowanceSingle(spenderAddress: spenderAddress, defaultBlockParameter: .latest))
-                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                .subscribe(onSuccess: { [weak self] allowanceA, allowanceB in
-                    self?.state = .ready(allowanceA: CoinValue(kind: .token(token: tokenA), value: allowanceA), allowanceB: CoinValue(kind: .token(token: tokenB), value: allowanceB))
-                }, onError: { [weak self] error in
-                    self?.state = .notReady(error: error)
-                })
-                .disposed(by: allowanceDisposeBag)
+        let address = Address(raw: spenderAddress.hex)
+        Task {
+            do{
+                let allowanceA = try await adapterA.allowance(spenderAddress: address, defaultBlockParameter: .latest)
+                let allowanceB = try await adapterB.allowance(spenderAddress: address, defaultBlockParameter: .latest)
+                self.state = .ready(allowanceA: AppValue(kind: .token(token: tokenA), value: allowanceA), allowanceB: AppValue(kind: .token(token: tokenB), value: allowanceB))
+//                DispatchQueue.main.async { [weak self] in
+//                    self?.state = .ready(allowanceA: AppValue(kind: .token(token: tokenA), value: allowanceA), allowanceB: AppValue(kind: .token(token: tokenB), value: allowanceB))
+//                }
+            }catch{
+                self.state = .notReady(error: error)
+//                DispatchQueue.main.async {
+//                    self.state = .notReady(error: error)
+//                }
+            }
+        }
     }
 
 }
@@ -123,7 +129,7 @@ extension LiquidityAllowanceService {
 
     enum State: Equatable {
         case loading
-        case ready(allowanceA: CoinValue, allowanceB: CoinValue)
+        case ready(allowanceA: AppValue, allowanceB: AppValue)
         case notReady(error: Error)
 
         static func ==(lhs: State, rhs: State) -> Bool {

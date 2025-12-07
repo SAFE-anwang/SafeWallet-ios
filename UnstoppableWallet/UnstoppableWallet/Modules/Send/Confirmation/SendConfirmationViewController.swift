@@ -1,8 +1,7 @@
-import ComponentKit
+
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIKit
 
 class SendConfirmationViewController: ThemeViewController, SectionsDataSource {
@@ -83,18 +82,16 @@ class SendConfirmationViewController: ThemeViewController, SectionsDataSource {
 
     private func row(viewItem: SendConfirmationViewModel.ViewItem, rowInfo: RowInfo) -> RowProtocol {
         switch viewItem {
-        case let .subhead(iconName, title, value):
-            return CellComponent.actionTitleRow(tableView: tableView, rowInfo: rowInfo, iconName: iconName, iconDimmed: true, title: title, value: value)
-        case let .amount(iconUrl, iconPlaceholderImageName, coinAmount, currencyAmount, type):
-            return CellComponent.amountRow(tableView: tableView, rowInfo: rowInfo, iconUrl: iconUrl, iconPlaceholderImageName: iconPlaceholderImageName, coinAmount: coinAmount, currencyAmount: currencyAmount, type: type)
-        case let .address(title, value, valueTitle, contactAddress):
+        case let .amount(title, token, coinAmount, currencyAmount, type):
+            return CellComponent.amountRow(tableView: tableView, rowInfo: rowInfo, title: title, subtitle: token.fullBadge, imageUrl: token.coin.imageUrl, alternativeImageUrl: token.coin.image, placeholderImageName: token.placeholderImageName, coinAmount: coinAmount, currencyAmount: currencyAmount, type: type)
+        case let .address(title, value, valueTitle, contactAddress, statSection):
             var onAddToContact: (() -> Void)? = nil
             if let contactAddress {
                 onAddToContact = { [weak self] in
-                    ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self)
+                    ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self, statPage: .sendConfirmation, statSection: statSection)
                 }
             }
-            return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: title, value: value, valueTitle: valueTitle, onAddToContact: onAddToContact)
+            return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: title, value: value, valueTitle: valueTitle, statPage: .sendConfirmation, statSection: statSection, onAddToContact: onAddToContact)
         case let .value(iconName, title, value, type):
             return CellComponent.valueRow(tableView: tableView, rowInfo: rowInfo, iconName: iconName, title: title, value: value, type: type)
         }
@@ -104,7 +101,7 @@ class SendConfirmationViewController: ThemeViewController, SectionsDataSource {
 extension SendConfirmationViewController {
     func buildSections() -> [SectionProtocol] {
         var sections = [SectionProtocol]()
-        viewItems.enumerated().forEach { index, viewItems in
+        for (index, viewItems) in viewItems.enumerated() {
             sections.append(
                 Section(
                     id: "section-\(index)",

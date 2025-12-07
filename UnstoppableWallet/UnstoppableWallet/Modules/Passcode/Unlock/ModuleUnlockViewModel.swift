@@ -4,10 +4,10 @@ import Foundation
 class ModuleUnlockViewModel: BaseUnlockViewModel {
     private let onUnlock: () -> Void
 
-    init(passcodeManager: PasscodeManager, biometryManager: BiometryManager, lockoutManager: LockoutManager, blurManager: BlurManager, biometryAllowed: Bool, onUnlock: @escaping () -> Void) {
+    init(biometryAllowed: Bool, onUnlock: @escaping () -> Void) {
         self.onUnlock = onUnlock
 
-        super.init(passcodeManager: passcodeManager, biometryManager: biometryManager, lockoutManager: lockoutManager, blurManager: blurManager, biometryAllowed: biometryAllowed)
+        super.init(biometryAllowed: biometryAllowed)
     }
 
     override func isValid(passcode: String) -> Bool {
@@ -16,11 +16,11 @@ class ModuleUnlockViewModel: BaseUnlockViewModel {
 
     override func onEnterValid(passcode _: String) {
         onUnlock()
-        finishSubject.send(false)
+        finishSubject.send()
     }
 
-    override func onBiometryUnlock() -> Bool {
+    override func onBiometryUnlock() {
         onUnlock()
-        return true
+        finishSubject.send()
     }
 }

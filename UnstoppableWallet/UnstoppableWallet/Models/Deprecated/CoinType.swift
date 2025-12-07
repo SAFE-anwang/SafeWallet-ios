@@ -7,6 +7,7 @@ public enum CoinType: Decodable {
     case safe
     case safe4
     case zcash
+    case monero
     case ethereum
     case binanceSmartChain
     case polygon
@@ -49,6 +50,7 @@ public enum CoinType: Decodable {
         case "safe": self = .safe
         case "safe4": self = .safe4
         case "zcash": self = .zcash
+        case "monero": self = .monero
         case "ethereum": self = .ethereum
         case "binance-smart-chain": self = .binanceSmartChain
         case "polygon": self = .polygon
@@ -86,6 +88,7 @@ public enum CoinType: Decodable {
         case .safe: return (type: "safe", address: nil, symbol: nil)
         case .safe4: return (type: "safe4", address: nil, symbol: nil)
         case .zcash: return (type: "zcash", address: nil, symbol: nil)
+        case .monero: return (type: "monero", address: nil, symbol: nil)
         case .ethereum: return (type: "ethereum", address: nil, symbol: nil)
         case .binanceSmartChain: return (type: "binance-smart-chain", address: nil, symbol: nil)
         case .polygon: return (type: "polygon", address: nil, symbol: nil)
@@ -125,6 +128,7 @@ extension CoinType: Equatable {
         case (.safe, .safe): return true
         case (.safe4, .safe4): return true
         case (.zcash, .zcash): return true
+        case (.monero, .monero): return true
         case (.ethereum, .ethereum): return true
         case (.binanceSmartChain, .binanceSmartChain): return true
         case (.polygon, .polygon): return true
@@ -176,6 +180,7 @@ extension CoinType: Identifiable {
             case "safe-anwang": self = .safe
             case "safe4-anwang": self = .safe4
             case "zcash": self = .zcash
+            case "monero": self = .monero
             case "ethereum": self = .ethereum
             case "binanceSmartChain": self = .binanceSmartChain
             case "polygon": self = .polygon
@@ -219,6 +224,7 @@ extension CoinType: Identifiable {
         case .safe: return "safe-anwang"
         case .safe4: return "safe4-anwang"
         case .zcash: return "zcash"
+        case .monero: return "monero"
         case .ethereum: return "ethereum"
         case .binanceSmartChain: return "binanceSmartChain"
         case .polygon: return "polygon"
@@ -258,6 +264,7 @@ extension CoinType: CustomStringConvertible {
         case .safe: return "safe-anwang"
         case .safe4: return "safe4-anwang"
         case .zcash: return "zcash"
+        case .monero: return "monero"
         case .ethereum: return "ethereum"
         case .binanceSmartChain: return "binanceSmartChain"
         case .polygon: return "polygon"

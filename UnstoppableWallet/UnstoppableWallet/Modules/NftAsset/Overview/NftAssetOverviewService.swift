@@ -139,8 +139,8 @@ class NftAssetOverviewService {
         _fill(priceItem: item.average30d, map: map)
         _fill(priceItem: item.collectionFloor, map: map)
 
-        item.offers.forEach {
-            _fill(priceItem: $0, map: map)
+        for offer in item.offers {
+            _fill(priceItem: offer, map: map)
         }
 
         if let saleItem = item.sale {
@@ -160,24 +160,18 @@ class NftAssetOverviewService {
 }
 
 extension NftAssetOverviewService: IWalletCoinPriceServiceDelegate {
-    func didUpdateBaseCurrency() {
+    func didUpdate(itemsMap: [String: WalletCoinPriceService.Item]?) {
         queue.async {
             guard case let .completed(item) = self.state else {
                 return
             }
 
-            self._fillCoinPrices(item: item, coinUids: self._allCoinUids(item: item))
-            self.state = .completed(item)
-        }
-    }
-
-    func didUpdate(itemsMap: [String: WalletCoinPriceService.Item]) {
-        queue.async {
-            guard case let .completed(item) = self.state else {
-                return
+            if let itemsMap {
+                self._fillCoinPrices(item: item, map: itemsMap)
+            } else {
+                self._fillCoinPrices(item: item, coinUids: self._allCoinUids(item: item))
             }
 
-            self._fillCoinPrices(item: item, map: itemsMap)
             self.state = .completed(item)
         }
     }

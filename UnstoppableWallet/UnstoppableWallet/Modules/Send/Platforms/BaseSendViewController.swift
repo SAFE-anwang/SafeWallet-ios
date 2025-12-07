@@ -1,14 +1,13 @@
-import ComponentKit
+
 import RxCocoa
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIKit
 
 class BaseSendViewController: ThemeViewController, SectionsDataSource {
     private let disposeBag = DisposeBag()
-    let viewModel: SendViewModel
+    let viewModel: SendViewModelOld
 
     let tableView = SectionsTableView(style: .grouped)
 
@@ -34,7 +33,7 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
 
     init(confirmationFactory: ISendConfirmationFactory,
          feeSettingsFactory: ISendFeeSettingsFactory? = nil,
-         viewModel: SendViewModel,
+         viewModel: SendViewModelOld,
          availableBalanceViewModel: SendAvailableBalanceViewModel,
          amountInputViewModel: AmountInputViewModel,
          amountCautionViewModel: SendAmountCautionViewModel,
@@ -76,7 +75,7 @@ class BaseSendViewController: ThemeViewController, SectionsDataSource {
             iconImageView.snp.makeConstraints { make in
                 make.size.equalTo(CGFloat.iconSize24)
             }
-            iconImageView.setImage(withUrlString: viewModel.token.coin.imageUrl, placeholder: UIImage(named: viewModel.token.placeholderImageName))
+            iconImageView.setImage(coin: viewModel.token.coin, placeholder: viewModel.token.placeholderImageName)
             iconImageView.tintColor = .themeGray
         }
 

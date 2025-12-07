@@ -1,8 +1,8 @@
-import ComponentKit
+
 import MarketKit
 import MobileCoreServices
 import SwiftUI
-import ThemeKit
+
 import UIKit
 
 protocol ContactBookSelectorDelegate: AnyObject {
@@ -10,20 +10,24 @@ protocol ContactBookSelectorDelegate: AnyObject {
 }
 
 enum ContactBookModule {
-    private static func showAddContact(mode: ContactBookModule.AddContactMode, contactAddress: ContactAddress, parentViewController: UIViewController?) {
+    private static func showAddContact(mode: ContactBookModule.AddContactMode, contactAddress: ContactAddress, statPage: StatPage, statSection: StatSection? = nil) -> UIViewController? {
         switch mode {
         case .new:
             guard let module = ContactBookContactModule.viewController(mode: .add(contactAddress)) else {
-                return
+                return nil
             }
 
-            parentViewController?.present(module, animated: true)
+            stat(page: statPage, section: statSection, event: .open(page: .contactNew))
+
+            return module
         case .exist:
             guard let module = ContactBookModule.viewController(mode: .addToContact(contactAddress), presented: true) else {
-                return
+                return nil
             }
 
-            parentViewController?.present(module, animated: true)
+            stat(page: statPage, section: statSection, event: .open(page: .contactAddToExisting))
+
+            return module
         }
     }
 
@@ -48,7 +52,7 @@ enum ContactBookModule {
 
 extension ContactBookModule {
     static func viewController(mode: Mode, presented: Bool = false) -> UIViewController? {
-        let service = ContactBookService(marketKit: App.shared.marketKit, contactManager: App.shared.contactManager, blockchainType: mode.blockchainType)
+        let service = ContactBookService(marketKit: Core.shared.marketKit, contactManager: Core.shared.contactManager, blockchainType: mode.blockchainType)
         let viewModel = ContactBookViewModel(service: service)
 
         let viewController = ContactBookViewController(viewModel: viewModel, mode: mode, presented: presented)
@@ -59,16 +63,19 @@ extension ContactBookModule {
         }
     }
 
-    static func showAddition(contactAddress: ContactAddress, parentViewController: UIViewController?) {
+    static func showAddition(contactAddress: ContactAddress, parentViewController: UIViewController?, statPage: StatPage, statSection: StatSection? = nil) {
         // if all contacts has address for blockchain just show add-new controller
-        if App.shared.contactManager.all?.isEmpty ?? true {
-            showAddContact(mode: .new, contactAddress: contactAddress, parentViewController: parentViewController)
+        if Core.shared.contactManager.all?.isEmpty ?? true, let controller = showAddContact(mode: .new, contactAddress: contactAddress, statPage: statPage, statSection: statSection) {
+            parentViewController?.present(controller, animated: true)
             return
         }
 
         // show alert and choose make new contact or add to existed
         let alertController = ContactBookModule.chooseAddContactMode(resultAfterClose: true) { [weak parentViewController] mode in
-            showAddContact(mode: mode, contactAddress: contactAddress, parentViewController: parentViewController)
+            guard let controller = showAddContact(mode: mode, contactAddress: contactAddress, statPage: statPage, statSection: statSection) else {
+                return
+            }
+            parentViewController?.present(controller, animated: true)
         }
 
         parentViewController?.present(alertController, animated: true)
@@ -120,7 +127,7 @@ struct ContactBookView: UIViewControllerRepresentable {
     let mode: ContactBookModule.Mode
     let presented: Bool
 
-    init(mode: ContactBookModule.Mode, presented: Bool) {
+    init(mode: ContactBookModule.Mode, presented: Bool = false) {
         self.mode = mode
         self.presented = presented
     }

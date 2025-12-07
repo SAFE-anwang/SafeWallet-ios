@@ -2,11 +2,9 @@ import Foundation
 import UIKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIExtensions
 import RxSwift
 import RxCocoa
-import ComponentKit
 
 class Safe4ConfirmBaseViewController: ThemeViewController, SectionsDataSource {
     let tableView = SectionsTableView(style: .grouped)

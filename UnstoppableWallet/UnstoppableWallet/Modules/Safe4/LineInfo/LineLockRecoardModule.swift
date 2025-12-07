@@ -1,33 +1,33 @@
 import UIKit
 import MarketKit
-import ComponentKit
 import SwiftUI
-import ThemeKit
 
 struct LineLockRecoardModule {
-    static func viewController() -> UIViewController? {
-        guard let wallet = App.shared.walletManager.activeWallets.filter({ $0.coin.uid == safeCoinUid && $0.token.blockchain.type == .safe }).first else {
+    
+    static func viewModel() -> LineLockRecoardViewModel? {
+        guard let wallet = Core.shared.walletManager.activeWallets.filter({ $0.coin.uid == safeCoinUid && $0.token.blockchain.type == .safe }).first else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
-        guard let account = App.shared.accountManager.activeAccount else { return nil }
-        guard let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: wallet), state == .synced else {
+        guard let account = Core.shared.accountManager.activeAccount else { return nil }
+        guard let state = WalletAdapterService(account: account, adapterManager: Core.shared.adapterManager).state(wallet: wallet), state == .synced else {
             HudHelper.instance.show(banner: .error(string: "balance.syncing".localized))
             return nil
         }
-        guard let adapter = App.shared.adapterManager.adapter(for: wallet) as? SafeCoinAdapter else { return nil }
+        guard let adapter = Core.shared.adapterManager.adapter(for: wallet) as? SafeCoinAdapter else { return nil }
 
         let viewModel = LineLockRecoardViewModel(wallet: wallet, adapter: adapter)
-        return LineLockRecoardViewController(lineLockRecoardViewModel: viewModel)
+        return viewModel
     }
 }
 
 struct LineLockRecoardView: UIViewControllerRepresentable {
     typealias UIViewControllerType = UIViewController
-
+    let viewModel: LineLockRecoardViewModel
+    
     func makeUIViewController(context _: Context) -> UIViewController {
         // TODO: must provide any VC
-        ThemeNavigationController(rootViewController: LineLockRecoardModule.viewController() ?? UIViewController())
+        ThemeNavigationController(rootViewController: LineLockRecoardViewController(viewModel: viewModel))
     }
 
     func updateUIViewController(_: UIViewController, context _: Context) {}

@@ -71,13 +71,13 @@ extension SwapPendingAllowanceService {
     }
 
     func syncAllowance() {
-        guard let token, let adapter = adapterManager.adapter(for: token) as? IErc20Adapter else {
+        guard let token, let adapter = adapterManager.adapter(for: token) as? IAllowanceAdapter else {
             return
         }
 
         for transaction in adapter.pendingTransactions {
-            if let approve = transaction as? ApproveTransactionRecord, let value = approve.value.decimalValue {
-                pendingAllowance = value
+            if let approve = transaction as? ApproveTransactionRecord {
+                pendingAllowance = approve.value.value
             }
         }
 

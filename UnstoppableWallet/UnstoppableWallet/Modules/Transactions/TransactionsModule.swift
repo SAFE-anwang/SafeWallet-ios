@@ -1,46 +1,4 @@
 import MarketKit
-import RxSwift
-import UIKit
-
-enum TransactionsModule {
-    static func viewController() -> UIViewController {
-        let rateService = HistoricalRateService(marketKit: App.shared.marketKit, currencyManager: App.shared.currencyManager)
-        let nftMetadataService = NftMetadataService(nftMetadataManager: App.shared.nftMetadataManager)
-
-        let service = TransactionsService(
-            walletManager: App.shared.walletManager,
-            adapterManager: App.shared.transactionAdapterManager,
-            rateService: rateService,
-            nftMetadataService: nftMetadataService,
-            balanceHiddenManager: App.shared.balanceHiddenManager
-        )
-
-        let contactLabelService = TransactionsContactLabelService(contactManager: App.shared.contactManager)
-        let viewItemFactory = TransactionsViewItemFactory(evmLabelManager: App.shared.evmLabelManager, contactLabelService: contactLabelService)
-        let viewModel = TransactionsViewModel(service: service, contactLabelService: contactLabelService, factory: viewItemFactory)
-        let dataSource = TransactionsTableViewDataSource(viewModel: viewModel)
-
-        return TransactionsViewController(viewModel: viewModel, dataSource: dataSource)
-    }
-
-    static func dataSource(token: Token) -> TransactionsTableViewDataSource {
-        let rateService = HistoricalRateService(marketKit: App.shared.marketKit, currencyManager: App.shared.currencyManager)
-        let nftMetadataService = NftMetadataService(nftMetadataManager: App.shared.nftMetadataManager)
-
-        let service = TokenTransactionsService(
-            token: token,
-            adapterManager: App.shared.transactionAdapterManager,
-            rateService: rateService,
-            nftMetadataService: nftMetadataService
-        )
-
-        let contactLabelService = TransactionsContactLabelService(contactManager: App.shared.contactManager)
-        let viewItemFactory = TransactionsViewItemFactory(evmLabelManager: App.shared.evmLabelManager, contactLabelService: contactLabelService)
-        let viewModel = BaseTransactionsViewModel(service: service, contactLabelService: contactLabelService, factory: viewItemFactory)
-
-        return TransactionsTableViewDataSource(viewModel: viewModel)
-    }
-}
 
 struct TransactionItem: Comparable {
     var record: TransactionRecord
@@ -69,6 +27,15 @@ struct TransactionFilter: Equatable {
     init() {
         blockchain = nil
         token = nil
+        contact = nil
+        scamFilterEnabled = true
+        safe4IncomeEnabled = UserDefaultsStorage().value(for: safe4key_IncomeEnabled) ?? true
+        safe4NodestatusEnabled = UserDefaultsStorage().value(for: safe4key_Nodestatus) ?? true
+    }
+    
+    init(token: Token) {
+        blockchain = .blockchain(blockchain: token.blockchain)
+        self.token = token
         contact = nil
         scamFilterEnabled = true
         safe4IncomeEnabled = UserDefaultsStorage().value(for: safe4key_IncomeEnabled) ?? true

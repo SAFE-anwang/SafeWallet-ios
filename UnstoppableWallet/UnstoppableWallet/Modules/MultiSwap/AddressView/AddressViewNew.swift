@@ -9,16 +9,18 @@ struct AddressViewNew: View {
 
     @Binding var text: String
     @Binding var result: AddressInput.Result
+    @Binding var borderColor: Color
 
-    init(initial: AddressInput.Initial, text: Binding<String>, result: Binding<AddressInput.Result>) {
+    init(initial: AddressInput.Initial, text: Binding<String>, result: Binding<AddressInput.Result>, borderColor: Binding<Color>) {
         _viewModel = StateObject(wrappedValue: AddressViewModelNew(initial: initial))
 
         _text = text
         _result = result
+        _borderColor = borderColor
     }
 
     var body: some View {
-        InputTextRow(vertical: .margin8) {
+        InputTextRow(vertical: .margin8, borderColor: $borderColor) {
             ShortcutButtonsView(
                 content: {
                     textField(
@@ -56,16 +58,6 @@ struct AddressViewNew: View {
                     viewModel.onTapDelete()
                 }
             )
-        }
-        .sheet(isPresented: $viewModel.qrScanPresented) {
-            ScanQrViewNew(pasteEnabled: true) {
-                viewModel.didFetch(qrText: $0)
-            }
-        }
-        .sheet(isPresented: $viewModel.contactsPresented) {
-            if let blockchainType = viewModel.blockchainType {
-                ContactBookView(mode: .select(blockchainType, viewModel), presented: true)
-            }
         }
     }
 

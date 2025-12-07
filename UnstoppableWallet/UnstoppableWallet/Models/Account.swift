@@ -21,7 +21,7 @@ class Account: Identifiable {
 
     var watchAccount: Bool {
         switch type {
-        case .evmAddress, .tronAddress, .tonAddress, .btcAddress:
+        case .evmAddress, .tronAddress, .tonAddress, .stellarAccount, .btcAddress, .moneroWatchAccount:
             return true
         case let .hdExtendedKey(key):
             switch key {
@@ -30,13 +30,6 @@ class Account: Identifiable {
             }
         default:
             return false
-        }
-    }
-
-    var cexAccount: Bool {
-        switch type {
-        case .cex: return true
-        default: return false
         }
     }
 
@@ -59,7 +52,7 @@ class Account: Identifiable {
     var canBeBackedUp: Bool {
         switch type {
         case .mnemonic: return true
-        case .hdExtendedKey, .evmAddress, .tronAddress, .tonAddress, .evmPrivateKey, .btcAddress, .cex: return false
+        default: return false
         }
     }
 }

@@ -1,8 +1,10 @@
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class InputView: UIView {
+    static let cornerRadius: CGFloat = .cornerRadius12
+
     private let formValidatedView: FormValidatedView
     private let inputStackView: InputStackView
 

@@ -34,7 +34,7 @@ class BaseEvmAdapter {
     func convertToAdapterState(evmSyncState: EvmKit.SyncState) -> AdapterState {
         switch evmSyncState {
         case .synced: return .synced
-        case let .notSynced(error): return .notSynced(error: error.convertedError)
+        case let .notSynced(error): return .notSynced(error: error.convertedError.localizedDescription)
         case .syncing: return .syncing(progress: nil, lastBlockDate: nil)
         }
     }
@@ -44,7 +44,7 @@ class BaseEvmAdapter {
     }
 
     func balanceData(balance: BigUInt?) -> BalanceData {
-        BalanceData(available: balanceDecimal(kitBalance: balance, decimals: decimals))
+        BalanceData(balance: balanceDecimal(kitBalance: balance, decimals: decimals))
     }
 }
 

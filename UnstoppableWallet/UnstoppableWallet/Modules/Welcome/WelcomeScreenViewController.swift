@@ -1,9 +1,21 @@
-import ComponentKit
 import SnapKit
-import ThemeKit
+import SwiftUI
 import UIKit
 
+struct WelcomeScreenView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+
+    let onFinish: () -> Void
+
+    func makeUIViewController(context _: Context) -> UIViewController {
+        WelcomeScreenViewController.instance(onFinish: onFinish)
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
+}
+
 class WelcomeScreenViewController: ThemeViewController {
+    private let onFinish: () -> Void
     private let scrollView = UIScrollView()
     private var textViews = [WelcomeTextView]()
     private let pageControl: BarPageControl
@@ -19,7 +31,8 @@ class WelcomeScreenViewController: ThemeViewController {
         Slide(title: "intro.stay_private.title".localized, description: "intro.stay_private.description".localized, image: "Intro - Stay Private"),
     ]
 
-    override init() {
+    init(onFinish: @escaping () -> Void) {
+        self.onFinish = onFinish
         pageControl = BarPageControl(barCount: slides.count)
 
         super.init()
@@ -211,7 +224,7 @@ class WelcomeScreenViewController: ThemeViewController {
         if pageControl.currentPage < pageControl.numberOfPages - 1 {
             scrollView.setContentOffset(CGPoint(x: scrollView.width * CGFloat(pageControl.currentPage + 1), y: 0), animated: true)
         } else {
-            UIWindow.keyWindow?.set(newRootController: MainModule.instance())
+            onFinish()
         }
     }
 }
@@ -242,6 +255,13 @@ extension WelcomeScreenViewController: UIScrollViewDelegate {
                 textViews[i].alpha = 0
             }
         }
+    }
+}
+
+extension WelcomeScreenViewController {
+    static func instance(onFinish: @escaping () -> Void) -> UIViewController {
+        let viewController = WelcomeScreenViewController(onFinish: onFinish)
+        return viewController
     }
 }
 

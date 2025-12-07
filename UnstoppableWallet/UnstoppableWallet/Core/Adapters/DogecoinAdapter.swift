@@ -14,7 +14,7 @@ class DogecoinAdapter: BitcoinBaseAdapter {
 
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
         let networkType: DogecoinKit.Kit.NetworkType = .mainNet
-        let logger = App.shared.logger.scoped(with: "DogeecoinKit")
+        let logger = Core.shared.logger.scoped(with: "DogeecoinKit")
         
         let hasher: (Data) -> Data = { data in
             let params = DogecoinKit.Kit.defaultScryptParams

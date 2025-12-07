@@ -11,15 +11,15 @@ struct MultiSwapRevokeView: View {
     @State private var unlockPresented = false
     @Environment(\.dismiss) private var dismiss
 
-    init(tokenIn: Token, spenderAddress: EvmKit.Address, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) {
+    init(tokenIn: Token, spenderAddress: Address, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) {
         _viewModel = .init(wrappedValue: MultiSwapRevokeViewModel(token: tokenIn, spenderAddress: spenderAddress))
         _isPresented = isPresented
         self.onSuccess = onSuccess
     }
 
     var body: some View {
-        if let transactionData = viewModel.transactionData {
-            SendConfirmationNewView(sendData: .evm(blockchainType: viewModel.token.blockchainType, transactionData: transactionData)) {
+        if let sendData = viewModel.sendData {
+            RegularSendView(sendData: sendData) {
                 onSuccess()
                 isPresented = false
             }

@@ -5,7 +5,7 @@ struct MultiSwapQuotesView: View {
     @Binding var isPresented: Bool
 
     var body: some View {
-        ThemeNavigationView {
+        ThemeNavigationStack {
             ScrollableThemeView {
                 VStack {
                     ForEach(viewModel.quotes, id: \.provider.id) { (quote: MultiSwapViewModel.Quote) in
@@ -22,9 +22,9 @@ struct MultiSwapQuotesView: View {
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(quote.provider.name).textSubhead2(color: .themeLeah)
 
-                                    if quote.provider.id == viewModel.bestQuote?.provider.id {
-                                        Text("swap.quotes.best_price".localized).textSubhead2(color: .themeRemus)
-                                    }
+                                    // if quote.provider.id == viewModel.bestQuote?.provider.id {
+                                    //     Text("swap.quotes.best_price".localized).textSubhead2(color: .themeRemus)
+                                    // }
                                 }
 
                                 Spacer()
@@ -67,7 +67,7 @@ struct MultiSwapQuotesView: View {
             return nil
         }
 
-        return ValueFormatter.instance.formatFull(coinValue: CoinValue(kind: .token(token: tokenOut), value: quote.quote.amountOut))
+        return AppValue(token: tokenOut, value: quote.quote.amountOut).formattedFull()
     }
 
     private func quoteCurrencyValue(quote: MultiSwapViewModel.Quote) -> String? {

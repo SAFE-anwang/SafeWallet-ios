@@ -1,7 +1,5 @@
 import UIKit
-import ThemeKit
 import SnapKit
-import ComponentKit
 
 class ProposalCell: UITableViewCell {
     private let margins = UIEdgeInsets(top: .margin4, left: .margin16, bottom: .margin4, right: .margin16)

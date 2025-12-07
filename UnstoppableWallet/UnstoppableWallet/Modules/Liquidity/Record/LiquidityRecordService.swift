@@ -41,7 +41,7 @@ class LiquidityRecordService {
         
         self.currentBlockchainType = blockchainType
         
-        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
             return
         }
         self.evmKitWrapper = evmKitWrapper
@@ -284,6 +284,7 @@ extension LiquidityRecordService {
                         transactionData: transactionData,
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
+                        privateSend: false,
                         nonce: nonce
                 )
     }

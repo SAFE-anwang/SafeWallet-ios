@@ -35,21 +35,26 @@ class LockedRecordViewModel: ObservableObject {
 }
 
 extension LockedRecordViewModel {
-    func withdraw(id: BigUInt) {
+    func withdraw(ids: [BigUInt]) {
         sendState = .loading
         Task {
             do{
-                let type: web3swift.AccountManager.ContractType
                 
-                if lockedIds_01.contains(id) {
-                    type = .smallAmount_01
-                } else if lockedIds_02.contains(id) {
-                    type = .smallAmount_02
-                } else {
-                    type = .native
+                let smallAmount_01 = intersectionUsingSet(lockedIds_01, ids)
+                let smallAmount_02 = intersectionUsingSet(lockedIds_02, ids)
+                let native = intersectionUsingSet(lockedIds, ids)
+                
+                if smallAmount_01.count > 0 {
+                    let _ = try await service.withdrawByID(type: .smallAmount_01, ids: ids)
+                }
+                if smallAmount_02.count > 0 {
+                    let _ = try await service.withdrawByID(type: .smallAmount_02, ids: ids)
                 }
                 
-                let _ = try await service.withdrawByID(type: type, id: id)
+                if native.count > 0 {
+                    let _ = try await service.withdrawByID(type: .native, ids: ids)
+                }
+                
                 await MainActor.run {
                     sendState = .success(message: "safe_zone.safe4.withdraw".localized + "transactions.types.outgoing".localized)
                 }
@@ -66,6 +71,22 @@ extension LockedRecordViewModel {
             return
         }
         requestItems(loadMore: true)
+    }
+    
+    var withdrawEnableIds: [BigUInt] {
+        viewItems.filter{$0.withdrawEnable}.map{BigUInt($0.id)}
+    }
+    
+    func allWithdraw() {
+        guard withdrawEnableIds.count > 0 else{ return }
+        guard case .items = dataState else{ return }
+        withdraw(ids: withdrawEnableIds)
+    }
+    
+    private func intersectionUsingSet(_ array1: [BigUInt], _ array2: [BigUInt]) -> [BigUInt] {
+        let set1 = Set(array1)
+        let set2 = Set(array2)
+        return Array(set1.intersection(set2))
     }
     
      private func showCache() {

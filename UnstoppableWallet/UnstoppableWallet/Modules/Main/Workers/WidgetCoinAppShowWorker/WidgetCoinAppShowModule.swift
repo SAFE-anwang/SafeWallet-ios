@@ -1,21 +1,29 @@
+import Combine
+import MarketKit
 import UIKit
 
-class WidgetCoinAppShowModule {
-    private let parentViewController: UIViewController?
+class WidgetCoinEventHandler {
+    private let marketKit: MarketKit.Kit
 
-    init(parentViewController: UIViewController?) {
-        self.parentViewController = parentViewController
+    private var signalSubject = PassthroughSubject<EventHandlerSignal, Never>()
+
+    init(marketKit: MarketKit.Kit) {
+        self.marketKit = marketKit
     }
 }
 
-extension WidgetCoinAppShowModule: IEventHandler {
-    @MainActor
-    func handle(event: Any, eventType: EventHandler.EventType) async throws {
+extension WidgetCoinEventHandler: IEventHandler {
+    var signal: AnyPublisher<EventHandlerSignal, Never> {
+        signalSubject.eraseToAnyPublisher()
+    }
+
+    @MainActor func handle(source _: StatPage, event: Any, eventType: EventHandler.EventType) async throws {
         guard eventType.contains(.deepLink) else {
             throw EventHandler.HandleError.noSuitableHandler
         }
 
         var coinUid: String?
+
         switch event {
         case let event as String:
             coinUid = event
@@ -26,17 +34,11 @@ extension WidgetCoinAppShowModule: IEventHandler {
         default: ()
         }
 
-        guard let coinUid, let viewController = CoinPageModule.viewController(coinUid: coinUid) else {
+        guard let coinUid, let coin = try? marketKit.fullCoins(coinUids: [coinUid]).first?.coin else {
             throw EventHandler.HandleError.noSuitableHandler
         }
 
-        parentViewController?.visibleController.present(viewController, animated: true)
-        stat(page: .widget, event: .coinOpen, params: [.coinUid: coinUid])
-    }
-}
-
-extension WidgetCoinAppShowModule {
-    static func handler(parentViewController: UIViewController? = nil) -> IEventHandler {
-        WidgetCoinAppShowModule(parentViewController: parentViewController)
+        stat(page: .widget, event: .openCoin(coinUid: coinUid))
+        signalSubject.send(.coinPage(coin))
     }
 }

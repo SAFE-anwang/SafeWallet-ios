@@ -7,7 +7,7 @@ class AppStatusViewModel {
 
     init(systemInfoManager: SystemInfoManager, appVersionStorage: AppVersionStorage, accountManager: AccountManager,
          walletManager: WalletManager, adapterManager: AdapterManager, logRecordManager: LogRecordManager,
-         evmBlockchainManager: EvmBlockchainManager, binanceKitManager: BinanceKitManager, marketKit: MarketKit.Kit)
+         evmBlockchainManager: EvmBlockchainManager, marketKit: MarketKit.Kit)
     {
         dateFormatter.dateFormat = "dd MMM yyyy, HH:mm"
 
@@ -20,6 +20,7 @@ class AppStatusViewModel {
                         .info(title: "App Version", value: systemInfoManager.appVersion.description),
                         .info(title: "Device Model", value: systemInfoManager.deviceModel),
                         .info(title: "iOS Version", value: systemInfoManager.osVersion),
+                        .info(title: "App ID", value: AppConfig.appId ?? "n/a"),
                     ],
                 ]
             )
@@ -68,7 +69,7 @@ class AppStatusViewModel {
             let blockchain = wallet.token.blockchain
 
             switch blockchain.type {
-            case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dash, .zcash:
+            case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dash, .zcash, .ton, .monero:
                 if let adapter = adapterManager.adapter(for: wallet) {
                     blockchainBlocks.append(block(blockchain: blockchain.name, statusInfo: adapter.statusInfo))
                 }
@@ -78,13 +79,9 @@ class AppStatusViewModel {
         }
 
         for blockchain in evmBlockchainManager.allBlockchains {
-            if let evmKitWrapper = evmBlockchainManager.evmKitManager(blockchainType: blockchain.type).evmKitWrapper {
+            if let evmKitWrapper = try? evmBlockchainManager.evmKitManager(blockchainType: blockchain.type).evmKitWrapper {
                 blockchainBlocks.append(block(blockchain: blockchain.name, statusInfo: evmKitWrapper.evmKit.statusInfo()))
             }
-        }
-
-        if let binanceKit = binanceKitManager.binanceKit {
-            blockchainBlocks.append(block(blockchain: "Binance Chain", statusInfo: binanceKit.statusInfo))
         }
 
         if !blockchainBlocks.isEmpty {
@@ -138,7 +135,7 @@ class AppStatusViewModel {
     private func build(logs: [(String, Any)], level: Int = 0, showBullet: Bool = false) -> String {
         var result = ""
 
-        logs.forEach { key, value in
+        for (key, value) in logs {
             let indentation = String(repeating: "    ", count: level)
             let bullet = showBullet ? "- " : ""
             let key = (indentation + bullet + key + ": ").capitalized
@@ -153,7 +150,7 @@ class AppStatusViewModel {
                 result += key + "\(int)" + "\n"
             } else if let deep = value as? [String] {
                 result += key + "\n"
-                deep.forEach { str in
+                for str in deep {
                     result += indentation + "    " + bullet + str + "\n"
                 }
             } else if let deep = value as? [(String, Any)] {

@@ -111,7 +111,7 @@ class LiquidityService {
         syncState()
     }
 
-    private func checkAllowanceError(allowance: CoinValue) -> Error? {
+    private func checkAllowanceError(allowance: AppValue) -> Error? {
         guard let balanceIn = balanceIn,
               balanceIn >= tradeService.amountIn,
               tradeService.amountIn > allowance.value else {
@@ -125,7 +125,7 @@ class LiquidityService {
         return SwapModule.SwapError.insufficientAllowance
     }
     
-    private func checkAllowanceBError(allowance: CoinValue) -> Error? {
+    private func checkAllowanceBError(allowance: AppValue) -> Error? {
         guard let balanceOut = balanceOut,
               balanceOut >= tradeService.amountOut,
                 tradeService.amountOut > allowance.value else {

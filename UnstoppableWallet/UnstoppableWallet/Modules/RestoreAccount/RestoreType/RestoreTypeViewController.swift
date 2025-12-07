@@ -1,8 +1,8 @@
 import Combine
-import ComponentKit
+
 import SectionsTableView
 import SnapKit
-import ThemeKit
+
 import UIKit
 import UniformTypeIdentifiers
 
@@ -11,11 +11,12 @@ class RestoreTypeViewController: ThemeViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private let tableView = SectionsTableView(style: .grouped)
-    private weak var returnViewController: UIViewController?
 
-    init(viewModel: RestoreTypeViewModel, returnViewController: UIViewController?) {
+    private let onRestore: () -> Void
+
+    init(viewModel: RestoreTypeViewModel, onRestore: @escaping () -> Void) {
         self.viewModel = viewModel
-        self.returnViewController = returnViewController
+        self.onRestore = onRestore
 
         super.init()
     }
@@ -145,9 +146,16 @@ class RestoreTypeViewController: ThemeViewController {
     private func show(type: RestoreTypeModule.RestoreType) {
         let viewController: UIViewController
         var viaPush = true
+
+        let isWallet = viewModel.sourceType == .wallet
+
         switch type {
-        case .recoveryOrPrivateKey: viewController = RestoreModule.viewController(sourceViewController: self, returnViewController: returnViewController)
-//        case .cloudRestore: viewController = RestoreCloudModule.viewController(returnViewController: returnViewController)
+        case .recoveryOrPrivateKey:
+            viewController = RestoreModule.viewController(onRestore: onRestore)
+            stat(page: .importWallet, event: .open(page: .importWalletFromKey))
+//        case .cloudRestore:
+//            viewController = RestoreCloudModule.viewController(sourceType: viewModel.sourceType, onRestore: onRestore)
+//            stat(page: isWallet ? .importWallet : .importFull, event: .open(page: isWallet ? .importWalletFromCloud : .importFullFromCloud))
 //        case .fileRestore:
 //            let documentPicker: UIDocumentPickerViewController
 //            let types = UTType.types(tag: "json", tagClass: UTTagClass.filenameExtension, conformingTo: nil)
@@ -158,7 +166,7 @@ class RestoreTypeViewController: ThemeViewController {
 //
 //            viaPush = false
 //            viewController = documentPicker
-//        case .cex: viewController = RestoreCexViewController(returnViewController: returnViewController)
+//            stat(page: isWallet ? .importWallet : .importFull, event: .open(page: isWallet ? .importWalletFromFiles : .importFullFromFiles))
         }
 
         if viaPush {
@@ -169,7 +177,9 @@ class RestoreTypeViewController: ThemeViewController {
     }
 
     private func show(source: BackupModule.NamedSource) {
-        let viewController = RestorePassphraseModule.viewController(item: source, returnViewController: returnViewController)
+        let isWallet = viewModel.sourceType == .wallet
+
+        let viewController = RestorePassphraseModule.viewController(item: source, statPage: isWallet ? .importWalletFromFiles : .importFullFromFiles, onRestore: onRestore)
         navigationController?.pushViewController(viewController, animated: true)
     }
 

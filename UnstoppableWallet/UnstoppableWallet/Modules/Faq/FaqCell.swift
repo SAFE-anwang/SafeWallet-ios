@@ -1,5 +1,4 @@
-import ComponentKit
-import ThemeKit
+
 import UIKit
 
 class FaqCell: BaseSelectableThemeCell {
@@ -19,10 +18,6 @@ class FaqCell: BaseSelectableThemeCell {
         label.numberOfLines = 0
         label.font = FaqCell.font
         label.textColor = .themeLeah
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
     }
 
     var title: String? {

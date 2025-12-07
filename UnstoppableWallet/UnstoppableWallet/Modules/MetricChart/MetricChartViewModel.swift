@@ -1,15 +1,14 @@
 import Chart
 import Combine
 import Foundation
-import HUD
 import MarketKit
 import RxCocoa
 import RxRelay
 import RxSwift
 
-class MetricChartViewModel {
+class MetricChartViewModel: ObservableObject {
     private let service: MetricChartService
-    private let factory: MetricChartFactory
+    private let factory: IMetricChartFactory
     private var cancellables = Set<AnyCancellable>()
 
     private let pointSelectedItemRelay = BehaviorRelay<ChartModule.SelectedPointViewItem?>(value: nil)
@@ -19,9 +18,12 @@ class MetricChartViewModel {
     private let errorRelay = BehaviorRelay<Bool>(value: false)
     private let needUpdateIntervalsRelay = BehaviorRelay<Int>(value: 0)
 
-    init(service: MetricChartService, factory: MetricChartFactory) {
+    @Published var periodType: HsPeriodType
+
+    init(service: MetricChartService, factory: IMetricChartFactory) {
         self.service = service
         self.factory = factory
+        periodType = service.interval
 
         service.$interval
             .sink { [weak self] in self?.sync(interval: $0) }
@@ -100,15 +102,16 @@ extension MetricChartViewModel: IChartViewModel {
         errorRelay.asDriver()
     }
 
-    var intervals: [String] { service.intervals.timePeriods.map { $0.title.uppercased() } }
+    var intervals: [String] { service.intervals.timePeriods.map { $0.shortTitle.uppercased() } }
 
     func onSelectInterval(at index: Int) {
         let chartTypes = service.intervals
         guard chartTypes.count > index else {
             return
         }
-
-        service.interval = chartTypes[index]
+        let interval = chartTypes[index]
+        service.interval = interval
+        periodType = interval
     }
 
     func start() {
@@ -137,5 +140,65 @@ extension MetricChartViewModel: IChartViewTouchDelegate {
 
     public func touchUp() {
         pointSelectedItemRelay.accept(nil)
+    }
+}
+
+extension MetricChartViewModel {
+    static func instance(type: MarketGlobalModule.MetricsType) -> MetricChartViewModel {
+        let fetcher = MarketGlobalFetcher(currencyManager: Core.shared.currencyManager, marketKit: Core.shared.marketKit, metricsType: type)
+        let service = MetricChartService(
+            chartFetcher: fetcher,
+            interval: .byPeriod(.week1),
+            statPage: type.statPage
+        )
+
+        let factory = MetricChartFactory(currentLocale: LanguageManager.shared.currentLocale)
+        return MetricChartViewModel(service: service, factory: factory)
+    }
+
+    static func etfInstance(category: MarketEtfFetcher.EtfCategory) -> MetricChartViewModel {
+        let fetcher = MarketEtfFetcher(marketKit: Core.shared.marketKit, currencyManager: Core.shared.currencyManager, category: category)
+        let service = MetricChartService(
+            chartFetcher: fetcher,
+            interval: .byPeriod(.month1),
+            statPage: StatPage.globalMetricsEtf
+        )
+
+        let factory = MetricChartFactory(currentLocale: LanguageManager.shared.currentLocale)
+        return MetricChartViewModel(service: service, factory: factory)
+    }
+
+    static func platformInstance(platform: TopPlatform) -> MetricChartViewModel {
+        let marketCapFetcher = TopPlatformMarketCapFetcher(marketKit: Core.shared.marketKit, currencyManager: Core.shared.currencyManager, topPlatform: platform)
+        let chartService = MetricChartService(chartFetcher: marketCapFetcher, interval: .byPeriod(.week1), statPage: .topPlatform)
+        let factory = MetricChartFactory(currentLocale: LanguageManager.shared.currentLocale, hardcodedRightMode: "top_platform.total_cap".localized)
+        return MetricChartViewModel(service: chartService, factory: factory)
+    }
+
+    static func sectorInstance(sector: CoinCategory) -> MetricChartViewModel {
+        let marketCapFetcher = SectorMarketCapFetcher(marketKit: Core.shared.marketKit, currencyManager: Core.shared.currencyManager, sector: sector)
+        let chartService = MetricChartService(chartFetcher: marketCapFetcher, interval: .byPeriod(.day1), statPage: .sector)
+        let factory = MetricChartFactory(currentLocale: LanguageManager.shared.currentLocale, hardcodedRightMode: "top_platform.total_cap".localized)
+        return MetricChartViewModel(service: chartService, factory: factory)
+    }
+
+    static func vaultInstance(vault: Vault) -> MetricChartViewModel {
+        let marketCapFetcher = VaultChartFetcher(marketKit: Core.shared.marketKit, currencyManager: Core.shared.currencyManager, vault: vault)
+        let chartService = MetricChartService(chartFetcher: marketCapFetcher, interval: .byPeriod(.week1), statPage: .vault)
+        let factory = MarketVaultChartFactory(currentLocale: LanguageManager.shared.currentLocale)
+        return MetricChartViewModel(service: chartService, factory: factory)
+    }
+
+    static func instance(coin: Coin, type: CoinProChartModule.ProChartType) -> MetricChartViewModel {
+        let chartFetcher = ProChartFetcher(marketKit: Core.shared.marketKit, currencyManager: Core.shared.currencyManager, coin: coin, type: type)
+
+        let chartService = MetricChartService(
+            chartFetcher: chartFetcher,
+            interval: .byPeriod(.month1),
+            statPage: type.statPage
+        )
+
+        let factory = MetricChartFactory(currentLocale: LanguageManager.shared.currentLocale)
+        return MetricChartViewModel(service: chartService, factory: factory)
     }
 }

@@ -10,23 +10,23 @@ private struct TransparentFullScreenModifier<FullScreenContent: View>: ViewModif
                 UIView.setAnimationsEnabled(false)
             }
             .fullScreenCover(
-                    isPresented: $isPresented,
-                    content: {
-                        ZStack {
-                            fullScreenContent()
-                        }
-                            .background(FullScreenCoverBackgroundRemovalView())
-                            .onAppear {
-                                if !UIView.areAnimationsEnabled {
-                                    UIView.setAnimationsEnabled(true)
-                                }
-                            }
-                            .onDisappear {
-                                if !UIView.areAnimationsEnabled {
-                                    UIView.setAnimationsEnabled(true)
-                                }
-                            }
+                isPresented: $isPresented,
+                content: {
+                    ZStack {
+                        fullScreenContent()
                     }
+                    .background(FullScreenCoverBackgroundRemovalView())
+                    .onAppear {
+                        if !UIView.areAnimationsEnabled {
+                            UIView.setAnimationsEnabled(true)
+                        }
+                    }
+                    .onDisappear {
+                        if !UIView.areAnimationsEnabled {
+                            UIView.setAnimationsEnabled(true)
+                        }
+                    }
+                }
             )
     }
 }
@@ -48,7 +48,7 @@ private struct FullScreenCoverBackgroundRemovalView: UIViewRepresentable {
 }
 
 extension View {
-    func transparentFullScreenCover(isPresented: Binding<Bool>, content: @escaping () -> some View) -> some View {
+    func transparentFullScreenCover(isPresented: Binding<Bool>, @ViewBuilder content: @escaping () -> some View) -> some View {
         modifier(TransparentFullScreenModifier(isPresented: isPresented, fullScreenContent: content))
     }
 }

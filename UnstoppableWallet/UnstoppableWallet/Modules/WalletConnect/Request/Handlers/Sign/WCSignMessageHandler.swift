@@ -1,6 +1,4 @@
 import Foundation
-
-import Foundation
 import UIKit
 import WalletConnectSign
 
@@ -14,6 +12,8 @@ class WCSignMessageHandler<Payload: WCSignMessagePayload>: WalletConnectRequestH
 }
 
 extension WCSignMessageHandler: IWalletConnectRequestHandler {
+    var namespace: String { Eip155ProposalHandler.namespace }
+
     func handle(session: Session, request: Request) -> WalletConnectRequestChain.RequestResult {
         guard request.method == Payload.method else {
             return .unsuccessful(error: WCRequestPayload.ParsingError.cantParseRequest)

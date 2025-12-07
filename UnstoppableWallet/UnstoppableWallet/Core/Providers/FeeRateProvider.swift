@@ -91,7 +91,7 @@ class BitcoinCashFeeRateProvider: IFeeRateProvider {
 
 class ECashFeeRateProvider: IFeeRateProvider {
     func feeRates() async throws -> FeeRateProvider.FeeRates {
-        .init(recommended: 1, minimum: 0)
+        .init(recommended: 3, minimum: 0)
     }
 }
 

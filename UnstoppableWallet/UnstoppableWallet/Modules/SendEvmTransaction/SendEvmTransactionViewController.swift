@@ -1,11 +1,11 @@
-import ComponentKit
+
 import Foundation
 import MarketKit
 import RxCocoa
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class SendEvmTransactionViewController: ThemeViewController {
@@ -24,8 +24,6 @@ class SendEvmTransactionViewController: ThemeViewController {
     private let caution1Cell = TitledHighlightedDescriptionCell()
     private let caution2Cell = TitledHighlightedDescriptionCell()
     private var isLoaded = false
-
-    var topDescription: String?
 
     init(transactionViewModel: SendEvmTransactionViewModel, settingsViewModel: EvmSendSettingsViewModel) {
         self.transactionViewModel = transactionViewModel
@@ -154,37 +152,31 @@ class SendEvmTransactionViewController: ThemeViewController {
         switch viewItem {
         case let .subhead(iconName, title, value):
             return CellComponent.actionTitleRow(tableView: tableView, rowInfo: rowInfo, iconName: iconName, iconDimmed: true, title: title, value: value)
-        case let .amount(iconUrl, iconPlaceholderImageName, coinAmount, currencyAmount, type):
-            return CellComponent.amountRow(tableView: tableView, rowInfo: rowInfo, iconUrl: iconUrl, iconPlaceholderImageName: iconPlaceholderImageName, coinAmount: coinAmount, currencyAmount: currencyAmount, type: type)
+        case let .amount(title, token, coinAmount, currencyAmount, type):
+            return CellComponent.amountRow(tableView: tableView, rowInfo: rowInfo, title: title, subtitle: token.fullBadge, imageUrl: token.coin.imageUrl, alternativeImageUrl: token.coin.image, placeholderImageName: token.placeholderImageName, coinAmount: coinAmount, currencyAmount: currencyAmount, type: type)
         case let .nftAmount(iconUrl, iconPlaceholderImageName, nftAmount, type):
             return CellComponent.nftAmountRow(tableView: tableView, rowInfo: rowInfo, iconUrl: iconUrl, iconPlaceholderImageName: iconPlaceholderImageName, nftAmount: nftAmount, type: type, onTapOpenNft: nil)
         case let .doubleAmount(title, coinValue, currencyValue):
             return CellComponent.doubleAmountRow(tableView: tableView, rowInfo: rowInfo, title: title, coinValue: coinValue, currencyValue: currencyValue)
-        case let .address(title, value, valueTitle, contactAddress):
+        case let .address(title, value, valueTitle, contactAddress, statSection):
             var onAddToContact: (() -> Void)? = nil
             if let contactAddress {
                 onAddToContact = { [weak self] in
-                    ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self)
+                    ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self, statPage: .send, statSection: statSection)
                 }
             }
-            return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: title, value: value, valueTitle: valueTitle, onAddToContact: onAddToContact)
+            return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: title, value: value, valueTitle: valueTitle, statPage: .send, statSection: statSection, onAddToContact: onAddToContact)
         case let .value(title, value, type):
             return CellComponent.valueRow(tableView: tableView, rowInfo: rowInfo, iconName: nil, title: title, value: value, type: type)
         case let .input(value):
-            return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "Input", value: value, valueTitle: nil)
+            return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "Input", value: value, valueTitle: nil, statPage: .send, statSection: .input)
         }
     }
 
     private func section(sectionViewItem: SendEvmTransactionViewModel.SectionViewItem, index: Int) -> SectionProtocol {
-        var headerText: String?
-
-        if index == 0, let topDescription {
-            headerText = topDescription
-        }
-
-        return Section(
+        Section(
             id: "section_\(index)",
-            headerState: headerText.map { tableView.sectionFooter(text: $0) } ?? .margin(height: .margin12),
+            headerState: .margin(height: index == 0 ? .margin12 : .margin16),
             rows: sectionViewItem.viewItems.enumerated().map { index, viewItem in
                 row(viewItem: viewItem, rowInfo: RowInfo(index: index, isFirst: index == 0, isLast: index == sectionViewItem.viewItems.count - 1))
             }

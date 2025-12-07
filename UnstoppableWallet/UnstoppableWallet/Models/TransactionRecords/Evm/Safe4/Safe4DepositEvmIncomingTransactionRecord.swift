@@ -4,16 +4,16 @@ import MarketKit
 
 class Safe4DepositEvmIncomingTransactionRecord: EvmTransactionRecord {
     let from: String
-    let value: TransactionValue
+    let value: AppValue
 
-    init(source: TransactionSource, transaction: Transaction, baseToken: Token, from: String, value: TransactionValue) {
+    init(source: TransactionSource, transaction: Transaction, baseToken: Token, from: String, value: AppValue, protected: Bool) {
         self.from = from
         self.value = value
 
-        super.init(source: source, transaction: transaction, baseToken: baseToken, ownTransaction: false)
+        super.init(source: source, transaction: transaction, baseToken: baseToken, ownTransaction: false, protected: protected)
     }
 
-    override var mainValue: TransactionValue? {
+    override var mainValue: AppValue? {
         value
     }
 }

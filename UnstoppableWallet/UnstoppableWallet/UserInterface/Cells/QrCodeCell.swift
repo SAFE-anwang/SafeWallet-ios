@@ -1,6 +1,6 @@
-import ComponentKit
+
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class QrCodeCell: UITableViewCell {
@@ -33,7 +33,7 @@ class QrCodeCell: UITableViewCell {
             make.top.bottom.equalToSuperview()
         }
 
-        wrapperView.borderColor = .themeSteel20
+        wrapperView.borderColor = .themeBlade
         wrapperView.borderWidth = .heightOneDp
         wrapperView.cornerRadius = .cornerRadius24
         wrapperView.cornerCurve = .continuous

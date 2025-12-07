@@ -2,7 +2,6 @@ import EvmKit
 import Foundation
 import HsExtensions
 import MarketKit
-import ThemeKit
 import UIKit
 import BigInt
 import web3swift
@@ -14,7 +13,7 @@ struct SendEvmData {
     let additionalInfo: AdditionInfo?
     let warnings: [Warning]
     let errors: [Error]
-    
+
     init(transactionData: TransactionData, additionalInfo: AdditionInfo?, warnings: [Warning], errors: [Error] = []) {
         self.transactionData = transactionData
         self.additionalInfo = additionalInfo
@@ -30,6 +29,7 @@ struct SendEvmData {
         case safeSwap(info: SwapInfo)
         case liquidity(info: LiquidityInfo)
         case v3Liquidity(info: LiquidityInfo)
+
         var dAppInfo: DAppInfo? {
             if case let .otherDApp(info) = self { return info } else { return nil }
         }
@@ -116,15 +116,14 @@ enum SendEvmConfirmationModule {
 
         guard let coinServiceFactory = EvmCoinServiceFactory(
             blockchainType: evmKitWrapper.blockchainType,
-            marketKit: App.shared.marketKit,
-            currencyManager: App.shared.currencyManager,
-            coinManager: App.shared.coinManager
+            marketKit: Core.shared.marketKit,
+            currencyManager: Core.shared.currencyManager,
+            coinManager: Core.shared.coinManager
         ) else {
             return nil
         }
-        
         let predefinedGasLimit: Int? = [.ethereum, .polygon, .binanceSmartChain].contains(evmKitWrapper.blockchainType) ? 100000 : nil
-        
+
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
             evmKit: evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory,
             predefinedGasLimit: predefinedGasLimit,
@@ -133,16 +132,16 @@ enum SendEvmConfirmationModule {
             return nil
         }
 
-        let service = SendEvmTransactionService(sendData: sendData, evmKitWrapper: evmKitWrapper, settingsService: settingsService, evmLabelManager: App.shared.evmLabelManager)
-        let contactLabelService = ContactLabelService(contactManager: App.shared.contactManager, blockchainType: evmKitWrapper.blockchainType)
-        let viewModel = SendEvmTransactionViewModel(service: service, coinServiceFactory: coinServiceFactory, cautionsFactory: SendEvmCautionsFactory(), evmLabelManager: App.shared.evmLabelManager, contactLabelService: contactLabelService)
+        let service = SendEvmTransactionService(sendData: sendData, privateSendMode: .none, evmKitWrapper: evmKitWrapper, settingsService: settingsService, evmLabelManager: Core.shared.evmLabelManager)
+        let contactLabelService = ContactLabelService(contactManager: Core.shared.contactManager, blockchainType: evmKitWrapper.blockchainType)
+        let viewModel = SendEvmTransactionViewModel(service: service, coinServiceFactory: coinServiceFactory, cautionsFactory: SendEvmCautionsFactory(), evmLabelManager: Core.shared.evmLabelManager, contactLabelService: contactLabelService)
         let controller = SendEvmConfirmationViewController(mode: .send, transactionViewModel: viewModel, settingsViewModel: settingsViewModel)
 
         return controller
     }
 
     static func resendViewController(adapter: ITransactionsAdapter, type: ResendTransactionType, transactionHash: String) throws -> UIViewController {
-        guard let adapter = adapter as? EvmTransactionsAdapter, let fullTransaction = adapter.evmKit.transaction(hash: Data(hex: transactionHash.hs.stripHexPrefix())) else {
+        guard let adapter = adapter as? EvmTransactionsAdapter, let hash = transactionHash.hs.hexData, let fullTransaction = adapter.evmKit.transaction(hash: hash) else {
             throw CreateModuleError.wrongTransaction
         }
 
@@ -159,9 +158,9 @@ enum SendEvmConfirmationModule {
         let evmKitWrapper = adapter.evmKitWrapper
         guard let coinServiceFactory = EvmCoinServiceFactory(
             blockchainType: evmKitWrapper.blockchainType,
-            marketKit: App.shared.marketKit,
-            currencyManager: App.shared.currencyManager,
-            coinManager: App.shared.coinManager
+            marketKit: Core.shared.marketKit,
+            currencyManager: Core.shared.currencyManager,
+            coinManager: Core.shared.coinManager
         ) else {
             throw CreateModuleError.cantCreateFeeRateProvider
         }
@@ -186,9 +185,14 @@ enum SendEvmConfirmationModule {
             throw CreateModuleError.cantCreateFeeSettingsModule
         }
 
-        let service = SendEvmTransactionService(sendData: sendData, evmKitWrapper: evmKitWrapper, settingsService: settingsService, evmLabelManager: App.shared.evmLabelManager)
-        let contactLabelService = ContactLabelService(contactManager: App.shared.contactManager, blockchainType: evmKitWrapper.blockchainType)
-        let viewModel = SendEvmTransactionViewModel(service: service, coinServiceFactory: coinServiceFactory, cautionsFactory: SendEvmCautionsFactory(), evmLabelManager: App.shared.evmLabelManager, contactLabelService: contactLabelService)
+        var privateSendMode: SendEvmTransactionService.PrivateSendMode = .none
+        if MerkleTransactionAdapter.isProtected(transaction: fullTransaction) {
+            privateSendMode = .cancelPrevious(transaction.hash)
+        }
+
+        let service = SendEvmTransactionService(sendData: sendData, privateSendMode: privateSendMode, evmKitWrapper: evmKitWrapper, settingsService: settingsService, evmLabelManager: Core.shared.evmLabelManager)
+        let contactLabelService = ContactLabelService(contactManager: Core.shared.contactManager, blockchainType: evmKitWrapper.blockchainType)
+        let viewModel = SendEvmTransactionViewModel(service: service, coinServiceFactory: coinServiceFactory, cautionsFactory: SendEvmCautionsFactory(), evmLabelManager: Core.shared.evmLabelManager, contactLabelService: contactLabelService)
 
         let mode: SendEvmConfirmationViewController.Mode
         switch type {
@@ -216,8 +220,8 @@ extension SendEvmConfirmationModule {
     }
 }
 
-enum ResendTransactionType {
-    case speedUp
+enum ResendTransactionType: String {
+    case speedUp = "speed_up"
     case cancel
 }
 
@@ -227,7 +231,7 @@ struct SendEvmConfirmationView: UIViewControllerRepresentable {
     
     func makeUIViewController(context _: Context) -> UIViewController {
         // TODO: must provide any VC
-        viewController ?? UIViewController()
+        ThemeNavigationController(rootViewController: viewController ?? UIViewController()) 
     }
 
     func updateUIViewController(_: UIViewController, context _: Context) {}

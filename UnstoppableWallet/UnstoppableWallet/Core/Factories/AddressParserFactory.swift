@@ -1,35 +1,22 @@
-import BinanceChainKit
 import BitcoinCashKit
 import BitcoinCore
 import BitcoinKit
 import DashKit
-import SafeCoinKit
 import ECashKit
 import LitecoinKit
-import DogecoinKit
 import MarketKit
 import ZcashLightClientKit
+import SafeCoinKit
+import DogecoinKit
 
 enum AddressParserFactory {
-    static let uriBlockchainTypes: [BlockchainType] = [
-        .bitcoin,
-        .bitcoinCash,
-        .ecash,
-        .litecoin,
-        .dash,
-        .zcash,
-        .ethereum,
-        .binanceChain,
-        .tron,
-    ]
-
     static func parser(blockchainType: BlockchainType?, tokenType: TokenType?) -> AddressUriParser {
         AddressUriParser(blockchainType: blockchainType, tokenType: tokenType)
     }
 
     static func parserChainHandlers(blockchainType: BlockchainType, withEns: Bool = true) -> [IAddressParserItem] {
         switch blockchainType {
-        case .bitcoin, .dash, .litecoin, .dogecoin, .bitcoinCash, .ecash, .safe:
+        case .bitcoin, .dash, .litecoin, .bitcoinCash, .ecash, .dogecoin, .safe:
             let scriptConverter = ScriptConverter()
 
             let specificAddressConverter: IAddressConverter?
@@ -41,15 +28,15 @@ enum AddressParserFactory {
             case .litecoin:
                 network = LitecoinKit.MainNet()
                 specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
-            case .dogecoin:
-                network = DogecoinKit.MainNet()
-                specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
             case .bitcoinCash:
                 network = BitcoinCashKit.MainNet()
                 specificAddressConverter = CashBech32AddressConverter(prefix: network.bech32PrefixPattern)
             case .ecash:
                 network = ECashKit.MainNet()
                 specificAddressConverter = CashBech32AddressConverter(prefix: network.bech32PrefixPattern)
+            case .dogecoin:
+                network = DogecoinKit.MainNet()
+                specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
             case .safe:
                 network = SafeCoinKit.MainNet()
                 specificAddressConverter = nil
@@ -75,7 +62,7 @@ enum AddressParserFactory {
                     blockchainType: blockchainType
                 )
                 handlers.append(udnAddressParserItem)
-                if let httpSyncSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .ethereum),
+                if let httpSyncSource = Core.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .ethereum),
                    let ensAddressParserItem = EnsAddressParserItem(rpcSource: httpSyncSource.rpcSource, rawAddressParserItem: bitcoinTypeParserItem)
                 {
                     handlers.append(ensAddressParserItem)
@@ -83,7 +70,7 @@ enum AddressParserFactory {
             }
 
             return handlers
-        case .ethereum, .gnosis, .fantom, .polygon, .arbitrumOne, .avalanche, .optimism, .binanceSmartChain, .safe4:
+        case .ethereum, .gnosis, .fantom, .polygon, .arbitrumOne, .avalanche, .optimism, .binanceSmartChain, .base, .zkSync, .safe4:
             let evmAddressParserItem = EvmAddressParser(blockchainType: blockchainType)
 
             var handlers = [IAddressParserItem]()
@@ -95,7 +82,7 @@ enum AddressParserFactory {
                 )
                 handlers.append(udnAddressParserItem)
 
-                if let httpSyncSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .ethereum),
+                if let httpSyncSource = Core.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .ethereum),
                    let ensAddressParserItem = EnsAddressParserItem(rpcSource: httpSyncSource.rpcSource, rawAddressParserItem: evmAddressParserItem)
                 {
                     handlers.append(ensAddressParserItem)
@@ -105,12 +92,6 @@ enum AddressParserFactory {
             return handlers
         case .tron:
             return [TronAddressParser()]
-        case .binanceChain:
-            let network = BinanceChainKit.NetworkType.mainNet
-            let validator = BinanceAddressValidator(prefix: network.addressPrefix)
-
-            let binanceParserItem = BinanceAddressParserItem(parserType: .validator(validator))
-            return [binanceParserItem]
         case .zcash:
             let network = ZcashNetworkBuilder.network(for: .mainnet)
             let validator = ZcashAddressValidator(network: network)
@@ -120,8 +101,11 @@ enum AddressParserFactory {
         case .solana: return []
         case .ton:
             return [TonAddressParserItem()]
+        case .stellar:
+            return [StellarAddressParserItem()]
+        case .monero:
+            return [MoneroAddressParserItem()]
         case .unsupported: return []
-
         }
     }
 

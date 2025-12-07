@@ -1,5 +1,4 @@
 import UIKit
-import ThemeKit
 import SnapKit
 import SectionsTableView
 import RxSwift

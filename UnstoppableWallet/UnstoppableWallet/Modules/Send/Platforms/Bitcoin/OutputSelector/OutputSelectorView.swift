@@ -11,31 +11,32 @@ struct OutputSelectorView: View {
     var body: some View {
         ThemeView {
             BottomGradientWrapper {
-                VStack(spacing: .margin16) {
-                    ListSection {
-                        ListRow(minHeight: .heightDoubleLineCell) {
-                            amount(subtitle: addressViewModel.address, viewItem: amountViewModel.viewItem)
-                        }
-                        ListRow(minHeight: .heightDoubleLineCell) {
-                            fee(value: feeViewModel.value, spinnerVisible: feeViewModel.spinnerVisible)
-                        }
-                        if let changeViewItem = viewModel.changeViewItem {
+                ScrollView {
+                    VStack(spacing: .margin16) {
+                        ListSection {
                             ListRow(minHeight: .heightDoubleLineCell) {
-                                change(viewItem: changeViewItem)
+                                amount(subtitle: addressViewModel.address, viewItem: amountViewModel.viewItem)
+                            }
+                            ListRow(minHeight: .heightDoubleLineCell) {
+                                fee(value: feeViewModel.value, spinnerVisible: feeViewModel.spinnerVisible)
+                            }
+                            if let changeViewItem = viewModel.changeViewItem {
+                                ListRow(minHeight: .heightDoubleLineCell) {
+                                    change(viewItem: changeViewItem)
+                                }
                             }
                         }
-                    }
-                    .themeListStyle(.borderedLawrence)
 
-                    ListSection {
-                        ForEach(viewModel.outputsViewItems) { viewItem in
-                            output(viewItem: viewItem)
+                        ListSection {
+                            ForEach(viewModel.outputsViewItems) { viewItem in
+                                output(viewItem: viewItem)
+                            }
                         }
+                        .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
                     }
-                    .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
+                    .animation(.easeInOut, value: viewModel.changeViewItem)
+                    .padding(EdgeInsets(top: .margin12, leading: 0, bottom: .margin32, trailing: 0))
                 }
-                .animation(.easeInOut, value: viewModel.changeViewItem)
-                .padding(EdgeInsets(top: .margin12, leading: 0, bottom: .margin32, trailing: 0))
             } bottomContent: {
                 Button(action: {
                     viewModel.onTapDone()
@@ -58,13 +59,14 @@ struct OutputSelectorView: View {
                 .disabled(!viewModel.resetEnabled)
             }
 
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .confirmationAction) {
                 Button("button.done".localized) {
                     presentationMode.wrappedValue.dismiss()
                 }
                 .disabled(!viewModel.doneEnabled)
             }
         }
+        .accentColor(Color.themeJacob)
     }
 
     @ViewBuilder func amount(subtitle: String?, viewItem: AmountOutputSelectorViewModel.ViewItem?) -> some View {
@@ -138,13 +140,7 @@ struct OutputSelectorView: View {
             viewModel.toggle(viewItem: viewItem)
         }) {
             HStack(spacing: .margin16) {
-                Image("check_2_20")
-                    .themeIcon(color: .themeJacob)
-                    .opacity(viewModel.selectedSet.contains(viewItem.id) ? 1 : 0)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: .cornerRadius4, style: .continuous)
-                            .stroke(Color.themeGray, lineWidth: .heightOneDp + .heightOnePixel)
-                    )
+                CheckBoxUiView(checked: .init(get: { viewModel.selectedSet.contains(viewItem.id) }, set: { _ in }))
 
                 VStack(spacing: 1) {
                     Text(viewItem.date).themeBody()

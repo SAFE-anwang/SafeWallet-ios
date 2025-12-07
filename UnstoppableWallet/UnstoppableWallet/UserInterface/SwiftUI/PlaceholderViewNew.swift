@@ -1,47 +1,57 @@
 import SwiftUI
 
 struct PlaceholderViewNew<Content: View>: View {
-    let image: Image
-    let text: String
-    let additionalContent: Content
+    let icon: String
+    var title: String?
+    var subtitle: String?
+    var layoutType: LayoutType = .upperMiddle
+    @ViewBuilder var additionalContent: Content
 
-    init(image: Image, text: String, @ViewBuilder additionalContent: () -> Content) {
-        self.image = image
-        self.text = text
-        self.additionalContent = additionalContent()
-    }
+    @State private var contentHeight: CGFloat = 0
 
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                VStack(spacing: .margin32) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.themeRaina)
-                            .frame(width: 100, height: 100)
-
-                        image
-                            .renderingMode(.template)
-                            .foregroundColor(.themeGray)
-                    }
-
-                    Text(text)
-                        .font(.themeSubhead2)
-                        .foregroundColor(.themeGray)
-                        .multilineTextAlignment(.center)
-
+                ErrorMessage(icon: icon, title: title, subtitle: subtitle) {
                     additionalContent
                 }
-                .frame(width: 264)
-                .padding(.bottom, proxy.size.height / 10)
+                .background(
+                    GeometryReader { contentProxy in
+                        Color.clear
+                            .onAppear {
+                                contentHeight = contentProxy.size.height
+                            }
+                            .onChange(of: contentProxy.size.height) { newHeight in
+                                contentHeight = newHeight
+                            }
+                    }
+                )
+                .position(
+                    x: proxy.size.width / 2,
+                    y: proxy.size.height / 2 + (proxy.size.height - contentHeight) / 2 * layoutType.multiplier
+                )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
 
+extension PlaceholderViewNew {
+    enum LayoutType {
+        case upperMiddle
+        case middle
+
+        var multiplier: CGFloat {
+            switch self {
+            case .upperMiddle: return -0.15
+            case .middle: return 0
+            }
+        }
+    }
+}
+
 extension PlaceholderViewNew where Content == EmptyView {
-    init(image: Image, text: String) {
-        self.init(image: image, text: text, additionalContent: { EmptyView() })
+    init(icon: String, title: String? = nil, subtitle: String? = nil) {
+        self.init(icon: icon, title: title, subtitle: subtitle, additionalContent: { EmptyView() })
     }
 }

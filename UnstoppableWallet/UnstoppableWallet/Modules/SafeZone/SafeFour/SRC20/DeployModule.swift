@@ -2,12 +2,11 @@ import Foundation
 import UIKit
 import EvmKit
 import MarketKit
-import ComponentKit
 
 class DeployModule {
 
-    static func viewController() -> UIViewController? {
-        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+    static func viewModel() -> DeployViewModel? {
+        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
             return nil
         }
         guard let privateKey = evmKitWrapper.signer?.privateKey else {
@@ -15,8 +14,7 @@ class DeployModule {
         }
         let service = SRC20Service(privateKey: privateKey)
         let viewModel = DeployViewModel(service: service, evmKitWrapper: evmKitWrapper)
-        let viewController = DeployView(viewModel: viewModel).toViewController()
-        return viewController
+        return viewModel
     }
     
 }

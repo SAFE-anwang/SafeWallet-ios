@@ -133,35 +133,34 @@ class AddLiquidityTransactionViewModel {
         let token = coinService.token
 
         return .amount(
-                iconUrl: token.coin.imageUrl,
-                iconPlaceholderImageName: token.placeholderImageName,
-                coinAmount: ValueFormatter.instance.formatFull(coinValue: amountData.coinValue) ?? "n/a".localized,
-                currencyAmount: amountData.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) },
-                type: type
+            title: token.coin.imageUrl,
+            token: token,
+            coinAmount: amountData.appValue.formattedFull() ?? "n/a".localized,
+            currencyAmount: amountData.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) },
+            type: type
         )
     }
 
     private func estimatedAmountViewItem(coinService: CoinService, value: Decimal, type: AmountType) -> ViewItem {
         let token = coinService.token
         let amountData = coinService.amountData(value: value, sign: type.sign)
-        let coinAmount = ValueFormatter.instance.formatFull(coinValue: amountData.coinValue) ?? "n/a".localized
+        let coinAmount = amountData.appValue.formattedFull() ?? "n/a".localized
         
         return .amount(
-                iconUrl: token.coin.imageUrl,
-                iconPlaceholderImageName: token.placeholderImageName,
-                coinAmount: "\(coinAmount) \("swap.estimate_short".localized)",
-                currencyAmount: amountData.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) },
-                type: type
+            title: token.coin.imageUrl,
+            token: token,
+            coinAmount: "\(coinAmount) \("swap.estimate_short".localized)",
+            currencyAmount: amountData.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) },
+            type: type
         )
     }
-
 
     private func doubleAmountViewItem(coinService: CoinService, title: String, value: BigUInt) -> ViewItem {
         let amountData = coinService.amountData(value: value, sign: .plus)
 
         return .doubleAmount(
                 title: title,
-                coinAmount: ValueFormatter.instance.formatFull(coinValue: amountData.coinValue) ?? "n/a".localized,
+                coinAmount: amountData.appValue.formattedFull() ?? "n/a".localized,
                 currencyAmount: amountData.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) }
         )
     }
@@ -216,7 +215,8 @@ class AddLiquidityTransactionViewModel {
                     title: "swap.advanced_settings.recipient_address".localized,
                     value: addressValue,
                     valueTitle: addressTitle,
-                    contactAddress: contactData.contactAddress
+                    contactAddress: contactData.contactAddress,
+                    statSection: .addressTo
                 )
             )
             if let contactName = contactData.name {
@@ -294,14 +294,24 @@ extension AddLiquidityTransactionViewModel {
     }
 
     enum ViewItem {
+//        case subhead(iconName: String, title: String, value: String)
+//        case amount(iconUrl: String?, iconPlaceholderImageName: String, coinAmount: String, currencyAmount: String?, type: AmountType)
+//        case nftAmount(iconUrl: String?, iconPlaceholderImageName: String, nftAmount: String, type: AmountType)
+//        case doubleAmount(title: String, coinAmount: String, currencyAmount: String?)
+//        case address(title: String, value: String, valueTitle: String?, contactAddress: ContactAddress?)
+//        case value(title: String, value: String, type: ValueType)
+//        case input(value: String)
+        
         case subhead(iconName: String, title: String, value: String)
-        case amount(iconUrl: String?, iconPlaceholderImageName: String, coinAmount: String, currencyAmount: String?, type: AmountType)
+        case amount(title: String, token: MarketKit.Token, coinAmount: String, currencyAmount: String?, type: AmountType)
         case nftAmount(iconUrl: String?, iconPlaceholderImageName: String, nftAmount: String, type: AmountType)
         case doubleAmount(title: String, coinAmount: String, currencyAmount: String?)
-        case address(title: String, value: String, valueTitle: String?, contactAddress: ContactAddress?)
+        case address(title: String, value: String, valueTitle: String?, contactAddress: ContactAddress?, statSection: StatSection)
         case value(title: String, value: String, type: ValueType)
         case input(value: String)
     }
+    
+    
 
 }
 

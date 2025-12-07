@@ -1,8 +1,5 @@
 import Chart
-import ComponentKit
-import HUD
 import SnapKit
-import ThemeKit
 import UIKit
 
 class MarketCardCell: UITableViewCell {
@@ -69,7 +66,7 @@ extension MarketCardCell {
     }
 
     func clear() {
-        marketCardViews.forEach { view in
+        for view in marketCardViews {
             stackView.removeArrangedSubview(view)
         }
 

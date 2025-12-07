@@ -3,16 +3,15 @@ import Foundation
 import MarketKit
 
 protocol IWalletCoinPriceServiceDelegate: AnyObject {
-    func didUpdateBaseCurrency()
-    func didUpdate(itemsMap: [String: WalletCoinPriceService.Item])
+    func didUpdate(itemsMap: [String: WalletCoinPriceService.Item]?)
 }
 
 class WalletCoinPriceService {
     weak var delegate: IWalletCoinPriceServiceDelegate?
 
-    private let tag: String
-    private let currencyManager: CurrencyManager
-    private let marketKit: MarketKit.Kit
+    private let currencyManager = Core.shared.currencyManager
+    private let priceChangeModeManager = Core.shared.priceChangeModeManager
+    private let marketKit = Core.shared.marketKit
     private var cancellables = Set<AnyCancellable>()
     private var coinPriceCancellables = Set<AnyCancellable>()
 
@@ -21,11 +20,7 @@ class WalletCoinPriceService {
     private var feeCoinUids = Set<String>()
     private var conversionCoinUids = Set<String>()
 
-    init(tag: String, currencyManager: CurrencyManager, marketKit: MarketKit.Kit) {
-        self.tag = tag
-        self.currencyManager = currencyManager
-        self.marketKit = marketKit
-
+    init() {
         currency = currencyManager.baseCurrency
 
         currencyManager.$baseCurrency
@@ -33,19 +28,25 @@ class WalletCoinPriceService {
                 self?.onUpdate(baseCurrency: currency)
             }
             .store(in: &cancellables)
+
+        priceChangeModeManager.$priceChangeMode
+            .sink { [weak self] _ in
+                self?.delegate?.didUpdate(itemsMap: nil)
+            }
+            .store(in: &cancellables)
     }
 
     private func onUpdate(baseCurrency: Currency) {
         currency = baseCurrency
         subscribeToCoinPrices()
-        delegate?.didUpdateBaseCurrency()
+        delegate?.didUpdate(itemsMap: nil)
     }
 
     private func subscribeToCoinPrices() {
         coinPriceCancellables = Set()
 
         if !coinUids.isEmpty {
-            marketKit.coinPriceMapPublisher(tag: tag, coinUids: Array(coinUids), currencyCode: currencyManager.baseCurrency.code)
+            marketKit.coinPriceMapPublisher(coinUids: Array(coinUids), currencyCode: currencyManager.baseCurrency.code)
                 .sink { [weak self] in
                     self?.onUpdate(coinPriceMap: $0)
                 }
@@ -53,13 +54,13 @@ class WalletCoinPriceService {
         }
 
         if !feeCoinUids.isEmpty {
-            marketKit.coinPriceMapPublisher(tag: "fee:\(tag)", coinUids: Array(feeCoinUids), currencyCode: currencyManager.baseCurrency.code)
+            marketKit.coinPriceMapPublisher(coinUids: Array(feeCoinUids), currencyCode: currencyManager.baseCurrency.code)
                 .sink { _ in }
                 .store(in: &coinPriceCancellables)
         }
 
         if !conversionCoinUids.isEmpty {
-            marketKit.coinPriceMapPublisher(tag: "conversion:\(tag)", coinUids: Array(conversionCoinUids), currencyCode: currencyManager.baseCurrency.code)
+            marketKit.coinPriceMapPublisher(coinUids: Array(conversionCoinUids), currencyCode: currencyManager.baseCurrency.code)
                 .sink { _ in }
                 .store(in: &coinPriceCancellables)
         }
@@ -73,9 +74,17 @@ class WalletCoinPriceService {
     private func item(coinPrice: CoinPrice) -> Item {
         let currency = currencyManager.baseCurrency
 
+        let diff: Decimal?
+        switch priceChangeModeManager.priceChangeMode {
+        case .hour24:
+            diff = coinPrice.diff24h
+        case .day1:
+            diff = coinPrice.diff1d
+        }
+
         return Item(
             price: CurrencyValue(currency: currency, value: coinPrice.value),
-            diff: coinPrice.diff,
+            diff: diff,
             expired: coinPrice.expired
         )
     }
@@ -110,7 +119,7 @@ extension WalletCoinPriceService {
 }
 
 extension WalletCoinPriceService {
-    struct Item {
+    struct Item: Hashable {
         let price: CurrencyValue
         let diff: Decimal?
         let expired: Bool

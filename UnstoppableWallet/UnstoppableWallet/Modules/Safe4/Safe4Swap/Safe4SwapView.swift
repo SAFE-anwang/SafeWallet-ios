@@ -21,7 +21,7 @@ struct Safe4SwapView: View {
     }
 
     var body: some View {
-        ThemeNavigationView {
+        ThemeNavigationStack {
             ThemeView {
                 ScrollView {
                     VStack(spacing: .margin12) {
@@ -33,44 +33,40 @@ struct Safe4SwapView: View {
                         }
                     }
                     .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
-
-                    NavigationLink(
-                        isActive: $sendPresented,
-                        destination: {
-                            if let tokenIn = viewModel.tokenIn,
-                               let tokenOut = viewModel.tokenOut,
-                               let amountIn = viewModel.amountIn,
-                                let transactionData = viewModel.transactionData()
-                            {
-                                Safe4SwapConfirmationView(
-                                    transactionData: transactionData,
-                                    tokenIn: tokenIn,
-                                    tokenOut: tokenOut,
-                                    amountIn: amountIn,
-                                    swapPresentationMode: presentationMode
-                                )
-                            }
-                        }
-                    ) {
-                        EmptyView()
-                    }
-                    .onChange(of: sendPresented) { presented in
-//                        if !presented {
-//                            viewModel.autoQuoteIfRequired()
-//                        }
-                    }
                 }
-                .navigationTitle("swap.safe4.title".localized)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("button.cancel".localized) {
-                            presentationMode.wrappedValue.dismiss()
-                        }
+
+            }
+        }
+        .navigationTitle("swap.safe4.title".localized)
+        .navigationDestination(isPresented: $sendPresented) {
+//                    if let tokenIn = viewModel.tokenIn,
+//                       let tokenOut = viewModel.tokenOut,
+//                       let amountIn = viewModel.amountIn,
+//                       let transactionData = viewModel.transactionData()
+//                       let currentQuote = viewModel.currentQuote
+//                    {
+//                        MultiSwapSendView(
+//                            tokenIn: tokenIn,
+//                            tokenOut: tokenOut,
+//                            amountIn: amountIn,
+//                            provider: currentQuote.provider,
+//                            swapPresentationMode: presentationMode
+//                        )
+//                    }
+            }
+            .onChange(of: sendPresented) { presented in
+//                    if !presented {
+//                        viewModel.autoQuoteIfRequired()
+//                    }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("button.cancel".localized) {
+                        presentationMode.wrappedValue.dismiss()
                     }
                 }
             }
-        }
     }
 
     @ViewBuilder private func amountsView() -> some View {
@@ -121,7 +117,7 @@ struct Safe4SwapView: View {
                                         .frame(maxWidth: .infinity)
 
                                         RoundedRectangle(cornerRadius: 0.5, style: .continuous)
-                                            .fill(Color.themeSteel20)
+                                            .fill(Color.themeBlade)
                                             .frame(width: 1)
                                             .frame(maxHeight: .infinity)
                                     }
@@ -139,7 +135,7 @@ struct Safe4SwapView: View {
                                 .frame(maxWidth: .infinity)
 
                                 RoundedRectangle(cornerRadius: 0.5, style: .continuous)
-                                    .fill(Color.themeSteel20)
+                                    .fill(Color.themeBlade)
                                     .frame(width: 1)
                                     .frame(maxHeight: .infinity)
 
@@ -170,7 +166,7 @@ struct Safe4SwapView: View {
     @ViewBuilder private func boxSeparatorView() -> some View {
         HStack(spacing: 0) {
             Rectangle()
-                .fill(Color.themeSteel20)
+                .fill(Color.themeBlade)
                 .frame(height: .heightOneDp)
                 .frame(maxWidth: .infinity)
 
@@ -182,7 +178,7 @@ struct Safe4SwapView: View {
             .buttonStyle(SecondaryCircleButtonStyle(style: .default))
 
             Rectangle()
-                .fill(Color.themeSteel20)
+                .fill(Color.themeBlade)
                 .frame(height: .heightOneDp)
                 .frame(maxWidth: .infinity)
         }
@@ -343,7 +339,7 @@ struct Safe4SwapView: View {
                     if let placeholderImage {
                         placeholderImage
                     } else {
-                        Circle().fill(Color.themeSteel20)
+                        Circle().fill(Color.themeSteel)
                     }
                 }
         }

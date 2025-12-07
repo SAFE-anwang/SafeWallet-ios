@@ -14,7 +14,7 @@ class MasterNodeService {
         }
     }
     private var nodeTypeRelay = BehaviorRelay<Safe4NodeType>(value: .normal)
-    private let evmKit: EvmKit.Kit
+    let evmKit: EvmKit.Kit
     
     init(evmKit: EvmKit.Kit) {
         self.evmKit = evmKit

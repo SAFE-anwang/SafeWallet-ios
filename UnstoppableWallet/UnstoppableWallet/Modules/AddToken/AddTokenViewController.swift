@@ -1,10 +1,9 @@
-import ComponentKit
+
 import Foundation
 import RxCocoa
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIKit
 
 class AddTokenViewController: ThemeViewController {
@@ -164,56 +163,55 @@ extension AddTokenViewController: SectionsDataSource {
                 ]
             ),
             Section(
-                    id: "input",
-                    footerState: .margin(height: .margin32),
-                    rows: [
-                        StaticRow(
-                                cell: inputCell,
-                                id: "input",
-                                dynamicHeight: { [weak self] width in
-                                    self?.inputCell.height(containerWidth: width) ?? 0
-                                }
-                        ),
-                        StaticRow(
-                                cell: inputCautionCell,
-                                id: "input-caution",
-                                dynamicHeight: { [weak self] width in
-                                    self?.inputCautionCell.height(containerWidth: width) ?? 0
-                                }
-                        )
-                    ]
-            )
+                id: "input",
+                footerState: .margin(height: .margin32),
+                rows: [
+                    StaticRow(
+                        cell: inputCell,
+                        id: "input",
+                        dynamicHeight: { [weak self] width in
+                            self?.inputCell.height(containerWidth: width) ?? 0
+                        }
+                    ),
+                    StaticRow(
+                        cell: inputCautionCell,
+                        id: "input-caution",
+                        dynamicHeight: { [weak self] width in
+                            self?.inputCautionCell.height(containerWidth: width) ?? 0
+                        }
+                    ),
+                ]
+            ),
         ]
 
-        if let viewItem = viewItem {
+        if let viewItem {
             sections.append(
-                    Section(
-                            id: "token-info",
-                            footerState: .margin(height: .margin32),
-                            rows: [
-                                tableView.universalRow48(
-                                        id: "coin-name",
-                                        title: .subhead2("add_token.coin_name".localized),
-                                        value: .subhead1(viewItem.name),
-                                        isFirst: true
-                                ),
-                                tableView.universalRow48(
-                                        id: "coin-name",
-                                        title: .subhead2("add_token.symbol".localized),
-                                        value: .subhead1(viewItem.code)
-                                ),
-                                tableView.universalRow48(
-                                        id: "coin-name",
-                                        title: .subhead2("add_token.decimals".localized),
-                                        value: .subhead1(viewItem.decimals),
-                                        isLast: true
-                                )
-                            ]
-                    )
+                Section(
+                    id: "token-info",
+                    footerState: .margin(height: .margin32),
+                    rows: [
+                        tableView.universalRow48(
+                            id: "coin-name",
+                            title: .subhead2("add_token.coin_name".localized),
+                            value: .subhead1(viewItem.name),
+                            isFirst: true
+                        ),
+                        tableView.universalRow48(
+                            id: "coin-name",
+                            title: .subhead2("add_token.symbol".localized),
+                            value: .subhead1(viewItem.code)
+                        ),
+                        tableView.universalRow48(
+                            id: "coin-name",
+                            title: .subhead2("add_token.decimals".localized),
+                            value: .subhead1(viewItem.decimals),
+                            isLast: true
+                        ),
+                    ]
+                )
             )
         }
 
         return sections
     }
-
 }

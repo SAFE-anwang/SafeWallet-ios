@@ -1,12 +1,9 @@
-import RxSwift
-
 class JailbreakService {
     private let localStorage: LocalStorage
-    private let jailbreakTestManager: JailbreakTestManager
+    private let jailbreakTestManager = JailbreakTestManager()
 
-    init(localStorage: LocalStorage, jailbreakTestManager: JailbreakTestManager) {
+    init(localStorage: LocalStorage) {
         self.localStorage = localStorage
-        self.jailbreakTestManager = jailbreakTestManager
     }
 
     var needToShowAlert: Bool {

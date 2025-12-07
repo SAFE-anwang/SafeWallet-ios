@@ -7,13 +7,13 @@ import MarketKit
 import RxSwift
 
 class DashAdapter: BitcoinBaseAdapter {
+    static let networkType: DashKit.Kit.NetworkType = .mainNet
     private let feeRate = 1
 
     private let dashKit: DashKit.Kit
 
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
-        let networkType: DashKit.Kit.NetworkType = .mainNet
-        let logger = App.shared.logger.scoped(with: "DashKit")
+        let logger = Core.shared.logger.scoped(with: "DashKit")
 
         switch wallet.account.type {
         case .mnemonic:
@@ -25,8 +25,8 @@ class DashAdapter: BitcoinBaseAdapter {
                 seed: seed,
                 walletId: wallet.account.id,
                 syncMode: syncMode,
-                networkType: networkType,
-                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
             )
         case let .hdExtendedKey(key):
@@ -34,8 +34,8 @@ class DashAdapter: BitcoinBaseAdapter {
                 extendedKey: key,
                 walletId: wallet.account.id,
                 syncMode: syncMode,
-                networkType: networkType,
-                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
             )
         case let .btcAddress(address, _, _):
@@ -43,8 +43,8 @@ class DashAdapter: BitcoinBaseAdapter {
                 watchAddress: address,
                 walletId: wallet.account.id,
                 syncMode: syncMode,
-                networkType: networkType,
-                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
             )
         default:
@@ -57,15 +57,15 @@ class DashAdapter: BitcoinBaseAdapter {
     }
 
     override var explorerTitle: String {
-        "dash.org"
+        "blockchair.com"
     }
 
     override func explorerUrl(transactionHash: String) -> String? {
-        "https://insight.dash.org/insight/tx/" + transactionHash
+        "https://blockchair.com/dash/transaction/" + transactionHash
     }
 
     override func explorerUrl(address: String) -> String? {
-        "https://insight.dash.org/insight/address/" + address
+        "https://blockchair.com/dash/address/" + address
     }
 }
 
@@ -93,5 +93,32 @@ extension DashAdapter: ISendBitcoinAdapter {
 extension DashAdapter {
     static func clear(except excludedWalletIds: [String]) throws {
         try Kit.clear(exceptFor: excludedWalletIds)
+    }
+
+    static func firstAddress(accountType: AccountType) throws -> String {
+        switch accountType {
+        case .mnemonic:
+            guard let seed = accountType.mnemonicSeed else {
+                throw AdapterError.unsupportedAccount
+            }
+
+            let address = try DashKit.Kit.firstAddress(
+                seed: seed,
+                networkType: networkType
+            )
+
+            return address.stringValue
+        case let .hdExtendedKey(key):
+            let address = try DashKit.Kit.firstAddress(
+                extendedKey: key,
+                networkType: networkType
+            )
+
+            return address.stringValue
+        case let .btcAddress(address, _, _):
+            return address
+        default:
+            throw AdapterError.unsupportedAccount
+        }
     }
 }

@@ -4,8 +4,6 @@ import Combine
 import EvmKit
 import Kingfisher
 import MarketKit
-import ComponentKit
-import HUD
 import UIKit
 
 struct AddLockDaysView: View {
@@ -18,62 +16,64 @@ struct AddLockDaysView: View {
     }
     
     var body: some View {
-        ThemeView {
-            ZStack{
-                ScrollableThemeView {
-                    VStack(spacing: .margin8) {
-                        ListSection {
-                            ForEach(viewModel.viewItems, id: \.lockID) { item in
-                                ClickableRow(action: {}) {
-                                    ItemView(item: item, minusAction: {
-                                        item.minus()
-                                    } ,plusAction: {
-                                        item.plus()
-                                    } ,addLockDaysAction: {
-                                        addLockDaysAlertPresented = true
-                                    })
-                                }.sheet(isPresented: $addLockDaysAlertPresented) {
-                                    if #available(iOS 16, *) {
-                                        ViewWrapper(BottomSheetModule.addLockDaysConfirmation(days: item.selectedLockedDays.description) {
-                                            viewModel.addLock(info: item)
-                                        }).presentationDetents([.medium])
-                                    } else {
-                                        ViewWrapper(BottomSheetModule.addLockDaysConfirmation(days: item.selectedLockedDays.description) {
-                                            viewModel.addLock(info: item)
+        ThemeNavigationStack {
+            ThemeView {
+                ZStack{
+                    ScrollableThemeView {
+                        VStack(spacing: .margin8) {
+                            ListSection {
+                                ForEach(viewModel.viewItems, id: \.lockID) { item in
+                                    ClickableRow(action: {}) {
+                                        ItemView(item: item, minusAction: {
+                                            item.minus()
+                                        } ,plusAction: {
+                                            item.plus()
+                                        } ,addLockDaysAction: {
+                                            addLockDaysAlertPresented = true
                                         })
+                                    }.sheet(isPresented: $addLockDaysAlertPresented) {
+                                        if #available(iOS 16, *) {
+                                            ViewWrapper(BottomSheetModule.addLockDaysConfirmation(days: item.selectedLockedDays.description) {
+                                                viewModel.addLock(info: item)
+                                            }).presentationDetents([.medium])
+                                        } else {
+                                            ViewWrapper(BottomSheetModule.addLockDaysConfirmation(days: item.selectedLockedDays.description) {
+                                                viewModel.addLock(info: item)
+                                            })
+                                        }
                                     }
                                 }
                             }
                         }
+                        .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
                     }
-                    .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
+                    if case .completed = viewModel.state {
+                        if viewModel.viewItems.isEmpty {
+                            PlaceholderViewNew(icon: "no_data_48", title: "coin_markets.empty".localized)
+                        }else {
+                            
+                        }
+                    }
+                    
+                    if case .loading = viewModel.state {
+                        Color.white.opacity(0.01)
+                            .edgesIgnoringSafeArea(.all)
+                            .onTapGesture {}
+                        ProgressView()
+                    }
                 }
-                if case .completed = viewModel.state {
-                    if viewModel.viewItems.isEmpty {
-                        PlaceholderViewNew(image: Image("no_data_48"), text: "coin_markets.empty".localized)
-                    }else {
-                        
-                    }
+            }
+            .navigationBarTitle("safe_zone.safe4.node.locked.days.add.title".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .task(id: viewModel.state) {
+                if case let .success(message) = viewModel.state {
+                    HudHelper.instance.show(banner: .success(string: message ?? ""))
+                    presentationMode.wrappedValue.dismiss()
                 }
                 
-                if case .loading = viewModel.state {
-                    Color.white.opacity(0.01)
-                        .edgesIgnoringSafeArea(.all)
-                        .onTapGesture {}
-                    ProgressView()
+                if case let .failed(error) = viewModel.state {
+                    HudHelper.instance.show(banner: .error(string: error ?? ""))
                 }
-            }
-        }
-        .navigationBarTitle("safe_zone.safe4.node.locked.days.add.title".localized)
-        .navigationBarTitleDisplayMode(.inline)
-        .task(id: viewModel.state) {
-            if case let .success(message) = viewModel.state {
-                HudHelper.instance.show(banner: .success(string: message ?? ""))
-                presentationMode.wrappedValue.dismiss()
-            }
-            
-            if case let .failed(error) = viewModel.state {
-                HudHelper.instance.show(banner: .error(string: error ?? ""))
             }
         }
     }

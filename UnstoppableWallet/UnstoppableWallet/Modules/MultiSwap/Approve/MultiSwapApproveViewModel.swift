@@ -7,25 +7,23 @@ import MarketKit
 class MultiSwapApproveViewModel: ObservableObject {
     let token: Token
     let amount: Decimal
-    private let spenderAddress: EvmKit.Address
+    private let spenderAddress: Address
     private let approveDataProvider: IApproveDataProvider?
 
     @Published var unlimitedAmount = false
 
-    init(token: Token, amount: Decimal, spenderAddress: EvmKit.Address) {
+    init(token: Token, amount: Decimal, spenderAddress: Address) {
         self.token = token
         self.amount = amount
         self.spenderAddress = spenderAddress
-        approveDataProvider = App.shared.adapterManager.adapter(for: token) as? IApproveDataProvider
+        approveDataProvider = Core.shared.adapterManager.adapter(for: token) as? IApproveDataProvider
     }
-
-    private func syncState() {}
 }
 
 extension MultiSwapApproveViewModel {
-    var transactionData: TransactionData? {
+    var sendData: SendData? {
         let amount = unlimitedAmount ? .init(2).power(256) - 1 : token.fractionalMonetaryValue(value: amount)
-        return approveDataProvider?.approveTransactionData(spenderAddress: spenderAddress, amount: amount)
+        return try? approveDataProvider?.approveSendData(token: token, spenderAddress: spenderAddress, amount: amount)
     }
 
     func set(unlimitedAmount: Bool) {
@@ -34,13 +32,5 @@ extension MultiSwapApproveViewModel {
         }
 
         self.unlimitedAmount = unlimitedAmount
-
-        syncState()
-    }
-}
-
-extension MultiSwapApproveViewModel {
-    enum InitError: Error {
-        case noApproveDataProvider
     }
 }

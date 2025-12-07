@@ -1,4 +1,4 @@
-import ComponentKit
+
 import SnapKit
 import UIKit
 
@@ -55,7 +55,7 @@ class FilterView: UIView {
         collectionView.backgroundColor = .clear
         collectionView.scrollsToTop = false
         collectionView.showsHorizontalScrollIndicator = false
-        collectionView.showsVerticalScrollIndicator = false
+
         collectionView.registerCell(forClass: FilterHeaderCell.self)
 
         if bottomSeparator {
@@ -66,7 +66,7 @@ class FilterView: UIView {
                 maker.height.equalTo(CGFloat.heightOneDp)
             }
 
-            separator.backgroundColor = UIColor.themeSteel10
+            separator.backgroundColor = UIColor.themeBlade
         }
 
         collectionView.addSubview(selectedView)

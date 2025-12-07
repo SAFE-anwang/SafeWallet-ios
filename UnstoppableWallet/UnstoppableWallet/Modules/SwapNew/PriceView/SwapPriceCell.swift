@@ -1,6 +1,4 @@
-import ComponentKit
 import Foundation
-import HUD
 import UIKit
 
 class SwapPriceCell: BaseThemeCell {
@@ -13,7 +11,7 @@ class SwapPriceCell: BaseThemeCell {
         strokeLineWidth: 2,
         radius: 7.5,
         strokeColor: .themeJacob,
-        donutColor: .themeSteel20,
+        donutColor: .themeBlade,
         duration: 10
     )
 

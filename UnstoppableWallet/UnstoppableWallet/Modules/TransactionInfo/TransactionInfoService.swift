@@ -38,33 +38,21 @@ class TransactionInfoService {
         var tokens = [Token?]()
 
         switch transactionRecord {
-        case let tx as Safe4DepositEvmIncomingTransactionRecord: tokens.append(tx.value.token)
-        case let tx as Safe4DepositEvmOutgoingTransactionRecord: tokens.append(tx.value.token)
-        case let tx as Safe4WithdrawTransactionRecord: tokens.append(tx.value.token)
-        case let tx as Safe4RedeemTransactionRecoard: tokens.append(tx.value.token)
-        case let tx as Safe4VoteTransactionRecoard: tokens.append(tx.value.token)
-        case let tx as Safe4NodeRegisterTransactionRecoard: tokens.append(tx.value.token)
-        case let tx as Safe4CrossChainIncomingRecoard: tokens.append(tx.value.token)
-        case let tx as Safe4CrossChainOutgoingRecoard: tokens.append(tx.value.token)
         case let tx as EvmIncomingTransactionRecord: tokens.append(tx.value.token)
         case let tx as EvmOutgoingTransactionRecord: tokens.append(tx.value.token)
         case let tx as SwapTransactionRecord:
             tokens.append(tx.valueIn.token)
             tx.valueOut.flatMap { tokens.append($0.token) }
-
         case let tx as UnknownSwapTransactionRecord:
             tx.valueIn.flatMap { tokens.append($0.token) }
             tx.valueOut.flatMap { tokens.append($0.token) }
-
         case let tx as ApproveTransactionRecord: tokens.append(tx.value.token)
         case let tx as ContractCallTransactionRecord:
             tokens.append(contentsOf: tx.incomingEvents.map(\.value.token))
             tokens.append(contentsOf: tx.outgoingEvents.map(\.value.token))
-
         case let tx as ExternalContractCallTransactionRecord:
             tokens.append(contentsOf: tx.incomingEvents.map(\.value.token))
             tokens.append(contentsOf: tx.outgoingEvents.map(\.value.token))
-
         case let tx as TronIncomingTransactionRecord: tokens.append(tx.value.token)
         case let tx as TronOutgoingTransactionRecord: tokens.append(tx.value.token)
         case let tx as TronApproveTransactionRecord: tokens.append(tx.value.token)
@@ -74,25 +62,30 @@ class TransactionInfoService {
         case let tx as TronExternalContractCallTransactionRecord:
             tokens.append(contentsOf: tx.incomingEvents.map(\.value.token))
             tokens.append(contentsOf: tx.outgoingEvents.map(\.value.token))
-
         case let tx as BitcoinIncomingTransactionRecord: tokens.append(tx.value.token)
         case let tx as BitcoinOutgoingTransactionRecord:
             tx.fee.flatMap { tokens.append($0.token) }
             tokens.append(tx.value.token)
-
-        case let tx as BinanceChainIncomingTransactionRecord: tokens.append(tx.value.token)
-        case let tx as BinanceChainOutgoingTransactionRecord:
-            tokens.append(tx.fee.token)
-            tokens.append(tx.value.token)
-
-        case let tx as TonIncomingTransactionRecord:
-            tokens.append(tx.transfer?.value.token)
-        case let tx as TonOutgoingTransactionRecord:
-            tokens.append(tx.fee?.token)
-            tx.transfers.forEach { tokens.append($0.value.token) }
         case let tx as TonTransactionRecord:
+            for action in tx.actions {
+                switch action.type {
+                case let .send(value, _, _, _): tokens.append(value.token)
+                case let .receive(value, _, _): tokens.append(value.token)
+                default: ()
+                }
+            }
             tokens.append(tx.fee?.token)
-
+        case let tx as StellarTransactionRecord:
+            switch tx.type {
+            case let .accountCreated(startingBalance, _): tokens.append(startingBalance.token)
+            case let .accountFunded(startingBalance, _): tokens.append(startingBalance.token)
+            case let .sendPayment(value, _, _): tokens.append(value.token)
+            case let .receivePayment(value, _): tokens.append(value.token)
+            case let .changeTrust(value, _, _, _): tokens.append(value.token)
+            default: ()
+            }
+            tokens.append(tx.fee?.token)
+        case let tx as ZcashShieldingTransactionRecord: tokens.append(tx.value.token)
         default: ()
         }
 
@@ -108,7 +101,7 @@ class TransactionInfoService {
     }
 
     private func fetchRates() {
-        tokenForRates.forEach { token in
+        for token in tokenForRates {
             let rateKey = RateKey(token: token, date: transactionRecord.date)
             if let currencyValue = rateService.rate(key: rateKey) {
                 rates[rateKey] = currencyValue
@@ -168,12 +161,7 @@ extension TransactionInfoService {
         Item(
             record: transactionRecord,
             lastBlockInfo: adapter.lastBlockInfo,
-            rates: Dictionary(
-                rates.map { (key: $0.key.token.coin, value: $0.value) },
-                uniquingKeysWith: { old, new in
-                    return new 
-                }
-            ),//Dictionary(uniqueKeysWithValues: rates.map { key, value in (key.token.coin, value) }),
+            rates: Dictionary(uniqueKeysWithValues: rates.map { key, value in (key.token.coin, value) }),
             nftMetadata: nftMetadata,
             explorerTitle: adapter.explorerTitle,
             explorerUrl: adapter.explorerUrl(transactionHash: transactionRecord.transactionHash)

@@ -1,6 +1,4 @@
 import SwiftUI
-import ComponentKit
-import HUD
 
 struct DeployView: View {
     @Environment(\.presentationMode) private var presentationMode
@@ -13,86 +11,88 @@ struct DeployView: View {
     }
     
     var body: some View {
-        ThemeView {
-            ZStack{
-                BottomGradientWrapper {
-                    ScrollableThemeView {
-                        VStack(spacing: .margin8) {
-                            modeChooseView()
-                            modeDesView()
-                            nameInputView()
-                            symbolInputView()
-                            totalSupplyInputView()
+        ThemeNavigationStack {
+            ThemeView {
+                ZStack{
+                    BottomGradientWrapper {
+                        ScrollableThemeView {
+                            VStack(spacing: .margin8) {
+                                modeChooseView()
+                                modeDesView()
+                                nameInputView()
+                                symbolInputView()
+                                totalSupplyInputView()
+                            }
+                            .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
                         }
-                        .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
+                    } bottomContent: {
+                        Button(action: {
+                            if case .ready = viewModel.sendState {
+                                isShowAlert = true
+                            }
+                        }) {
+                            HStack(spacing: .margin8) {
+                                Text("button.next".localized)
+                            }
+                        }
+                        .disabled(!(viewModel.sendState == .ready || viewModel.sendState == .failed))
+                        .buttonStyle(PrimaryButtonStyle(style: .yellow))
                     }
-                } bottomContent: {
-                    Button(action: {
-                        if case .ready = viewModel.sendState {
-                            isShowAlert = true
-                        }
-                    }) {
-                        HStack(spacing: .margin8) {
-                            Text("button.next".localized)
-                        }
+                    if case .sending = viewModel.sendState {
+                        ProgressView()
                     }
-                    .disabled(!(viewModel.sendState == .ready || viewModel.sendState == .failed))
-                    .buttonStyle(PrimaryButtonStyle(style: .yellow))
                 }
-                if case .sending = viewModel.sendState {
-                    ProgressView()
-                }
-            }
 
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("button.done".localized) {
-                    if focusField != nil {
-                        focusField = nil
-                    }else {
-                        UIApplication.shared.sendAction(
-                                #selector(UIResponder.resignFirstResponder),
-                                to: nil,
-                                from: nil,
-                                for: nil
-                            )
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("button.done".localized) {
+                        if focusField != nil {
+                            focusField = nil
+                        }else {
+                            UIApplication.shared.sendAction(
+                                    #selector(UIResponder.resignFirstResponder),
+                                    to: nil,
+                                    from: nil,
+                                    for: nil
+                                )
+                        }
                     }
                 }
             }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            focusField = nil
-        }
-        .navigationBarTitle("SRC20_Deploy_One_Click_Issu".localized)
-        .navigationBarTitleDisplayMode(.inline)
-        .alert("SRC20_Deploy_Confirm".localized(viewModel.mode.title), isPresented: $isShowAlert, actions: {
-            HStack{
-                Button("button.cancel".localized) {
-                    isShowAlert = false
-                }
-                Button("button.confirm".localized) {
-                    
-                    viewModel.deploy { sendState in
-                        if case .completed = sendState {
-                            DispatchQueue.main.async {
-                                HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
-                                presentationMode.wrappedValue.dismiss()
-                            }
-                        }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                focusField = nil
+            }
+            .navigationBarTitle("SRC20_Deploy_One_Click_Issu".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .alert("SRC20_Deploy_Confirm".localized(viewModel.mode.title), isPresented: $isShowAlert, actions: {
+                HStack{
+                    Button("button.cancel".localized) {
+                        isShowAlert = false
+                    }
+                    Button("button.confirm".localized) {
                         
-                        if case .failed = sendState {
-                            DispatchQueue.main.async {
-                                HudHelper.instance.show(banner: .error(string: "transactions.failed".localized))
+                        viewModel.deploy { sendState in
+                            if case .completed = sendState {
+                                DispatchQueue.main.async {
+                                    HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
+                                    presentationMode.wrappedValue.dismiss()
+                                }
+                            }
+                            
+                            if case .failed = sendState {
+                                DispatchQueue.main.async {
+                                    HudHelper.instance.show(banner: .error(string: "transactions.failed".localized))
+                                }
                             }
                         }
+                        isShowAlert = false
                     }
-                    isShowAlert = false
                 }
-            }
-        })
+            })
+        }
     }
     
     @ViewBuilder private func modeChooseView() -> some View {

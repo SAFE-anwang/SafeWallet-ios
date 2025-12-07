@@ -9,21 +9,21 @@ class ContractCallTransactionRecord: EvmTransactionRecord {
     let outgoingEvents: [TransferEvent]
 
     init(source: TransactionSource, transaction: Transaction, baseToken: Token,
-         contractAddress: String, method: String?, incomingEvents: [TransferEvent], outgoingEvents: [TransferEvent])
+         contractAddress: String, method: String?, incomingEvents: [TransferEvent], outgoingEvents: [TransferEvent], protected: Bool)
     {
         self.contractAddress = contractAddress
         self.method = method
         self.incomingEvents = incomingEvents
         self.outgoingEvents = outgoingEvents
 
-        super.init(source: source, transaction: transaction, baseToken: baseToken, ownTransaction: true)
+        super.init(source: source, transaction: transaction, baseToken: baseToken, ownTransaction: true, protected: protected)
     }
 
-    var combinedValues: ([TransactionValue], [TransactionValue]) {
+    var combinedValues: ([AppValue], [AppValue]) {
         combined(incomingEvents: incomingEvents, outgoingEvents: outgoingEvents)
     }
 
-    override var mainValue: TransactionValue? {
+    override var mainValue: AppValue? {
         let (incomingValues, outgoingValues) = combinedValues
 
         if incomingValues.count == 1, outgoingValues.isEmpty {

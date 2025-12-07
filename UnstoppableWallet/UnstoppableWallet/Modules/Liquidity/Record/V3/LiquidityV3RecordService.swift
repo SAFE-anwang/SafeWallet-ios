@@ -42,9 +42,9 @@ class LiquidityV3RecordService {
 
     init?(dexType: DexType, marketKit: MarketKit.Kit, walletManager: WalletManager, adapterManager: AdapterManager, blockchainType: BlockchainType) {
         
-        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else { return nil }
+        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else { return nil }
         
-        guard let rpcSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: blockchainType)?.rpcSource else { return nil }
+        guard let rpcSource = Core.shared.evmSyncSourceManager.httpSyncSource(blockchainType: blockchainType)?.rpcSource else { return nil }
         
         let uniswapKit = try! UniswapKit.KitV3.instance(dexType: dexType)
         let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKitWrapper.evmKit)
@@ -172,7 +172,7 @@ extension LiquidityV3RecordService {
         let transactionData = eip20Kit.approveTransactionData(spenderAddress: spenderAddress, amount:maxValue)
         
         async let gasLimit = try evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
-        let _ = try await evmKitWrapper.send(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
+        let _ = try await evmKitWrapper.send(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, privateSend: false, nonce: nonce)
     }
     
     private func send(transactionData: TransactionData) async throws -> Single<FullTransaction> {
@@ -185,6 +185,7 @@ extension LiquidityV3RecordService {
                         transactionData: transactionData,
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
+                        privateSend: false,
                         nonce: nonce
         )
     }

@@ -1,8 +1,6 @@
 import Foundation
 import UIKit
 import SnapKit
-import ThemeKit
-import ComponentKit
 import BigInt
 
 class LiquidityV3RecordDetailHeaderView: UITableViewHeaderFooterView {

@@ -2,7 +2,6 @@ import Foundation
 import UIKit
 import EvmKit
 import MarketKit
-import ComponentKit
 import SwiftUI
 import web3swift
 
@@ -10,9 +9,9 @@ class Safe4Module {
     
     static func handlerCrossChain(wsafeType: WSafeChainType, crossChainType: CrossChainType, isSafe4: Bool) -> UIViewController? {
         
-        guard let account = App.shared.accountManager.activeAccount else { return nil }
+        guard let account = Core.shared.accountManager.activeAccount else { return nil }
 
-        let walletList = App.shared.walletManager.activeWallets
+        let walletList = Core.shared.walletManager.activeWallets
         
         let safeWallet = walletList.filter{$0.coin.uid == safe4CoinUid && $0.token.blockchain.type == .safe4 && $0.token.type == .native}.first
         let wsafeWallet = walletList.filter{$0.coin.uid == safeCoinUid && $0.token.blockchain.type == wsafeType.blockchainType}.first
@@ -34,7 +33,7 @@ class Safe4Module {
         case .wsafeCrossToSafe: activeAccountWallet = wsafeWallet
         }
         
-        guard let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: activeAccountWallet), state == .synced  else {
+        guard let state = WalletAdapterService(account: account, adapterManager: Core.shared.adapterManager).state(wallet: activeAccountWallet), state == .synced  else {
             HudHelper.instance.show(banner: .error(string: "balance.syncing".localized))
             return nil
         }
@@ -57,7 +56,7 @@ class Safe4Module {
         }
         
         var reciverAddress: Address?
-        if let depositAdapter = App.shared.adapterManager.depositAdapter(for: activeAccountWallet) {
+        if let depositAdapter = Core.shared.adapterManager.depositAdapter(for: activeAccountWallet) {
             reciverAddress = Address(raw: depositAdapter.receiveAddress.address)
         }
         
@@ -70,7 +69,7 @@ class Safe4Module {
         )
 
         if case .safeCrossToWSafe = crossChainType {
-            guard let adapter = App.shared.adapterManager.adapter(for: safeWallet) else { return nil }
+            guard let adapter = Core.shared.adapterManager.adapter(for: safeWallet) else { return nil }
             switch adapter {
             case let adapter as ISendEthereumAdapter:
                 return SendEvmModule.safe4ViewController(token: safeWallet.token, wsafeChainType: wsafeType, safeAdapter: adapter, crossChainInfo: crossChainInfo)
@@ -79,7 +78,7 @@ class Safe4Module {
         }
         
         if case .wsafeCrossToSafe = crossChainType {
-            guard let wsafeAdapter = App.shared.adapterManager.adapter(for: wsafeWallet) else { return nil }
+            guard let wsafeAdapter = Core.shared.adapterManager.adapter(for: wsafeWallet) else { return nil }
             switch wsafeAdapter {
             case let wsafeAdapter as ISendEthereumAdapter:
                 return SendEvmModule.wsafeViewController(token: wsafeWallet.token, wsafeAdapter: wsafeAdapter, crossChainInfo: crossChainInfo)
@@ -89,47 +88,6 @@ class Safe4Module {
         }
         return nil
     }
-    
-    
-    
-//    static func handlerLineLock() -> UIViewController? {
-//        let walletList = App.shared.walletManager.activeWallets
-//        var safeWallet: Wallet?
-//        
-//        for wallet in walletList {
-//            if wallet.coin.uid == safe4CoinUid {
-//                if wallet.token.blockchain.type == .safe4, wallet.token.coin.uid == safe4CoinUid {
-//                    safeWallet = wallet
-//                }
-//            }
-//        }
-//        
-//        guard let safeWallet else {
-//            HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
-//            return nil
-//        }
-//        guard let account = App.shared.accountManager.activeAccount else { return nil }
-//        guard let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: safeWallet), state == .synced else {
-//            HudHelper.instance.show(banner: .error(string: "balance.syncing".localized))
-//            return nil
-//        }
-//        
-//        guard let adapter = App.shared.adapterManager.adapter(for: safeWallet) else { return nil }
-//        
-//        var reciverAddress: Address?
-//
-//        if  let depositAdapter = App.shared.adapterManager.depositAdapter(for: safeWallet) {
-//            reciverAddress = Address(raw: depositAdapter.receiveAddress.address)
-//        }
-//        
-//        switch adapter {
-//        case let adapter as ISendSafeCoinAdapter:
-//            return SendModule.lineLockViewController(token: safeWallet.token, mode: .send, adapter: adapter, reciverAddress: reciverAddress)
-//        default: return nil
-//        }
-//        
-//    }
-    
 }
 
 

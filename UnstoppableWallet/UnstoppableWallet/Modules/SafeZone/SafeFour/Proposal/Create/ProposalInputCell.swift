@@ -1,5 +1,4 @@
 import UIKit
-import ComponentKit
 import RxSwift
 
 class ProposalInputCell: Safe4BaseInputCell {

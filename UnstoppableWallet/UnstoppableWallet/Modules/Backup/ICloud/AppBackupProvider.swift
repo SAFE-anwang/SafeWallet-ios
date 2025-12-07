@@ -1,6 +1,5 @@
 import Foundation
 import MarketKit
-import ThemeKit
 
 class AppBackupProvider {
     private static let version = 2
@@ -8,8 +7,9 @@ class AppBackupProvider {
     private let accountManager: AccountManager
     private let accountFactory: AccountFactory
     private let walletManager: WalletManager
-    private let favoritesManager: FavoritesManager
+    private let watchlistManager: WatchlistManager
     private let evmSyncSourceManager: EvmSyncSourceManager
+    private let moneroNodeManager: MoneroNodeManager // TODO: Add monero nodes to backup
     private let btcBlockchainManager: BtcBlockchainManager
     private let restoreSettingsManager: RestoreSettingsManager
     private let chartRepository: ChartIndicatorsRepository
@@ -19,16 +19,19 @@ class AppBackupProvider {
     private let themeManager: ThemeManager
     private let launchScreenManager: LaunchScreenManager
     private let appIconManager: AppIconManager
-    private let balancePrimaryValueManager: BalancePrimaryValueManager
+    private let appSettingManager: AppSettingManager
     private let balanceConversionManager: BalanceConversionManager
     private let balanceHiddenManager: BalanceHiddenManager
     private let contactManager: ContactBookManager
+    private let priceChangeModeManager: PriceChangeModeManager
+    private let walletButtonHiddenManager: WalletButtonHiddenManager
 
     init(accountManager: AccountManager,
          accountFactory: AccountFactory,
          walletManager: WalletManager,
-         favoritesManager: FavoritesManager,
+         watchlistManager: WatchlistManager,
          evmSyncSourceManager: EvmSyncSourceManager,
+         moneroNodeManager: MoneroNodeManager,
          btcBlockchainManager: BtcBlockchainManager,
          restoreSettingsManager: RestoreSettingsManager,
          chartRepository: ChartIndicatorsRepository,
@@ -38,16 +41,19 @@ class AppBackupProvider {
          themeManager: ThemeManager,
          launchScreenManager: LaunchScreenManager,
          appIconManager: AppIconManager,
-         balancePrimaryValueManager: BalancePrimaryValueManager,
+         appSettingManager: AppSettingManager,
          balanceConversionManager: BalanceConversionManager,
          balanceHiddenManager: BalanceHiddenManager,
-         contactManager: ContactBookManager)
+         contactManager: ContactBookManager,
+         priceChangeModeManager: PriceChangeModeManager,
+         walletButtonHiddenManager: WalletButtonHiddenManager)
     {
         self.accountManager = accountManager
         self.accountFactory = accountFactory
         self.walletManager = walletManager
-        self.favoritesManager = favoritesManager
+        self.watchlistManager = watchlistManager
         self.evmSyncSourceManager = evmSyncSourceManager
+        self.moneroNodeManager = moneroNodeManager
         self.btcBlockchainManager = btcBlockchainManager
         self.restoreSettingsManager = restoreSettingsManager
         self.chartRepository = chartRepository
@@ -57,10 +63,12 @@ class AppBackupProvider {
         self.themeManager = themeManager
         self.launchScreenManager = launchScreenManager
         self.appIconManager = appIconManager
-        self.balancePrimaryValueManager = balancePrimaryValueManager
+        self.appSettingManager = appSettingManager
         self.balanceConversionManager = balanceConversionManager
         self.balanceHiddenManager = balanceHiddenManager
         self.contactManager = contactManager
+        self.priceChangeModeManager = priceChangeModeManager
+        self.walletButtonHiddenManager = walletButtonHiddenManager
     }
 
     // Parts of backups
@@ -86,11 +94,11 @@ class AppBackupProvider {
             }
     }
 
-    private func settings(evmSyncSources: EvmSyncSourceManager.SyncSourceBackup) -> SettingsBackup {
+    private func settings(evmSyncSources: EvmSyncSourceManager.SyncSourceBackup, moneroNodes: MoneroNodeManager.NodeBackup) -> SettingsBackup {
         SettingsBackup(
             evmSyncSources: evmSyncSources,
+            moneroNodes: moneroNodes,
             btcModes: btcBlockchainManager.backup,
-            lockTimeEnabled: true,
             remoteContactsSync: localStorage.remoteContactsSync,
             swapProviders: swapProviders,
             chartIndicators: chartRepository.backup,
@@ -99,9 +107,11 @@ class AppBackupProvider {
             baseCurrency: currencyManager.baseCurrency.code,
             mode: themeManager.themeMode,
             showMarketTab: launchScreenManager.showMarket,
+            priceChangeMode: priceChangeModeManager.priceChangeMode,
             launchScreen: launchScreenManager.launchScreen,
             conversionTokenQueryId: balanceConversionManager.conversionToken?.tokenQuery.id,
-            balancePrimaryValue: balancePrimaryValueManager.balancePrimaryValue,
+            balanceHideButtons: walletButtonHiddenManager.buttonHidden,
+            balancePrimaryValue: appSettingManager.balancePrimaryValue,
             balanceAutoHide: balanceHiddenManager.balanceAutoHide,
             appIcon: appIconManager.appIcon.title
         )
@@ -121,15 +131,15 @@ class AppBackupProvider {
             .compactMap { accountManager.account(id: $0) }
             .compactMap { RawWalletBackup(account: $0, enabledWallets: enabledWallets(account: $0)) }
 
-        let custom = evmSyncSourceManager.customSources
-        let selected = evmSyncSourceManager.selectedSources
-        let syncSources = EvmSyncSourceManager.SyncSourceBackup(selected: selected, custom: [])
+        let syncSources = EvmSyncSourceManager.SyncSourceBackup(selected: evmSyncSourceManager.selectedSources, custom: [])
+        let moneroNodes = MoneroNodeManager.NodeBackup(selected: moneroNodeManager.selectedNodes, custom: [])
         return RawFullBackup(
             accounts: accounts,
-            watchlistIds: favoritesManager.allCoinUids,
+            watchlistIds: watchlistManager.coinUids,
             contacts: contactManager.backupContactBook?.contacts ?? [],
-            settings: settings(evmSyncSources: syncSources),
-            customSyncSources: custom
+            settings: settings(evmSyncSources: syncSources, moneroNodes: moneroNodes),
+            customSyncSources: evmSyncSourceManager.customSources,
+            customMoneroNodes: moneroNodeManager.customNodeRecords,
         )
     }
 }
@@ -149,51 +159,48 @@ extension AppBackupProvider {
 
         accountManager.save(accounts: updated.map(\.account))
 
-        updated.forEach { (raw: RawWalletBackup) in
-            switch raw.account.type {
-            case .cex: ()
-            default:
-                let wallets = raw.enabledWallets.compactMap { (wallet: WalletBackup.EnabledWallet) -> EnabledWallet? in
-                    guard let tokenQuery = TokenQuery(id: wallet.tokenQueryId),
-                          BlockchainType.supported.contains(tokenQuery.blockchainType)
-                    else {
-                        return nil
-                    }
-
-                    if !wallet.settings.isEmpty {
-                        var restoreSettings = [RestoreSettingType: String]()
-                        wallet.settings.forEach { key, value in
-                            if let key = RestoreSettingType(rawValue: key) {
-                                restoreSettings[key] = value
-                            }
-                        }
-                        restoreSettingsManager.save(settings: restoreSettings, account: raw.account, blockchainType: tokenQuery.blockchainType)
-                    }
-
-                    return EnabledWallet(
-                        tokenQueryId: wallet.tokenQueryId,
-                        accountId: raw.account.id,
-                        coinName: wallet.coinName,
-                        coinCode: wallet.coinCode,
-                        tokenDecimals: wallet.tokenDecimals
-                    )
+        for raw in updated {
+            let wallets = raw.enabledWallets.compactMap { (wallet: WalletBackup.EnabledWallet) -> EnabledWallet? in
+                guard let tokenQuery = TokenQuery(id: wallet.tokenQueryId),
+                      BlockchainType.supported.contains(tokenQuery.blockchainType)
+                else {
+                    return nil
                 }
-                walletManager.save(enabledWallets: wallets)
+
+                if !wallet.settings.isEmpty {
+                    var restoreSettings = [RestoreSettingType: String]()
+                    for (key, value) in wallet.settings {
+                        if let key = RestoreSettingType(rawValue: key) {
+                            restoreSettings[key] = value
+                        }
+                    }
+                    restoreSettingsManager.save(settings: restoreSettings, account: raw.account, blockchainType: tokenQuery.blockchainType)
+                }
+
+                return EnabledWallet(
+                    tokenQueryId: wallet.tokenQueryId,
+                    accountId: raw.account.id,
+                    coinName: wallet.coinName,
+                    coinCode: wallet.coinCode,
+                    tokenDecimals: wallet.tokenDecimals
+                )
             }
+            walletManager.save(enabledWallets: wallets)
         }
     }
 
     func restore(raw: RawFullBackup) {
-        raw.accounts.forEach { wallet in
+        for wallet in raw.accounts {
             restore(raws: [wallet])
         }
-        favoritesManager.add(coinUids: raw.watchlistIds)
+        watchlistManager.add(coinUids: raw.watchlistIds)
 
         if !raw.contacts.isEmpty {
             try? contactManager.restore(contacts: raw.contacts, mergePolitics: .replace)
         }
 
         evmSyncSourceManager.restore(selected: raw.settings.evmSyncSources.selected, custom: raw.customSyncSources)
+        moneroNodeManager.restore(selected: raw.settings.moneroNodes.selected, custom: raw.customMoneroNodes)
         btcBlockchainManager.restore(backup: raw.settings.btcModes)
         chartRepository.restore(backup: raw.settings.chartIndicators)
         localStorage.restore(backup: raw.settings)
@@ -205,8 +212,10 @@ extension AppBackupProvider {
         themeManager.themeMode = raw.settings.mode
         launchScreenManager.showMarket = raw.settings.showMarketTab
         launchScreenManager.launchScreen = raw.settings.launchScreen
-        balancePrimaryValueManager.balancePrimaryValue = raw.settings.balancePrimaryValue
+        priceChangeModeManager.priceChangeMode = raw.settings.priceChangeMode
+        appSettingManager.balancePrimaryValue = raw.settings.balancePrimaryValue
 
+        walletButtonHiddenManager.buttonHidden = raw.settings.balanceHideButtons
         balanceConversionManager.set(tokenQueryId: raw.settings.conversionTokenQueryId)
         balanceHiddenManager.set(balanceAutoHide: raw.settings.balanceAutoHide)
         let appIcon = AppIconManager.allAppIcons.first { $0.title == raw.settings.appIcon } ?? .main
@@ -241,13 +250,15 @@ extension AppBackupProvider {
         let contacts = try fullBackup.contacts.map { try ContactBookManager.decrypt(crypto: $0, passphrase: passphrase) }
 
         let customSources = try evmSyncSourceManager.decrypt(sources: fullBackup.settings.evmSyncSources.custom, passphrase: passphrase)
+        let customMoneroNodes = try moneroNodeManager.decrypt(nodes: fullBackup.settings.moneroNodes.custom, passphrase: passphrase)
 
         return RawFullBackup(
             accounts: wallets,
             watchlistIds: fullBackup.watchlistIds,
             contacts: contacts ?? [],
             settings: fullBackup.settings,
-            customSyncSources: customSources
+            customSyncSources: customSources,
+            customMoneroNodes: customMoneroNodes
         )
     }
 
@@ -258,14 +269,19 @@ extension AppBackupProvider {
         }
 
         let contacts = try ContactBookManager.encrypt(contacts: raw.contacts, passphrase: passphrase)
-        let custom = try evmSyncSourceManager.encrypt(sources: raw.customSyncSources, passphrase: passphrase)
+        let customEvmSyncSource = try evmSyncSourceManager.encrypt(sources: raw.customSyncSources, passphrase: passphrase)
+        let customMoneroNode = try moneroNodeManager.encrypt(nodes: raw.customMoneroNodes, passphrase: passphrase)
+        let settingsBackup = settings(
+            evmSyncSources: .init(selected: raw.settings.evmSyncSources.selected, custom: customEvmSyncSource),
+            moneroNodes: .init(selected: raw.settings.moneroNodes.selected, custom: customMoneroNode)
+        )
 
         return FullBackup(
             id: UUID().uuidString,
             wallets: wallets,
             watchlistIds: raw.watchlistIds,
             contacts: contacts,
-            settings: settings(evmSyncSources: .init(selected: raw.settings.evmSyncSources.selected, custom: custom)),
+            settings: settingsBackup,
             version: AppBackupProvider.version,
             timestamp: Date().timeIntervalSince1970.rounded()
         )

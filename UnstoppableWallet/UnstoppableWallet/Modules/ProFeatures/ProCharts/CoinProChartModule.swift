@@ -5,11 +5,12 @@ import UIKit
 
 enum CoinProChartModule {
     static func viewController(coin: Coin, type: ProChartType) -> UIViewController {
-        let chartFetcher = ProChartFetcher(marketKit: App.shared.marketKit, currencyManager: App.shared.currencyManager, coin: coin, type: type)
+        let chartFetcher = ProChartFetcher(marketKit: Core.shared.marketKit, currencyManager: Core.shared.currencyManager, coin: coin, type: type)
 
         let chartService = MetricChartService(
             chartFetcher: chartFetcher,
-            interval: .byPeriod(.month1)
+            interval: .byPeriod(.month1),
+            statPage: type.statPage
         )
 
         let factory = MetricChartFactory(currentLocale: LanguageManager.shared.currentLocale)
@@ -24,13 +25,17 @@ enum CoinProChartModule {
 }
 
 extension CoinProChartModule {
-    enum ProChartType {
+    enum ProChartType: Identifiable {
         case cexVolume
         case dexVolume
         case dexLiquidity
         case activeAddresses
         case txCount
         case tvl
+
+        var id: Self {
+            self
+        }
 
         var title: String {
             switch self {

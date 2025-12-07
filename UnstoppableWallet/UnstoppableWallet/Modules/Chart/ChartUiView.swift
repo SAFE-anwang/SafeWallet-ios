@@ -1,9 +1,6 @@
 import Chart
-import ComponentKit
-import HUD
 import RxSwift
 import SnapKit
-import ThemeKit
 import UIKit
 
 class ChartUiView: UIView {
@@ -223,18 +220,30 @@ class ChartUiView: UIView {
         CGSize(width: UIView.noIntrinsicMetric, height: totalHeight)
     }
 
+    func timePeriod(show: Bool) {
+        timePeriodView.isHidden = !show
+        timePeriodView.snp.updateConstraints { maker in
+            maker.height.equalTo(show ? CGFloat.heightCell48 : 0)
+        }
+
+        updateConstraints()
+    }
+
     var totalHeight: CGFloat {
         .heightDoubleLineCell
             + configuration.mainHeight
             + (configuration.showIndicatorArea ? configuration.indicatorHeight : 0)
-            + .margin8 + .heightCell48 + .margin8
+            + (timePeriodView.isHidden ? 0 : .heightCell48)
+            + .margin8
     }
 
     private func updateIntervals() {
         var viewItems: [FilterView.ViewItem] = viewModel.intervals.map { .item(title: $0) }
-        if viewModel.showAll {
+        if viewModel.showAll, !viewModel.intervals.isEmpty {
             viewItems.append(.item(title: "chart.time_duration.all".localized))
         }
+
+        timePeriod(show: !viewItems.isEmpty || viewModel.showAll)
         timePeriodView.reload(filters: viewItems)
     }
 
@@ -284,6 +293,14 @@ class ChartUiView: UIView {
                 } else {
                     currentSecondaryDiffLabel.isHidden = true
                 }
+            case let .custom(title, value):
+                currentSecondaryTitleLabel.isHidden = false
+                currentSecondaryValueLabel.isHidden = false
+                currentSecondaryDiffLabel.isHidden = true
+
+                currentSecondaryTitleLabel.text = title
+                currentSecondaryValueLabel.text = value
+                currentSecondaryValueLabel.textColor = .themeLeah
             }
 
             if !chartView.isPressed {
@@ -349,6 +366,14 @@ class ChartUiView: UIView {
             } else {
                 chartSecondaryDiffLabel.isHidden = true
             }
+        case let .custom(title, value):
+            chartSecondaryTitleLabel.isHidden = false
+            chartSecondaryValueLabel.isHidden = false
+            chartSecondaryDiffLabel.isHidden = true
+
+            chartSecondaryTitleLabel.text = title
+            chartSecondaryValueLabel.text = value
+            chartSecondaryValueLabel.textColor = .themeLeah
         case let .indicators(top, bottom):
             chartSecondaryTitleLabel.isHidden = false
             chartSecondaryValueLabel.isHidden = false

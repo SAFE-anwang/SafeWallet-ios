@@ -49,8 +49,8 @@ extension EvmAdapter: IBalanceAdapter {
         let available = balanceData(balance: evmKit.accountState?.balance).available
         let locked = balanceData(balance: evmKit.accountState?.timeLockBalance).available
 
-        return LockedBalanceData(
-            available: available,
+        return BalanceData(
+            balance: available,
             locked: locked
         )
     }
@@ -59,9 +59,9 @@ extension EvmAdapter: IBalanceAdapter {
         evmKit.accountStateObservable.map { [weak self] in
             if let available = self?.balanceData(balance: $0.balance).available,
                let locked = self?.balanceData(balance: $0.timeLockBalance).available {
-                return LockedBalanceData(available: available, locked: locked)
+                return BalanceData(balance: available, locked: locked)
             }else {
-                return BalanceData(available: 0)
+                return BalanceData(balance: 0)
             }
         }
     }

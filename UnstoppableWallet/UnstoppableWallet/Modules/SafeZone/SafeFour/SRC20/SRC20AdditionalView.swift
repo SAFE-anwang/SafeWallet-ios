@@ -1,6 +1,4 @@
 import SwiftUI
-import ComponentKit
-import HUD
 
 struct SRC20AdditionalView: View {
     @Environment(\.presentationMode) private var presentationMode
@@ -10,6 +8,13 @@ struct SRC20AdditionalView: View {
 
     init(viewModel: SRC20AdditionalViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
+    }
+    
+    var borderColor: Color {
+        switch viewModel.addressResult {
+        case .invalid: return .themeLucian
+        default: return .themeBlade
+        }
     }
     
     var body: some View {
@@ -116,7 +121,8 @@ struct SRC20AdditionalView: View {
                 showContacts: true
             ),
             text: $viewModel.address,
-            result: $viewModel.addressResult
+            result: $viewModel.addressResult,
+            borderColor: Binding(get: { borderColor }, set: { _ in })
         )
         .modifier(CautionBorder(cautionState: $viewModel.addressCautionState))
         .modifier(CautionPrompt(cautionState: $viewModel.addressCautionState))

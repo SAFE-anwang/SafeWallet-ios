@@ -6,15 +6,21 @@ import HdWalletKit
 import MarketKit
 import TronKit
 
-enum AccountType {
+enum AccountType: Identifiable {
     case mnemonic(words: [String], salt: String, bip39Compliant: Bool)
     case evmPrivateKey(data: Data)
+    case stellarSecretKey(secretSeed: String)
     case evmAddress(address: EvmKit.Address)
     case tronAddress(address: TronKit.Address)
     case tonAddress(address: String)
+    case stellarAccount(accountId: String)
     case hdExtendedKey(key: HDExtendedKey)
     case btcAddress(address: String, blockchainType: BlockchainType, tokenType: TokenType)
-    case cex(cexAccount: CexAccount)
+    case moneroWatchAccount(address: String, viewKey: String, restoreHeight: Int)
+
+    var id: Self {
+        self
+    }
 
     var mnemonicSeed: Data? {
         switch self {
@@ -42,18 +48,22 @@ enum AccountType {
             privateData = description.data(using: .utf8) ?? Data() // always non-null
         case let .evmPrivateKey(data):
             privateData = data
+        case let .stellarSecretKey(secretSeed):
+            privateData = secretSeed.hs.data
         case let .evmAddress(address):
             privateData = address.hex.hs.data
         case let .tronAddress(address):
             privateData = address.hex.hs.data
         case let .tonAddress(address):
             privateData = address.hs.data
+        case let .stellarAccount(accountId):
+            privateData = accountId.hs.data
         case let .hdExtendedKey(key):
             privateData = key.serialized
         case let .btcAddress(address, blockchainType, tokenType):
             privateData = "\(address)&\(blockchainType.uid)|\(tokenType.id)".data(using: .utf8) ?? Data()
-        case let .cex(cexAccount):
-            privateData = cexAccount.uniqueId.data(using: .utf8) ?? Data() // always non-null
+        case let .moneroWatchAccount(address, viewKey, restoreHeight):
+            privateData = "\(address)|\(viewKey)|\(restoreHeight)".data(using: .utf8) ?? Data()
         }
 
         if hashed {
@@ -74,7 +84,7 @@ enum AccountType {
             case (.dogecoin, .native): return true
             case (.dash, .native): return true
             case (.zcash, .native): return true
-            case (.binanceChain, .native), (.binanceChain, .bep2): return true
+            case (.monero, .native): return true
             case (.ethereum, .native), (.ethereum, .eip20): return true
             case (.binanceSmartChain, .native), (.binanceSmartChain, .eip20): return true
             case (.polygon, .native), (.polygon, .eip20): return true
@@ -83,10 +93,13 @@ enum AccountType {
             case (.fantom, .native), (.fantom, .eip20): return true
             case (.arbitrumOne, .native), (.arbitrumOne, .eip20): return true
             case (.optimism, .native), (.optimism, .eip20): return true
+            case (.base, .native), (.base, .eip20): return true
+            case (.zkSync, .native), (.zkSync, .eip20): return true
             case (.tron, .native), (.tron, .eip20): return true
-            case (.ton, .native): return true
             case (.safe, .native), (.safe, .eip20): return true
             case (.safe4, .native), (.safe4, .eip20): return true
+            case (.ton, .native), (.ton, .jetton): return true
+            case (.stellar, .native), (.stellar, .stellar): return true
             default: return false
             }
         case let .hdExtendedKey(key):
@@ -116,8 +129,13 @@ enum AccountType {
             case (.fantom, .native), (.fantom, .eip20): return true
             case (.arbitrumOne, .native), (.arbitrumOne, .eip20): return true
             case (.optimism, .native), (.optimism, .eip20): return true
-//            case (.safe, .native): return true
-//            case (.dogecoin, .native): return true
+            case (.base, .native), (.base, .eip20): return true
+            case (.zkSync, .native), (.zkSync, .eip20): return true
+            default: return false
+            }
+        case .stellarSecretKey, .stellarAccount:
+            switch (token.blockchainType, token.type) {
+            case (.stellar, .native), (.stellar, .stellar): return true
             default: return false
             }
         case .tronAddress:
@@ -127,14 +145,13 @@ enum AccountType {
             }
         case .tonAddress:
             switch (token.blockchainType, token.type) {
-            case (.ton, .native): return true
+            case (.ton, .native), (.ton, .jetton): return true
             default: return false
             }
         case let .btcAddress(_, blockchainType, tokenType):
             return token.blockchainType == blockchainType && token.type == tokenType
-
-        default:
-            return false
+        case .moneroWatchAccount:
+            return token.blockchainType == .monero
         }
     }
 
@@ -152,23 +169,9 @@ enum AccountType {
         }
     }
 
-    var supportsNft: Bool {
+    var supportsTonConnect: Bool {
         switch self {
-        case .cex: return false
-        default: return true
-        }
-    }
-
-    var withdrawalAllowed: Bool {
-        switch self {
-        case let .cex(cexAccount: account): return account.cex.withdrawalAllowed
-        default: return true
-        }
-    }
-
-    var hideZeroBalances: Bool {
-        switch self {
-        case .evmAddress: return true
+        case .mnemonic: return true
         default: return false
         }
     }
@@ -180,12 +183,16 @@ enum AccountType {
             return salt.isEmpty ? "manage_accounts.n_words".localized(count) : "manage_accounts.n_words_with_passphrase".localized(count)
         case .evmPrivateKey:
             return "EVM Private Key"
+        case .stellarSecretKey:
+            return "Stellar Secret Key"
         case .evmAddress:
             return "EVM Address"
         case .tronAddress:
             return "TRON Address"
         case .tonAddress:
             return "TON Address"
+        case .stellarAccount:
+            return "Stellar Account"
         case let .hdExtendedKey(key):
             switch key {
             case .private:
@@ -202,23 +209,78 @@ enum AccountType {
             }
         case .btcAddress:
             return "BTC Address"
-        case let .cex(cexAccount):
-            return cexAccount.cex.title
+        case .moneroWatchAccount:
+            return "Monero Watch Account"
+        }
+    }
+
+    var statDescription: String {
+        switch self {
+        case let .mnemonic(words, salt, _):
+            let count = "\(words.count)"
+            return salt.isEmpty ? "mnemonic_\(count)" : "mnemonic_with_passphrase_\(count)"
+        case .evmPrivateKey:
+            return "evm_private_key"
+        case .stellarSecretKey:
+            return "stellar_secret_key"
+        case .evmAddress:
+            return "evm_address"
+        case .tronAddress:
+            return "tron_address"
+        case .tonAddress:
+            return "ton_address"
+        case .stellarAccount:
+            return "stellar_account"
+        case let .hdExtendedKey(key):
+            switch key {
+            case .private:
+                switch key.derivedType {
+                case .master: return "bip32_root_key"
+                case .account: return "account_x_priv_key"
+                default: return ""
+                }
+            case .public:
+                switch key.derivedType {
+                case .account: return "account_x_pub_key"
+                default: return ""
+                }
+            }
+        case .btcAddress:
+            return "btc_address"
+        case .moneroWatchAccount:
+            return "monero_watch_account"
+        }
+    }
+
+    var watchAddress: String? {
+        switch self {
+        case let .evmAddress(address):
+            return address.eip55
+        case let .tronAddress(address):
+            return address.base58
+        case let .tonAddress(address):
+            return address
+        case let .stellarAccount(accountId):
+            return accountId
+        case let .hdExtendedKey(key):
+            switch key {
+            case .private: return nil
+            case let .public(publicKey):
+                switch key.derivedType {
+                case .account: return publicKey.extended()
+                default: return nil
+                }
+            }
+        case let .btcAddress(address, _, _):
+            return address
+        case let .moneroWatchAccount(address, _, _):
+            return address
+        default: return nil
         }
     }
 
     var detailedDescription: String {
-        switch self {
-        case let .evmAddress(address):
-            return address.eip55.shortened
-        case let .tronAddress(address):
-            return address.base58.shortened
-        case let .tonAddress(address):
-            return address.shortened
-        case let .btcAddress(address, _, _):
-            return address.shortened
-        default: return description
-        }
+        watchAddress?.shortened ?? description
     }
 
     func evmAddress(chain: Chain) -> EvmKit.Address? {
@@ -243,7 +305,9 @@ enum AccountType {
                 return nil
             }
 
-            guard let privateKey = try? Signer.privateKey(seed: mnemonicSeed, chain: App.shared.evmBlockchainManager.chain(blockchainType: .ethereum)) else {
+            guard let chain = try? Core.shared.evmBlockchainManager.chain(blockchainType: .ethereum),
+                  let privateKey = try? Signer.privateKey(seed: mnemonicSeed, chain: chain)
+            else {
                 return nil
             }
 
@@ -280,6 +344,8 @@ extension AccountType {
             return AccountType.mnemonic(words: words, salt: salt, bip39Compliant: bip39Compliant)
         case .evmPrivateKey:
             return AccountType.evmPrivateKey(data: uniqueId)
+        case .stellarSecretKey:
+            return AccountType.stellarSecretKey(secretSeed: string)
         case .hdExtendedKey:
             do {
                 return try AccountType.hdExtendedKey(key: HDExtendedKey(data: uniqueId))
@@ -297,45 +363,55 @@ extension AccountType {
         case .evmAddress:
             return (try? EvmKit.Address(hex: string)).map { AccountType.evmAddress(address: $0) }
         case .tronAddress:
-            return (try? TronKit.Address(address: string)).map { AccountType.tronAddress(address: $0) }
+            let hexData = string.hs.hexData ?? Data()
+
+            let address: TronKit.Address?
+            if !hexData.isEmpty { // android convention address
+                address = try? TronKit.Address(raw: hexData)
+            } else { // old ios style
+                address = try? TronKit.Address(address: string)
+            }
+
+            return address.map { AccountType.tronAddress(address: $0) }
         case .tonAddress:
             return AccountType.tonAddress(address: string)
-        case .cex:
-            guard let cexAccount = CexAccount.decode(uniqueId: string) else {
+        case .stellarAccount:
+            return AccountType.stellarAccount(accountId: string)
+        case .moneroWatchAccount:
+            let (address, remainder) = split(string, separator: "|")
+            let (viewKey, restoreHeight) = split(remainder, separator: "|")
+            guard let restoreHeightInt = Int(restoreHeight) else {
                 return nil
             }
 
-            return .cex(cexAccount: cexAccount)
+            return AccountType.moneroWatchAccount(address: address, viewKey: viewKey, restoreHeight: restoreHeightInt)
         }
     }
 
     enum Abstract: String, Codable {
         case mnemonic
         case evmPrivateKey = "private_key"
+        case stellarSecretKey = "stellar_secret_key"
         case evmAddress = "evm_address"
         case tronAddress = "tron_address"
         case tonAddress = "ton_address"
+        case stellarAccount = "stellar_account"
         case hdExtendedKey = "hd_extended_key"
         case btcAddress = "btc_address_key"
-        case cex
+        case moneroWatchAccount = "monero_watch_account"
 
         init(_ type: AccountType) {
             switch type {
             case .mnemonic: self = .mnemonic
             case .evmPrivateKey: self = .evmPrivateKey
+            case .stellarSecretKey: self = .stellarSecretKey
             case .evmAddress: self = .evmAddress
             case .tronAddress: self = .tronAddress
             case .tonAddress: self = .tonAddress
+            case .stellarAccount: self = .stellarAccount
             case .hdExtendedKey: self = .hdExtendedKey
             case .btcAddress: self = .btcAddress
-            case .cex: self = .cex
-            }
-        }
-
-        var isWatch: Bool {
-            switch self {
-            case .evmAddress, .tronAddress: return true
-            default: return false
+            case .moneroWatchAccount: self = .moneroWatchAccount
             }
         }
     }
@@ -348,18 +424,22 @@ extension AccountType: Hashable {
             return lhsWords == rhsWords && lhsSalt == rhsSalt && lhsBip39Compliant == rhsBip39Compliant
         case let (.evmPrivateKey(lhsData), .evmPrivateKey(rhsData)):
             return lhsData == rhsData
+        case let (.stellarSecretKey(lhsSecretSeed), .stellarSecretKey(rhsSecretSeed)):
+            return lhsSecretSeed == rhsSecretSeed
         case let (.evmAddress(lhsAddress), .evmAddress(rhsAddress)):
             return lhsAddress == rhsAddress
         case let (.tronAddress(lhsAddress), .tronAddress(rhsAddress)):
             return lhsAddress == rhsAddress
         case let (.tonAddress(lhsAddress), .tonAddress(rhsAddress)):
             return lhsAddress == rhsAddress
+        case let (.stellarAccount(lhsAccountId), .stellarAccount(rhsAccountId)):
+            return lhsAccountId == rhsAccountId
         case let (.hdExtendedKey(lhsKey), .hdExtendedKey(rhsKey)):
             return lhsKey == rhsKey
         case let (.btcAddress(lhsAddress, lhsBlockchainType, lhsTokenType), .btcAddress(rhsAddress, rhsBlockchainType, rhsTokenType)):
             return lhsAddress == rhsAddress && lhsBlockchainType == rhsBlockchainType && lhsTokenType == rhsTokenType
-        case let (.cex(lhsCexAccount), .cex(rhsCexAccount)):
-            return lhsCexAccount == rhsCexAccount
+        case let (.moneroWatchAccount(lhsAddress, lhsViewKey, lhsRestoreHeight), .moneroWatchAccount(rhsAddress, rhsViewKey, rhsRestoreHeight)):
+            return lhsAddress == rhsAddress && lhsViewKey == rhsViewKey && lhsRestoreHeight == rhsRestoreHeight
         default: return false
         }
     }
@@ -374,6 +454,9 @@ extension AccountType: Hashable {
         case let .evmPrivateKey(data):
             hasher.combine("evmPrivateKey")
             hasher.combine(data)
+        case let .stellarSecretKey(secretSeed):
+            hasher.combine("stellarSecretKey")
+            hasher.combine(secretSeed)
         case let .evmAddress(address):
             hasher.combine("evmAddress")
             hasher.combine(address.raw)
@@ -383,6 +466,9 @@ extension AccountType: Hashable {
         case let .tonAddress(address):
             hasher.combine("tonAddress")
             hasher.combine(address)
+        case let .stellarAccount(accountId):
+            hasher.combine("stellarAccount")
+            hasher.combine(accountId)
         case let .hdExtendedKey(key):
             hasher.combine("hdExtendedKey")
             hasher.combine(key)
@@ -391,9 +477,11 @@ extension AccountType: Hashable {
             hasher.combine(address)
             hasher.combine(blockchainType)
             hasher.combine(tokenType)
-        case let .cex(cexAccount):
-            hasher.combine("cex")
-            hasher.combine(cexAccount)
+        case let .moneroWatchAccount(address, viewKey, restoreHeight):
+            hasher.combine("moneroWatchWallet")
+            hasher.combine(address)
+            hasher.combine(viewKey)
+            hasher.combine(restoreHeight)
         }
     }
 }

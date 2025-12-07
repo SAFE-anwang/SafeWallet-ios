@@ -18,7 +18,7 @@ class CoinChartService {
     private let marketKit: MarketKit.Kit
     private let localStorage: LocalStorage
     private let currencyManager: CurrencyManager
-    private let indicatorRepository: IChartIndicatorsRepository
+    let indicatorRepository: IChartIndicatorsRepository
     private let coinUid: String
 
     private let indicatorsShownUpdatedRelay = PublishRelay<Void>()
@@ -29,6 +29,8 @@ class CoinChartService {
         set {
             localStorage.indicatorsShown = newValue
             indicatorsShownUpdatedRelay.accept(())
+
+            stat(page: .coinOverview, event: .toggleIndicators(shown: indicatorsShown))
         }
     }
 
@@ -38,6 +40,8 @@ class CoinChartService {
             if periodType != oldValue {
                 periodTypeRelay.accept(periodType)
                 fetch()
+
+                stat(page: .coinOverview, event: .switchChartPeriod(period: periodType.statPeriod))
             }
         }
     }
@@ -71,7 +75,7 @@ class CoinChartService {
         self.indicatorRepository = indicatorRepository
         self.coinUid = coinUid
 
-        periodType = .byCustomPoints(.day1, indicatorRepository.extendedPointCount)
+        periodType = .byCustomPoints(Core.shared.priceChangeModeManager.day1Period, indicatorRepository.extendedPointCount)
         indicatorRepository.updatedPublisher
             .sink { [weak self] in
                 self?.fetchWithUpdatedIndicators()
@@ -80,11 +84,10 @@ class CoinChartService {
     }
 
     private func fetchStartTime() {
-        guard !coinUid.isSafeCoin else { return }
         Task { [weak self, marketKit, coinUid] in
             do {
-                let uid = coinUid.isSafeCoin ? "safe-anwang" : coinUid
-                self?.startTime = try await marketKit.chartPriceStart(coinUid: uid)
+                self?.startTime = try await marketKit.chartPriceStart(coinUid: coinUid)
+                self?.fetchData()
             } catch {
                 self?.state = .failed(error)
             }
@@ -94,8 +97,7 @@ class CoinChartService {
     private func fetchChartInfo() {
         Task { [weak self, marketKit, coinUid, currency, periodType] in
             do {
-                let uid = coinUid.isSafeCoin ? "safe-anwang" : coinUid
-                let (fromTimestamp, chartPoints) = try await marketKit.chartPoints(coinUid: uid, currencyCode: currency.code, periodType: periodType)
+                let (fromTimestamp, chartPoints) = try await marketKit.chartPoints(coinUid: coinUid, currencyCode: currency.code, periodType: periodType)
                 self?.handle(fromTimestamp: fromTimestamp, chartPoints: chartPoints, periodType: periodType)
             } catch {
                 self?.state = .failed(error)
@@ -121,7 +123,8 @@ class CoinChartService {
         let item = Item(
             coinUid: coinUid,
             rate: coinPrice.value,
-            rateDiff24h: coinPrice.diff,
+            rateDiff24h: coinPrice.diff24h,
+            rateDiff1d: coinPrice.diff1d,
             timestamp: coinPrice.timestamp,
             chartPointsItem: chartPointsItem,
             indicators: indicatorRepository.indicators,
@@ -154,10 +157,10 @@ extension CoinChartService {
     }
 
     var validIntervals: [HsTimePeriod] {
-        HsChartHelper.validIntervals(startTime: startTime).filter{
-            guard coinUid.isSafeCoin else { return true }
-            return .year5 != $0
+        if let startTime {
+            return HsChartHelper.validIntervals(startTime: startTime)
         }
+        return []
     }
 
     func setPeriodAll() {
@@ -167,7 +170,7 @@ extension CoinChartService {
     func fetchWithUpdatedIndicators() {
         switch periodType {
         case let .byCustomPoints(interval, _):
-            let updatedType: HsPeriodType = .byCustomPoints(interval, indicatorRepository.extendedPointCount)
+            let updatedType: HsPeriodType = .byCustomPoints(Core.shared.priceChangeModeManager.convert(period: interval), indicatorRepository.extendedPointCount)
             if periodType == updatedType {
                 fetch()
             } else {
@@ -178,13 +181,13 @@ extension CoinChartService {
     }
 
     func setPeriod(interval: HsTimePeriod) {
-        periodType = .byCustomPoints(interval, indicatorRepository.extendedPointCount)
+        periodType = .byCustomPoints(Core.shared.priceChangeModeManager.convert(period: interval), indicatorRepository.extendedPointCount)
     }
 
     func start() {
         coinPrice = marketKit.coinPrice(coinUid: coinUid, currencyCode: currency.code)
 
-        marketKit.coinPricePublisher(tag: "coin-chart-service", coinUid: coinUid, currencyCode: currency.code)
+        marketKit.coinPricePublisher(coinUid: coinUid, currencyCode: currency.code)
             .sink { [weak self] coinPrice in
                 self?.coinPrice = coinPrice
                 self?.syncState()
@@ -200,8 +203,13 @@ extension CoinChartService {
 
         if startTime == nil {
             fetchStartTime()
+            return
         }
 
+        fetchData()
+    }
+
+    private func fetchData() {
         if chartPointsMap[periodType] != nil {
             syncState()
         } else {
@@ -225,6 +233,7 @@ extension CoinChartService {
         let coinUid: String
         let rate: Decimal
         let rateDiff24h: Decimal?
+        let rateDiff1d: Decimal?
         let timestamp: TimeInterval
         let chartPointsItem: ChartPointsItem
         let indicators: [ChartIndicator]

@@ -1,12 +1,13 @@
 import SwiftUI
-import ThemeKit
 
 struct InputTextView: View {
     var placeholder: String = ""
     var multiline: Bool
+    var font: Font
 
     var text: Binding<String>
 
+    @Environment(\.isEnabled) private var isEnabled
     @Binding var secured: Bool
 
     @State var shake = false
@@ -14,9 +15,10 @@ struct InputTextView: View {
 
     var isValidText: ((String) -> Bool)?
 
-    init(placeholder: String = "", multiline: Bool = false, text: Binding<String>, secured: Binding<Bool> = .constant(false), isValidText: ((String) -> Bool)? = nil) {
+    init(placeholder: String = "", multiline: Bool = false, font: Font = .themeBody, text: Binding<String>, secured: Binding<Bool> = .constant(false), isValidText: ((String) -> Bool)? = nil) {
         self.placeholder = placeholder
         self.multiline = multiline
+        self.font = font
         self.text = text
         _secured = secured
 
@@ -25,7 +27,7 @@ struct InputTextView: View {
 
     var body: some View {
         editView()
-            .font(.themeBody)
+            .font(font)
             .accentColor(.themeLeah)
             .modifier(Validated(text: text, isValidText: isValidText))
     }
@@ -37,6 +39,7 @@ struct InputTextView: View {
                 placeholder,
                 text: text
             )
+            .textContentType(.oneTimeCode) // the only way to disable strong password suggestions
             .accentColor(.themeYellow)
             .frame(height: 20) // TODO: How to remove this? (When change from Secure to TextField it's change height)
         } else {
@@ -47,12 +50,14 @@ struct InputTextView: View {
                     axis: .vertical
                 )
                 .accentColor(.themeYellow)
+                .foregroundColor(isEnabled ? .themeLeah : .themeAndy)
             } else {
                 TextField(
                     placeholder,
                     text: text
                 )
                 .accentColor(.themeYellow)
+                .foregroundColor(isEnabled ? .themeLeah : .themeAndy)
                 .frame(height: 20) // TODO: How to remove this? (When change from Secure to TextField it's change height)
             }
         }
@@ -76,11 +81,29 @@ extension InputTextView {
     }
 }
 
+struct ColoredBorder: ViewModifier {
+    let cornerRadius: CGFloat
+    let color: Color
+
+    init(cornerRadius: CGFloat = InputView.cornerRadius, color: Color = .themeJacob) {
+        self.cornerRadius = cornerRadius
+        self.color = color
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(color, lineWidth: .heightOneDp)
+            )
+    }
+}
+
 struct CautionBorder: ViewModifier {
     let cornerRadius: CGFloat
     @Binding var cautionState: CautionState
 
-    init(cornerRadius: CGFloat = .cornerRadius8, cautionState: Binding<CautionState>) {
+    init(cornerRadius: CGFloat = InputView.cornerRadius, cautionState: Binding<CautionState>) {
         self.cornerRadius = cornerRadius
         _cautionState = cautionState
     }
@@ -98,7 +121,7 @@ struct FieldCautionBorder: ViewModifier {
     let cornerRadius: CGFloat
     @Binding var cautionState: FieldCautionState
 
-    init(cornerRadius: CGFloat = .cornerRadius8, cautionState: Binding<FieldCautionState>) {
+    init(cornerRadius: CGFloat = InputView.cornerRadius, cautionState: Binding<FieldCautionState>) {
         self.cornerRadius = cornerRadius
         _cautionState = cautionState
     }

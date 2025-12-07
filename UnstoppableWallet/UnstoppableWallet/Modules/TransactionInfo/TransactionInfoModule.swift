@@ -1,17 +1,18 @@
 import MarketKit
+import SwiftUI
 import UIKit
 
 enum TransactionInfoModule {
     static func instance(transactionRecord: TransactionRecord) -> UIViewController? {
-        guard let adapter = App.shared.transactionAdapterManager.adapter(for: transactionRecord.source) else {
+        guard let adapter = Core.shared.transactionAdapterManager.adapter(for: transactionRecord.source) else {
             return nil
         }
-        let rateService = HistoricalRateService(marketKit: App.shared.marketKit, currencyManager: App.shared.currencyManager)
-        let nftMetadataService = NftMetadataService(nftMetadataManager: App.shared.nftMetadataManager)
+        let rateService = HistoricalRateService(marketKit: Core.shared.marketKit, currencyManager: Core.shared.currencyManager)
+        let nftMetadataService = NftMetadataService(nftMetadataManager: Core.shared.nftMetadataManager)
 
-        let service = TransactionInfoService(transactionRecord: transactionRecord, adapter: adapter, currencyManager: App.shared.currencyManager, rateService: rateService, nftMetadataService: nftMetadataService, balanceHiddenManager: App.shared.balanceHiddenManager)
-        let contactLabelService = ContactLabelService(contactManager: App.shared.contactManager, blockchainType: transactionRecord.source.blockchainType)
-        let factory = TransactionInfoViewItemFactory(evmLabelManager: App.shared.evmLabelManager, contactLabelService: contactLabelService, actionEnabled: transactionRecord.source.blockchainType.resendable)
+        let service = TransactionInfoService(transactionRecord: transactionRecord, adapter: adapter, currencyManager: Core.shared.currencyManager, rateService: rateService, nftMetadataService: nftMetadataService, balanceHiddenManager: Core.shared.balanceHiddenManager)
+        let contactLabelService = ContactLabelService(contactManager: Core.shared.contactManager, blockchainType: transactionRecord.source.blockchainType)
+        let factory = TransactionInfoViewItemFactory(evmLabelManager: Core.shared.evmLabelManager, contactLabelService: contactLabelService, actionEnabled: transactionRecord.source.blockchainType.resendable)
         let viewModel = TransactionInfoViewModel(service: service, factory: factory, contactLabelService: contactLabelService)
         let viewController = TransactionInfoViewController(adapter: adapter, viewModel: viewModel, pageTitle: "tx_info.title".localized, urlManager: UrlManager(inApp: true))
 
@@ -26,7 +27,7 @@ extension TransactionInfoModule {
 
     enum ViewItem {
         case actionTitle(iconName: String?, iconDimmed: Bool, title: String, subTitle: String?)
-        case amount(iconUrl: String?, iconPlaceholderImageName: String, coinAmount: String, currencyAmount: String?, type: AmountType, coinUid: String?)
+        case amount(title: String, subtitle: String?, iconUrl: String?, iconAlternativeUrl: String?, iconPlaceholderImageName: String, coinAmount: String, currencyAmount: String?, type: AmountType, coin: Coin?)
         case nftAmount(iconUrl: String?, iconPlaceholderImageName: String, nftAmount: String, type: AmountType, providerCollectionUid: String?, nftUid: NftUid?)
         case status(status: TransactionStatus)
         case option(option: Option)
@@ -49,4 +50,30 @@ extension TransactionInfoModule {
         case explorer(title: String, url: String?)
         case warning(text: String)
     }
+
+    struct SectionViewItem {
+        let viewItems: [ViewItem]
+        let footer: String?
+
+        init(_ viewItems: [ViewItem], footer: String? = nil) {
+            self.viewItems = viewItems
+            self.footer = footer
+        }
+    }
+}
+
+struct TransactionInfoView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+
+    private let transactionRecord: TransactionRecord
+
+    init(transactionRecord: TransactionRecord) {
+        self.transactionRecord = transactionRecord
+    }
+
+    func makeUIViewController(context _: Context) -> UIViewController {
+        ThemeNavigationController(rootViewController: TransactionInfoModule.instance(transactionRecord: transactionRecord) ?? UIViewController())
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

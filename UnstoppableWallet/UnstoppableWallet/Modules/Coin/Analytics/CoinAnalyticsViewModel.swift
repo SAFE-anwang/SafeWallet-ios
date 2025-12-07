@@ -1,32 +1,20 @@
 import Chart
 import Combine
+import Foundation
+import HsExtensions
 import MarketKit
-import RxCocoa
-import RxRelay
-import RxSwift
-import UIKit
 
-class CoinAnalyticsViewModel {
-    private let queue = DispatchQueue(label: "\(AppConfig.label).coin_analytics_view_model", qos: .userInitiated)
-
-    private let service: CoinAnalyticsService
-    private let technicalIndicatorService: TechnicalIndicatorService
-    private let coinIndicatorViewItemFactory: CoinIndicatorViewItemFactory
+class CoinAnalyticsViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
-    private let viewItemRelay = BehaviorRelay<ViewItem?>(value: nil)
-    private let loadingRelay = BehaviorRelay<Bool>(value: false)
-    private let syncErrorRelay = BehaviorRelay<Bool>(value: false)
-    private let emptyViewRelay = BehaviorRelay<Bool>(value: false)
+    let coin: Coin
+    private let marketKit = Core.shared.marketKit
+    private let currencyManager = Core.shared.currencyManager
+    private let purchaseManager = Core.shared.purchaseManager
+    private var tasks = Set<AnyTask>()
 
-    private let indicatorViewItemsSubject = CurrentValueSubject<IndicatorViewItem, Never>(.empty)
-    private let subscriptionInfoSubject = PassthroughSubject<Void, Never>()
-
-    private var detailsShowed: Bool = false {
-        didSet {
-            sync()
-        }
-    }
+    @Published private(set) var analyticsEnabled: Bool = false
+    @Published private(set) var state: State = .loading
 
     private let ratioFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -46,99 +34,142 @@ class CoinAnalyticsViewModel {
         return formatter
     }()
 
-    init(service: CoinAnalyticsService, technicalIndicatorService: TechnicalIndicatorService, coinIndicatorViewItemFactory: CoinIndicatorViewItemFactory) {
-        self.service = service
-        self.technicalIndicatorService = technicalIndicatorService
-        self.coinIndicatorViewItemFactory = coinIndicatorViewItemFactory
-
-        service.$state
-            .receive(on: queue)
-            .sink { [weak self] _ in self?.sync() }
+    init(coin: Coin) {
+        self.coin = coin
+        analyticsEnabled = purchaseManager.activated(.tokenInsights)
+        purchaseManager.$activeFeatures
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] activeFeatures in
+                self?.analyticsEnabled = activeFeatures.contains(.tokenInsights)
+            }
             .store(in: &cancellables)
-
-        technicalIndicatorService.$state
-            .receive(on: queue)
-            .sink { [weak self] _ in self?.sync() }
-            .store(in: &cancellables)
-
-        sync()
     }
 
-    private func syncIndicators(enabled: Bool) {
-        var loading = false
-        var error = false
-        var switchEnabled = false
-        var viewItems = [CoinIndicatorViewItemFactory.ViewItem]()
-
-        if enabled {
-            switch technicalIndicatorService.state {
-            case .loading: loading = true
-            case .failed:
-                error = true
-                switchEnabled = true
-            case let .completed(items):
-                switchEnabled = true
-                viewItems = coinIndicatorViewItemFactory.viewItems(items: items)
-            }
-        }
-
-        let viewItem = IndicatorViewItem(loading: loading, error: error, switchEnabled: switchEnabled, viewItems: viewItems)
-        indicatorViewItemsSubject.send(viewItem)
-    }
-
-    private func sync() {
-        let state = service.state
-        switch state {
-        case .loading:
-            viewItemRelay.accept(nil)
-            loadingRelay.accept(true)
-            syncErrorRelay.accept(false)
-            emptyViewRelay.accept(false)
-
-            syncIndicators(enabled: false)
-        case .failed:
-            viewItemRelay.accept(nil)
-            loadingRelay.accept(false)
-            syncErrorRelay.accept(true)
-            emptyViewRelay.accept(false)
-
-            syncIndicators(enabled: false)
-        case let .preview(analyticsPreview):
-            let viewItem = previewViewItem(analyticsPreview: analyticsPreview)
-
-            if viewItem.isEmpty {
-                viewItemRelay.accept(nil)
-                emptyViewRelay.accept(true)
-            } else {
-                viewItemRelay.accept(viewItem)
-                emptyViewRelay.accept(false)
-            }
-
-            loadingRelay.accept(false)
-            syncErrorRelay.accept(false)
-
-            syncIndicators(enabled: false)
-            subscriptionInfoSubject.send()
-        case let .success(analytics):
-            let viewItem = viewItem(analytics: analytics)
-
-            if viewItem.isEmpty {
-                viewItemRelay.accept(nil)
-                emptyViewRelay.accept(true)
-            } else {
-                viewItemRelay.accept(viewItem)
-                emptyViewRelay.accept(false)
-            }
-
-            loadingRelay.accept(false)
-            syncErrorRelay.accept(false)
-
-            syncIndicators(enabled: true)
+    private func handle(analytics: Analytics) async {
+        await MainActor.run { [weak self] in
+            self?.state = .loaded(viewItem: analytics)
         }
     }
 
-    private func rankString(value: Int) -> String {
-        "#\(value)"
+    func viewItem(_ analytics: Analytics) -> ViewItem {
+        let cexVolume = rankCardViewItem(
+            points: analytics.cexVolume?.aggregatedChartPoints.points,
+            value: analytics.cexVolume?.aggregatedChartPoints.aggregatedValue,
+            postfix: .currency,
+            rank: analytics.cexVolume?.rank30d,
+            rating: analytics.cexVolume?.rating
+        )
+        let tvl = tvlViewItem(
+            points: analytics.tvl?.chartPoints,
+            rank: analytics.tvl?.rank,
+            ratio: analytics.tvl?.ratio,
+            rating: analytics.tvl?.rating
+        )
+
+        guard analyticsEnabled else {
+            return ViewItem(
+                technicalAdvice: .init(advice: .preview, details: nil),
+                cexVolume: cexVolume,
+                dexVolume: analytics.dexVolume != nil ? .init(chart: .preview, rank: .preview, rating: .preview) : nil,
+                dexLiquidity: analytics.dexLiquidity != nil ? .init(chart: .preview, rank: .preview, rating: .preview) : nil,
+                activeAddresses: analytics.addresses != nil ? .init(chart: .preview, count30d: .preview, rank: .preview, rating: .preview) : nil,
+                transactionCount: analytics.transactions != nil ? .init(chart: .preview, volume: .preview, rank: .preview, rating: .preview) : nil,
+                holders: analytics.holders != nil ? .preview : nil,
+                holdersRank: analytics.holdersRank != nil ? .preview : nil,
+                holdersRating: analytics.holdersRating != nil ? .preview : nil,
+                tvl: tvl,
+                fee: analytics.fee != nil ? .init(value: .preview, rank: .preview, description: nil) : nil,
+                revenue: analytics.revenue != nil ? .init(value: .preview, rank: .preview, description: nil) : nil,
+                reports: analytics.reports != nil ? .preview : nil,
+                investors: analytics.fundsInvested != nil ? .preview : nil,
+                treasuries: analytics.treasuries != nil ? .preview : nil,
+                audits: analytics.audits != nil ? .preview : nil,
+                issueBlockchains: nil
+            )
+        }
+
+        return ViewItem(
+            technicalAdvice: viewItem(technicalAdvice: analytics.technicalAdvice),
+            cexVolume: cexVolume,
+            dexVolume: rankCardViewItem(
+                points: analytics.dexVolume?.aggregatedChartPoints.points,
+                value: analytics.dexVolume?.aggregatedChartPoints.aggregatedValue,
+                postfix: .currency,
+                rank: analytics.dexVolume?.rank30d,
+                rating: analytics.dexVolume?.rating
+            ),
+            dexLiquidity: rankCardViewItem(
+                points: analytics.dexLiquidity?.chartPoints,
+                value: analytics.dexLiquidity?.chartPoints.last?.value,
+                postfix: .currency,
+                rank: analytics.dexLiquidity?.rank,
+                rating: analytics.dexLiquidity?.rating
+            ),
+            activeAddresses: activeAddressesViewItem(
+                points: analytics.addresses?.chartPoints,
+                value: analytics.addresses?.chartPoints.last?.value,
+                count30d: analytics.addresses?.count30d,
+                rank: analytics.addresses?.rank30d,
+                rating: analytics.addresses?.rating
+            ),
+            transactionCount: transactionCountViewItem(
+                points: analytics.transactions?.aggregatedChartPoints.points,
+                value: analytics.transactions?.aggregatedChartPoints.aggregatedValue,
+                volume: analytics.transactions?.volume30d,
+                rank: analytics.transactions?.rank30d,
+                rating: analytics.transactions?.rating
+            ),
+            holders: holdersViewItem(holderBlockchains: analytics.holders),
+            holdersRank: analytics.holdersRank.map { .regular(value: rankString(value: $0)) },
+            holdersRating: analytics.holdersRating.flatMap { CoinAnalyticsModule.Rating(rawValue: $0) }.map { .regular(value: $0) },
+            tvl: tvl,
+            fee: valueRankViewItem(
+                value: analytics.fee?.value30d,
+                rank: analytics.fee?.rank30d,
+                description: analytics.fee?.description
+            ),
+            revenue: valueRankViewItem(
+                value: analytics.revenue?.value30d,
+                rank: analytics.revenue?.rank30d,
+                description: analytics.revenue?.description
+            ),
+            reports: analytics.reports
+                .map { .regular(value: "\($0)") },
+            investors: analytics.fundsInvested
+                .flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) }
+                .map { .regular(value: $0) },
+            treasuries: analytics.treasuries
+                .flatMap { ValueFormatter.instance.formatShort(currency: currency, value: $0) }
+                .map { .regular(value: $0) },
+            audits: analytics.audits
+                .map { .regular(value: $0) },
+            issueBlockchains: analytics.issueBlockchains.flatMap { issueBlockchainViewItems(issueBlockchains: $0) }
+        )
+    }
+
+    private func viewItem(technicalAdvice: TechnicalAdvice?) -> TechnicalAdviceViewItem? {
+        guard let technicalAdvice, let advice = technicalAdvice.advice else {
+            return nil
+        }
+
+        let details: [String?] = [technicalAdvice.mainAdvice, technicalAdvice.trendAdvice]
+
+        return TechnicalAdviceViewItem(
+            advice: .regular(value: advice),
+            details: details.compactMap { $0 }.joined(separator: "\n\n")
+        )
+    }
+
+    private func rankCardViewItem(points: [ChartPoint]?, value: Decimal?, postfix: ChartPreviewValuePostfix, rank: Int?, rating: String?) -> RankCardViewItem? {
+        guard let points, let chartViewItem = chartViewItem(points: points, value: value, postfix: postfix) else {
+            return nil
+        }
+
+        return RankCardViewItem(
+            chart: .regular(value: chartViewItem),
+            rank: rank.map { .regular(value: rankString(value: $0)) },
+            rating: rating.flatMap { CoinAnalyticsModule.Rating(rawValue: $0) }.map { .regular(value: $0) }
+        )
     }
 
     private func chartViewItem(points: [ChartPoint], value: Decimal? = nil, postfix: ChartPreviewValuePostfix) -> ChartViewItem? {
@@ -156,7 +187,7 @@ class CoinAnalyticsViewModel {
 
         if let value {
             switch postfix {
-            case .currency: valueString = ValueFormatter.instance.formatShort(currency: service.currency, value: value)
+            case .currency: valueString = ValueFormatter.instance.formatShort(currency: currency, value: value)
             case .coin: valueString = ValueFormatter.instance.formatShort(value: value).map { [$0, coin.code].joined(separator: " ") }
             case .noPostfix: valueString = ValueFormatter.instance.formatShort(value: value)
             }
@@ -166,31 +197,6 @@ class CoinAnalyticsViewModel {
             value: valueString ?? "n/a".localized,
             chartData: chartData,
             chartTrend: first.value < last.value ? .up : .down
-        )
-    }
-
-    private func viewItem(technicalAdvice: TechnicalAdvice?) -> TechnicalAdviceViewItem? {
-        guard let technicalAdvice, let advice = technicalAdvice.advice else {
-            return nil
-        }
-
-        return TechnicalAdviceViewItem(
-            title: advice.title,
-            sliderIndex: advice.sliderIndex,
-            details: coinIndicatorViewItemFactory.advice(technicalAdvice: technicalAdvice),
-            detailsShowed: detailsShowed
-        )
-    }
-
-    private func rankCardViewItem(points: [ChartPoint]?, value: Decimal?, postfix: ChartPreviewValuePostfix, rank: Int?, rating: String?) -> RankCardViewItem? {
-        guard let points, let chartViewItem = chartViewItem(points: points, value: value, postfix: postfix) else {
-            return nil
-        }
-
-        return RankCardViewItem(
-            chart: .regular(value: chartViewItem),
-            rank: rank.map { .regular(value: rankString(value: $0)) },
-            rating: rating.flatMap { CoinAnalyticsModule.Rating(rawValue: $0) }.map { .regular(value: $0) }
         )
     }
 
@@ -230,7 +236,7 @@ class CoinAnalyticsViewModel {
             return nil
         }
 
-        let blockchains = service.blockchains(uids: holderBlockchains.filter { $0.holdersCount > 0 }.map(\.uid))
+        let blockchains = blockchains(uids: holderBlockchains.filter { $0.holdersCount > 0 }.map(\.uid))
 
         let items = holderBlockchains.sorted { $0.holdersCount > $1.holdersCount }.compactMap { holderBlockchain -> Item? in
             guard let blockchain = blockchains.first(where: { $0.uid == holderBlockchain.uid }) else {
@@ -253,8 +259,6 @@ class CoinAnalyticsViewModel {
 
                 return HolderViewItem(
                     blockchain: item.blockchain,
-                    imageUrl: item.blockchain.type.imageUrl,
-                    name: item.blockchain.name,
                     value: holderShareFormatter.string(from: percent as NSNumber),
                     percent: percent
                 )
@@ -278,7 +282,7 @@ class CoinAnalyticsViewModel {
     }
 
     private func valueRankViewItem(value: Decimal?, rank: Int?, description: String?) -> ValueRankViewItem? {
-        guard let value, let formattedValue = ValueFormatter.instance.formatShort(currency: service.currency, value: value) else {
+        guard let value, let formattedValue = ValueFormatter.instance.formatShort(currency: currency, value: value) else {
             return nil
         }
 
@@ -290,16 +294,15 @@ class CoinAnalyticsViewModel {
     }
 
     private func issueBlockchainViewItems(issueBlockchains: [Analytics.IssueBlockchain]) -> [IssueBlockchainViewItem]? {
-        let blockchains = service.blockchains(uids: issueBlockchains.map(\.blockchain))
+        let blockchains = blockchains(uids: issueBlockchains.map(\.blockchain))
 
-        let viewItems: [IssueBlockchainViewItem] = issueBlockchains.compactMap { issueBlockchain in
+        let viewItems: [IssueBlockchainViewItem] = issueBlockchains.compactMap { issueBlockchain -> IssueBlockchainViewItem? in
             guard let blockchain = blockchains.first(where: { $0.uid == issueBlockchain.blockchain }) else {
                 return nil
             }
 
-            return IssueBlockchainViewItem(
-                blockchain: blockchain,
-                allItems: issueBlockchain.issues.map { issue in
+            let allItems = issueBlockchain.issues
+                .map { issue in
                     IssueViewItem(
                         title: issue.title ?? issue.description ?? "",
                         description: issue.title != nil ? issue.description : nil,
@@ -307,7 +310,17 @@ class CoinAnalyticsViewModel {
                         type: issue.issue,
                         issues: issue.issues.map { $0.compactMap(\.description) } ?? []
                     )
-                }.sorted { $0.level.rawValue < $1.level.rawValue }
+                }
+                .sorted { $0.level.rawValue < $1.level.rawValue }
+
+            return IssueBlockchainViewItem(
+                blockchain: blockchain,
+                allItems: allItems,
+                highRiskCount: allItems.filter { $0.level == .highRisk }.count,
+                mediumRiskCount: allItems.filter { $0.level == .mediumRisk }.count,
+                lowRiskCount: allItems.filter { $0.level == .attentionRequired || $0.level == .informational }.count,
+                coreItems: allItems.filter { $0.type == "core" },
+                generalItems: allItems.filter { $0.type == "general" }
             )
         }
 
@@ -318,171 +331,52 @@ class CoinAnalyticsViewModel {
         return viewItems.sorted { $0.blockchain.type.order < $1.blockchain.type.order }
     }
 
-    private func viewItem(analytics: Analytics) -> ViewItem {
-        ViewItem(
-            cexVolume: rankCardViewItem(
-                points: analytics.cexVolume?.aggregatedChartPoints.points,
-                value: analytics.cexVolume?.aggregatedChartPoints.aggregatedValue,
-                postfix: .currency,
-                rank: analytics.cexVolume?.rank30d,
-                rating: analytics.cexVolume?.rating
-            ),
-            dexVolume: rankCardViewItem(
-                points: analytics.dexVolume?.aggregatedChartPoints.points,
-                value: analytics.dexVolume?.aggregatedChartPoints.aggregatedValue,
-                postfix: .currency,
-                rank: analytics.dexVolume?.rank30d,
-                rating: analytics.dexVolume?.rating
-            ),
-            dexLiquidity: rankCardViewItem(
-                points: analytics.dexLiquidity?.chartPoints,
-                value: analytics.dexLiquidity?.chartPoints.last?.value,
-                postfix: .currency,
-                rank: analytics.dexLiquidity?.rank,
-                rating: analytics.dexLiquidity?.rating
-            ),
-            activeAddresses: activeAddressesViewItem(
-                points: analytics.addresses?.chartPoints,
-                value: analytics.addresses?.chartPoints.last?.value,
-                count30d: analytics.addresses?.count30d,
-                rank: analytics.addresses?.rank30d,
-                rating: analytics.addresses?.rating
-            ),
-            transactionCount: transactionCountViewItem(
-                points: analytics.transactions?.aggregatedChartPoints.points,
-                value: analytics.transactions?.aggregatedChartPoints.aggregatedValue,
-                volume: analytics.transactions?.volume30d,
-                rank: analytics.transactions?.rank30d,
-                rating: analytics.transactions?.rating
-            ),
-            holders: holdersViewItem(holderBlockchains: analytics.holders),
-            holdersRank: analytics.holdersRank.map { .regular(value: rankString(value: $0)) },
-            holdersRating: analytics.holdersRating.flatMap { CoinAnalyticsModule.Rating(rawValue: $0) }.map { .regular(value: $0) },
-            tvl: tvlViewItem(
-                points: analytics.tvl?.chartPoints,
-                rank: analytics.tvl?.rank,
-                ratio: analytics.tvl?.ratio,
-                rating: analytics.tvl?.rating
-            ),
-            fee: valueRankViewItem(
-                value: analytics.fee?.value30d,
-                rank: analytics.fee?.rank30d,
-                description: analytics.fee?.description
-            ),
-            revenue: valueRankViewItem(
-                value: analytics.revenue?.value30d,
-                rank: analytics.revenue?.rank30d,
-                description: analytics.revenue?.description
-            ),
-            reports: analytics.reports
-                .map { .regular(value: "\($0)") },
-            investors: analytics.fundsInvested
-                .flatMap { ValueFormatter.instance.formatShort(currency: service.currency, value: $0) }
-                .map { .regular(value: $0) },
-            treasuries: analytics.treasuries
-                .flatMap { ValueFormatter.instance.formatShort(currency: service.currency, value: $0) }
-                .map { .regular(value: $0) },
-            auditAddresses: service.auditAddresses
-                .map { .regular(value: $0) },
-            issueBlockchains: analytics.issueBlockchains.flatMap { issueBlockchainViewItems(issueBlockchains: $0) },
-            technicalAdvice: viewItem(technicalAdvice: analytics.technicalAdvice)
-        )
+    private func rankString(value: Int) -> String {
+        "#\(value)"
     }
 
-    private func previewViewItem(analyticsPreview data: AnalyticsPreview) -> ViewItem {
-        ViewItem(
-            cexVolume: data.cexVolume ? RankCardViewItem(chart: .preview, rank: data.cexVolumeRank30d ? .preview : nil, rating: data.cexVolumeRating ? .preview : nil) : nil,
-            dexVolume: data.dexVolume ? RankCardViewItem(chart: .preview, rank: data.dexVolumeRank30d ? .preview : nil, rating: data.dexVolumeRating ? .preview : nil) : nil,
-            dexLiquidity: data.dexLiquidity ? RankCardViewItem(chart: .preview, rank: data.dexLiquidityRank ? .preview : nil, rating: data.dexLiquidityRating ? .preview : nil) : nil,
-            activeAddresses: data.addresses ? ActiveAddressesViewItem(chart: .preview, count30d: data.addressesCount30d ? .preview : nil, rank: data.addressesRank30d ? .preview : nil, rating: data.addressesRating ? .preview : nil) : nil,
-            transactionCount: data.transactions ? TransactionCountViewItem(chart: .preview, volume: data.transactionsVolume30d ? .preview : nil, rank: data.transactionsRank30d ? .preview : nil, rating: data.transactionsRating ? .preview : nil) : nil,
-            holders: data.holders ? .preview : nil,
-            holdersRank: data.holdersRank ? .preview : nil,
-            holdersRating: data.holdersRating ? .preview : nil,
-            tvl: data.tvl ? TvlViewItem(chart: .preview, rank: data.tvlRank ? .preview : nil, ratio: data.tvlRatio ? .preview : nil, rating: data.tvlRating ? .preview : nil) : nil,
-            fee: data.fee ? ValueRankViewItem(value: .preview, rank: data.feeRank30d ? .preview : nil, description: nil) : nil,
-            revenue: data.revenue ? ValueRankViewItem(value: .preview, rank: data.revenueRank30d ? .preview : nil, description: nil) : nil,
-            reports: data.reports ? .preview : nil,
-            investors: data.fundsInvested ? .preview : nil,
-            treasuries: data.treasuries ? .preview : nil,
-            auditAddresses: service.auditAddresses != nil ? .preview : nil,
-            issueBlockchains: nil,
-            technicalAdvice: nil
-        )
+    private func blockchains(uids: [String]) -> [Blockchain] {
+        do {
+            return try marketKit.blockchains(uids: uids)
+        } catch {
+            return []
+        }
     }
 }
 
 extension CoinAnalyticsViewModel {
-    var period: String {
-        technicalIndicatorService.period.title
+    var currency: Currency {
+        currencyManager.baseCurrency
     }
 
-    var periodViewItems: [SelectorModule.ViewItem] {
-        technicalIndicatorService.allPeriods.map {
-            .init(title: $0.title, selected: $0 == technicalIndicatorService.period)
-        }
-    }
+    func load() {
+        tasks = Set()
 
-    var detailAdviceSectionViewItems: [CoinIndicatorViewItemFactory.SectionDetailViewItem]? {
-        guard let items = technicalIndicatorService.state.data else {
-            return nil
-        }
-        return coinIndicatorViewItemFactory.detailViewItems(items: items)
-    }
+        state = .loading
 
-    func onSelectPeriod(index: Int) {
-        guard let period = technicalIndicatorService.allPeriods.at(index: index) else {
-            return
+        Task { [weak self, marketKit, coin, currency] in
+            do {
+                let analytics = try await marketKit.analytics(coinUid: coin.uid, currencyCode: currency.code)
+                await self?.handle(analytics: analytics)
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.state = .failed
+                }
+            }
         }
-
-        technicalIndicatorService.period = period
+        .store(in: &tasks)
     }
 }
 
 extension CoinAnalyticsViewModel {
-    var viewItemDriver: Driver<ViewItem?> {
-        viewItemRelay.asDriver()
+    enum State {
+        case loading
+        case loaded(viewItem: Analytics)
+        case failed
     }
 
-    var loadingDriver: Driver<Bool> {
-        loadingRelay.asDriver()
-    }
-
-    var syncErrorDriver: Driver<Bool> {
-        syncErrorRelay.asDriver()
-    }
-
-    var emptyViewDriver: Driver<Bool> {
-        emptyViewRelay.asDriver()
-    }
-
-    var indicatorViewItemsPublisher: AnyPublisher<IndicatorViewItem, Never> {
-        indicatorViewItemsSubject.eraseToAnyPublisher()
-    }
-
-    var subscriptionInfoPublisher: AnyPublisher<Void, Never> {
-        subscriptionInfoSubject.eraseToAnyPublisher()
-    }
-
-    var coin: Coin {
-        service.coin
-    }
-
-    func onLoad() {
-        service.sync()
-    }
-
-    func onTapRetry() {
-        service.sync()
-    }
-
-    func onTapDetails() {
-        detailsShowed.toggle()
-    }
-}
-
-extension CoinAnalyticsViewModel {
     struct ViewItem {
+        let technicalAdvice: TechnicalAdviceViewItem?
         let cexVolume: RankCardViewItem?
         let dexVolume: RankCardViewItem?
         let dexLiquidity: RankCardViewItem?
@@ -497,36 +391,18 @@ extension CoinAnalyticsViewModel {
         let reports: Previewable<String>?
         let investors: Previewable<String>?
         let treasuries: Previewable<String>?
-        let auditAddresses: Previewable<[String]>?
+        let audits: Previewable<[Analytics.Audit]>?
         let issueBlockchains: [IssueBlockchainViewItem]?
-        let technicalAdvice: TechnicalAdviceViewItem?
 
         var isEmpty: Bool {
-            let items: [Any?] = [cexVolume, dexVolume, dexLiquidity, activeAddresses, transactionCount, holders, tvl, revenue, reports, investors, treasuries, technicalAdvice]
+            let items: [Any?] = [technicalAdvice, cexVolume, dexVolume, dexLiquidity, activeAddresses, transactionCount, holders, tvl, revenue, reports, investors, treasuries]
             return items.compactMap { $0 }.isEmpty
         }
     }
 
-    struct IndicatorViewItem {
-        static let empty = IndicatorViewItem(loading: false, error: false, switchEnabled: false, viewItems: [])
-
-        let loading: Bool
-        let error: Bool
-        let switchEnabled: Bool
-        let viewItems: [CoinIndicatorViewItemFactory.ViewItem]
-    }
-
-    struct ChartViewItem {
-        let value: String
-        let chartData: ChartData
-        let chartTrend: MovementTrend
-    }
-
     struct TechnicalAdviceViewItem {
-        let title: String
-        let sliderIndex: Int
-        let details: String
-        let detailsShowed: Bool
+        let advice: Previewable<TechnicalAdvice.Advice>
+        let details: String?
     }
 
     struct RankCardViewItem {
@@ -556,34 +432,34 @@ extension CoinAnalyticsViewModel {
 
     struct HolderViewItem {
         let blockchain: Blockchain
-        let imageUrl: String
-        let name: String
         let value: String?
         let percent: Decimal
     }
 
-    struct IssueBlockchainViewItem {
+    struct TvlViewItem {
+        let chart: Previewable<ChartViewItem>
+        let rank: Previewable<String>?
+        let ratio: Previewable<String>?
+        let rating: Previewable<CoinAnalyticsModule.Rating>?
+    }
+
+    struct ValueRankViewItem {
+        let value: Previewable<String>
+        let rank: Previewable<String>?
+        let description: String?
+    }
+
+    struct IssueBlockchainViewItem: Identifiable {
         let blockchain: Blockchain
         let allItems: [IssueViewItem]
+        let highRiskCount: Int
+        let mediumRiskCount: Int
+        let lowRiskCount: Int
+        let coreItems: [IssueViewItem]
+        let generalItems: [IssueViewItem]
 
-        var highRiskCount: Int {
-            allItems.filter { $0.level == .highRisk }.count
-        }
-
-        var mediumRiskCount: Int {
-            allItems.filter { $0.level == .mediumRisk }.count
-        }
-
-        var lowRiskCount: Int {
-            allItems.filter { $0.level == .attentionRequired || $0.level == .informational }.count
-        }
-
-        var coreItems: [IssueViewItem] {
-            allItems.filter { $0.type == "core" }
-        }
-
-        var generalItems: [IssueViewItem] {
-            allItems.filter { $0.type == "general" }
+        var id: String {
+            blockchain.uid
         }
     }
 
@@ -613,61 +489,15 @@ extension CoinAnalyticsViewModel {
         }
     }
 
-    struct TvlViewItem {
-        let chart: Previewable<ChartViewItem>
-        let rank: Previewable<String>?
-        let ratio: Previewable<String>?
-        let rating: Previewable<CoinAnalyticsModule.Rating>?
-    }
-
-    struct ValueRankViewItem {
-        let value: Previewable<String>
-        let rank: Previewable<String>?
-        let description: String?
+    struct ChartViewItem {
+        let value: String
+        let chartData: ChartData
+        let chartTrend: MovementTrend
     }
 
     enum ChartPreviewValuePostfix {
         case currency
         case coin
         case noPostfix
-    }
-}
-
-enum Previewable<T> {
-    case preview
-    case regular(value: T)
-
-    var isPreview: Bool {
-        switch self {
-        case .preview: return true
-        case .regular: return false
-        }
-    }
-
-    func previewableValue<P>(mapper: (T) -> P) -> Previewable<P> {
-        switch self {
-        case .preview: return .preview
-        case let .regular(value): return .regular(value: mapper(value))
-        }
-    }
-
-    func value<P>(mapper: (T) -> P) -> P? {
-        switch self {
-        case .preview: return nil
-        case let .regular(value): return mapper(value)
-        }
-    }
-}
-
-extension HsPointTimePeriod {
-    var title: String {
-        switch self {
-        case .minute30, .hour8: return "" // not used
-        case .hour1: return "coin_analytics.period.1h".localized
-        case .hour4: return "coin_analytics.period.4h".localized
-        case .day1: return "coin_analytics.period.1d".localized
-        case .week1: return "coin_analytics.period.1w".localized
-        case .month1: return "coin_analytics.period.1m".localized
-        }
     }
 }

@@ -1,8 +1,6 @@
 import UIKit
 import Foundation
 import SnapKit
-import ThemeKit
-import ComponentKit
 import BigInt
 
 class LiquidityRemoveConfirmView: UIView {

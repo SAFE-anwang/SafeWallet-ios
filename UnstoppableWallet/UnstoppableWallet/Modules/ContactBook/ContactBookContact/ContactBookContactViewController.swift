@@ -1,9 +1,9 @@
-import ComponentKit
+
 import Foundation
 import RxCocoa
 import RxSwift
 import SectionsTableView
-import ThemeKit
+
 import UIKit
 
 class ContactBookContactViewController: KeyboardAwareViewController {
@@ -48,6 +48,7 @@ class ContactBookContactViewController: KeyboardAwareViewController {
         navigationItem.largeTitleDisplayMode = .never
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.save".localized, style: .done, target: self, action: #selector(onTapSaveButton))
+        navigationItem.rightBarButtonItem?.tintColor = .themeJacob
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "button.cancel".localized, style: .plain, target: self, action: #selector(onCloseConfirmation))
 
         view.addSubview(tableView)
@@ -95,6 +96,7 @@ class ContactBookContactViewController: KeyboardAwareViewController {
 
     private func handleChangeContact() {
         navigationItem.rightBarButtonItem?.isEnabled = contactWasChanged
+        navigationItem.rightBarButtonItem?.tintColor = contactWasChanged ? .themeJacob : .themeGray
         isModalInPresentation = contactWasChanged
     }
 
@@ -220,6 +222,7 @@ extension ContactBookContactViewController: SectionsDataSource {
                             rowInfo: RowInfo(index: index, count: addressViewItems.count),
                             imageUrl: viewItem.blockchainImageUrl,
                             title: viewItem.blockchainName,
+                            code: viewItem.blockchainCode,
                             value: viewItem.address,
                             editType: viewItem.edited ? .edited : .original
                         ) { [weak self] in

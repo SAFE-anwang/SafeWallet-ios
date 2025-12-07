@@ -1,7 +1,6 @@
-import ComponentKit
+import Kingfisher
 import MarketKit
 import SectionsTableView
-import ThemeKit
 import UIKit
 
 enum CellComponent {
@@ -43,25 +42,45 @@ enum CellComponent {
         )
     }
 
-    static func amountRow(tableView: SectionsTableView, rowInfo: RowInfo, iconUrl: String?, iconPlaceholderImageName: String, coinAmount: String, currencyAmount: String?, type: AmountType, action: (() -> Void)? = nil) -> RowProtocol {
+    static func amountRow(tableView: SectionsTableView, rowInfo: RowInfo, title: String, subtitle: String? = nil, imageUrl: String?, alternativeImageUrl: String?, placeholderImageName: String, coinAmount: String, currencyAmount: String?, type: AmountType, action: (() -> Void)? = nil) -> RowProtocol {
         CellBuilderNew.row(
             rootElement: .hStack([
                 .image32 { (component: ImageComponent) in
-                    component.setImage(urlString: iconUrl, placeholder: UIImage(named: iconPlaceholderImageName))
+                    component.imageView.setImage(url: imageUrl, alternativeUrl: alternativeImageUrl, placeholder: UIImage(named: placeholderImageName))
+                    component.imageView.cornerRadius = CGFloat.iconSize32 / 2
                 },
-                .text { (component: TextComponent) in
-                    component.font = type.textFont
-                    component.textColor = type.textColor
-                    component.lineBreakMode = .byTruncatingMiddle
-                    component.text = coinAmount
-                },
-                .text { (component: TextComponent) in
-                    component.isHidden = currencyAmount == nil
-                    component.font = .subhead2
-                    component.textColor = .themeGray
-                    component.lineBreakMode = .byTruncatingMiddle
-                    component.text = currencyAmount
-                },
+                .vStackCentered([
+                    .text { (component: TextComponent) in
+                        component.font = .subhead2
+                        component.textColor = .themeLeah
+                        component.text = title
+                    },
+                    .margin(1),
+                    .text { (component: TextComponent) in
+                        component.isHidden = subtitle == nil
+                        component.font = .caption
+                        component.textColor = .themeGray
+                        component.text = subtitle
+                    },
+                ]),
+                .vStackCentered([
+                    .text { (component: TextComponent) in
+                        component.font = type.textFont
+                        component.textColor = type.textColor
+                        component.textAlignment = .right
+                        component.lineBreakMode = .byTruncatingMiddle
+                        component.text = coinAmount
+                    },
+                    .margin(1),
+                    .text { (component: TextComponent) in
+                        component.isHidden = currencyAmount == nil
+                        component.font = .caption
+                        component.textColor = .themeGray
+                        component.textAlignment = .right
+                        component.lineBreakMode = .byTruncatingMiddle
+                        component.text = currencyAmount
+                    },
+                ]),
             ]),
             tableView: tableView,
             id: "amount-\(rowInfo.index)",
@@ -136,7 +155,7 @@ enum CellComponent {
         )
     }
 
-    static func fromToRow(tableView: UITableView, rowInfo: RowInfo, title: String, value: String, valueTitle _: String?, onAddToContact: (() -> Void)? = nil) -> RowProtocol {
+    static func fromToRow(tableView: UITableView, rowInfo: RowInfo, title: String, value: String, valueTitle _: String?, statPage: StatPage, statSection: StatSection, onAddToContact: (() -> Void)? = nil) -> RowProtocol {
         let backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence
         let titleFont: UIFont = .subhead2
         let valueFont: UIFont = .subhead1
@@ -168,6 +187,7 @@ enum CellComponent {
                     component.button.set(image: UIImage(named: "copy_20"))
                     component.onTap = {
                         CopyHelper.copyAndNotify(value: value)
+                        stat(page: statPage, section: statSection, event: .copy(entity: .address))
                     }
                 },
             ]),
@@ -194,32 +214,69 @@ enum CellComponent {
         )
     }
 
-    static func valueRow(tableView: UITableView, rowInfo: RowInfo, iconName _: String?, title _: String, value: String, type _: ValueType = .regular) -> RowProtocol {
-        CellBuilder.row(
-            elements: [.image20, .text, .text],
+    static func priceRow(tableView: UITableView, rowInfo: RowInfo, title: String, value: String, onTap: (() -> Void)? = nil) -> RowProtocol {
+        let backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence
+        let titleFont: UIFont = .subhead2
+        let valueFont: UIFont = .subhead1
+
+        return CellBuilderNew.row(
+            rootElement: .hStack([
+                .text { component in
+                    component.font = titleFont
+                    component.textColor = .themeGray
+                    component.text = title
+                    component.setContentCompressionResistancePriority(.required, for: .horizontal)
+                },
+                .text { component in
+                    component.font = valueFont
+                    component.textColor = .themeLeah
+                    component.text = value
+                    component.textAlignment = .right
+                    component.numberOfLines = 0
+                },
+                .margin8,
+                .secondaryCircleButton { component in
+                    component.button.set(image: UIImage(named: "arrow_swap_3_20"), style: .transparent)
+                    component.onTap = onTap
+                },
+            ]),
             tableView: tableView,
-            id: "from-to-\(rowInfo.index)",
-            hash: value,
-            height: .heightCell48,
+            id: "price-\(rowInfo.index)",
+            hash: value + rowInfo.description,
+            dynamicHeight: { containerWidth in
+                CellBuilderNew.height(
+                    containerWidth: containerWidth,
+                    backgroundStyle: backgroundStyle,
+                    text: value,
+                    font: valueFont,
+                    elements: [
+                        .fixed(width: TextComponent.width(font: titleFont, text: title)),
+                        .multiline,
+                        .margin8,
+                        .fixed(width: SecondaryCircleButton.size),
+                    ]
+                )
+            },
             bind: { cell in
                 cell.set(backgroundStyle: .lawrence, isFirst: rowInfo.isFirst, isLast: rowInfo.isLast)
             }
         )
     }
 
-    static func valueRow(tableView: SectionsTableView, rowInfo: RowInfo, iconName: String?, title: String, value: String, type: ValueType = .regular) -> RowProtocol {
+    static func valueRow(tableView: SectionsTableView, rowInfo: RowInfo, iconName: String?, title: String, value: String, type: ValueType = .regular, accessoryType: CellBuilderNew.CellElement.AccessoryType = .none) -> RowProtocol {
         tableView.universalRow48(
             id: "value-\(rowInfo.index)",
             image: iconName.flatMap { UIImage(named: $0)?.withTintColor(.themeGray) }.map { .local($0) },
             title: .subhead2(title),
             value: .subhead1(value, color: type.textColor),
+            accessoryType: accessoryType,
             hash: value,
             isFirst: rowInfo.isFirst,
             isLast: rowInfo.isLast
         )
     }
 
-    static func blockchainAddress(tableView: UITableView, rowInfo: RowInfo, imageUrl: String, title: String, value: String, editType: EditType, action: (() -> Void)? = nil) -> RowProtocol {
+    static func blockchainAddress(tableView: UITableView, rowInfo: RowInfo, imageUrl: String, title: String, code: String? = nil, value: String, editType: EditType, action: (() -> Void)? = nil) -> RowProtocol {
         let backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence
         let titleFont: UIFont = .subhead1
         let valueFont: UIFont = .subhead2
@@ -231,7 +288,18 @@ enum CellComponent {
             rootElement: .hStack([
                 .imageElement(image: .url(imageUrl, placeholder: "placeholder_rectangle_32"), size: .image32),
                 .vStackCentered([
-                    .textElement(text: .subhead1(title), parameters: .allCompression),
+                    .hStack([
+                        .textElement(text: .subhead1(title), parameters: .highHugging),
+                        .margin8,
+                        .badge { component in
+                            component.isHidden = code?.count == 0
+                            component.badgeView.set(style: .small)
+                            component.badgeView.text = code
+                        },
+                        .margin0,
+                        .text { _ in
+                        },
+                    ]),
                     .margin(titleValueMargin),
                     .textElement(text: .subhead2(value), parameters: .multiline),
                 ]),
@@ -298,13 +366,6 @@ enum AmountType {
     case neutral
     case secondary
 
-//    var showSign: Bool {
-//        switch self {
-//        case .incoming, .outgoing, .secondary: return true
-//        case .neutral: return false
-//        }
-//    }
-    
     var signType: ValueFormatter.SignType {
         switch self {
         case .incoming, .outgoing, .secondary: return .always
@@ -329,8 +390,7 @@ enum AmountType {
     var textColor: UIColor {
         switch self {
         case .incoming: return .themeRemus
-        case .outgoing: return .themeLucian
-        case .neutral: return .themeLeah
+        case .neutral, .outgoing: return .themeLeah
         case .secondary: return .themeGray
         }
     }

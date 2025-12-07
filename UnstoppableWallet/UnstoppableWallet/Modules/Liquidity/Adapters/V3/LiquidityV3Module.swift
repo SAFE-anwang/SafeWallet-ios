@@ -10,12 +10,12 @@ class LiquidityV3Module {
     private let service: LiquidityV3Service
 
     init?(dex: LiquidityMainModule.Dex, dataSourceState: LiquidityMainModule.DataSourceState) {
-        guard let evmKit = App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
+        guard let evmKit = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
             return nil
         }
 
         guard let swapKit = try? UniswapKit.KitV3.instance(dexType: dex.provider.dexType),
-              let rpcSource = App.shared.evmSyncSourceManager.httpSyncSource(blockchainType: dex.blockchainType)?.rpcSource
+              let rpcSource = Core.shared.evmSyncSourceManager.httpSyncSource(blockchainType: dex.blockchainType)?.rpcSource
         else {
             return nil
         }
@@ -34,12 +34,12 @@ class LiquidityV3Module {
         )
         allowanceService = LiquidityAllowanceService(
             spenderAddress: uniswapRepository.nonfungiblePositionAddress,
-            adapterManager: App.shared.adapterManager,
+            adapterManager: Core.shared.adapterManager,
             evmKit: evmKit
         )
         pendingAllowanceService = LiquidityPendingAllowanceService(
             spenderAddress: uniswapRepository.nonfungiblePositionAddress,
-            adapterManager: App.shared.adapterManager,
+            adapterManager: Core.shared.adapterManager,
             allowanceService: allowanceService
         )
         service = LiquidityV3Service(
@@ -47,7 +47,7 @@ class LiquidityV3Module {
             tradeService: tradeService,
             allowanceService: allowanceService,
             pendingAllowanceService: pendingAllowanceService,
-            adapterManager: App.shared.adapterManager
+            adapterManager: Core.shared.adapterManager
         )
     }
 }
@@ -58,10 +58,10 @@ extension LiquidityV3Module: ILiquidityProvider {
         let viewModel = LiquidityV3ViewModel(
             service: service,
             tradeService: tradeService,
-            switchService: AmountTypeSwitchService(userDefaultsStorage: App.shared.userDefaultsStorage, useLocalStorage: false),
+            switchService: AmountTypeSwitchService(userDefaultsStorage: Core.shared.userDefaultsStorage, useLocalStorage: false),
             allowanceService: allowanceService,
             pendingAllowanceService: pendingAllowanceService,
-            currencyManager: App.shared.currencyManager,
+            currencyManager: Core.shared.currencyManager,
             viewItemHelper: LiquidityViewItemHelper()
         )
         

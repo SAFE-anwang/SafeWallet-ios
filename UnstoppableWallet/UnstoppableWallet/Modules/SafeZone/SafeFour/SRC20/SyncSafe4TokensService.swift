@@ -5,10 +5,9 @@ import RxCocoa
 import RxRelay
 import MarketKit
 import EvmKit
-import HUD
 
 class SyncSafe4TokensService {
-    private let userDefaultsStorage = App.shared.userDefaultsStorage
+    private let userDefaultsStorage = Core.shared.userDefaultsStorage
     private var disposeBag = DisposeBag()
     private let storage: Safe4CustomTokenStorage
     private let provider: SyncSafe4TokensProvider
@@ -132,18 +131,17 @@ class SyncSafe4TokensService {
                 let coin = Coin(uid: tokenQuery.customCoinUid, name: tokenInfo.name, code: tokenInfo.symbol)
                 try marketKit.insertCoin(coin: coin)
                 try marketKit.insertToken(coinUid: tokenQuery.customCoinUid, blockchainUid: BlockchainType.safe4.uid, type: "eip20", decimals: tokenInfo.decimals, reference: tokenInfo.address)
+                
+                if let _ = try storage.asset(address: tokenInfo.address) {
+                    storage.update(token: tokenInfo)
+                } else {
+                    storage.save(token: tokenInfo)
+                }
             }
-            
-            if let _ = try storage.asset(address: tokenInfo.address) {
-                storage.update(token: tokenInfo)
-            } else {
-                storage.save(token: tokenInfo)
-            }
-            
-            if let account = App.shared.accountManager.activeAccount {
-                let uids = App.shared.walletManager.activeWallets.map{$0.token.coin.uid.lowercased()}
+            if let account = Core.shared.accountManager.activeAccount {
+                let uids = Core.shared.walletManager.activeWallets.map{$0.token.coin.uid.lowercased()}
                 if !uids.contains(tokenQuery.customCoinUid.lowercased()) {
-                    App.shared.walletManager.preloadWallets()
+//                    Core.shared.walletManager.preloadWallets()
                 }
             }
         }catch{}

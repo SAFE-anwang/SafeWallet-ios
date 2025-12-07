@@ -4,7 +4,6 @@ import RxCocoa
 import RxRelay
 import MarketKit
 import EvmKit
-import HUD
 
 class DrawSafe4Service {
     

@@ -1,12 +1,9 @@
 import UIKit
-import ComponentKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import RxSwift
 import RxCocoa
 import MarketKit
-import HUD
 
 class MasterNodeViewController: ThemeViewController {
     
@@ -141,8 +138,10 @@ class MasterNodeViewController: ThemeViewController {
         case .superNode:
             HudHelper.instance.show(banner: .error(string: "safe_zone.safe4.account.node.state.super".localized))
         case .normal:
-            guard let vc = MasterNodeRegisterModule.viewController() else { return }
-            navigationController?.pushViewController(vc, animated: true)
+            guard let viewModel = MasterNodeRegisterModule.viewModel() else { return }
+            Coordinator.shared.present { _ in
+                MasterNodeRegisterView(viewModel: viewModel)
+            }
         }
     }
     
@@ -173,34 +172,32 @@ extension MasterNodeViewController {
             bind: { cell, _ in
                 cell.bind(viewItem: viewItem)
                 cell.toDetail = { [weak self] in
-                    guard let strongSelf = self, let vc = MasterNodeDetailModule.viewController(nodeType: strongSelf.viewModel.nodeType, viewItem: viewItem, viewType: .Detail) else { return }
-                    vc.needReload = {
-                        strongSelf.tableView.reload()
+                    guard let strongSelf = self, let viewModel = MasterNodeDetailModule.viewModel(nodeType: strongSelf.viewModel.nodeType, viewItem: viewItem) else { return }
+                    Coordinator.shared.present { _ in
+                        MasterNodeDetailView.init(viewModel: viewModel, viewType: .Detail)
                     }
-                    strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
                 }
                 cell.toJoin = { [weak self] in
-                    guard let strongSelf = self, let vc = MasterNodeDetailModule.viewController(nodeType: strongSelf.viewModel.nodeType, viewItem: viewItem, viewType: .JoinPartner) else { return }
-                    vc.needReload = {
-                        strongSelf.tableView.reload()
+                    guard let strongSelf = self, let viewModel = MasterNodeDetailModule.viewModel(nodeType: strongSelf.viewModel.nodeType, viewItem: viewItem) else { return }
+                    Coordinator.shared.present { _ in
+                        MasterNodeDetailView.init(viewModel: viewModel, viewType: .JoinPartner)
                     }
-                    strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
                 }
-                cell.toEdit = { [weak self] in
-                    guard let strongSelf = self else { return }
-                    guard let vc = MasterNodeChangeModule.viewController(viewItem: viewItem) else { return }
-                    vc.needReload = {
-                        strongSelf.viewModel.refresh()
+                cell.toEdit = {
+                    guard let viewModel = MasterNodeChangeModule.viewModel(viewItem: viewItem) else { return }
+                    Coordinator.shared.present { _ in
+                        MasterNodeChangeView(viewModel: viewModel)
                     }
-                    strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
                 }
                 cell.toAddLock = { [weak self] in
                     guard let strongSelf = self else { return }
                     let ids = viewItem.info.founders
                         .filter { $0.addr.address.lowercased() == strongSelf.viewModel.address.lowercased() }
                         .map{ $0.lockID }
-                    guard let vc = AddLockDaysModule.viewController(ids: ids) else { return }
-                    strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
+                    guard let vm = AddLockDaysModule.viewModel(ids: ids) else { return }
+                    Coordinator.shared.present { _ in
+                        AddLockDaysView(viewModel: vm)
+                    }
                 }
             }
         )

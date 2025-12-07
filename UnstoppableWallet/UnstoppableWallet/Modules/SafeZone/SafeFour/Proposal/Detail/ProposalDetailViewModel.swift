@@ -9,7 +9,6 @@ import BigInt
 import web3swift
 import Web3Core
 import HsExtensions
-import ThemeKit
 
 class ProposalDetailViewModel {
     private let catch_key = "voted_Key"

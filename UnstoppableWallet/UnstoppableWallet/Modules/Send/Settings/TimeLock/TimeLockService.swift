@@ -81,5 +81,19 @@ extension TimeLockService {
         var title: String {
             HodlerPlugin.LockTimeInterval.title(lockTimeInterval: lockTimeInterval)
         }
+        
+        var days: Int? {
+            switch self {
+            case .none: return nil
+            case .month: return 30
+            case .month_3: return 30 * 3
+            case .halfYear: return 30 * 6
+            case .month_9: return 30 * 9
+            case .year: return 30 * 12
+            case .year_3: return 30 * 12 * 3
+            case .year_5: return 30 * 12 * 5
+            case .year_10: return 30 * 12 * 10
+            }
+        }
     }
 }

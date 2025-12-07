@@ -1,8 +1,7 @@
-import ComponentKit
+
 import RxCocoa
 import RxSwift
 import SectionsTableView
-import ThemeKit
 import UIKit
 
 class SendBitcoinViewController: BaseSendViewController {
@@ -19,7 +18,7 @@ class SendBitcoinViewController: BaseSendViewController {
     init(confirmationFactory: ISendConfirmationFactory,
          feeSettingsFactory: ISendFeeSettingsFactory,
          outputSelectorFactory: ISendOutputSelectorFactory,
-         viewModel: SendViewModel,
+         viewModel: SendViewModelOld,
          availableBalanceViewModel: SendAvailableBalanceViewModel,
          amountInputViewModel: AmountInputViewModel,
          amountCautionViewModel: SendAmountCautionViewModel,

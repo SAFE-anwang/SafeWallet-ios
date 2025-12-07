@@ -3,13 +3,12 @@ import SwiftUI
 struct AppStatusView: View {
     let viewModel: AppStatusViewModel
 
-    @State private var shareText: String?
-
     var body: some View {
         ScrollableThemeView {
             VStack(spacing: .margin24) {
                 HStack(spacing: .margin8) {
                     Button(action: {
+                        stat(page: .appStatus, event: .copy(entity: .status))
                         CopyHelper.copyAndNotify(value: viewModel.rawStatus)
                     }) {
                         Text("button.copy".localized)
@@ -17,14 +16,14 @@ struct AppStatusView: View {
                     .buttonStyle(PrimaryButtonStyle(style: .yellow))
 
                     Button(action: {
-                        shareText = viewModel.rawStatus
+                        Coordinator.shared.present { _ in
+                            ActivityView(activityItems: [viewModel.rawStatus])
+                        }
+                        stat(page: .appStatus, event: .share(entity: .status))
                     }) {
                         Text("button.share".localized)
                     }
                     .buttonStyle(PrimaryButtonStyle(style: .gray))
-                }
-                .sheet(item: $shareText) { shareText in
-                    ActivityView(activityItems: [shareText]).ignoresSafeArea()
                 }
 
                 ForEach(viewModel.sections, id: \.title) { section in
@@ -39,7 +38,9 @@ struct AppStatusView: View {
                                             switch field {
                                             case let .info(title, value):
                                                 Text(title).themeSubhead2()
-                                                Text(value).themeSubhead1(color: .themeLeah, alignment: .trailing)
+                                                Text(value)
+                                                    .themeSubhead1(color: .themeLeah, alignment: .trailing)
+                                                    .multilineTextAlignment(.trailing)
                                             case let .title(value):
                                                 Text(value).themeSubhead1(color: .themeLeah)
                                             case let .raw(text):

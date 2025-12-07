@@ -2,35 +2,25 @@ import Foundation
 import RxSwift
 import RxRelay
 import RxCocoa
+import EvmKit
+import Combine
 
-class MasterNodeTabViewModel {
+class MasterNodeTabViewModel: ObservableObject {
     private let service: MasterNodeService
-
-    private let currentTabRelay: BehaviorRelay<MasterNodeModule.Tab>
+    private let keyTab = "MasterNode-tab"
+    @Published var currentTab: MasterNodeModule.Tab = .all
 
     init(service: MasterNodeService) {
         self.service = service
-        currentTabRelay = BehaviorRelay<MasterNodeModule.Tab>(value: .all)
     }
-}
-
-extension MasterNodeTabViewModel {
     
     var nodeType: Safe4NodeType {
         service.nodeType
     }
     
-    var currentTabDriver: Driver<MasterNodeModule.Tab> {
-        currentTabRelay.asDriver()
+    var evmKit: EvmKit.Kit{
+        service.evmKit
     }
-
-    var tabs: [MasterNodeModule.Tab] {
-        MasterNodeModule.Tab.allCases
-    }
-
-    func onSelect(tab: MasterNodeModule.Tab) {
-        currentTabRelay.accept(tab)
-    }
-
 }
+
 

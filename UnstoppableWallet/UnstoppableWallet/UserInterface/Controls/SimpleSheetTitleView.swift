@@ -1,5 +1,5 @@
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class SimpleSheetTitleView: UIView {
@@ -33,7 +33,7 @@ class SimpleSheetTitleView: UIView {
             maker.height.equalTo(CGFloat.heightOneDp)
         }
 
-        separatorView.backgroundColor = .themeSteel10
+        separatorView.backgroundColor = .themeBlade
     }
 
     @available(*, unavailable)

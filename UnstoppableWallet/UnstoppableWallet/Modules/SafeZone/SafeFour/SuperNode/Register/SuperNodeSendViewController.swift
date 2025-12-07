@@ -3,8 +3,6 @@ import Foundation
 import SectionsTableView
 import RxSwift
 import RxCocoa
-import ComponentKit
-import HUD
 
 class SuperNodeSendViewController: Safe4ConfirmBaseViewController {
     private let disposeBag = DisposeBag()

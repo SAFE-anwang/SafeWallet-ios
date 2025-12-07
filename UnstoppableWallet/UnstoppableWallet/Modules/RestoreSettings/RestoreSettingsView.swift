@@ -1,17 +1,19 @@
 import MarketKit
 import RxCocoa
 import RxSwift
-import ThemeKit
+
 import UIKit
 
 class RestoreSettingsView {
     private let viewModel: RestoreSettingsViewModel
+    private let statPage: StatPage
     private let disposeBag = DisposeBag()
 
     var onOpenController: ((UIViewController) -> Void)?
 
-    init(viewModel: RestoreSettingsViewModel) {
+    init(viewModel: RestoreSettingsViewModel, statPage: StatPage) {
         self.viewModel = viewModel
+        self.statPage = statPage
 
         subscribe(disposeBag, viewModel.openBirthdayAlertSignal) { [weak self] token in
             self?.showBirthdayAlert(token: token)
@@ -27,5 +29,7 @@ class RestoreSettingsView {
             self?.viewModel.onCancelEnterBirthdayHeight()
         }
         onOpenController?(ThemeNavigationController(rootViewController: controller))
+
+        stat(page: statPage, event: .open(page: .birthdayInput))
     }
 }

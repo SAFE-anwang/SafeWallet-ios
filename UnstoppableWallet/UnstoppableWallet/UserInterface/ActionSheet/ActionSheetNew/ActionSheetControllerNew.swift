@@ -129,6 +129,14 @@ public class ActionSheetControllerNew: UIViewController, IDeinitDelegate {
         didAppear = false
     }
 
+    override public var canBecomeFirstResponder: Bool {
+        content.canBecomeFirstResponder
+    }
+
+    override public func becomeFirstResponder() -> Bool {
+        content.becomeFirstResponder()
+    }
+
     @objc private func keyboardNotification(notification: NSNotification) {
         guard let userInfo = notification.userInfo else { return }
 
@@ -154,8 +162,15 @@ extension ActionSheetControllerNew {
     private func addChildController() {
         addChild(content)
         view.addSubview(content.view)
+
+        view.backgroundColor = configuration.contentBackgroundColor
+        view.clipsToBounds = true
+        view.layer.maskedCorners = configuration.corners
+        view.cornerRadius = configuration.cornerRadius
+
         setContentViewPosition(animated: false)
         content.view.clipsToBounds = true
+        content.view.layer.maskedCorners = configuration.corners
         content.view.cornerRadius = configuration.cornerRadius
     }
 
@@ -169,15 +184,17 @@ extension ActionSheetControllerNew {
             return
         }
 
+        let keyboardHeight = configuration.ignoreKeyboard ? 0 : keyboardHeightRelay.value
+
         content.view.snp.remakeConstraints { maker in
             maker.leading.trailing.equalToSuperview().inset(configuration.sideMargin)
             if configuration.style == .sheet { // content controller from bottom of superview
                 maker.top.equalToSuperview()
-                maker.bottom.equalToSuperview().inset(configuration.sideMargin + keyboardHeightRelay.value).priority(.required)
+                maker.bottom.equalToSuperview().inset(configuration.sideMargin + keyboardHeight).priority(.required)
             } else { // content controller by center of superview
                 maker.centerX.equalToSuperview()
                 maker.centerY.equalToSuperview().priority(.low)
-                maker.bottom.lessThanOrEqualTo(view.snp.bottom).inset(keyboardHeightRelay.value + 16)
+                maker.bottom.lessThanOrEqualTo(view.snp.bottom).inset(keyboardHeight + 16)
             }
             if let height = viewDelegate?.height {
                 maker.height.equalTo(height)
@@ -195,7 +212,7 @@ extension ActionSheetControllerNew {
     }
 }
 
-extension ActionSheetControllerNew: ActionSheetView {
+extension ActionSheetControllerNew: IActionSheetView {
     public func contentWillDismissed() {
         dismissing = true
     }

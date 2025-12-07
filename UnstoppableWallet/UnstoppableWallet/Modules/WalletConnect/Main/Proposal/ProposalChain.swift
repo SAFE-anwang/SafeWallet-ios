@@ -2,7 +2,7 @@ import Foundation
 import WalletConnectSign
 
 protocol IProposalHandler {
-    func handle(provider: INamespaceProvider) -> WalletConnectMainModule.BlockchainSet
+    func handle(provider: INamespaceProvider) -> [WalletConnectMainModule.BlockchainProposal]
 }
 
 protocol INamespaceProvider {
@@ -19,9 +19,9 @@ extension Session: INamespaceProvider {
     var proposalNamespaces: [String: ProposalNamespace] {
         namespaces.reduce(into: [:]) {
             $0[$1.key] = ProposalNamespace(
-                chains: Set($1.value.accounts.compactMap { account in
+                chains: $1.value.accounts.compactMap { account in
                     Blockchain(namespace: account.namespace, reference: account.reference)
-                }),
+                },
                 methods: $1.value.methods,
                 events: $1.value.events
             )
@@ -43,15 +43,14 @@ class ProposalChain {
 }
 
 extension ProposalChain: IProposalHandler {
-    func handle(provider: INamespaceProvider) -> WalletConnectMainModule.BlockchainSet {
-        var set = WalletConnectMainModule.BlockchainSet.empty
+    func handle(provider: INamespaceProvider) -> [WalletConnectMainModule.BlockchainProposal] {
+        var proposals = [WalletConnectMainModule.BlockchainProposal]()
 
         for handler in handlers {
             let result = handler.handle(provider: provider)
-
-            set.formUnion(result)
+            proposals.append(contentsOf: result)
         }
 
-        return set
+        return proposals
     }
 }

@@ -1,6 +1,4 @@
 import SwiftUI
-import ComponentKit
-import HUD
 import Kingfisher
 
 struct SRC20PromotionView: View {

@@ -1,4 +1,4 @@
-import ThemeKit
+import SwiftUI
 import UIKit
 
 enum BackupModule {
@@ -14,7 +14,7 @@ enum BackupModule {
     }
 
     static func cloudViewController(account: Account) -> UIViewController {
-        let service = ICloudBackupTermsService(cloudAccountBackupManager: App.shared.cloudBackupManager, account: account)
+        let service = ICloudBackupTermsService(cloudAccountBackupManager: Core.shared.cloudBackupManager, account: account)
         let viewModel = ICloudBackupTermsViewModel(service: service)
         let viewController = ICloudBackupTermsViewController(viewModel: viewModel)
 
@@ -51,4 +51,38 @@ extension BackupModule {
         let name: String
         let source: Source
     }
+}
+
+struct BackupView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+
+    private let account: Account
+    private let onComplete: (() -> Void)?
+
+    init(account: Account, onComplete: (() -> Void)? = nil) {
+        self.account = account
+        self.onComplete = onComplete
+    }
+
+    func makeUIViewController(context _: Context) -> UIViewController {
+        BackupModule.manualViewController(account: account, onComplete: onComplete) ?? UIViewController()
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
+}
+
+struct ICloudBackupTermsView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+
+    private let account: Account
+
+    init(account: Account) {
+        self.account = account
+    }
+
+    func makeUIViewController(context _: Context) -> UIViewController {
+        BackupModule.cloudViewController(account: account)
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

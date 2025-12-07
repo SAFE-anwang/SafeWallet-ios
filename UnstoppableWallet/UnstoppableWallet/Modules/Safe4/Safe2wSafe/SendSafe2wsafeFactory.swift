@@ -43,8 +43,8 @@ class SendSafe2wsafeFactory: BaseSendFactory {
         let (coinValue, currencyValue) = try values(fiatService: fiatService)
         let (feeCoinValue, feeCurrencyValue) = try values(fiatService: feeFiatService)
 
-        viewItems.append(SendConfirmationAmountViewItem(coinValue: coinValue, currencyValue: currencyValue, receiver: contractAddress))
-        viewItems.append(SendConfirmationFeeViewItem(coinValue: feeCoinValue, currencyValue: feeCurrencyValue))
+        viewItems.append(SendConfirmationAmountViewItem(appValue: coinValue, currencyValue: currencyValue, receiver: contractAddress))
+        viewItems.append(SendConfirmationFeeViewItem(appValue: feeCoinValue, currencyValue: feeCurrencyValue))
 
         if (timeLockService?.lockTime ?? .none) != TimeLockService.Item.none {
             viewItems.append(SendConfirmationLockUntilViewItem(lockValue: timeLockService?.lockTime.title ?? "n/a".localized))
@@ -65,7 +65,7 @@ extension SendSafe2wsafeFactory: ISendConfirmationFactory {
         let items = try items()
 
         let service = SendConfirmationService(sendService: adapterService, logger: logger, token: token, items: items)
-        let contactLabelService = ContactLabelService(contactManager: App.shared.contactManager, blockchainType: token.blockchainType)
+        let contactLabelService = ContactLabelService(contactManager: Core.shared.contactManager, blockchainType: token.blockchainType)
         let viewModel = SendConfirmationViewModel(service: service, contactLabelService: contactLabelService)
         let viewController = SendConfirmationViewController(viewModel: viewModel)
 

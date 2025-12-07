@@ -14,12 +14,14 @@ struct SecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: .margin4) {
+        HStack(spacing: .margin2) {
             accessoryView(accessory: leftAccessory, configuration: configuration)
             labelView(configuration: configuration)
             accessoryView(accessory: rightAccessory, configuration: configuration)
         }
-        .padding(EdgeInsets(top: 5.5, leading: .margin16, bottom: 5.5, trailing: .margin16))
+        .padding(.leading, leftAccessory.padding)
+        .padding(.trailing, rightAccessory.padding)
+        .frame(height: 28)
         .background(style.backgroundColor(isEnabled: isEnabled, isPressed: configuration.isPressed))
         .clipShape(Capsule(style: .continuous))
         .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
@@ -27,13 +29,13 @@ struct SecondaryButtonStyle: ButtonStyle {
 
     @ViewBuilder func labelView(configuration: Configuration) -> some View {
         configuration.label
-            .font(.themeSubhead1)
+            .font(.themeCaptionSB)
             .foregroundColor(style.foregroundColor(isEnabled: isEnabled, isPressed: configuration.isPressed))
     }
 
     @ViewBuilder func accessoryView(accessory: Accessory, configuration: Configuration) -> some View {
-        if let icon = accessory.icon {
-            Image(icon)
+        if let image = accessory.image {
+            image
                 .renderingMode(.template)
                 .foregroundColor(accessory.foregroundColor(isEnabled: isEnabled, isPressed: configuration.isPressed))
         } else {
@@ -47,34 +49,41 @@ struct SecondaryButtonStyle: ButtonStyle {
 
         func foregroundColor(isEnabled: Bool, isPressed: Bool) -> Color {
             switch self {
-            case .default, .transparent: return isEnabled ? (isPressed ? .themeGray : .themeLeah) : .themeGray50
+            case .default, .transparent: return isEnabled ? (isPressed ? .themeGray : .themeLeah) : .themeAndy
             }
         }
 
         func backgroundColor(isEnabled: Bool, isPressed: Bool) -> Color {
             switch self {
-            case .default: return isEnabled ? (isPressed ? .themeSteel10 : .themeSteel20) : .themeSteel20
+            case .default: return isEnabled ? (isPressed ? .themeBlade : .themeBlade) : .themeBlade
             case .transparent: return .clear
             }
         }
     }
 
     enum Accessory {
-        static let pressedColor = Color.themeGray
-        static let enabledColor = Color.themeGray
-        static let disabledColor = Color.themeGray50
+        static let pressedColor = Color.themeLeah.pressed
+        static let enabledColor = Color.themeLeah
+        static let disabledColor = Color.themeAndy
 
         case none
         case dropDown
         case info
-        case custom(icon: String, pressedColor: Color = Self.pressedColor, activeColor: Color = Self.enabledColor, disabledColor: Color = Self.disabledColor)
+        case custom(image: Image, pressedColor: Color = Self.pressedColor, activeColor: Color = Self.enabledColor, disabledColor: Color = Self.disabledColor)
 
-        var icon: String? {
+        var image: Image? {
             switch self {
             case .none: return nil
-            case .dropDown: return "arrow_small_down_20"
-            case .info: return "circle_information_20"
-            case let .custom(icon, _, _, _): return icon
+            case .dropDown: return Image("arrow_small_down_20")
+            case .info: return Image("circle_information_20")
+            case let .custom(image, _, _, _): return image
+            }
+        }
+
+        var padding: CGFloat {
+            switch self {
+            case .none: return .margin16
+            default: return .margin8
             }
         }
 

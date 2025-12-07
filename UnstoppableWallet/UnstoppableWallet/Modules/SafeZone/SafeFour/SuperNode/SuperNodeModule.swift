@@ -1,11 +1,11 @@
 import UIKit
 import BigInt
 import EvmKit
-import ComponentKit
+import SwiftUI
 
 struct SuperNodeModule {
-    static func viewController() -> UIViewController? {
-        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+    static func tabViewModel() -> SuperNodeTabViewModel? {
+        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
@@ -14,14 +14,13 @@ struct SuperNodeModule {
         }
         let service = SuperNodeService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
         let viewModel = SuperNodeTabViewModel(service: service)
-        let viewController = SuperNodeTabViewController(viewModel: viewModel, evmKit: evmKitWrapper.evmKit, privateKey: privateKey)
-        return viewController
+        return viewModel
     }
-    
-    static func subViewController(type: SuperNodeType, evmKit: EvmKit.Kit, privateKey: Data) -> SuperNodeViewController {
+
+    static func viewModel(type: SuperNodeType, evmKit: EvmKit.Kit, privateKey: Data) -> SuperNodeViewModel {
         let service = SuperNodeService(privateKey: privateKey, evmKit: evmKit)
         let viewModel = SuperNodeViewModel(service: service, type: type)
-        return SuperNodeViewController(viewModel: viewModel)
+        return viewModel
     }
         
     enum Tab: Int, CaseIterable {
@@ -42,4 +41,14 @@ struct SuperNodeModule {
     }
 }
 
+struct SuperNodeView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+    let viewModel: SuperNodeViewModel
+    
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        return SuperNodeViewController(viewModel: viewModel)
+    }
 
+    func updateUIViewController(_: UIViewController, context _: Context) {}
+}

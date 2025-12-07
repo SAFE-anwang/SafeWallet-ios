@@ -1,5 +1,3 @@
-import ComponentKit
-import HUD
 import UIKit
 
 class FeeSliderWrapper: UIView {
@@ -99,7 +97,7 @@ class FeeSliderWrapper: UIView {
         feeConfig.hapticType = .none
         feeConfig.blurEffectStyle = nil
         feeConfig.blurEffectIntensity = nil
-        feeConfig.borderColor = .themeSteel20
+        feeConfig.borderColor = .themeBlade
         feeConfig.borderWidth = .heightOnePixel
         feeConfig.exactSize = false
         feeConfig.preferredSize = CGSize(width: hudWidth, height: 48)

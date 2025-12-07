@@ -1,9 +1,7 @@
 import SwiftUI
 
 struct SafeLineLockRecoardView: View {
-    
     @StateObject var viewModel: SafeLineLockRecoardViewModel
-    
     init(viewModel: SafeLineLockRecoardViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }

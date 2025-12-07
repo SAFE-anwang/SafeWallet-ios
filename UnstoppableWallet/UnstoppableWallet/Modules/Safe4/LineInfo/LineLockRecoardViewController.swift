@@ -1,6 +1,4 @@
 import UIKit
-import ThemeKit
-import ComponentKit
 import SectionsTableView
 import RxSwift
 import RxCocoa
@@ -13,8 +11,8 @@ class LineLockRecoardViewController: ThemeViewController {
     private let tableView = SectionsTableView(style: .grouped)
     private var viewItems = [LineLockRecoardViewModel.ViewItem]()
     
-    init(lineLockRecoardViewModel: LineLockRecoardViewModel) {
-        self.viewModel = lineLockRecoardViewModel
+    init(viewModel: LineLockRecoardViewModel) {
+        self.viewModel = viewModel
         super.init()
         hidesBottomBarWhenPushed = true
     }

@@ -22,7 +22,9 @@ enum AppError: Error {
     enum ZcashError: Error {
         case sendToSelf
         case cantCreateKeys
+        case noAccountId
         case noReceiveAddress
+        case notEnough
         case seedRequired
     }
 
@@ -57,7 +59,9 @@ extension AppError: LocalizedError {
         case let .zcash(reason):
             switch reason {
             case .sendToSelf: return "error.send.self_transfer".localized
+            case .noAccountId: return "send.error.invalid_address".localized
             case .noReceiveAddress: return "send.error.invalid_address".localized
+            case .notEnough: return "fee_settings.errors.insufficient_balance".localized
             case .seedRequired, .cantCreateKeys: return "Seed Required"
             }
         case let .ethereum(reason):
@@ -86,5 +90,20 @@ extension AppError: LocalizedError {
         case .weakReference: return "Weak Reference"
         case .unknownError: return "Unknown Error"
         }
+    }
+}
+
+extension AppError {
+    var title: String? {
+        switch self {
+        case .notSupportedByHodler: return "fee_settings.time_lock".localized
+        default: return nil
+        }
+    }
+}
+
+extension Error {
+    var title: String? {
+        (convertedError as? AppError).flatMap(\.title)
     }
 }

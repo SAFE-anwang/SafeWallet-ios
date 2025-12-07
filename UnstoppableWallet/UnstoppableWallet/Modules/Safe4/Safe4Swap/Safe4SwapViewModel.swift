@@ -14,10 +14,10 @@ class Safe4SwapViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var balanceDisposeBag = DisposeBag()
     
-    private let currencyManager = App.shared.currencyManager
-    private let marketKit = App.shared.marketKit
-    private let walletManager = App.shared.walletManager
-    private let adapterManager = App.shared.adapterManager
+    private let currencyManager = Core.shared.currencyManager
+    private let marketKit = Core.shared.marketKit
+    private let walletManager = Core.shared.walletManager
+    private let adapterManager = Core.shared.adapterManager
     private let decimalParser = AmountDecimalParser()
     
     @Published var currency: Currency
@@ -255,7 +255,7 @@ extension Safe4SwapViewModel {
     }
     
     func updateScr20Balance(wallet: Wallet) {
-        guard let adapter = App.shared.adapterManager.adapter(for: wallet) else { return }
+        guard let adapter = Core.shared.adapterManager.adapter(for: wallet) else { return }
         adapter.start()
     }
 }

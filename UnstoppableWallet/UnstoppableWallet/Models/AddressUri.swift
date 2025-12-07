@@ -25,7 +25,11 @@ struct AddressUri: Equatable {
     }
 
     var amount: Decimal? {
-        value(field: .amount) ?? value(field: .value)
+        value(field: .amount) ?? value(field: .value) ?? value(field: .txAmount)
+    }
+
+    var memo: String? {
+        value(field: .txDescription)
     }
 
     static func == (lhs: AddressUri, rhs: AddressUri) -> Bool {
@@ -39,6 +43,8 @@ extension AddressUri {
     enum Field: String, CaseIterable {
         case amount
         case value
+        case txAmount = "tx_amount"
+        case txDescription = "tx_description"
         case label
         case message
         case blockchainUid = "blockchain_uid"
@@ -47,6 +53,9 @@ extension AddressUri {
         static func amountField(blockchainType: BlockchainType) -> Self {
             if EvmBlockchainManager.blockchainTypes.contains(blockchainType) {
                 return .value
+            }
+            if blockchainType == .monero {
+                return .txAmount
             }
             return .amount
         }

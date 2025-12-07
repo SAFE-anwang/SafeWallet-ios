@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import RxSwift
 import UIKit
@@ -10,28 +11,36 @@ class AppManager {
     private let lockManager: LockManager
     private let keychainManager: KeychainManager
     private let passcodeLockManager: PasscodeLockManager
-    private let blurManager: BlurManager
+    private let coverManager: CoverManager
     private let kitCleaner: KitCleaner
-    private let debugBackgroundLogger: DebugLogger?
     private let appVersionManager: AppVersionManager
     private let rateAppManager: RateAppManager
     private let logRecordManager: LogRecordManager
-    private let deepLinkManager: DeepLinkManager
+    private let deeplinkStorage: DeeplinkStorage
     private let evmLabelManager: EvmLabelManager
     private let balanceHiddenManager: BalanceHiddenManager
+    private let statManager: StatManager
     private let walletConnectSocketConnectionService: WalletConnectSocketConnectionService
     private let nftMetadataSyncer: NftMetadataSyncer
+    private let tonKitManager: TonKitManager
+    private let stellarKitManager: StellarKitManager
 
-    private let didBecomeActiveSubject = PublishSubject<Void>()
-    private let willEnterForegroundSubject = PublishSubject<Void>()
+    private let didBecomeActiveSubjectOld = PublishSubject<Void>()
+    private let willEnterForegroundSubjectOld = PublishSubject<Void>()
+
+    private let didBecomeActiveSubject = PassthroughSubject<Void, Never>()
+    private let willResignActiveSubject = PassthroughSubject<Void, Never>()
+    private let didEnterBackgroundSubject = PassthroughSubject<Void, Never>()
+    private let willEnterForegroundSubject = PassthroughSubject<Void, Never>()
 
     init(accountManager: AccountManager, walletManager: WalletManager, adapterManager: AdapterManager, lockManager: LockManager,
-         keychainManager: KeychainManager, passcodeLockManager: PasscodeLockManager, blurManager: BlurManager,
-         kitCleaner: KitCleaner, debugLogger: DebugLogger?,
+         keychainManager: KeychainManager, passcodeLockManager: PasscodeLockManager,
+         kitCleaner: KitCleaner, coverManager: CoverManager,
          appVersionManager: AppVersionManager, rateAppManager: RateAppManager,
-         logRecordManager: LogRecordManager,
-         deepLinkManager: DeepLinkManager, evmLabelManager: EvmLabelManager, balanceHiddenManager: BalanceHiddenManager,
-         walletConnectSocketConnectionService: WalletConnectSocketConnectionService, nftMetadataSyncer: NftMetadataSyncer)
+         logRecordManager: LogRecordManager, deeplinkStorage: DeeplinkStorage,
+         evmLabelManager: EvmLabelManager, balanceHiddenManager: BalanceHiddenManager, statManager: StatManager,
+         walletConnectSocketConnectionService: WalletConnectSocketConnectionService, nftMetadataSyncer: NftMetadataSyncer, tonKitManager: TonKitManager,
+         stellarKitManager: StellarKitManager)
     {
         self.accountManager = accountManager
         self.walletManager = walletManager
@@ -39,17 +48,19 @@ class AppManager {
         self.lockManager = lockManager
         self.keychainManager = keychainManager
         self.passcodeLockManager = passcodeLockManager
-        self.blurManager = blurManager
         self.kitCleaner = kitCleaner
-        debugBackgroundLogger = debugLogger
+        self.coverManager = coverManager
         self.appVersionManager = appVersionManager
         self.rateAppManager = rateAppManager
         self.logRecordManager = logRecordManager
-        self.deepLinkManager = deepLinkManager
+        self.deeplinkStorage = deeplinkStorage
         self.evmLabelManager = evmLabelManager
         self.balanceHiddenManager = balanceHiddenManager
+        self.statManager = statManager
         self.walletConnectSocketConnectionService = walletConnectSocketConnectionService
         self.nftMetadataSyncer = nftMetadataSyncer
+        self.tonKitManager = tonKitManager
+        self.stellarKitManager = stellarKitManager
     }
 
     private func warmUp() {
@@ -62,10 +73,8 @@ class AppManager {
 extension AppManager {
     func didFinishLaunching() {
         warmUp()
-        debugBackgroundLogger?.logFinishLaunching()
 
         keychainManager.handleLaunch()
-        passcodeLockManager.handleLaunch()
         accountManager.handleLaunch()
         walletManager.preloadWallets()
         kitCleaner.clear()
@@ -73,61 +82,88 @@ extension AppManager {
         rateAppManager.onLaunch()
 
         evmLabelManager.sync()
+
+        statManager.sendStats()
     }
 
     func willResignActive() {
-        blurManager.willResignActive()
+        willResignActiveSubject.send()
+
+        coverManager.willResignActive()
         rateAppManager.onResignActive()
     }
 
     func didBecomeActive() {
-        didBecomeActiveSubject.onNext(())
+        didBecomeActiveSubject.send()
+        didBecomeActiveSubjectOld.onNext(())
 
-        blurManager.didBecomeActive()
+        coverManager.didBecomeActive()
         rateAppManager.onBecomeActive()
         logRecordManager.onBecomeActive()
     }
 
     func didEnterBackground() {
-        debugBackgroundLogger?.logEnterBackground()
+        didEnterBackgroundSubject.send()
 
         lockManager.didEnterBackground()
         walletConnectSocketConnectionService.didEnterBackground()
         balanceHiddenManager.didEnterBackground()
+
+        tonKitManager.tonKit?.stopListener()
+        stellarKitManager.stellarKit?.stopListener()
     }
 
     func willEnterForeground() {
         accountManager.handleForeground()
 
-        blurManager.willEnterForeground()
-        debugBackgroundLogger?.logEnterForeground()
-        willEnterForegroundSubject.onNext(())
+        willEnterForegroundSubject.send()
+        willEnterForegroundSubjectOld.onNext(())
 
+        coverManager.willEnterForeground()
         passcodeLockManager.handleForeground()
         lockManager.willEnterForeground()
         adapterManager.refresh()
         walletConnectSocketConnectionService.willEnterForeground()
 
+        statManager.sendStats()
+
         nftMetadataSyncer.sync()
+
+        tonKitManager.tonKit?.startListener()
+        stellarKitManager.stellarKit?.startListener()
 
         AppWidgetConstants.allKinds.forEach { WidgetCenter.shared.reloadTimelines(ofKind: $0) }
     }
 
-    func willTerminate() {
-        debugBackgroundLogger?.logTerminate()
+    func didReceive(url: URL) {
+        deeplinkStorage.deepLinkUrl = url
+    }
+}
+
+extension AppManager {
+    var didBecomeActivePublisher: AnyPublisher<Void, Never> {
+        didBecomeActiveSubject.eraseToAnyPublisher()
     }
 
-    func didReceive(url: URL) -> Bool {
-        deepLinkManager.handle(url: url)
+    var willResignActivePublisher: AnyPublisher<Void, Never> {
+        willResignActiveSubject.eraseToAnyPublisher()
+    }
+
+    var didEnterBackgroundPublisher: AnyPublisher<Void, Never> {
+        didEnterBackgroundSubject.eraseToAnyPublisher()
+    }
+
+    var willEnterForegroundPublisher: AnyPublisher<Void, Never> {
+        willEnterForegroundSubject.eraseToAnyPublisher()
     }
 }
 
 extension AppManager: IAppManager {
     var didBecomeActiveObservable: Observable<Void> {
-        didBecomeActiveSubject.asObservable()
+        didBecomeActiveSubjectOld.asObservable()
     }
 
     var willEnterForegroundObservable: Observable<Void> {
-        willEnterForegroundSubject.asObservable()
+        willEnterForegroundSubjectOld.asObservable()
     }
 }

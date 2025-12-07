@@ -1,9 +1,8 @@
 import Chart
 import Combine
-import ComponentKit
+
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIKit
 
 class ChartIndicatorsViewController: ThemeViewController {
@@ -31,6 +30,7 @@ class ChartIndicatorsViewController: ThemeViewController {
         title = "chart_indicators.title".localized
         navigationItem.largeTitleDisplayMode = .never
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.done".localized, style: .done, target: self, action: #selector(onTapClose))
+        navigationItem.rightBarButtonItem?.tintColor = .themeJacob
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
         view.addSubview(tableView)

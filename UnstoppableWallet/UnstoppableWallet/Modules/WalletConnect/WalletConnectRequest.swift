@@ -3,7 +3,7 @@ import Foundation
 
 import BigInt
 
-class WalletConnectRequest {
+class WalletConnectRequest: Identifiable {
     let id: Int
     let chain: Chain
     let payload: WCRequestPayload
@@ -19,14 +19,18 @@ class WalletConnectRequest {
     }
 
     struct Chain {
-        let id: Int
+        let id: String
         let chainName: String?
         let address: String?
 
-        init(id: Int, chainName: String? = nil, address: String? = nil) {
+        init(id: String, chainName: String? = nil, address: String? = nil) {
             self.id = id
             self.chainName = chainName
             self.address = address
+        }
+
+        var description: String {
+            chainName ?? id
         }
     }
 }

@@ -1,10 +1,8 @@
 import UIKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import RxSwift
 import MarketKit
-import ComponentKit
 import Alamofire
 
 class LiquidityCoinSelectViewController: ThemeSearchViewController {

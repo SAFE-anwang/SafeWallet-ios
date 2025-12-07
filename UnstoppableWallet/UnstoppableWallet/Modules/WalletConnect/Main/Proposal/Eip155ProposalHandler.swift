@@ -5,6 +5,9 @@ class Eip155ProposalHandler {
     static let namespace = "eip155"
 
     static let supportedEvents = [
+        "connect",
+        "disconnect",
+        "message",
         "chainChanged",
         "accountsChanged",
     ]
@@ -19,58 +22,61 @@ class Eip155ProposalHandler {
         self.supportedMethods = supportedMethods
     }
 
-    private func blockchainSet(namespace: ProposalNamespace) -> WalletConnectMainModule.BlockchainSet {
-        var set = WalletConnectMainModule.BlockchainSet.empty
+    private func blockchains(namespace: ProposalNamespace) -> [WalletConnectMainModule.BlockchainProposal] {
+        var items = [WalletConnectMainModule.BlockchainItem]()
+        var methods = Set<String>()
+        var events = Set<String>()
 
         for blockchain in namespace.chains ?? [] {
-            guard let chainId = Int(blockchain.reference),
+            guard blockchain.namespace == Eip155ProposalHandler.namespace,
+                  let chainId = Int(blockchain.reference),
                   let evmBlockchain = evmBlockchainManager.blockchain(chainId: chainId)
             else {
                 // can't get blockchain by chainId, or can't parse chainId
                 continue
             }
 
-            let chain = evmBlockchainManager.chain(blockchainType: evmBlockchain.type)
-
-            guard let address = try? WalletConnectManager.evmAddress(account: account, chain: chain) else {
+            guard let chain = try? evmBlockchainManager.chain(blockchainType: evmBlockchain.type),
+                  let address = try? WalletConnectManager.evmAddress(account: account, chain: chain)
+            else {
                 // can't get address for chain
                 continue
             }
 
-            set.items.insert(
+            items.append(
                 WalletConnectMainModule.BlockchainItem(
                     namespace: blockchain.namespace,
-                    chainId: chainId,
+                    chainId: blockchain.reference,
                     blockchain: evmBlockchain,
                     address: address.eip55
                 )
             )
         }
 
-        namespace.methods.forEach {
-            if supportedMethods.contains($0) {
-                set.methods.insert($0)
+        for method in namespace.methods {
+            if supportedMethods.contains(method) {
+                methods.insert(method)
             }
         }
 
-        namespace.events.forEach {
-            if Self.supportedEvents.contains($0) {
-                set.events.insert($0)
+        for event in namespace.events {
+            if Self.supportedEvents.contains(event) {
+                events.insert(event)
             }
         }
 
-        return set
+        return items.map { .init(item: $0, methods: methods, events: events) }
     }
 }
 
 extension Eip155ProposalHandler: IProposalHandler {
-    func handle(provider: INamespaceProvider) -> WalletConnectMainModule.BlockchainSet {
-        var set = WalletConnectMainModule.BlockchainSet.empty
+    func handle(provider: INamespaceProvider) -> [WalletConnectMainModule.BlockchainProposal] {
+        var proposals = [WalletConnectMainModule.BlockchainProposal]()
 
-        provider.get(namespace: Self.namespace).forEach { namespace in
-            set.formUnion(blockchainSet(namespace: namespace))
+        for namespace in provider.get(namespace: Self.namespace) {
+            proposals.append(contentsOf: blockchains(namespace: namespace))
         }
 
-        return set
+        return proposals
     }
 }

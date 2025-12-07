@@ -1,7 +1,7 @@
-import ComponentKit
+
 import SectionsTableView
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class EvmPrivateKeyViewController: ThemeViewController {
@@ -67,16 +67,20 @@ class EvmPrivateKeyViewController: ThemeViewController {
 
         let module = MarkdownModule.viewController(url: url, handleRelativeUrl: false)
         present(ThemeNavigationController(rootViewController: module), animated: true)
+        stat(page: .evmPrivateKey, event: .open(page: .info))
     }
 
     @objc private func onTapCopy() {
-        let viewController = BottomSheetModule.copyConfirmation(value: viewModel.privateKey)
+        let viewController = BottomSheetModule.copyConfirmation(value: viewModel.privateKey) {
+            stat(page: .evmPrivateKey, event: .copy(entity: .evmPrivateKey))
+        }
         present(viewController, animated: true)
     }
 
     private func toggle() {
         visible = !visible
         tableView.reload()
+        stat(page: .evmPrivateKey, event: .toggleHidden)
     }
 }
 

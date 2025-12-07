@@ -1,11 +1,9 @@
-import EvmKit
 import MarketKit
 import OneInchKit
-import SwiftUI
 import UniswapKit
 
-enum MultiSwapModule {
-    static func view(token: MarketKit.Token? = nil) -> some View {
+extension MultiSwapViewModel {
+    static func instance(token: MarketKit.Token? = nil) -> MultiSwapViewModel {
         let storage = MultiSwapSettingStorage()
         var providers = [IMultiSwapProvider]()
 
@@ -28,8 +26,9 @@ enum MultiSwapModule {
         }
 
         providers.append(ThorChainMultiSwapProvider(storage: storage))
+        providers.append(MayaMultiSwapProvider(storage: storage))
+        providers.append(AllBridgeMultiSwapProvider(storage: storage))
 
-        let viewModel = MultiSwapViewModel(providers: providers, token: token)
-        return MultiSwapView(viewModel: viewModel)
+        return MultiSwapViewModel(providers: providers, token: token)
     }
 }

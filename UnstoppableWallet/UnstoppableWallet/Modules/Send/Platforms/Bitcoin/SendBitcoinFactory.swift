@@ -17,42 +17,40 @@ protocol ISendOutputSelectorFactory {
 }
 
 class BaseSendFactory {
-    func values(fiatService: FiatService) throws -> (CoinValue, CurrencyValue?) {
+    func values(fiatService: FiatService) throws -> (AppValue, CurrencyValue?) {
         guard let token = fiatService.token else {
             throw ConfirmationError.noCoin
         }
 
-        var coinValue: CoinValue?
+        var appValue: AppValue?
         var currencyValue: CurrencyValue?
 
         switch fiatService.primaryInfo {
         case let .amount(value):
-            coinValue = CoinValue(kind: .token(token: token), value: value)
+            appValue = AppValue(token: token, value: value)
         case let .amountInfo(info):
             guard let info else {
                 throw ConfirmationError.noAmount
             }
 
             switch info {
-            case let .coinValue(value): coinValue = value
+            case let .appValue(value): appValue = value
             case let .currencyValue(value): currencyValue = value
             }
         }
 
         if let info = fiatService.secondaryAmountInfo {
             switch info {
-            case let .coinValue(value): coinValue = value
+            case let .appValue(value): appValue = value
             case let .currencyValue(value): currencyValue = value
             }
         }
 
-        guard let coinValue else {
+        guard let appValue else {
             throw ConfirmationError.noAmount
         }
 
-        let negativeCoinValue = CoinValue(kind: coinValue.kind, value: Decimal(sign: .minus, exponent: coinValue.value.exponent, significand: coinValue.value.significand))
-
-        return (negativeCoinValue, currencyValue)
+        return (appValue.negative, currencyValue)
     }
 }
 
@@ -98,18 +96,18 @@ class SendBitcoinFactory: BaseSendFactory {
             throw ConfirmationError.noAddress
         }
 
-        let (coinValue, currencyValue) = try values(fiatService: fiatService)
-        let (feeCoinValue, feeCurrencyValue) = try values(fiatService: feeFiatService)
+        let (appValue, currencyValue) = try values(fiatService: fiatService)
+        let (feeAppValue, feeCurrencyValue) = try values(fiatService: feeFiatService)
 
-        viewItems.append(SendConfirmationAmountViewItem(coinValue: coinValue, currencyValue: currencyValue, receiver: address))
+        viewItems.append(SendConfirmationAmountViewItem(appValue: appValue, currencyValue: currencyValue, receiver: address))
 
         if memoService.isAvailable, let memo = memoService.memo, !memo.isEmpty {
             viewItems.append(SendConfirmationMemoViewItem(memo: memo))
         }
 
-        viewItems.append(SendConfirmationFeeViewItem(coinValue: feeCoinValue, currencyValue: feeCurrencyValue))
+        viewItems.append(SendConfirmationFeeViewItem(appValue: feeAppValue, currencyValue: feeCurrencyValue))
 
-        if !App.shared.btcBlockchainManager.transactionRbfEnabled(blockchainType: token.blockchainType) {
+        if !Core.shared.btcBlockchainManager.transactionRbfEnabled(blockchainType: token.blockchainType) {
             viewItems.append(SendConfirmationDisabledRbfViewItem())
         }
 
@@ -126,7 +124,7 @@ extension SendBitcoinFactory: ISendConfirmationFactory {
         let items = try items()
 
         let service = SendConfirmationService(sendService: adapterService, logger: logger, token: token, items: items)
-        let contactLabelService = ContactLabelService(contactManager: App.shared.contactManager, blockchainType: token.blockchainType)
+        let contactLabelService = ContactLabelService(contactManager: Core.shared.contactManager, blockchainType: token.blockchainType)
         let viewModel = SendConfirmationViewModel(service: service, contactLabelService: contactLabelService)
         let viewController = SendConfirmationViewController(viewModel: viewModel)
 
@@ -174,8 +172,8 @@ extension SendBitcoinFactory: ISendOutputSelectorFactory {
         let feeViewModel = SendFeeViewModel(service: feeService)
         let amountViewModel = AmountOutputSelectorViewModel(fiatService: fiatService)
 
-        let switchService = AmountTypeSwitchService(userDefaultsStorage: App.shared.userDefaultsStorage)
-        let outputSelectorFiatService = BaseFiatService(switchService: switchService, currencyManager: App.shared.currencyManager, marketKit: App.shared.marketKit)
+        let switchService = AmountTypeSwitchService(userDefaultsStorage: Core.shared.userDefaultsStorage)
+        let outputSelectorFiatService = BaseFiatService(switchService: switchService, currencyManager: Core.shared.currencyManager, marketKit: Core.shared.marketKit)
         outputSelectorFiatService.set(token: token)
 
         let viewModel = OutputSelectorViewModel(adapterService: adapterService, fiatService: outputSelectorFiatService)

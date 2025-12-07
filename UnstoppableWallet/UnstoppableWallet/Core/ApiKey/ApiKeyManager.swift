@@ -9,7 +9,7 @@ class ApiKeyManager {
         service = ApiKeyService(provider: provider)
     }
     
-    static func getApiKey(name: ApiKeyName) -> [String]? {
+    static func apiKeys(name: ApiKeyName) -> [String]? {
         ApiKeyService.getCacheApiKeys().filter{$0.name == name.rawValue}.first?.key
     }
     

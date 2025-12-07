@@ -11,9 +11,7 @@ import BigInt
 import web3swift
 import Web3Core
 import HsExtensions
-import ThemeKit
 import BitcoinCore
-import ComponentKit
 import CryptoKit
 import BitcoinKit
 import HsCryptoKit
@@ -276,7 +274,7 @@ extension RedeemSafe3ViewModel {
                     let hdWallet = try safe3Adapter.hdWallet(safe3Wallet)
 
                     self.step = .check
-                    let unspentOutputs = safe3Adapter.bitcoinCore.unspentOutputs
+                    let unspentOutputs = safe3Adapter.bitcoinCore.unspentOutputs(filters: UtxoFilters())
                     let availableAmount = BigUInt(unspentOutputs.map{$0.output.value}.reduce(0, +))
                     
                     let spendableTimeLockUtxo = safe3Adapter.bitcoinCore.unspendableTimeLockedUtxo

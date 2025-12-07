@@ -1,14 +1,15 @@
 import Combine
-import ComponentKit
+
 import Foundation
 
 class BackupAppViewModel: ObservableObject {
     static let backupNamePrefix = "App Backup"
-    let accountManager: AccountManager
-    let contactManager: ContactBookManager
-    let cloudBackupManager: CloudBackupManager
-    let favoritesManager: FavoritesManager
-    let evmSyncSourceManager: EvmSyncSourceManager
+    private let accountManager = Core.shared.accountManager
+    private let contactManager = Core.shared.contactManager
+    private let cloudBackupManager = Core.shared.cloudBackupManager
+    private let watchlistManager = Core.shared.watchlistManager
+    private let evmSyncSourceManager = Core.shared.evmSyncSourceManager
+    private let moneroNodeManager = Core.shared.moneroNodeManager
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -86,15 +87,8 @@ class BackupAppViewModel: ObservableObject {
     @Published var passwordButtonProcessing = false
 
     private var dismissSubject = PassthroughSubject<Void, Never>()
-    @Published var sharePresented: URL?
 
-    init(accountManager: AccountManager, contactManager: ContactBookManager, cloudBackupManager: CloudBackupManager, favoritesManager: FavoritesManager, evmSyncSourceManager: EvmSyncSourceManager) {
-        self.accountManager = accountManager
-        self.contactManager = contactManager
-        self.cloudBackupManager = cloudBackupManager
-        self.favoritesManager = favoritesManager
-        self.evmSyncSourceManager = evmSyncSourceManager
-
+    init() {
         cloudAvailable = cloudBackupManager.iCloudUrl != nil
         cloudBackupManager.$state
             .sink(receiveValue: { [weak self] state in
@@ -155,9 +149,10 @@ extension BackupAppViewModel {
 
         return BackupAppModule.items(
             watchAccountCount: accounts(watch: true).count,
-            watchlistCount: favoritesManager.allCoinUids.count,
+            watchlistCount: watchlistManager.coinUids.count,
             contactAddressCount: contacts.count,
-            blockchainSourcesCount: evmSyncSourceManager.customSyncSources(blockchainType: nil).count
+            customEvmSyncSources: evmSyncSourceManager.customSyncSources(blockchainType: nil).count,
+            customMoneroNodes: moneroNodeManager.customNodes(blockchainType: nil).count
         )
     }
 
@@ -235,6 +230,11 @@ extension BackupAppViewModel {
     }
 
     @MainActor
+    func showDone() {
+        HudHelper.instance.show(banner: .done)
+    }
+
+    @MainActor
     private func show(error: Error) {
         HudHelper.instance.show(banner: .error(string: error.localizedDescription))
     }
@@ -255,6 +255,8 @@ extension BackupAppViewModel {
                     try cloudBackupManager.save(accountIds: selectedIds, passphrase: password, name: name)
                     passwordButtonProcessing = false
                     await showSuccess()
+
+                    stat(page: .exportFullToCloud, event: .exportFull)
                     dismissSubject.send()
                 } catch {
                     passwordButtonProcessing = false
@@ -263,7 +265,24 @@ extension BackupAppViewModel {
             case .local:
                 do {
                     let url = try cloudBackupManager.file(accountIds: selectedIds, passphrase: password, name: name)
-                    sharePresented = url
+
+                    Coordinator.shared.present { _ in
+                        ActivityView(activityItems: [url], completionWithItemsHandler: { _, success, _, error in
+                            Task { [weak self] in
+                                if success {
+                                    stat(page: .exportFullToFiles, event: .exportFull)
+
+                                    await self?.showDone()
+                                    self?.dismissSubject.send()
+                                }
+
+                                if let error {
+                                    await self?.show(error: error)
+                                }
+                            }
+                        })
+                    }
+
                     passwordButtonProcessing = false
                 } catch {
                     passwordButtonProcessing = false
@@ -277,6 +296,13 @@ extension BackupAppViewModel {
 extension BackupAppViewModel {
     var dismissPublisher: AnyPublisher<Void, Never> {
         dismissSubject.eraseToAnyPublisher()
+    }
+
+    var statPage: StatPage {
+        switch destination {
+        case .cloud: return .exportFullToCloud
+        default: return .exportFullToFiles
+        }
     }
 }
 

@@ -1,8 +1,6 @@
-import ComponentKit
 import RxCocoa
 import RxSwift
 import SnapKit
-import ThemeKit
 import UIKit
 
 class NodeDetailVoteRecordHeaderView: UITableViewHeaderFooterView {

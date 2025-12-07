@@ -62,6 +62,7 @@ class ContactBookContactViewModel {
             blockchainUid: item.blockchain.uid,
             blockchainImageUrl: item.blockchain.type.imageUrl,
             blockchainName: item.blockchain.name,
+            blockchainCode: item.blockchainCode,
             address: item.address,
             edited: item.edited
         )
@@ -135,6 +136,7 @@ extension ContactBookContactViewModel {
         let blockchainUid: String
         let blockchainImageUrl: String
         let blockchainName: String
+        let blockchainCode: String
         let address: String
         let edited: Bool
     }

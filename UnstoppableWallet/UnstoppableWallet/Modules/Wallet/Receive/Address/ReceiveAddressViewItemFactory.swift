@@ -1,9 +1,13 @@
 import Foundation
 
 class ReceiveAddressViewItemFactory: IReceiveAddressViewItemFactory {
-    typealias Item = ReceiveAddressService.Item
+    typealias Item = ReceiveAddress
 
-    func viewItem(item: Item, amount: String?) -> ReceiveAddressModule.ViewItem {
+    func viewItem(item: ReceiveAddress, amount: String?) -> ReceiveAddressModule.ViewItem {
+        guard let item = item as? ReceiveAddressService.AssetReceiveAddress else {
+            return .empty(address: item.raw)
+        }
+
         var description: ReceiveAddressModule.HighlightedDescription?
         if item.watchAccount {
             description = .init(
@@ -37,7 +41,10 @@ class ReceiveAddressViewItemFactory: IReceiveAddressViewItemFactory {
             addressUri.parameters[.blockchainUid] = item.token.blockchainType.uid
             switch item.token.type {
             case .addressType, .derived: ()
-            default: addressUri.parameters[.tokenUid] = item.token.type.id
+            default:
+                if item.token.blockchainType != .monero {
+                    addressUri.parameters[.tokenUid] = item.token.type.id
+                }
             }
 
             uri = parser.uri(addressUri)
@@ -49,13 +56,18 @@ class ReceiveAddressViewItemFactory: IReceiveAddressViewItemFactory {
         )
         var amountString: String?
         if let amount, let decimalValue = Decimal(string: amount) {
-            let coinValue = CoinValue(kind: .token(token: item.token), value: decimalValue)
-            amountString = coinValue.formattedFull
+            let appValue = AppValue(token: item.token, value: decimalValue)
+            amountString = appValue.formattedFull()
         }
 
         var active = true
         if let address = item.address as? ActivatedDepositAddress, !address.isActive {
             active = false
+        }
+
+        var assetActivated = true
+        if let address = item.address as? StellarDepositAddress, !address.assetActivated {
+            assetActivated = false
         }
 
         let notEmpty = item.usedAddresses?.contains { _, value in !value.isEmpty } ?? false
@@ -65,23 +77,41 @@ class ReceiveAddressViewItemFactory: IReceiveAddressViewItemFactory {
             qrItem: qrItem,
             amount: amountString,
             active: active,
+            assetActivated: assetActivated,
             memo: nil,
             usedAddresses: notEmpty ? item.usedAddresses : nil
         )
     }
 
     func popup(item: Item) -> ReceiveAddressModule.PopupWarningItem? {
+        guard let item = item as? ReceiveAddressService.AssetReceiveAddress else {
+            return nil
+        }
+
         if let address = item.address as? ActivatedDepositAddress, !address.isActive {
             return .init(
                 title: "deposit.not_active.title".localized,
-                description: .init(text: "deposit.not_active.tron_description".localized, style: .yellow),
-                doneButtonTitle: "button.i_understand".localized
+                description: .init(text: "deposit.not_active.tron_description".localized, style: .warning),
+                mode: .done(title: "button.i_understand".localized)
             )
         }
+
+        if let address = item.address as? StellarDepositAddress, !address.assetActivated {
+            return .init(
+                title: "deposit.stellar.inactive_asset.title".localized,
+                description: .init(text: "deposit.stellar.inactive_asset.description".localized(item.coinCode, item.coinCode), style: .warning),
+                mode: .activateStellarAsset
+            )
+        }
+
         return nil
     }
 
     func actions(item: Item) -> [ReceiveAddressModule.ActionType] {
+        guard let item = item as? ReceiveAddressService.AssetReceiveAddress else {
+            return [.copy, .share]
+        }
+
         if item.watchAccount {
             return [.copy, .share]
         }

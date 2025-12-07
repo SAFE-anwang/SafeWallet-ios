@@ -1,9 +1,7 @@
 import UIKit
-import ThemeKit
 import SnapKit
 import RxSwift
 import RxCocoa
-import ComponentKit
 
 class LiquidityConfirmationViewController: AddLiquidityTransactionViewController {
     private let swapButton = PrimaryButton()

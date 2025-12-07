@@ -1,35 +1,26 @@
 import Foundation
-import RxSwift
-import RxRelay
-import RxCocoa
 import EvmKit
+import Combine
 
-class ProposalTabViewModel {
-    private let currentTabRelay: BehaviorRelay<ProposalModule.Tab>
-    private let evmKit: EvmKit.Kit
-    init(evmKit: EvmKit.Kit) {
+class ProposalTabViewModel: ObservableObject {
+    @Published var currentTab: ProposalModule.Tab = .all
+    let evmKit: EvmKit.Kit
+    let privateKey: Data
+    
+    init(evmKit: EvmKit.Kit, privateKey: Data) {
         self.evmKit = evmKit
-        currentTabRelay = BehaviorRelay<ProposalModule.Tab>(value: .all)
+        self.privateKey = privateKey
     }
-
 }
 
 extension ProposalTabViewModel {
-
-    var currentTabDriver: Driver<ProposalModule.Tab> {
-        currentTabRelay.asDriver()
-    }
-
+    
     var tabs: [ProposalModule.Tab] {
         ProposalModule.Tab.allCases
     }
 
-    func onSelect(tab: ProposalModule.Tab) {
-        currentTabRelay.accept(tab)
-    }
-    
     var isEnabledAdd: Bool {
         (evmKit.lastBlockHeight ?? 0) > 86400
     }
-
 }
+

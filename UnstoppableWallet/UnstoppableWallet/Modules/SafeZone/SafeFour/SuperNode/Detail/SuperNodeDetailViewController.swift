@@ -2,12 +2,9 @@ import Foundation
 import UIKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIExtensions
 import RxSwift
 import RxCocoa
-import ComponentKit
-import HUD
 
 class SuperNodeDetailViewController: ThemeViewController {
     
@@ -164,8 +161,7 @@ extension SuperNodeDetailViewController {
         let vc = SuperNodeDetailSendViewController(viewModel: viewModel, sendAmount: sendAmount)
         vc.partnerCompleted = { [weak self] in
             self?.tableView.reload()
-            self?.navigationController?.popToViewController(ofClass: SuperNodeTabViewController.self)
-
+            self?.dismiss(animated: true)
         }
         navigationController?.pushViewController(vc, animated: true)
     }
@@ -174,7 +170,7 @@ extension SuperNodeDetailViewController {
         let vc = SuperNodeDetailVoteSendViewController(viewModel: viewModel, type: type)
         vc.partnerCompleted = { [weak self] in
             self?.tableView.reload()
-            self?.navigationController?.popToViewController(ofClass: SuperNodeTabViewController.self)
+            self?.dismiss(animated: true)
         }
         navigationController?.pushViewController(vc, animated: true)
     }

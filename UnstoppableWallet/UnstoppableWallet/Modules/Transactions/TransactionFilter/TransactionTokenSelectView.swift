@@ -4,12 +4,13 @@ import SwiftUI
 
 struct TransactionTokenSelectView: View {
     @ObservedObject var viewModel: TransactionTokenSelectViewModel
+    @Binding var isPresented: Bool
 
-    @Environment(\.presentationMode) private var presentationMode
     @State private var searchText: String = ""
 
-    init(transactionFilterViewModel: TransactionFilterViewModel) {
+    init(transactionFilterViewModel: TransactionFilterViewModel, isPresented: Binding<Bool>) {
         _viewModel = ObservedObject(wrappedValue: TransactionTokenSelectViewModel(transactionFilterViewModel: transactionFilterViewModel))
+        _isPresented = isPresented
     }
 
     var body: some View {
@@ -21,7 +22,7 @@ struct TransactionTokenSelectView: View {
                     ListSection {
                         ClickableRow(action: {
                             viewModel.set(currentToken: nil)
-                            presentationMode.wrappedValue.dismiss()
+                            isPresented = false
                         }) {
                             Image("circle_coin_24").themeIcon()
                             Text("transaction_filter.all_coins").themeBody()
@@ -34,19 +35,16 @@ struct TransactionTokenSelectView: View {
                         ForEach(searchResults, id: \.self) { token in
                             ClickableRow(action: {
                                 viewModel.set(currentToken: token)
-                                presentationMode.wrappedValue.dismiss()
+                                isPresented = false
                             }) {
-                                KFImage.url(URL(string: token.coin.imageUrl))
-                                    .resizable()
-                                    .placeholder { Image(token.placeholderImageName) }
-                                    .frame(width: .iconSize32, height: .iconSize32)
+                                CoinIconView(coin: token.coin, placeholderImage: token.placeholderImageName)
 
                                 VStack(spacing: 1) {
                                     HStack(spacing: .margin8) {
                                         Text(token.coin.code).textBody()
 
                                         if let badge = token.badge {
-                                            BadgeViewNew(text: badge)
+                                            BadgeViewNew(badge)
                                         }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,7 +66,7 @@ struct TransactionTokenSelectView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 Button("button.cancel".localized) {
-                    presentationMode.wrappedValue.dismiss()
+                    isPresented = false
                 }
             }
         }

@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import EvmKit
+
 class TransactionRecord {
     let source: TransactionSource
     let uid: String
@@ -12,7 +13,9 @@ class TransactionRecord {
     let failed: Bool
     let spam: Bool
 
-    init(source: TransactionSource, uid: String, transactionHash: String, transactionIndex: Int, blockHeight: Int?, confirmationsThreshold: Int?, date: Date, failed: Bool, spam: Bool = false) {
+    var paginationRaw: String
+
+    init(source: TransactionSource, uid: String, transactionHash: String, transactionIndex: Int, blockHeight: Int?, confirmationsThreshold: Int?, date: Date, failed: Bool, paginationRaw: String? = nil, spam: Bool = false) {
         self.source = source
         self.uid = uid
         self.transactionHash = transactionHash
@@ -22,6 +25,8 @@ class TransactionRecord {
         self.date = date
         self.failed = failed
         self.spam = spam
+
+        self.paginationRaw = paginationRaw ?? transactionHash
     }
 
     func status(lastBlockHeight: Int?) -> TransactionStatus {
@@ -45,32 +50,14 @@ class TransactionRecord {
         nil
     }
 
-    open var mainValue: TransactionValue? {
+    open var mainValue: AppValue? {
         nil
     }
+}
 
-    static func isSpam(transactionValues: [TransactionValue]) -> Bool {
-        for value in transactionValues {
-            switch value {
-            case let .coinValue(token, value):
-                let stableCoinUids = ["tether", "usd-coin", "dai", "binance-usd", "binance-peg-busd", "stasis-eurs"]
-
-                if stableCoinUids.contains(token.coin.uid) {
-                    if value > 0.01 {
-                        return false
-                    }
-                } else if value > 0 {
-                    return false
-                }
-            case let .nftValue(_, value, _, _):
-                if value > 0 {
-                    return false
-                }
-            default: ()
-            }
-        }
-
-        return true
+extension TransactionRecord: Identifiable {
+    var id: String {
+        uid
     }
 }
 
@@ -84,7 +71,7 @@ extension TransactionRecord: Comparable {
             return lhs.transactionIndex > rhs.transactionIndex
         }
 
-        return lhs.uid > rhs.uid
+        return lhs.paginationRaw > rhs.paginationRaw
     }
 
     public static func == (lhs: TransactionRecord, rhs: TransactionRecord) -> Bool {

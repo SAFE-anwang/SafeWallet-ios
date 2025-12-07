@@ -1,16 +1,12 @@
 import Kingfisher
 import SwiftUI
-import ThemeKit
 import UIExtensions
 import SafariServices
-import ComponentKit
 import MarketKit
 import Combine
 
 struct MainSafeZoneView: View {
-    @Environment(\.navigationController) var navController
-    @State private var presentDestination: PresentDestination?
-    @State private var linkUrl: URL?
+
     var body: some View {
         ScrollableThemeView {
             VStack(spacing: .margin8) {
@@ -25,42 +21,27 @@ struct MainSafeZoneView: View {
                 SectionSRC20View()
                 SectionBasicInfoView()
             }
-            .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
+            .padding(EdgeInsets(top: .margin2, leading: .margin16, bottom: .margin32, trailing: .margin16))
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("safe_zone.nav.title".localized)
-        .sheet(item: $presentDestination) { reason in
-            switch reason {
-            case .lineLockRecoard:
-                LineLockRecoardView()
-                
-            case let .crossChain(vc):
-                Safe4CrossChainView(viewController: vc)
-                
-            case .safeSwapScr20:
-                Safe4SwapSrc20View()
-            }
-        }
-        .sheet(item: $linkUrl) { url in
-            SFSafariView(url: url)
-                .ignoresSafeArea()
-        }
-
     }
 
     @ViewBuilder private func SectionLockView() -> some View {
         SafeListSectionHeader(text: "SAFE")
         ListSection {
             ClickableRow(action: {
-                if let vc = SafeLineLockModule.viewController() {
-                    navController?.pushViewController(vc, animated: true)
+                guard let vm = SafeLineLockModule.viewModel() else { return }
+                Coordinator.shared.present { _ in
+                    SafeLineLockView(viewModel: vm)
                 }
             }) {
                 ItemView(title: "safe_zone.row.linear".localized)
             }
             ClickableRow(action: {
-                if let vc = SafeLineLockRecoardModule.viewController() {
-                    navController?.pushViewController(vc, animated: true)
+                guard let vm = SafeLineLockRecoardModule.viewModel() else { return }
+                Coordinator.shared.present { _ in
+                    SafeLineLockRecoardView(viewModel: vm)
                 }
             }) {
                 ItemView(title: "safe_zone.row.lock".localized)
@@ -82,8 +63,9 @@ struct MainSafeZoneView: View {
         }.padding(EdgeInsets(top: .margin12, leading: 0, bottom: 0, trailing: 0))
         ListSection {
             ClickableRow(action: {
-                if let vc = LineLockRecoardModule.viewController() {
-                    navController?.pushViewController(vc, animated: true)
+                guard let viewModel = LineLockRecoardModule.viewModel() else { return }
+                Coordinator.shared.present { _ in
+                    LineLockRecoardView(viewModel: viewModel)
                 }
             }) {
                 ItemView(title: "safe_zone.row.lock".localized)
@@ -95,40 +77,55 @@ struct MainSafeZoneView: View {
         SafeListSectionHeader(text: "SAFE")
         ListSection {
             ClickableRow(action: {
-                guard let vc = SuperNodeModule.viewController() else{ return }
-                navController?.pushViewController(vc, animated: true)
+                guard let viewModel = SuperNodeModule.tabViewModel() else{ return }
+                Coordinator.shared.present { _ in
+                    SuperNodeTabView(viewModel: viewModel)
+                        .ignoresSafeArea()
+                }
             }) {
                 ItemView(title: "safe_zone.row.superNode".localized)
             }
             ClickableRow(action: {
-                guard let vc = MasterNodeModule.viewController() else{ return }
-                navController?.pushViewController(vc, animated: true)
+                guard let viewModel = MasterNodeModule.tabViewModel() else{ return }
+                Coordinator.shared.present { _ in
+                    MasterNodeTabView(viewModel: viewModel)
+                        .ignoresSafeArea()
+                }
             }) {
                 ItemView(title: "safe_zone.row.masterNode".localized)
             }
             ClickableRow(action: {
-                guard let vc = ProposalModule.viewController() else { return }
-                navController?.pushViewController(vc, animated: true)
+                guard let viewModel = ProposalModule.tabViewModel() else { return }
+                Coordinator.shared.present { _ in
+                    ProposalTabView(viewModel: viewModel)
+                        .ignoresSafeArea()
+                }
             }) {
                 ItemView(title: "safe_zone.row.proposal".localized)
             }
             ClickableRow(action: {
-                guard let nav = navController else { return }
-                guard let vc = LockedRecordModule.viewController(nav: nav) else { return }
-                vc.hidesBottomBarWhenPushed = true
-                navController?.pushViewController(vc, animated: true)
+                guard let vm = LockedRecordModule.viewModel() else { return }
+                Coordinator.shared.present { _ in
+                    LockedRecordView(viewModel: vm)
+                        .ignoresSafeArea()
+                }
             }) {
                 ItemView(title: "safe_zone.safe4.account.lock".localized)
             }
             ClickableRow(action: {
-                guard let vc = RedeemSafe3Module.viewController() else { return }
-                navController?.pushViewController(vc, animated: true)
+                guard let viewModel = RedeemSafe3Module.tabViewModel() else { return }
+                Coordinator.shared.present { _ in
+                    RedeemSafe3TabView(viewModel: viewModel).ignoresSafeArea()
+                }
             }) {
                 TagItemView(text: "=> SAFE", name: "SAFE", code: "SAFE3", type: .left)
             }
             ClickableRow(action: {
-                guard let vc = DrawSafe4Module.viewController() else { return }
-                navController?.pushViewController(vc, animated: true)
+                guard let viewModel = DrawSafe4Module.viewModel() else { return }
+                Coordinator.shared.present { _ in
+                    DrawSafe4View(viewModel: viewModel)
+                        .ignoresSafeArea()
+                }
             }) {
                 ItemView(title: "SAFE领取".localized)
             }
@@ -140,7 +137,9 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 if let vc = Safe4Module.handlerCrossChain(wsafeType: .ETH, crossChainType: .safeCrossToWSafe, isSafe4: true) {
-                    presentDestination = .crossChain(vc: vc)
+                    Coordinator.shared.present { _ in
+                        Safe4CrossChainView(viewController: vc)
+                    }
                 }
             })
             {
@@ -148,18 +147,22 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 if let vc = Safe4Module.handlerCrossChain(wsafeType: .ETH, crossChainType: .wsafeCrossToSafe, isSafe4: true) {
-                    presentDestination = .crossChain(vc: vc)
+                    Coordinator.shared.present { _ in
+                        Safe4CrossChainView(viewController: vc)
+                    }
                 }
             }) {
                 TagItemView(text:  "=> SAFE", name: "SAFE", code: "ERC20", type: .left)
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://etherscan.io/token/0xEE9c1Ea4DCF0AAf4Ff2D78B6fF83AA69797B65Eb")
+                let linkUrl = URL(string: "https://etherscan.io/token/0xEE9c1Ea4DCF0AAf4Ff2D78B6fF83AA69797B65Eb")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.contract".localized)
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://v2.info.uniswap.org/pair/0x8b04fdc8e8d7ac6400b395eb3f8569af1496ee33")
+                let linkUrl = URL(string: "https://v2.info.uniswap.org/pair/0x8b04fdc8e8d7ac6400b395eb3f8569af1496ee33")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "SAFE@uniswapv2")
             }
@@ -171,25 +174,31 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 if let vc = Safe4Module.handlerCrossChain(wsafeType: .BSC, crossChainType: .safeCrossToWSafe, isSafe4: true) {
-                    presentDestination = .crossChain(vc: vc)
+                    Coordinator.shared.present { _ in
+                        Safe4CrossChainView(viewController: vc)
+                    }
                 }
             }) {
                 TagItemView(text:  "SAFE =>", name: "SAFE", code: "BEP20", type: .right)
             }
             ClickableRow(action: {
                 if let vc = Safe4Module.handlerCrossChain(wsafeType: .BSC, crossChainType: .wsafeCrossToSafe, isSafe4: true) {
-                    presentDestination = .crossChain(vc: vc)
+                    Coordinator.shared.present { _ in
+                        Safe4CrossChainView(viewController: vc)
+                    }
                 }
             }) {
                 TagItemView(text:  "=> SAFE", name: "SAFE", code: "BEP20", type: .left)
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://bscscan.com/token/0x4d7fa587ec8e50bd0e9cd837cb4da796f47218a1")
+                let linkUrl = URL(string: "https://bscscan.com/token/0x4d7fa587ec8e50bd0e9cd837cb4da796f47218a1")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.contract".localized)
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://pancakeswap.finance/info/pool/0x400db103af7a0403c9ab014b2b73702b89f6b4b7")
+                let linkUrl = URL(string: "https://pancakeswap.finance/info/pool/0x400db103af7a0403c9ab014b2b73702b89f6b4b7")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "SAFE@pancakeswap")
             }
@@ -201,20 +210,25 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 if let vc = Safe4Module.handlerCrossChain(wsafeType: .MATIC, crossChainType: .safeCrossToWSafe, isSafe4: true) {
-                    presentDestination = .crossChain(vc: vc)
+                    Coordinator.shared.present { _ in
+                        Safe4CrossChainView(viewController: vc)
+                    }
                 }
             }) {
                 TagItemView(text:  "SAFE =>", name: "SAFE", code: "MATIC", type: .right)
             }
             ClickableRow(action: {
                 if let vc = Safe4Module.handlerCrossChain(wsafeType: .MATIC, crossChainType: .wsafeCrossToSafe, isSafe4: true) {
-                    presentDestination = .crossChain(vc: vc)
+                    Coordinator.shared.present { _ in
+                        Safe4CrossChainView(viewController: vc)
+                    }
                 }
             }) {
                 TagItemView(text:  "=> SAFE", name: "SAFE", code: "MATIC", type: .left)
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://polygonscan.com/address/0xb7Dd19490951339fE65E341Df6eC5f7f93FF2779")
+                let linkUrl = URL(string: "https://polygonscan.com/address/0xb7Dd19490951339fE65E341Df6eC5f7f93FF2779")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.contract".localized)
             }
@@ -236,8 +250,10 @@ struct MainSafeZoneView: View {
         }.padding(EdgeInsets(top: .margin16, leading: 0, bottom: 0, trailing: 0))
         ListSection {
             ClickableRow(action: {
-                if let _ = Safe4SwapModule.viewController() {
-                    presentDestination = .safeSwapScr20
+                if let viewModel = Safe4SwapModule.viewModel() {
+                    Coordinator.shared.present { _ in
+                        Safe4SwapView(viewModel: viewModel)
+                    }
                 }
             }) {
                 TagItemView(text:  "SAFE <=>", name: "SAFE", code: "SRC20", type: .right)
@@ -249,37 +265,42 @@ struct MainSafeZoneView: View {
         SafeListSectionHeader(text: "safe_zone.safe4.withdraw".localized)
         ListSection {
             ClickableRow(action: {
-                guard let vc = WithdrawModule.viewController(type: .masterNode) else { return }
-                vc.hidesBottomBarWhenPushed = true
-                navController?.pushViewController(vc, animated: true)
+                guard let vm = WithdrawModule.viewModel(type: .masterNode) else { return }
+                Coordinator.shared.present { _ in
+                    WithdrawView(viewModel: vm)
+                }
             }) {
                 ItemView(title: SafeWithdrawType.masterNode.title)
             }
             ClickableRow(action: {
-                guard let vc = WithdrawModule.viewController(type: .superNode) else { return }
-                vc.hidesBottomBarWhenPushed = true
-                navController?.pushViewController(vc, animated: true)
+                guard let vm = WithdrawModule.viewModel(type: .superNode) else { return }
+                Coordinator.shared.present { _ in
+                    WithdrawView(viewModel: vm)
+                }
             }) {
                 ItemView(title: SafeWithdrawType.superNode.title)
             }
             ClickableRow(action: {
-                guard let vc = WithdrawModule.viewController(type: .proposal) else { return }
-                vc.hidesBottomBarWhenPushed = true
-                navController?.pushViewController(vc, animated: true)
+                guard let vm = WithdrawModule.viewModel(type: .proposal) else { return }
+                Coordinator.shared.present { _ in
+                    WithdrawView(viewModel: vm)
+                }
             }) {
                 ItemView(title: SafeWithdrawType.proposal.title)
             }
             ClickableRow(action: {
-                guard let vc = RewardsModule.viewController() else { return }
-                vc.hidesBottomBarWhenPushed = true
-                navController?.pushViewController(vc, animated: true)
+                guard let viewModel = RewardsModule.viewModel() else { return }
+                Coordinator.shared.present { _ in
+                    RewardsView(viewModel: viewModel).ignoresSafeArea()
+                }
             }) {
                 ItemView(title: "safe_zone.row.rewards".localized + "safe_zone.safe4.withdraw".localized)
             }
             ClickableRow(action: {
-                guard let vc = WithdrawModule.viewController(type: .voteLocked) else { return }
-                vc.hidesBottomBarWhenPushed = true
-                navController?.pushViewController(vc, animated: true)
+                guard let vm = WithdrawModule.viewModel(type: .voteLocked) else { return }
+                Coordinator.shared.present { _ in
+                    WithdrawView(viewModel: vm)
+                }
             }) {
                 ItemView(title: SafeWithdrawType.voteLocked.title)
             }
@@ -290,17 +311,18 @@ struct MainSafeZoneView: View {
         SafeListSectionHeader(text: "SRC20_Deploy_Title".localized)
         ListSection {
             ClickableRow(action: {
-                guard let vc = DeployModule.viewController() else { return }
-                vc.hidesBottomBarWhenPushed = true
-                navController?.pushViewController(vc, animated: true)
+                guard let viewModel = DeployModule.viewModel() else { return }
+                Coordinator.shared.present { _ in
+                    DeployView(viewModel: viewModel)
+                }
             }) {
                 ItemView(title: "SRC20_Deploy_One_Click_Issu".localized)
             }
             ClickableRow(action: {
-                guard let nav = navController else { return }
-                guard let vc = SRC20ManagerModule.viewController(nav: nav) else { return }
-                vc.hidesBottomBarWhenPushed = true
-                navController?.pushViewController(vc, animated: true)
+                guard let viewModel = SRC20ManagerModule.viewModel() else { return }
+                Coordinator.shared.present { _ in
+                    SRC20ManagerView(viewModel: viewModel)
+                }
             }) {
                 ItemView(title: "SRC20_Deploy_Promotion".localized)
             }
@@ -311,42 +333,50 @@ struct MainSafeZoneView: View {
         SafeListSectionHeader(text: "safe_zone.section.basic".localized)
         ListSection {
             ClickableRow(action: {
-                linkUrl = URL(string: "https://anwang.com")
+                let linkUrl = URL(string: "https://anwang.com")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.homepage".localized)
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://chain.anwang.com")
+                let linkUrl = URL(string: "https://chain.anwang.com")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 TagItemView(text:  "safe_zone.row.blockExplorer".localized(""), name: "SAFE", code: "SAFE3", type: .left)
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://anwang.com/assetgate.html")
+                let linkUrl = URL(string: "https://anwang.com/assetgate.html")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 TagItemView(text: "safe_zone.row.acrossExplorer".localized(""), name: "SAFE", code: "SAFE3", type: .left)
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://safe4.anwang.com")
+                let linkUrl = URL(string: "https://safe4.anwang.com")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.blockExplorer".localized("SAFE"))
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://safe4.anwang.com/crosschains")
+                let linkUrl = URL(string: "https://safe4.anwang.com/crosschains")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.acrossExplorer".localized("SAFE"))
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://www.coingecko.com/en/coins/safe")
+                let linkUrl = URL(string: "https://www.coingecko.com/en/coins/safe")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "SAFE@coingecko")
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://coinmarketcap.com/currencies/safe")
+                let linkUrl = URL(string: "https://coinmarketcap.com/currencies/safe")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "SAFE@coinmarketcap")
             }
             ClickableRow(action: {
-                linkUrl = URL(string: "https://www.coingecko.com/en/coins/safe-anwang")
+                let linkUrl = URL(string: "https://www.coingecko.com/en/coins/safe-anwang")
+                Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "SAFE BEP20@CMC")
             }
@@ -429,7 +459,6 @@ struct MainSafeZoneView: View {
     }
     
     enum PresentDestination: Hashable, Identifiable {
-        case lineLockRecoard
         case crossChain(vc: UIViewController)
         case safeSwapScr20
 

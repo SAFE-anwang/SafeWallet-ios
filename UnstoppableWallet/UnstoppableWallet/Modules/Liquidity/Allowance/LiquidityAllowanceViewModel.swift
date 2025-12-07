@@ -70,8 +70,8 @@ class LiquidityAllowanceViewModel {
         let isInsufficientAllowanceB = errors.first(where: { .insufficientAllowanceB == $0 as? SwapModule.SwapError }) != nil
         switch state {
         case .ready(let allowanceA, let allowanceB):
-            let valueFormatterA = isInsufficientAllowanceA ? ValueFormatter.instance.formatFull(coinValue: allowanceA) : nil
-            let valueFormatterB = isInsufficientAllowanceB ? ValueFormatter.instance.formatFull(coinValue: allowanceB) : nil
+            let valueFormatterA = isInsufficientAllowanceA ? allowanceA.formattedFull() : nil
+            let valueFormatterB = isInsufficientAllowanceB ? allowanceB.formattedFull() : nil
             return (valueFormatterA != nil) ? valueFormatterA : valueFormatterB
         default: return nil
         }

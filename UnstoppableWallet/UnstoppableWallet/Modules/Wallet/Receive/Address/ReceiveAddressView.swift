@@ -1,21 +1,23 @@
+import Combine
+
 import SwiftUI
 
 private let qrSize: CGFloat = 203
 private let appIconSize: CGFloat = 47
 
-struct ReceiveAddressView<Service: IReceiveAddressService, Factory: IReceiveAddressViewItemFactory>: View where Service.ServiceItem == Factory.Item {
-    @ObservedObject var viewModel: ReceiveAddressViewModel<Service, Factory>
+struct ReceiveAddressView: View {
+    @StateObject var viewModel: ReceiveAddressViewModel
     var onDismiss: (() -> Void)?
 
-    @State private var hasAppeared = false
-    @State private var warningAlertPopup: ReceiveAddressModule.PopupWarningItem?
-
-    @State private var shareText: String?
     @State private var inputAmountPresented: Bool = false
 
-    @State private var inputText: String = ""
-
     @Environment(\.presentationMode) private var presentationMode
+
+    init(wallet: Wallet, onDismiss: (() -> Void)? = nil) {
+        self.onDismiss = onDismiss
+
+        _viewModel = StateObject(wrappedValue: ReceiveAddressViewModel.instance(wallet: wallet))
+    }
 
     var body: some View {
         ScrollableThemeView {
@@ -36,6 +38,9 @@ struct ReceiveAddressView<Service: IReceiveAddressService, Factory: IReceiveAddr
                         if !viewItem.active {
                             notActive()
                         }
+                        if !viewItem.assetActivated {
+                            inactiveStellarAsset()
+                        }
                         if let memo = viewItem.memo {
                             view(memo: memo)
                         }
@@ -44,11 +49,14 @@ struct ReceiveAddressView<Service: IReceiveAddressService, Factory: IReceiveAddr
                             NavigationRow(destination: {
                                 UsedAddressesView(
                                     coinName: viewModel.coinName,
+                                    title: viewModel.usedAddressesTitle,
+                                    description: viewModel.usedAddressesDescription,
+                                    hasChangeAddresses: viewModel.hasChangeAddresses,
                                     usedAddresses: usedAddresses,
                                     onDismiss: onDismiss ?? { presentationMode.wrappedValue.dismiss() }
                                 )
                             }) {
-                                Text("deposit.used_addresses".localized).themeSubhead2()
+                                Text(viewModel.usedAddressesTitle).themeSubhead2()
                                 Image.disclosureIcon
                             }
                         }
@@ -67,50 +75,41 @@ struct ReceiveAddressView<Service: IReceiveAddressService, Factory: IReceiveAddr
 
                 Spacer()
             case .failed:
-                PlaceholderViewNew(image: Image("sync_error_48"), text: "sync_error".localized)
+                PlaceholderViewNew(icon: "sync_error_48", subtitle: "sync_error".localized)
             }
         }
-        .onChange(of: viewModel.popup) {
-            guard hasAppeared else { return }
-            warningAlertPopup = $0
-        }
-        .sheet(item: $shareText) { shareText in
-            ActivityView.view(activityItems: [shareText])
-        }
-        .alert("deposit.enter_amount".localized, isPresented: $inputAmountPresented, actions: {
-            TextField("deposit.enter_amount".localized, text: $inputText) // TODO: Can't check valid numbers in default alertview
-                .keyboardType(.decimalPad)
-            Button("button.cancel".localized) {
-                updateAmount(success: false)
+        .textFieldAlert(
+            isPresented: $inputAmountPresented,
+            amountChanged: viewModel.onAmountChanged(_:),
+            content: {
+                TextFieldAlert(
+                    title: "deposit.enter_amount".localized,
+                    message: nil,
+                    initial: viewModel.initialText
+                )
             }
-            Button("button.confirm".localized) {
-                updateAmount(success: true)
-            }
-        })
+        )
         .alertButtonTint(color: .themeJacob)
-        .bottomSheet(item: $warningAlertPopup) { popup in
-            AlertView(
-                image: .warning,
-                title: popup.title,
-                items: [
-                    .highlightedDescription(text: popup.description.text, style: popup.description.style),
-                ],
-                buttons: [
-                    .init(style: .yellow, title: popup.doneButtonTitle) { warningAlertPopup = nil },
-                ],
-                onDismiss: { warningAlertPopup = nil }
-            )
-        }
-        .onAppear {
-            guard !hasAppeared else { return }
-            hasAppeared = true
-
+        .onFirstAppear {
             viewModel.onFirstAppear()
+        }
+        .onReceive(viewModel.popupPublisher) { popup in
+            Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                BottomSheetView(
+                    icon: .warning,
+                    title: popup.title,
+                    items: [
+                        .highlightedDescription(text: popup.description.text, style: popup.description.style),
+                    ],
+                    buttons: popupButtons(mode: popup.mode, isPresented: isPresented),
+                    isPresented: isPresented
+                )
+            }
         }
         .navigationTitle(viewModel.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .confirmationAction) {
                 Button("button.done".localized) {
                     if let onDismiss {
                         onDismiss()
@@ -132,7 +131,7 @@ struct ReceiveAddressView<Service: IReceiveAddressService, Factory: IReceiveAddr
                         .padding(.margin2)
                         .background(Color.white)
 
-                    Image(uiImage: UIImage(named: AppIcon.main.imageName) ?? UIImage())
+                    Image(AppIcon.main.imageName)
                         .resizable()
                         .scaledToFit()
                         .frame(width: appIconSize, height: appIconSize)
@@ -180,17 +179,16 @@ struct ReceiveAddressView<Service: IReceiveAddressService, Factory: IReceiveAddr
             return
         }
         switch action {
-        case .amount: inputAmountPresented = true
-        case .share: shareText = data.copyValue
-        case .copy: CopyHelper.copyAndNotify(value: data.copyValue)
-        }
-    }
-
-    private func updateAmount(success: Bool) {
-        if success {
-            viewModel.set(amount: inputText)
-        } else {
-            inputText = viewModel.amount == 0 ? "" : viewModel.amount.description
+        case .amount:
+            inputAmountPresented = true
+        case .share:
+            Coordinator.shared.present { _ in
+                ActivityView(activityItems: [data.copyValue])
+            }
+            stat(page: .receive, event: .share(entity: .receiveAddress))
+        case .copy:
+            CopyHelper.copyAndNotify(value: data.copyValue)
+            stat(page: .receive, event: .copy(entity: .receiveAddress))
         }
     }
 
@@ -200,8 +198,8 @@ struct ReceiveAddressView<Service: IReceiveAddressService, Factory: IReceiveAddr
             Spacer()
             Text(amount).textSubhead1(color: .themeLeah)
             Button(action: {
-                inputText = ""
                 viewModel.set(amount: "")
+                stat(page: .receive, event: .removeAmount)
             }, label: {
                 Image("trash_20").renderingMode(.template)
             })
@@ -210,32 +208,41 @@ struct ReceiveAddressView<Service: IReceiveAddressService, Factory: IReceiveAddr
     }
 
     @ViewBuilder func notActive() -> some View {
-        ListRow {
+        ListRow(padding: EdgeInsets(top: .margin12, leading: 0, bottom: .margin12, trailing: .margin16)) {
             Text("deposit.account".localized)
                 .textSubhead2()
                 .modifier(
-                    Informed(description:
-                        AlertView.InfoDescription(
-                            title: "deposit.not_active.title".localized,
-                            description: "deposit.not_active.tron_description".localized
-                        )
-                    ))
+                    Informed(infoDescription: .init(
+                        title: "deposit.not_active.title".localized,
+                        description: "deposit.not_active.tron_description".localized
+                    )))
             Spacer()
             Text("deposit.not_active".localized).textSubhead1(color: .themeYellow)
         }
     }
 
+    @ViewBuilder func inactiveStellarAsset() -> some View {
+        ClickableRow(action: {
+            viewModel.showPopup()
+        }) {
+            HStack(spacing: .margin8) {
+                Text("deposit.trustline".localized).textSubhead2()
+                Image("circle_information_20").themeIcon()
+            }
+            Spacer()
+            Text("deposit.trustline.not_activated".localized).textSubhead1(color: .themeYellow)
+        }
+    }
+
     @ViewBuilder func view(memo: String) -> some View {
         ListRow {
-            Text("cex_deposit.memo".localized)
+            Text("deposit.memo".localized)
                 .textSubhead2()
                 .modifier(
-                    Informed(description:
-                        AlertView.InfoDescription(
-                            title: "cex_deposit.memo_warning.title".localized,
-                            description: "cex_deposit.memo_warning.description".localized
-                        )
-                    ))
+                    Informed(infoDescription: .init(
+                        title: "deposit.memo_warning.title".localized,
+                        description: "deposit.memo_warning.description".localized
+                    )))
             Spacer()
             Text(memo).textSubhead1(color: .themeLeah)
             Button(action: {
@@ -244,6 +251,37 @@ struct ReceiveAddressView<Service: IReceiveAddressService, Factory: IReceiveAddr
                 Image("copy_20").renderingMode(.template)
             })
             .buttonStyle(SecondaryCircleButtonStyle(style: .default))
+        }
+    }
+
+    private func popupButtons(mode: ReceiveAddressModule.PopupWarningItem.Mode, isPresented: Binding<Bool>) -> [BottomSheetView.ButtonItem] {
+        switch mode {
+        case let .done(title):
+            return [
+                .init(style: .yellow, title: title) {
+                    isPresented.wrappedValue = false
+                },
+            ]
+        case .activateStellarAsset:
+            return [
+                .init(style: .yellow, title: "deposit.activate".localized) {
+                    isPresented.wrappedValue = false
+
+                    Coordinator.shared.present { isPresented in
+                        if let sendData = viewModel.stellarSendData {
+                            ThemeNavigationStack {
+                                RegularSendView(sendData: sendData) {
+                                    HudHelper.instance.show(banner: .sent)
+                                    isPresented.wrappedValue = false
+                                }
+                            }
+                        }
+                    }
+                },
+                .init(style: .transparent, title: "button.later".localized) {
+                    isPresented.wrappedValue = false
+                },
+            ]
         }
     }
 }

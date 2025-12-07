@@ -8,7 +8,7 @@ import TronKit
 
 class SendTronService {
     let sendToken: Token
-    let mode: SendBaseService.Mode
+    let mode: PreSendViewModel.Mode
 
     private let disposeBag = DisposeBag()
     private let adapter: ISendTronAdapter
@@ -39,9 +39,7 @@ class SendTronService {
         }
     }
 
-    private let activeAddressRelay = PublishRelay<Bool>()
-
-    init(token: Token, mode: SendBaseService.Mode, adapter: ISendTronAdapter, addressService: AddressService, memoService: SendMemoInputService) {
+    init(token: Token, mode: PreSendViewModel.Mode, adapter: ISendTronAdapter, addressService: AddressService, memoService: SendMemoInputService) {
         sendToken = token
         self.mode = mode
         self.adapter = adapter
@@ -53,7 +51,7 @@ class SendTronService {
             addressService.set(text: address)
             if let amount { addressService.publishAmountRelay.accept(amount) }
         case let .predefined(address): addressService.set(text: address)
-        case .send: ()
+        case .regular: ()
         }
 
         subscribe(disposeBag, addressService.stateObservable) { [weak self] in self?.sync(addressState: $0) }
@@ -107,10 +105,6 @@ extension SendTronService {
 
     var addressErrorObservable: Observable<Error?> {
         addressErrorRelay.asObservable()
-    }
-
-    var activeAddressObservable: Observable<Bool> {
-        activeAddressRelay.asObservable()
     }
 }
 
@@ -185,24 +179,6 @@ extension SendTronService: IAmountInputService {
             addressError = AddressError.ownAddress
             return
         }
-
-        Single<Bool>
-            .create { [weak self] observer in
-                let task = Task { [weak self] in
-                    let active = await self?.adapter.accountActive(address: tronAddress) ?? false
-                    observer(.success(active))
-                }
-
-                return Disposables.create {
-                    task.cancel()
-                }
-            }
-            .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-            .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-            .subscribe(onSuccess: { [weak self] active in
-                self?.activeAddressRelay.accept(active)
-            })
-            .disposed(by: disposeBag)
     }
 }
 

@@ -2,12 +2,9 @@ import Foundation
 import UIKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIExtensions
 import RxSwift
 import RxCocoa
-import ComponentKit
-import HUD
 
 class MasterNodeDetailViewController: ThemeViewController {
     
@@ -79,7 +76,7 @@ extension MasterNodeDetailViewController {
         let vc = MasterNodeDetailSendViewController(viewModel: viewModel, sendAmount: sendAmount)
         vc.partnerCompleted = { [weak self] in
             self?.tableView.reload()
-            self?.navigationController?.popToViewController(ofClass: MasterNodeTabViewController.self)
+            self?.dismiss(animated: true)
         }
         navigationController?.pushViewController(vc, animated: true)
     }

@@ -105,7 +105,7 @@ class SendSafe2wsafeAdapterService {
             minimumSendAmount = adapter.minimumSendAmountSafe(address: address.raw)
         }
         
-//        App.shared.safeInfoManager.startNet()
+//        Core.shared.safeInfoManager.startNet()
         
         sync(feeRate: .completed(10))
         
@@ -203,7 +203,7 @@ class SendSafe2wsafeAdapterService {
     func newFee(_ fee: Decimal) -> Decimal {
         var newFee = fee
         do {
-            let safeInfo = try App.shared.safeInfoManager.getSafeInfo()
+            let safeInfo = try Core.shared.safeInfoManager.getSafeInfo()
             switch ethAdapter.evmKitWrapper.blockchainType {
             case .binanceSmartChain:
                 newFee += Decimal(safeInfo.bsc?.safe_fee ?? 0)
@@ -269,18 +269,15 @@ extension SendSafe2wsafeAdapterService: ISendService {
         
         let reverseHex = getReverseHex(addressHex: address.raw)
         let rbfEnabled = btcBlockchainManager.transactionRbfEnabled(blockchainType: adapter.blockchainType)
-        return adapter.sendSingle(amount: amountInputService.amount,
-                                  address: contractAddress,
-                                  memo: memoService.memo,
-                                  feeRate: feeRate,
-                                  unspentOutputs: customOutputs,
-                                  pluginData: pluginData,
-                                  sortMode: .shuffle,
-                                  rbfEnabled: rbfEnabled,
-                                  logger: logger,
-                                  lockedTimeInterval: nil,
-                                  reverseHex: reverseHex
-        )
+        let value = convertToSatoshi(value: amountInputService.amount)
+        let params = SendParameters(address: contractAddress, value: value, feeRate: feeRate, sortType: .shuffle,  rbfEnabled: rbfEnabled, memo: memoService.memo, unspentOutputs: customOutputs, pluginData: pluginData, reverseHex: reverseHex)
+        return adapter.sendSingle(params: params, logger: logger)
+    }
+    
+    func convertToSatoshi(value: Decimal) -> Int {
+        let coinValue: Decimal = value * 10//coinRate
+        let handler = NSDecimalNumberHandler(roundingMode: .down, scale: Int16(truncatingIfNeeded: 0), raiseOnExactness: false, raiseOnOverflow: false, raiseOnUnderflow: false, raiseOnDivideByZero: false)
+        return NSDecimalNumber(decimal: coinValue).rounding(accordingToBehavior: handler).intValue
     }
 
 }

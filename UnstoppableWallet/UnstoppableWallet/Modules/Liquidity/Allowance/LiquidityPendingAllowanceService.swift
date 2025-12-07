@@ -83,23 +83,23 @@ extension LiquidityPendingAllowanceService {
     }
 
     func syncAllowance() {
-        guard let tokenA = tokenA, let adapterA = adapterManager.adapter(for: tokenA) as? IErc20Adapter else {
+        guard let tokenA = tokenA, let adapterA = adapterManager.adapter(for: tokenA) as? IAllowanceAdapter else {
             return
         }
         
-        guard let tokenB = tokenB, let adapterB = adapterManager.adapter(for: tokenB) as? IErc20Adapter else {
+        guard let tokenB = tokenB, let adapterB = adapterManager.adapter(for: tokenB) as? IAllowanceAdapter else {
             return
         }
 
         for transaction in adapterA.pendingTransactions {
-            if let approve = transaction as? ApproveTransactionRecord, let value = approve.value.decimalValue {
-                pendingAllowanceA = value
+            if let approve = transaction as? ApproveTransactionRecord {
+                pendingAllowanceA = approve.value.value
             }
         }
         
         for transaction in adapterB.pendingTransactions {
-            if let approve = transaction as? ApproveTransactionRecord, let value = approve.value.decimalValue {
-                pendingAllowanceB = value
+            if let approve = transaction as? ApproveTransactionRecord {
+                pendingAllowanceB = approve.value.value
             }
         }
 

@@ -1,15 +1,10 @@
-import RxSwift
-import RxRelay
-import RxCocoa
 import SafeCoinKit
 import Checkpoints
 import Combine
 import MarketKit
 
-class FallbackBlockViewModel {
-    
-    private let disposeBag = DisposeBag()
-    
+class FallbackBlockViewModel: ObservableObject {
+        
     private let walletManager: WalletManager
     private let accountManager: AccountManager
     private let adapterManager: AdapterManager
@@ -43,9 +38,13 @@ class FallbackBlockViewModel {
 }
 
 extension FallbackBlockViewModel {
-    struct FallbackBlockViewItem {
+    struct FallbackBlockViewItem: Identifiable {
         let date: CheckpointData.FallbackDate
         let item: SelectorModule.ViewItem
         
+        public var id: String {
+            item.id
+        }
+
     }
 }

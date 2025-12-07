@@ -59,6 +59,10 @@ public extension Kit {
     func transactionsSingle(tagQueries: [TransactionTagQuery], fromHash: Data? = nil, limit: Int? = nil) -> Single<[FullTransaction]> {
         Single.just(transactions(tagQueries: tagQueries, fromHash: fromHash, limit: limit))
     }
+
+    func rawTransaction(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) -> Single<RawTransaction> {
+        rawTransaction(address: transactionData.to, value: transactionData.value, transactionInput: transactionData.input, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
+    }
     
     func safe4RawTransaction(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, lockDay: Int, nonce: Int? = nil) -> Single<RawTransaction> {
         Single<RawTransaction>.create { [weak self] observer in
@@ -80,10 +84,6 @@ public extension Kit {
             }
             
         }
-    }
-    
-    func rawTransaction(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) -> Single<RawTransaction> {
-        rawTransaction(address: transactionData.to, value: transactionData.value, transactionInput: transactionData.input, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
     }
 
     func rawTransaction(address: EvmKit.Address, value: BigUInt, transactionInput: Data = Data(), gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) -> Single<RawTransaction> {

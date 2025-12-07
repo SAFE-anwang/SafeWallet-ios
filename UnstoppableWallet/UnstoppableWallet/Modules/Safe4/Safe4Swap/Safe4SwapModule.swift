@@ -2,14 +2,13 @@ import Foundation
 import UIKit
 import EvmKit
 import MarketKit
-import ComponentKit
 import SwiftUI
 
 class Safe4SwapModule {
     static let gasLimit: Int = 100000
 
-    static func viewController() -> UIViewController? {
-        let walletList = App.shared.walletManager.activeWallets
+    static func viewModel() -> Safe4SwapViewModel? {
+        let walletList = Core.shared.walletManager.activeWallets
         
         guard let tokenIn = walletList.filter({$0.coin.uid == safe4CoinUid && $0.token.blockchain.type == .safe4 && $0.token.type == .native}).first?.token else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
@@ -20,8 +19,7 @@ class Safe4SwapModule {
             return nil
         }
         let viewModel = Safe4SwapViewModel(tokenIn: tokenIn, tokenOut: tokenOut)
-        let viewController = Safe4SwapView(viewModel: viewModel).toViewController()
-        return viewController
+        return viewModel
     }
 }
 
@@ -33,16 +31,4 @@ extension Safe4SwapViewModel {
 
 enum Safe4SwapSendData {
     case evm(blockchainType: BlockchainType, transactionData: TransactionData)
-}
-
-struct Safe4SwapSrc20View: UIViewControllerRepresentable {
-    
-    typealias UIViewControllerType = UIViewController
-
-    func makeUIViewController(context _: Context) -> UIViewController {
-        // TODO: must provide any VC
-        Safe4SwapModule.viewController() ?? UIViewController()
-    }
-
-    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

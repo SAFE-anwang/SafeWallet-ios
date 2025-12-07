@@ -1,11 +1,11 @@
 import MarketKit
 import SwiftUI
-import ThemeKit
+
 import UIKit
 
 enum EvmNetworkModule {
     static func viewController(blockchain: Blockchain) -> UIViewController {
-        let service = EvmNetworkService(blockchain: blockchain, evmSyncSourceManager: App.shared.evmSyncSourceManager)
+        let service = EvmNetworkService(blockchain: blockchain, evmSyncSourceManager: Core.shared.evmSyncSourceManager)
         let viewModel = EvmNetworkViewModel(service: service)
         let viewController = EvmNetworkViewController(viewModel: viewModel)
 

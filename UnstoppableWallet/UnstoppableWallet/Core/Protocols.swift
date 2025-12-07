@@ -1,5 +1,4 @@
 import Alamofire
-import Hodler
 import BigInt
 import BitcoinCore
 import Combine
@@ -8,7 +7,8 @@ import GRDB
 import HsToolKit
 import MarketKit
 import RxSwift
-import ThemeKit
+import TonKit
+import TonSwift
 import TronKit
 import UIKit
 import UniswapKit
@@ -62,20 +62,23 @@ protocol ITransactionsAdapter {
     var additionalTokenQueries: [TokenQuery] { get }
     func explorerUrl(transactionHash: String) -> String?
     func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]>
-    func transactionsSingle(from: TransactionRecord?, token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?, limit: Int) -> Single<[TransactionRecord]>
+    func transactionsSingle(paginationData: String?, token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?, limit: Int) -> Single<[TransactionRecord]>
+    func allTransactionsAfter(paginationData: String?) -> Single<[TransactionRecord]>
     func rawTransaction(hash: String) -> String?
 }
 
 protocol ISendBitcoinAdapter {
     var blockchainType: BlockchainType { get }
     var balanceData: BalanceData { get }
-    func availableBalance(feeRate: Int, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData]) -> Decimal
+    func availableBalance(params: SendParameters) -> Decimal
     func maximumSendAmount(pluginData: [UInt8: IBitcoinPluginData]) -> Decimal?
-    func minimumSendAmount(address: String?) -> Decimal
-    func validate(address: String, pluginData: [UInt8: IBitcoinPluginData]) throws
-    var unspentOutputs: [UnspentOutputInfo] { get }
-    func sendInfo(amount: Decimal, feeRate: Int, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData]) throws -> SendInfo
-    func sendSingle(amount: Decimal, address: String, memo: String?, feeRate: Int, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData], sortMode: TransactionDataSortMode, rbfEnabled: Bool, logger: HsToolKit.Logger) -> Single<Void>
+    func minimumSendAmount(params: SendParameters) -> Decimal
+    func validate(address: String, pluginData: [UInt8: IPluginData]) throws
+    func unspentOutputs(filters: UtxoFilters) -> [UnspentOutputInfo]
+    func sendInfo(params: SendParameters) throws -> SendInfo
+    func sendSingle(params: SendParameters, logger: HsToolKit.Logger) -> Single<Void>
+    func convertToSatoshi(value: Decimal) -> Int
+    func convertToKitSortMode(sort: TransactionDataSortMode) -> TransactionDataSortType
 }
 
 protocol ISendDashAdapter {
@@ -98,10 +101,13 @@ protocol ISendSafeCoinAdapter {
     func maximumSendAmountSafe(pluginData: [UInt8: IBitcoinPluginData]) -> Decimal?
     func minimumSendAmountSafe(address: String?) -> Decimal
     func validateSafe(address: String) throws
-    var unspentOutputs: [UnspentOutputInfo] { get }
+    func unspentOutputs(filters: UtxoFilters) -> [UnspentOutputInfo]
     func convertFeeSafe(amount: Decimal, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData]) throws -> SendInfo
     func sendInfoSafe(amount: Decimal, feeRate: Int, address: String?, memo: String?, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData]) throws -> SendInfo
-    func sendSingle(amount: Decimal, address: String, memo: String?, feeRate: Int, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData], sortMode: TransactionDataSortMode, rbfEnabled: Bool, logger: HsToolKit.Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> Single<Void>
+    // need set: lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?
+    func sendSingle(params: SendParameters, logger: HsToolKit.Logger) -> Single<Void>
+
+//    func sendSingle(amount: Decimal, address: String, memo: String?, feeRate: Int, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData], sortMode: TransactionDataSortMode, rbfEnabled: Bool, logger: HsToolKit.Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> Single<Void>
 }
 
 protocol ISendTronAdapter {
@@ -112,35 +118,32 @@ protocol ISendTronAdapter {
 }
 
 protocol ISendTonAdapter {
-    var availableBalance: Decimal { get }
-    func validate(address: String) throws
-    func estimateFee() async throws -> Decimal
-    func send(recipient: String, amount: Decimal, memo: String?) async throws
+    func transferData(recipient: FriendlyAddress, amount: TonAdapter.SendAmount, comment: String?) throws -> TransferData
 }
 
-protocol IErc20Adapter {
+protocol IAllowanceAdapter {
     var pendingTransactions: [TransactionRecord] { get }
-    func allowanceSingle(spenderAddress: EvmKit.Address, defaultBlockParameter: DefaultBlockParameter) -> Single<Decimal>
-    func allowance(spenderAddress: EvmKit.Address, defaultBlockParameter: DefaultBlockParameter) async throws -> Decimal
+    func allowance(spenderAddress: Address, defaultBlockParameter: BlockParameter) async throws -> Decimal
+}
+
+enum BlockParameter {
+    case blockNumber(value: Int)
+    case earliest
+    case latest
+    case pending
 }
 
 protocol IApproveDataProvider {
-    func approveTransactionData(spenderAddress: EvmKit.Address, amount: BigUInt) -> TransactionData
-}
-
-protocol ISendBinanceAdapter {
-    var availableBalance: Decimal { get }
-    var availableBinanceBalance: Decimal { get }
-    func validate(address: String) throws
-    var fee: Decimal { get }
-    func sendSingle(amount: Decimal, address: String, memo: String?) -> Single<Void>
+    func approveSendData(token: MarketKit.Token, spenderAddress: Address, amount: BigUInt) throws -> SendData
 }
 
 protocol ISendZcashAdapter {
     var availableBalance: Decimal { get }
+    var areFundsSpendable: Bool { get }
     func validate(address: String, checkSendToSelf: Bool) throws -> ZcashAdapter.AddressType
-    var fee: Decimal { get }
+    func sendProposal(amount: Decimal, address: Recipient, memo: Memo?) async throws -> Proposal
     func sendSingle(amount: Decimal, address: Recipient, memo: Memo?) -> Single<Void>
+    func send(proposal: Proposal) async throws
     func recipient(from stringEncodedAddress: String) -> Recipient?
 }
 

@@ -1,4 +1,4 @@
-import ComponentKit
+
 import UIKit
 
 class PostCell: BaseSelectableThemeCell {
@@ -50,10 +50,6 @@ class PostCell: BaseSelectableThemeCell {
 
         timeLabel.font = .micro
         timeLabel.textColor = .themeGray50
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
     }
 
     func bind(header: String, title: String, body: String, time: String) {

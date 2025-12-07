@@ -1,20 +1,19 @@
 import UIKit
-import ThemeKit
 import EvmKit
 import OneInchKit
 
 struct LiquidityConfirmationModule {
 
     static func viewController(sendData: SendEvmData, dex: LiquidityMainModule.Dex) -> UIViewController? {
-        guard let evmKitWrapper =  App.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper else {
             return nil
         }
 
         guard let coinServiceFactory = EvmCoinServiceFactory(
                 blockchainType: dex.blockchainType,
-                marketKit: App.shared.marketKit,
-                currencyManager: App.shared.currencyManager,
-                coinManager: App.shared.coinManager
+                marketKit: Core.shared.marketKit,
+                currencyManager: Core.shared.currencyManager,
+                coinManager: Core.shared.coinManager
         ) else {
             return nil
         }
@@ -53,13 +52,13 @@ struct LiquidityConfirmationModule {
         default: return nil
         }
         
-        guard let chainToken = App.shared.evmBlockchainManager.baseToken(blockchainType: dex.blockchainType) else {
+        guard let chainToken = Core.shared.evmBlockchainManager.baseToken(blockchainType: dex.blockchainType) else {
             return nil
         }
 
-        let service = AddLiquidityTransactionService(sendData: sendData, evmKitWrapper: evmKitWrapper, settingsService: settingService, evmLabelManager: App.shared.evmLabelManager)
-        let contactLabelService = ContactLabelService(contactManager: App.shared.contactManager, blockchainType: evmKitWrapper.blockchainType)
-        let viewModel = AddLiquidityTransactionViewModel(service: service, coinServiceFactory: coinServiceFactory, cautionsFactory: SendEvmCautionsFactory(), evmLabelManager: App.shared.evmLabelManager, contactLabelService: contactLabelService, marketKit: App.shared.marketKit, currencyManager: App.shared.currencyManager, chainToken: chainToken)
+        let service = AddLiquidityTransactionService(sendData: sendData, evmKitWrapper: evmKitWrapper, settingsService: settingService, evmLabelManager: Core.shared.evmLabelManager)
+        let contactLabelService = ContactLabelService(contactManager: Core.shared.contactManager, blockchainType: evmKitWrapper.blockchainType)
+        let viewModel = AddLiquidityTransactionViewModel(service: service, coinServiceFactory: coinServiceFactory, cautionsFactory: SendEvmCautionsFactory(), evmLabelManager: Core.shared.evmLabelManager, contactLabelService: contactLabelService, marketKit: Core.shared.marketKit, currencyManager: Core.shared.currencyManager, chainToken: chainToken)
 
         return  LiquidityConfirmationViewController(transactionViewModel: viewModel, settingsViewModel: settingsViewModel)
     }

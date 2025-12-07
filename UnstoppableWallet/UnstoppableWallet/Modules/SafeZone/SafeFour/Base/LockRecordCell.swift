@@ -1,8 +1,6 @@
-import ComponentKit
 import RxCocoa
 import RxSwift
 import SnapKit
-import ThemeKit
 import UIKit
 import UIExtensions
 
@@ -66,18 +64,5 @@ class LockRecordCell: UICollectionViewCell {
         contentBUtton.isSelected = item.isSlected
         let title = "ID:\(item.record.id)\n\(item.record.amount.safe4FomattedAmount) SAFE"
         contentBUtton.setTitle(title, for: .normal)
-    }
-}
-extension UIColor {
-    static var themeBlackAndWhite: UIColor { color(dark: .themeWhite, light: .themeBlack) }
-    static var themeBlue: UIColor { color(dark: .themeIssykBlue.withAlphaComponent(0.5), light: .themeIssykBlue) }
-    static func color(dark: UIColor, light: UIColor) -> UIColor {
-        UIColor { traits in
-            switch ThemeManager.shared.themeMode {
-            case .dark: return dark
-            case .light: return light
-            case .system: return traits.userInterfaceStyle == .dark ? dark : light
-            }
-        }
     }
 }

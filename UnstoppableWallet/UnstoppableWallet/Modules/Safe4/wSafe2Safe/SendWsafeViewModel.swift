@@ -3,7 +3,6 @@ import RxSwift
 import RxCocoa
 import EvmKit
 import MarketKit
-import ComponentKit
 
 class SendWsafeViewModel {
     private let service: SendWsafeService
@@ -15,12 +14,11 @@ class SendWsafeViewModel {
     private let safeInfoManager: SafeInfoManager
     
     var isMatic: Bool = false
-    var error: BinanceAdapter.AddressConversion?
     
     init(service: SendWsafeService, isMatic: Bool) {
         self.service = service
         self.isMatic = isMatic
-        safeInfoManager = App.shared.safeInfoManager
+        safeInfoManager = Core.shared.safeInfoManager
         safeInfoManager.startNet(blockchainType: service.sendToken.blockchainType)
         
         subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
@@ -94,7 +92,7 @@ extension SendWsafeViewModel {
     }
     
     func onEnterAddress(wsafeWallet: Wallet, safeWallet: Wallet, address: Address?) {
-        if let depositAdapter = App.shared.adapterManager.depositAdapter(for: wsafeWallet) {
+        if let depositAdapter = Core.shared.adapterManager.depositAdapter(for: wsafeWallet) {
             let ethAddress = Address(raw: depositAdapter.receiveAddress.address, domain: nil)
             service.setRecipientAddress(address: ethAddress, to: address)
         }

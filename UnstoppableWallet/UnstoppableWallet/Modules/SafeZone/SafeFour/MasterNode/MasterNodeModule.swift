@@ -1,25 +1,24 @@
 import UIKit
 import EvmKit
-import ComponentKit
 import BigInt
+import SwiftUI
 
 struct MasterNodeModule {
     
-    static func viewController() -> UIViewController? {
-        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+    static func tabViewModel() -> MasterNodeTabViewModel? {
+        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
         let service = MasterNodeService(evmKit: evmKitWrapper.evmKit)
         let viewModel = MasterNodeTabViewModel(service: service)
-        let viewController = MasterNodeTabViewController(viewModel: viewModel, evmKit: evmKitWrapper.evmKit)
-        return viewController
+        return viewModel
     }
     
-    static func subViewController(type: MasterNodeType, evmKit: EvmKit.Kit) -> MasterNodeViewController {
+    static func viewModel(type: MasterNodeType, evmKit: EvmKit.Kit) -> MasterNodeViewModel {
         let service = MasterNodeService(evmKit: evmKit)
         let viewModel = MasterNodeViewModel(service: service, type: type)
-        return MasterNodeViewController(viewModel: viewModel)
+        return viewModel
     }
         
     enum Tab: Int, CaseIterable {
@@ -64,4 +63,16 @@ enum MasterNodeInputType {
     var keyboardType: UIKeyboardType {
         .default
     }
+}
+
+struct MasterNodeView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+    let viewModel: MasterNodeViewModel
+    
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        return MasterNodeViewController(viewModel: viewModel)
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

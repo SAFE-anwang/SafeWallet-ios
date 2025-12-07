@@ -1,7 +1,6 @@
 import Chart
-import ComponentKit
+
 import SnapKit
-import ThemeKit
 import UIKit
 
 class MarketWideCardCell: BaseSelectableThemeCell {
@@ -90,7 +89,7 @@ class MarketWideCardCell: BaseSelectableThemeCell {
             let chartConfiguration: ChartConfiguration
             switch chartCurveType {
             case .line: chartConfiguration = .previewChart
-            case .bars: chartConfiguration = .previewBarChart
+            case .bars, .histogram: chartConfiguration = .previewBarChart
             }
             showChartView(configuration: chartConfiguration)
 

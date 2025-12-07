@@ -1,9 +1,9 @@
-import ComponentKit
+
 import RxCocoa
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class EvmSendSettingsViewController: ThemeViewController {
@@ -57,7 +57,9 @@ class EvmSendSettingsViewController: ThemeViewController {
         title = "fee_settings".localized
         navigationItem.largeTitleDisplayMode = .never
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "button.reset".localized, style: .done, target: self, action: #selector(onTapReset))
+        navigationItem.leftBarButtonItem?.tintColor = .themeJacob
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.done".localized, style: .done, target: self, action: #selector(onTapDone))
+        navigationItem.rightBarButtonItem?.tintColor = .themeJacob
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in

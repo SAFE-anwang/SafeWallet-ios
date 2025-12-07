@@ -1,16 +1,17 @@
 import Combine
-import ComponentKit
+
 import SectionsTableView
 import SnapKit
-import ThemeKit
+
 import UIExtensions
 import UIKit
 
 class RestorePassphraseViewController: KeyboardAwareViewController {
     private let viewModel: RestorePassphraseViewModel
+    private let statPage: StatPage
     private var cancellables = Set<AnyCancellable>()
 
-    private weak var returnViewController: UIViewController?
+    private let onRestore: () -> Void
 
     private let tableView = SectionsTableView(style: .grouped)
 
@@ -23,9 +24,10 @@ class RestorePassphraseViewController: KeyboardAwareViewController {
     private var keyboardShown = false
     private var isLoaded = false
 
-    init(viewModel: RestorePassphraseViewModel, returnViewController: UIViewController?) {
+    init(viewModel: RestorePassphraseViewModel, statPage: StatPage, onRestore: @escaping () -> Void) {
         self.viewModel = viewModel
-        self.returnViewController = returnViewController
+        self.statPage = statPage
+        self.onRestore = onRestore
 
         super.init(scrollViews: [tableView], accessoryView: gradientWrapperView)
     }
@@ -116,10 +118,7 @@ class RestorePassphraseViewController: KeyboardAwareViewController {
 
         viewModel.successPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                HudHelper.instance.show(banner: .imported)
-                (self?.returnViewController ?? self)?.dismiss(animated: true)
-            }
+            .sink { [weak self] in self?.onSuccess(accountType: $0) }
             .store(in: &cancellables)
 
         showDefaultPassphrase()
@@ -169,19 +168,28 @@ class RestorePassphraseViewController: KeyboardAwareViewController {
         HudHelper.instance.show(banner: .error(string: error))
     }
 
+    private func onSuccess(accountType: AccountType) {
+        HudHelper.instance.show(banner: .imported)
+
+        stat(page: statPage, event: .importWallet(walletType: accountType.statDescription))
+
+        onRestore()
+    }
+
     private func openSelectCoins(accountName: String, accountType: AccountType, isManualBackedUp: Bool, isFileBackedUp: Bool) {
         let viewController = RestoreSelectModule.viewController(
             accountName: accountName,
             accountType: accountType,
+            statPage: statPage,
             isManualBackedUp: isManualBackedUp,
             isFileBackedUp: isFileBackedUp,
-            returnViewController: returnViewController
+            onRestore: onRestore
         )
         navigationController?.pushViewController(viewController, animated: true)
     }
 
     private func openConfiguration(rawBackup: RawFullBackup) {
-        let viewController = RestoreFileConfigurationModule.viewController(rawBackup: rawBackup, returnViewController: returnViewController)
+        let viewController = RestoreFileConfigurationModule.viewController(rawBackup: rawBackup, statPage: statPage, onRestore: onRestore)
         navigationController?.pushViewController(viewController, animated: true)
     }
 }

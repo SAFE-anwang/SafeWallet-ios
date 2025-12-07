@@ -3,8 +3,6 @@ import EvmKit
 import Kingfisher
 import MarketKit
 import SwiftUI
-import ComponentKit
-import HUD
 import UIKit
 import AdvancedList
 import BigInt
@@ -12,52 +10,65 @@ import BigInt
 struct LockedRecordView: View {
     @StateObject private var viewModel: LockedRecordViewModel
     @Environment(\.presentationMode) private var presentationMode
-    private var uiNavController: UINavigationController
-    @State private var lockedRecordItemAction: LockedRecordViewModel.LockedRecordItemAction?
     
-    init(viewModel: LockedRecordViewModel, uiNavController: UINavigationController) {
+    init(viewModel: LockedRecordViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
-        self.uiNavController = uiNavController
     }
     
     var body: some View {
-        ThemeView {
-            ZStack {
-                VStack{
-                    list()
-                    if case .loading = viewModel.dataState, !viewModel.viewItems.isEmpty {
+        ThemeNavigationStack{
+            ThemeView {
+                ZStack {
+                    VStack{
+                        list()
+                        if case .loading = viewModel.dataState, !viewModel.viewItems.isEmpty {
+                            ProgressView()
+                        }
+                        if !viewModel.hasMoreItems {
+                            Text("loadData.nomore".localized)
+                                .themeSubhead1(color: .themeLeah, alignment: .center)
+                        }
+                    }
+
+                    if case .loading = viewModel.dataState, viewModel.viewItems.isEmpty {
                         ProgressView()
                     }
-                    if !viewModel.hasMoreItems {
-                        Text("loadData.nomore".localized)
-                            .themeSubhead1(color: .themeLeah, alignment: .center)
+                    
+                    if case .items = viewModel.dataState, viewModel.viewItems.isEmpty {
+                        PlaceholderViewNew(icon: "no_data_48", title: "coin_markets.empty".localized)
+                    }
+                    
+                    if case .loading = viewModel.sendState {
+                        loadingHud()
                     }
                 }
-
-                if case .loading = viewModel.dataState, viewModel.viewItems.isEmpty {
-                    ProgressView()
+            }
+            .navigationBarTitle("safe_zone.safe4.account.lock".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbar() }
+            .task(id: viewModel.sendState) {
+                if case let .success(message) = viewModel.sendState {
+                    HudHelper.instance.show(banner: .success(string: message ?? ""))
+                    presentationMode.wrappedValue.dismiss()
                 }
                 
-                if case .items = viewModel.dataState, viewModel.viewItems.isEmpty {
-                    PlaceholderViewNew(image: Image("no_data_48"), text: "coin_markets.empty".localized)
-                }
-                
-                if case .loading = viewModel.sendState {
-                    loadingHud()
+                if case let .failed(error) = viewModel.sendState {
+                    HudHelper.instance.show(banner: .error(string: error ?? ""))
                 }
             }
         }
-        .navigationBarTitle("safe_zone.safe4.account.lock".localized)
-        .navigationBarTitleDisplayMode(.inline)
-        .task(id: viewModel.sendState) {
-            if case let .success(message) = viewModel.sendState {
-                HudHelper.instance.show(banner: .success(string: message ?? ""))
-                presentationMode.wrappedValue.dismiss()
+    }
+    @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button(action: {
+                Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                    confirmWithdrawView(ids: [], isAll: true, isPresented: isPresented)
+                }
+            }) {
+                Text("一键提现".localized)
+                    .themeSubhead1(color: viewModel.withdrawEnableIds.count > 0 ? .themeYellow : .themeGray)
             }
-            
-            if case let .failed(error) = viewModel.sendState {
-                HudHelper.instance.show(banner: .error(string: error ?? ""))
-            }
+            .disabled(viewModel.withdrawEnableIds.count == 0)
         }
     }
     
@@ -79,25 +90,41 @@ struct LockedRecordView: View {
                  isEnableWithdraw: item.withdrawEnable,
                  isShowAddLock: item.addLockDayEnable)
         {
-            lockedRecordItemAction = .withdraw(id: BigUInt(item.id))
+            Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                confirmWithdrawView(ids: [BigUInt(item.id)], isPresented: isPresented)
+            }
         } addLockAction: {
-            guard let vc = AddLockDaysModule.viewController(ids: [BigUInt(item.id)]) else { return }
-            uiNavController.pushViewController(vc, animated: true)
-        }
-        .modifier(ThemeListStyleModifier(themeListStyle: .lawrence, selected: false))
-        .sheet(item: $lockedRecordItemAction) { action in
-            if case let .withdraw(id)  = action {
-                if #available(iOS 16, *) {
-                    ViewWrapper(BottomSheetModule.withdrawConfirmation() {
-                        viewModel.withdraw(id: id)
-                    }).presentationDetents([.medium])
-                } else {
-                    ViewWrapper(BottomSheetModule.withdrawConfirmation() {
-                        viewModel.withdraw(id: id)
-                    })
-                }
+            guard let vm = AddLockDaysModule.viewModel(ids: [BigUInt(item.id)]) else { return }
+            Coordinator.shared.present { _ in
+                AddLockDaysView(viewModel: vm)
             }
         }
+    }
+    
+    @ViewBuilder private func confirmWithdrawView(ids: [BigUInt], isAll: Bool = false, isPresented: Binding<Bool>) -> some View {
+        
+        BottomSheetView(
+            icon: .warning,
+            title: "safe_zone.safe4.withdraw".localized,
+            items: [
+                .highlightedDescription(text: "提现后将不再产生收益，确定提取吗？", style: .warning),
+            ],
+            buttons: [
+                .init(style: .yellow, title: "button.ok".localized) {
+                    if isAll {
+                        viewModel.allWithdraw()
+                    }else {
+                        viewModel.withdraw(ids: ids)
+                    }
+                    
+                    isPresented.wrappedValue = false
+                },
+                .init(style: .transparent, title: "button.cancel".localized) {
+                    isPresented.wrappedValue = false
+                }
+            ],
+            isPresented: isPresented
+        )
     }
     
     private func loadNextItems() {

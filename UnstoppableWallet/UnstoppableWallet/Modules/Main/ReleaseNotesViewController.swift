@@ -1,5 +1,4 @@
 import SnapKit
-import ThemeKit
 import UIKit
 
 class ReleaseNotesViewController: MarkdownViewController {
@@ -42,7 +41,7 @@ class ReleaseNotesViewController: MarkdownViewController {
             maker.height.equalTo(1)
         }
 
-        separator.backgroundColor = .themeSteel10
+        separator.backgroundColor = .themeBlade
 
         let twitterButton = UIButton()
         bottomHolder.addSubview(twitterButton)
@@ -53,7 +52,7 @@ class ReleaseNotesViewController: MarkdownViewController {
         }
 
         twitterButton.addTarget(self, action: #selector(onTwitterTap), for: .touchUpInside)
-        twitterButton.setImage(UIImage(named: "filled_twitter_24"), for: .normal)
+        twitterButton.setImage(UIImage(named: "filled_twitter_24")?.withTintColor(.themeJacob), for: .normal)
 
         let telegramButton = UIButton()
         bottomHolder.addSubview(telegramButton)
@@ -64,18 +63,7 @@ class ReleaseNotesViewController: MarkdownViewController {
         }
 
         telegramButton.addTarget(self, action: #selector(onTelegramTap), for: .touchUpInside)
-        telegramButton.setImage(UIImage(named: "filled_telegram_24"), for: .normal)
-
-        let redditButton = UIButton()
-        bottomHolder.addSubview(redditButton)
-        redditButton.snp.makeConstraints { maker in
-            maker.leading.equalTo(telegramButton.snp.trailing).offset(CGFloat.margin8)
-            maker.top.bottom.equalToSuperview()
-            maker.width.equalTo(52)
-        }
-
-        redditButton.addTarget(self, action: #selector(onRedditTap), for: .touchUpInside)
-        redditButton.setImage(UIImage(named: "filled_reddit_24"), for: .normal)
+        telegramButton.setImage(UIImage(named: "filled_telegram_24")?.withTintColor(.themeJacob), for: .normal)
 
         let followUsLabel = UILabel()
         bottomHolder.addSubview(followUsLabel)
@@ -85,7 +73,7 @@ class ReleaseNotesViewController: MarkdownViewController {
         }
 
         followUsLabel.font = .caption
-        followUsLabel.textColor = .themeGray
+        followUsLabel.textColor = .themeJacob
         followUsLabel.text = "release_notes.follow_us".localized
     }
 
@@ -115,10 +103,6 @@ class ReleaseNotesViewController: MarkdownViewController {
 
     @objc private func onTelegramTap() {
         urlManager.open(url: "https://t.me/\(AppConfig.appTelegramAccount)", from: nil)
-    }
-
-    @objc private func onRedditTap() {
-        urlManager.open(url: "https://www.reddit.com/r/\(AppConfig.appRedditAccount)", from: nil)
     }
 }
 

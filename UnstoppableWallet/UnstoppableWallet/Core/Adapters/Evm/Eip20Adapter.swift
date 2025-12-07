@@ -17,7 +17,10 @@ class Eip20Adapter: BaseEvmAdapter {
         eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: address)
         self.contractAddress = address
 
-        transactionConverter = EvmTransactionConverter(source: wallet.transactionSource, baseToken: baseToken, coinManager: coinManager, evmKitWrapper: evmKitWrapper, evmLabelManager: evmLabelManager)
+        transactionConverter = EvmTransactionConverter(
+            source: wallet.transactionSource, baseToken: baseToken, coinManager: coinManager, evmKitWrapper: evmKitWrapper, blockchainType: evmKitWrapper.blockchainType,
+            userAddress: evmKitWrapper.evmKit.address, evmLabelManager: evmLabelManager
+        )
 
         super.init(evmKitWrapper: evmKitWrapper, decimals: wallet.decimals)
     }
@@ -56,7 +59,7 @@ extension Eip20Adapter: IBalanceAdapter {
 
     var balanceDataUpdatedObservable: Observable<BalanceData> {
         eip20Kit.balanceObservable.map { [weak self] in
-            self?.balanceData(balance: $0) ?? BalanceData(available: 0)
+            self?.balanceData(balance: $0) ?? BalanceData(balance: 0)
         }
     }
 }
@@ -67,26 +70,14 @@ extension Eip20Adapter: ISendEthereumAdapter {
     }
 }
 
-extension Eip20Adapter: IErc20Adapter {
+extension Eip20Adapter: IAllowanceAdapter {
     var pendingTransactions: [TransactionRecord] {
         eip20Kit.pendingTransactions().map { transactionConverter.transactionRecord(fromTransaction: $0) }
     }
 
-    func allowanceSingle(spenderAddress: EvmKit.Address, defaultBlockParameter: DefaultBlockParameter = .latest) -> Single<Decimal> {
-        let decimals = decimals
-
-        return eip20Kit.allowanceSingle(spenderAddress: spenderAddress, defaultBlockParameter: defaultBlockParameter)
-            .map { allowanceString in
-                if let significand = Decimal(string: allowanceString) {
-                    return Decimal(sign: .plus, exponent: -decimals, significand: significand)
-                }
-
-                return 0
-            }
-    }
-
-    func allowance(spenderAddress: EvmKit.Address, defaultBlockParameter: DefaultBlockParameter) async throws -> Decimal {
-        let allowanceString = try await eip20Kit.allowance(spenderAddress: spenderAddress, defaultBlockParameter: defaultBlockParameter)
+    func allowance(spenderAddress: Address, defaultBlockParameter: BlockParameter) async throws -> Decimal {
+        let address = try EvmKit.Address(hex: spenderAddress.raw)
+        let allowanceString = try await eip20Kit.allowance(spenderAddress: address, defaultBlockParameter: .init(defaultBlockParameter))
 
         guard let significand = Decimal(string: allowanceString) else {
             return 0
@@ -97,7 +88,21 @@ extension Eip20Adapter: IErc20Adapter {
 }
 
 extension Eip20Adapter: IApproveDataProvider {
-    func approveTransactionData(spenderAddress: EvmKit.Address, amount: BigUInt) -> TransactionData {
-        eip20Kit.approveTransactionData(spenderAddress: spenderAddress, amount: amount)
+    func approveSendData(token: Token, spenderAddress: Address, amount: BigUInt) throws -> SendData {
+        let address = try EvmKit.Address(hex: spenderAddress.raw)
+        let transactionData = eip20Kit.approveTransactionData(spenderAddress: address, amount: amount)
+
+        return .evm(blockchainType: token.blockchainType, transactionData: transactionData)
+    }
+}
+
+extension DefaultBlockParameter {
+    init(_ blockParameter: BlockParameter) {
+        switch blockParameter {
+        case .pending: self = .pending
+        case .latest: self = .latest
+        case .earliest: self = .earliest
+        case let .blockNumber(value): self = .blockNumber(value: value)
+        }
     }
 }

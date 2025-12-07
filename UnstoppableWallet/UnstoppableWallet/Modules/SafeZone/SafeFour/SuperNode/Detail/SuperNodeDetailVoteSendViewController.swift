@@ -3,8 +3,6 @@ import Foundation
 import SectionsTableView
 import RxSwift
 import RxCocoa
-import ComponentKit
-import HUD
 
 class SuperNodeDetailVoteSendViewController: Safe4ConfirmBaseViewController {
     private let disposeBag = DisposeBag()
@@ -116,7 +114,7 @@ private extension SuperNodeDetailVoteSendViewController {
             case .completed(_): ()
             case .voteCompleted:
                 self?.show(message: "safe_zone.safe4.vote.success".localized)
-                self?.navigationController?.popToViewController(ofClass: SuperNodeTabViewController.self)
+                self?.dismiss(animated: true)
             case .lockRecoardCompleted(_): ()
             }
         }

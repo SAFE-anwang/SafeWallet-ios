@@ -1,8 +1,8 @@
-import ComponentKit
+
 import RxCocoa
 import RxSwift
 import SectionsTableView
-import ThemeKit
+
 import UIKit
 import WalletConnectSign
 
@@ -18,7 +18,6 @@ class WalletConnectListViewController: ThemeViewController {
     private let tableView = SectionsTableView(style: .grouped)
 
     private var viewItems = [WalletConnectListViewModel.ViewItem]()
-    private var pairingCount: Int = 0
 
     init(viewModel: WalletConnectListViewModel) {
         self.viewModel = viewModel
@@ -38,7 +37,7 @@ class WalletConnectListViewController: ThemeViewController {
 
         title = "wallet_connect_list.title".localized
 
-//        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "circle_information_24"), style: .plain, target: self, action: #selector(onTapInfo))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "circle_information_24"), style: .plain, target: self, action: #selector(onTapInfo))
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
         view.addSubview(tableView)
@@ -69,15 +68,13 @@ class WalletConnectListViewController: ThemeViewController {
         subscribe(disposeBag, viewModel.disableNewConnectionSignal) { [weak self] in self?.disableNewConnection($0) }
         subscribe(disposeBag, viewModel.showErrorSignal) { [weak self] in self?.showError(text: $0) }
         subscribe(disposeBag, viewModel.viewItemsDriver) { [weak self] in self?.sync(viewItems: $0) }
-        subscribe(disposeBag, viewModel.pairingCountDriver) { [weak self] in self?.sync(pairingCount: $0) }
         subscribe(disposeBag, viewModel.showDisconnectingSignal) { HudHelper.instance.show(banner: .disconnectingWalletConnect) }
         subscribe(disposeBag, viewModel.showSuccessSignal) { HudHelper.instance.show(banner: .disconnectedWalletConnect) }
         subscribe(disposeBag, viewModel.showWalletConnectSessionSignal) { [weak self] in self?.show(session: $0) }
     }
 
-    private func sync(viewItems: [WalletConnectListViewModel.ViewItem]? = nil, pairingCount: Int? = nil) {
+    private func sync(viewItems: [WalletConnectListViewModel.ViewItem]? = nil) {
         if let viewItems { self.viewItems = viewItems }
-        if let pairingCount { self.pairingCount = pairingCount }
 
         emptyView.isHidden = !viewModel.emptyList
 
@@ -97,20 +94,17 @@ class WalletConnectListViewController: ThemeViewController {
         let scanQrViewController = ScanQrViewController(reportAfterDismiss: true, pasteEnabled: true)
         scanQrViewController.didFetch = { [weak self] in self?.viewModel.didScan(string: $0) }
 
+        stat(page: .walletConnect, event: .open(page: .scanQrCode))
         present(scanQrViewController, animated: true)
     }
 
     private func show(session: WalletConnectSign.Session) {
-        guard let viewController = WalletConnectMainModule.viewController(session: session, sourceViewController: self) else {
+        guard let account = Core.shared.accountManager.activeAccount else {
             return
         }
+        let viewController = WalletConnectMainModule.viewController(account: account, session: session, sourceViewController: self, viaPushing: true)
 
-        navigationController?.present(viewController, animated: true)
-    }
-
-    private func showPairings() {
-        let viewController = WalletConnectPairingModule.viewController()
-
+        stat(page: .walletConnect, event: .open(page: .walletConnectSession))
         navigationController?.pushViewController(viewController, animated: true)
     }
 
@@ -171,15 +165,18 @@ class WalletConnectListViewController: ThemeViewController {
                     component.text = viewItem.description
                 },
             ]),
-            .badge { component in
+            .text { component in
                 if let badge = viewItem.badge {
+                    component.setContentHuggingPriority(.defaultHigh, for: .horizontal)
                     component.isHidden = false
-                    component.badgeView.set(style: .medium)
-                    component.badgeView.text = badge
+                    component.font = .subhead1
+                    component.textColor = .themeJacob
+                    component.text = badge
                 } else {
                     component.isHidden = true
                 }
             },
+            .margin12,
             .image20 { component in
                 component.imageView.image = UIImage(named: "arrow_big_forward_20")
             },
@@ -197,39 +194,13 @@ class WalletConnectListViewController: ThemeViewController {
         )
     }
 
-    private func pairingCountCell(tableView: SectionsTableView, pairingCount: Int) -> RowProtocol {
-        tableView.universalRow48(id: "session-pairing",
-                                 title: .body("wallet_connect.list.pairings".localized),
-                                 value: .subhead1("\(pairingCount)", color: .themeGray),
-                                 accessoryType: .disclosure,
-                                 autoDeselect: true,
-                                 isFirst: true,
-                                 isLast: true,
-                                 action: { [weak self] in self?.showPairings() })
-    }
-
-    private func pairingSection(tableView: SectionsTableView, showHeader: Bool) -> SectionProtocol? {
-        guard pairingCount != 0 else {
-            return nil
-        }
-
-        let cell = pairingCountCell(tableView: tableView, pairingCount: pairingCount)
-        return Section(
-            id: "section_pairing",
-            headerState: showHeader ? tableView.sectionHeader(text: "wallet_connect.list.version_text".localized("2.0")) : .margin(height: 0),
-            footerState: .margin(height: .margin24),
-            rows: [cell]
-        )
-    }
-
     private func section(tableView: SectionsTableView, viewItems: [WalletConnectListViewModel.ViewItem]) -> SectionProtocol? {
         guard !viewItems.isEmpty else {
             return nil
         }
 
         return Section(
-            id: "section_2",
-            headerState: tableView.sectionHeader(text: "wallet_connect.list.version_text".localized("2.0")),
+            id: "section",
             footerState: .margin(height: .margin24),
             rows: viewItems.enumerated().compactMap { index, viewItem in
                 let isFirst = index == 0
@@ -249,7 +220,6 @@ extension WalletConnectListViewController: SectionsDataSource {
 
         sections.append(contentsOf: [
             section(tableView: tableView, viewItems: viewItems),
-            pairingSection(tableView: tableView, showHeader: viewItems.isEmpty),
         ].compactMap { $0 })
 
         return sections

@@ -2,7 +2,6 @@ import Foundation
 import RxCocoa
 import RxRelay
 import RxSwift
-import WalletConnectPairing
 import WalletConnectSign
 
 class WalletConnectListViewModel {
@@ -17,7 +16,6 @@ class WalletConnectListViewModel {
     private let disableNewConnectionRelay = PublishRelay<Bool>()
 
     private let viewItemsRelay = BehaviorRelay<[WalletConnectListViewModel.ViewItem]>(value: [])
-    private let pairingCountRelay = BehaviorRelay<Int>(value: 0)
     private let showDisconnectingRelay = PublishRelay<Void>()
     private let showSuccessRelay = PublishRelay<Void>()
 
@@ -27,19 +25,15 @@ class WalletConnectListViewModel {
 
         subscribe(disposeBag, service.itemsObservable) { [weak self] in self?.sync(items: $0) }
         subscribe(disposeBag, service.pendingRequestsObservable) { [weak self] in self?.sync(pendingRequests: $0) }
-        subscribe(disposeBag, service.pairingsObservable) { [weak self] in self?.sync(pairings: $0) }
         subscribe(disposeBag, service.showSessionObservable) { [weak self] in self?.show(session: $0) }
         subscribe(disposeBag, service.sessionKillingObservable) { [weak self] in self?.sync(sessionKillingState: $0) }
 
         sync(items: service.items)
         sync(pendingRequests: service.pendingRequests)
-        sync(pairings: service.pairings)
     }
 
     private func sync(items: [WalletConnectListService.Item]) {
         let viewItems = items.map {
-            let description = $0.blockchains.map(\.shortName).joined(separator: ", ")
-
             var badge: String?
             if $0.requestCount != 0 {
                 badge = "\($0.requestCount)"
@@ -48,17 +42,13 @@ class WalletConnectListViewModel {
             return WalletConnectListViewModel.ViewItem(
                 id: $0.id,
                 title: ($0.appName != "") ? $0.appName : "Unnamed",
-                description: description,
+                description: $0.appUrl,
                 badge: badge,
                 imageUrl: $0.appIcons.last
             )
         }
 
         viewItemsRelay.accept(viewItems)
-    }
-
-    private func sync(pairings: [WalletConnectPairing.Pairing]) {
-        pairingCountRelay.accept(pairings.count)
     }
 
     private func sync(pendingRequests _: [WalletConnectSign.Request]) {
@@ -87,10 +77,6 @@ extension WalletConnectListViewModel {
         viewItemsRelay.asDriver()
     }
 
-    var pairingCountDriver: Driver<Int> {
-        pairingCountRelay.asDriver()
-    }
-
     var showDisconnectingSignal: Signal<Void> {
         showDisconnectingRelay.asSignal()
     }
@@ -101,7 +87,7 @@ extension WalletConnectListViewModel {
 
     // NewConnection section
     var emptyList: Bool {
-        service.emptySessionList && service.emptyPairingList
+        service.emptySessionList
     }
 
     var disableNewConnectionSignal: Signal<Bool> {
@@ -118,7 +104,7 @@ extension WalletConnectListViewModel {
 
             do {
                 self?.disableNewConnectionRelay.accept(true)
-                try await eventHandler.handle(event: string, eventType: .walletConnectUri)
+                try await eventHandler.handle(source: .walletConnect, event: string, eventType: .walletConnectUri)
             } catch {}
         }
     }
@@ -129,6 +115,7 @@ extension WalletConnectListViewModel {
     }
 
     func kill(id: Int) {
+        stat(page: .walletConnect, event: .delete(entity: .session))
         service.kill(id: id)
     }
 }
@@ -147,14 +134,6 @@ extension WalletConnectListViewModel {
             self.description = description
             self.badge = badge
             self.imageUrl = imageUrl
-        }
-    }
-}
-
-extension WalletConnectUriHandler.ConnectionError: LocalizedError {
-    var errorDescription: String? {
-        switch self {
-        case .wrongUri: return "wallet_connect.error.invalid_url".localized
         }
     }
 }

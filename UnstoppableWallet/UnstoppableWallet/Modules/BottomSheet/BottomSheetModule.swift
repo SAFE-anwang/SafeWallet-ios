@@ -1,7 +1,6 @@
-import ComponentKit
+
 import SectionsTableView
 import SwiftUI
-import ThemeKit
 import UIKit
 
 protocol IBottomSheetDismissDelegate: AnyObject {
@@ -16,7 +15,7 @@ enum BottomSheetModule {
 }
 
 extension BottomSheetModule {
-    static func copyConfirmation(value: String) -> UIViewController {
+    static func copyConfirmation(value: String, onCopy: (() -> Void)? = nil) -> UIViewController {
         viewController(
             image: .warning,
             title: "copy_warning.title".localized,
@@ -27,6 +26,7 @@ extension BottomSheetModule {
                 .init(style: .red, title: "copy_warning.i_will_risk_it".localized) {
                     UIPasteboard.general.string = value
                     HudHelper.instance.show(banner: .copied)
+                    onCopy?()
                 },
                 .init(style: .transparent, title: "copy_warning.dont_copy".localized),
             ]
@@ -39,7 +39,8 @@ extension BottomSheetModule {
             description: "backup_prompt.warning".localized,
             cancelText: "backup_prompt.later".localized,
             account: account,
-            sourceViewController: sourceViewController
+            sourceViewController: sourceViewController,
+            statPage: .backupPromptAfterCreate
         )
     }
 
@@ -49,11 +50,12 @@ extension BottomSheetModule {
             description: description,
             cancelText: "button.cancel".localized,
             account: account,
-            sourceViewController: sourceViewController
+            sourceViewController: sourceViewController,
+            statPage: .backupRequired
         )
     }
 
-    private static func backupPrompt(title: String, description: String, cancelText: String, account: Account, sourceViewController: UIViewController?) -> UIViewController {
+    private static func backupPrompt(title: String, description: String, cancelText: String, account: Account, sourceViewController: UIViewController?, statPage: StatPage) -> UIViewController {
         viewController(
             image: .warning,
             title: title,
@@ -67,22 +69,25 @@ extension BottomSheetModule {
                     }
 
                     sourceViewController?.present(viewController, animated: true)
+                    stat(page: statPage, event: .open(page: .manualBackup))
                 },
                 .init(style: .gray, title: "backup_prompt.backup_cloud".localized, imageName: "icloud_24", actionType: .afterClose) { [weak sourceViewController] in
                     sourceViewController?.present(BackupModule.cloudViewController(account: account), animated: true)
+                    stat(page: statPage, event: .open(page: .cloudBackup))
                 },
                 .init(style: .transparent, title: cancelText),
             ]
         )
     }
 
-    static func description(title: String, text: String) -> UIViewController {
+    static func description(title: String, text: String, buttons: [Button] = []) -> UIViewController {
         viewController(
             image: .local(name: "circle_information_20", tint: .gray),
             title: title,
             items: [
                 .description(text: text),
-            ]
+            ],
+            buttons: buttons
         )
     }
 

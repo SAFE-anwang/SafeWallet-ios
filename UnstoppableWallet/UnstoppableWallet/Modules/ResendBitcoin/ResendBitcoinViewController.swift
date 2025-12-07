@@ -1,8 +1,8 @@
-import ComponentKit
+
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class ResendBitcoinViewController: KeyboardAwareViewController, SectionsDataSource {
@@ -12,10 +12,11 @@ class ResendBitcoinViewController: KeyboardAwareViewController, SectionsDataSour
     private let tableView = SectionsTableView(style: .grouped)
     private let bottomWrapper = BottomGradientHolder()
     private let minFeeCell: StepperAmountInputCell
+    private let cautionCell = TitledHighlightedDescriptionCell()
     private let sendButton = SliderButton()
 
-    private var topDescription: String = ""
     private var viewItems = [[ResendBitcoinViewModel.ViewItem]]()
+    private var loaded = false
 
     init(viewModel: ResendBitcoinViewModel) {
         self.viewModel = viewModel
@@ -48,8 +49,6 @@ class ResendBitcoinViewController: KeyboardAwareViewController, SectionsDataSour
         bottomWrapper.add(to: self)
         bottomWrapper.addSubview(sendButton)
 
-        topDescription = viewModel.replaceType == .speedUp ? "send.confirmation.resend_description".localized : "send.confirmation.btc_cancel_description".localized
-
         sendButton.title = viewModel.replaceType == .speedUp ? "send.confirmation.slide_to_resend".localized : "send.confirmation.slide_to_cancel".localized
         sendButton.finalTitle = "send.confirmation.sending".localized
         sendButton.slideImage = UIImage(named: "arrow_medium_2_right_24")
@@ -65,8 +64,12 @@ class ResendBitcoinViewController: KeyboardAwareViewController, SectionsDataSour
         subscribe(disposeBag, viewModel.sendSuccessSignal) { [weak self] in self?.handleSendSuccess() }
         subscribe(disposeBag, viewModel.sendFailedSignal) { [weak self] in self?.handleSendFailed(error: $0) }
         subscribe(disposeBag, viewModel.minFeeDriver) { [weak self] in self?.minFeeCell.value = $0 }
+        subscribe(disposeBag, viewModel.cautionDriver) { [weak self] in self?.handle(caution: $0) }
 
         minFeeCell.onChangeValue = { [weak self] value in self?.viewModel.set(minFee: value) }
+
+        handle(caution: nil)
+        loaded = true
     }
 
     private func sync(viewItems: [[ResendBitcoinViewModel.ViewItem]]) {
@@ -89,20 +92,33 @@ class ResendBitcoinViewController: KeyboardAwareViewController, SectionsDataSour
         sendButton.reset()
     }
 
+    private func handle(caution: TitledCaution?) {
+        cautionCell.isVisible = caution != nil
+
+        if let caution {
+            cautionCell.bind(caution: caution)
+        }
+
+        if loaded {
+            UIView.animate(withDuration: 0.15) {
+                self.tableView.beginUpdates()
+                self.tableView.endUpdates()
+            }
+        }
+    }
+
     private func row(viewItem: ResendBitcoinViewModel.ViewItem, rowInfo: RowInfo) -> RowProtocol {
         switch viewItem {
-        case let .subhead(iconName, title, value):
-            return CellComponent.actionTitleRow(tableView: tableView, rowInfo: rowInfo, iconName: iconName, iconDimmed: true, title: title, value: value)
-        case let .amount(iconUrl, iconPlaceholderImageName, coinAmount, currencyAmount, type):
-            return CellComponent.amountRow(tableView: tableView, rowInfo: rowInfo, iconUrl: iconUrl, iconPlaceholderImageName: iconPlaceholderImageName, coinAmount: coinAmount, currencyAmount: currencyAmount, type: type)
-        case let .address(title, value, valueTitle, contactAddress):
+        case let .amount(title, token, coinAmount, currencyAmount, type):
+            return CellComponent.amountRow(tableView: tableView, rowInfo: rowInfo, title: title, subtitle: token.fullBadge, imageUrl: token.coin.imageUrl, alternativeImageUrl: token.coin.image, placeholderImageName: token.placeholderImageName, coinAmount: coinAmount, currencyAmount: currencyAmount, type: type)
+        case let .address(title, value, valueTitle, contactAddress, statSection):
             var onAddToContact: (() -> Void)? = nil
             if let contactAddress {
                 onAddToContact = { [weak self] in
-                    ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self)
+                    ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self, statPage: .resend, statSection: statSection)
                 }
             }
-            return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: title, value: value, valueTitle: valueTitle, onAddToContact: onAddToContact)
+            return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: title, value: value, valueTitle: valueTitle, statPage: .resend, statSection: statSection, onAddToContact: onAddToContact)
         case let .value(iconName, title, value, type):
             return CellComponent.valueRow(tableView: tableView, rowInfo: rowInfo, iconName: iconName, title: title, value: value, type: type)
         case let .fee(title, coinValue, currencyValue):
@@ -118,7 +134,7 @@ extension ResendBitcoinViewController {
             sections.append(
                 Section(
                     id: "section-\(index)",
-                    headerState: index == 0 ? tableView.sectionFooter(text: topDescription) : .margin(height: .margin16),
+                    headerState: .margin(height: index == 0 ? .margin12 : .margin16),
                     rows: viewItems.enumerated().map { index, viewItem in
                         row(viewItem: viewItem, rowInfo: RowInfo(index: index, isFirst: index == 0, isLast: index == viewItems.count - 1))
                     }
@@ -158,6 +174,21 @@ extension ResendBitcoinViewController {
             )
         )
 
-        return sections
+        let cautionsSections: [SectionProtocol] = [
+            Section(
+                id: "caution",
+                rows: [
+                    StaticRow(
+                        cell: cautionCell,
+                        id: "caution",
+                        dynamicHeight: { [weak self] containerWidth in
+                            self?.cautionCell.cellHeight(containerWidth: containerWidth) ?? 0
+                        }
+                    ),
+                ]
+            ),
+        ]
+
+        return sections + cautionsSections
     }
 }

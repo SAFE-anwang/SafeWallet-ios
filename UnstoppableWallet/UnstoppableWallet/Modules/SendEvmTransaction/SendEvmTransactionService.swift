@@ -1,4 +1,5 @@
 import BigInt
+import Combine
 import EvmKit
 import Foundation
 import MarketKit
@@ -6,7 +7,6 @@ import OneInchKit
 import RxCocoa
 import RxSwift
 import UniswapKit
-import web3swift
 
 protocol ISendEvmTransactionService {
     var state: SendEvmTransactionService.State { get }
@@ -25,8 +25,10 @@ protocol ISendEvmTransactionService {
 
 class SendEvmTransactionService {
     private let disposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
 
     private let sendData: SendEvmData
+    private let privateSendMode: PrivateSendMode
     private let evmKitWrapper: EvmKitWrapper
     private let settingsService: EvmSendSettingsService
     private let evmLabelManager: EvmLabelManager
@@ -47,8 +49,9 @@ class SendEvmTransactionService {
         }
     }
 
-    init(sendData: SendEvmData, evmKitWrapper: EvmKitWrapper, settingsService: EvmSendSettingsService, evmLabelManager: EvmLabelManager) {
+    init(sendData: SendEvmData, privateSendMode: SendEvmTransactionService.PrivateSendMode, evmKitWrapper: EvmKitWrapper, settingsService: EvmSendSettingsService, evmLabelManager: EvmLabelManager) {
         self.sendData = sendData
+        self.privateSendMode = privateSendMode
         self.evmKitWrapper = evmKitWrapper
         self.settingsService = settingsService
         self.evmLabelManager = evmLabelManager
@@ -131,28 +134,15 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
         let transaction = fallibleTransaction.data
 
         sendState = .sending
-        
-        if transaction.transactionData.times != -1 {
-            guard let value = (transaction.transactionData.value / BigUInt(transaction.transactionData.times)).safe4ToDecimal(),
-                    let type = web3swift.AccountManager.ContractType.contractType(value: value) else {
-                return
-            }
-            
-            evmKitWrapper.sendSafe4LineLockSingle(type: type, transactionData: transaction.transactionData)
-                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                .subscribe(onSuccess: { [weak self] hashStr in
-                    self?.sendState = .sent(transactionHash: hashStr.hs.data)
-                }, onError: { error in
-                    self.sendState = .failed(error: error)
-                })
-                .disposed(by: disposeBag)
-        }else {
+
+        switch privateSendMode {
+        case .none, .protected:
             evmKitWrapper.sendSingle(
                 transactionData: transaction.transactionData,
                 gasPrice: transaction.gasData.price,
                 gasLimit: transaction.gasData.limit,
-                nonce: transaction.nonce,
-                lockDay: sendData.transactionData.lockTime
+                privateSend: privateSendMode.privateSend,
+                nonce: transaction.nonce
             )
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
             .subscribe(onSuccess: { [weak self] fullTransaction in
@@ -161,11 +151,37 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
                 self.sendState = .failed(error: error)
             })
             .disposed(by: disposeBag)
+        case let .cancelPrevious(hash):
+            Task { [weak self] in
+                do {
+                    let successful = try await self?.evmKitWrapper.sendCancel(hash: hash)
+                    if successful ?? false {
+                        self?.sendState = .sent(transactionHash: hash)
+                    } else {
+                        self?.sendState = .failed(error: SendEvmTransactionService.TransactionError.unexpectedError)
+                    }
+                } catch {
+                    self?.sendState = .failed(error: error)
+                }
+            }
         }
     }
 }
 
 extension SendEvmTransactionService {
+    enum PrivateSendMode {
+        case none
+        case protected
+        case cancelPrevious(Data)
+
+        var privateSend: Bool {
+            switch self {
+            case .none: return false
+            default: return true
+            }
+        }
+    }
+
     enum State {
         case ready(warnings: [Warning])
         case notReady(errors: [Error], warnings: [Warning])
@@ -176,7 +192,6 @@ extension SendEvmTransactionService {
         let additionalInfo: SendEvmData.AdditionInfo?
         var decoration: TransactionDecoration?
         let nonce: Int?
-//        let lockTime: Int?
     }
 
     enum SendState {
@@ -187,6 +202,7 @@ extension SendEvmTransactionService {
     }
 
     enum TransactionError: Error {
+        case unexpectedError
         case noTransactionData
         case insufficientBalance(requiredBalance: BigUInt)
     }

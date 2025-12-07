@@ -15,7 +15,7 @@ class HistoricalRateService {
 
     private let rateUpdatedRelay = PublishRelay<(RateKey, CurrencyValue)>()
     private let ratesChangedRelay = PublishRelay<Void>()
-    
+
     private let queue = DispatchQueue(label: "\(AppConfig.label).transactions-historical-rate-service-queue", qos: .userInitiated)
 
     init(marketKit: MarketKit.Kit, currencyManager: CurrencyManager) {
@@ -73,6 +73,7 @@ extension HistoricalRateService {
             guard !key.token.isCustom else {
                 return nil
             }
+
             if let value = marketKit.cachedCoinHistoricalPriceValue(coinUid: key.token.coin.uid, currencyCode: currency.code, timestamp: key.date.timeIntervalSince1970) {
                 let currencyValue = CurrencyValue(currency: currency, value: value)
                 rates[key] = currencyValue

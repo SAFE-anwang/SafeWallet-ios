@@ -1,6 +1,6 @@
-import ComponentKit
+
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class AmountInputView: UIView {
@@ -50,7 +50,7 @@ class AmountInputView: UIView {
             maker.height.equalTo(CGFloat.heightOnePixel)
         }
 
-        separatorView.backgroundColor = .themeSteel20
+        separatorView.backgroundColor = .themeBlade
 
         addSubview(secondaryButton)
         secondaryButton.snp.makeConstraints { maker in

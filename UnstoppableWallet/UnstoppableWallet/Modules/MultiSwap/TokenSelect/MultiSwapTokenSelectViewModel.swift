@@ -1,16 +1,17 @@
 import Combine
 import EvmKit
+import Foundation
 import HsExtensions
 import MarketKit
 
 class MultiSwapTokenSelectViewModel: ObservableObject {
     private var syncTask: AnyTask?
 
-    private let marketKit = App.shared.marketKit
-    private let accountManager = App.shared.accountManager
-    private let adapterManager = App.shared.adapterManager
-    private let currencyManager = App.shared.currencyManager
-    private let walletManager = App.shared.walletManager
+    private let marketKit = Core.shared.marketKit
+    private let accountManager = Core.shared.accountManager
+    private let adapterManager = Core.shared.adapterManager
+    private let currencyManager = Core.shared.currencyManager
+    private let walletManager = Core.shared.walletManager
 
     private let token: Token?
 
@@ -42,10 +43,26 @@ class MultiSwapTokenSelectViewModel: ObservableObject {
             let wallets = walletManager.activeWallets
             var resultTokens = [Token]()
 
+            let currency = currencyManager.baseCurrency
+            let coinPriceMap = marketKit.coinPriceMap(coinUids: wallets.map(\.coin.uid).removeDuplicates(), currencyCode: currency.code)
+
+            var balances = [Token: Decimal]()
+            var fiatBalances = [Token: Decimal]()
+
+            for wallet in wallets {
+                let balance = adapterManager.balanceAdapter(for: wallet)?.balanceData.available ?? 0
+                balances[wallet.token] = balance
+
+                if let coinPrice = coinPriceMap[wallet.coin.uid] {
+                    fiatBalances[wallet.token] = balance * coinPrice.value
+                }
+            }
+
             do {
                 if filter.isEmpty {
                     let enabledTokens = wallets
                         .map(\.token)
+                        .filter(\.swappable)
                         .sorted { lhsToken, rhsToken in
                             if let token {
                                 let lhsSameBlockchain = lhsToken.blockchainType == token.blockchainType
@@ -54,6 +71,13 @@ class MultiSwapTokenSelectViewModel: ObservableObject {
                                 if lhsSameBlockchain != rhsSameBlockchain {
                                     return lhsSameBlockchain
                                 }
+                            }
+
+                            let lhsFiatBalance = fiatBalances[lhsToken] ?? 0
+                            let rhsFiatBalance = fiatBalances[rhsToken] ?? 0
+
+                            if lhsFiatBalance != rhsFiatBalance {
+                                return lhsFiatBalance > rhsFiatBalance
                             }
 
                             if lhsToken.coin.code != rhsToken.coin.code {
@@ -70,7 +94,7 @@ class MultiSwapTokenSelectViewModel: ObservableObject {
                     resultTokens.append(contentsOf: enabledTokens)
 
                     if let token {
-                        let topFullCoins = try marketKit.topFullCoins(limit: 100)
+                        let topFullCoins = try marketKit.topFullCoins(limit: 100, allowedBlockchainTypes: BlockchainType.swappable)
 
                         let tokens = topFullCoins
                             .map { $0.tokens.filter { $0.blockchainType == token.blockchainType } }
@@ -100,7 +124,7 @@ class MultiSwapTokenSelectViewModel: ObservableObject {
                     if case .hdExtendedKey = account.type {
                         tokenQueries = BtcBlockchainManager.blockchainTypes.map(\.nativeTokenQueries).flatMap { $0 }
                     } else {
-                        tokenQueries = BlockchainType.supported.map(\.defaultTokenQuery)
+                        tokenQueries = BlockchainType.swappable.map(\.defaultTokenQuery)
                     }
 
                     let tokens = try marketKit.tokens(queries: tokenQueries)
@@ -123,8 +147,8 @@ class MultiSwapTokenSelectViewModel: ObservableObject {
                     resultTokens = tokens
                         .filter { account.type.supports(token: $0) }
                         .sorted { lhsToken, rhsToken in
-                            let lhsEnabled = wallets.contains { $0.token == lhsToken }
-                            let rhsEnabled = wallets.contains { $0.token == rhsToken }
+                            let lhsEnabled = balances[lhsToken] != nil
+                            let rhsEnabled = balances[rhsToken] != nil
 
                             if lhsEnabled != rhsEnabled {
                                 return lhsEnabled
@@ -137,14 +161,14 @@ class MultiSwapTokenSelectViewModel: ObservableObject {
                             return lhsToken.badge ?? "" < rhsToken.badge ?? ""
                         }
                 } else {
-                    let allFullCoins = try marketKit.fullCoins(filter: filter, limit: 100)
+                    let allFullCoins = try marketKit.fullCoins(filter: filter, limit: 100, allowedBlockchainTypes: BlockchainType.swappable)
                     let tokens = allFullCoins.map(\.tokens).flatMap { $0 }
 
                     resultTokens = tokens
                         .filter { account.type.supports(token: $0) }
                         .sorted { lhsToken, rhsToken in
-                            let lhsEnabled = wallets.contains { $0.token == lhsToken }
-                            let rhsEnabled = wallets.contains { $0.token == rhsToken }
+                            let lhsEnabled = balances[lhsToken] != nil
+                            let rhsEnabled = balances[rhsToken] != nil
 
                             if lhsEnabled != rhsEnabled {
                                 return lhsEnabled
@@ -182,27 +206,22 @@ class MultiSwapTokenSelectViewModel: ObservableObject {
                 }
             } catch {}
 
-            let currency = currencyManager.baseCurrency
-            let coinPriceMap = marketKit.coinPriceMap(coinUids: wallets.map(\.coin.uid).removeDuplicates(), currencyCode: currency.code)
-
             let items = resultTokens.map { token in
-                var balance: String?
-                var fiatBalance: String?
+                var balanceString: String?
+                var fiatBalanceString: String?
 
-                if let wallet = wallets.first(where: { $0.token == token }),
-                   let availableBalance = adapterManager.balanceAdapter(for: wallet)?.balanceData.available
-                {
-                    balance = ValueFormatter.instance.formatShort(coinValue: CoinValue(kind: .token(token: token), value: availableBalance))
+                if let balance = balances[token] {
+                    balanceString = AppValue(token: token, value: balance).formattedShort()
 
-                    if let coinPrice = coinPriceMap[token.coin.uid] {
-                        fiatBalance = ValueFormatter.instance.formatShort(currency: currency, value: availableBalance * coinPrice.value)
+                    if let fiatBalance = fiatBalances[token] {
+                        fiatBalanceString = ValueFormatter.instance.formatShort(currency: currency, value: fiatBalance)
                     }
                 }
 
                 return Item(
                     token: token,
-                    balance: balance,
-                    fiatBalance: fiatBalance
+                    balance: balanceString,
+                    fiatBalance: fiatBalanceString
                 )
             }
 

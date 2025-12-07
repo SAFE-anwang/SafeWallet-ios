@@ -1,10 +1,9 @@
 import Foundation
-import UIKit
 import MarketKit
+import UIKit
 
 enum AppConfig {
-    
-    static let label = "SafeWallet"
+    static let label = "io.SAFE-anwang.com"
     static let backupSalt = "SafeWallet"
 
     static let companyName = "anwang"
@@ -12,14 +11,18 @@ enum AppConfig {
     static let companyWebPageLink = "https://www.anwang.com"
     static let appWebPageLink = "https://www.anwang.com/#safewallet"
     static let analyticsLink = "https://unstoppable.money/analytics"
+    static let privacyPolicyLink = ""
+    static let appleTermsOfServiceLink = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula"
+    static let nymVpnLink = "https://nymtechnologies.pxf.io/N9vnr1"
     static let appGitHubAccount = "SAFE-anwang"
     static let appGitHubRepository = ""
     static let appTwitterAccount = "safeanwang"
     static let appTelegramAccount = ""
-    static let appRedditAccount = ""
+    static let appTokenTelegramAccount = ""
     static let mempoolSpaceUrl = "https://mempool.space"
     static let guidesIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/blockchain-crypto-guides/v1.2/index.json")!
     static let faqIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/unstoppable-wallet-website/master/src/faq.json")!
+    static let eduIndexUrl = URL(string: "")!
     static let donationAddresses: [BlockchainType: String] = [
         .bitcoin: "bc1qxt5u5swx3sk6y2923whr4tvjreza43g37czv67",
         .bitcoinCash: "bitcoincash:qz6sy9fq66yvfl5mvpfv3v2nqw5pervvkc425nj9g0\n",
@@ -29,16 +32,27 @@ enum AppConfig {
         .zcash: "zs1jpd8u7zghtq5eg48l384y6fpy7cr0xmqehnw5mujpm8v2u7jr9a3j7luftqpthf6a8f720vdfyn",
         .ethereum: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
         .binanceSmartChain: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .binanceChain: "bnb1m0ys77zwg74733f5wwyzhjme2xrdq4ee84smf4",
         .polygon: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
         .avalanche: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
         .optimism: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+        .base: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+        .zkSync: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
         .arbitrumOne: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
         .gnosis: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
         .fantom: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
         .ton: "UQAYLATDlfKgn3cKZAgznvowhXzpqgxrIicesxJfo9f6PN3k",
         .tron: "TQzANCd363w5CjRWDtswm8Y5nFPAdnwekF",
         .solana: "5gattKnvu5f1NDHBuZ6VfDXjRrJa9UcAArkZ3ys3e82F",
+    ]
+    static var spamCoinValueLimits: [String: Decimal] = [
+        "XLM": 0.01,
+        "USDT": 0.01,
+        "USDC": 0.01,
+        "USDD": 0.01,
+        "DAI": 0.01,
+        "BUSD": 0.01,
+        "EURS": 0.01,
+        "BSC-USD": 0.01,
     ]
 
     static var appVersion: String {
@@ -61,82 +75,44 @@ enum AppConfig {
         (Bundle.main.object(forInfoDictionaryKey: "MarketApiUrl") as? String) ?? ""
     }
 
-    static var officeMode: Bool {
-        Bundle.main.object(forInfoDictionaryKey: "OfficeMode") as? String == "true"
-    }
-    
-    private static let randomNumber = Int.random(in: 0...2)
-    
-    static var infuraCredentials: (id: String, secret: String?) {
-        
-        if let infura = apiKey(.infura) {
-            let key = infura.components(separatedBy: "#")
-            return (id: key[0], secret: key[1])
-        }
-
-        let id = (Bundle.main.object(forInfoDictionaryKey: "InfuraProjectId") as? String) ?? ""
-        let secret = Bundle.main.object(forInfoDictionaryKey: "InfuraProjectSecret") as? String
-        
-        let id_2 = (Bundle.main.object(forInfoDictionaryKey: "InfuraProjectId_2") as? String) ?? ""
-        let secret_2 = Bundle.main.object(forInfoDictionaryKey: "InfuraProjectSecret_2") as? String
-        
-        let id_3 = (Bundle.main.object(forInfoDictionaryKey: "InfuraProjectId_3") as? String) ?? ""
-        let secret_3 = Bundle.main.object(forInfoDictionaryKey: "InfuraProjectSecret_3") as? String
-        
-        let ids = [id, id_2, id_3]
-        let secrets = [secret, secret_2, secret_3]
-        return (id: ids[randomNumber], secret: secrets[randomNumber])
+    static var etherscanKeys: [String] {
+        apiKeys(.etherscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
-    static var etherscanKey: String {
-       apiKey(.etherscan) ?? (Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKey") as? String) ?? ""
+    static var arbiscanKeys: [String] {
+        apiKeys(.arbiscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "ArbiscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
-    static var arbiscanKey: String {
-        apiKey(.arbiscan) ?? (Bundle.main.object(forInfoDictionaryKey: "ArbiscanApiKey") as? String) ?? ""
+    static var gnosisscanKeys: [String] {
+        apiKeys(.gnosisscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "GnosisscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
-    static var gnosisscanKey: String {
-        apiKey(.gnosisscan) ?? (Bundle.main.object(forInfoDictionaryKey: "GnosisscanApiKey") as? String) ?? ""
+    static var ftmscanKeys: [String] {
+        apiKeys(.ftmscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "FtmscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
-    static var ftmscanKey: String {
-        apiKey(.ftmscan) ?? (Bundle.main.object(forInfoDictionaryKey: "FtmscanApiKey") as? String) ?? ""
+    static var optimismEtherscanKeys: [String] {
+        apiKeys(.optimisticEtherscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "OptimismEtherscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
-    static var optimismEtherscanKey: String {
-        apiKey(.optimisticEtherscan) ?? (Bundle.main.object(forInfoDictionaryKey: "OptimismEtherscanApiKey") as? String) ?? ""
+    static var basescanKeys: [String] {
+         ((Bundle.main.object(forInfoDictionaryKey: "BasescanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
-    static var bscscanKey: String {
-        if let key = apiKey(.bscscan) { return key }
-        
-        let apiKey = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey") as? String) ?? ""
-        let apiKey2 = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey_2") as? String) ?? ""
-        let apiKey3 = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey_3") as? String) ?? ""
-        let apiKey4 = (Bundle.main.object(forInfoDictionaryKey: "BscscanApiKey_4") as? String) ?? ""
-        let array = [apiKey, apiKey2, apiKey3, apiKey4]
-        let randomIndex = Int.random(in: 0 ..< array.count)
-        return array[randomIndex]
+    static var eraZkSyncKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "EraZkSyncApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
-    
-    static var oneInchApiKeys: [String] {
-        apiKeys(.oneInch) ?? ((Bundle.main.object(forInfoDictionaryKey: "OneInchApiKeys") as? String) ?? "").components(separatedBy: ",")
+
+    static var bscscanKeys: [String] {
+        apiKeys(.bscscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "BscscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
+
     static var polygonscanKeys: [String] {
         apiKeys(.polygonscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "PolygonscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
-    static var snowtraceKey: String {
-        (Bundle.main.object(forInfoDictionaryKey: "SnowtraceApiKey") as? String) ?? ""
-    }
-
-    static var cryptoCompareApiKey: String? {
-        (Bundle.main.object(forInfoDictionaryKey: "CryptoCompareApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
-    }
-
-    static var defiYieldApiKey: String? {
-        (Bundle.main.object(forInfoDictionaryKey: "DefiYieldApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    static var snowtraceKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "SnowtraceApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var twitterBearerToken: String? {
@@ -158,22 +134,51 @@ enum AppConfig {
     static var unstoppableDomainsApiKey: String? {
         (Bundle.main.object(forInfoDictionaryKey: "UnstoppableDomainsApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
-    
+
     static var oneInchApiKey: String? {
-        if let key = apiKey(.oneInch) {
-            return key
-        }
-        let apiKeys = ((Bundle.main.object(forInfoDictionaryKey: "OneInchApiKeys") as? String) ?? "").components(separatedBy: ",")
-        let randomIndex = Int.random(in: 0 ..< apiKeys.count)
-        return apiKeys[randomIndex]
+        apiKey(.oneInch) ?? (Bundle.main.object(forInfoDictionaryKey: "OneInchApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
-    
+
+    static var oneInchCommissionAddress: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "OneInchCommissionAddress") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var oneInchCommission: Decimal? {
+        (Bundle.main.object(forInfoDictionaryKey: "OneInchCommission") as? String).flatMap {
+            $0.isEmpty ? nil : Decimal(string: $0, locale: Locale(identifier: "en_US_POSIX"))
+        }
+    }
+
+    static var thorchainAffiliate: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "ThorchainAffiliate") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var thorchainAffiliateBps: Int? {
+        (Bundle.main.object(forInfoDictionaryKey: "ThorchainAffiliateBps") as? String).flatMap { $0.isEmpty ? nil : Int($0) }
+    }
+
+    static var mayaAffiliate: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "MayaAffiliate") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var mayaAffiliateBps: Int? {
+        (Bundle.main.object(forInfoDictionaryKey: "MayaAffiliateBps") as? String).flatMap { $0.isEmpty ? nil : Int($0) }
+    }
+
+    static var referralAppServerUrl: String {
+        (Bundle.main.object(forInfoDictionaryKey: "ReferralAppServerUrl") as? String) ?? ""
+    }
+
     static var defaultWords: String {
         Bundle.main.object(forInfoDictionaryKey: "DefaultWords") as? String ?? ""
     }
 
     static var defaultPassphrase: String {
         Bundle.main.object(forInfoDictionaryKey: "DefaultPassphrase") as? String ?? ""
+    }
+
+    static var defaultWatchAddress: String? {
+        Bundle.main.object(forInfoDictionaryKey: "DefaultWatchAddress") as? String
     }
 
     static var sharedCloudContainer: String? {
@@ -186,6 +191,18 @@ enum AppConfig {
 
     static var openSeaApiKey: String {
         (Bundle.main.object(forInfoDictionaryKey: "OpenSeaApiKey") as? String) ?? ""
+    }
+
+    static var chainalysisApiKey: String {
+        (Bundle.main.object(forInfoDictionaryKey: "ChainalysisApiKey") as? String) ?? ""
+    }
+
+    static var merkleApiPath: String {
+        (Bundle.main.object(forInfoDictionaryKey: "MerkleApiPath") as? String) ?? ""
+    }
+
+    static var hashDitApiKey: String {
+        (Bundle.main.object(forInfoDictionaryKey: "HashDitApiKey") as? String) ?? ""
     }
 
     static var swapEnabled: Bool {
@@ -205,11 +222,11 @@ enum AppConfig {
     }
     
     static func apiKeys(_ name: ApiKeyName) -> [String]? {
-        ApiKeyManager.getApiKey(name: name)
+        ApiKeyManager.apiKeys(name: name)
     }
     
     static func apiKey(_ name: ApiKeyName) -> String? {
-        let list = ApiKeyManager.getApiKey(name: name)
+        let list = ApiKeyManager.apiKeys(name: name)
         guard let keys = list else { return nil }
         let randomNumber = Int.random(in: 0..<keys.count)
         return keys[randomNumber]
@@ -230,4 +247,3 @@ extension Chain {
         }
     }
 }
-

@@ -45,6 +45,12 @@ class AccountStorage {
             }
 
             type = .evmPrivateKey(data: data)
+        case .stellarSecretKey:
+            guard let secretSeed = record.dataKey else {
+                return nil
+            }
+
+            type = .stellarSecretKey(secretSeed: secretSeed)
         case .evmAddress:
             guard let data = recoverData(id: id, typeName: typeName, keyName: .data) else {
                 return nil
@@ -63,6 +69,12 @@ class AccountStorage {
             }
 
             type = .tonAddress(address: address)
+        case .stellarAccount:
+            guard let accountId = record.dataKey else {
+                return nil
+            }
+
+            type = .stellarAccount(accountId: accountId)
         case .hdExtendedKey:
             guard let data = recoverData(id: id, typeName: typeName, keyName: .data) else {
                 return nil
@@ -86,18 +98,15 @@ class AccountStorage {
             }
 
             type = .btcAddress(address: address, blockchainType: BlockchainType(uid: blockchainTypeUid), tokenType: tokenType)
-        case .cex:
-            guard let data = recoverData(id: id, typeName: typeName, keyName: .data) else {
+        case .moneroWatchAccount:
+            let viewKey: String? = recover(id: id, typeName: typeName, keyName: .data)
+            guard let address = record.wordsKey, let viewKey,
+                  let restoreHeightString = record.saltKey, let restoreHeight = Int(restoreHeightString)
+            else {
                 return nil
             }
 
-            let uniqueId = String(decoding: data, as: UTF8.self)
-
-            guard let cexAccount = CexAccount.decode(uniqueId: uniqueId) else {
-                return nil
-            }
-
-            type = .cex(cexAccount: cexAccount)
+            type = .moneroWatchAccount(address: address, viewKey: viewKey, restoreHeight: restoreHeight)
         }
 
         return Account(
@@ -129,6 +138,9 @@ class AccountStorage {
         case let .evmPrivateKey(data):
             typeName = .evmPrivateKey
             dataKey = try store(data: data, id: id, typeName: typeName, keyName: .data)
+        case let .stellarSecretKey(secretSeed):
+            typeName = .stellarSecretKey
+            dataKey = secretSeed
         case let .evmAddress(address):
             typeName = .evmAddress
             dataKey = try store(data: address.raw, id: id, typeName: typeName, keyName: .data)
@@ -138,19 +150,22 @@ class AccountStorage {
         case let .tonAddress(address):
             typeName = .tonAddress
             dataKey = address
+        case let .stellarAccount(accountId):
+            typeName = .stellarAccount
+            dataKey = accountId
         case let .hdExtendedKey(key):
             typeName = .hdExtendedKey
             dataKey = try store(data: key.serialized, id: id, typeName: typeName, keyName: .data)
-        case let .cex(cexAccount):
-            typeName = .cex
-            if let data = cexAccount.uniqueId.data(using: .utf8) {
-                dataKey = try store(data: data, id: id, typeName: typeName, keyName: .data)
-            }
         case let .btcAddress(address, blockchainType, tokenType):
             typeName = .btcAddress
             wordsKey = address
             saltKey = blockchainType.uid
             dataKey = tokenType.id
+        case let .moneroWatchAccount(address, viewKey, restoreHeight):
+            typeName = .moneroWatchAccount
+            wordsKey = address
+            saltKey = String(restoreHeight)
+            dataKey = try store(viewKey, id: id, typeName: typeName, keyName: .data)
         }
 
         return AccountRecord(
@@ -177,6 +192,8 @@ class AccountStorage {
             try keychainStorage.removeValue(for: secureKey(id: id, typeName: .mnemonic, keyName: .salt))
         case .evmPrivateKey:
             try keychainStorage.removeValue(for: secureKey(id: id, typeName: .evmPrivateKey, keyName: .data))
+        case .stellarSecretKey:
+            try keychainStorage.removeValue(for: secureKey(id: id, typeName: .stellarSecretKey, keyName: .data))
         case .evmAddress:
             try keychainStorage.removeValue(for: secureKey(id: id, typeName: .evmAddress, keyName: .data))
         case .tronAddress:
@@ -185,8 +202,8 @@ class AccountStorage {
             try keychainStorage.removeValue(for: secureKey(id: id, typeName: .hdExtendedKey, keyName: .data))
         case .btcAddress:
             try keychainStorage.removeValue(for: secureKey(id: id, typeName: .btcAddress, keyName: .data))
-        case .cex:
-            try keychainStorage.removeValue(for: secureKey(id: id, typeName: .cex, keyName: .data))
+        case .moneroWatchAccount:
+            try keychainStorage.removeValue(for: secureKey(id: id, typeName: .moneroWatchAccount, keyName: .data))
         default:
             ()
         }
@@ -267,12 +284,14 @@ extension AccountStorage {
     private enum TypeName: String {
         case mnemonic
         case evmPrivateKey
+        case stellarSecretKey
         case evmAddress = "address"
         case tronAddress
         case tonAddress
+        case stellarAccount
         case hdExtendedKey
         case btcAddress
-        case cex
+        case moneroWatchAccount
     }
 
     private enum KeyName: String {

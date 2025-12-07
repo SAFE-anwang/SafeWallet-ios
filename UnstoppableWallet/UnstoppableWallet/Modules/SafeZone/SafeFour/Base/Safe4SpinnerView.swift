@@ -1,6 +1,5 @@
 import Foundation
 import UIKit
-import HUD
 
 class Safe4SpinnerView: UIView {
     private let spinner = HUDActivityView.create(with: .medium24)

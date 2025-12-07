@@ -70,8 +70,8 @@ class LiquidityCoinCardViewModel {
             return
         }
 
-        let coinValue = CoinValue(kind: .token(token: token), value: balance)
-        balanceRelay.accept(ValueFormatter.instance.formatFull(coinValue: coinValue))
+        let coinValue = AppValue(kind: .token(token: token), value: balance)
+        balanceRelay.accept(coinValue.formattedFull())
     }
 
     private func sync(error: Error?) {

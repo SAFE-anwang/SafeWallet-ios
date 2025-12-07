@@ -1,8 +1,6 @@
 import UIKit
-import ThemeKit
 import SnapKit
 import RxSwift
-import ComponentKit
 
 class Safe4WarningCell: BaseThemeCell {
     private static let horizontalPadding: CGFloat = .margin16

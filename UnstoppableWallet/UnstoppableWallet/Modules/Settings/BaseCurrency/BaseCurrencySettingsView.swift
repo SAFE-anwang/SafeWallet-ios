@@ -4,12 +4,11 @@ struct BaseCurrencySettingsView: View {
     @ObservedObject var viewModel: BaseCurrencySettingsViewModel
 
     @Environment(\.presentationMode) private var presentationMode
-    @State var confirmationCurrency: Currency?
 
     var body: some View {
         ScrollableThemeView {
             ListSection {
-                ForEach(viewModel.popularCurrencies) { currency in
+                ForEach(viewModel.popularCurrencies, id: \.self) { currency in
                     row(currency: currency, showConfirmation: false)
                 }
             }
@@ -19,51 +18,12 @@ struct BaseCurrencySettingsView: View {
                 ListSectionHeader(text: "settings.base_currency.other".localized)
 
                 ListSection {
-                    ForEach(viewModel.otherCurrencies) { currency in
+                    ForEach(viewModel.otherCurrencies, id: \.self) { currency in
                         row(currency: currency, showConfirmation: true)
                     }
                 }
             }
             .padding(EdgeInsets(top: 0, leading: .margin16, bottom: .margin32, trailing: .margin16))
-        }
-        .bottomSheet(item: $confirmationCurrency) { currency in
-            VStack(spacing: 0) {
-                HStack(spacing: .margin16) {
-                    Image("warning_2_24").themeIcon(color: .themeJacob)
-
-                    Text("settings.base_currency.disclaimer".localized).themeHeadline2()
-
-                    Button(action: {
-                        confirmationCurrency = nil
-                    }) {
-                        Image("close_3_24")
-                    }
-                }
-                .padding(.horizontal, .margin32)
-                .padding(.vertical, .margin24)
-
-                HighlightedTextView(text: "settings.base_currency.disclaimer.description".localized(AppConfig.appName, viewModel.popularCurrencies.map(\.code).joined(separator: ",")))
-                    .padding(.horizontal, .margin16)
-
-                VStack(spacing: .margin12) {
-                    Button(action: {
-                        viewModel.baseCurrency = currency
-                        confirmationCurrency = nil
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
-                        Text("settings.base_currency.disclaimer.set".localized)
-                    }
-                    .buttonStyle(PrimaryButtonStyle(style: .yellow))
-
-                    Button(action: {
-                        confirmationCurrency = nil
-                    }) {
-                        Text("button.cancel".localized)
-                    }
-                    .buttonStyle(PrimaryButtonStyle(style: .transparent))
-                }
-                .padding(EdgeInsets(top: .margin24, leading: .margin24, bottom: .margin16, trailing: .margin24))
-            }
         }
         .navigationBarTitle("settings.base_currency.title".localized)
     }
@@ -73,7 +33,9 @@ struct BaseCurrencySettingsView: View {
             if viewModel.baseCurrency == currency {
                 presentationMode.wrappedValue.dismiss()
             } else if showConfirmation {
-                confirmationCurrency = currency
+                Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                    confirmView(currency: currency, isPresented: isPresented)
+                }
             } else {
                 viewModel.baseCurrency = currency
                 presentationMode.wrappedValue.dismiss()
@@ -90,5 +52,26 @@ struct BaseCurrencySettingsView: View {
                 Image.checkIcon
             }
         }
+    }
+
+    @ViewBuilder private func confirmView(currency: Currency, isPresented: Binding<Bool>) -> some View {
+        BottomSheetView(
+            icon: .warning,
+            title: "settings.base_currency.disclaimer".localized,
+            items: [
+                .highlightedDescription(text: "settings.base_currency.disclaimer.description".localized(AppConfig.appName, viewModel.popularCurrencies.map(\.code).joined(separator: ", "))),
+            ],
+            buttons: [
+                .init(style: .yellow, title: "settings.base_currency.disclaimer.set".localized) {
+                    viewModel.baseCurrency = currency
+                    isPresented.wrappedValue = false
+                    presentationMode.wrappedValue.dismiss()
+                },
+                .init(style: .transparent, title: "button.cancel".localized) {
+                    isPresented.wrappedValue = false
+                },
+            ],
+            isPresented: isPresented
+        )
     }
 }

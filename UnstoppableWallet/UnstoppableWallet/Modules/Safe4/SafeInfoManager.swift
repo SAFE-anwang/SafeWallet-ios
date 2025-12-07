@@ -2,7 +2,6 @@ import Foundation
 import RxSwift
 import RxRelay
 import RxCocoa
-import ComponentKit
 import EvmKit
 import SafeCoinKit
 import ObjectMapper
@@ -23,7 +22,7 @@ class SafeInfoManager {
     }
     
     func startNet(blockchainType: BlockchainType) {
-        let chain = evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper?.evmKit.chain ?? Chain.ethereum
+        guard let chain = try? evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper?.evmKit.chain ?? Chain.ethereum else{ return }
         let wsafeKit = WSafeKit(chain: chain)
         do {
             let safeNetType = try wsafeKit.getSafeNetType()
@@ -46,10 +45,11 @@ class SafeInfoManager {
            let safeInfo = try? SafeChainInfo(JSONString: safeInfoJSON) {
             return safeInfo
         }else {
-            let chain = evmBlockchainManager.evmKitManager(blockchainType: .ethereum).evmKitWrapper?.evmKit.chain ?? Chain.ethereum
+            guard let chain = try? evmBlockchainManager.evmKitManager(blockchainType: .ethereum).evmKitWrapper?.evmKit.chain else{
+                return try defaultSafeInfo(chain: .ethereum)
+            }
             return try defaultSafeInfo(chain: chain)
         }
-    
     }
     
     private func defaultSafeInfo(chain: Chain) throws -> SafeChainInfo {

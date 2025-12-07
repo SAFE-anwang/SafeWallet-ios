@@ -9,9 +9,8 @@ import BigInt
 import web3swift
 import Web3Core
 import HsExtensions
-import ThemeKit
 
-class SuperNodeViewModel {
+class SuperNodeViewModel: ObservableObject {
     let type: SuperNodeModule.SuperNodeType
     private let service: SuperNodeService
     private let disposeBag = DisposeBag()

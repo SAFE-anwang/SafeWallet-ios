@@ -1,31 +1,33 @@
 import Combine
 import MarketKit
 
+let safe4key_IncomeEnabled = "coin-safe4-IncomeEnabled-key"
+let safe4key_Nodestatus = "coin-safe4-Nodestatus-key"
+
 class TransactionFilterViewModel: ObservableObject {
-    private let service: TransactionsService
     private var cancellables = Set<AnyCancellable>()
+    @Published var transactionsViewModel: TransactionsViewModel
     @Published var blockchain: TransactionFilter.FilterBlockchainType?
     @Published var token: Token?
     @Published var contact: Contact?
     
     @Published var scamFilterEnabled: Bool
     @Published var resetEnabled: Bool
-    
     @Published var safe4IncomeEnabled: Bool
     @Published var safe4NodestatusEnabled: Bool
 
-    init(service: TransactionsService) {
-        self.service = service
-        
-        blockchain = service.transactionFilter.blockchain
-        token = service.transactionFilter.token
-        contact = service.transactionFilter.contact
-        scamFilterEnabled = service.transactionFilter.scamFilterEnabled
-        resetEnabled = service.transactionFilter.hasChanges
-        safe4IncomeEnabled = service.transactionFilter.safe4IncomeEnabled
-        safe4NodestatusEnabled = service.transactionFilter.safe4NodestatusEnabled
-        
-        service.$transactionFilter
+    init(transactionsViewModel: TransactionsViewModel) {
+        self.transactionsViewModel = transactionsViewModel
+
+        blockchain = transactionsViewModel.transactionFilter.blockchain
+        token = transactionsViewModel.transactionFilter.token
+        contact = transactionsViewModel.transactionFilter.contact
+        scamFilterEnabled = transactionsViewModel.transactionFilter.scamFilterEnabled
+        resetEnabled = transactionsViewModel.transactionFilter.hasChanges
+        safe4IncomeEnabled = transactionsViewModel.transactionFilter.safe4IncomeEnabled
+        safe4NodestatusEnabled = transactionsViewModel.transactionFilter.safe4NodestatusEnabled
+
+        transactionsViewModel.$transactionFilter
             .sink { [weak self] filter in
                 self?.blockchain = filter.blockchain
                 self?.token = filter.token
@@ -39,50 +41,48 @@ class TransactionFilterViewModel: ObservableObject {
     }
     
     func set(blockchain: TransactionFilter.FilterBlockchainType?, blockchainUIds: [String]?) {
-        var newFilter = service.transactionFilter
+        var newFilter = transactionsViewModel.transactionFilter
         newFilter.set(blockchain: blockchain, blockchainUIds: blockchainUIds)
-        service.transactionFilter = newFilter
+        transactionsViewModel.transactionFilter = newFilter
     }
     
     var uids: [String]? {
-        service.transactionFilter.blockchainUIds
+        transactionsViewModel.transactionFilter.blockchainUIds
     }
 
     func set(token: Token?) {
-        var newFilter = service.transactionFilter
+        var newFilter = transactionsViewModel.transactionFilter
         newFilter.set(token: token)
-        service.transactionFilter = newFilter
+        transactionsViewModel.transactionFilter = newFilter
     }
 
     func set(contact: Contact?) {
-        var newFilter = service.transactionFilter
+        var newFilter = transactionsViewModel.transactionFilter
         newFilter.set(contact: contact)
-        service.transactionFilter = newFilter
+        transactionsViewModel.transactionFilter = newFilter
     }
 
     func set(scamFilterEnabled: Bool) {
-        var newFilter = service.transactionFilter
+        var newFilter = transactionsViewModel.transactionFilter
         newFilter.scamFilterEnabled = scamFilterEnabled
-        service.transactionFilter = newFilter
+        transactionsViewModel.transactionFilter = newFilter
     }
     
     func set(safe4IncomeEnabled: Bool) {
-        var newFilter = service.transactionFilter
+        var newFilter = transactionsViewModel.transactionFilter
         newFilter.safe4IncomeEnabled = safe4IncomeEnabled
+        transactionsViewModel.transactionFilter = newFilter
         UserDefaultsStorage().set(value: safe4IncomeEnabled, for: safe4key_IncomeEnabled)
-        service.transactionFilter = newFilter
     }
     
     func set(safe4NodestatusEnabled: Bool) {
-        var newFilter = service.transactionFilter
+        var newFilter = transactionsViewModel.transactionFilter
         newFilter.safe4NodestatusEnabled = safe4NodestatusEnabled
+        transactionsViewModel.transactionFilter = newFilter
         UserDefaultsStorage().set(value: safe4NodestatusEnabled, for: safe4key_Nodestatus)
-        service.transactionFilter = newFilter
     }
 
     func reset() {
-        var newFilter = service.transactionFilter
-        newFilter.reset()
-        service.transactionFilter = newFilter
+        transactionsViewModel.transactionFilter.reset()
     }
 }

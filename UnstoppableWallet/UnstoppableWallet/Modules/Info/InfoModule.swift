@@ -1,5 +1,4 @@
 import SwiftUI
-import ThemeKit
 import UIKit
 
 enum InfoModule {
@@ -10,11 +9,20 @@ enum InfoModule {
 }
 
 extension InfoModule {
-    enum ViewItem {
+    enum ViewItem: Identifiable {
         case header1(text: String)
         case header3(text: String)
         case text(text: String)
         case listItem(text: String)
+
+        var id: String {
+            switch self {
+            case let .header1(text): return text
+            case let .header3(text): return text
+            case let .text(text): return text
+            case let .listItem(text): return text
+            }
+        }
     }
 
     static var feeInfo: UIViewController {
@@ -33,16 +41,6 @@ extension InfoModule {
                 .text(text: "lock_info.text".localized),
             ]
         )
-    }
-
-    static var restoreSourceInfo: some View {
-        InfoView(
-            viewItems: [
-                .header1(text: "blockchain_settings.info.restore_source".localized),
-                .text(text: "blockchain_settings.info.restore_source.content".localized(AppConfig.appName)),
-            ]
-        )
-        .ignoresSafeArea()
     }
 
     static var transactionInputsOutputsInfo: UIViewController {
@@ -82,16 +80,4 @@ extension InfoModule {
             ]
         )
     }
-}
-
-struct InfoView: UIViewControllerRepresentable {
-    typealias UIViewControllerType = UIViewController
-
-    let viewItems: [InfoModule.ViewItem]
-
-    func makeUIViewController(context _: Context) -> UIViewController {
-        InfoModule.viewController(viewItems: viewItems)
-    }
-
-    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

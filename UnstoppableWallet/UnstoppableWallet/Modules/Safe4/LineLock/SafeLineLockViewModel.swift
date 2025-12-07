@@ -34,8 +34,8 @@ class SafeLineLockViewModel: ObservableObject {
     private let adapter: EvmAdapter
     private var enteringFiat = false
     private let decimalParser = AmountDecimalParser()
-    private let currencyManager = App.shared.currencyManager
-    private let marketKit = App.shared.marketKit
+    private let currencyManager = Core.shared.currencyManager
+    private let marketKit = Core.shared.marketKit
     private let parserChain: AddressParserChain
     private(set) var account: Account
     private var disposeBag = DisposeBag()
@@ -63,7 +63,7 @@ class SafeLineLockViewModel: ObservableObject {
         self.addressResult = .valid(.init(address: Address(raw: address), uri: nil))
         
         rate = marketKit.coinPrice(coinUid: wallet.coin.uid, currencyCode: currency.code)?.value
-        marketKit.coinPricePublisher(tag: "line-lock", coinUid: wallet.coin.uid, currencyCode: currency.code)
+        marketKit.coinPricePublisher( coinUid: wallet.coin.uid, currencyCode: currency.code)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] price in self?.rate = price.value }
             .store(in: &cancellables)
@@ -383,5 +383,4 @@ extension SafeLineLockViewModel {
         case ready(data: TransactionData)
     }
 }
-
 

@@ -8,7 +8,7 @@ import RxSwift
 
 class SendEvmService {
     let sendToken: Token
-    let mode: SendBaseService.Mode
+    let mode: PreSendViewModel.Mode
 
     private let disposeBag = DisposeBag()
     private let adapter: ISendEthereumAdapter
@@ -23,8 +23,7 @@ class SendEvmService {
 
     private var evmAmount: BigUInt?
     private var addressData: AddressData?
-    private var lockTime: Int?
-    
+
     private let amountCautionRelay = PublishRelay<(error: Error?, warning: AmountWarning?)>()
     private var amountCaution: (error: Error?, warning: AmountWarning?) = (error: nil, warning: nil) {
         didSet {
@@ -32,7 +31,7 @@ class SendEvmService {
         }
     }
 
-    init(token: Token, mode: SendBaseService.Mode, adapter: ISendEthereumAdapter, addressService: AddressService) {
+    init(token: Token, mode: PreSendViewModel.Mode, adapter: ISendEthereumAdapter, addressService: AddressService) {
         sendToken = token
         self.mode = mode
         self.adapter = adapter
@@ -43,7 +42,7 @@ class SendEvmService {
             addressService.set(text: address)
             if let amount { addressService.publishAmountRelay.accept(amount) }
         case let .predefined(address): addressService.set(text: address)
-        case .send: ()
+        case .regular: ()
         }
 
         subscribe(disposeBag, addressService.stateObservable) { [weak self] in self?.sync(addressState: $0) }
@@ -65,9 +64,9 @@ class SendEvmService {
 
     private func syncState() {
         if amountCaution.error == nil, case .success = addressService.state, let evmAmount, let addressData {
-            var transactionData = adapter.transactionData(amount: evmAmount, address: addressData.evmAddress)
-            transactionData.update(lockTime: lockTime)
+            let transactionData = adapter.transactionData(amount: evmAmount, address: addressData.evmAddress)
             let sendInfo = SendEvmData.SendInfo(domain: addressData.domain)
+
             let sendData = SendEvmData(transactionData: transactionData, additionalInfo: .send(info: sendInfo), warnings: [])
             state = .ready(sendData: sendData)
         } else {
@@ -156,11 +155,6 @@ extension SendEvmService: IAmountInputService {
             amountCaution = (error: nil, warning: nil)
         }
 
-        syncState()
-    }
-    
-    func update(lockTime: Int?) {
-        self.lockTime = lockTime
         syncState()
     }
 }

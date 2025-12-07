@@ -16,19 +16,19 @@ class EvmAccountManager {
     private let walletManager: WalletManager
     private let marketKit: MarketKit.Kit
     private let evmKitManager: EvmKitManager
-    private let evmAccountRestoreStateManager: EvmAccountRestoreStateManager
+    private let restoreStateManager: RestoreStateManager
 
     private let disposeBag = DisposeBag()
     private var cancellables = Set<AnyCancellable>()
     private var tasks = Set<AnyTask>()
 
-    init(blockchainType: BlockchainType, accountManager: AccountManager, walletManager: WalletManager, marketKit: MarketKit.Kit, evmKitManager: EvmKitManager, evmAccountRestoreStateManager: EvmAccountRestoreStateManager) {
+    init(blockchainType: BlockchainType, accountManager: AccountManager, walletManager: WalletManager, marketKit: MarketKit.Kit, evmKitManager: EvmKitManager, restoreStateManager: RestoreStateManager) {
         self.blockchainType = blockchainType
         self.accountManager = accountManager
         self.walletManager = walletManager
         self.marketKit = marketKit
         self.evmKitManager = evmKitManager
-        self.evmAccountRestoreStateManager = evmAccountRestoreStateManager
+        self.restoreStateManager = restoreStateManager
 
         subscribe(ConcurrentDispatchQueueScheduler(qos: .userInitiated), disposeBag, evmKitManager.evmKitCreatedObservable) { [weak self] in self?.handleEvmKitCreated() }
     }
@@ -45,8 +45,6 @@ class EvmAccountManager {
             return
         }
 
-//        print("Subscribe: \(evmKitWrapper.evmKit.networkType)")
-
         evmKitWrapper.evmKit.allTransactionsPublisher
             .receive(on: DispatchQueue.global(qos: .userInitiated))
             .sink { [weak self] fullTransactions, initial in
@@ -56,13 +54,11 @@ class EvmAccountManager {
     }
 
     private func handle(fullTransactions: [FullTransaction], initial: Bool) {
-//        print("Tx Sync: \(blockchainType): full transactions: \(fullTransactions.count); initial: \(initial)")
-
         guard let account = accountManager.activeAccount else {
             return
         }
 
-        if initial, account.origin == .restored, !account.watchAccount, !evmAccountRestoreStateManager.isRestored(account: account, blockchainType: blockchainType) {
+        if initial, account.origin == .restored, !account.watchAccount, !restoreStateManager.shouldRestore(account: account, blockchainType: blockchainType) {
             return
         }
 
@@ -127,6 +123,7 @@ class EvmAccountManager {
                         }
                     }
                 }
+
             default: ()
             }
         }

@@ -1,12 +1,13 @@
+import Combine
 import MarketKit
 import RxCocoa
 import RxSwift
-import WalletConnectPairing
 import WalletConnectSign
 import WalletConnectUtils
 
 class WalletConnectSessionManager {
     private let disposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
 
     let service: WalletConnectService
     private let storage: WalletConnectSessionStorage
@@ -16,7 +17,6 @@ class WalletConnectSessionManager {
 
     private let sessionsRelay = BehaviorRelay<[WalletConnectSign.Session]>(value: [])
     private let activePendingRequestsRelay = BehaviorRelay<[WalletConnectSign.Request]>(value: [])
-    private let pairingsRelay = BehaviorRelay<[WalletConnectPairing.Pairing]>(value: [])
     private let sessionRequestReceivedRelay = PublishRelay<WalletConnectRequest>()
 
     init(service: WalletConnectService, storage: WalletConnectSessionStorage, accountManager: AccountManager, requestHandler: IWalletConnectRequestHandler, currentDateProvider: CurrentDateProvider) {
@@ -26,12 +26,14 @@ class WalletConnectSessionManager {
         self.requestHandler = requestHandler
         self.currentDateProvider = currentDateProvider
 
-        subscribe(disposeBag, accountManager.accountDeletedObservable) { [weak self] in
-            self?.handleDeleted(account: $0)
-        }
-        subscribe(disposeBag, accountManager.activeAccountObservable) { [weak self] in
-            self?.handle(activeAccount: $0)
-        }
+        accountManager.activeAccountPublisher
+            .sink { [weak self] in self?.handle(activeAccount: $0) }
+            .store(in: &cancellables)
+
+        accountManager.accountDeletedPublisher
+            .sink { [weak self] in self?.handleDeleted(account: $0) }
+            .store(in: &cancellables)
+
         subscribe(disposeBag, service.sessionsUpdatedObservable) { [weak self] in
             self?.syncSessions()
         }
@@ -41,12 +43,8 @@ class WalletConnectSessionManager {
         subscribe(disposeBag, service.pendingRequestsUpdatedObservable) { [weak self] in
             self?.syncPendingRequest()
         }
-        subscribe(disposeBag, service.pairingUpdatedObservable) { [weak self] in
-            self?.syncPairings()
-        }
 
         syncSessions()
-        syncPairings()
     }
 
     private func handleDeleted(account: Account) {
@@ -124,10 +122,6 @@ class WalletConnectSessionManager {
         activePendingRequestsRelay.accept(activePendingRequests)
     }
 
-    private func syncPairings() {
-        pairingsRelay.accept(service.pairings)
-    }
-
     private func requests(accountId: String? = nil) -> [WalletConnectSign.Request] {
         let allRequests = service.pendingRequests
         let dbSessions = storage.sessions(accountId: accountId)
@@ -141,10 +135,6 @@ class WalletConnectSessionManager {
 }
 
 extension WalletConnectSessionManager {
-    public func validate(uri: String) throws {
-        _ = try service.validate(uri: uri)
-    }
-
     public var sessions: [WalletConnectSign.Session] {
         guard let accountId = accountManager.activeAccount?.id else {
             return []
@@ -181,19 +171,7 @@ extension WalletConnectSessionManager {
         activePendingRequestsRelay.asObservable()
     }
 
-    public var pairings: [WalletConnectPairing.Pairing] {
-        service.pairings
-    }
-
-    public var pairingsObservable: Observable<[WalletConnectPairing.Pairing]> {
-        pairingsRelay.asObservable()
-    }
-
     public var sessionRequestReceivedObservable: Observable<WalletConnectRequest> {
         sessionRequestReceivedRelay.asObservable()
-    }
-
-    public func disconnectPairing(topic: String) -> Single<Void> {
-        service.disconnectPairing(topic: topic)
     }
 }

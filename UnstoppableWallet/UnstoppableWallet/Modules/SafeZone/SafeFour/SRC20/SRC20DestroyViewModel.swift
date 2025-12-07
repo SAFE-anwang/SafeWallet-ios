@@ -64,11 +64,11 @@ class SRC20DestroyViewModel: ObservableObject {
     }
     
     var balance: Decimal {
-        adapter.balanceData.balanceTotal
+        adapter.balanceData.available
     }
     
     var balanceString: String {
-        adapter.balanceData.balanceTotal.safe4FormattedAmount + "  " + token.symbol
+        adapter.balanceData.available.safe4FormattedAmount + "  " + token.symbol
     }
     
     private func syncSendData() {

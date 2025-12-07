@@ -2,8 +2,6 @@ import Foundation
 import UIKit
 import RxSwift
 import SnapKit
-import ThemeKit
-import ComponentKit
 
 class LiquidityInputCell: UITableViewCell {
     static let cellHeight: CGFloat = 180

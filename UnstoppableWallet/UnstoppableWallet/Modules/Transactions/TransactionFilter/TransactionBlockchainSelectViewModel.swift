@@ -3,7 +3,7 @@ import MarketKit
 
 class TransactionBlockchainSelectViewModel: ObservableObject {
     private let transactionFilterViewModel: TransactionFilterViewModel
-    private let walletManager = App.shared.walletManager
+    private let walletManager = Core.shared.walletManager
 
     let blockchains: [Blockchain]
     let allBlockchainSeries: [TransactionFilter.BlockchainSeries]
@@ -12,7 +12,7 @@ class TransactionBlockchainSelectViewModel: ObservableObject {
         self.transactionFilterViewModel = transactionFilterViewModel
         let blockchains = Array(Set(walletManager.activeWallets.map(\.token.blockchain)))
         self.blockchains = blockchains
-        allBlockchainSeries = TransactionFilter.BlockchainSeries.allCases
+        self.allBlockchainSeries = TransactionFilter.BlockchainSeries.allCases
             .filter{ $0.hasOne(of: blockchains.map(\.type))}
     }
 

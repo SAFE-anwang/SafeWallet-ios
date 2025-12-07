@@ -8,7 +8,7 @@ extension SendBaseService {
         case ready
         case notReady
     }
-
+    
     enum Mode {
         case send
         case prefilled(address: String, amount: Decimal?)
@@ -21,7 +21,7 @@ extension SendBaseService {
             }
         }
     }
-
+    
     enum AmountError: Error {
         case invalidDecimal
         case insufficientBalance

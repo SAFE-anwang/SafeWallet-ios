@@ -42,7 +42,7 @@ class ContactBookContactService {
         oldContact = contact
         restoreContainer()
 
-        newAddresses.forEach { address in
+        for address in newAddresses {
             updateContact(address: address)
         }
 
@@ -169,6 +169,10 @@ extension ContactBookContactService {
         let blockchain: Blockchain
         let address: String
         let edited: Bool
+        
+        var blockchainCode: String {
+            blockchain.type == .safe ? "SAFE3" : ""
+        }
     }
 
     struct Item {

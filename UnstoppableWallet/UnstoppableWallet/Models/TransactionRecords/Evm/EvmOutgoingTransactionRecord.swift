@@ -4,18 +4,18 @@ import MarketKit
 
 class EvmOutgoingTransactionRecord: EvmTransactionRecord {
     let to: String
-    let value: TransactionValue
+    let value: AppValue
     let sentToSelf: Bool
 
-    init(source: TransactionSource, transaction: Transaction, baseToken: Token, to: String, value: TransactionValue, sentToSelf: Bool) {
+    init(source: TransactionSource, transaction: Transaction, baseToken: Token, to: String, value: AppValue, sentToSelf: Bool, protected: Bool) {
         self.to = to
         self.value = value
         self.sentToSelf = sentToSelf
 
-        super.init(source: source, transaction: transaction, baseToken: baseToken, ownTransaction: true)
+        super.init(source: source, transaction: transaction, baseToken: baseToken, ownTransaction: true, protected: protected)
     }
 
-    override var mainValue: TransactionValue? {
+    override var mainValue: AppValue? {
         value
     }
 }

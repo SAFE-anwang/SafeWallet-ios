@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import MarketKit
 import RxCocoa
 import RxSwift
 
@@ -21,6 +22,7 @@ class ResendBitcoinViewModel {
     private let sendSuccessRelay = PublishRelay<Void>()
     private let sendFailedRelay = PublishRelay<String>()
     private let minFeeRelay = BehaviorRelay<Decimal?>(value: nil)
+    private let cautionRelay = BehaviorRelay<TitledCaution?>(value: nil)
 
     init(service: ResendBitcoinService, contactLabelService: ContactLabelService) {
         self.service = service
@@ -36,6 +38,11 @@ class ResendBitcoinViewModel {
             .sink { [weak self] in self?.syncViewItems(items: $0) }
             .store(in: &cancellables)
 
+        service.$caution
+            .receive(on: queue)
+            .sink { [weak self] in self?.cautionRelay.accept($0) }
+            .store(in: &cancellables)
+
         service.$minFee
             .receive(on: queue)
             .sink { [weak self] in self?.minFeeRelay.accept(Decimal($0)) }
@@ -43,6 +50,7 @@ class ResendBitcoinViewModel {
 
         sync(state: service.state)
         syncViewItems(items: service.items)
+        cautionRelay.accept(service.caution)
         minFeeRelay.accept(Decimal(service.minFee))
     }
 
@@ -50,22 +58,14 @@ class ResendBitcoinViewModel {
         var primaryViewItems = [ViewItem]()
         var secondaryViewItems = [ViewItem]()
 
-        primaryViewItems.append(
-            .subhead(
-                iconName: "arrow_medium_2_up_right_24",
-                title: "send.confirmation.you_send".localized,
-                value: service.token.coin.name
-            )
-        )
-
         for item in items {
             switch item {
             case let item as SendConfirmationAmountViewItem:
                 primaryViewItems.append(
                     .amount(
-                        iconUrl: service.token.coin.imageUrl,
-                        iconPlaceholderImageName: service.token.placeholderImageName,
-                        coinAmount: ValueFormatter.instance.formatFull(coinValue: item.coinValue) ?? "n/a".localized,
+                        title: "send.confirmation.you_send".localized,
+                        token: service.token,
+                        coinAmount: item.appValue.formattedFull() ?? "n/a".localized,
                         currencyAmount: item.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) },
                         type: .neutral
                     )
@@ -78,7 +78,8 @@ class ResendBitcoinViewModel {
                         title: item.sentToSelf ? "send.confirmation.own".localized : "send.confirmation.to".localized,
                         value: item.receiver.raw,
                         valueTitle: item.receiver.title,
-                        contactAddress: contactData.contactAddress
+                        contactAddress: contactData.contactAddress,
+                        statSection: .addressTo
                     )
                 )
                 if let contactName = contactData.name {
@@ -104,7 +105,7 @@ class ResendBitcoinViewModel {
                 secondaryViewItems.append(
                     .fee(
                         title: "send.confirmation.fee".localized,
-                        coinAmount: ValueFormatter.instance.formatFull(coinValue: item.coinValue) ?? "",
+                        coinAmount: item.appValue.formattedFull() ?? "",
                         currencyAmount: item.currencyValue.flatMap { ValueFormatter.instance.formatFull(currencyValue: $0) }
                     )
                 )
@@ -135,7 +136,6 @@ class ResendBitcoinViewModel {
                         type: .regular
                     )
                 )
-
             default: ()
             }
         }
@@ -190,6 +190,10 @@ extension ResendBitcoinViewModel {
         minFeeRelay.asDriver()
     }
 
+    var cautionDriver: Driver<TitledCaution?> {
+        cautionRelay.asDriver()
+    }
+
     var replaceType: ResendTransactionType {
         service.type
     }
@@ -205,9 +209,8 @@ extension ResendBitcoinViewModel {
 
 extension ResendBitcoinViewModel {
     enum ViewItem {
-        case subhead(iconName: String, title: String, value: String)
-        case amount(iconUrl: String?, iconPlaceholderImageName: String, coinAmount: String, currencyAmount: String?, type: AmountType)
-        case address(title: String, value: String, valueTitle: String?, contactAddress: ContactAddress?)
+        case amount(title: String, token: Token, coinAmount: String, currencyAmount: String?, type: AmountType)
+        case address(title: String, value: String, valueTitle: String?, contactAddress: ContactAddress?, statSection: StatSection)
         case value(iconName: String?, title: String, value: String, type: ValueType)
         case fee(title: String, coinAmount: String, currencyAmount: String?)
     }

@@ -28,16 +28,16 @@ class SendZcashFactory: BaseSendFactory {
             throw ConfirmationError.noAddress
         }
 
-        let (coinValue, currencyValue) = try values(fiatService: fiatService)
-        let (feeCoinValue, feeCurrencyValue) = try values(fiatService: feeFiatService)
+        let (appValue, currencyValue) = try values(fiatService: fiatService)
+        let (feeAppValue, feeCurrencyValue) = try values(fiatService: feeFiatService)
 
-        viewItems.append(SendConfirmationAmountViewItem(coinValue: coinValue, currencyValue: currencyValue, receiver: address))
+        viewItems.append(SendConfirmationAmountViewItem(appValue: appValue, currencyValue: currencyValue, receiver: address))
 
         if memoService.isAvailable, let memo = memoService.memo, !memo.isEmpty {
             viewItems.append(SendConfirmationMemoViewItem(memo: memo))
         }
 
-        viewItems.append(SendConfirmationFeeViewItem(coinValue: feeCoinValue, currencyValue: feeCurrencyValue))
+        viewItems.append(SendConfirmationFeeViewItem(appValue: feeAppValue, currencyValue: feeCurrencyValue))
 
         return viewItems
     }
@@ -48,7 +48,7 @@ extension SendZcashFactory: ISendConfirmationFactory {
         let items = try items()
 
         let service = SendConfirmationService(sendService: service, logger: logger, token: token, items: items)
-        let contactLabelService = ContactLabelService(contactManager: App.shared.contactManager, blockchainType: .zcash)
+        let contactLabelService = ContactLabelService(contactManager: Core.shared.contactManager, blockchainType: .zcash)
         let viewModel = SendConfirmationViewModel(service: service, contactLabelService: contactLabelService)
         let viewController = SendConfirmationViewController(viewModel: viewModel)
 

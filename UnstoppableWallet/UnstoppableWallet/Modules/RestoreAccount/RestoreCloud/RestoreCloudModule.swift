@@ -3,13 +3,13 @@ import RxSwift
 import UIKit
 
 enum RestoreCloudModule {
-    static func viewController(returnViewController: UIViewController?) -> UIViewController {
+    static func viewController(sourceType: BackupModule.Source.Abstract, onRestore: @escaping () -> Void) -> UIViewController {
         let service = RestoreCloudService(
-            cloudAccountBackupManager: App.shared.cloudBackupManager,
-            accountManager: App.shared.accountManager
+            cloudAccountBackupManager: Core.shared.cloudBackupManager,
+            accountManager: Core.shared.accountManager
         )
-        let viewModel = RestoreCloudViewModel(service: service)
-        return RestoreCloudViewController(viewModel: viewModel, returnViewController: returnViewController)
+        let viewModel = RestoreCloudViewModel(service: service, sourceType: sourceType)
+        return RestoreCloudViewController(viewModel: viewModel, onRestore: onRestore)
     }
 
     struct RestoredBackup: Codable {

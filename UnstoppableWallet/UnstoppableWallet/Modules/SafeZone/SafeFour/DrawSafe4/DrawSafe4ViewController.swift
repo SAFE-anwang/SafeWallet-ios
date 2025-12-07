@@ -1,9 +1,6 @@
 import UIKit
 import RxSwift
-import ThemeKit
 import SectionsTableView
-import ComponentKit
-import HUD
 
 class DrawSafe4ViewController: ThemeViewController {
     private let viewModel: DrawSafe4ViewModel

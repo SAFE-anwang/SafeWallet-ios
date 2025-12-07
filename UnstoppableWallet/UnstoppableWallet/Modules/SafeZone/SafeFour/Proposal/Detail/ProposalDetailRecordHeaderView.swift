@@ -1,9 +1,8 @@
-import ComponentKit
 import RxCocoa
 import RxSwift
 import SnapKit
-import ThemeKit
 import UIKit
+
 class ProposalDetailRecordHeaderView: UITableViewHeaderFooterView {
     private let titleLabel = UILabel()
     private let addressLabel = UILabel()

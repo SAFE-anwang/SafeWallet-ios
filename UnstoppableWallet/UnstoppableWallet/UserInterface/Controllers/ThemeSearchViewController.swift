@@ -1,6 +1,6 @@
 import Combine
 import HsExtensions
-import ThemeKit
+
 import UIKit
 
 class ThemeSearchViewController: KeyboardAwareViewController {
@@ -10,8 +10,6 @@ class ThemeSearchViewController: KeyboardAwareViewController {
     private var currentFilter: String?
 
     @PostPublished var filter: String?
-    
-    let customButton = UIButton(type: .system)
 
     init(scrollViews: [UIScrollView], automaticallyShowsCancelButton: Bool = false, accessoryView: UIView? = nil) {
         self.automaticallyShowsCancelButton = automaticallyShowsCancelButton
@@ -31,25 +29,9 @@ class ThemeSearchViewController: KeyboardAwareViewController {
         searchController.delegate = self
         searchController.searchBar.setValue("button.cancel".localized, forKey: "cancelButtonText")
         searchController.searchBar.placeholder = "placeholder.search".localized
-//        UIBarButtonItem.appearance(whenContainedInInstancesOf: [UISearchBar.self]).title = "button.cancel".localized
+
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
-        
-        customButton.setTitle("Custom", for: .normal)
-        customButton.addTarget(self, action: #selector(customButtonTapped), for: .touchUpInside)
-//        customButton.isHidden = true
-        searchController.searchBar.addSubview(customButton)
-        
-//        // 布局自定义按钮
-//        customButton.translatesAutoresizingMaskIntoConstraints = false
-//        NSLayoutConstraint.activate([
-//            customButton.trailingAnchor.constraint(equalTo: searchController.searchBar.trailingAnchor, constant: -10),
-//            customButton.centerYAnchor.constraint(equalTo: searchController.searchBar.centerYAnchor)
-//        ])
-    }
-    
-    @objc func customButtonTapped() {
-        print("Custom button tapped")
     }
 
     override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
@@ -72,6 +54,8 @@ class ThemeSearchViewController: KeyboardAwareViewController {
             }
         }
     }
+
+    func didPresentSearch() {}
 }
 
 extension ThemeSearchViewController: UISearchControllerDelegate {
@@ -79,6 +63,8 @@ extension ThemeSearchViewController: UISearchControllerDelegate {
         DispatchQueue.main.async {
             self.searchController.searchBar.becomeFirstResponder()
         }
+
+        didPresentSearch()
     }
 }
 

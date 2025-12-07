@@ -32,8 +32,8 @@ class LockedRecordService {
 
 extension LockedRecordService {
     
-    func withdrawByID(type: web3swift.AccountManager.ContractType, id: BigUInt) async throws -> String {
-        try await web3().safe4.accountmanager(type: type).withdrawByID(privateKey: privateKey, ids: [id])
+    func withdrawByID(type: web3swift.AccountManager.ContractType, ids: [BigUInt]) async throws -> String {
+        try await web3().safe4.accountmanager(type: type).withdrawByID(privateKey: privateKey, ids: ids)
     }
 }
 

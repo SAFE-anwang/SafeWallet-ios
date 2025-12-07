@@ -3,7 +3,6 @@ import UIKit
 import MarketKit
 import EvmKit
 import BigInt
-import ThemeKit
 import UniswapKit
 
 class LiquidityRecordModule {
@@ -19,17 +18,17 @@ class LiquidityRecordModule {
     static func subViewController(dexType: UniswapKit.DexType, blockchainType: BlockchainType) -> LiquidityRecordViewController {
 
         let v2Service = LiquidityRecordService(
-            marketKit: App.shared.marketKit,
-            walletManager: App.shared.walletManager,
-            adapterManager: App.shared.adapterManager,
+            marketKit: Core.shared.marketKit,
+            walletManager: Core.shared.walletManager,
+            adapterManager: Core.shared.adapterManager,
             blockchainType: blockchainType
         )
         
         let v3Service = LiquidityV3RecordService(
             dexType: dexType,
-            marketKit: App.shared.marketKit,
-            walletManager: App.shared.walletManager,
-            adapterManager: App.shared.adapterManager,
+            marketKit: Core.shared.marketKit,
+            walletManager: Core.shared.walletManager,
+            adapterManager: Core.shared.adapterManager,
             blockchainType: blockchainType
         )
         

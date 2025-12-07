@@ -1,7 +1,6 @@
 import Foundation
 import UIKit
 import BigInt
-import ThemeKit
 
 let superNodeRegisterSafeLockNum: Decimal = 5000
 let superNodeRegisterCrowdFundingSafeLockNum: Decimal = 1000
@@ -112,9 +111,4 @@ extension UINavigationController {
             popToViewController(viewController, animated: animated)
         }
     }
-}
-
-extension UIColor {
-    public static var themeDisabledGray: UIColor { color(dark: .themeGray, light: .themeLightGray) }
-    public static var themeDisabledBgGray: UIColor { color(dark: .themeLightGray, light: .themeLight) }
 }

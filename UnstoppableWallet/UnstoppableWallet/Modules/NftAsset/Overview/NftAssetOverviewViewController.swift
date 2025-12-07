@@ -1,10 +1,7 @@
-import ComponentKit
-import HUD
 import RxCocoa
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIKit
 
 class NftAssetOverviewViewController: ThemeViewController {
@@ -679,7 +676,7 @@ extension NftAssetOverviewViewController: SectionsDataSource {
                 sections.append(contentsOf: linksSections(links: viewItem.links))
             }
 
-            sections.append(poweredBySection(text: "Powered by OpenSea API"))
+            sections.append(poweredBySection(text: "powered_by".localized("OpenSea API")))
         }
 
         return sections

@@ -16,7 +16,7 @@ class PoolGroupFactory {
                 }
 
                 let poolSource: PoolSource
-                if App.shared.evmBlockchainManager.allBlockchains.contains(where: { $0 == wallet.token.blockchain }) || wallet.token.blockchainType == .tron {
+                if Core.shared.evmBlockchainManager.allBlockchains.contains(where: { $0 == wallet.token.blockchain }) || wallet.token.blockchainType == .tron || wallet.token.blockchainType == .ton || wallet.token.blockchainType == .stellar {
                     poolSource = PoolSource(
                         token: nil,
                         blockchainType: wallet.token.blockchainType,
@@ -36,7 +36,7 @@ class PoolGroupFactory {
             }
 
             return poolSources.compactMap { poolSource in
-                if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+                if let adapter = Core.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
                     return PoolProvider(adapter: adapter, source: poolSource)
                 } else {
                     return nil
@@ -49,7 +49,7 @@ class PoolGroupFactory {
             if contact != nil, address == nil {
                 return []
             }
-            if App.shared.evmBlockchainManager.allBlockchains.contains(where: { $0.type == blockchainType }) || blockchainType == .tron {
+            if Core.shared.evmBlockchainManager.allBlockchains.contains(where: { $0.type == blockchainType }) || blockchainType == .tron || blockchainType == .ton || blockchainType == .stellar {
                 let poolSource = PoolSource(
                     token: nil,
                     blockchainType: blockchainType,
@@ -57,7 +57,7 @@ class PoolGroupFactory {
                     address: address
                 )
 
-                if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+                if let adapter = Core.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
                     let provider = PoolProvider(adapter: adapter, source: poolSource)
                     return [provider]
                 }
@@ -75,7 +75,7 @@ class PoolGroupFactory {
                         address: address
                     )
 
-                    if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+                    if let adapter = Core.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
                         let provider = PoolProvider(adapter: adapter, source: poolSource)
                         providers.append(provider)
                     }
@@ -97,11 +97,11 @@ class PoolGroupFactory {
                 address: address
             )
 
-            if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+            if let adapter = Core.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
                 let provider = PoolProvider(adapter: adapter, source: poolSource)
                 return [provider]
             }
-        case let .blockchains(types, wallets):
+        case .blockchains(types: let types, wallets: let wallets):
             var providers = [PoolProvider]()
             for blockchainType in types {
                 
@@ -110,7 +110,7 @@ class PoolGroupFactory {
                 if contact != nil, address == nil {
                     return []
                 }
-                if App.shared.evmBlockchainManager.allBlockchains.contains(where: { $0.type == blockchainType }) || blockchainType == .tron {
+                if Core.shared.evmBlockchainManager.allBlockchains.contains(where: { $0.type == blockchainType }) || blockchainType == .tron {
                     let poolSource = PoolSource(
                         token: nil,
                         blockchainType: blockchainType,
@@ -118,7 +118,7 @@ class PoolGroupFactory {
                         address: address
                     )
 
-                    if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+                    if let adapter = Core.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
                         let provider = PoolProvider(adapter: adapter, source: poolSource)
                         return [provider]
                     }
@@ -136,7 +136,7 @@ class PoolGroupFactory {
                             address: address
                         )
 
-                        if let adapter = App.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
+                        if let adapter = Core.shared.transactionAdapterManager.adapter(for: poolSource.transactionSource) {
                             let provider = PoolProvider(adapter: adapter, source: poolSource)
                             providers.append(provider)
                         }
@@ -145,15 +145,18 @@ class PoolGroupFactory {
             }
             return providers
         }
+
         return []
     }
 }
 
 extension PoolGroupFactory {
     func poolGroup(type: PoolGroupType, filter: TransactionTypeFilter, contact: Contact?, scamFilterEnabled: Bool, safe4IncomeEnabled: Bool, safe4NodestatusEnabled: Bool) -> PoolGroup {
+//    func poolGroup(type: PoolGroupType, filter: TransactionTypeFilter, contact: Contact?, scamFilterEnabled: Bool) -> PoolGroup {
         let providers = providers(poolGroupType: type, filter: filter, contact: contact)
         let pools = providers.map { poolProvider in
             scamFilterEnabled  || safe4IncomeEnabled || safe4NodestatusEnabled ? Pool(provider: NonSpamPoolProvider(poolProvider: poolProvider, scamFilterEnabled: scamFilterEnabled, safe4IncomeEnabled: safe4IncomeEnabled, safe4NodestatusEnabled: safe4NodestatusEnabled)) : Pool(provider: poolProvider)
+//            scamFilterEnabled ? Pool(provider: NonSpamPoolProvider(poolProvider: poolProvider)) : Pool(provider: poolProvider)
         }
         return PoolGroup(pools: pools)
     }

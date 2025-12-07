@@ -1,10 +1,10 @@
-import UIKit
-import ThemeKit
-import SnapKit
-import SectionsTableView
-import RxSwift
-import RxCocoa
 import EvmKit
+import RxCocoa
+import RxSwift
+import SectionsTableView
+import SnapKit
+
+import UIKit
 
 class SendEvmViewController: ThemeViewController {
     private let evmKitWrapper: EvmKitWrapper
@@ -23,34 +23,26 @@ class SendEvmViewController: ThemeViewController {
     private let recipientCautionCell: RecipientAddressCautionCell
 
     private let buttonCell = PrimaryButtonCell()
-    
-    private var safeLockTimeCell: SafeDropDownListCell?
-    private var timeLockViewModel: TimeLockViewModel?
-    
+
     private var isLoaded = false
     private var keyboardShown = false
 
-    init(evmKitWrapper: EvmKitWrapper, viewModel: SendEvmViewModel, availableBalanceViewModel: ISendAvailableBalanceViewModel, amountViewModel: AmountInputViewModel, recipientViewModel: RecipientAddressViewModel, timeLockViewModel: TimeLockViewModel? = nil) {
+    init(evmKitWrapper: EvmKitWrapper, viewModel: SendEvmViewModel, availableBalanceViewModel: ISendAvailableBalanceViewModel, amountViewModel: AmountInputViewModel, recipientViewModel: RecipientAddressViewModel) {
         self.evmKitWrapper = evmKitWrapper
         self.viewModel = viewModel
-        self.timeLockViewModel = timeLockViewModel
-        
+
         availableBalanceCell = SendAvailableBalanceCell(viewModel: availableBalanceViewModel)
 
         amountCell = AmountInputCell(viewModel: amountViewModel)
 
         recipientCell = RecipientAddressInputCell(viewModel: recipientViewModel)
         recipientCautionCell = RecipientAddressCautionCell(viewModel: recipientViewModel)
-        
-        // timeLock cell
-        if  let timeLockViewModel {
-            safeLockTimeCell = SafeDropDownListCell(viewModel: timeLockViewModel, title: "fee_settings.time_lock".localized)
-        }
 
         super.init()
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -68,7 +60,7 @@ class SendEvmViewController: ThemeViewController {
         iconImageView.snp.makeConstraints { make in
             make.size.equalTo(CGFloat.iconSize24)
         }
-        iconImageView.setImage(withUrlString: viewModel.token.coin.imageUrl, placeholder: UIImage(named: viewModel.token.placeholderImageName))
+        iconImageView.setImage(coin: viewModel.token.coin, placeholder: viewModel.token.placeholderImageName)
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
@@ -104,8 +96,6 @@ class SendEvmViewController: ThemeViewController {
             self?.amountCautionCell.set(caution: caution)
         }
         subscribe(disposeBag, viewModel.proceedSignal) { [weak self] in self?.openConfirm(sendData: $0) }
-        
-        safeLockTimeCell?.showList = { [weak self] in self?.showList() }
 
         tableView.buildSections()
         isLoaded = true
@@ -145,109 +135,81 @@ class SendEvmViewController: ThemeViewController {
         }
         navigationController?.pushViewController(viewController, animated: true)
     }
-    
-    private func showList() {
-        let alertController: UIViewController = AlertRouter.module(
-                title: "fee_settings.time_lock".localized,
-                viewItems: timeLockViewModel?.itemsList ?? []
-        ) { [weak self] index in
-            self?.timeLockViewModel?.onSelect(index)
-        }
-        present(alertController, animated: true)
-    }
-
 }
 
-
 extension SendEvmViewController: SectionsDataSource {
-
     func buildSections() -> [SectionProtocol] {
         var sections = [
             Section(
-                    id: "available-balance",
-                    headerState: .margin(height: .margin12),
-                    rows: [
-                        StaticRow(
-                                cell: availableBalanceCell,
-                                id: "available-balance",
-                                height: availableBalanceCell.cellHeight
-                        )
-                    ]
+                id: "available-balance",
+                headerState: .margin(height: .margin12),
+                rows: [
+                    StaticRow(
+                        cell: availableBalanceCell,
+                        id: "available-balance",
+                        height: availableBalanceCell.cellHeight
+                    ),
+                ]
             ),
             Section(
-                    id: "amount",
-                    headerState: .margin(height: .margin16),
-                    rows: [
-                        StaticRow(
-                                cell: amountCell,
-                                id: "amount-input",
-                                height: amountCell.cellHeight
-                        ),
-                        StaticRow(
-                                cell: amountCautionCell,
-                                id: "amount-caution",
-                                dynamicHeight: { [weak self] width in
-                                    self?.amountCautionCell.height(containerWidth: width) ?? 0
-                                }
-                        )
-                    ]
-            )
+                id: "amount",
+                headerState: .margin(height: .margin16),
+                rows: [
+                    StaticRow(
+                        cell: amountCell,
+                        id: "amount-input",
+                        height: amountCell.cellHeight
+                    ),
+                    StaticRow(
+                        cell: amountCautionCell,
+                        id: "amount-caution",
+                        dynamicHeight: { [weak self] width in
+                            self?.amountCautionCell.height(containerWidth: width) ?? 0
+                        }
+                    ),
+                ]
+            ),
         ]
 
         if viewModel.showAddress {
             sections.append(
-                    Section(
-                            id: "recipient",
-                            headerState: .margin(height: .margin16),
-                            rows: [
-                                StaticRow(
-                                        cell: recipientCell,
-                                        id: "recipient-input",
-                                        dynamicHeight: { [weak self] width in
-                                            self?.recipientCell.height(containerWidth: width) ?? 0
-                                        }
-                                ),
-                                StaticRow(
-                                        cell: recipientCautionCell,
-                                        id: "recipient-caution",
-                                        dynamicHeight: { [weak self] width in
-                                            self?.recipientCautionCell.height(containerWidth: width) ?? 0
-                                        }
-                                )
-                            ]
-                    )
-            )
-        }
-        if let safeLockTimeCell {
-            sections.append(
                 Section(
-                        id: "safe-time-lock",
-                        headerState: .margin(height: .margin12),
-                        rows: [
-                            StaticRow(
-                                    cell: safeLockTimeCell,
-                                    id: "safe-time-lock-cell",
-                                    height: .heightCell56
-                            )
-                        ]
+                    id: "recipient",
+                    headerState: .margin(height: .margin16),
+                    rows: [
+                        StaticRow(
+                            cell: recipientCell,
+                            id: "recipient-input",
+                            dynamicHeight: { [weak self] width in
+                                self?.recipientCell.height(containerWidth: width) ?? 0
+                            }
+                        ),
+                        StaticRow(
+                            cell: recipientCautionCell,
+                            id: "recipient-caution",
+                            dynamicHeight: { [weak self] width in
+                                self?.recipientCautionCell.height(containerWidth: width) ?? 0
+                            }
+                        ),
+                    ]
                 )
             )
         }
+
         sections.append(
-                Section(
+            Section(
+                id: "button",
+                footerState: .margin(height: .margin32),
+                rows: [
+                    StaticRow(
+                        cell: buttonCell,
                         id: "button",
-                        footerState: .margin(height: .margin32),
-                        rows: [
-                            StaticRow(
-                                    cell: buttonCell,
-                                    id: "button",
-                                    height: PrimaryButtonCell.height
-                            )
-                        ]
-                )
+                        height: PrimaryButtonCell.height
+                    ),
+                ]
+            )
         )
 
         return sections
     }
-
 }

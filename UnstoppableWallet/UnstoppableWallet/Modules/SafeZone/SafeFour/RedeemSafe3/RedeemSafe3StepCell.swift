@@ -1,11 +1,9 @@
-
-
 import Foundation
 import UIKit
-import ComponentKit
+import SnapKit
 
 class RedeemSafe3StepCell: BaseThemeCell {
-    let stackView = UIStackView()
+//    let stackView = UIStackView()
     let step1 = StepItemView()
     let step2 = StepItemView()
     let step3 = StepItemView()

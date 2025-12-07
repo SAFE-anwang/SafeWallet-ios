@@ -3,8 +3,6 @@ import EvmKit
 import Kingfisher
 import MarketKit
 import SwiftUI
-import ComponentKit
-import HUD
 import AdvancedList
 
 struct WithdrawView: View {
@@ -16,72 +14,74 @@ struct WithdrawView: View {
     }
     
     var body: some View {
-        ThemeView {
-            ZStack {
-                VStack{
-                    list(items: viewModel.viewItems)
-                    if case .loading = viewModel.dataState, !viewModel.viewItems.isEmpty {
+        ThemeNavigationStack {
+            ThemeView {
+                ZStack {
+                    VStack{
+                        list(items: viewModel.viewItems)
+                        if case .loading = viewModel.dataState, !viewModel.viewItems.isEmpty {
+                            ProgressView()
+                        }
+                        if !viewModel.hasMoreItems, viewModel.viewItems.count > 0 {
+                            Text("loadData.nomore".localized)
+                                .themeSubhead1(color: .themeLeah, alignment: .center)
+                        }
+                        if /*case .items = viewModel.dataState, */!viewModel.viewItems.isEmpty {
+                            Button(action: {
+                                viewModel.onSuccess = { sendState in
+                                    switch sendState {
+                                    case .normal, .loading:()
+                                    case .completed:
+                                        DispatchQueue.main.async {
+                                            HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
+                                            presentationMode.wrappedValue.dismiss()
+                                        }
+                                        
+                                    case .failed(_):
+                                        HudHelper.instance.show(banner: .error(string: "transactions.failed".localized))
+                                    }
+                                }
+                                viewModel.withdraw()
+                            }) {
+                                HStack {
+                                    if case .loading = viewModel.sendState {
+                                        ProgressView()
+                                    }
+                                    Text("safe_zone.safe4.withdraw".localized)
+                                }
+                            }
+                            .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
+                            .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                            .disabled(!viewModel.withdrawEnabled)
+                        }
+                    }
+
+                    if case .loading = viewModel.dataState, viewModel.viewItems.isEmpty {
                         ProgressView()
                     }
-                    if !viewModel.hasMoreItems {
-                        Text("loadData.nomore".localized)
-                            .themeSubhead1(color: .themeLeah, alignment: .center)
+                    
+                    if case .items = viewModel.dataState, viewModel.viewItems.isEmpty {
+                        PlaceholderViewNew(icon: "no_data_48", title: "coin_markets.empty".localized)
                     }
-                    if /*case .items = viewModel.dataState, */!viewModel.viewItems.isEmpty {
-                        Button(action: {
-                            viewModel.onSuccess = { sendState in
-                                switch sendState {
-                                case .normal, .loading:()
-                                case .completed:
-                                    DispatchQueue.main.async {
-                                        HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
-                                        presentationMode.wrappedValue.dismiss()
-                                    }
-                                    
-                                case .failed(_):
-                                    HudHelper.instance.show(banner: .error(string: "transactions.failed".localized))
-                                }
-                            }
-                            viewModel.withdraw()
-                        }) {
-                            HStack {
-                                if case .loading = viewModel.sendState {
-                                    ProgressView()
-                                }
-                                Text("safe_zone.safe4.withdraw".localized)
-                            }
-                        }
-                        .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
-                        .buttonStyle(PrimaryButtonStyle(style: .yellow))
-                        .disabled(!viewModel.withdrawEnabled)
+                    
+                    if case .loading = viewModel.sendState {
+                        loadingHud()
                     }
-                }
-
-                if case .loading = viewModel.dataState, viewModel.viewItems.isEmpty {
-                    ProgressView()
-                }
-                
-                if case .items = viewModel.dataState, viewModel.viewItems.isEmpty {
-                    PlaceholderViewNew(image: Image("no_data_48"), text: "coin_markets.empty".localized)
-                }
-                
-                if case .loading = viewModel.sendState {
-                    loadingHud()
                 }
             }
-        }
-        .navigationBarTitle(viewModel.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                if case .items = viewModel.dataState, viewModel.enableItems.count > 0 {
-                    if viewModel.isChoosedAll {
-                        Button("button.cancel".localized) {
-                            viewModel.cancelAll()
-                        }
-                    } else if !viewModel.isChoosedAll {
-                        Button("button.all".localized) {
-                            viewModel.chooseAll()
+            .navigationBarTitle(viewModel.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if case .items = viewModel.dataState, viewModel.enableItems.count > 0 {
+                        if viewModel.isChoosedAll {
+                            Button("button.cancel".localized) {
+                                viewModel.cancelAll()
+                            }
+                        } else if !viewModel.isChoosedAll {
+                            Button("button.all".localized) {
+                                viewModel.chooseAll()
+                            }
                         }
                     }
                 }

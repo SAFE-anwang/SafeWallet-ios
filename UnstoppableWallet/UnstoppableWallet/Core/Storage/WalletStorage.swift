@@ -16,6 +16,7 @@ class WalletStorage {
             accountId: wallet.account.id,
             coinName: wallet.coin.name,
             coinCode: wallet.coin.code,
+            coinImage: wallet.coin.image,
             tokenDecimals: wallet.token.decimals
         )
     }
@@ -41,13 +42,15 @@ extension WalletStorage {
             }
 
             if let coinName = enabledWallet.coinName, let coinCode = enabledWallet.coinCode, let tokenDecimals = enabledWallet.tokenDecimals,
-               let blockchain = blockchains.first(where: { $0.uid == tokenQuery.blockchainType.uid }) {
-                let coinUid =  isSafeCoin(name: coinName, code: coinCode) ? "safe-anwang" : tokenQuery.customCoinUid
+               let blockchain = blockchains.first(where: { $0.uid == tokenQuery.blockchainType.uid })
+            {
+                let coinUid = tokenQuery.customCoinUid
+
                 let token = Token(
-                        coin: Coin(uid: coinUid, name: coinName, code: coinCode),
-                        blockchain: blockchain,
-                        type: tokenQuery.tokenType,
-                        decimals: tokenDecimals
+                    coin: Coin(uid: coinUid, name: coinName, code: coinCode, image: enabledWallet.coinImage),
+                    blockchain: blockchain,
+                    type: tokenQuery.tokenType,
+                    decimals: tokenDecimals
                 )
 
                 return Wallet(token: token, account: account)
@@ -70,11 +73,4 @@ extension WalletStorage {
     func clearWallets() {
         try? storage.clear()
     }
-
-}
-extension WalletStorage {
-    private func isSafeCoin(name: String, code: String) -> Bool {
-        name == "SAFE" || code == "SAFE"
-    }
-                    
 }

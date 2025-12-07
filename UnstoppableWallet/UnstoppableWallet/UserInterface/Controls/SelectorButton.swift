@@ -1,4 +1,4 @@
-import ComponentKit
+
 import Foundation
 import UIKit
 
@@ -14,10 +14,6 @@ class SelectorButton: SecondaryButton {
         super.init()
 
         addTarget(self, action: #selector(onTap), for: .touchUpInside)
-    }
-
-    public required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
     }
 
     func set(items: [String]) {

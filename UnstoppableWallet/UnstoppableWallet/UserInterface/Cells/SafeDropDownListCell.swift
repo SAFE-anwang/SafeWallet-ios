@@ -1,8 +1,6 @@
 import UIKit
 import RxSwift
 import RxCocoa
-import ComponentKit
-import ThemeKit
 
 class SafeDropDownListCell: BaseSelectableThemeCell {
     private let disposeBag = DisposeBag()

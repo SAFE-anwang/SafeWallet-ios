@@ -2,12 +2,10 @@ import Foundation
 import UIKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIExtensions
 import RxSwift
 import RxCocoa
-import ComponentKit
-import HUD
+
 
 class MasterNodeRegisterViewController: KeyboardAwareViewController {
     private let disposeBag = DisposeBag()
@@ -66,7 +64,7 @@ class MasterNodeRegisterViewController: KeyboardAwareViewController {
         
         buttonCell.set(style: .yellow)
         buttonCell.title = "send.next_button".localized
-        buttonCell.setDebounceInterval(2)
+//        buttonCell.setDebounceInterval(2)
         buttonCell.onTap = { [weak self] in
             self?.toSendVc()
         }

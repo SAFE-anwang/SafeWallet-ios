@@ -1,30 +1,19 @@
 
 import Foundation
-import RxSwift
-import RxRelay
-import RxCocoa
+import Combine
 
-class RedeemSafe3TabViewModel {
-    private let currentTabRelay: BehaviorRelay<RedeemSafe3Module.Tab>
-
-    init() {
-        currentTabRelay = BehaviorRelay<RedeemSafe3Module.Tab>(value: .other)
+class RedeemSafe3TabViewModel: ObservableObject {
+    @Published var currentTab: RedeemSafe3Module.Tab = .other
+    let account: Account
+    let safe4EvmKitWrapper: EvmKitWrapper
+    
+    init(account: Account, safe4EvmKitWrapper: EvmKitWrapper) {
+//        self.currentTab = currentTab
+        self.account = account
+        self.safe4EvmKitWrapper = safe4EvmKitWrapper
     }
-}
-
-extension RedeemSafe3TabViewModel {
-
-    var currentTabDriver: Driver<RedeemSafe3Module.Tab> {
-        currentTabRelay.asDriver()
-    }
-
     var tabs: [RedeemSafe3Module.Tab] {
         RedeemSafe3Module.Tab.allCases
     }
-
-    func onSelect(tab: RedeemSafe3Module.Tab) {
-        currentTabRelay.accept(tab)
-    }
-
 }
 

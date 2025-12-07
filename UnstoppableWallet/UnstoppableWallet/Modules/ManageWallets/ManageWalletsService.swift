@@ -1,9 +1,12 @@
 import EvmKit
+import Foundation
 import MarketKit
 import RxRelay
 import RxSwift
 
 class ManageWalletsService {
+    private var queue = DispatchQueue(label: "\(AppConfig.label).manage-wallets-service.tokens", qos: .userInitiated)
+
     private let account: Account
     private let marketKit: MarketKit.Kit
     private let walletManager: WalletManager
@@ -23,11 +26,7 @@ class ManageWalletsService {
         }
     }
 
-    init?(marketKit: MarketKit.Kit, walletManager: WalletManager, accountManager: AccountManager, restoreSettingsService: RestoreSettingsService) {
-        guard let account = accountManager.activeAccount else {
-            return nil
-        }
-
+    init(account: Account, marketKit: MarketKit.Kit, walletManager: WalletManager, accountManager _: AccountManager, restoreSettingsService: RestoreSettingsService) {
         self.account = account
         self.marketKit = marketKit
         self.walletManager = walletManager
@@ -45,8 +44,6 @@ class ManageWalletsService {
 
         sync(wallets: walletManager.activeWallets)
         syncTokens()
-        sortTokens()
-        syncState()
     }
 
     private func handleApproveRestoreSettings(token: Token, settings: RestoreSettings = [:]) {
@@ -74,7 +71,7 @@ class ManageWalletsService {
                 } else {
                     tokenQueries = BlockchainType.supported.map(\.defaultTokenQuery)
                 }
-                let safe4CustomTokenQueries = App.shared.safe4CustomTokenStorage.allTokens().map{
+                let safe4CustomTokenQueries = Core.shared.safe4CustomTokenStorage.allTokens().map{
                     TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: $0.address))
                 }
                 let safe4CustomTokens = try marketKit.tokens(queries: safe4CustomTokenQueries)
@@ -106,15 +103,26 @@ class ManageWalletsService {
         }
     }
 
-    private func syncTokens() {
-        tokens = fetchTokens()
+    private func syncTokens(force: Bool = true) {
+        queue.async { [weak self] in
+            guard let self else { return }
+
+            var newTokens = fetchTokens()
+
+            if force || newTokens.count > tokens.count {
+                sort(tokens: &newTokens)
+
+                tokens = newTokens
+                syncState()
+            }
+        }
     }
 
     private func isEnabled(token: Token) -> Bool {
         wallets.contains { $0.token == token }
     }
 
-    private func sortTokens() {
+    private func sort(tokens: inout [Token]) {
         tokens.sort { lhsToken, rhsToken in
             let lhsEnabled = isEnabled(token: lhsToken)
             let rhsEnabled = isEnabled(token: rhsToken)
@@ -155,7 +163,11 @@ class ManageWalletsService {
     }
 
     private func sync(wallets: [Wallet]) {
-        self.wallets = Set(wallets)
+        queue.async { [weak self] in
+            guard let self else { return }
+
+            self.wallets = Set(wallets)
+        }
     }
 
     private func hasInfo(token: Token, enabled: Bool) -> Bool {
@@ -169,7 +181,7 @@ class ManageWalletsService {
         }
 
         switch token.type {
-        case .eip20, .bep2: return true
+        case .eip20, .jetton, .stellar: return true
         default: return false
         }
     }
@@ -191,14 +203,7 @@ class ManageWalletsService {
     private func handleUpdated(wallets: [Wallet]) {
         sync(wallets: wallets)
 
-        let newTokens = fetchTokens()
-
-        if newTokens.count > tokens.count {
-            tokens = newTokens
-            sortTokens()
-        }
-
-        syncState()
+        syncTokens(force: false)
     }
 
     private func save(token: Token) {
@@ -224,8 +229,6 @@ extension ManageWalletsService {
         self.filter = filter
 
         syncTokens()
-        sortTokens()
-        syncState()
     }
 
     func enable(index: Int) {
@@ -235,6 +238,8 @@ extension ManageWalletsService {
             restoreSettingsService.approveSettings(token: token, account: account)
         } else {
             save(token: token)
+
+            stat(page: .coinManager, event: .enableToken(token: token))
         }
     }
 
@@ -242,6 +247,8 @@ extension ManageWalletsService {
         let token = tokens[index]
         let walletsToDelete = wallets.filter { $0.token == token }
         walletManager.delete(wallets: Array(walletsToDelete))
+
+        stat(page: .coinManager, event: .disableToken(token: token))
     }
 
     func infoItem(index: Int) -> InfoItem? {
@@ -265,8 +272,13 @@ extension ManageWalletsService {
         }
 
         switch token.type {
-        case let .eip20(value), let .bep2(value):
-            return InfoItem(token: token, type: .contractAddress(value: value, explorerUrl: token.blockchain.explorerUrl(reference: value)))
+        case let .eip20(address):
+            return InfoItem(token: token, type: .contractAddress(value: address, explorerUrl: token.blockchain.explorerUrl(reference: address)))
+        case let .jetton(address):
+            return InfoItem(token: token, type: .contractAddress(value: address, explorerUrl: token.blockchain.explorerUrl(reference: address)))
+        case let .stellar(code, issuer):
+            let assetId = [code, issuer].joined(separator: "-")
+            return InfoItem(token: token, type: .contractAddress(value: assetId, explorerUrl: token.blockchain.explorerUrl(reference: assetId)))
         default:
             return nil
         }

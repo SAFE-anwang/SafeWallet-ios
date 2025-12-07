@@ -73,7 +73,7 @@ extension EvmLabelManager {
 
     func methodLabel(input: Data) -> String? {
         let methodId = Data(input.prefix(4)).hs.hexString
-        let label = EvmKit.Safe4Methods.allCases.filter{$0.id == methodId}.first?.title ?? EvmLabelManager.ExSafe4Methods.allCases.filter{$0.id == methodId}.first?.title
+        let label = EvmKit.Safe4Methods.allCases.filter{$0.id.lowercased() == methodId.lowercased()}.first?.title ?? EvmLabelManager.ExSafe4Methods.allCases.filter{$0.id.lowercased() == methodId.lowercased()}.first?.title
         return label ?? (try? storage.evmMethodLabel(methodId: methodId))?.label
     }
 
@@ -87,6 +87,15 @@ extension EvmLabelManager {
         }
 
         return address.shortened
+    }
+    
+    func addressLabelMap() -> [String: String] {
+        do {
+            let addressLabels = try storage.allAddressLabels()
+            return addressLabels.reduce(into: [String: String]()) { $0[$1.address] = $1.label }
+        } catch {
+            return [:]
+        }
     }
 }
 

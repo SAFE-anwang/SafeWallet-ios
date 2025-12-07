@@ -1,15 +1,15 @@
 import Combine
-import ComponentKit
+
 import Foundation
 import SectionsTableView
-import ThemeKit
+
 import UIKit
 
 class RestoreCloudViewController: ThemeViewController {
     private let viewModel: RestoreCloudViewModel
     private var cancellables = Set<AnyCancellable>()
 
-    private weak var returnViewController: UIViewController?
+    private let onRestore: () -> Void
 
     private let emptyView = PlaceholderView()
     private let tableView = SectionsTableView(style: .grouped)
@@ -17,9 +17,9 @@ class RestoreCloudViewController: ThemeViewController {
     private var walletViewItem: RestoreCloudViewModel.ViewItem
     private var fullBackupViewItem: RestoreCloudViewModel.ViewItem
 
-    init(viewModel: RestoreCloudViewModel, returnViewController: UIViewController?) {
+    init(viewModel: RestoreCloudViewModel, onRestore: @escaping () -> Void) {
         self.viewModel = viewModel
-        self.returnViewController = returnViewController
+        self.onRestore = onRestore
 
         walletViewItem = viewModel.walletViewItem
         fullBackupViewItem = viewModel.fullBackupViewItem
@@ -92,11 +92,12 @@ class RestoreCloudViewController: ThemeViewController {
     }
 
     @objc private func onCancel() {
-        (returnViewController ?? self)?.dismiss(animated: true)
+        dismiss(animated: true)
     }
 
     private func restore(item: BackupModule.NamedSource) {
-        let viewController = RestorePassphraseModule.viewController(item: item, returnViewController: returnViewController)
+        let statPage: StatPage = viewModel.sourceType == .wallet ? .importWalletFromCloud : .importFullFromCloud
+        let viewController = RestorePassphraseModule.viewController(item: item, statPage: statPage, onRestore: onRestore)
 
         navigationController?.pushViewController(viewController, animated: true)
     }

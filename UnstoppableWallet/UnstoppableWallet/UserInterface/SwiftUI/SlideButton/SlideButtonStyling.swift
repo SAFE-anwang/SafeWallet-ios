@@ -1,12 +1,11 @@
 import SwiftUI
-import ThemeKit
 
 public struct SlideButtonStyling {
     public init(
         indicatorSize: CGFloat = .heightButton,
         indicatorColor: Color = .themeJacob,
         indicatorBrightness: Double = 0.0,
-        backgroundColor: Color = .themeSteel20,
+        backgroundColor: Color = .themeBlade,
         start: String = "",
         end: String = "",
         success: String = "",

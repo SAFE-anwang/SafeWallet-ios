@@ -1,9 +1,6 @@
-import ComponentKit
-import HUD
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIKit
 
 class FaqViewController: ThemeViewController {
@@ -147,6 +144,7 @@ extension FaqViewController: SectionsDataSource {
                             return
                         }
 
+                        stat(page: .faq, event: .openArticle(relativeUrl: url.relativePath))
                         let module = MarkdownModule.viewController(url: url, handleRelativeUrl: false)
                         self?.navigationController?.pushViewController(module, animated: true)
                     }

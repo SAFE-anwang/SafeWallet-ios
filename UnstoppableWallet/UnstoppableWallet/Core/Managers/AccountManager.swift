@@ -1,19 +1,19 @@
 import Combine
-import RxRelay
-import RxSwift
+import HsExtensions
 
 class AccountManager {
     private let passcodeManager: PasscodeManager
     private let storage: AccountCachedStorage
     private var cancellables = Set<AnyCancellable>()
 
-    private let activeAccountRelay = PublishRelay<Account?>()
-    private let accountsRelay = PublishRelay<[Account]>()
-    private let accountUpdatedRelay = PublishRelay<Account>()
-    private let accountDeletedRelay = PublishRelay<Account>()
-    private let accountsLostRelay = BehaviorRelay<Bool>(value: false)
+    private let activeAccountSubject = PassthroughSubject<Account?, Never>()
+    private let accountsSubject = PassthroughSubject<[Account], Never>()
+    private let accountUpdatedSubject = PassthroughSubject<Account, Never>()
+    private let accountDeletedSubject = PassthroughSubject<Account, Never>()
 
     private var lastCreatedAccount: Account?
+
+    @PostPublished var accountsLost = false
 
     init(passcodeManager: PasscodeManager, accountStorage: AccountStorage, activeAccountStorage: ActiveAccountStorage) {
         self.passcodeManager = passcodeManager
@@ -21,9 +21,7 @@ class AccountManager {
         storage = AccountCachedStorage(level: passcodeManager.currentPasscodeLevel, accountStorage: accountStorage, activeAccountStorage: activeAccountStorage)
 
         passcodeManager.$currentPasscodeLevel
-            .sink { [weak self] level in
-                self?.handle(level: level)
-            }
+            .sink { [weak self] in self?.handle(level: $0) }
             .store(in: &cancellables)
 
         passcodeManager.$isDuressPasscodeSet
@@ -38,8 +36,8 @@ class AccountManager {
     private func handle(level: Int) {
         storage.set(level: level)
 
-        accountsRelay.accept(storage.accounts)
-        activeAccountRelay.accept(storage.activeAccount)
+        accountsSubject.send(storage.accounts)
+        activeAccountSubject.send(storage.activeAccount)
     }
 
     private func handleDisableDuress() {
@@ -52,39 +50,35 @@ class AccountManager {
             }
         }
 
-        accountsRelay.accept(storage.accounts)
+        accountsSubject.send(storage.accounts)
     }
 
     private func clearAccounts(ids: [String]) {
-        ids.forEach {
-            storage.delete(accountId: $0)
+        for id in ids {
+            storage.delete(accountId: id)
         }
 
         if storage.allAccounts.isEmpty {
-            accountsLostRelay.accept(true)
+            accountsLost = true
         }
     }
 }
 
 extension AccountManager {
-    var activeAccountObservable: Observable<Account?> {
-        activeAccountRelay.asObservable()
+    var activeAccountPublisher: AnyPublisher<Account?, Never> {
+        activeAccountSubject.eraseToAnyPublisher()
     }
 
-    var accountsObservable: Observable<[Account]> {
-        accountsRelay.asObservable()
+    var accountsPublisher: AnyPublisher<[Account], Never> {
+        accountsSubject.eraseToAnyPublisher()
     }
 
-    var accountUpdatedObservable: Observable<Account> {
-        accountUpdatedRelay.asObservable()
+    var accountUpdatedPublisher: AnyPublisher<Account, Never> {
+        accountUpdatedSubject.eraseToAnyPublisher()
     }
 
-    var accountDeletedObservable: Observable<Account> {
-        accountDeletedRelay.asObservable()
-    }
-
-    var accountsLostObservable: Observable<Bool> {
-        accountsLostRelay.asObservable()
+    var accountDeletedPublisher: AnyPublisher<Account, Never> {
+        accountDeletedSubject.eraseToAnyPublisher()
     }
 
     var currentLevel: Int {
@@ -100,11 +94,12 @@ extension AccountManager {
             return
         }
         do {
-            try App.shared.safe4StorageManager.superNodeLockRecordStorage.clear()
+            try Core.shared.safe4StorageManager.superNodeLockRecordStorage.clear()
         }catch{}
         
+
         storage.set(activeAccountId: activeAccountId)
-        activeAccountRelay.accept(storage.activeAccount)
+        activeAccountSubject.send(storage.activeAccount)
     }
 
     var accounts: [Account] {
@@ -118,24 +113,24 @@ extension AccountManager {
     func update(account: Account) {
         storage.save(account: account)
 
-        accountsRelay.accept(storage.accounts)
-        accountUpdatedRelay.accept(account)
+        accountsSubject.send(storage.accounts)
+        accountUpdatedSubject.send(account)
     }
 
     func save(account: Account) {
         storage.save(account: account)
 
-        accountsRelay.accept(storage.accounts)
+        accountsSubject.send(storage.accounts)
 
         set(activeAccountId: account.id)
     }
 
     func save(accounts: [Account]) {
-        accounts.forEach { account in
+        for account in accounts {
             storage.save(account: account)
         }
 
-        accountsRelay.accept(storage.accounts)
+        accountsSubject.send(storage.accounts)
         if let first = accounts.first {
             set(activeAccountId: first.id)
         }
@@ -144,8 +139,8 @@ extension AccountManager {
     func delete(account: Account) {
         storage.delete(account: account)
 
-        accountsRelay.accept(storage.accounts)
-        accountDeletedRelay.accept(account)
+        accountsSubject.send(storage.accounts)
+        accountDeletedSubject.send(account)
 
         if account == storage.activeAccount {
             set(activeAccountId: storage.accounts.first?.id)
@@ -155,7 +150,7 @@ extension AccountManager {
     func clear() {
         storage.clear()
 
-        accountsRelay.accept(storage.accounts)
+        accountsSubject.send(storage.accounts)
 
         set(activeAccountId: nil)
     }
@@ -183,11 +178,11 @@ extension AccountManager {
             lostAccountIds.contains(account.id)
         }
 
-        lostAccounts.forEach { account in
-            accountDeletedRelay.accept(account)
+        for account in lostAccounts {
+            accountDeletedSubject.send(account)
         }
 
-        accountsRelay.accept(storage.accounts)
+        accountsSubject.send(storage.accounts)
     }
 
     func set(lastCreatedAccount: Account) {
@@ -210,7 +205,7 @@ extension AccountManager {
             }
         }
 
-        accountsRelay.accept(storage.accounts)
+        accountsSubject.send(storage.accounts)
     }
 }
 

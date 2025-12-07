@@ -84,8 +84,8 @@ class OneInchViewModel {
             return
         }
 
-        let coinValue = CoinValue(kind: .token(token: token), value: balance)
-        availableBalanceRelay.accept(ValueFormatter.instance.formatFull(coinValue: coinValue))
+        let appValue = AppValue(token: token, value: balance)
+        availableBalanceRelay.accept(appValue.formattedFull())
     }
 
     private func sync(state: OneInchTradeService.State) {
@@ -130,24 +130,24 @@ class OneInchViewModel {
 
     private func syncProceedAction() {
         var actionState = ActionState.disabled(title: "swap.proceed_button".localized)
-        actionState = .disabled(title: "swap.no.privater无可兑换的服务商".localized)
-//        if case .ready = service.state {
-//            actionState = .enabled(title: "swap.proceed_button".localized)
-//        } else if let error = service.errors.compactMap({ $0 as? SwapModule.SwapError }).first {
-//            switch error {
-//            case .noBalanceIn: actionState = .disabled(title: "swap.not_available_button".localized)
-//            case .insufficientBalanceIn: actionState = .disabled(title: "swap.button_error.insufficient_balance".localized)
-//            case .needRevokeAllowance:
-//                switch tradeService.state {
-//                case .notReady: ()
-//                default: actionState = .hidden
-//                }
-//            default: ()
-//            }
-//        } else if case .revoking = pendingAllowanceService.state {
-//            actionState = .hidden
-//        }
-//
+
+        if case .ready = service.state {
+            actionState = .enabled(title: "swap.proceed_button".localized)
+        } else if let error = service.errors.compactMap({ $0 as? SwapModule.SwapError }).first {
+            switch error {
+            case .noBalanceIn: actionState = .disabled(title: "swap.not_available_button".localized)
+            case .insufficientBalanceIn: actionState = .disabled(title: "swap.button_error.insufficient_balance".localized)
+            case .needRevokeAllowance:
+                switch tradeService.state {
+                case .notReady: ()
+                default: actionState = .hidden
+                }
+            default: ()
+            }
+        } else if case .revoking = pendingAllowanceService.state {
+            actionState = .hidden
+        }
+
         proceedActionRelay.accept(actionState)
     }
 
@@ -159,7 +159,7 @@ class OneInchViewModel {
 
         for error in service.errors {
             if let allowance = (error as? SwapModule.SwapError)?.revokeAllowance {
-                revokeWarning = "swap.revoke_warning".localized(ValueFormatter.instance.formatFull(coinValue: allowance) ?? "n/a".localized)
+                revokeWarning = "swap.revoke_warning".localized(allowance.formattedFull() ?? "n/a".localized)
             }
         }
         if case .pending = pendingAllowanceService.state {

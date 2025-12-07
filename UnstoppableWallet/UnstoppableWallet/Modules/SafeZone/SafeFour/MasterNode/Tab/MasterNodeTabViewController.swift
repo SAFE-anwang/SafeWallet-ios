@@ -1,12 +1,11 @@
+/*
 import Foundation
 import UIKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIExtensions
 import RxSwift
 import RxCocoa
-import ComponentKit
 import EvmKit
 
 class MasterNodeTabViewController: ThemeViewController {
@@ -19,10 +18,10 @@ class MasterNodeTabViewController: ThemeViewController {
     private var allViewController: MasterNodeViewController
     private var mineViewController: MasterNodeViewController
     
-    init(viewModel: MasterNodeTabViewModel, evmKit: EvmKit.Kit) {
+    init(viewModel: MasterNodeTabViewModel) {
         self.viewModel = viewModel
-        allViewController = MasterNodeModule.subViewController(type: .All, evmKit: evmKit)
-        mineViewController = MasterNodeModule.subViewController(type: .Mine, evmKit: evmKit)
+        allViewController = MasterNodeModule.subViewController(type: .All, evmKit: viewModel.evmKit)
+        mineViewController = MasterNodeModule.subViewController(type: .Mine, evmKit: viewModel.evmKit)
         
         super.init()
         
@@ -114,3 +113,4 @@ extension MasterNodeTabViewController: IPresentDelegate {
 
 }
 
+*/

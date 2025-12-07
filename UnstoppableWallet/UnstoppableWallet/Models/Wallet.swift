@@ -27,6 +27,16 @@ struct Wallet {
             meta: token.type.meta
         )
     }
+
+    var priceCoinUid: String? {
+        token.isCustom ? nil : coin.uid
+    }
+}
+
+extension Wallet: Identifiable {
+    var id: String {
+        token.coin.uid + token.blockchainType.uid + token.type.id
+    }
 }
 
 extension Wallet: Hashable {

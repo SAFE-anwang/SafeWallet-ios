@@ -1,23 +1,15 @@
+import BigInt
 import Combine
 import Foundation
-import HdWalletKit
-import HsToolKit
-import MarketKit
 import RxSwift
-import TonKitKmm
+import TonKit
+import TonSwift
 
 class TonAdapter {
-    private static let coinRate: Decimal = 1_000_000_000
+    private static let decimals = 9
 
-    private let tonKit: TonKit
-    private let ownAddress: String
-    private let transactionSource: TransactionSource
-    private let baseToken: Token
-    private let reachabilityManager = App.shared.reachabilityManager
+    private let tonKit: TonKit.Kit
     private var cancellables = Set<AnyCancellable>()
-
-    private var adapterStarted = false
-    private var kitStarted = false
 
     private let balanceStateSubject = PublishSubject<AdapterState>()
     private(set) var balanceState: AdapterState {
@@ -33,164 +25,21 @@ class TonAdapter {
         }
     }
 
-    private let transactionsStateSubject = PublishSubject<AdapterState>()
-    private(set) var transactionsState: AdapterState {
-        didSet {
-            transactionsStateSubject.onNext(transactionsState)
-        }
-    }
-
     private let transactionRecordsSubject = PublishSubject<[TonTransactionRecord]>()
 
-    init(wallet: Wallet, baseToken: Token) throws {
-        transactionSource = wallet.transactionSource
-        self.baseToken = baseToken
+    init(tonKit: TonKit.Kit) {
+        self.tonKit = tonKit
 
-        switch wallet.account.type {
-        case .mnemonic:
-            guard let seed = wallet.account.type.mnemonicSeed else {
-                throw AdapterError.unsupportedAccount
-            }
+        balanceState = Self.adapterState(kitSyncState: tonKit.syncState)
+        balanceData = BalanceData(balance: Self.amount(kitAmount: tonKit.account?.balance))
 
-            let hdWallet = HDWallet(seed: seed, coinType: 607, xPrivKey: 0, curve: .ed25519)
-            let privateKey = try hdWallet.privateKey(account: 0)
-
-            tonKit = TonKitFactory(driverFactory: DriverFactory(), connectionManager: ConnectionManager()).create(seed: privateKey.raw.toKotlinByteArray(), walletId: wallet.account.id)
-        case let .tonAddress(address):
-            tonKit = TonKitFactory(driverFactory: DriverFactory(), connectionManager: ConnectionManager()).createWatch(address: address, walletId: wallet.account.id)
-        default:
-            throw AdapterError.unsupportedAccount
-        }
-
-        ownAddress = tonKit.receiveAddress
-
-        balanceState = Self.adapterState(kitSyncState: tonKit.balanceSyncState)
-        balanceData = BalanceData(available: Self.amount(kitAmount: tonKit.balance))
-        transactionsState = Self.adapterState(kitSyncState: tonKit.transactionsSyncState)
-
-        collect(tonKit.balanceSyncStatePublisher)
-            .completeOnFailure()
-            .sink { [weak self] syncState in
-                self?.balanceState = Self.adapterState(kitSyncState: syncState)
-            }
+        tonKit.syncStatePublisher
+            .sink { [weak self] in self?.balanceState = Self.adapterState(kitSyncState: $0) }
             .store(in: &cancellables)
 
-        collect(tonKit.balancePublisher)
-            .completeOnFailure()
-            .sink { [weak self] balance in
-                self?.balanceData = BalanceData(available: Self.amount(kitAmount: balance))
-            }
+        tonKit.accountPublisher
+            .sink { [weak self] in self?.balanceData = BalanceData(balance: Self.amount(kitAmount: $0?.balance)) }
             .store(in: &cancellables)
-
-        collect(tonKit.transactionsSyncStatePublisher)
-            .completeOnFailure()
-            .sink { [weak self] syncState in
-                self?.transactionsState = Self.adapterState(kitSyncState: syncState)
-            }
-            .store(in: &cancellables)
-
-        collect(tonKit.doNewTransactionsPublisher)
-            .completeOnFailure()
-            .sink { [weak self] tonTransactions in
-                self?.handle(tonTransactions: tonTransactions)
-            }
-            .store(in: &cancellables)
-
-        reachabilityManager.$isReachable
-            .sink { [weak self] isReachable in
-                self?.handle(isReachable: isReachable)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func handle(isReachable: Bool) {
-        guard adapterStarted else {
-            return
-        }
-
-        if isReachable, !kitStarted {
-            startKit()
-        } else if !isReachable, kitStarted {
-            stopKit()
-        }
-    }
-
-    private func handle(tonTransactions: [TonTransaction]) {
-        let transactionRecords = tonTransactions.map { transactionRecord(tonTransaction: $0) }
-        transactionRecordsSubject.onNext(transactionRecords)
-    }
-
-    private static func adapterState(kitSyncState: AnyObject) -> AdapterState {
-        switch kitSyncState {
-        case is TonKitKmm.SyncState.Syncing: return .syncing(progress: nil, lastBlockDate: nil)
-        case is TonKitKmm.SyncState.Synced: return .synced
-        case let notSyncedState as TonKitKmm.SyncState.NotSynced: return .notSynced(error: notSyncedState.error)
-        default: return .notSynced(error: AppError.unknownError)
-        }
-    }
-
-    static func amount(kitAmount: String) -> Decimal {
-        guard let decimal = Decimal(string: kitAmount) else {
-            return 0
-        }
-
-        return decimal / coinRate
-    }
-
-    private func transactionRecord(tonTransaction tx: TonTransaction) -> TonTransactionRecord {
-        switch tx.type {
-        case TransactionType.incoming:
-            return TonIncomingTransactionRecord(
-                source: transactionSource,
-                transaction: tx,
-                feeToken: baseToken,
-                token: baseToken
-            )
-        case TransactionType.outgoing:
-            return TonOutgoingTransactionRecord(
-                source: transactionSource,
-                transaction: tx,
-                feeToken: baseToken,
-                token: baseToken
-            )
-        default:
-            return TonTransactionRecord(
-                source: transactionSource,
-                transaction: tx,
-                feeToken: baseToken
-            )
-        }
-    }
-
-    private func transactionsSingle(from: TransactionRecord?, type: TransactionType?, limit: Int) -> Single<[TransactionRecord]> {
-        let single: Single<[TonTransaction]> = Single.create { [tonKit] observer in
-            let task = Task { [tonKit] in
-                do {
-                    let tonTransactions = try await tonKit.transactions(fromTransactionHash: from?.transactionHash, type: type, limit: Int64(limit))
-                    observer(.success(tonTransactions))
-                } catch {
-                    observer(.error(error))
-                }
-            }
-
-            return Disposables.create {
-                task.cancel()
-            }
-        }
-
-        return single.map { [weak self] tonTransactions -> [TransactionRecord] in
-            tonTransactions.compactMap { self?.transactionRecord(tonTransaction: $0) }
-        }
-    }
-
-    private func startKit() {
-        tonKit.start()
-        kitStarted = true
-    }
-
-    private func stopKit() {
-        tonKit.stop()
-        kitStarted = false
     }
 }
 
@@ -202,25 +51,23 @@ extension TonAdapter: IBaseAdapter {
 
 extension TonAdapter: IAdapter {
     func start() {
-        adapterStarted = true
-
-        if reachabilityManager.isReachable {
-            startKit()
-        }
+        // started via TonKitManager
     }
 
     func stop() {
-        adapterStarted = false
-
-        if kitStarted {
-            stopKit()
-        }
+        // stopped via TonKitManager
     }
 
-    func refresh() {}
+    func refresh() {
+        // refreshed via TonKitManager
+    }
 
     var statusInfo: [(String, Any)] {
-        []
+        [
+            ("Sync State", "\(tonKit.syncState)"),
+            ("Jetton Sync State", "\(tonKit.jettonSyncState)"),
+            ("Event Sync State", "\(tonKit.eventSyncState)"),
+        ]
     }
 
     var debugInfo: String {
@@ -240,84 +87,62 @@ extension TonAdapter: IBalanceAdapter {
 
 extension TonAdapter: IDepositAdapter {
     var receiveAddress: DepositAddress {
-        DepositAddress(tonKit.receiveAddress)
-    }
-}
-
-extension TonAdapter: ITransactionsAdapter {
-    var syncing: Bool {
-        transactionsState.syncing
-    }
-
-    var syncingObservable: Observable<Void> {
-        transactionsStateSubject.map { _ in () }
-    }
-
-    var lastBlockInfo: LastBlockInfo? {
-        nil
-    }
-
-    var lastBlockUpdatedObservable: Observable<Void> {
-        Observable.empty()
-    }
-
-    var explorerTitle: String {
-        "tonscan.org"
-    }
-
-    var additionalTokenQueries: [TokenQuery] {
-        []
-    }
-
-    func explorerUrl(transactionHash: String) -> String? {
-        "https://tonscan.org/tx/\(transactionHash)"
-    }
-
-    func transactionsObservable(token _: Token?, filter: TransactionTypeFilter, address _: String?) -> Observable<[TransactionRecord]> {
-        transactionRecordsSubject
-            .map { transactionRecords in
-                transactionRecords.compactMap { transaction -> TransactionRecord? in
-                    switch (transaction, filter) {
-                    case (_, .all): return transaction
-                    case (is TonIncomingTransactionRecord, .incoming): return transaction
-                    case (is TonOutgoingTransactionRecord, .outgoing): return transaction
-                    default: return nil
-                    }
-                }
-            }
-            .filter { !$0.isEmpty }
-    }
-
-    func transactionsSingle(from: TransactionRecord?, token _: Token?, filter: TransactionTypeFilter, address _: String?, limit: Int) -> Single<[TransactionRecord]> {
-        switch filter {
-        case .all: return transactionsSingle(from: from, type: nil, limit: limit)
-        case .incoming: return transactionsSingle(from: from, type: TransactionType.incoming, limit: limit)
-        case .outgoing: return transactionsSingle(from: from, type: TransactionType.outgoing, limit: limit)
-        default: return Single.just([])
-        }
-    }
-
-    func rawTransaction(hash _: String) -> String? {
-        nil
+        DepositAddress(tonKit.receiveAddress.toString(testOnly: TonKitManager.isTestNet, bounceable: false))
     }
 }
 
 extension TonAdapter: ISendTonAdapter {
-    var availableBalance: Decimal {
-        balanceData.available
+    func transferData(recipient: FriendlyAddress, amount: SendAmount, comment: String?) throws -> TransferData {
+        try tonKit.transferData(recipient: recipient, amount: sendAmount(amount: amount), comment: comment)
     }
 
-    func validate(address: String) throws {
-        try TonKit.companion.validate(address: address)
+    private func sendAmount(amount: SendAmount) throws -> Kit.SendAmount {
+        switch amount {
+        case let .amount(value):
+            guard let value = BigUInt(value.hs.roundedString(decimal: Self.decimals)) else {
+                throw AmountError.invalidAmount
+            }
+
+            return .amount(value: value)
+        case .max:
+            return .max
+        }
+    }
+}
+
+extension TonAdapter {
+    private static func adapterState(kitSyncState: TonKit.SyncState) -> AdapterState {
+        switch kitSyncState {
+        case .syncing: return .syncing(progress: nil, lastBlockDate: nil)
+        case .synced: return .synced
+        case let .notSynced(error): return .notSynced(error: error.localizedDescription)
+        }
     }
 
-    func estimateFee() async throws -> Decimal {
-        let kitAmount = try await tonKit.estimateFee()
-        return Self.amount(kitAmount: kitAmount)
+    static func amount(kitAmount: BigUInt?) -> Decimal {
+        guard let kitAmount, let significand = Decimal(string: kitAmount.description) else {
+            return 0
+        }
+
+        return Decimal(sign: .plus, exponent: -Self.decimals, significand: significand)
     }
 
-    func send(recipient: String, amount: Decimal, memo: String?) async throws {
-        let rawAmount = amount * Self.coinRate
-        try await tonKit.send(recipient: recipient, amount: rawAmount.description, memo: memo)
+    static func amount(kitAmount: String) -> Decimal {
+        amount(kitAmount: BigUInt(kitAmount))
+    }
+
+    static func amount(kitAmount: Int64) -> Decimal {
+        amount(kitAmount: BigUInt(kitAmount))
+    }
+}
+
+extension TonAdapter {
+    enum SendAmount {
+        case amount(value: Decimal)
+        case max
+    }
+
+    enum AmountError: Error {
+        case invalidAmount
     }
 }

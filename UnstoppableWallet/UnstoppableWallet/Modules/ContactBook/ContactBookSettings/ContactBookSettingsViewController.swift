@@ -1,7 +1,7 @@
-import ComponentKit
+
 import RxSwift
 import SectionsTableView
-import ThemeKit
+
 import UIKit
 import UniformTypeIdentifiers
 
@@ -33,6 +33,7 @@ class ContactBookSettingsViewController: ThemeViewController {
 
         navigationItem.largeTitleDisplayMode = .never
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.done".localized, style: .done, target: self, action: #selector(onTapDone))
+        navigationItem.rightBarButtonItem?.tintColor = .themeJacob
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in

@@ -1,11 +1,12 @@
 import Foundation
+import SwiftUI
 import UIKit
 
 enum FaqModule {
     static func viewController() -> UIViewController {
         let repository = FaqRepository(
-            networkManager: App.shared.networkManager,
-            reachabilityManager: App.shared.reachabilityManager
+            networkManager: Core.shared.networkManager,
+            reachabilityManager: Core.shared.reachabilityManager
         )
 
         let service = FaqService(
@@ -17,4 +18,14 @@ enum FaqModule {
 
         return FaqViewController(viewModel: viewModel)
     }
+}
+
+struct FaqView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+
+    func makeUIViewController(context _: Context) -> UIViewController {
+        FaqModule.viewController()
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

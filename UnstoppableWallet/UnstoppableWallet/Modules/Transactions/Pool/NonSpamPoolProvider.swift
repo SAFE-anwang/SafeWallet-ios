@@ -7,7 +7,9 @@ class NonSpamPoolProvider {
     private let scamFilterEnabled: Bool
     private let safe4IncomeEnabled: Bool
     private let safe4NodestatusEnabled: Bool
-    init(poolProvider: IPoolProvider, scamFilterEnabled: Bool,safe4IncomeEnabled: Bool, safe4NodestatusEnabled: Bool) {
+    init(poolProvider: IPoolProvider, scamFilterEnabled: Bool, safe4IncomeEnabled: Bool, safe4NodestatusEnabled: Bool) {
+
+//    init(poolProvider: IPoolProvider) {
         self.poolProvider = poolProvider
         self.scamFilterEnabled = scamFilterEnabled
         self.safe4IncomeEnabled = safe4IncomeEnabled
@@ -33,6 +35,7 @@ class NonSpamPoolProvider {
                 if self?.safe4NodestatusEnabled == true {
                     nonSpamTransactions = nonSpamTransactions.filter { !$0.isNodestatus }
                 }
+//                let nonSpamTransactions = allTransactions.filter { !$0.spam }
 
                 if nonSpamTransactions.count >= limit || newTransactions.count < extendedLimit {
                     return Single.just(Array(nonSpamTransactions.prefix(limit)))
@@ -76,6 +79,8 @@ extension NonSpamPoolProvider: IPoolProvider {
 //                    nonSpamTransactions = nonSpamTransactions.filter { !$0.isNodestatus }
 //                }
                 return nonSpamTransactions
+//            .map { transactions in
+//                transactions.filter { !$0.spam }
             }
     }
 

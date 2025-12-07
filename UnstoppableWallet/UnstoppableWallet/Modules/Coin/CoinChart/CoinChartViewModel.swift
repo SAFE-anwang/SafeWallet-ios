@@ -1,14 +1,13 @@
 import Chart
 import Combine
 import Foundation
-import HUD
 import MarketKit
 import RxCocoa
 import RxRelay
 import RxSwift
 
 class CoinChartViewModel: ObservableObject {
-    private let service: CoinChartService
+    let service: CoinChartService
     private let factory: CoinChartFactory
     private let disposeBag = DisposeBag()
 
@@ -26,7 +25,7 @@ class CoinChartViewModel: ObservableObject {
     @Published private(set) var indicatorsShown: Bool
 
     var intervals: [String] {
-        service.validIntervals.map(\.title)
+        service.validIntervals.map(\.shortTitle)
     }
 
     init(service: CoinChartService, factory: CoinChartFactory) {
@@ -168,19 +167,21 @@ extension CoinChartViewModel: IChartViewTouchDelegate {
     }
 }
 
-extension HsTimePeriod {
-    var title: String {
-        switch self {
-        case .day1: return "chart.time_duration.day".localized
-        case .week1: return "chart.time_duration.week".localized
-        case .week2: return "chart.time_duration.week2".localized
-        case .month1: return "chart.time_duration.month".localized
-        case .month3: return "chart.time_duration.month3".localized
-        case .month6: return "chart.time_duration.halfyear".localized
-        case .year1: return "chart.time_duration.year".localized
-        case .year2: return "chart.time_duration.year2".localized
-        case .year5: return "chart.time_duration.year5".localized
-        }
+extension CoinChartViewModel {
+    static func instance(coinUid: String) -> CoinChartViewModel {
+        let repository = ChartIndicatorsRepository(
+            localStorage: Core.shared.localStorage,
+            subscriptionManager: Core.shared.subscriptionManager
+        )
+        let chartService = CoinChartService(
+            marketKit: Core.shared.marketKit,
+            currencyManager: Core.shared.currencyManager,
+            localStorage: Core.shared.localStorage,
+            indicatorRepository: repository,
+            coinUid: coinUid
+        )
+        let chartFactory = CoinChartFactory(currentLocale: LanguageManager.shared.currentLocale)
+        return CoinChartViewModel(service: chartService, factory: chartFactory)
     }
 }
 

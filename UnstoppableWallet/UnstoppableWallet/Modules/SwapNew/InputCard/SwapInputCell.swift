@@ -1,8 +1,8 @@
-import ComponentKit
+
 import Foundation
 import RxSwift
 import SnapKit
-import ThemeKit
+
 import UIKit
 
 class SwapInputCell: UITableViewCell {
@@ -75,8 +75,8 @@ class SwapInputCell: UITableViewCell {
             maker.height.equalTo(CGFloat.heightOneDp)
         }
 
-        leftSeparatorView.backgroundColor = .themeSteel20
-        rightSeparatorView.backgroundColor = .themeSteel20
+        leftSeparatorView.backgroundColor = .themeBlade
+        rightSeparatorView.backgroundColor = .themeBlade
 
         cardView.addSubview(toInputCard)
         toInputCard.snp.makeConstraints { maker in

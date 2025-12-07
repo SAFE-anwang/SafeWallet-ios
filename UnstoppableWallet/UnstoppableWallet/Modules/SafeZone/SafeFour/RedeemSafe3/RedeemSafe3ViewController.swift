@@ -1,12 +1,9 @@
 import UIKit
-import ComponentKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import RxSwift
 import RxCocoa
 import MarketKit
-import HUD
 
 class RedeemSafe3ViewController: ThemeViewController {
     
@@ -157,15 +154,15 @@ class RedeemSafe3ViewController: ThemeViewController {
         
         if case .local = viewModel.redeemWalletType {
             syncStateView.isHidden = false
-            let wallets = App.shared.walletManager.activeWallets
+            let wallets = Core.shared.walletManager.activeWallets
             guard let safe3Wallet = wallets.filter({$0.token.blockchain.type == .safe}).first else {
                 syncStateView.text = "safe_zone.send.openCoin".localized("SAFE")
                 syncStateView.isHidden = false
                 return
             }
-            guard let safe3Adapter = App.shared.adapterManager.depositAdapter(for: safe3Wallet) as? SafeCoinAdapter else { return  }
+            guard let safe3Adapter = Core.shared.adapterManager.depositAdapter(for: safe3Wallet) as? SafeCoinAdapter else { return  }
 
-            if let state = WalletAdapterService(account: account, adapterManager: App.shared.adapterManager).state(wallet: safe3Wallet), state == .synced {
+            if let state = WalletAdapterService(account: account, adapterManager: Core.shared.adapterManager).state(wallet: safe3Wallet), state == .synced {
                 syncStateView.isHidden = true
                 viewModel.syncLocalWalletInfo(safe3Wallet: safe3Wallet, safe3Adapter: safe3Adapter)
             } else {

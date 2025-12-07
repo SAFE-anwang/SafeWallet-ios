@@ -1,12 +1,9 @@
 import UIKit
-import ComponentKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import RxSwift
 import RxCocoa
 import MarketKit
-import HUD
 
 class SuperNodeViewController: ThemeViewController {
     
@@ -168,45 +165,41 @@ extension SuperNodeViewController {
                 autoDeselect: true,
                 bind: { cell, _ in
                     cell.bind(viewItem: viewItem, index: index)
-                    cell.toEdit = { [weak self] in
-                        guard let strongSelf = self else { return }
-                        guard let vc = SuperNodeChangeModule.viewController(viewItem: viewItem) else { return }
-                        vc.needReload = {
-                            strongSelf.viewModel.refresh()
+                    cell.toEdit = {
+                        guard let viewModel = SuperNodeChangeModule.viewModel(viewItem: viewItem) else { return }
+                        Coordinator.shared.present { _ in
+                            SuperNodeChangeView(viewModel: viewModel)
                         }
-                        strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
                     }
-                    cell.toDetail = { [weak self] in
-                        guard let strongSelf = self, let vc = SuperNodeDetailModule.viewController(viewItem: viewItem, viewType: .Detail) else { return }
-                        vc.needReload = {
-                            strongSelf.tableView.reload()
+                    cell.toDetail = {
+                        guard let viewModel = SuperNodeDetailModule.viewModel(viewItem: viewItem) else { return }
+                        Coordinator.shared.present { _ in
+                            SuperNodeDetailView(viewModel: viewModel, viewType: .Detail)
                         }
-                        strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
                     }
-                    cell.toJoin = { [weak self] in
-                        guard let strongSelf = self, let vc = SuperNodeDetailModule.viewController(viewItem: viewItem, viewType: .JoinPartner) else { return }
-                        vc.needReload = {
-                            strongSelf.tableView.reload()
+                    cell.toJoin = {
+                        guard let viewModel = SuperNodeDetailModule.viewModel(viewItem: viewItem) else { return }
+                        Coordinator.shared.present { _ in
+                            SuperNodeDetailView(viewModel: viewModel, viewType: .JoinPartner)
                         }
-                        strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
                     }
-                    cell.toVote = { [weak self] in
-                        guard let strongSelf = self, let vc = SuperNodeDetailModule.viewController(viewItem: viewItem, viewType: .Vote) else { return }
-                        vc.needReload = {
-                            strongSelf.tableView.reload()
+                    cell.toVote = {
+                        guard let viewModel = SuperNodeDetailModule.viewModel(viewItem: viewItem) else { return }
+                        Coordinator.shared.present { _ in
+                            SuperNodeDetailView(viewModel: viewModel, viewType: .Vote)
                         }
-                        strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
                     }
                     cell.toAddLock = { [weak self] in
                         guard let strongSelf = self else { return }
                         let ids = viewItem.info.founders
                             .filter { $0.addr.address.lowercased() == strongSelf.viewModel.address.lowercased() }
                             .map{ $0.lockID }
-                        guard let vc = AddLockDaysModule.viewController(ids: ids) else { return }
-                        strongSelf.parentNavigationController?.pushViewController(vc, animated: true)
+                        guard let viewModel = AddLockDaysModule.viewModel(ids: ids) else { return }
+                        Coordinator.shared.present { _ in
+                            AddLockDaysView(viewModel: viewModel)
+                        }
                     }
                 }
-
         )
     }
     var tipsRow: RowProtocol {

@@ -3,9 +3,10 @@ import MarketKit
 import RxCocoa
 import RxSwift
 import SectionsTableView
-import ThemeKit
+
 import UIKit
 import UniswapKit
+import SwiftUI
 
 protocol ISwapDexManager {
     var dex: SwapModule.Dex? { get }
@@ -45,7 +46,7 @@ protocol ISwapDataSource: AnyObject {
 
 enum SwapModule {
     static func viewController(tokenFrom: MarketKit.Token? = nil) -> UIViewController? {
-        let swapDexManager = SwapProviderManager(localStorage: App.shared.localStorage, evmBlockchainManager: App.shared.evmBlockchainManager, tokenFrom: tokenFrom)
+        let swapDexManager = SwapProviderManager(localStorage: Core.shared.localStorage, evmBlockchainManager: Core.shared.evmBlockchainManager, tokenFrom: tokenFrom)
 
         let viewModel = SwapViewModel(dexManager: swapDexManager)
         let viewController = SwapViewController(
@@ -54,6 +55,18 @@ enum SwapModule {
         )
         return viewController
     }
+}
+
+struct SwapView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+    let viewController: UIViewController
+    
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        return ThemeNavigationController(rootViewController: viewController)
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }
 
 extension SwapModule {
@@ -125,7 +138,7 @@ extension SwapModule {
         case insufficientBalanceIn2
         case insufficientAllowance
         case insufficientAllowanceB
-        case needRevokeAllowance(allowance: CoinValue)
+        case needRevokeAllowance(allowance: AppValue)
 
         static func == (lhs: SwapError, rhs: SwapError) -> Bool {
             switch (lhs, rhs) {
@@ -134,12 +147,12 @@ extension SwapModule {
             case (.insufficientBalanceIn2, .insufficientBalanceIn2): return true
             case (.insufficientAllowance, .insufficientAllowance): return true
             case (.insufficientAllowanceB, .insufficientAllowanceB): return true
-            case (.needRevokeAllowance(let lAllowance), .needRevokeAllowance(let rAllowance)): return lAllowance == rAllowance
+            case let (.needRevokeAllowance(lAllowance), .needRevokeAllowance(rAllowance)): return lAllowance == rAllowance
             default: return false
             }
         }
 
-        var revokeAllowance: CoinValue? {
+        var revokeAllowance: AppValue? {
             switch self {
             case let .needRevokeAllowance(allowance): return allowance
             default: return nil
@@ -151,15 +164,17 @@ extension SwapModule {
 extension BlockchainType {
     var allowedProviders: [SwapModule.Dex.Provider] {
         switch self {
-        case .ethereum: return [ .uniswap, .uniswapV3, .safeSwap, .pancakeV3]
-        case .binanceSmartChain: return [ .pancake, .pancakeV3, .uniswapV3, .safeSwap]
-        case .polygon: return [.quickSwap, .uniswapV3, .safeSwap]
+        case .ethereum: return [.oneInch, .uniswap, .uniswapV3, .pancakeV3, .safeSwap]
+        case .binanceSmartChain: return [.oneInch, .pancake, .pancakeV3, .uniswapV3, .safeSwap]
+        case .polygon: return [.oneInch, .quickSwap, .uniswapV3, .safeSwap]
         case .avalanche: return [.oneInch]
         case .optimism: return [.oneInch]
         case .arbitrumOne: return [.oneInch, .uniswapV3]
         case .gnosis: return [.oneInch]
         case .fantom: return [.oneInch]
         case .safe4: return [.safeSwap]
+        case .base: return [.oneInch, .uniswap, .uniswapV3]
+        case .zkSync: return [.uniswapV3, .pancakeV3]
         default: return []
         }
     }
@@ -189,11 +204,11 @@ extension SwapModule.Dex {
 
         var allowedBlockchainTypes: [BlockchainType] {
             switch self {
-            case .uniswap: return [.ethereum]
-            case .uniswapV3: return [.ethereum, .binanceSmartChain, .arbitrumOne, .polygon]
-            case .oneInch: return [.ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom]
+            case .uniswap: return [.ethereum, .base]
+            case .uniswapV3: return [.ethereum, .binanceSmartChain, .arbitrumOne, .polygon, .base, .zkSync]
+            case .oneInch: return [.ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom, .base]
             case .pancake: return [.binanceSmartChain]
-            case .pancakeV3: return [.ethereum, .binanceSmartChain]
+            case .pancakeV3: return [.ethereum, .binanceSmartChain, .base, .zkSync]
             case .quickSwap: return [.polygon]
             case .safeSwap: return [.ethereum, .binanceSmartChain, .polygon, .safe4]
             }

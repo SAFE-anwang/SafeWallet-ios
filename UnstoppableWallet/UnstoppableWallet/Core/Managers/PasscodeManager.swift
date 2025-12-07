@@ -33,8 +33,8 @@ class PasscodeManager {
         isPasscodeSet = passcodes.last.map { !$0.isEmpty } ?? false
         isDuressPasscodeSet = passcodes.count > currentPasscodeLevel + 1
 
-        if !isPasscodeSet, biometryManager.biometryEnabled {
-            biometryManager.biometryEnabled = false
+        if !isPasscodeSet, biometryManager.biometryEnabledType.isEnabled {
+            biometryManager.biometryEnabledType = .off
         }
     }
 
@@ -62,36 +62,32 @@ extension PasscodeManager {
         passcodes.contains(passcode)
     }
 
-    func setLastPasscode() -> Bool {
+    func setLastPasscode() {
         guard !passcodes.isEmpty else {
-            return false
+            return
         }
 
         let level = passcodes.count - 1
 
         guard currentPasscodeLevel != level else {
-            return false
+            return
         }
 
         currentPasscodeLevel = level
         syncState()
-
-        return true
     }
 
-    func set(currentPasscode: String) -> Bool {
+    func set(currentPasscode: String) {
         guard let level = passcodes.firstIndex(of: currentPasscode) else {
-            return false
+            return
         }
 
         guard currentPasscodeLevel != level else {
-            return false
+            return
         }
 
         currentPasscodeLevel = level
         syncState()
-
-        return true
     }
 
     func set(passcode: String) throws {

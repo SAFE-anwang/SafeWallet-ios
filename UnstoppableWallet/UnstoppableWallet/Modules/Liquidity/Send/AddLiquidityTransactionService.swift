@@ -139,6 +139,7 @@ extension AddLiquidityTransactionService: IAddLiquidityTransactionService {
                         transactionData: transaction.transactionData,
                         gasPrice: transaction.gasData.price,
                         gasLimit: transaction.gasData.limit,
+                        privateSend: false,
                         nonce: transaction.nonce
                 )
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))

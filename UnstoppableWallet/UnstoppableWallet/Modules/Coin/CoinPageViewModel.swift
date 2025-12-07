@@ -1,42 +1,26 @@
-import ComponentKit
-import Foundation
-import RxCocoa
-import RxRelay
-import RxSwift
+import Combine
 
-class CoinPageViewModel {
-    private let service: CoinPageService
-    private let disposeBag = DisposeBag()
+import MarketKit
 
-    private let favoriteRelay: BehaviorRelay<Bool>
-    private let hudRelay = PublishRelay<HudHelper.BannerType>()
+class CoinPageViewModel: ObservableObject {
+    let coin: Coin
+    private let watchlistManager = Core.shared.watchlistManager
 
-    init(service: CoinPageService) {
-        self.service = service
-
-        favoriteRelay = BehaviorRelay(value: service.favorite)
-
-        subscribe(disposeBag, service.favoriteObservable) { [weak self] favorite in
-            self?.favoriteRelay.accept(favorite)
-            self?.hudRelay.accept(favorite ? .addedToWatchlist : .removedFromWatchlist)
+    @Published var isFavorite: Bool {
+        didSet {
+            if isFavorite {
+                watchlistManager.add(coinUid: coin.uid)
+                HudHelper.instance.show(banner: .addedToWatchlist)
+            } else {
+                watchlistManager.remove(coinUid: coin.uid)
+                HudHelper.instance.show(banner: .removedFromWatchlist)
+            }
         }
     }
-}
 
-extension CoinPageViewModel {
-    var favoriteDriver: Driver<Bool> {
-        favoriteRelay.asDriver()
-    }
+    init(coin: Coin) {
+        self.coin = coin
 
-    var hudSignal: Signal<HudHelper.BannerType> {
-        hudRelay.asSignal()
-    }
-
-    var title: String {
-        service.fullCoin.coin.code
-    }
-
-    func onTapFavorite() {
-        service.toggleFavorite()
+        isFavorite = watchlistManager.isWatched(coinUid: coin.uid)
     }
 }

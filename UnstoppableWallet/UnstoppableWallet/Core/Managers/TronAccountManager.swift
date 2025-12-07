@@ -8,18 +8,18 @@ class TronAccountManager {
     private let accountManager: AccountManager
     private let walletManager: WalletManager
     private let marketKit: MarketKit.Kit
-    private let tronKitManager: TronKitManager
-    private let evmAccountRestoreStateManager: EvmAccountRestoreStateManager
+    let tronKitManager: TronKitManager
+    private let restoreStateManager: RestoreStateManager
 
     private let disposeBag = DisposeBag()
     private var internalDisposeBag = DisposeBag()
 
-    init(accountManager: AccountManager, walletManager: WalletManager, marketKit: MarketKit.Kit, tronKitManager: TronKitManager, evmAccountRestoreStateManager: EvmAccountRestoreStateManager) {
+    init(accountManager: AccountManager, walletManager: WalletManager, marketKit: MarketKit.Kit, tronKitManager: TronKitManager, restoreStateManager: RestoreStateManager) {
         self.accountManager = accountManager
         self.walletManager = walletManager
         self.marketKit = marketKit
         self.tronKitManager = tronKitManager
-        self.evmAccountRestoreStateManager = evmAccountRestoreStateManager
+        self.restoreStateManager = restoreStateManager
 
         subscribe(ConcurrentDispatchQueueScheduler(qos: .userInitiated), disposeBag, tronKitManager.tronKitCreatedObservable) { [weak self] in self?.handleTronKitCreated() }
     }
@@ -48,7 +48,7 @@ class TronAccountManager {
             return
         }
 
-        if initial, account.origin == .restored, !account.watchAccount, !evmAccountRestoreStateManager.isRestored(account: account, blockchainType: blockchainType) {
+        if initial, account.origin == .restored, !account.watchAccount, !restoreStateManager.shouldRestore(account: account, blockchainType: blockchainType) {
             return
         }
 
@@ -182,6 +182,12 @@ class TronAccountManager {
         }
 
         walletManager.save(enabledWallets: enabledWallets)
+    }
+}
+
+extension TronAccountManager {
+    func address(type: AccountType) throws -> String {
+        try tronKitManager.address(type: type)
     }
 }
 

@@ -1,7 +1,5 @@
 import UIKit
-import ThemeKit
 import SnapKit
-import ComponentKit
 
 class LiquidityV3RecordCell: UITableViewCell {
     private static let margins = UIEdgeInsets(top: .margin4, left: .margin16, bottom: .margin4, right: .margin16)

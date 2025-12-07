@@ -13,6 +13,7 @@ class ResendBitcoinService {
     private let price: Decimal?
     private let logger: Logger
 
+    private var recommendedFee: Decimal?
     private(set) var replacementTransaction: ReplacementTransaction?
     private(set) var feeRange: Range<Int>
     let type: ResendTransactionType
@@ -20,6 +21,7 @@ class ResendBitcoinService {
 
     @PostPublished private(set) var minFee: Int = 0
     @PostPublished private(set) var items: [ISendConfirmationViewItemNew] = []
+    @PostPublished private(set) var caution: TitledCaution? = nil
     @PostPublished private(set) var state: State = .unsendable(error: nil)
 
     init(transactionRecord: BitcoinTransactionRecord, feeRange: Range<Int>, feeRateProvider: IFeeRateProvider, originalSize: Int, type: ResendTransactionType, adapter: BitcoinBaseAdapter, token: Token, currency: Currency, price: Decimal?, logger: Logger) {
@@ -36,6 +38,7 @@ class ResendBitcoinService {
         Task { [weak self, feeRateProvider] in
             if let feeRates = try? await feeRateProvider.feeRates() {
                 let recommendedFee = originalSize * feeRates.recommended
+                self?.recommendedFee = Decimal(recommendedFee) / pow(10, token.decimals)
                 self?.syncReplacement(minFee: min(max(recommendedFee, feeRange.lowerBound), feeRange.upperBound))
             }
         }.store(in: &tasks)
@@ -56,9 +59,9 @@ class ResendBitcoinService {
 
         var items = [ISendConfirmationViewItemNew]()
 
-        if let address = record.to, case let .coinValue(_, value) = record.value {
+        if let address = record.to {
             items.append(
-                SendConfirmationAmountViewItem(coinValue: .init(kind: .token(token: token), value: value), currencyValue: currencyValue(coinAmount: value), receiver: Address(raw: address), sentToSelf: record.sentToSelf)
+                SendConfirmationAmountViewItem(appValue: record.value, currencyValue: currencyValue(coinAmount: record.value.value), receiver: Address(raw: address), sentToSelf: record.sentToSelf)
             )
         }
 
@@ -70,10 +73,16 @@ class ResendBitcoinService {
             items.append(SendConfirmationLockUntilViewItem(lockValue: HodlerPlugin.LockTimeInterval.title(lockTimeInterval: lockInfo.lockTimeInterval)))
         }
 
-        if case let .coinValue(_, feeValue) = record.fee {
+        if let fee = record.fee {
             items.append(
-                SendConfirmationFeeViewItem(coinValue: .init(kind: .token(token: token), value: feeValue), currencyValue: currencyValue(coinAmount: feeValue))
+                SendConfirmationFeeViewItem(appValue: fee, currencyValue: currencyValue(coinAmount: fee.value))
             )
+
+            if let recommendedFee, fee.value < recommendedFee {
+                caution = TitledCaution(title: "fee_settings.warning.risk_of_getting_stuck".localized, text: "fee_settings.warning.risk_of_getting_stuck.info".localized, type: .warning)
+            } else {
+                caution = nil
+            }
         }
 
         if let replacement, !replacement.replacedTransactionHashes.isEmpty {

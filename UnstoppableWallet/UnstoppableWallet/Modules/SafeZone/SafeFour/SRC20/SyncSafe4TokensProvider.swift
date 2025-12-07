@@ -50,7 +50,8 @@ struct Safe4CustomTokenVersion: ImmutableMappable, Decodable {
     }
 }
 
-class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable {
+class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable, Hashable {
+
     let address: String
     let symbol: String
     let creator: String
@@ -143,5 +144,29 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
         container[Columns.type] = type
         container[Columns.logoURI] = logoURI
         container[Columns.version] = version
+    }
+    
+    public static func == (lhs: Safe4CustomTokenRecord, rhs: Safe4CustomTokenRecord) -> Bool {
+        lhs.address == rhs.address &&
+        lhs.symbol == rhs.symbol &&
+        lhs.creator == rhs.creator &&
+        lhs.chainId == rhs.chainId &&
+        lhs.decimals == rhs.decimals &&
+        lhs.name == rhs.name &&
+        lhs.type == rhs.type &&
+        lhs.logoURI == rhs.logoURI &&
+        lhs.version == rhs.version
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(address)
+        hasher.combine(symbol)
+        hasher.combine(creator)
+        hasher.combine(chainId)
+        hasher.combine(decimals)
+        hasher.combine(name)
+        hasher.combine(type)
+        hasher.combine(logoURI)
+        hasher.combine(version)
     }
 }

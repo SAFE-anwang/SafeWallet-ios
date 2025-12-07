@@ -2,12 +2,9 @@ import Foundation
 import UIKit
 import SectionsTableView
 import SnapKit
-import ThemeKit
 import UIExtensions
 import RxSwift
 import RxCocoa
-import ComponentKit
-import HUD
 
 class SuperNodeRegisterViewController: KeyboardAwareViewController {
     private let disposeBag = DisposeBag()
@@ -69,7 +66,7 @@ class SuperNodeRegisterViewController: KeyboardAwareViewController {
         
         buttonCell.set(style: .yellow)
         buttonCell.title = "send.next_button".localized
-        buttonCell.setDebounceInterval(3)
+//        buttonCell.setDebounceInterval(3)
         buttonCell.onTap = { [weak self] in
             self?.toSendVc()
         }
@@ -264,7 +261,7 @@ private extension SuperNodeRegisterViewController {
             StaticRow(
                 cell: balanceCell(lockNum: viewModel.createMode.lockAmount.description, balance: viewModel.balance),
                 id: "safe-balance",
-                height: .heightCell48
+                height: .heightCell56
             ),
             StaticRow(
                     cell: balanceCautionCell,

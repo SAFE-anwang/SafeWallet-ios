@@ -3,7 +3,6 @@ import RxSwift
 import RxCocoa
 import EvmKit
 import MarketKit
-import ComponentKit
 
 class SendSafe4ToWSafeViewModel {
     private let service: SendSafe4ToWSafeService
@@ -15,12 +14,11 @@ class SendSafe4ToWSafeViewModel {
     private let safeInfoManager: SafeInfoManager
     
     var isMatic: Bool = false
-    var error: BinanceAdapter.AddressConversion?
     
     init(service: SendSafe4ToWSafeService, isMatic: Bool) {
         self.service = service
         self.isMatic = isMatic
-        safeInfoManager = App.shared.safeInfoManager
+        safeInfoManager = Core.shared.safeInfoManager
         safeInfoManager.startNet(blockchainType: service.sendToken.blockchainType)
         
         subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
@@ -98,7 +96,7 @@ extension SendSafe4ToWSafeViewModel {
     ///   - safeWallet: safe Wallet
     ///   - address: 跨链接收人 address
     func onEnterAddress(wsafeWallet: Wallet, safeWallet: Wallet, address: Address?) {
-        if let depositAdapter = App.shared.adapterManager.depositAdapter(for: wsafeWallet) {
+        if let depositAdapter = Core.shared.adapterManager.depositAdapter(for: wsafeWallet) {
             let ethAddress = Address(raw: depositAdapter.receiveAddress.address, domain: nil)
             // 设置钱包的ETH地址为交易的接收地址
             service.setRecipientAddress(address: ethAddress, to: address)

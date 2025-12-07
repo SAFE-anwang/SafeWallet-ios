@@ -8,31 +8,30 @@ class SwapTransactionRecord: EvmTransactionRecord {
     let amountOut: Amount?
     let recipient: String?
 
-    init(source: TransactionSource, transaction: Transaction, baseToken: Token, exchangeAddress: String, amountIn: Amount, amountOut: Amount?, recipient: String?) {
+    init(source: TransactionSource, transaction: Transaction, baseToken: Token, exchangeAddress: String, amountIn: Amount, amountOut: Amount?, recipient: String?, protected: Bool) {
         self.exchangeAddress = exchangeAddress
         self.amountIn = amountIn
         self.amountOut = amountOut
-
         self.recipient = recipient
 
-        super.init(source: source, transaction: transaction, baseToken: baseToken, ownTransaction: true)
+        super.init(source: source, transaction: transaction, baseToken: baseToken, ownTransaction: true, protected: protected)
     }
 
-    var valueIn: TransactionValue {
+    var valueIn: AppValue {
         amountIn.value
     }
 
-    var valueOut: TransactionValue? {
+    var valueOut: AppValue? {
         amountOut?.value
     }
 }
 
 extension SwapTransactionRecord {
     enum Amount {
-        case exact(value: TransactionValue)
-        case extremum(value: TransactionValue)
+        case exact(value: AppValue)
+        case extremum(value: AppValue)
 
-        var value: TransactionValue {
+        var value: AppValue {
             switch self {
             case let .exact(value): return value
             case let .extremum(value): return value

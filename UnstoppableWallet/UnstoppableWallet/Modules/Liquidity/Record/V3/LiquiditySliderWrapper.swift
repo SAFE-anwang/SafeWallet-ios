@@ -1,5 +1,3 @@
-import ComponentKit
-import HUD
 import UIKit
 
 class LiquiditySliderWrapper: UIView {

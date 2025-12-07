@@ -1,6 +1,4 @@
 import SwiftUI
-import ComponentKit
-import HUD
 
 struct SafeLineLockView: View {
     @Environment(\.presentationMode) private var presentationMode
@@ -12,88 +10,96 @@ struct SafeLineLockView: View {
     
     init(viewModel: SafeLineLockViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
-
+    }
+    
+    var borderColor: Color {
+        switch viewModel.addressResult {
+        case .invalid: return .themeLucian
+        default: return .themeBlade
+        }
     }
     
     var body: some View {
-        ThemeView {
-            BottomGradientWrapper {
-                ScrollableThemeView {
-                    VStack(spacing: .margin8) {
-                        balanceView()
-                        addressInputView()
-                        inputView()
-                        lockNumView()
-                        startDateView()
-                        intervalMonthView()
-                        if let des = viewModel.lockDes {
-                            Text(des)
-                                .themeSubhead1(color: .themeLeah)
+        ThemeNavigationStack {
+            ThemeView {
+                BottomGradientWrapper {
+                    ScrollableThemeView {
+                        VStack(spacing: .margin8) {
+                            balanceView()
+                            addressInputView()
+                            inputView()
+                            lockNumView()
+                            startDateView()
+                            intervalMonthView()
+                            if let des = viewModel.lockDes {
+                                Text(des)
+                                    .themeSubhead1(color: .themeLeah)
+                            }
+                            
+                            if let tips = viewModel.lockTips {
+                                Text(tips)
+                                    .themeSubhead1(color: .themeLucian)
+                            }
+                        }
+                        .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
+                    }
+                } bottomContent: {
+                    Button(action: {
+                        if case let .ready(data) = viewModel.sendState {
+                            do {
+                                let info = SendEvmData.SendInfo(domain: data.to.eip55)
+                                let sendData = SendEvmData(transactionData: data, additionalInfo: .send(info: info), warnings: [])
+                                let evmKitWrapper = try Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper(account: viewModel.account, blockchainType: .safe4)
+                                if let vc = SendEvmConfirmationModule.viewController(evmKitWrapper: evmKitWrapper, sendData: sendData) {
+                                    DispatchQueue.main.async { [self] in
+                                        presentDestination = .toConfirmation(vc: vc)
+                                    }
+                                }
+                            }catch{}
+                        }
+                    }) {
+                        HStack(spacing: .margin8) {
+                            Text("button.next".localized)
+                        }
+                    }
+                    .disabled(viewModel.sendDisabled)
+                    .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                }
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("button.done".localized) {
+                        if focusField != nil {
+                            focusField = nil
+                        }else {
+                            UIApplication.shared.sendAction(
+                                    #selector(UIResponder.resignFirstResponder),
+                                    to: nil,
+                                    from: nil,
+                                    for: nil
+                                )
                         }
                         
-                        if let tips = viewModel.lockTips {
-                            Text(tips)
-                                .themeSubhead1(color: .themeLucian)
-                        }
-                    }
-                    .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
-                }
-            } bottomContent: {
-                Button(action: {
-                    if case let .ready(data) = viewModel.sendState {
-                        do {
-                            let info = SendEvmData.SendInfo(domain: data.to.eip55)
-                            let sendData = SendEvmData(transactionData: data, additionalInfo: .send(info: info), warnings: [])
-                            let evmKitWrapper = try App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper(account: viewModel.account, blockchainType: .safe4)
-                            if let vc = SendEvmConfirmationModule.viewController(evmKitWrapper: evmKitWrapper, sendData: sendData) {
-                                DispatchQueue.main.async { [self] in
-                                    presentDestination = .toConfirmation(vc: vc)
-                                }
-                            }
-                        }catch{}
-                    }
-                }) {
-                    HStack(spacing: .margin8) {
-                        Text("button.next".localized)
                     }
                 }
-                .disabled(viewModel.sendDisabled)
-                .buttonStyle(PrimaryButtonStyle(style: .yellow))
             }
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("button.done".localized) {
-                    if focusField != nil {
-                        focusField = nil
-                    }else {
-                        UIApplication.shared.sendAction(
-                                #selector(UIResponder.resignFirstResponder),
-                                to: nil,
-                                from: nil,
-                                for: nil
-                            )
-                    }
-                    
+            .contentShape(Rectangle())
+            .onTapGesture {
+                focusField = nil
+            }
+            .navigationBarTitle("safe_zone.row.linear".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(item: $presentDestination, onDismiss: {
+//                DispatchQueue.main.async {
+//                    HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
+//                    presentationMode.wrappedValue.dismiss()
+//                }
+            }) { present in
+                switch present {
+                case let .toConfirmation(vc):
+                    SendEvmConfirmationView(viewController: vc)
                 }
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            focusField = nil
-        }
-        .navigationBarTitle("safe_zone.row.linear".localized)
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $presentDestination, onDismiss: {
-            DispatchQueue.main.async {
-                HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
-                presentationMode.wrappedValue.dismiss()
-            }
-        }) { present in
-            switch present {
-            case let .toConfirmation(vc):
-                SendEvmConfirmationView(viewController: vc)
             }
         }
     }
@@ -126,7 +132,8 @@ struct SafeLineLockView: View {
                 showContacts: true
             ),
             text: $viewModel.address,
-            result: $viewModel.addressResult
+            result: $viewModel.addressResult,
+            borderColor: Binding(get: { borderColor }, set: { _ in })
         )
         .modifier(CautionBorder(cautionState: $viewModel.addressCautionState))
         .modifier(CautionPrompt(cautionState: $viewModel.addressCautionState))

@@ -3,8 +3,6 @@ import UIKit
 import SectionsTableView
 import RxSwift
 import RxCocoa
-import ComponentKit
-import HUD
 
 class ProposalVoteSendViewController: Safe4ConfirmBaseViewController {
     private let disposeBag = DisposeBag()
@@ -47,7 +45,8 @@ class ProposalVoteSendViewController: Safe4ConfirmBaseViewController {
                 self?.showSuccess()
             case let .failed(error):
                 self?.show(error: error)
-                self?.navigationController?.popToViewController(ofClass: ProposalTabViewController.self)
+                self?.dismiss(animated: true)
+//                self?.navigationController?.popToViewController(ofClass: ProposalTabViewController.self)
             case .completed(_): ()
             }
             self?.sendLock = false
@@ -56,7 +55,8 @@ class ProposalVoteSendViewController: Safe4ConfirmBaseViewController {
     
     func showSuccess() {
         show(message: "safe_zone.safe4.proposal.vote.completed".localized)
-        navigationController?.popToViewController(ofClass: ProposalTabViewController.self)
+        dismiss(animated: true)
+//        navigationController?.popToViewController(ofClass: ProposalTabViewController.self)
     }
     
     func show(error: String) {

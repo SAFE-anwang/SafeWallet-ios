@@ -6,6 +6,8 @@ enum ThemeListStyle {
     case borderedLawrence
     case transparent
     case transparentInline
+    case blur
+    case steel10WithCorners(UIRectCorner)
 }
 
 struct ThemeListStyleModifier: ViewModifier {
@@ -13,7 +15,7 @@ struct ThemeListStyleModifier: ViewModifier {
     private let cornerRadius: CGFloat
     private let selected: Bool
 
-    init(themeListStyle: ThemeListStyle = .lawrence, cornerRadius: CGFloat = .cornerRadius12, selected: Bool = false) {
+    init(themeListStyle: ThemeListStyle = .lawrence, cornerRadius: CGFloat = 12, selected: Bool = false) { // TODO: put params
         self.themeListStyle = themeListStyle
         self.cornerRadius = cornerRadius
         self.selected = selected
@@ -27,13 +29,23 @@ struct ThemeListStyleModifier: ViewModifier {
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         case .borderedLawrence:
             content
-                .background(Color.themeLawrence)
+                .background(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).fill(Color.themeLawrence))
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).stroke(selected ? Color.themeJacob : Color.themeBlade, lineWidth: .heightOneDp))
         case .bordered:
             content
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: cornerRadius).stroke(selected ? Color.themeJacob : Color.themeSteel20, lineWidth: .heightOneDp))
+                .overlay(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).stroke(selected ? Color.themeJacob : Color.themeBlade, lineWidth: .heightOneDp))
         case .transparent, .transparentInline:
             content
+        case .blur:
+            content
+                .background(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).fill(.ultraThinMaterial))
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        case let .steel10WithCorners(corners):
+            content
+                .background(RoundedCorner(radius: cornerRadius, corners: corners).fill(Color.themeBlade))
+                .clipShape(RoundedCorner(radius: cornerRadius, corners: corners))
         }
     }
 }
@@ -44,8 +56,10 @@ struct ThemeListStyleButtonModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         switch themeListStyle {
-        case .lawrence, .borderedLawrence: content.background(isPressed ? Color.themeLawrencePressed : Color.themeLawrence)
-        case .bordered, .transparent, .transparentInline: content.background(isPressed ? Color.themeLawrencePressed : Color.themeTyler)
+        case .lawrence, .borderedLawrence: content.background(isPressed ? Color.themeLawrence.pressed : Color.themeLawrence)
+        case .bordered: content.background(isPressed ? Color.themeLawrence.pressed : Color.clear)
+        case .transparent, .transparentInline: content.background(isPressed ? Color.themeLawrence.pressed : Color.themeTyler)
+        case .blur, .steel10WithCorners: content
         }
     }
 }

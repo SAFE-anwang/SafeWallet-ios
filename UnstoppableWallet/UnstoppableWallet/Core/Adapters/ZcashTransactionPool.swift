@@ -5,10 +5,13 @@ import ZcashLightClientKit
 class ZcashTransactionPool {
     private var confirmedTransactions = Set<ZcashTransactionWrapper>()
     private var pendingTransactions = Set<ZcashTransactionWrapper>()
+
+    private let accountId: AccountUUID
     private let synchronizer: Synchronizer
     private let receiveAddress: SaplingAddress
 
-    init(receiveAddress: SaplingAddress, synchronizer: Synchronizer) {
+    init(accountId: AccountUUID, receiveAddress: SaplingAddress, synchronizer: Synchronizer) {
+        self.accountId = accountId
         self.receiveAddress = receiveAddress
         self.synchronizer = synchronizer
     }
@@ -56,15 +59,12 @@ class ZcashTransactionPool {
             .first
 
         let recipients = await synchronizer.getRecipients(for: tx)
-        let firstAddress = recipients
-            .filter(\.hasAddress)
-            .first
 
-        return ZcashTransactionWrapper(tx: tx, memo: firstMemo, recipient: firstAddress, lastBlockHeight: lastBlockHeight)
+        return ZcashTransactionWrapper(accountId: accountId, tx: tx, memo: firstMemo, recipients: recipients, lastBlockHeight: lastBlockHeight)
     }
 
     private func sync(own: inout Set<ZcashTransactionWrapper>, incoming: [ZcashTransactionWrapper]) {
-        incoming.forEach { transaction in own.insert(transaction) }
+        incoming.forEach { transaction in own.update(with: transaction) }
     }
 
     func initTransactions() async {
@@ -92,17 +92,21 @@ extension ZcashTransactionPool {
         transactions(filter: .all, address: nil)
     }
 
-    func transactionsSingle(from: TransactionRecord?, filter: TransactionTypeFilter, address: String?, limit: Int) -> RxSwift.Single<[ZcashTransactionWrapper]> {
-        let transactions = transactions(filter: filter, address: address)
+    func transactionsSingle(paginationData: String?, filter: TransactionTypeFilter, descending: Bool, address: String? = nil, limit: Int?) -> RxSwift.Single<[ZcashTransactionWrapper]> {
+        let transactions = transactions(filter: filter, address: address).sorted(by: descending ? (<) : (>))
 
-        guard let transaction = from else {
-            return Single.just(Array(transactions.prefix(limit)))
+        var limited: [ZcashTransactionWrapper]
+        if let data = paginationData, let index = transactions.firstIndex(where: { $0.transactionHash == data }) {
+            limited = Array(transactions.suffix(from: index + 1))
+        } else {
+            limited = transactions
         }
 
-        if let index = transactions.firstIndex(where: { $0.transactionHash == transaction.transactionHash }) {
-            return Single.just(Array(transactions.suffix(from: index + 1).prefix(limit)))
+        if let limit {
+            limited = Array(limited.prefix(limit))
         }
-        return Single.just([])
+
+        return .just(limited)
     }
 }
 
@@ -111,6 +115,13 @@ extension TransactionRecipient {
         switch self {
         case .address: return true
         case .internalAccount: return false
+        }
+    }
+
+    var address: String? {
+        switch self {
+        case let .address(recipient): return recipient.stringEncoded
+        default: return nil
         }
     }
 }

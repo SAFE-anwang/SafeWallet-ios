@@ -24,6 +24,13 @@ extension PrivateKeysService {
         }
     }
 
+    var stellarSecretKeySupported: Bool {
+        switch account.type {
+        case .mnemonic, .stellarSecretKey: return true
+        default: return false
+        }
+    }
+
     var bip32RootKeySupported: Bool {
         switch account.type {
         case .mnemonic: return true
@@ -48,6 +55,13 @@ extension PrivateKeysService {
             case .private: return true
             default: return false
             }
+        default: return false
+        }
+    }
+
+    var moneroPrivateKeySupported: Bool {
+        switch account.type {
+        case .mnemonic: return true
         default: return false
         }
     }

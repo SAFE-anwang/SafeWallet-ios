@@ -38,12 +38,9 @@ class SRC20PromotionViewModel: ObservableObject {
     
     private func getFee() {
         Task{
-            do{
-                let fee = try await service.getLogoPayAmount(type: token.deployType).safe4ToDecimal()
-                DispatchQueue.main.async {
-                    self.fee = fee
-                }
-            }catch{}
+            if let fee = try? await service.getLogoPayAmount(type: token.deployType).safe4ToDecimal() {
+                self.fee = fee
+            }
         }
     }
     

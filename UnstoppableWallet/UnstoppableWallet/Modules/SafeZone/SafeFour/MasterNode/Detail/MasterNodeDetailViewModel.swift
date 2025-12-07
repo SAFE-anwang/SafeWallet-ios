@@ -5,7 +5,6 @@ import BigInt
 import web3swift
 import Web3Core
 import HsExtensions
-import ThemeKit
 import RxSwift
 import RxRelay
 import RxCocoa

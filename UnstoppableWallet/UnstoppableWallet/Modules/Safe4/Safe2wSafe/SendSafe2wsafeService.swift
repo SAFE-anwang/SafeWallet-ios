@@ -9,7 +9,7 @@ class SendSafe2wsafeService {
     private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "\(AppConfig.label).send-safe2wsafe-service")
 
     let token: Token
-    let mode: SendBaseService.Mode
+    let mode: PreSendViewModel.Mode
     private let amountService: IAmountInputService
     private let amountCautionService: SendAmountCautionService
     private let addressService: AddressService
@@ -24,7 +24,7 @@ class SendSafe2wsafeService {
         }
     }
 
-    init(amountService: IAmountInputService, amountCautionService: SendAmountCautionService, addressService: AddressService, adapterService: SendSafe2wsafeAdapterService, feeRateService: FeeRateService, timeLockErrorService: SafeSendTimeLockErrorService?, reachabilityManager: IReachabilityManager, token: Token, mode: SendBaseService.Mode) {
+    init(amountService: IAmountInputService, amountCautionService: SendAmountCautionService, addressService: AddressService, adapterService: SendSafe2wsafeAdapterService, feeRateService: FeeRateService, timeLockErrorService: SafeSendTimeLockErrorService?, reachabilityManager: IReachabilityManager, token: Token, mode: PreSendViewModel.Mode) {
         self.amountService = amountService
         self.amountCautionService = amountCautionService
         self.addressService = addressService

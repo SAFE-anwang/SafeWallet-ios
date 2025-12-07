@@ -5,11 +5,11 @@ import MarketKit
 import RxSwift
 
 class BitcoinAdapter: BitcoinBaseAdapter {
+    private static let networkType: BitcoinKit.Kit.NetworkType = .mainNet
     private let bitcoinKit: BitcoinKit.Kit
 
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
-        let networkType: BitcoinKit.Kit.NetworkType = .mainNet
-        let logger = App.shared.logger.scoped(with: "BitcoinKit")
+        let logger = Core.shared.logger.scoped(with: "BitcoinKit")
 
         switch wallet.account.type {
         case .mnemonic:
@@ -26,8 +26,8 @@ class BitcoinAdapter: BitcoinBaseAdapter {
                 purpose: derivation.purpose,
                 walletId: wallet.account.id,
                 syncMode: syncMode,
-                networkType: networkType,
-                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
             )
         case let .hdExtendedKey(key):
@@ -40,8 +40,8 @@ class BitcoinAdapter: BitcoinBaseAdapter {
                 purpose: derivation.purpose,
                 walletId: wallet.account.id,
                 syncMode: syncMode,
-                networkType: networkType,
-                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
             )
         case let .btcAddress(address, _, tokenType):
@@ -54,8 +54,8 @@ class BitcoinAdapter: BitcoinBaseAdapter {
                 purpose: purpose,
                 walletId: wallet.account.id,
                 syncMode: syncMode,
-                networkType: networkType,
-                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
             )
         default:
@@ -89,5 +89,42 @@ extension BitcoinAdapter: ISendBitcoinAdapter {
 extension BitcoinAdapter {
     static func clear(except excludedWalletIds: [String]) throws {
         try Kit.clear(exceptFor: excludedWalletIds)
+    }
+
+    static func firstAddress(accountType: AccountType, tokenType: TokenType) throws -> String {
+        switch accountType {
+        case .mnemonic:
+            guard let seed = accountType.mnemonicSeed else {
+                throw AdapterError.unsupportedAccount
+            }
+
+            guard let derivation = tokenType.derivation else {
+                throw AdapterError.wrongParameters
+            }
+
+            let address = try BitcoinKit.Kit.firstAddress(
+                seed: seed,
+                purpose: derivation.purpose,
+                networkType: networkType
+            )
+
+            return address.stringValue
+        case let .hdExtendedKey(key):
+            guard let derivation = tokenType.derivation else {
+                throw AdapterError.wrongParameters
+            }
+
+            let address = try BitcoinKit.Kit.firstAddress(
+                extendedKey: key,
+                purpose: derivation.purpose,
+                networkType: networkType
+            )
+
+            return address.stringValue
+        case let .btcAddress(address, _, _):
+            return address
+        default:
+            throw AdapterError.unsupportedAccount
+        }
     }
 }

@@ -1,7 +1,7 @@
-import ComponentKit
+
 import RxSwift
 import SectionsTableView
-import ThemeKit
+
 import UIKit
 
 class EvmNetworkViewController: ThemeViewController {
@@ -36,6 +36,7 @@ class EvmNetworkViewController: ThemeViewController {
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: iconImageView)
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.done".localized, style: .plain, target: self, action: #selector(onTapDone))
+        navigationItem.rightBarButtonItem?.tintColor = .themeJacob
 
         iconImageView.snp.makeConstraints { make in
             make.size.equalTo(CGFloat.iconSize24)
@@ -83,6 +84,7 @@ class EvmNetworkViewController: ThemeViewController {
     }
 
     private func openAddNew() {
+        stat(page: .blockchainSettingsEvm, event: .openBlockchainSettingsEvmAdd(chainUid: viewModel.blockchainType.uid))
         let module = AddEvmSyncSourceModule.viewController(blockchainType: viewModel.blockchainType)
         present(module, animated: true)
     }

@@ -1,6 +1,4 @@
 import SwiftUI
-import ComponentKit
-import HUD
 
 struct SRC20EditView: View {
     @Environment(\.presentationMode) private var presentationMode

@@ -1,8 +1,9 @@
-import ComponentKit
+
+import MarketKit
 import RxSwift
 import SafariServices
 import SectionsTableView
-import ThemeKit
+
 import UIKit
 
 class TransactionInfoViewController: ThemeViewController {
@@ -13,7 +14,7 @@ class TransactionInfoViewController: ThemeViewController {
     private var urlManager: UrlManager
     private let adapter: ITransactionsAdapter
 
-    private var viewItems = [[TransactionInfoModule.ViewItem]]()
+    private var viewItems = [TransactionInfoModule.SectionViewItem]()
 
     private let tableView = SectionsTableView(style: .grouped)
 
@@ -39,6 +40,7 @@ class TransactionInfoViewController: ThemeViewController {
         super.viewDidLoad()
 
         title = pageTitle
+        navigationItem.largeTitleDisplayMode = .never
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onTapCloseButton))
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
@@ -75,29 +77,33 @@ class TransactionInfoViewController: ThemeViewController {
 
     private func openStatusInfo() {
         present(InfoModule.transactionStatusInfo, animated: true)
+
+        stat(page: .transactionInfo, section: .status, event: .open(page: .info))
     }
 
     private func openResend(type: ResendTransactionType) {
         do {
-            if adapter is BaseEvmAdapter {
+            if let evmAdapter = adapter as? BaseEvmAdapter {
                 let viewController = try SendEvmConfirmationModule.resendViewController(adapter: adapter, type: type, transactionHash: viewModel.transactionHash)
                 present(ThemeNavigationController(rootViewController: viewController), animated: true)
-            } else if adapter is BitcoinBaseAdapter, let transactionRecord = viewModel.transactionRecord as? BitcoinTransactionRecord {
+
+                stat(page: .transactionInfo, event: .openResend(chainUid: evmAdapter.evmKitWrapper.blockchainType.uid, type: type.rawValue))
+            } else if let btcAdapter = adapter as? BitcoinBaseAdapter, let transactionRecord = viewModel.transactionRecord as? BitcoinTransactionRecord {
                 let viewController = try ResendBitcoinModule.resendViewController(adapter: adapter, type: type, transactionRecord: transactionRecord)
                 present(ThemeNavigationController(rootViewController: viewController), animated: true)
+
+                stat(page: .transactionInfo, event: .openResend(chainUid: btcAdapter.token.blockchainType.uid, type: type.rawValue))
             }
         } catch {
             HudHelper.instance.show(banner: .error(string: error.localizedDescription))
         }
     }
 
-    private func openCoin(coinUid: String) {
-        guard let module = CoinPageModule.viewController(coinUid: coinUid) else {
-            return
-        }
+    private func open(coin: Coin) {
+        let viewController = CoinPageView(coin: coin).toViewController()
+        present(viewController, animated: true)
 
-        present(module, animated: true)
-        stat(page: .transactionInfo, event: .coinOpen, params: [.coinUid: coinUid])
+        stat(page: .transactionInfo, event: .openCoin(coinUid: coin.uid))
     }
 
     private func openNftAsset(providerCollectionUid: String, nftUid: NftUid) {
@@ -188,7 +194,7 @@ class TransactionInfoViewController: ThemeViewController {
         return CellBuilderNew.row(
             rootElement: .hStack([
                 .imageElement(image: .local(image?.withTintColor(color)), size: .image24),
-                .textElement(text: .body(title, color: color)),
+                .textElement(text: .body(title)),
             ]),
             tableView: tableView,
             id: "option-\(rowInfo.index)",
@@ -205,40 +211,40 @@ class TransactionInfoViewController: ThemeViewController {
         var onAddToContact: (() -> Void)? = nil
         if let contactAddress {
             onAddToContact = { [weak self] in
-                ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self)
+                ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self, statPage: .transactionInfo, statSection: .addressFrom)
             }
         }
-        return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "tx_info.from_hash".localized, value: value, valueTitle: valueTitle, onAddToContact: onAddToContact)
+        return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "tx_info.from_hash".localized, value: value, valueTitle: valueTitle, statPage: .transactionInfo, statSection: .addressFrom, onAddToContact: onAddToContact)
     }
 
     private func toRow(rowInfo: RowInfo, value: String, valueTitle: String?, contactAddress: ContactAddress?) -> RowProtocol {
         var onAddToContact: (() -> Void)? = nil
         if let contactAddress {
             onAddToContact = { [weak self] in
-                ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self)
+                ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self, statPage: .transactionInfo, statSection: .addressTo)
             }
         }
-        return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "tx_info.to_hash".localized, value: value, valueTitle: valueTitle, onAddToContact: onAddToContact)
+        return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "tx_info.to_hash".localized, value: value, valueTitle: valueTitle, statPage: .transactionInfo, statSection: .addressTo, onAddToContact: onAddToContact)
     }
 
     private func spenderRow(rowInfo: RowInfo, value: String, valueTitle: String?, contactAddress: ContactAddress?) -> RowProtocol {
         var onAddToContact: (() -> Void)? = nil
         if let contactAddress {
             onAddToContact = { [weak self] in
-                ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self)
+                ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self, statPage: .transactionInfo, statSection: .addressSpender)
             }
         }
-        return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "tx_info.spender".localized, value: value, valueTitle: valueTitle, onAddToContact: onAddToContact)
+        return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "tx_info.spender".localized, value: value, valueTitle: valueTitle, statPage: .transactionInfo, statSection: .addressSpender, onAddToContact: onAddToContact)
     }
 
     private func recipientRow(rowInfo: RowInfo, value: String, valueTitle: String?, contactAddress: ContactAddress?) -> RowProtocol {
         var onAddToContact: (() -> Void)? = nil
         if let contactAddress {
             onAddToContact = { [weak self] in
-                ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self)
+                ContactBookModule.showAddition(contactAddress: contactAddress, parentViewController: self, statPage: .transactionInfo, statSection: .addressRecipient)
             }
         }
-        return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "tx_info.recipient_hash".localized, value: value, valueTitle: valueTitle, onAddToContact: onAddToContact)
+        return CellComponent.fromToRow(tableView: tableView, rowInfo: rowInfo, title: "tx_info.recipient_hash".localized, value: value, valueTitle: valueTitle, statPage: .transactionInfo, statSection: .addressRecipient, onAddToContact: onAddToContact)
     }
 
     private func idRow(rowInfo: RowInfo, value: String) -> RowProtocol {
@@ -251,6 +257,7 @@ class TransactionInfoViewController: ThemeViewController {
                     component.button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
                     component.onTap = {
                         CopyHelper.copyAndNotify(value: value)
+                        stat(page: .transactionInfo, event: .copy(entity: .transactionId))
                     }
                 },
                 .secondaryCircleButton { [weak self] (component: SecondaryCircleButtonComponent) in
@@ -258,6 +265,7 @@ class TransactionInfoViewController: ThemeViewController {
                     component.onTap = {
                         let activityViewController = UIActivityViewController(activityItems: [value], applicationActivities: [])
                         self?.present(activityViewController, animated: true)
+                        stat(page: .transactionInfo, event: .share(entity: .transactionId))
                     }
                 },
             ]),
@@ -358,6 +366,8 @@ class TransactionInfoViewController: ThemeViewController {
         ) { [weak self] in
             let viewController = DoubleSpendInfoViewController(transactionHash: txHash, conflictingTransactionHash: conflictingTxHash)
             self?.present(ThemeNavigationController(rootViewController: viewController), animated: true)
+
+            stat(page: .transactionInfo, event: .open(page: .doubleSpend))
         }
     }
 
@@ -366,9 +376,12 @@ class TransactionInfoViewController: ThemeViewController {
         let image = UIImage(named: lockState.locked ? "lock_24" : "unlock_24")
         let formattedDate = DateHelper.instance.formatFullTime(from: lockState.date)
         let unlockedHeight = (lockState.unlockedHeight != nil) ? "  解锁高度：\(lockState.unlockedHeight!)" : ""
+
         if lockState.locked {
             return warningRow(rowInfo: rowInfo, id: id, image: image, text: "tx_info.locked_until".localized(formattedDate) + unlockedHeight) { [weak self] in
                 self?.present(InfoModule.timeLockInfo, animated: true)
+
+                stat(page: .transactionInfo, section: .timeLock, event: .open(page: .info))
             }
         } else {
             return noteRow(rowInfo: rowInfo, id: id, image: image, text: "tx_info.unlocked_at".localized(formattedDate))
@@ -380,31 +393,31 @@ class TransactionInfoViewController: ThemeViewController {
         let textFont: UIFont = .subhead2
 
         return CellBuilderNew.row(
-                rootElement: .hStack([
-                    .image24 { (component: ImageComponent) -> () in
-                        component.imageView.image = image?.withTintColor(.themeGray)
-                    },
-                    .text { (component: TextComponent) -> () in
-                        component.font = textFont
-                        component.textColor = .themeGray
-                        component.text = text
-                        component.numberOfLines = 0
-                    }
-                ]),
-                tableView: tableView,
-                id: id,
-                dynamicHeight: { containerWidth in
-                    CellBuilderNew.height(
-                            containerWidth: containerWidth,
-                            backgroundStyle: backgroundStyle,
-                            text: text,
-                            font: textFont,
-                            elements: [.fixed(width: .iconSize20), .multiline]
-                    )
+            rootElement: .hStack([
+                .image24 { (component: ImageComponent) in
+                    component.imageView.image = image?.withTintColor(.themeGray)
                 },
-                bind: { cell in
-                    cell.set(backgroundStyle: backgroundStyle, isFirst: rowInfo.isFirst, isLast: rowInfo.isLast)
-                }
+                .text { (component: TextComponent) in
+                    component.font = textFont
+                    component.textColor = .themeGray
+                    component.text = text
+                    component.numberOfLines = 0
+                },
+            ]),
+            tableView: tableView,
+            id: id,
+            dynamicHeight: { containerWidth in
+                CellBuilderNew.height(
+                    containerWidth: containerWidth,
+                    backgroundStyle: backgroundStyle,
+                    text: text,
+                    font: textFont,
+                    elements: [.fixed(width: .iconSize20), .multiline]
+                )
+            },
+            bind: { cell in
+                cell.set(backgroundStyle: backgroundStyle, isFirst: rowInfo.isFirst, isLast: rowInfo.isLast)
+            }
         )
     }
 
@@ -451,6 +464,8 @@ class TransactionInfoViewController: ThemeViewController {
             action: { [weak self] in
                 if let url {
                     self?.urlManager.open(url: url, from: self)
+
+                    stat(page: .transactionInfo, event: .open(page: .externalBlockExplorer))
                 }
             }
         )
@@ -469,16 +484,16 @@ class TransactionInfoViewController: ThemeViewController {
         switch viewItem {
         case let .actionTitle(iconName, iconDimmed, title, subTitle):
             return CellComponent.actionTitleRow(tableView: tableView, rowInfo: rowInfo, iconName: iconName, iconDimmed: iconDimmed, title: title, value: subTitle ?? "")
-        case let .amount(iconUrl, iconPlaceholderImageName, coinAmount, currencyAmount, type, coinUid):
+        case let .amount(title, subtitle, iconUrl, iconAlternativeUrl, iconPlaceholderImageName, coinAmount, currencyAmount, type, coin):
             var action: (() -> Void)?
 
-            if let coinUid {
+            if let coin {
                 action = { [weak self] in
-                    self?.openCoin(coinUid: coinUid)
+                    self?.open(coin: coin)
                 }
             }
 
-            return CellComponent.amountRow(tableView: tableView, rowInfo: rowInfo, iconUrl: iconUrl, iconPlaceholderImageName: iconPlaceholderImageName, coinAmount: coinAmount, currencyAmount: currencyAmount, type: type, action: action)
+            return CellComponent.amountRow(tableView: tableView, rowInfo: rowInfo, title: title, subtitle: subtitle, imageUrl: iconUrl, alternativeImageUrl: iconAlternativeUrl, placeholderImageName: iconPlaceholderImageName, coinAmount: coinAmount, currencyAmount: currencyAmount, type: type, action: action)
         case let .nftAmount(iconUrl, iconPlaceholderImageName, nftAmount, type, providerCollectionUid, nftUid):
             var onTapOpenNft: (() -> Void)?
 
@@ -512,7 +527,7 @@ class TransactionInfoViewController: ThemeViewController {
         case let .fee(title, value):
             return CellComponent.valueRow(tableView: tableView, rowInfo: rowInfo, iconName: nil, title: title, value: value)
         case let .price(price):
-            return CellComponent.valueRow(tableView: tableView, rowInfo: rowInfo, iconName: nil, title: "tx_info.price".localized, value: price)
+            return CellComponent.priceRow(tableView: tableView, rowInfo: rowInfo, title: "tx_info.price".localized, value: price, onTap: { [weak self] in self?.viewModel.togglePrice() })
         case let .doubleSpend(txHash, conflictingTxHash):
             return doubleSpendRow(rowInfo: rowInfo, txHash: txHash, conflictingTxHash: conflictingTxHash)
         case let .lockInfo(lockState):
@@ -535,13 +550,23 @@ class TransactionInfoViewController: ThemeViewController {
 
 extension TransactionInfoViewController: SectionsDataSource {
     func buildSections() -> [SectionProtocol] {
-        viewItems.enumerated().map { (index: Int, sectionViewItems: [TransactionInfoModule.ViewItem]) -> SectionProtocol in
-            Section(
+        viewItems.enumerated().map { (index: Int, sectionViewItem: TransactionInfoModule.SectionViewItem) -> SectionProtocol in
+            let footerState: ViewState<BottomDescriptionHeaderFooterView>
+            if let footer = sectionViewItem.footer {
+                footerState = tableView.sectionFooter(text: footer, bottomMargin: .margin16)
+            } else {
+                footerState = .margin(height: index == viewItems.count - 1 ? .margin32 : 0)
+            }
+
+            let headerState: ViewState<UITableViewHeaderFooterView>
+            headerState = .margin(height: .margin12)
+
+            return Section(
                 id: "section_\(index)",
-                headerState: .margin(height: .margin12),
-                footerState: .margin(height: index == viewItems.count - 1 ? .margin32 : 0),
-                rows: sectionViewItems.enumerated().map { index, viewItem in
-                    row(viewItem: viewItem, rowInfo: RowInfo(index: index, isFirst: index == 0, isLast: index == sectionViewItems.count - 1))
+                headerState: headerState,
+                footerState: footerState,
+                rows: sectionViewItem.viewItems.enumerated().map { index, viewItem in
+                    row(viewItem: viewItem, rowInfo: RowInfo(index: index, isFirst: index == 0, isLast: index == sectionViewItem.viewItems.count - 1))
                 }
             )
         }

@@ -4,8 +4,6 @@ import Foundation
 import SectionsTableView
 import RxSwift
 import RxCocoa
-import ComponentKit
-import HUD
 
 class MasterNodeSendViewController: Safe4ConfirmBaseViewController {
     private let disposeBag = DisposeBag()

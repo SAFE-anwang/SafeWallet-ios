@@ -27,8 +27,8 @@ class SuperNodeService {
     private let syncRefreshRelay = PublishRelay<Bool>()
     
     private var nodeTypeRelay = BehaviorRelay<Safe4NodeType>(value: .normal)
-    private let evmKit: EvmKit.Kit
-    private let privateKey: Data
+    let evmKit: EvmKit.Kit
+    let privateKey: Data
     
     init(privateKey: Data, evmKit: EvmKit.Kit) {
         self.privateKey = privateKey

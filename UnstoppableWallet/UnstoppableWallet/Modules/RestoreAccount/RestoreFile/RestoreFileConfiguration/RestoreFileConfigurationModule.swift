@@ -1,17 +1,18 @@
 import UIKit
 
 enum RestoreFileConfigurationModule {
-    static func viewController(rawBackup: RawFullBackup, returnViewController: UIViewController?) -> UIViewController {
+    static func viewController(rawBackup: RawFullBackup, statPage: StatPage, onRestore: @escaping () -> Void) -> UIViewController {
         let viewModel = RestoreFileConfigurationViewModel(
-            cloudBackupManager: App.shared.cloudBackupManager,
-            appBackupProvider: App.shared.appBackupProvider,
-            contactBookManager: App.shared.contactManager,
+            cloudBackupManager: Core.shared.cloudBackupManager,
+            appBackupProvider: Core.shared.appBackupProvider,
+            contactBookManager: Core.shared.contactManager,
+            statPage: statPage,
             rawBackup: rawBackup
         )
 
         return RestoreFileConfigurationViewController(
             viewModel: viewModel,
-            returnViewController: returnViewController
+            onRestore: onRestore
         )
     }
 }

@@ -1,7 +1,6 @@
 import Chart
-import ComponentKit
+
 import SnapKit
-import ThemeKit
 import UIKit
 
 class MarketCardView: UIView {
@@ -97,7 +96,7 @@ class MarketCardView: UIView {
     }
 
     private func updateUI() {
-        button.setBackgroundColor(color: .themeLawrencePressed, forState: .highlighted)
+        button.setBackgroundColor(color: .themeLawrence.pressed, forState: .highlighted)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {

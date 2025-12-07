@@ -1,10 +1,10 @@
-import ComponentKit
+
 import Foundation
 import RxCocoa
 import RxSwift
 import SectionsTableView
 import SnapKit
-import ThemeKit
+
 import UIExtensions
 import UIKit
 
@@ -19,7 +19,7 @@ class RestoreViewController: KeyboardAwareViewController {
 
     private let nameCell = TextFieldCell()
 
-    private let mnemonicInputCell = MnemonicInputCell()
+    private let mnemonicInputCell: MnemonicInputCell
     private let mnemonicCautionCell = FormCautionCell()
     private let wordListCell = BaseSelectableThemeCell()
 
@@ -30,21 +30,24 @@ class RestoreViewController: KeyboardAwareViewController {
 
     private let hintView = RestoreMnemonicHintView()
 
-    private let privateKeyInputCell = TextInputCell()
+    private let privateKeyInputCell: TextInputCell
     private let privateKeyCautionCell = FormCautionCell()
 
     private var restoreType: RestoreViewModel.RestoreType = .mnemonic
     private var inputsVisible = false
     private var isLoaded = false
 
-    private weak var returnViewController: UIViewController?
+    private let onRestore: () -> Void
 
-    init(advanced: Bool, viewModel: RestoreViewModel, mnemonicViewModel: RestoreMnemonicViewModel, privateKeyViewModel: RestorePrivateKeyViewModel, returnViewController: UIViewController?) {
+    init(advanced: Bool, viewModel: RestoreViewModel, mnemonicViewModel: RestoreMnemonicViewModel, privateKeyViewModel: RestorePrivateKeyViewModel, onRestore: @escaping () -> Void) {
         self.advanced = advanced
         self.viewModel = viewModel
         self.mnemonicViewModel = mnemonicViewModel
         self.privateKeyViewModel = privateKeyViewModel
-        self.returnViewController = returnViewController
+        self.onRestore = onRestore
+
+        mnemonicInputCell = MnemonicInputCell(statPage: advanced ? .importWalletFromKeyAdvanced : .importWalletFromKey, statEntity: .recoveryPhrase)
+        privateKeyInputCell = TextInputCell(statPage: advanced ? .importWalletFromKeyAdvanced : .importWalletFromKey, statEntity: .key)
 
         super.init(scrollViews: [tableView], accessoryView: hintView)
     }
@@ -61,6 +64,7 @@ class RestoreViewController: KeyboardAwareViewController {
 
         navigationItem.largeTitleDisplayMode = .never
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.next".localized, style: .done, target: self, action: #selector(onTapNext))
+        navigationItem.rightBarButtonItem?.tintColor = .themeJacob
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
         view.addSubview(tableView)
@@ -108,7 +112,7 @@ class RestoreViewController: KeyboardAwareViewController {
         mnemonicCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
 
         wordListCell.set(backgroundStyle: .lawrence, isFirst: true, isLast: false)
-        passphraseToggleCell.set(backgroundStyle: .lawrence, isFirst: false, isLast: true)
+        passphraseToggleCell.set(backgroundStyle: .lawrence, isFirst: !advanced, isLast: true)
         CellBuilderNew.buildStatic(
             cell: passphraseToggleCell,
             rootElement: .hStack(
@@ -128,7 +132,7 @@ class RestoreViewController: KeyboardAwareViewController {
         passphraseCell.onChangeText = { [weak self] in self?.mnemonicViewModel.onChange(passphrase: $0 ?? "") }
 
         passphraseCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
-        passphraseDescriptionCell.descriptionText = "restore.passphrase_description".localized
+        passphraseDescriptionCell.descriptionText = "restore.wallet.passphrase_description".localized
 
         view.addSubview(hintView)
         hintView.snp.makeConstraints { maker in
@@ -191,7 +195,7 @@ class RestoreViewController: KeyboardAwareViewController {
     }
 
     @objc private func onTapAdvanced() {
-        let module = RestoreModule.viewController(advanced: true, returnViewController: returnViewController)
+        let module = RestoreModule.viewController(advanced: true, onRestore: onRestore)
         navigationController?.pushViewController(module, animated: true)
     }
 
@@ -232,7 +236,7 @@ class RestoreViewController: KeyboardAwareViewController {
     }
 
     private func openSelectCoins(accountName: String, accountType: AccountType) {
-        let viewController = RestoreSelectModule.viewController(accountName: accountName, accountType: accountType, returnViewController: returnViewController)
+        let viewController = RestoreSelectModule.viewController(accountName: accountName, accountType: accountType, statPage: advanced ? .importWalletFromKeyAdvanced : .importWalletFromKey, onRestore: onRestore)
         navigationController?.pushViewController(viewController, animated: true)
     }
 
@@ -271,8 +275,9 @@ class RestoreViewController: KeyboardAwareViewController {
     }
 
     private func onTapNonStandardRestore() {
-        let viewController = RestoreNonStandardModule.viewController(sourceViewController: self, returnViewController: returnViewController)
+        let viewController = RestoreNonStandardModule.viewController(onRestore: onRestore)
         navigationController?.pushViewController(viewController, animated: true)
+        stat(page: .importWalletFromKeyAdvanced, event: .open(page: .importWalletNonStandard))
     }
 }
 
@@ -321,7 +326,27 @@ extension RestoreViewController: SectionsDataSource {
 
         switch restoreType {
         case .mnemonic:
-            sections.append(
+            var wordlistPassphraseRows: [RowProtocol] = [
+                StaticRow(
+                    cell: passphraseToggleCell,
+                    id: "passphrase-toggle",
+                    height: .heightCell48
+                ),
+            ]
+
+            if advanced {
+                wordlistPassphraseRows.insert(StaticRow(
+                    cell: wordListCell,
+                    id: "word-list",
+                    height: .heightCell48,
+                    autoDeselect: true,
+                    action: { [weak self] in
+                        self?.openWordListSelector()
+                    }
+                ), at: 0)
+            }
+
+            sections.append(contentsOf: [
                 Section(
                     id: "mnemonic-input",
                     footerState: .margin(height: .margin32),
@@ -341,76 +366,57 @@ extension RestoreViewController: SectionsDataSource {
                             }
                         ),
                     ]
-                )
-            )
+                ),
+                Section(
+                    id: "wordlist-passphrase-toggle",
+                    footerState: .margin(height: .margin32),
+                    rows: wordlistPassphraseRows
+                ),
+                Section(
+                    id: "passphrase",
+                    footerState: inputsVisible ? .margin(height: .margin32) : .margin(height: 0),
+                    rows: [
+                        StaticRow(
+                            cell: passphraseCell,
+                            id: "passphrase",
+                            height: inputsVisible ? .heightSingleLineCell : 0
+                        ),
+                        StaticRow(
+                            cell: passphraseCautionCell,
+                            id: "passphrase-caution",
+                            dynamicHeight: { [weak self] width in
+                                self?.passphraseCautionCell.height(containerWidth: width) ?? 0
+                            }
+                        ),
+                        StaticRow(
+                            cell: passphraseDescriptionCell,
+                            id: "passphrase-description",
+                            dynamicHeight: { [weak self] width in
+                                self.flatMap { $0.inputsVisible ? $0.passphraseDescriptionCell.height(containerWidth: width) : 0 } ?? 0
+                            }
+                        ),
+                    ]
+                ),
+            ])
 
             if advanced {
-                let advancedSections: [SectionProtocol] = [
-                    Section(
-                        id: "wordlist-passphrase-toggle",
-                        footerState: .margin(height: .margin32),
-                        rows: [
-                            StaticRow(
-                                cell: wordListCell,
-                                id: "word-list",
-                                height: .heightCell48,
-                                autoDeselect: true,
-                                action: { [weak self] in
-                                    self?.openWordListSelector()
-                                }
-                            ),
-                            StaticRow(
-                                cell: passphraseToggleCell,
-                                id: "passphrase-toggle",
-                                height: .heightCell48
-                            ),
-                        ]
-                    ),
-                    Section(
-                        id: "passphrase",
-                        footerState: inputsVisible ? .margin(height: .margin32) : .margin(height: 0),
-                        rows: [
-                            StaticRow(
-                                cell: passphraseCell,
-                                id: "passphrase",
-                                height: inputsVisible ? .heightSingleLineCell : 0
-                            ),
-                            StaticRow(
-                                cell: passphraseCautionCell,
-                                id: "passphrase-caution",
-                                dynamicHeight: { [weak self] width in
-                                    self?.passphraseCautionCell.height(containerWidth: width) ?? 0
-                                }
-                            ),
-                            StaticRow(
-                                cell: passphraseDescriptionCell,
-                                id: "passphrase-description",
-                                dynamicHeight: { [weak self] width in
-                                    self.flatMap { $0.inputsVisible ? $0.passphraseDescriptionCell.height(containerWidth: width) : 0 } ?? 0
-                                }
-                            ),
-                        ]
-                    ),
-                    Section(
-                        id: "non-standard-restore",
-                        footerState: .margin(height: .margin32),
-                        rows: [
-                            tableView.universalRow48(
-                                id: "non-standard_restore",
-                                title: .body("restore.non_standard_import".localized),
-                                accessoryType: .disclosure,
-                                autoDeselect: true,
-                                isFirst: true,
-                                isLast: true,
-                                action: { [weak self] in
-                                    self?.onTapNonStandardRestore()
-                                }
-                            ),
-                        ]
-                    ),
-                ]
-
-                sections.append(contentsOf: advancedSections)
+                sections.append(Section(
+                    id: "non-standard-restore",
+                    footerState: .margin(height: .margin32),
+                    rows: [
+                        tableView.universalRow48(
+                            id: "non-standard_restore",
+                            title: .body("restore.non_standard_import".localized),
+                            accessoryType: .disclosure,
+                            autoDeselect: true,
+                            isFirst: true,
+                            isLast: true,
+                            action: { [weak self] in
+                                self?.onTapNonStandardRestore()
+                            }
+                        ),
+                    ]
+                ))
             }
         case .privateKey:
             sections.append(

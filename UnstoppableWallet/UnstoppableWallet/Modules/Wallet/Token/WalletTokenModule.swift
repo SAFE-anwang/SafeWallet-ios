@@ -1,31 +1,17 @@
-import MarketKit
-import ThemeKit
-import UIKit
+import SwiftUI
 
 enum WalletTokenModule {
-    static func viewController(element: WalletModule.Element) -> UIViewController? {
-        let service = WalletTokenService(element: element)
-        let viewModel = WalletTokenViewModel(service: service)
-
-        let dataSourceChain = DataSourceChain()
-
-        let viewController = WalletTokenViewController(
-            viewModel: viewModel,
-            dataSource: dataSourceChain
-        )
-
-        guard let tokenBalanceDataSource = WalletTokenBalanceModule.dataSource(element: element) else {
-            return nil
+    @ViewBuilder static func view(wallet: Wallet) -> some View {
+        if let adapter = Core.shared.adapterManager.adapter(for: wallet) as? StellarAdapter {
+            StellarWalletTokenView(wallet: wallet, stellarKit: adapter.stellarKit, asset: adapter.asset)
+        } else if let adapter = Core.shared.adapterManager.adapter(for: wallet) as? BitcoinBaseAdapter {
+            BitcoinWalletTokenView(wallet: wallet, adapter: adapter)
+        } else if let adapter = Core.shared.adapterManager.adapter(for: wallet) as? ZcashAdapter {
+            ZcashWalletTokenView(wallet: wallet, adapter: adapter)
+        } else if let adapter = Core.shared.adapterManager.adapter(for: wallet) as? BaseTronAdapter {
+            TronWalletTokenView(wallet: wallet, adapter: adapter)
+        } else {
+            WalletTokenView(wallet: wallet)
         }
-        tokenBalanceDataSource.parentViewController = viewController
-        dataSourceChain.append(source: tokenBalanceDataSource)
-
-        if let wallet = element.wallet {
-            let transactionsDataSource = TransactionsModule.dataSource(token: wallet.token)
-            transactionsDataSource.viewController = viewController
-            dataSourceChain.append(source: transactionsDataSource)
-        }
-
-        return viewController
     }
 }

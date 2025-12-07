@@ -16,13 +16,14 @@ class CoinProvider {
 
         custom = walletManager.activeWallets
             .filter { wallet in wallet.token.isCustom }
-            .map { FullCoin(coin: $0.coin, tokens: [$0.token])}
+            .map { FullCoin(coin: $0.coin, tokens: [$0.token]) }
+
         predefined = predefinedCoins
     }
 
     private var nativeFullCoins: [FullCoin] {
         do {
-            let blockchainTypes = BlockchainType.supported.sorted()
+            let blockchainTypes = BlockchainType.supported.ordered()
             let queries = blockchainTypes.map(\.nativeTokenQueries).flatMap { $0 }
             let coinUids = try marketKit
                 .tokens(queries: queries)

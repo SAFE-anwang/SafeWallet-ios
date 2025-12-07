@@ -1,7 +1,9 @@
+import Combine
 import Foundation
-import RxSwift
 
 class AccountRestoreWarningManager {
+    private static let keyAccountWarningPrefix = "wallet-ignore-non-recommended"
+
     private let accountManager: AccountManager
     private let userDefaultsStorage: UserDefaultsStorage
 
@@ -16,42 +18,36 @@ extension AccountRestoreWarningManager {
         !accountManager.accounts.filter(\.nonStandard).isEmpty
     }
 
-    var hasNonStandardObservable: Observable<Bool> {
-        accountManager.accountsObservable.map { !$0.filter(\.nonStandard).isEmpty }
+    var hasNonStandardPublisher: AnyPublisher<Bool, Never> {
+        accountManager.accountsPublisher.map { !$0.filter(\.nonStandard).isEmpty }.eraseToAnyPublisher()
     }
 
     var hasNonRecommended: Bool {
         !accountManager.accounts.filter(\.nonRecommended).isEmpty
     }
 
-    var hasNonRecommendedObservable: Observable<Bool> {
-        accountManager.accountsObservable.map { !$0.filter(\.nonStandard).isEmpty }
+    func getIgnoreWarning(account: Account) -> Bool {
+        userDefaultsStorage.value(for: Self.keyAccountWarningPrefix + account.id) ?? false
     }
 
     func removeIgnoreWarning(account: Account) {
-        userDefaultsStorage.set(value: nil as Bool?, for: AccountRestoreWarningFactory.keyAccountWarningPrefix + account.id)
+        userDefaultsStorage.set(value: nil as Bool?, for: Self.keyAccountWarningPrefix + account.id)
     }
 
     func setIgnoreWarning(account: Account) {
-        userDefaultsStorage.set(value: true, for: AccountRestoreWarningFactory.keyAccountWarningPrefix + account.id)
+        userDefaultsStorage.set(value: true, for: Self.keyAccountWarningPrefix + account.id)
     }
 }
 
 class AccountRestoreWarningFactory {
-    static let keyAccountWarningPrefix = "wallet-ignore-non-recommended"
-    private let userDefaultsStorage: UserDefaultsStorage
-    private let languageManager: LanguageManager
-
-    init(userDefaultsStorage: UserDefaultsStorage, languageManager: LanguageManager) {
-        self.userDefaultsStorage = userDefaultsStorage
-        self.languageManager = languageManager
-    }
+    private let accountRestoreWarningManager = Core.shared.accountRestoreWarningManager
+    private let languageManager = LanguageManager.shared
 
     func caution(account: Account, canIgnoreActiveAccountWarning: Bool) -> CancellableTitledCaution? {
         if account.nonStandard {
             return CancellableTitledCaution(title: "note".localized, text: "restore.error.non_standard.description".localized, type: .error, cancellable: false)
         } else if account.nonRecommended {
-            if canIgnoreActiveAccountWarning, userDefaultsStorage.value(for: Self.keyAccountWarningPrefix + account.id) ?? false {
+            if canIgnoreActiveAccountWarning, accountRestoreWarningManager.getIgnoreWarning(account: account) {
                 return nil
             }
 

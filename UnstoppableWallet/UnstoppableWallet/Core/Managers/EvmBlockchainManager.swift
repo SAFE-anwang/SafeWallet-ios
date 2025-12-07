@@ -12,7 +12,9 @@ class EvmBlockchainManager {
         .optimism,
         .arbitrumOne,
         .gnosis,
-        .fantom
+        .fantom,
+        .base,
+        .zkSync,
     ]
 
     private let syncSourceManager: EvmSyncSourceManager
@@ -38,12 +40,12 @@ class EvmBlockchainManager {
         self.accountManagerFactory = accountManagerFactory
     }
 
-    private func evmManagers(blockchainType: BlockchainType) -> (EvmKitManager, EvmAccountManager) {
+    private func evmManagers(blockchainType: BlockchainType) throws -> (EvmKitManager, EvmAccountManager) {
         if let evmKitManager = evmKitManagerMap[blockchainType], let evmAccountManager = evmAccountManagerMap[blockchainType] {
             return (evmKitManager, evmAccountManager)
         }
 
-        let evmKitManager = EvmKitManager(chain: chain(blockchainType: blockchainType), syncSourceManager: syncSourceManager)
+        let evmKitManager = try EvmKitManager(chain: chain(blockchainType: blockchainType), syncSourceManager: syncSourceManager)
         let evmAccountManager = accountManagerFactory.evmAccountManager(blockchainType: blockchainType, evmKitManager: evmKitManager)
 
         evmKitManagerMap[blockchainType] = evmKitManager
@@ -55,7 +57,7 @@ class EvmBlockchainManager {
 
 extension EvmBlockchainManager {
     func blockchain(chainId: Int) -> Blockchain? {
-        allBlockchains.first(where: { chain(blockchainType: $0.type).id == chainId })
+        allBlockchains.first(where: { (try? chain(blockchainType: $0.type).id) == chainId })
     }
 
     func blockchain(token: Token) -> Blockchain? {
@@ -67,10 +69,10 @@ extension EvmBlockchainManager {
     }
 
     func chain(chainId: Int) -> Chain? {
-        blockchain(chainId: chainId).map { chain(blockchainType: $0.type) }
+        blockchain(chainId: chainId).flatMap { try? chain(blockchainType: $0.type) }
     }
 
-    func chain(blockchainType: BlockchainType) -> Chain {
+    func chain(blockchainType: BlockchainType) throws -> Chain {
         switch blockchainType {
         case .ethereum:
             if testNetManager.testNetEnabled {
@@ -101,7 +103,9 @@ extension EvmBlockchainManager {
         case .gnosis: return .gnosis
         case .fantom: return .fantom
         case .safe4: return Chain.safeFourChain()
-        default: fatalError("Unsupported blockchain type")
+        case .base: return .base
+        case .zkSync: return .zkSync
+        default: throw ChainError.unsupportedBlockchain
         }
     }
 
@@ -110,11 +114,25 @@ extension EvmBlockchainManager {
         return try? marketKit.token(query: query)
     }
 
-    func evmKitManager(blockchainType: BlockchainType) -> EvmKitManager {
-        evmManagers(blockchainType: blockchainType).0
+    func evmKitManager(blockchainType: BlockchainType) throws -> EvmKitManager {
+        try evmManagers(blockchainType: blockchainType).0
     }
 
-    func evmAccountManager(blockchainType: BlockchainType) -> EvmAccountManager {
-        evmManagers(blockchainType: blockchainType).1
+    func evmAccountManager(blockchainType: BlockchainType) throws -> EvmAccountManager {
+        try evmManagers(blockchainType: blockchainType).1
+    }
+
+    func kitWrapper(chainId: Int, account: Account) -> EvmKitWrapper? {
+        guard let blockchainType = blockchain(chainId: chainId)?.type else {
+            return nil
+        }
+
+        return try? evmKitManager(blockchainType: blockchainType).evmKitWrapper(account: account, blockchainType: blockchainType)
+    }
+}
+
+extension EvmBlockchainManager {
+    enum ChainError: Error {
+        case unsupportedBlockchain
     }
 }

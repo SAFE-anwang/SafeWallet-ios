@@ -2,12 +2,11 @@ import Foundation
 import UIKit
 import EvmKit
 import MarketKit
-import ComponentKit
 
 class WithdrawModule {
-
-    static func viewController(type: SafeWithdrawType) -> UIViewController? {
-        guard let evmKitWrapper = App.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+    
+    static func viewModel(type: SafeWithdrawType) -> WithdrawViewModel? {
+        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
             return nil
         }
         guard let privateKey = evmKitWrapper.signer?.privateKey else {
@@ -15,12 +14,10 @@ class WithdrawModule {
         }
         let service = WithdrawViewService(type: type, privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
         let viewModel = WithdrawViewModel(service: service,
-                                          withdrawLockedStorage: App.shared.safe4StorageManager.withdrawLockedStorage
+                                          withdrawLockedStorage: Core.shared.safe4StorageManager.withdrawLockedStorage
         )
-        let viewController = WithdrawView(viewModel: viewModel).toViewController()
-        return viewController
+        return viewModel
     }
-    
 }
 
 enum SafeWithdrawType: Int {

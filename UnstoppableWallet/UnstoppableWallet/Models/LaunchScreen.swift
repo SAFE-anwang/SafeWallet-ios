@@ -18,7 +18,7 @@ enum LaunchScreen: String, CaseIterable {
         case .auto: return "settings_24"
         case .balance: return "wallet_24"
         case .marketOverview: return "markets_24"
-        case .watchlist: return "star_24"
+        case .watchlist: return "heart_24"
         }
     }
 }
@@ -29,5 +29,14 @@ extension LaunchScreen: Codable {
         case balance
         case marketOverview = "market_overview"
         case watchlist
+    }
+
+    var statType: String {
+        switch self {
+        case .auto: return "auto"
+        case .balance: return "balance"
+        case .marketOverview: return "market_overview"
+        case .watchlist: return "watchlist"
+        }
     }
 }

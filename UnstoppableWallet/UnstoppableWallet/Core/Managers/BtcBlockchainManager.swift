@@ -12,8 +12,12 @@ class BtcBlockchainManager {
         .ecash,
         .litecoin,
         .dogecoin,
-        .dash
-        
+        .dash,
+    ]
+
+    static let allowedRbfBlockchainTypes: [BlockchainType] = [
+        .bitcoin,
+        .litecoin,
     ]
 
     private let marketKit: MarketKit.Kit
@@ -82,6 +86,10 @@ extension BtcBlockchainManager {
         storage.btcTransactionRbfEnabled(blockchainType: blockchainType) ?? true
     }
 
+    func transactionRbfAllowed(blockchainType: BlockchainType) -> Bool {
+        Self.allowedRbfBlockchainTypes.contains(blockchainType)
+    }
+
     func save(transactionSortMode: TransactionDataSortMode, blockchainType: BlockchainType) {
         storage.save(btcTransactionSortMode: transactionSortMode, blockchainType: blockchainType)
         transactionSortModeUpdatedRelay.accept(blockchainType)
@@ -104,17 +112,16 @@ extension BtcBlockchainManager {
     }
 
     func restore(backup: [BtcRestoreModeBackup]) {
-        backup
-            .forEach { backup in
-                let type = BlockchainType(uid: backup.blockchainTypeUid)
+        for backup in backup {
+            let type = BlockchainType(uid: backup.blockchainTypeUid)
 
-                if let mode = BtcRestoreMode(rawValue: backup.restoreMode) {
-                    save(restoreMode: mode, blockchainType: type)
-                }
-                if let mode = TransactionDataSortMode(rawValue: backup.sortMode) {
-                    save(transactionSortMode: mode, blockchainType: type)
-                }
+            if let mode = BtcRestoreMode(rawValue: backup.restoreMode) {
+                save(restoreMode: mode, blockchainType: type)
             }
+            if let mode = TransactionDataSortMode(rawValue: backup.sortMode) {
+                save(transactionSortMode: mode, blockchainType: type)
+            }
+        }
     }
 }
 
