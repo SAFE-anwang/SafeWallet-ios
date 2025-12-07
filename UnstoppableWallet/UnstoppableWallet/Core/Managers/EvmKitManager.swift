@@ -188,12 +188,12 @@ class EvmKitWrapper {
         merkleTransactionAdapter != nil
     }
 
-    func sendSingle(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, privateSend _: Bool, nonce: Int? = nil, lockDay: Int? = nil) -> Single<FullTransaction> {
+    func sendSingle(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, privateSend _: Bool, nonce: Int? = nil, timeLock: TimeLock? = nil) -> Single<FullTransaction> {
         guard let signer else {
             return Single.error(SignerError.signerNotSupported)
         }
-        if let lockDay {
-            return evmKit.safe4RawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, lockDay: lockDay, nonce: nonce)
+        if let timeLock {
+            return evmKit.safe4RawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, lockDay: timeLock.lockDays, nonce: nonce)
                 .flatMap { [weak self] rawTransaction in
                     guard let strongSelf = self else {
                         return Single.error(AppError.weakReference)
@@ -201,7 +201,7 @@ class EvmKitWrapper {
 
                     do {
                         let signature = try signer.signature(rawTransaction: rawTransaction)
-                        return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, lockDay: lockDay)
+                        return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, timeLock: timeLock)
                     } catch {
                         return Single.error(error)
                     }
@@ -215,7 +215,7 @@ class EvmKitWrapper {
 
                     do {
                         let signature = try signer.signature(rawTransaction: rawTransaction)
-                        return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, lockDay: lockDay)
+                        return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, timeLock: timeLock)
                     } catch {
                         return Single.error(error)
                     }
@@ -240,15 +240,14 @@ class EvmKitWrapper {
         return evmKit.sendSafe4LinLockSingle(type: type, privateKey: signer.privateKey, transactionData: transactionData)
     }
 
-    func send(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, privateSend: Bool, nonce: Int? = nil, lockDays: Int? = nil) async throws -> FullTransaction {
+    func send(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, privateSend: Bool, nonce: Int? = nil, timeLock: TimeLock? = nil) async throws -> FullTransaction {
         guard let signer else {
             throw SignerError.signerNotSupported
         }
-
         let rawTransaction = try await evmKit.fetchRawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
         let signature = try signer.signature(rawTransaction: rawTransaction)
         guard privateSend, let merkleTransactionAdapter else {
-            return try await evmKit.send(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, lockDay: lockDays)
+            return try await evmKit.send(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, timeLock: timeLock)
         }
         return try await merkleTransactionAdapter.send(rawTransaction: rawTransaction, signature: signature)
     }

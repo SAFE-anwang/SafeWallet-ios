@@ -36,7 +36,7 @@ struct PreSendView: View {
                         availableBalanceView(value: balanceValue())
                     }
                     
-                    if viewModel.token.coin.isSafeCoin {
+                    if viewModel.isSupportedTimeLockToken {
                         VStack(spacing: .margin8) {
                             lockTimeView()
                         }
@@ -330,6 +330,8 @@ struct PreSendView: View {
             title = "send.enter_amount".localized
         } else if let availableBalance = viewModel.availableBalance, let amount = viewModel.amount, amount > availableBalance {
             title = "send.insufficient_balance".localized
+        } else if let amount = viewModel.amount, viewModel.selectedTimeLock != .none, amount < viewModel.minTimeLockCoinValue {
+            title = "最小锁定数为 \(viewModel.minTimeLockCoinValue)".localized
         } else {
             title = "send.next_button".localized
             disabled = viewModel.sendData == nil

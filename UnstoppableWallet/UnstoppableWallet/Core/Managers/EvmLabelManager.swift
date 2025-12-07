@@ -111,6 +111,7 @@ extension EvmLabelManager {
         case deploy_1
         case destroy
         case removeVote
+        case src20Lock
         
         var id: String {
             switch self {
@@ -124,6 +125,7 @@ extension EvmLabelManager {
             case .deploy_1: "0x61016060"
             case .destroy: "0x42966c68"
             case .removeVote : "0x9fbe5cc5"
+            case .src20Lock: "0x4b86c225"
             }
         }
         
@@ -136,6 +138,7 @@ extension EvmLabelManager {
             case .deploy_0, .deploy_1: "SRC20_Deploy_Title".localized
             case .destroy: "SRC20_Info_Destroy".localized
             case .removeVote: "取消投票和委托".localized
+            case .src20Lock: "SRC20 锁仓".localized
             }
         }
     }

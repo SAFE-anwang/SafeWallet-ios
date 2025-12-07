@@ -7,13 +7,13 @@ class EvmSendData: BaseSendEvmData, ISendData {
     let decoration: EvmDecoration
     let transactionData: TransactionData?
     let transactionError: Error?
-    let timeLockDays: Int?
+    let timeLock: TimeLock?
     
-    init(decoration: EvmDecoration, transactionData: TransactionData?, transactionError: Error?, gasPrice: GasPrice?, evmFeeData: EvmFeeData?, nonce: Int?, timeLockDays: Int?) {
+    init(decoration: EvmDecoration, transactionData: TransactionData?, transactionError: Error?, gasPrice: GasPrice?, evmFeeData: EvmFeeData?, nonce: Int?, timeLock: TimeLock?) {
         self.decoration = decoration
         self.transactionData = transactionData
         self.transactionError = transactionError
-        self.timeLockDays = timeLockDays
+        self.timeLock = timeLock
         
         super.init(gasPrice: gasPrice, evmFeeData: evmFeeData, nonce: nonce)
     }

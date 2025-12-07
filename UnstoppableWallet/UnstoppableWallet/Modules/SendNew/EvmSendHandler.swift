@@ -9,13 +9,13 @@ class EvmSendHandler {
     private let evmKitWrapper: EvmKitWrapper
     private let decorator = EvmDecorator()
     private let evmFeeEstimator = EvmFeeEstimator()
-    private let timeLockDays: Int?
+    private let timeLock: TimeLock?
     
-    init(baseToken: Token, transactionData: TransactionData, evmKitWrapper: EvmKitWrapper, lockDays: Int? = nil) {
+    init(baseToken: Token, transactionData: TransactionData, evmKitWrapper: EvmKitWrapper, timeLock: TimeLock? = nil) {
         self.baseToken = baseToken
         self.transactionData = transactionData
         self.evmKitWrapper = evmKitWrapper
-        self.timeLockDays = lockDays
+        self.timeLock = timeLock
     }
 }
 
@@ -71,7 +71,7 @@ extension EvmSendHandler: ISendHandler {
             gasPrice: gasPriceData?.userDefined,
             evmFeeData: evmFeeData,
             nonce: transactionSettings?.nonce,
-            timeLockDays: timeLockDays
+            timeLock: timeLock
         )
     }
 
@@ -98,7 +98,7 @@ extension EvmSendHandler: ISendHandler {
             gasLimit: gasLimit,
             privateSend: true,
             nonce: data.nonce,
-            lockDays: data.timeLockDays
+            timeLock: data.timeLock
         )
     }
 }
@@ -113,7 +113,7 @@ extension EvmSendHandler {
 }
 
 extension EvmSendHandler {
-    static func instance(blockchainType: BlockchainType, transactionData: TransactionData, lockDays: Int? = nil) -> EvmSendHandler? {
+    static func instance(blockchainType: BlockchainType, transactionData: TransactionData, timeLock: TimeLock? = nil) -> EvmSendHandler? {
         guard let baseToken = try? Core.shared.coinManager.token(query: .init(blockchainType: blockchainType, tokenType: .native)) else {
             return nil
         }
@@ -126,7 +126,7 @@ extension EvmSendHandler {
             baseToken: baseToken,
             transactionData: transactionData,
             evmKitWrapper: evmKitWrapper,
-            lockDays: lockDays
+            timeLock: timeLock
         )
     }
 }

@@ -130,7 +130,7 @@ public extension Kit {
         }
     }
 
-    func sendSingle(rawTransaction: RawTransaction, signature: Signature, privateKey: Data, lockDay: Int? = nil) -> Single<FullTransaction> {
+    func sendSingle(rawTransaction: RawTransaction, signature: Signature, privateKey: Data, timeLock: TimeLock? = nil) -> Single<FullTransaction> {
         Single<FullTransaction>.create { [weak self] observer in
             guard let strongSelf = self else {
                 observer(.error(DisposedError()))
@@ -139,7 +139,7 @@ public extension Kit {
 
             let task = Task {
                 do {
-                    let result = try await strongSelf.send(rawTransaction: rawTransaction, signature: signature, privateKey: privateKey, lockDay: lockDay)
+                    let result = try await strongSelf.send(rawTransaction: rawTransaction, signature: signature, privateKey: privateKey, timeLock: timeLock)
                     observer(.success(result))
                 } catch {
                     observer(.error(error))

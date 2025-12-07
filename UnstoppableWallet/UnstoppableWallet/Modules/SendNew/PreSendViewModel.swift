@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import MarketKit
+import EvmKit
 
 class PreSendViewModel: ObservableObject {
     private let wallet: Wallet
@@ -22,6 +23,19 @@ class PreSendViewModel: ObservableObject {
         didSet {
             syncSendData()
         }
+    }
+    
+    var minTimeLockCoinValue: Decimal {
+        1
+    }
+    
+    var isSupportedTimeLockToken: Bool {
+        if token.coin.uid == safe4CoinUid {
+            return true
+        } else if token.coin.uid.isSafeFourCustomCoin, let _ = SRC20SyncManager.logo(coinUid: token.coin.uid.lowercased()) {
+            return true
+        }
+        return false
     }
         
     var amount: Decimal? {
@@ -214,12 +228,36 @@ extension PreSendViewModel {
             sendData = nil
             return
         }
+        
+        if selectedTimeLock != .none {
+            guard amount >= 1 else {
+                sendData = nil
+                return
+            }
+        }
 
         let trimmedMemo = memo.trimmingCharacters(in: .whitespaces)
         let memo = hasMemo && !trimmedMemo.isEmpty ? trimmedMemo : nil
         switch handler  {
         case let handler as EvmPreSendHandler:
-            handler.timeLockDays = selectedTimeLock.days
+            var timeLock: TimeLock?
+            if selectedTimeLock == .none {
+                timeLock = nil
+            }
+            if let days = selectedTimeLock.days {
+                if token.coin.uid == safe4CoinUid {
+                    timeLock = TimeLock(token: .native, lockDays: days)
+                } else if token.coin.uid.isSafeFourCustomCoin, let _ = SRC20SyncManager.logo(coinUid: token.coin.uid.lowercased()) {
+                    if case let .eip20(address) = token.type {
+                        timeLock = TimeLock(token: .src20(contract: try! EvmKit.Address(hex: address)), lockDays: days)
+                    } else {
+                        timeLock = nil
+                    }
+                }
+            }else {
+                timeLock = nil
+            }
+            handler.timeLock = timeLock
         default:()
         }
         let result = handler.sendData(amount: amount, address: resolvedAddress.address, memo: memo)
