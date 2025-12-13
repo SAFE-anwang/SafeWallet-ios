@@ -17,7 +17,7 @@ extension Token {
             case .ethereum: return "ERC20"
             case .binanceSmartChain: return "BEP20"
             case .tron: return "TRC20"
-            case .safe4: return "SRC20"
+            case .safe4: return isSafeUSDT() ? "SAFE" : "SRC20"
             default: return blockchain.name
             }
         case .jetton:
@@ -27,6 +27,14 @@ extension Token {
         }
     }
 
+    func isSafeUSDT() -> Bool {
+        if case let .eip20(address) = type {
+            return address.isSafeUsdtContract
+        }else {
+            return false
+        }
+    }
+        
     var isCustom: Bool {
         !coin.uid.contains("safe4-anwang") && coin.uid == tokenQuery.customCoinUid
     }

@@ -50,7 +50,6 @@ fileprivate class WSafeManager {
         self.chain = chain
     }
     
-    
     /// - Parameters:
     ///   - amount: 金额
     ///   - to: 跨链接收人 Address
@@ -61,6 +60,7 @@ fileprivate class WSafeManager {
         return TransactionData(to: address, value: BigUInt.zero, input: input)
     }
     
+    // safe to wsafe
     func transactionDataSafe4(amount: BigUInt,
                          to: String) -> TransactionData {
         let toAddress = try! EvmKit.Address(hex: getSafe4ContractAddress(chain: chain))
@@ -68,7 +68,7 @@ fileprivate class WSafeManager {
     }
 
     /**
-     * 获取跨链eth合约地址
+     * 获取跨链区块合约地址
      */
     func getContractAddress(chain: EvmKit.Chain) throws -> String {
 
@@ -117,26 +117,3 @@ fileprivate class WSafeManager {
         }
     }
 }
-
-class Web3jUtils {
-    
-    static func getEth2safeTransactionInput(amount: BigUInt,
-                                            toAddressHex: String) -> Data? {
-        let methodId = Safe4Methods.Eth2safe.id.hs.hexData ?? Data()
-        let data = ContractMethodHelper.encodedABI(methodId: methodId, arguments: [amount, toAddressHex])
-        return data
-    }
-    
-    static func getSafe4SwapSrcTransactionInput() -> Data? {
-        let methodId = "0xd0e30db0".hs.hexData ?? Data()
-        let data = ContractMethodHelper.encodedABI(methodId: methodId, arguments: [])
-        return data
-    }
-    
-    static func getSrcSwapSafe4TransactionInput(amount: BigUInt) -> Data? {
-        let methodId = "0x2e1a7d4d".hs.hexData ?? Data()
-        let data = ContractMethodHelper.encodedABI(methodId: methodId, arguments: [amount])
-        return data
-    }
-}
-

@@ -8,7 +8,7 @@ class StellarSecretKeyViewModel {
         case let .mnemonic(words, salt, _):
             do {
                 let keyPair = try WalletUtils.createKeyPair(mnemonic: words.joined(separator: " "), passphrase: salt, index: 0)
-                secretKey = keyPair.secretSeed
+                secretKey = keyPair.secretSeed ?? ""
             } catch {
                 return nil
             }

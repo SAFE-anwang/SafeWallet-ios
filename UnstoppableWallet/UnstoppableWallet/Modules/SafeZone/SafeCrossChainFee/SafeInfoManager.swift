@@ -71,7 +71,5 @@ class SafeInfoManager {
         }else {
             throw WSafeKit.UnsupportedChainError.noSafeNetType
         }
-
-
     }
 }

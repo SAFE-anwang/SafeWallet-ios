@@ -21,20 +21,17 @@ struct Safe4SwapView: View {
     }
 
     var body: some View {
-        ThemeNavigationStack {
-            ThemeView {
-                ScrollView {
-                    VStack(spacing: .margin12) {
-                        VStack(spacing: .margin16) {
-                            VStack(spacing: .margin8) {
-                                amountsView()
-                            }
-                            buttonView()
+        ThemeView {
+            ScrollView {
+                VStack(spacing: .margin12) {
+                    VStack(spacing: .margin16) {
+                        VStack(spacing: .margin8) {
+                            amountsView()
                         }
+                        buttonView()
                     }
-                    .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
                 }
-
+                .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
             }
         }
         .navigationTitle("swap.safe4.title".localized)

@@ -27,6 +27,8 @@ enum SendHandlerFactory {
             return try? TonConnectSendHandler.instance(request: request)
         case let .evmSafe4(blockchainType, transactionData, timeLock):
             return EvmSendHandler.instance(blockchainType: blockchainType, transactionData: transactionData, timeLock: timeLock)
+        case let .crossChain(blockchainType, transactionData):
+            return CrossChainSendHandler.instance(blockchainType: blockchainType, transactionData: transactionData)
         }
     }
 

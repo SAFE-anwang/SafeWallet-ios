@@ -16,6 +16,8 @@ struct MainSafeZoneView: View {
                 SectionCrossETHView()
                 SectionCrossBSCView()
                 SectionCrossMATICView()
+                SectionUsdtCrossETHView()
+                SectionUsdtCrossBSCView()
                 SectionSafeSwapView()
                 SectionWithdrawView()
                 SectionSRC20View()
@@ -118,7 +120,7 @@ struct MainSafeZoneView: View {
                     RedeemSafe3TabView(viewModel: viewModel).ignoresSafeArea()
                 }
             }) {
-                TagItemView(text: "=> SAFE", name: "SAFE", code: "SAFE3", type: .left)
+                TagItemView(fromCoin: "SAFE", fromChain: "SAFE3", toCoin: "SAFE", toChain: nil)
             }
             ClickableRow(action: {
                 guard let viewModel = DrawSafe4Module.viewModel() else { return }
@@ -133,26 +135,30 @@ struct MainSafeZoneView: View {
     }
     
     @ViewBuilder private func SectionCrossETHView() -> some View {
-        SafeListSectionHeader(text: "safe_zone.section.cross_eth".localized)
+        SafeListSectionHeader(text: "SAFE" + "safe_zone.section.cross_eth".localized)
         ListSection {
             ClickableRow(action: {
-                if let vc = Safe4Module.handlerCrossChain(wsafeType: .ETH, crossChainType: .safeCrossToWSafe, isSafe4: true) {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .ETH, direction: .SAFE_CrossChain_to_other)) {
                     Coordinator.shared.present { _ in
-                        Safe4CrossChainView(viewController: vc)
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
                     }
                 }
             })
             {
-                TagItemView(text:  "SAFE =>", name: "SAFE", code: "ERC20", type: .right)
+                TagItemView(fromCoin: "SAFE", fromChain: nil, toCoin: "SAFE", toChain: "ERC20")
             }
             ClickableRow(action: {
-                if let vc = Safe4Module.handlerCrossChain(wsafeType: .ETH, crossChainType: .wsafeCrossToSafe, isSafe4: true) {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .ETH, direction: .other_CrossChain_to_SAFE)) {
                     Coordinator.shared.present { _ in
-                        Safe4CrossChainView(viewController: vc)
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
                     }
                 }
             }) {
-                TagItemView(text:  "=> SAFE", name: "SAFE", code: "ERC20", type: .left)
+                TagItemView(fromCoin: "SAFE", fromChain: "ERC20", toCoin: "SAFE", toChain: nil)
             }
             ClickableRow(action: {
                 let linkUrl = URL(string: "https://etherscan.io/token/0xEE9c1Ea4DCF0AAf4Ff2D78B6fF83AA69797B65Eb")
@@ -170,25 +176,29 @@ struct MainSafeZoneView: View {
     }
     
     @ViewBuilder private func SectionCrossBSCView() -> some View {
-        SafeListSectionHeader(text: "safe_zone.section.cross_bsc".localized)
+        SafeListSectionHeader(text: "SAFE" + "safe_zone.section.cross_bsc".localized)
         ListSection {
             ClickableRow(action: {
-                if let vc = Safe4Module.handlerCrossChain(wsafeType: .BSC, crossChainType: .safeCrossToWSafe, isSafe4: true) {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .BSC, direction: .SAFE_CrossChain_to_other)) {
                     Coordinator.shared.present { _ in
-                        Safe4CrossChainView(viewController: vc)
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
                     }
                 }
             }) {
-                TagItemView(text:  "SAFE =>", name: "SAFE", code: "BEP20", type: .right)
+                TagItemView(fromCoin: "SAFE", fromChain: nil, toCoin: "SAFE", toChain: "BEP20")
             }
             ClickableRow(action: {
-                if let vc = Safe4Module.handlerCrossChain(wsafeType: .BSC, crossChainType: .wsafeCrossToSafe, isSafe4: true) {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .BSC, direction: .other_CrossChain_to_SAFE)) {
                     Coordinator.shared.present { _ in
-                        Safe4CrossChainView(viewController: vc)
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
                     }
                 }
             }) {
-                TagItemView(text:  "=> SAFE", name: "SAFE", code: "BEP20", type: .left)
+                TagItemView(fromCoin: "SAFE", fromChain: "BEP20", toCoin: "SAFE", toChain: nil)
             }
             ClickableRow(action: {
                 let linkUrl = URL(string: "https://bscscan.com/token/0x4d7fa587ec8e50bd0e9cd837cb4da796f47218a1")
@@ -206,25 +216,29 @@ struct MainSafeZoneView: View {
     }
     
     @ViewBuilder private func SectionCrossMATICView() -> some View {
-        SafeListSectionHeader(text: "safe_zone.section.cross_matic".localized)
+        SafeListSectionHeader(text: "SAFE" + "safe_zone.section.cross_matic".localized)
         ListSection {
             ClickableRow(action: {
-                if let vc = Safe4Module.handlerCrossChain(wsafeType: .MATIC, crossChainType: .safeCrossToWSafe, isSafe4: true) {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .POL, direction: .SAFE_CrossChain_to_other)) {
                     Coordinator.shared.present { _ in
-                        Safe4CrossChainView(viewController: vc)
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
                     }
                 }
             }) {
-                TagItemView(text:  "SAFE =>", name: "SAFE", code: "MATIC", type: .right)
+                TagItemView(fromCoin: "SAFE", fromChain: nil, toCoin: "SAFE", toChain: "MATIC")
             }
             ClickableRow(action: {
-                if let vc = Safe4Module.handlerCrossChain(wsafeType: .MATIC, crossChainType: .wsafeCrossToSafe, isSafe4: true) {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .POL, direction: .other_CrossChain_to_SAFE)) {
                     Coordinator.shared.present { _ in
-                        Safe4CrossChainView(viewController: vc)
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
                     }
                 }
             }) {
-                TagItemView(text:  "=> SAFE", name: "SAFE", code: "MATIC", type: .left)
+                TagItemView(fromCoin: "SAFE", fromChain: "MATIC", toCoin: "SAFE", toChain: nil)
             }
             ClickableRow(action: {
                 let linkUrl = URL(string: "https://polygonscan.com/address/0xb7Dd19490951339fE65E341Df6eC5f7f93FF2779")
@@ -234,6 +248,75 @@ struct MainSafeZoneView: View {
             }
         }
 
+    }
+    
+    @ViewBuilder private func SectionUsdtCrossETHView() -> some View {
+        SafeListSectionHeader(text: "USDT" + "safe_zone.section.cross_eth".localized)
+        ListSection {
+            ClickableRow(action: {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .ETH, direction: .SAFE_CrossChain_to_other)) {
+                    Coordinator.shared.present { _ in
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
+                    }
+                }
+            })
+            {
+                TagItemView(fromCoin: "USDT", fromChain: "SAFE", toCoin: "USDT", toChain: "ETH")
+            }
+            ClickableRow(action: {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .ETH, direction: .other_CrossChain_to_SAFE)) {
+                    Coordinator.shared.present { _ in
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
+                    }
+                }
+            }) {
+                TagItemView(fromCoin: "USDT", fromChain: "ETH", toCoin: "USDT", toChain: "SAFE")
+            }
+            ClickableRow(action: {
+                let linkUrl = URL(string: "https://safe4.anwang.com/address/0x9C1246a4BB3c57303587e594a82632c3171662C9")
+                Coordinator.shared.present(url: linkUrl)
+            }) {
+                ItemView(title: "safe_zone.row.contract".localized)
+            }
+        }
+    }
+    
+    @ViewBuilder private func SectionUsdtCrossBSCView() -> some View {
+        SafeListSectionHeader(text: "USDT" + "safe_zone.section.cross_bsc".localized)
+        ListSection {
+            ClickableRow(action: {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .BSC, direction: .SAFE_CrossChain_to_other)) {
+                    Coordinator.shared.present { _ in
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
+                    }
+                }
+            }) {
+                TagItemView(fromCoin: "USDT", fromChain: "SAFE", toCoin: "USDT", toChain: "BSC")
+            }
+            ClickableRow(action: {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .BSC, direction: .other_CrossChain_to_SAFE)) {
+                    Coordinator.shared.present { _ in
+                        ThemeNavigationStack {
+                            CrossPreSendView(viewModel: viewModel)
+                        }
+                    }
+                }
+            }) {
+                TagItemView(fromCoin: "USDT", fromChain: "BSC", toCoin: "USDT", toChain: "SAFE")
+            }
+            ClickableRow(action: {
+                let linkUrl = URL(string: "https://safe4.anwang.com/address/0x9C1246a4BB3c57303587e594a82632c3171662C9")
+                Coordinator.shared.present(url: linkUrl)
+            }) {
+                ItemView(title: "safe_zone.row.contract".localized)
+            }
+        }
     }
     
     @ViewBuilder private func SectionSafeSwapView() -> some View {
@@ -252,11 +335,13 @@ struct MainSafeZoneView: View {
             ClickableRow(action: {
                 if let viewModel = Safe4SwapModule.viewModel() {
                     Coordinator.shared.present { _ in
-                        Safe4SwapView(viewModel: viewModel)
+                        ThemeNavigationStack {
+                            Safe4SwapView(viewModel: viewModel)
+                        }
                     }
                 }
             }) {
-                TagItemView(text:  "SAFE <=>", name: "SAFE", code: "SRC20", type: .right)
+                TagItemView(fromCoin: "SAFE", fromChain: nil, separator: "<=>", toCoin: "SAFE", toChain: "SRC20")
             }
         }
     }
@@ -342,13 +427,13 @@ struct MainSafeZoneView: View {
                 let linkUrl = URL(string: "https://chain.anwang.com")
                 Coordinator.shared.present(url: linkUrl)
             }) {
-                TagItemView(text:  "safe_zone.row.blockExplorer".localized(""), name: "SAFE", code: "SAFE3", type: .left)
+                TagItemView(fromCoin: "SAFE", fromChain: "SAFE3", separator: "", toCoin: "safe_zone.row.blockExplorer".localized(""), toChain: nil)
             }
             ClickableRow(action: {
                 let linkUrl = URL(string: "https://anwang.com/assetgate.html")
                 Coordinator.shared.present(url: linkUrl)
             }) {
-                TagItemView(text: "safe_zone.row.acrossExplorer".localized(""), name: "SAFE", code: "SAFE3", type: .left)
+                TagItemView(fromCoin: "SAFE", fromChain: "SAFE3", separator: "", toCoin: "safe_zone.row.acrossExplorer".localized(""), toChain: nil)
             }
             ClickableRow(action: {
                 let linkUrl = URL(string: "https://safe4.anwang.com")
@@ -404,28 +489,39 @@ struct MainSafeZoneView: View {
     }
     
     struct TagItemView: View {
-        let text: String
-        let name: String
-        let code: String
-        let type: TagCoinPositionType
+        let fromCoin: String
+        let fromChain: String?
+        var separator: String = "=>"
+        let toCoin: String
+        let toChain: String?
         
         var body: some View {
             Image("safe_logo_24").renderingMode(.original)
-            switch type {
-            case .left:
-                TagCoinView(name: name, code: code)
-                Text(text).themeBody()
-            case .right:
-                Text(text).themeBody().fixedSize()
-                TagCoinView(name: name, code: code)
+            
+            if let fromChain {
+                TagCoinView(name: fromCoin, code: fromChain)
+            }else {
+                Text(fromCoin)
+                    .themeBody()
+                    .fixedSize()
             }
+            
+            if separator.count > 0 {
+                Text(separator)
+                    .themeBody()
+                    .fixedSize()
+            }
+            
+            if let toChain {
+                TagCoinView(name: toCoin, code: toChain)
+            }else {
+                Text(toCoin)
+                    .themeBody()
+                    .fixedSize()
+            }
+            
             Spacer()
             Image.disclosureIcon
-        }
-        
-        enum TagCoinPositionType {
-        case left
-        case right
         }
     }
     
