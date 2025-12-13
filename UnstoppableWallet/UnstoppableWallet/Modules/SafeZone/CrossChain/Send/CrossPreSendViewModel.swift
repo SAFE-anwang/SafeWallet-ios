@@ -115,7 +115,7 @@ class CrossPreSendViewModel: ObservableObject {
     }
 
     var handler: IPreSendHandler?
-    var crossChainHandler: ICrossChainHandler
+    let crossChainHandler: ICrossChainHandler
     @Published var sendData: ExtendedSendData?
     @Published var cautions = [CautionNew]()
     
@@ -217,7 +217,7 @@ extension CrossPreSendViewModel {
     }
 
     func syncSendData() {
-        guard let amount else {
+        guard let amount, amount >= crossChainHandler.minAmount  else {
             sendData = nil
             return
         }

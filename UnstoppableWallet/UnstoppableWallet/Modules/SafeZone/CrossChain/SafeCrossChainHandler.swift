@@ -45,6 +45,9 @@ class SafeCrossChainHandler {
 }
 
 extension SafeCrossChainHandler: ICrossChainHandler {
+    var minAmount: Decimal {
+        0.1
+    }
     
     var wallet: Wallet {
         baseWallet!

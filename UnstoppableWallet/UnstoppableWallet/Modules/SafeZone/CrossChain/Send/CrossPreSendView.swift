@@ -262,6 +262,8 @@ struct CrossPreSendView: View {
             title = "send.token_not_synced".localized
         } else if viewModel.amount == nil {
             title = "send.enter_amount".localized
+        } else if let amount = viewModel.amount, amount < viewModel.crossChainHandler.minAmount {
+            title = "send.amount_error.minimum_amount".localized("\(viewModel.crossChainHandler.minAmount)")
         } else if let availableBalance = viewModel.availableBalance, let amount = viewModel.amount, amount > availableBalance {
             title = "send.insufficient_balance".localized
         } else {

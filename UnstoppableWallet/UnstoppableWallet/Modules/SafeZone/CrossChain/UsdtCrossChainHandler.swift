@@ -51,6 +51,10 @@ extension UsdtCrossChainHandler: ICrossChainHandler {
         crossChain.blockchainType
     }
     
+    var minAmount: Decimal {
+        0.1
+    }
+    
     var crossChainContract: String {
         switch direction {
         case .SAFE_CrossChain_to_other: return crossChain.safe_CrossChainContract
