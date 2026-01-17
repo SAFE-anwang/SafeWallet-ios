@@ -159,12 +159,19 @@ class LiquidityRecordViewController: ThemeViewController {
     
     private func removeConfirmation(viewItem: LiquidityRecordViewModel.RecordItem) {
         let viewController = LiquidityRemoveConfirmViewController(viewModel: viewModel, recordItem: viewItem)
-        parentNavigationController?.pushViewController(viewController, animated: true)
+        Coordinator.shared.present { _ in
+            LiquidityViewRepresentable(viewController: viewController)
+        }
+//        parentNavigationController?.pushViewController(viewController, animated: true)
     }
     
     func toDetailView(viewItem: LiquidityV3RecordViewModel.V3RecordItem) {
+        
         let viewController = LiquidityV3RecordDetailViewController(viewModel: v3ViewModel, viewItem: viewItem)
-        parentNavigationController?.pushViewController(viewController, animated: true)
+        Coordinator.shared.present { _ in
+            LiquidityViewRepresentable(viewController: viewController)
+        }
+//        parentNavigationController?.pushViewController(viewController, animated: true)
     }
 }
 

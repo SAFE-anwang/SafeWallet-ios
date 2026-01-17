@@ -4,6 +4,7 @@ import Kingfisher
 import MarketKit
 import SwiftUI
 import AdvancedList
+import BigInt
 
 struct WithdrawView: View {
     @StateObject var viewModel: WithdrawViewModel
@@ -72,21 +73,43 @@ struct WithdrawView: View {
             .navigationBarTitle(viewModel.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if case .items = viewModel.dataState, viewModel.enableItems.count > 0 {
-                        if viewModel.isChoosedAll {
-                            Button("button.cancel".localized) {
-                                viewModel.cancelAll()
+                if viewModel.withdrawType == .voteLocked {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                                confirmWithdrawView(ids: [], isAll: true, isPresented: isPresented)
                             }
-                        } else if !viewModel.isChoosedAll {
-                            Button("button.all".localized) {
-                                viewModel.chooseAll()
-                            }
+                        }) {
+                            Text("一键提现".localized)
+                                .themeSubhead1(color: viewModel.enableItems.count > 0 ? .themeYellow : .themeGray)
                         }
+                        .disabled(viewModel.enableItems.count == 0)
                     }
                 }
             }
         }
+    }
+    
+    @ViewBuilder
+    private func confirmWithdrawView(ids: [BigUInt], isAll: Bool = false, isPresented: Binding<Bool>) -> some View {
+        
+        BottomSheetView(
+            icon: .warning,
+            title: "safe_zone.safe4.withdraw".localized,
+            items: [
+                .highlightedDescription(text: "提现后将不再产生收益，确定提取吗？", style: .warning),
+            ],
+            buttons: [
+                .init(style: .yellow, title: "button.ok".localized) {
+                    viewModel.allWithdraw()
+                    isPresented.wrappedValue = false
+                },
+                .init(style: .transparent, title: "button.cancel".localized) {
+                    isPresented.wrappedValue = false
+                }
+            ],
+            isPresented: isPresented
+        )
     }
     
     @ViewBuilder
@@ -153,7 +176,6 @@ struct WithdrawView: View {
                         .truncationMode(.middle)
                         .lineLimit(1)
                 }
-
             }
             
             if isEnable {

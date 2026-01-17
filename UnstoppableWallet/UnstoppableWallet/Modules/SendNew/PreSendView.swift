@@ -11,7 +11,8 @@ struct PreSendView: View {
     @FocusState private var focusField: FocusField?
 
     @State private var confirmPresented = false
-
+    @State private var allowancePresented = false
+    
     init(wallet: Wallet, handler: IPreSendHandler?, resolvedAddress: ResolvedAddress, amount: Decimal? = nil, memo: String? = nil, addressVisible: Bool = true, onDismiss: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: PreSendViewModel(wallet: wallet, handler: handler, resolvedAddress: resolvedAddress, amount: amount, memo: memo))
         self.addressVisible = addressVisible
@@ -27,7 +28,8 @@ struct PreSendView: View {
                             addressView()
                         } else {
                             addressView()
-                                .overlay(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous).stroke(Color.themeRed50, lineWidth: .heightOneDp))
+                                .overlay(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous)
+                                .stroke(Color.themeRed50, lineWidth: .heightOneDp))
                         }
                     }
 
@@ -221,12 +223,18 @@ struct PreSendView: View {
             )
         }
     }
-
     @ViewBuilder private func buttonView() -> some View {
         let (title, disabled, showProgress) = buttonState()
 
         Button(action: {
-            if viewModel.resolvedAddress.issueTypes.isEmpty {
+            if let step = viewModel.allowanceHandler.allowanceState?.customButtonState?.preSwapStep, let amount = viewModel.amount {
+                Coordinator.shared.present { isPresented in
+                    viewModel.allowanceHandler.preSwapView(step: step, amount: amount, isPresented: isPresented) {
+                        viewModel.syncSendData()
+                        isPresented.wrappedValue = false
+                    }
+                }
+            }else if viewModel.resolvedAddress.issueTypes.isEmpty {
                 confirmPresented = true
             } else {
                 Coordinator.shared.present(type: .bottomSheet) { isPresented in
@@ -276,7 +284,7 @@ struct PreSendView: View {
                 Button(action: {
                     Coordinator.shared.present(type: .alert) { isPresented in
                         OptionAlertView(
-                            title: "balance.sort.header".localized,
+                            title: "send.hodler_locktime".localized,
                             viewItems: viewModel.timeLockItems.map{AlertViewItem(text: $0.title, selected: $0.days == viewModel.selectedTimeLock.days) },
                             onSelect: { index in
                                 viewModel.selectedTimeLock = viewModel.timeLockItems[index]
@@ -300,7 +308,7 @@ struct PreSendView: View {
             .background(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous).fill(Color.themeLawrence))
             
             Text("时间锁（TimeLock）只适用于发送 SAFE（从 1 开始）".localized)
-                .textCaption()
+                .themeCaption(alignment: .leading)
                 .multilineTextAlignment(.trailing)
         }
 
@@ -313,7 +321,6 @@ struct PreSendView: View {
 
         return AppValue(token: viewModel.token, value: availableBalance).formattedFull()
     }
-
     private func buttonState() -> (String, Bool, Bool) {
         let title: String
         var disabled = true
@@ -332,6 +339,21 @@ struct PreSendView: View {
             title = "send.insufficient_balance".localized
         } else if let amount = viewModel.amount, viewModel.selectedTimeLock != .none, amount < viewModel.minTimeLockCoinValue {
             title = "最小锁定数为 \(viewModel.minTimeLockCoinValue)".localized
+//        } else if viewModel.allowanceHandler.allowanceSyncing == true {
+//            title = ""
+//            showProgress = true
+//        } else if viewModel.allowanceHandler.isApproving == true {
+//            title = "审批中"
+//            showProgress = true
+        } else if let state = viewModel.allowanceHandler.allowanceState, let buttonState = state.customButtonState {
+            if case .allowed = state {
+                title = "send.next_button".localized
+                disabled = viewModel.sendData == nil
+            }else {
+                title = buttonState.title
+                disabled = buttonState.disabled
+                showProgress = buttonState.showProgress
+            }
         } else {
             title = "send.next_button".localized
             disabled = viewModel.sendData == nil

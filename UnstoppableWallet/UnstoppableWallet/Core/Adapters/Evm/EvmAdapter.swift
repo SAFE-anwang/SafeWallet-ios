@@ -48,7 +48,6 @@ extension EvmAdapter: IBalanceAdapter {
     var balanceData: BalanceData {
         let available = balanceData(balance: evmKit.accountState?.balance).available
         let locked = balanceData(balance: evmKit.accountState?.timeLockBalance).available
-
         return BalanceData(
             balance: available,
             locked: locked

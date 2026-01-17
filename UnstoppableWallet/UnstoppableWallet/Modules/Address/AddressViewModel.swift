@@ -38,16 +38,22 @@ class AddressViewModel: ObservableObject {
         self.destination = destination
         issueTypes = AddressSecurityIssueType.issueTypes(token: token)
 
-        let contacts = Core.shared.contactManager.contacts(blockchainUid: token.blockchainType.uid)
-            .compactMap { contact -> Contact? in
-                guard let address = contact.address(blockchainUid: token.blockchainType.uid) else {
-                    return nil
-                }
-
-                return Contact(uid: contact.uid, name: contact.name, address: address.address)
-            }
-            .sorted { $0.name ?? "" < $1.name ?? "" }
-
+//        let contacts = Core.shared.contactManager.contacts(blockchainUid: token.blockchainType.uid)
+//            .compactMap { contact -> Contact? in
+//                guard let address = contact.address(blockchainUid: token.blockchainType.uid) else {
+//                    return nil
+//                }
+//
+//                return Contact(uid: contact.uid, name: contact.name, address: address.address)
+//            }
+//            .sorted { $0.name ?? "" < $1.name ?? "" }
+        var contacts = [Contact]()
+        if let contact = Core.shared.contactManager.contacts(blockchainUid: token.blockchainType.uid).first {
+            contacts = contact.addresses.map{
+                Contact(uid: contact.uid, name: contact.name, address: $0.address)
+            }.sorted { $0.name ?? "" < $1.name ?? "" }
+        }
+            
         let recentAddress = try? Core.shared.recentAddressStorage.address(blockchainUid: token.blockchainType.uid)
 
         recentContact = recentAddress.map { address in
@@ -192,7 +198,7 @@ extension AddressViewModel {
         let address: String
 
         var id: String {
-            uid
+            address
         }
     }
 }

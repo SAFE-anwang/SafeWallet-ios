@@ -84,32 +84,32 @@ class EvmTransactionConverter {
         }
     }
 
-    private func convertToAmount(token: AddLiquidityDecoration.Token, amount: AddLiquidityDecoration.Amount, sign: FloatingPointSign) -> SwapTransactionRecord.Amount {
+    private func convertToAmount(token: LiquidityDecoration.Token, amount: LiquidityDecoration.Amount, sign: FloatingPointSign) -> SwapTransactionRecord.Amount {
         switch amount {
         case let .exact(value): return .exact(value: convertToAppValue(token: token, value: value, sign: sign))
         case let .extremum(value): return .extremum(value: convertToAppValue(token: token, value: value, sign: sign))
         }
     }
     
-    private func convertToAmount(token: RemoveLiquidityDecoration.Token, amount: RemoveLiquidityDecoration.Amount, sign: FloatingPointSign) -> SwapTransactionRecord.Amount {
-        switch amount {
-        case let .exact(value): return .exact(value: convertToAppValue(token: token, value: value, sign: sign))
-        case let .extremum(value): return .extremum(value: convertToAppValue(token: token, value: value, sign: sign))
-        }
-    }
-    private func convertToAppValue(token: AddLiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> AppValue {
+//    private func convertToAmount(token: LiquidityDecoration.Token, amount: LiquidityDecoration.Amount, sign: FloatingPointSign) -> SwapTransactionRecord.Amount {
+//        switch amount {
+//        case let .exact(value): return .exact(value: convertToAppValue(token: token, value: value, sign: sign))
+//        case let .extremum(value): return .extremum(value: convertToAppValue(token: token, value: value, sign: sign))
+//        }
+//    }
+    private func convertToAppValue(token: LiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> AppValue {
         switch token {
         case .evmCoin: return baseAppValue(value: value, sign: sign)
         case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
         }
     }
     
-    private func convertToAppValue(token: RemoveLiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> AppValue {
-        switch token {
-        case .evmCoin: return baseAppValue(value: value, sign: sign)
-        case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
-        }
-    }
+//    private func convertToAppValue(token: RemoveLiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> AppValue {
+//        switch token {
+//        case .evmCoin: return baseAppValue(value: value, sign: sign)
+//        case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
+//        }
+//    }
 
     private func transferEvents(incomingEip20Transfers: [TransferEventInstance]) -> [TransferEvent] {
         incomingEip20Transfers.map { transfer in
@@ -463,32 +463,32 @@ extension EvmTransactionConverter {
                 protected: protected
             )
             
-        case let decoration as RemoveLiquidityDecoration:
-            let address = evmKit.address
-            let amountA = convertToAmount(token: decoration.tokenA, amount: decoration.amountAMin, sign: .plus)
-            let amountB = convertToAmount(token: decoration.tokenB, amount: decoration.amountBMin, sign: .plus)
-            
-            if let contractAddress = transaction.to {
-                
-                let incomingEvents = [TransferEvent(address: address.eip55, value: amountA.value),
-                                      TransferEvent(address: address.eip55, value: amountB.value)
-                                    ]
-                
-                let amount = convertAmount(amount: decoration.liquidity, decimals: baseToken.decimals, sign: .minus)
-                let transactionValue = AppValue.init(tokenName: "safeswap-V2", tokenCode: "", tokenDecimals: baseToken.decimals, value: amount)
-                let outgoingEvents = [TransferEvent(address: contractAddress.eip55, value: transactionValue)]
-                return ContractCallTransactionRecord(
-                    source: source,
-                    transaction: transaction,
-                    baseToken: baseToken,
-                    contractAddress: contractAddress.eip55,
-                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
-                    incomingEvents: incomingEvents,
-                    outgoingEvents: outgoingEvents,
-                    protected: protected
-                )
-            }
-        case let decoration as AddLiquidityDecoration:
+//        case let decoration as RemoveLiquidityDecoration:
+//            let address = evmKit.address
+//            let amountA = convertToAmount(token: decoration.tokenA, amount: decoration.amountAMin, sign: .plus)
+//            let amountB = convertToAmount(token: decoration.tokenB, amount: decoration.amountBMin, sign: .plus)
+//            
+//            if let contractAddress = transaction.to {
+//                
+//                let incomingEvents = [TransferEvent(address: address.eip55, value: amountA.value),
+//                                      TransferEvent(address: address.eip55, value: amountB.value)
+//                                    ]
+//                
+//                let amount = convertAmount(amount: decoration.liquidity, decimals: baseToken.decimals, sign: .minus)
+//                let transactionValue = AppValue.init(tokenName: "safeswap-V2", tokenCode: "", tokenDecimals: baseToken.decimals, value: amount)
+//                let outgoingEvents = [TransferEvent(address: contractAddress.eip55, value: transactionValue)]
+//                return ContractCallTransactionRecord(
+//                    source: source,
+//                    transaction: transaction,
+//                    baseToken: baseToken,
+//                    contractAddress: contractAddress.eip55,
+//                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+//                    incomingEvents: incomingEvents,
+//                    outgoingEvents: outgoingEvents,
+//                    protected: protected
+//                )
+//            }
+        case let decoration as LiquidityDecoration:
             let address = evmKit.address
             let amountA = convertToAmount(token: decoration.tokenInA, amount: decoration.amountInA, sign: .minus)
             let amountB = convertToAmount(token: decoration.tokenInB, amount: decoration.amountInB, sign: .minus)

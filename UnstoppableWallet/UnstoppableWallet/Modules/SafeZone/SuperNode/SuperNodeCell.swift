@@ -241,7 +241,7 @@ class SuperNodeCell: UITableViewCell {
     }
     
     static func height() -> CGFloat {
-        return 200
+        return 210
     }
     
     @objc private func detail() {

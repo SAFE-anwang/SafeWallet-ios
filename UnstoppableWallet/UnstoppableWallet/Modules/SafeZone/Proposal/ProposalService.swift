@@ -6,6 +6,7 @@ import Foundation
 
 class ProposalService {
     let type: ProposalModule.ProposalType
+    private let proposalStorageManager = ProposalStorageManager()
     
     init(type: ProposalModule.ProposalType) {
         self.type = type
@@ -51,7 +52,7 @@ extension ProposalService {
 }
 
 // all Proposal
-private extension ProposalService {
+extension ProposalService {
     func getNum() async throws -> BigUInt {
         try await web3().safe4.proposal.getNum()
     }
@@ -59,7 +60,6 @@ private extension ProposalService {
     func allProposalIds(page: Safe4PageControl) async throws -> [BigUInt] {
         try await web3().safe4.proposal.getAll(BigUInt(page.start), BigUInt(page.currentPageCount))
     }
-    
 }
 
 // mine Proposal

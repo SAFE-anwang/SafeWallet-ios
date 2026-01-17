@@ -12,7 +12,6 @@ class MainViewModel: ObservableObject {
     private let disposeBag = DisposeBag()
 
     @Published private(set) var showMarket: Bool
-
     @Published var selectedTab: Tab = .wallet {
         didSet {
             userDefaultsStorage.set(value: selectedTab.rawValue, for: keyTab)
@@ -25,7 +24,6 @@ class MainViewModel: ObservableObject {
                         Coordinator.shared.present(type: .bottomSheet) { _ in
                             SwitchAccountView()
                         }
-
                         stat(page: .main, event: .open(page: .switchWallet))
                     }
                 } else {

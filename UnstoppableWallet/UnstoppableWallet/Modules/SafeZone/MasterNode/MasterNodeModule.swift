@@ -67,11 +67,10 @@ enum MasterNodeInputType {
 
 struct MasterNodeView: UIViewControllerRepresentable {
     typealias UIViewControllerType = UIViewController
-    let viewModel: MasterNodeViewModel
-    
+    let viewController: MasterNodeViewController
     func makeUIViewController(context _: Context) -> UIViewController {
         // TODO: must provide any VC
-        return MasterNodeViewController(viewModel: viewModel)
+        return viewController
     }
 
     func updateUIViewController(_: UIViewController, context _: Context) {}

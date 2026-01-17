@@ -6,21 +6,18 @@ class TransactionBlockchainSelectViewModel: ObservableObject {
     private let walletManager = Core.shared.walletManager
 
     let blockchains: [Blockchain]
-    let allBlockchainSeries: [TransactionFilter.BlockchainSeries]
 
     init(transactionFilterViewModel: TransactionFilterViewModel) {
         self.transactionFilterViewModel = transactionFilterViewModel
-        let blockchains = Array(Set(walletManager.activeWallets.map(\.token.blockchain)))
-        self.blockchains = blockchains
-        self.allBlockchainSeries = TransactionFilter.BlockchainSeries.allCases
-            .filter{ $0.hasOne(of: blockchains.map(\.type))}
+
+        blockchains = Array(Set(walletManager.activeWallets.map(\.token.blockchain)))
     }
 
-    var currentBlockchain: TransactionFilter.FilterBlockchainType? {
+    var currentBlockchain: Blockchain? {
         transactionFilterViewModel.blockchain
     }
-    
-    func set(currentBlockchain: TransactionFilter.FilterBlockchainType?, blockchainUIds: [String]?) {
-        transactionFilterViewModel.set(blockchain: currentBlockchain, blockchainUIds: blockchainUIds)
+
+    func set(currentBlockchain: Blockchain?) {
+        transactionFilterViewModel.set(blockchain: currentBlockchain)
     }
 }

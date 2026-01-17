@@ -1,3 +1,4 @@
+/*
 import Foundation
 import UIKit
 import SectionsTableView
@@ -17,7 +18,7 @@ class LiquidityRecordTabViewController: ThemeViewController {
     private var bscViewController: LiquidityRecordViewController
     private var ethViewController: LiquidityRecordViewController
     
-    init?(viewModel: LiquidityRecordTabViewModel) {
+    init(viewModel: LiquidityRecordTabViewModel) {
         self.viewModel = viewModel
         safeViewController = LiquidityRecordModule.subViewController(dexType: .uniswap, blockchainType: .safe4)
         bscViewController = LiquidityRecordModule.subViewController(dexType: .pancakeSwap, blockchainType: .binanceSmartChain)
@@ -101,3 +102,4 @@ extension LiquidityRecordTabViewController: IPresentDelegate {
     }
 
 }
+*/

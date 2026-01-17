@@ -14,12 +14,14 @@ class SuperNodeViewModel: ObservableObject {
     let type: SuperNodeModule.SuperNodeType
     private let service: SuperNodeService
     private let disposeBag = DisposeBag()
-    private var safe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: false)
-    private var partnerSafe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: false)
+    private var safe4Page = Safe4PageControl(pageSize: 10)
+    private var partnerSafe4Page = Safe4PageControl(pageSize: 10)
     private var partnerAddressArray = [EthereumAddress]()
+    private var nodeStorageManager: NodeStorageManager
 
     private var stateRelay = PublishRelay<SuperNodeViewModel.State>()
     private var viewItems = [SuperNodeViewModel.ViewItem]()
+    private var cacheItems = [SuperNodeViewModel.ViewItem]()
 
     private(set) var state: SuperNodeViewModel.State = .loading {
         didSet {
@@ -35,8 +37,23 @@ class SuperNodeViewModel: ObservableObject {
     init(service: SuperNodeService, type: SuperNodeModule.SuperNodeType) {
         self.service = service
         self.type = type
-        
+        self.nodeStorageManager = NodeStorageManager(nodeType: .superNode, pageControl: safe4Page)
+
         subscribe(disposeBag, service.syncRefreshObservable) { [weak self] _ in self?.refresh() }
+        
+//        if let (pageControl, caches) = nodeStorageManager.load() {
+//            let cacheItems = caches.map { ViewItem(info: $0.transformToSuper(),
+//                                                   totalVoteNum: 0,
+//                                                   totalAmount: 0,
+//                                                   allVoteNum: 0,
+//                                                   ownerType: ownerType(info: $0.transformToSuper()),
+//                                                   nodeType: nodeType,
+//                                                   isEnabledEdit: false)
+//                  }
+//            self.cacheItems = cacheItems
+//            self.viewItems.append(contentsOf: cacheItems)
+//            self.safe4Page = pageControl
+//        }
     }
 }
 
@@ -273,6 +290,15 @@ extension SuperNodeViewModel {
             requestInfos(loadMore: false)
         case .Mine:
             requestMineNodeInfos(loadMore: false)
+        }
+    }
+    
+    func clearCaches() {
+        if case .All = type {
+            safe4Page.reset()
+            nodeStorageManager.clearCaches()
+            cacheItems.removeAll()
+            viewItems.removeAll()
         }
     }
     

@@ -65,7 +65,7 @@ struct CrossPreSendView: View {
                 Text("send.available_balance".localized)
                     .themeSubhead2()
                 if let balance = viewModel.availableBalance {
-                    Text( "\(balance.safe4FormattedAmount)" + " " + "SAFE")
+                    Text( "\(balance.safe4FormattedAmount) \(viewModel.token.coin.code)" )
                         .themeSubhead2(color: .themeLeah, alignment: .trailing)
                 }else {
                     Text("N/A" + "SAFE")

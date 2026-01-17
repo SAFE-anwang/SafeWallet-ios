@@ -13,25 +13,42 @@ class SafeLineLockRecoardViewModel: ObservableObject {
     
     @Published var totalLockedSafe: BigUInt = 0
     @Published private(set) var viewItems: [LineLockRecoard] = []
-//    private var viewModel: TransactionsViewModel
+    private(set) var sections = [TransactionsViewModel.Section]()
+    private var cancellables = Set<AnyCancellable>()
     private let disposeBag = DisposeBag()
-//    private let queue = DispatchQueue(label: "\(AppConfig.label).line_lock_recoard_view_model", qos: .userInitiated)
-    private let adapter: ITransactionsAdapter
-    init(adapter: ITransactionsAdapter) {
-        self.adapter = adapter
-//        sync(items: viewModel.__items)
+    private let tsVM: TransactionsViewModel
+    private var lastSection: TransactionsViewModel.Section?
+    private var lastViewItem: TransactionsViewModel.ViewItem?
+    private let queue = DispatchQueue(label: "\(AppConfig.label).SafeLineLockRecoard", qos: .userInitiated)
+    init(tsVM: TransactionsViewModel) {
+        self.tsVM = tsVM
+        self.sections = tsVM.sections
         
-        subscribe(disposeBag, adapter.transactionsObservable(token: nil, filter: .all, address: nil)) { [weak self] records in
-//            self?.logger?.log(level: .debug, message: "Handle NEW \(records.count) records. For \(source.blockchainType.uid)")
-//            self?.serialSync(source: source)
+        tsVM.$sections
+        .sink { newSections in
+            if let lastSection = newSections.last, let viewItem = lastSection.viewItems.last {
+                if self.lastSection != lastSection, self.lastViewItem != viewItem {
+                    self.lastSection = lastSection
+                    self.lastViewItem = viewItem
+                    self.sync(items: tsVM.__items)
+                    self.loadMore()
+                }
+            }
+        }
+        .store(in: &cancellables)
+    }
+    
+    private func sync(items: [TransactionsViewModel.Item]) {
+        queue.async {
+            self._sync(items: items)
+        }
+    }
+    func loadMore() {
+        if let lastSection, let lastViewItem {
+            tsVM.onDisplay(section: lastSection, viewItem: lastViewItem)
         }
     }
     
-//    private func sync(items: [TransactionsViewModel.Item]) {
-//        queue.async {
-//            self._sync(items: items)
-//        }
-//    }
     private func _sync(items: [TransactionsViewModel.Item]) {
         let itemArray = items
             .unique(by: \.transactionItem.record.uid)
@@ -42,7 +59,8 @@ class SafeLineLockRecoardViewModel: ObservableObject {
         var tempViewItems: [LineLockRecoard] = []
         for item in itemArray {
             if let input = item?.transaction.input  {
-                if let method = try? Safe4LineLockMethod.createMethod(inputArguments: input) as? Safe4LineLockMethod {
+                let methodId = Data(input.prefix(4)).hs.hexString
+                if methodId.lowercased() == EvmLabelManager.ExSafe4Methods.lineLock.id.lowercased(), let method = try? Safe4LineLockMethod.createMethod(inputArguments: Data(input.suffix(from: 4))) as? Safe4LineLockMethod {
                     if let value = item?.transaction.value {
                         total += value
                         let lockedValue = value / method.times
@@ -55,10 +73,14 @@ class SafeLineLockRecoardViewModel: ObservableObject {
                 }
             }
         }
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.totalLockedSafe = total
-            self?.viewItems = tempViewItems
+        if tempViewItems.count == 0 {
+            loadMore()
+        }else {
+            DispatchQueue.main.async { [weak self] in
+                self?.totalLockedSafe = total
+                self?.viewItems = tempViewItems
+            }
+
         }
     }
 }

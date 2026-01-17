@@ -9,11 +9,11 @@ let masterNodeRegisterSafeLockNum: Decimal = 1000
 let masterNodeRegisterCrowdFundingSafeLockNum: Decimal = 200
 let safe4Decimals: Int = 18
 
-enum Safe4NodeType {
+enum Safe4NodeType: String {
     case normal
-    case superNode
     case masterNode
-    
+    case superNode
+
     var warnings: String {
         switch self {
         case .normal:

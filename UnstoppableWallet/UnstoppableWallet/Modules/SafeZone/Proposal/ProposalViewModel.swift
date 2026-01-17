@@ -11,12 +11,14 @@ import Web3Core
 import HsExtensions
 
 class ProposalViewModel {
-    private let service: ProposalService
-    private var safe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: true)
+    let service: ProposalService
+    private var safe4Page = Safe4PageControl(pageSize: 20, isReverse: true)
     private var stateRelay = PublishRelay<ProposalViewModel.State>()
     private var viewItems = [ProposalViewModel.ViewItem]()
-    
     private let searchCautionRelay = BehaviorRelay<Caution?>(value:nil)
+    let proposalStorageManager: ProposalStorageManager
+    @Published var hasNewProposal: Bool = false
+
     private(set) var state: ProposalViewModel.State = .loading {
         didSet {
             stateRelay.accept(state)
@@ -25,12 +27,13 @@ class ProposalViewModel {
     
     init(service: ProposalService) {
         self.service = service
+        self.proposalStorageManager = ProposalStorageManager()
     }
 }
 
 extension ProposalViewModel {
 
-    private func requestInfos(loadMore: Bool) {
+    private func requestInfos(loadMore: Bool, completed: (()-> Void)?) {
         state = .loading
         Task(priority: .userInitiated) { [service] in
             do{
@@ -67,15 +70,51 @@ extension ProposalViewModel {
                 }
                 results.sort{ Int($0.info.id) > Int($1.info.id) }
                 if results.count > 0 { safe4Page.plusPage() }
+                self.proposalStorageManager.save(infos: results.map{ ProposalInfoRecord(info: $0.info)})
+                self.proposalStorageManager.savePageControl(safe4Page)
                 viewItems.append(contentsOf: results)
                 state = .completed(datas: viewItems)
+                completed?()
             }catch{
                 state = .failed(error: error.localizedDescription)
             }
         }
     }
+    
+    func loadCache() {
+        guard let pageControl = proposalStorageManager.getPageControl() else { return }
+        var caches = proposalStorageManager.loadCaches().map{ViewItem(info: $0.transform())}
+        caches.sort{ Int($0.info.id) > Int($1.info.id) }
+        viewItems = caches
+        safe4Page = pageControl
+        state = .completed(datas: viewItems)
+    }
+    
+    func clearCaches() {
+        proposalStorageManager.clearCaches()
+    }
 }
-
+// load new Proposal
+extension ProposalViewModel {
+    func loadNewProposals() {
+        if case .All = service.type {
+            Task {
+                let totalNum = try await service.getTotalNum()
+                if let pageControl = proposalStorageManager.getPageControl(), pageControl.totalNum < Int(totalNum) {
+                    safe4Page.set(totalNum: totalNum)
+                    requestInfos(loadMore: false) {
+                        self.hasNewProposal = true
+                        self.proposalStorageManager.savePageControl(self.safe4Page)
+                    }
+                }else {
+                    requestInfos(loadMore: true) {
+                        self.hasNewProposal = self.viewItems.count > 0
+                    }
+                }
+            }
+        }
+    }
+}
 // search
 extension ProposalViewModel {
     func search(text: String?) {
@@ -118,14 +157,26 @@ extension ProposalViewModel {
     
     func refresh() {
         viewItems.removeAll()
-        requestInfos(loadMore: false)
+        if case .All = service.type {
+            if let pageControl = proposalStorageManager.getPageControl(), proposalStorageManager.totalCacheNum > 0 {
+                safe4Page.set(totalNum: pageControl.totalNum)
+                loadCache()
+            }else {
+                requestInfos(loadMore: false, completed: nil)
+            }
+        }else {
+            requestInfos(loadMore: false, completed: nil)
+        }
+
     }
     
     func loadMore() {
         if case .loading = state {
            return
         }
-        requestInfos(loadMore: true)
+        if safe4Page.isAbleLoadMore {
+            requestInfos(loadMore: true, completed: nil)
+        }
     }
 }
 

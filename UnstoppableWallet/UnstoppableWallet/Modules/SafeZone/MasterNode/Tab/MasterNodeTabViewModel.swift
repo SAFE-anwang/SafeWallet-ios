@@ -1,15 +1,23 @@
 import Foundation
-import RxSwift
-import RxRelay
-import RxCocoa
+import SwiftUI
 import EvmKit
 import Combine
 
 class MasterNodeTabViewModel: ObservableObject {
     private let service: MasterNodeService
-    private let keyTab = "MasterNode-tab"
     @Published var currentTab: MasterNodeModule.Tab = .all
 
+    var currentTabIndex: Binding<Int> {
+        Binding<Int>(
+            get: {
+                MasterNodeModule.Tab.allCases.firstIndex(of: self.currentTab) ?? 0
+            },
+            set: { [self] index in
+                currentTab = MasterNodeModule.Tab.allCases[index]
+            }
+        )
+    }
+    
     init(service: MasterNodeService) {
         self.service = service
     }

@@ -667,6 +667,37 @@ class TransactionInfoViewItemFactory {
             if let fee = record.fee {
                 feeViewItem = .fee(title: "tx_info.fee".localized, value: feeString(appValue: fee, rate: _rate(fee.coin)))
             }
+            
+        case let record as Safe4DepositEvmIncomingTransactionRecord:
+            sections.append(.init(receiveSection(source: record.source, appValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden)))
+            
+        case let record as Safe4WithdrawTransactionRecord:
+            sections.append(.init(receiveSection(source: record.source, appValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden)))
+            
+        case let record as Safe4VoteTransactionRecoard:
+            sections.append(.init(sendSection(source: record.source, appValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: false, balanceHidden: balanceHidden)))
+            
+        case let record as Safe4NodeRegisterTransactionRecoard:
+            sections.append(.init(sendSection(source: record.source, appValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: false, balanceHidden: balanceHidden)))
+        
+        case let record as Safe4CrossChainIncomingRecoard:
+            sections.append(.init(receiveSection(source: record.source, appValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden)))
+
+        case let record as Safe4CrossChainOutgoingRecoard:
+            sections.append(.init(sendSection(source: record.source, appValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: false, balanceHidden: balanceHidden)))
+            
+//        case let record as LiquidityTransactionRecord:
+//            sections.append([
+//                .actionTitle(iconName: record.source.blockchainType.iconPlain32, iconDimmed: false, title: record.method ?? "transactions.contract_call".localized, subTitle: evmLabelManager.mapped(address: record.contractAddress)),
+//            ])
+//
+//            for event in record.outgoingEvents {
+//                sections.append(sendSection(source: record.source, transactionValue: event.value, to: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden))
+//            }
+//
+//            for event in record.incomingEvents {
+//                sections.append(receiveSection(source: record.source, transactionValue: event.value, from: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden))
+//            }
 
         default: ()
         }

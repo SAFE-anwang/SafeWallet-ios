@@ -11,11 +11,11 @@ class LockedRecordViewModel: ObservableObject {
     private let nullAddress = "0x0000000000000000000000000000000000000000"
     private let service: LockedRecordService
     private let lockedRecoardStorage: Safe4LockedRecordStorage
-    private var votedPageControl = Safe4PageControl(initCount: 20, totalNum: 0, page: 0, isReverse: false)
-    private var lockedPageControl = Safe4PageControl(initCount: 20, totalNum: 0, page: 0, isReverse: false)
-    private var lockedPageControl_01 = Safe4PageControl(initCount: 20, totalNum: 0, page: 0, isReverse: false)
-    private var lockedPageControl_02 = Safe4PageControl(initCount: 20, totalNum: 0, page: 0, isReverse: false)
-    private var proposalPageControl = Safe4PageControl(initCount: 20, totalNum: 0, page: 0, isReverse: false)
+    private var votedPageControl = Safe4PageControl(pageSize: 20)
+    private var lockedPageControl = Safe4PageControl(pageSize: 20)
+    private var lockedPageControl_01 = Safe4PageControl(pageSize: 20)
+    private var lockedPageControl_02 = Safe4PageControl(pageSize: 20)
+    private var proposalPageControl = Safe4PageControl(pageSize: 20)
 
     private var lockedIds: [BigUInt] = [BigUInt]()
     private var lockedIds_01: [BigUInt] = [BigUInt]()

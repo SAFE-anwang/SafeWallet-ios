@@ -46,7 +46,7 @@ class CoinMarketsViewModel: ObservableObject {
 
         Task { [weak self, marketKit, coinUid, currency] in
             do {
-                let tickers = try await marketKit.marketTickers(coinUid: coinUid, currencyCode: currency.code)
+                let tickers = try await marketKit.marketTickers(coinUid: coinUid.isSafeCoin ? safeCoinUid : coinUid, currencyCode: currency.code)
                 self?.tickers = tickers
                 self?.syncState()
             } catch {

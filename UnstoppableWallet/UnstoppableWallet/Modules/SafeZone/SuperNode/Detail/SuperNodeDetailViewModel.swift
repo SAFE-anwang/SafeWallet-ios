@@ -19,10 +19,10 @@ class SuperNodeDetailViewModel {
     private(set) var lockRecordIsLoading = false
     private(set) var hasMoreRecords: Bool = true
 
-    private var safe4Page = Safe4PageControl(initCount: 25, totalNum: 0, page: 0, isReverse: false)
-    private var votedPageControl = Safe4PageControl(initCount: 30, totalNum: 0, page: 0, isReverse: false)
-    private var lockedPageControl = Safe4PageControl(initCount: 30, totalNum: 0, page: 0, isReverse: false)
-    private var proposalPageControl = Safe4PageControl(initCount: 30, totalNum: 0, page: 0, isReverse: false)
+    private var safe4Page = Safe4PageControl(pageSize: 30)
+    private var votedPageControl = Safe4PageControl(pageSize: 30)
+    private var lockedPageControl = Safe4PageControl(pageSize: 30)
+    private var proposalPageControl = Safe4PageControl(pageSize: 30)
     
     private let nodeViewItem: SuperNodeViewModel.ViewItem
     private let service: SuperNodeDetailService

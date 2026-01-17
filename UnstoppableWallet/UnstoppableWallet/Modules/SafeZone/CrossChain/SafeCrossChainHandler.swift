@@ -15,13 +15,19 @@ class SafeCrossChainHandler {
         
         switch direction {
         case .SAFE_CrossChain_to_other:
-            if let wallet = activeWallets.filter({$0.token.type == .native && $0.token.blockchain.type == .safe4}).first {
+            if let wallet = activeWallets.filter({
+                $0.token.type == .native &&
+                $0.token.blockchain.type == .safe4
+            }).first {
                 self.baseWallet = wallet
             } else {
                 throw CrossChainWalletError.openWallet(openTokenTips)
             }
         case .other_CrossChain_to_SAFE:
-            if let wallet = activeWallets.filter({$0.coin.uid == crossChain.coinUid && $0.token.blockchain.type == crossChain.blockchainType}).first {
+            if let wallet = activeWallets.filter({
+                $0.coin.uid == crossChain.coinUid &&
+                $0.token.blockchain.type == crossChain.blockchainType
+            }).first {
                 self.baseWallet = wallet
             } else {
                 throw CrossChainWalletError.openWallet(openTokenTips)
@@ -80,7 +86,7 @@ extension SafeCrossChainHandler: ICrossChainHandler {
             return .invalid(cautions: [])
         }
         let transactionData = transactionData(amount: evmAmount, to: address)
-        return .valid(sendData: .crossChain(blockchainType: wallet.token.blockchainType, transactionData: transactionData))
+        return .valid(sendData: .crossChain(baseWallet: wallet, transactionData: transactionData))
     }
 }
 

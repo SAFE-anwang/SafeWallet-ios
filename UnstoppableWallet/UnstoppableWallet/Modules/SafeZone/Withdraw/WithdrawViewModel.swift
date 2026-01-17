@@ -16,7 +16,7 @@ class WithdrawViewModel: ObservableObject {
     @Published private(set) var hasMoreItems = true
     @Published private(set) var viewItems: [WithdrawItem] = []
     
-    private var pageControl = Safe4PageControl(initCount: 20, totalNum: 0, page: 0, isReverse: false)
+    private var pageControl = Safe4PageControl(pageSize: 20)
     @Published var selectedItems: [WithdrawItem] = [] {
         didSet {
             withdrawEnabled = selectedItems.count > 0
@@ -94,6 +94,11 @@ extension WithdrawViewModel {
     
     func cancelAll() {
         selectedItems.removeAll()
+    }
+    
+    func allWithdraw() {
+        selectedItems = viewItems
+        withdraw()
     }
     
     var enableItems: [WithdrawItem] {
@@ -208,7 +213,7 @@ extension WithdrawViewModel {
                 case .proposal:
                     let tempArray = infos.filter{$0.1.frozenAddr.address != nullAddress}
                     let recoards = tempArray.map{Safe4WithdrawLockedRecord(type: .proposal, record: Safe4AccountRecord(record: $0.0), info: Safe4RecordUseInfo(info: $0.1))}
-                    withdrawLockedStorage.save(type: .voteLocked, recoards: recoards)
+                    withdrawLockedStorage.save(type: .proposal, recoards: recoards)
                     results = recoards
                 }
                 
@@ -247,16 +252,16 @@ extension WithdrawViewModel {
     
     private func ids(type: web3swift.AccountManager.ContractType, isLoadMore: Bool) async throws -> [BigUInt] {
         if !isLoadMore {
-            switch service.type {
-            case .masterNode:
-                try withdrawLockedStorage.clear(type: .masterNode)
-            case .superNode:
-                try withdrawLockedStorage.clear(type: .superNode)
-            case .voteLocked:
-                try withdrawLockedStorage.clear(type: .voteLocked)
-            case .proposal:
-                try withdrawLockedStorage.clear(type: .proposal)
-            }
+//            switch service.type {
+//            case .masterNode:
+//                try withdrawLockedStorage.clear(type: .masterNode)
+//            case .superNode:
+//                try withdrawLockedStorage.clear(type: .superNode)
+//            case .voteLocked:
+//                try withdrawLockedStorage.clear(type: .voteLocked)
+//            case .proposal:
+//                try withdrawLockedStorage.clear(type: .proposal)
+//            }
             
             try await pageControl(type: type)
         }

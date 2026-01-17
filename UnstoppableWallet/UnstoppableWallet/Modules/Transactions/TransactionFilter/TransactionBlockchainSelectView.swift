@@ -14,7 +14,7 @@ struct TransactionBlockchainSelectView: View {
         ScrollableThemeView {
             ListSection {
                 ClickableRow(action: {
-                    viewModel.set(currentBlockchain: nil, blockchainUIds: nil)
+                    viewModel.set(currentBlockchain: nil)
                     isPresented = false
                 }) {
                     Image("blocks_24").themeIcon()
@@ -24,25 +24,10 @@ struct TransactionBlockchainSelectView: View {
                         Image.checkIcon
                     }
                 }
-                
-                ForEach(viewModel.allBlockchainSeries, id: \.id) { series in
-                    ClickableRow(action: {
-                        viewModel.set(currentBlockchain: .blockchainSeries(series: series), blockchainUIds: series.uids(blockchains: viewModel.blockchains))
-                        isPresented = false
-                    }) {
-                        Image("blocks_24").themeIcon()
-                        Text(series.title).themeBody()
-
-                        if case let .blockchainSeries(_series) = viewModel.currentBlockchain,  _series == series {
-                            Image.checkIcon
-                        }
-                    }
-                }
-
 
                 ForEach(viewModel.blockchains, id: \.uid) { blockchain in
                     ClickableRow(action: {
-                        viewModel.set(currentBlockchain: .blockchain(blockchain: blockchain), blockchainUIds: [blockchain.uid])
+                        viewModel.set(currentBlockchain: blockchain)
                         isPresented = false
                     }) {
                         KFImage.url(URL(string: blockchain.type.imageUrl))
@@ -51,7 +36,7 @@ struct TransactionBlockchainSelectView: View {
 
                         Text(blockchain.name).themeBody()
 
-                        if case let .blockchain(_blockchain) = viewModel.currentBlockchain,  _blockchain == blockchain {
+                        if viewModel.currentBlockchain == blockchain {
                             Image.checkIcon
                         }
                     }

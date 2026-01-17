@@ -19,8 +19,8 @@ enum SendData {
     case walletConnect(request: WalletConnectRequest)
     case tonConnect(request: TonConnectSendTransactionRequest)
     case monero(token: Token, amount: MoneroSendAmount, address: String, memo: String?)
-    case evmSafe4(blockchainType: BlockchainType, transactionData: TransactionData, timeLock: TimeLock?)
-    case crossChain(blockchainType: BlockchainType, transactionData: TransactionData)
+    case evmSafe4TimeLock(blockchainType: BlockchainType, transactionData: TransactionData, timeLock: TimeLock)
+    case crossChain(baseWallet: Wallet, transactionData: TransactionData)
 }
 
 enum StellarSendData {

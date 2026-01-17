@@ -113,6 +113,11 @@ extension EvmLabelManager {
         case removeVote
         case src20Lock
         case usdtCross
+        case usdtCrossToSafe
+        case lockRedeem1
+        case lockRedeem2
+        case lockRedeem3
+        case lockRedeem4
         
         var id: String {
             switch self {
@@ -128,6 +133,11 @@ extension EvmLabelManager {
             case .removeVote : "0x9fbe5cc5"
             case .src20Lock: "0x4b86c225"
             case .usdtCross: "0x49530e18"
+            case .usdtCrossToSafe: "0xa9059cbb"
+            case .lockRedeem1: "0xd885085f"
+            case .lockRedeem2: "0x4c9e906a"
+            case .lockRedeem3: "0x43594feb"
+            case .lockRedeem4: "0x6d5b08d3"
             }
         }
         
@@ -139,9 +149,10 @@ extension EvmLabelManager {
             case .promotion: "SRC20_Info_Promotion".localized
             case .deploy_0, .deploy_1: "SRC20_Deploy_Title".localized
             case .destroy: "SRC20_Info_Destroy".localized
-            case .removeVote: "取消投票和委托".localized
+            case .removeVote: "投票释放".localized
             case .src20Lock: "SRC20 锁仓".localized
-            case .usdtCross: "跨链".localized
+            case .usdtCross, .usdtCrossToSafe: "跨链".localized
+            case .lockRedeem1, .lockRedeem2, .lockRedeem3, .lockRedeem4: "锁仓余额迁移".localized
             }
         }
     }

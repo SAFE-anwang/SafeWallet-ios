@@ -21,7 +21,10 @@ class UsdtCrossChainHandler {
                 throw CrossChainWalletError.openWallet(openTokenTips)
             }
         case .other_CrossChain_to_SAFE:
-            if let wallet = activeWallets.filter({$0.token.type == crossChain.tokenType && $0.token.blockchain.type == crossChain.blockchainType}).first {
+            if let wallet = activeWallets.filter({
+                $0.token.type == crossChain.tokenType &&
+                $0.token.blockchain.type == crossChain.blockchainType
+            }).first {
                 self.baseWallet = wallet
             } else {
                 throw CrossChainWalletError.openWallet(openTokenTips)
@@ -35,7 +38,7 @@ class UsdtCrossChainHandler {
     
     var openTokenTips: String {
         switch direction {
-        case .SAFE_CrossChain_to_other: return "safe_zone.send.openCoin".localized("USDT")
+        case .SAFE_CrossChain_to_other: return "safe_zone.send.openCoin".localized("USDT SAFE")
         case .other_CrossChain_to_SAFE: return crossChain.errorTips
         }
     }
@@ -77,8 +80,8 @@ extension UsdtCrossChainHandler: ICrossChainHandler {
         guard let _ = try? EvmKit.Address(hex: address) else {
             return .invalid(cautions: [])
         }
-        let transactionData = transactionData(amount: evmAmount, to: address)
-        return .valid(sendData: .crossChain(blockchainType: wallet.token.blockchainType, transactionData: transactionData))
+        let transactionData = transactionData(amount: evmAmount, recipient: address)
+        return .valid(sendData: .crossChain(baseWallet: wallet, transactionData: transactionData))
     }
 }
 
@@ -87,18 +90,19 @@ extension UsdtCrossChainHandler {
     /// - Parameters:
     ///   - amount: 跨链金额
     ///   - to: 跨链接收人 address
-    func transactionData(amount: BigUInt, to: String) -> TransactionData {
-        let crossChainAddress = try! EvmKit.Address(hex: crossChainContract)
+    func transactionData(amount: BigUInt, recipient: String) -> TransactionData {
         switch direction {
         case .SAFE_CrossChain_to_other:
-            let input = Web3jUtils.send_USDT_SAFE4_TransactionInput(amount: amount, address: to, network: crossChain.netType) ??  Data()
+            let input = Web3jUtils.send_USDT_SAFE4_TransactionInput(amount: amount, address: recipient, network: crossChain.netType) ??  Data()
             let to = try! EvmKit.Address(hex: SAFE4USDT_Contract)
             return TransactionData(to: to, value: .zero, input: input)
 
         case .other_CrossChain_to_SAFE:
-            let input = Web3jUtils.send_USDT_ETH_TransactionInput(address: to, amount: amount)
-            let extraData = "safe4:\(to)".hs.data
-            return TransactionData(to: crossChainAddress, value: amount, input: ((input ?? Data()) + extraData))
+            let inputTo = try! EvmKit.Address(hex: crossChain.wsafe_CrossChainContract)
+            let input = Web3jUtils.send_USDT_ETH_TransactionInput(address: inputTo, amount: amount)
+            let extraData = "safe4:\(recipient)".hs.data
+            let to = try! EvmKit.Address(hex: crossChain.safe_CrossChainContract)
+            return TransactionData(to: to, value: .zero, input: ((input ?? Data()) + extraData))
         }
     }
 }
@@ -117,10 +121,10 @@ enum USDT_CrossChain: CaseIterable {
 
     var tokenType: TokenType {
         switch self {
-        case .ETH: return .eip20(address: USDT_EthContract)//.lowercased())
-        case .BSC: return .eip20(address: USDT_BscContract)//.lowercased())
-        case .TRON: return .eip20(address: USDT_TronContract)//.lowercased())
-        case .SOL: return .eip20(address: USDT_SolContract)//.lowercased())
+        case .ETH: return .eip20(address: USDT_EthContract.lowercased())
+        case .BSC: return .eip20(address: USDT_BscContract.lowercased())
+        case .TRON: return .eip20(address: USDT_TronContract.lowercased())
+        case .SOL: return .eip20(address: USDT_SolContract.lowercased())
         }
     }
     

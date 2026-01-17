@@ -22,15 +22,15 @@ class EvmSyncSourceManager {
         switch blockchainType {
         case .safe4: return AppConfig.isSafe4TestNet ? .safeFourscanTestNet(apiKeys: AppConfig.etherscanKeys) : .safeFourscan(apiKeys: AppConfig.etherscanKeys)
         case .ethereum: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
-        case .binanceSmartChain: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
+        case .binanceSmartChain: return .ethereumEtherscan(apiKeys: AppConfig.bscscanKeys)
         case .polygon: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
         case .avalanche: return .snowtrace(apiKeys: AppConfig.snowtraceKeys)
-        case .optimism: return .ethereumEtherscan(apiKeys: AppConfig.optimismEtherscanKeys)
-        case .arbitrumOne: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
-        case .gnosis: return .ethereumEtherscan(apiKeys: AppConfig.gnosisscanKeys)
-        case .fantom: return .ethereumEtherscan(apiKeys: AppConfig.ftmscanKeys)
-        case .base: return .ethereumEtherscan(apiKeys: AppConfig.basescanKeys)
-        case .zkSync: return .ethereumEtherscan(apiKeys: AppConfig.eraZkSyncKeys)
+        case .optimism: return .optimisticEtherscan(apiKeys: AppConfig.optimismEtherscanKeys)
+        case .arbitrumOne: return .arbiscan(apiKeys: AppConfig.arbiscanKeys)
+        case .gnosis: return .gnosis(apiKeys: AppConfig.gnosisscanKeys)
+        case .fantom: return .fantom(apiKeys: AppConfig.ftmscanKeys)
+        case .base: return .basescan(apiKeys: AppConfig.basescanKeys)
+        case .zkSync: return .eraZkSync(apiKeys: AppConfig.eraZkSyncKeys)
         default: fatalError("Non-supported EVM blockchain")
         }
     }
@@ -48,6 +48,10 @@ extension RpcSource {
     
     static func safeBscRpcHttp() -> RpcSource {
         .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .bsc) ?? "https://bsc-mainnet.core.chainstack.com/67f0d109c5c0b7f0aa251a89f12c0b7b")!], auth: nil)
+    }
+    
+    static func p2pifyRpcHttp() -> RpcSource {
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .p2pify) ?? "https://nd-981-064-010.p2pify.com/3abdd3b90f012f4427380b632deb4180")!], auth: nil)
     }
     
     static func safePolygonRpcHttp() -> RpcSource {
@@ -109,26 +113,16 @@ extension EvmSyncSourceManager {
                 ]
             } else {
                 return [
-//                    EvmSyncSource(
-//                        name: "BlocksDecoded",
-//                        rpcSource: .http(urls: [URL(string: "\(AppConfig.marketApiUrl)/v1/ethereum-rpc/mainnet")!], auth: nil),
-//                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
-//                    ),
+                    EvmSyncSource(
+                        name: "BlocksDecoded",
+                        rpcSource: .http(urls: [URL(string: "\(AppConfig.marketApiUrl)/v1/ethereum-rpc/mainnet")!], auth: nil),
+                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+                    ),
                     EvmSyncSource(
                         name: "ETH RPC",
                         rpcSource: .safeEthereumRpcHttp(),
                         transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                     ),
-//                    EvmSyncSource(
-//                        name: "Infura",
-//                        rpcSource: .ethereumInfuraWebsocket(projectId: AppConfig.infuraCredentials.id, projectSecret: AppConfig.infuraCredentials.secret),
-//                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
-//                    ),
-//                    EvmSyncSource(
-//                        name: "Infura",
-//                        rpcSource: .ethereumInfuraHttp(projectId: AppConfig.infuraCredentials.id, projectSecret: AppConfig.infuraCredentials.secret),
-//                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
-//                    ),
                     EvmSyncSource(
                         name: "LlamaNodes",
                         rpcSource: .http(urls: [URL(string: "https://eth.llamarpc.com")!], auth: nil),
@@ -150,30 +144,20 @@ extension EvmSyncSourceManager {
                 ]
             } else {
                 return [
-                    EvmSyncSource(
-                        name: "Binance",
-                        rpcSource: .binanceSmartChainHttp(),
-                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
-                    ),
-                    EvmSyncSource(
-                        name: "BlockRazor",
-                        rpcSource: .http(urls: [URL(string: "https://unstoppable.bsc.blockrazor.xyz")!], auth: nil),
-                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
-                    ),
-                    EvmSyncSource(
-                        name: "48club",
-                        rpcSource: .http(urls: [URL(string: "https://unstoppable.rpc.48.club")!], auth: nil),
-                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
-                    ),
+//                    EvmSyncSource(
+//                        name: "Binance",
+//                        rpcSource: .binanceSmartChainHttp(),
+//                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+//                    ),
                     EvmSyncSource(
                         name: "BSC RPC",
                         rpcSource: .safeBscRpcHttp(),
                         transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                     ),
                     EvmSyncSource(
-                        name: "Omnia",
-                        rpcSource: .http(urls: [URL(string: "https://endpoints.omniatech.io/v1/bsc/mainnet/public")!], auth: nil),
-                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+                        name: "p2pify",
+                        rpcSource: .p2pifyRpcHttp(),
+                        transactionSource: defaultTransactionSource(blockchainType: .binanceSmartChain)
                     ),
                 ]
             }

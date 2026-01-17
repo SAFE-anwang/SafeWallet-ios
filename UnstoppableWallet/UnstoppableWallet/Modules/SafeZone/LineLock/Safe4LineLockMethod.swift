@@ -24,7 +24,7 @@ class Safe4LineLockMethod: ContractMethod {
 
 extension Safe4LineLockMethod {
     static func createMethod(inputArguments: Data) throws -> ContractMethod {
-        let parsedArguments = ContractMethodHelper.decodeABI(inputArguments: inputArguments, argumentTypes: [Address.self, BigUInt.self, BigUInt.self, BigUInt.self])
+        let parsedArguments = ContractMethodHelper.decodeABI(inputArguments: inputArguments, argumentTypes: [EvmKit.Address.self, BigUInt.self, BigUInt.self, BigUInt.self])
         guard let address = parsedArguments[0] as? EvmKit.Address,
               let times = parsedArguments[1] as? BigUInt,
               let spaceDay = parsedArguments[2] as? BigUInt,

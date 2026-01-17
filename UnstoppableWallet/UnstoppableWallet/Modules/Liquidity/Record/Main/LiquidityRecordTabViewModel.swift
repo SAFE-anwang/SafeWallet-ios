@@ -1,30 +1,30 @@
 import Foundation
-import RxSwift
-import RxRelay
-import RxCocoa
+import Combine
 
-class LiquidityRecordTabViewModel {
-    private let disposeBag = DisposeBag()
-    private let currentTabRelay: BehaviorRelay<LiquidityRecordModule.Tab>
+class LiquidityRecordTabViewModel: ObservableObject {
+    @Published var currentTab: LiquidityRecordModule.Tab = .safe
 
-    init() {
-        currentTabRelay = BehaviorRelay<LiquidityRecordModule.Tab>(value: .safe)
-    }
-
-}
-
-extension LiquidityRecordTabViewModel {
-
-    var currentTabDriver: Driver<LiquidityRecordModule.Tab> {
-        currentTabRelay.asDriver()
-    }
-
-    var tabs: [LiquidityRecordModule.Tab] {
-        LiquidityRecordModule.Tab.allCases
-    }
-
-    func onSelect(tab: LiquidityRecordModule.Tab) {
-        currentTabRelay.accept(tab)
-    }
+//    private let disposeBag = DisposeBag()
+//    private let currentTabRelay: BehaviorRelay<LiquidityRecordModule.Tab>
+//
+//    init() {
+//        currentTabRelay = BehaviorRelay<LiquidityRecordModule.Tab>(value: .safe)
+//    }
 
 }
+//
+//extension LiquidityRecordTabViewModel {
+//
+//    var currentTabDriver: Driver<LiquidityRecordModule.Tab> {
+//        currentTabRelay.asDriver()
+//    }
+//
+//    var tabs: [LiquidityRecordModule.Tab] {
+//        LiquidityRecordModule.Tab.allCases
+//    }
+//
+//    func onSelect(tab: LiquidityRecordModule.Tab) {
+//        currentTabRelay.accept(tab)
+//    }
+//
+//}

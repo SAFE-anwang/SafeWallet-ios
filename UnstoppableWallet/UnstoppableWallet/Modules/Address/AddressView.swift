@@ -56,7 +56,9 @@ struct AddressView: View {
                             if !viewModel.contacts.isEmpty {
                                 ListSectionHeader2(text: "send.address.contacts".localized)
                                 ListSection {
-                                    ForEach(viewModel.contacts) { row(contact: $0) }
+                                    ForEach(viewModel.contacts) {
+                                        row(contact: $0)
+                                    }
                                 }
                                 .themeListStyle(.bordered)
                             }

@@ -13,7 +13,7 @@ import HsExtensions
 class ProposalDetailViewModel {
     private let catch_key = "voted_Key"
     private let servie: ProposalDetailService
-    private var safe4Page = Safe4PageControl(initCount: 100)
+    private var safe4Page = Safe4PageControl(pageSize: 100)
     private var stateRelay = PublishRelay<ProposalDetailViewModel.State>()
     private var viewItems = [ProposalDetailViewModel.ViewItem]()
     private let infoItem: ProposalViewModel.ViewItem

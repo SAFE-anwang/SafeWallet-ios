@@ -6,7 +6,7 @@ import MarketKit
 import RxSwift
 
 class CrossPreSendHandler {
-    private let token: Token
+    private let baseWallet: Wallet
     private let adapter: ISendEthereumAdapter & IBalanceAdapter
 
     private let stateSubject = PassthroughSubject<AdapterState, Never>()
@@ -14,8 +14,8 @@ class CrossPreSendHandler {
 
     private let disposeBag = DisposeBag()
 
-    init(token: Token, adapter: ISendEthereumAdapter & IBalanceAdapter) {
-        self.token = token
+    init(baseWallet: Wallet, adapter: ISendEthereumAdapter & IBalanceAdapter) {
+        self.baseWallet = baseWallet
         self.adapter = adapter
 
         adapter.balanceStateUpdatedObservable
@@ -52,7 +52,7 @@ extension CrossPreSendHandler: IPreSendHandler {
     }
     // address: 接收人地址
     func sendData(amount: Decimal, address: String, memo _: String?) -> SendDataResult {
-        guard let evmAmount = BigUInt(amount.hs.roundedString(decimal: token.decimals)) else {
+        guard let evmAmount = BigUInt(amount.hs.roundedString(decimal: baseWallet.token.decimals)) else {
             return .invalid(cautions: [])
         }
 
@@ -61,7 +61,7 @@ extension CrossPreSendHandler: IPreSendHandler {
         }
         let transactionData = adapter.transactionData(amount: evmAmount, address: evmAddress)
 
-        return .valid(sendData: .crossChain(blockchainType: token.blockchainType, transactionData: transactionData))
+        return .valid(sendData: .crossChain(baseWallet: baseWallet, transactionData: transactionData))
     }
 }
 

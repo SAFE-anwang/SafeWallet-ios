@@ -28,7 +28,8 @@ class RedeemSafe3ViewModel {
     private let service: RedeemSafe3Service
     private let userDefaultsStorage: UserDefaultsStorage
 
-    private var safe4Page = Safe4PageControl(initCount: 30, totalNum: 0, page: 0, isReverse: false)
+    private var safe4Page = Safe4PageControl(pageSize: 30)
+    private var pettyPage = Safe4PageControl(pageSize: 30)
     let redeemWalletType: RedeemSafe3Module.RedeemWalletType
 
     private var availableSafe3Info: AvailableSafe3Info?
@@ -36,6 +37,7 @@ class RedeemSafe3ViewModel {
     private(set) var existAvailable = false
     private(set) var existLocked = false
     private(set) var existMasterNode = false
+    private(set) var existPettyLocked = false
     
     private let addressService: AddressService
     
@@ -111,17 +113,24 @@ class RedeemSafe3ViewModel {
             do {
                 try await checkNeedToRedeem(address: safe3Address)
                 let info = try await service.safe3GetAvailableInfo(safe3address: safe3Address)
+                let pettyInfo = try await service.getPettyInfo(safe3Addr: safe3Address)
                 let (maxLockedCount, results) = try await getLockedSafe3Infos(safe3address: safe3Address)
+
                 let balance = info.amount
                 let lockBalance = results.map{$0.amount}.reduce(0, +)
                 let masterNodeLockBalance = results.filter{$0.isMN}.map{$0.amount}.reduce(0, +)
                 if results.count == 0 {
                     self.existLocked = false
                 }
-                if lockBalance == 0 {
+                if lockBalance == 0 && pettyInfo.amount == 0 {
                     self.existLocked = false
                 }
-                self.safe3BalanceInfo = Safe3BalanceInfo(maxLockedCount: maxLockedCount, balance: balance, lockBalance: lockBalance, masterNodeLockBalance: masterNodeLockBalance)
+                self.safe3BalanceInfo = Safe3BalanceInfo(maxLockedCount: maxLockedCount,
+                                                         balance: balance,
+                                                         pettyBalance: pettyInfo.amount,
+                                                         lockBalance: lockBalance,
+                                                         masterNodeLockBalance: masterNodeLockBalance
+                                                         )
                 syncState()
                 state = .success
             }catch{
@@ -169,7 +178,7 @@ class RedeemSafe3ViewModel {
         if let privateKeyData, let redeem: Bool = userDefaultsStorage.value(for: "\(keyRedeemAddress)\(privateKeyData.hs.hex)") {
             isRedeem = redeem
         }
-        let isEnabled = (existAvailable || existLocked) && !isRedeem
+        let isEnabled = (existAvailable || existLocked || existPettyLocked) && !isRedeem
         isEnabledSendRelay.accept(isEnabled)
     }
 }
@@ -280,32 +289,31 @@ extension RedeemSafe3ViewModel {
                     let spendableTimeLockUtxo = safe3Adapter.bitcoinCore.unspendableTimeLockedUtxo
                     let lockedAmount = BigUInt(spendableTimeLockUtxo.map{$0.output.value}.reduce(0, +))
                     
-                    var redeemableAmount: BigUInt = 0
-                    var redeemableLocked: BigUInt = 0
                     let infos = try await redeemAddressInfo(hdWallet: hdWallet,
                                                         safe3Adapter: safe3Adapter,
                                                         outputs: unspentOutputs,
-                                                        isLock: false,
-                                                        redeemableAmount: &redeemableAmount,
-                                                        redeemableLocked: &redeemableLocked
+                                                        isLock: false
                     )
                     
                     let timeLockInfos = try await redeemAddressInfo(hdWallet: hdWallet,
                                                                 safe3Adapter: safe3Adapter,
                                                                 outputs: spendableTimeLockUtxo,
-                                                                isLock: true,
-                                                                redeemableAmount: &redeemableAmount,
-                                                                redeemableLocked: &redeemableLocked
+                                                                isLock: true
                     )
                     
-                    var results = infos + timeLockInfos
+                    var results = (timeLockInfos + infos).removeDuplicates()
                     results.sort{ ($0.address.hs.hexData ?? Data()) > ($1.address.hs.hexData ?? Data()) }
 
+                    let redeemableAmount = results.filter{$0.existAvailable}.map{$0.balance}.reduce(0, +)
+                    let redeemableLocked = results.filter{$0.existLocked || $0.existAvailable}.map{$0.lockBalance}.reduce(0, +)
+                    let redeemablePetty = results.filter{$0.existPettyLocked}.map{$0.pettyBalance}.reduce(0, +)
+                    
                     let balanceInfo = LocalBalanceInfo(token: safe3Adapter.token,
                                                        availableAmount: availableAmount,
-                                                       redeemableAmount: redeemableAmount,
+                                                       redeemableAmount: BigUInt(redeemableAmount),
                                                        lockedAmount: lockedAmount,
-                                                       redeemableLocked: redeemableLocked
+                                                       redeemableLocked: BigUInt(redeemableLocked),
+                                                       pettyLockBalance: BigUInt(redeemablePetty)
                     )
                     
                     self.state = .complated(datas: results, balanceInfo: balanceInfo)
@@ -323,7 +331,7 @@ extension RedeemSafe3ViewModel {
         }
     }
     
-    func redeemAddressInfo(hdWallet: HDWallet, safe3Adapter: SafeCoinAdapter, outputs: [UnspentOutput], isLock: Bool, redeemableAmount: inout BigUInt, redeemableLocked: inout BigUInt) async throws -> [LocalSafe3WalletBalanceInfoItem] {
+    func redeemAddressInfo(hdWallet: HDWallet, safe3Adapter: SafeCoinAdapter, outputs: [UnspentOutput], isLock: Bool) async throws -> [LocalSafe3WalletBalanceInfoItem] {
         let uniqueArray = outputs.reduce(into: [String: [UnspentOutput]]()) { result, output in
             if let key = output.transaction.blockHash?.hs.hexString {
                 if result[key] == nil {
@@ -337,9 +345,6 @@ extension RedeemSafe3ViewModel {
         
         var results: [LocalSafe3WalletBalanceInfoItem] = []
         var errors: [Error] = []
-        var redeemableTotalAmount: BigUInt = 0
-        var redeemableLockedTotal: BigUInt = 0
-        
         await withTaskGroup(of: Result<LocalSafe3WalletBalanceInfoItem, Error>.self) { taskGroup in
             for unspentOutput in uniqueArray {
                 taskGroup.addTask { [self, service] in
@@ -350,28 +355,25 @@ extension RedeemSafe3ViewModel {
                             throw RedeemError.privateKeyError
                         }
                         
-                        let existAvailable = try await service.existAvailableNeedToRedeem(safe3address: address)
-                        let existLocked = try await service.existLockedNeedToRedeem(safe3Addr: address)
-                        let existMasterNode = try await service.existMasterNodeNeedToRedeem(safe3Addr: address)
-                        
-                        let isExist = existAvailable || existLocked || existMasterNode
+                        try await checkNeedToRedeem(address: address)
+                        let isExist = existAvailable || existLocked || existMasterNode || existPettyLocked
                         if isExist {
                             let info = try await service.safe3GetAvailableInfo(safe3address: address)
+                            let pettyInfo = try await service.getPettyInfo(safe3Addr: address)
                             let (maxLockedCount, results) = try await getLockedSafe3Infos(safe3address: address)
                             let balance = info.amount
                             let lockBalance = results.map{$0.amount}.reduce(0, +)
                             let masterNodeLockBalance = results.filter{$0.isMN}.map{$0.amount}.reduce(0, +)
                             
-                            redeemableTotalAmount += info.amount
-                            redeemableLockedTotal += lockBalance
-                            
                             let item = LocalSafe3WalletBalanceInfoItem(address: address,
                                                                        maxLockedCount: maxLockedCount,
                                                                        balance: balance,
+                                                                       pettyBalance: pettyInfo.amount,
                                                                        lockBalance: lockBalance,
                                                                        existAvailable: existAvailable,
                                                                        existLocked: existLocked,
                                                                        existMasterNode: existMasterNode,
+                                                                       existPettyLocked: existPettyLocked,
                                                                        privateKey: privateKeyData,
                                                                        masterNodeLockBalance: masterNodeLockBalance,
                                                                        isEnabledRedeem: true
@@ -386,10 +388,12 @@ extension RedeemSafe3ViewModel {
                             let item = LocalSafe3WalletBalanceInfoItem(address: address,
                                                                        maxLockedCount: 0,
                                                                        balance: BigUInt(availableAmount),
+                                                                       pettyBalance: 0,
                                                                        lockBalance: BigUInt(lockedAmount),
                                                                        existAvailable: existAvailable,
                                                                        existLocked: existLocked,
                                                                        existMasterNode: existMasterNode,
+                                                                       existPettyLocked: existPettyLocked,
                                                                        privateKey: privateKeyData,
                                                                        masterNodeLockBalance: nil,
                                                                        isEnabledRedeem: false
@@ -411,8 +415,6 @@ extension RedeemSafe3ViewModel {
                 }
             }
         }
-        redeemableAmount += redeemableTotalAmount
-        redeemableLocked += redeemableLockedTotal
         return results
     }
     
@@ -486,9 +488,12 @@ extension RedeemSafe3ViewModel {
         async let existAvailable = try service.existAvailableNeedToRedeem(safe3address: address)
         async let existLocked = try service.existLockedNeedToRedeem(safe3Addr: address)
         async let existMasterNode = try service.existMasterNodeNeedToRedeem(safe3Addr: address)
+        async let existPettyLocked = try service.existPettyNeedToRedeem(safe3Addr: address)
+
         self.existAvailable = try await existAvailable
         self.existLocked = try await existLocked
         self.existMasterNode = try await existMasterNode
+        self.existPettyLocked = try await existPettyLocked
     }
     
     private func privateKeyToSafe4Address(privateKey: Data) -> String {
@@ -504,27 +509,33 @@ extension RedeemSafe3ViewModel {
 
 extension RedeemSafe3ViewModel {
     
-    struct LocalSafe3WalletBalanceInfoItem {
+    struct LocalSafe3WalletBalanceInfoItem: Equatable {
         let address: String
         let maxLockedCount: Int
         let balance: BigUInt
+        let pettyBalance: BigUInt
         let lockBalance: BigUInt
         let existAvailable: Bool
         let existLocked: Bool
         let existMasterNode: Bool
+        let existPettyLocked: Bool
         let privateKey: Data
         var masterNodeLockBalance: BigUInt?
         let isEnabledRedeem: Bool
+        
+        public static func == (lhs: Self, rhs: Self) -> Bool {
+            lhs.address.lowercased() == rhs.address.lowercased()
+        }
     }
     
     struct Safe3BalanceInfo {
         let maxLockedCount: Int
         let balance: BigUInt
+        let pettyBalance: BigUInt
         let lockBalance: BigUInt
         let masterNodeLockBalance: BigUInt
-        
         var hasBalance: Bool {
-            balance + lockBalance + masterNodeLockBalance > 0
+            balance + lockBalance + masterNodeLockBalance + pettyBalance > 0
         }
     }
     
@@ -534,6 +545,7 @@ extension RedeemSafe3ViewModel {
         let redeemableAmount: BigUInt
         let lockedAmount: BigUInt
         let redeemableLocked: BigUInt
+        let pettyLockBalance: BigUInt
         
         var availableValue: String {
             availableAmount.safe3FomattedAmount
@@ -548,8 +560,12 @@ extension RedeemSafe3ViewModel {
         }
         
         var redeemableLockedValue: String {
-            redeemableLocked.safe4FomattedAmount
+            (redeemableLocked + pettyLockBalance).safe4FomattedAmount
         }
+        
+//        var pettyLockBalanceValue: String {
+//            pettyLockBalance.safe4FomattedAmount
+//        }
         
     }
     

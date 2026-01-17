@@ -50,7 +50,8 @@ struct SendView: View {
     @ViewBuilder private func dataView(data: ISendData, handler: ISendHandler) -> some View {
         ScrollView {
             VStack(spacing: .margin16) {
-                let sections = data.sections(baseToken: handler.baseToken, currency: viewModel.currency, rates: viewModel.rates)
+
+                let sections = data.sections(baseToken: baseToken(handler: handler), currency: viewModel.currency, rates: viewModel.rates)
 
                 if !sections.isEmpty {
                     ForEach(sections.indices, id: \.self) { sectionIndex in
@@ -92,6 +93,15 @@ struct SendView: View {
                 HighlightedTextView(caution: CautionNew(text: error.smartDescription, type: .error))
             }
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
+        }
+    }
+    
+    func baseToken(handler: ISendHandler) -> Token {
+        let _handler = handler as? CrossChainSendHandler
+        if let _handler {
+            return _handler.wallet.token
+        }else {
+            return handler.baseToken
         }
     }
 }

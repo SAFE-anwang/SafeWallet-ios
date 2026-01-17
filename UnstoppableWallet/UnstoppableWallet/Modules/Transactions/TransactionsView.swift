@@ -20,6 +20,15 @@ struct TransactionsView: View {
                         viewModel.onDisplay(section: section, viewItem: viewItem)
                     }
                 }
+            } header: {
+                ThemeText(section.title, style: .subheadSB, colorStyle: .andy)
+                    .textCase(.uppercase)
+                    .padding(.horizontal, .margin16)
+                    .padding(.top, .margin24)
+                    .padding(.bottom, .margin12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.themeLawrence)
+                    .listRowInsets(EdgeInsets())
             }
         }
     }

@@ -99,7 +99,7 @@
 
 "version" = "版本%@";
 
-"n/a" = "不可用";
+"n/a" = "";//"不可用";
 
 "sync_error" = "同步错误。请再试一次.";
 
@@ -1424,6 +1424,7 @@
 "transactions.all_coins" = "所有硬币";
 "transactions.choose_coin" = "选择代币";
 "transactions.filter_all" = "所有";
+"transactions.syncing_placeholder" = "请等待同步完成";
 "transactions.empty_text" = "您还没有任何待定或成功的交易";
 "transactions.pending" = "待处理";
 "transactions.processing" = "正在处理";
@@ -2412,7 +2413,7 @@
 "safe_zone.safe4.node.super.register" = "注册超级节点";
 "safe_zone.safe4.node.master.title" = "主节点";
 "safe_zone.safe4.node.master.register" = "成为主节点";
-"safe_zone.safe4.proposal.all" = "提案列表";
+"safe_zone.safe4.proposal.all" = "所有提案";
 "safe_zone.safe4.proposal.mine" = "我的提案";
 "safe_zone.safe4.empty.description" = "暂无数据";
 "safe_zone.safe4.creater" = "创建人";
@@ -2591,7 +2592,7 @@
 "safe_zone.safe4.SuperNodeRegister" = "创建超级节点";
 "safe_zone.safe4.NodeUpdate" = "节点信息更新";
 "safe_zone.safe4.ProposalVote" = "提案投票";
-"safe_zone.safe4.lockVote" = "锁仓投票";
+"safe_zone.safe4.lockVote" = "投票超级节点";
 "safe_zone.safe4.node.state.upload" = "节点状态上传";
 "safe_zone.safe4.reward" = "挖矿收益";
 "safe_zone.safe4.contract.deployment" = "合约部署";

@@ -2,14 +2,16 @@ import SwiftUI
 
 struct MasterNodeTabView: View {
     @StateObject var viewModel: MasterNodeTabViewModel
-    var allViewModel: MasterNodeViewModel
-    var mineViewModel: MasterNodeViewModel
+    var allViewController: MasterNodeViewController
+    var mineViewController: MasterNodeViewController
     @State private var loadedTabs = [MasterNodeModule.Tab]()
 
     init(viewModel: MasterNodeTabViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
-        allViewModel = MasterNodeModule.viewModel(type: .All, evmKit: viewModel.evmKit)
-        mineViewModel = MasterNodeModule.viewModel(type: .Mine, evmKit: viewModel.evmKit)
+        let allViewModel = MasterNodeModule.viewModel(type: .All, evmKit: viewModel.evmKit)
+        let mineViewModel = MasterNodeModule.viewModel(type: .Mine, evmKit: viewModel.evmKit)
+        allViewController = MasterNodeViewController(viewModel: allViewModel)
+        mineViewController = MasterNodeViewController(viewModel: mineViewModel)
     }
 
     var body: some View {
@@ -22,34 +24,26 @@ struct MasterNodeTabView: View {
                             highlighted: false
                         )
                     },
-                    currentTabIndex: Binding(
-                        get: {
-                            MasterNodeModule.Tab.allCases.firstIndex(of: viewModel.currentTab) ?? 0
-                        },
-                        set: { index in
-                            viewModel.currentTab = MasterNodeModule.Tab.allCases[index]
-                        }
-                    ),
+                    currentTabIndex: viewModel.currentTabIndex,
                     isAequilate: true
                 )
-                ZStack {
-                    MasterNodeView(viewModel: allViewModel)
-                        .ignoresSafeArea()
-                        .opacity(viewModel.currentTab == .all ? 1 : 0)
-                        .onChange(of: viewModel.currentTab) { tab in
-                            load(tab: tab)
+                ThemeView {
+                    TabView(selection: viewModel.currentTabIndex) {
+                        ForEach(MasterNodeModule.Tab.allCases, id: \.self) { tab in
+                            switch tab {
+                            case .all:
+                                MasterNodeView(viewController: allViewController)//viewModel: allViewModel)
+                                    .ignoresSafeArea()
+                                    .tag(tab.rawValue)
+                            case .mine:
+                                MasterNodeView(viewController: mineViewController)//viewModel: mineViewModel)
+                                    .ignoresSafeArea()
+                                    .tag(tab.rawValue)
+
+                            }
                         }
-                        .onFirstAppear {
-                            load(tab: viewModel.currentTab)
-                        }
-                    MasterNodeView(viewModel: mineViewModel).ignoresSafeArea()
-                        .opacity(viewModel.currentTab == .mine ? 1 : 0)
-                        .onChange(of: viewModel.currentTab) { tab in
-                            load(tab: tab)
-                        }
-                        .onFirstAppear {
-                            load(tab: viewModel.currentTab)
-                        }
+                    }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 }
             }
             .tint(.themeJacob)
@@ -78,19 +72,6 @@ struct MasterNodeTabView: View {
             }) {
                 Image("safe4_add_2_24")
             }
-        }
-    }
-            
-    private func load(tab: MasterNodeModule.Tab) {
-        guard !loadedTabs.contains(tab) else {
-            return
-        }
-
-        loadedTabs.append(tab)
-
-        switch tab {
-        case .all: allViewModel.refresh()
-        case .mine: mineViewModel.refresh()
         }
     }
 }

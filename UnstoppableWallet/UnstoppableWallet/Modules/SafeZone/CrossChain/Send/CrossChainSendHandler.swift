@@ -4,13 +4,15 @@ import MarketKit
 import SwiftUI
 
 class CrossChainSendHandler {
+    let wallet: Wallet
     let baseToken: Token
     private let transactionData: TransactionData
     private let evmKitWrapper: EvmKitWrapper
     private let decorator = EvmDecorator()
     private let evmFeeEstimator = EvmFeeEstimator()
     
-    init(baseToken: Token, transactionData: TransactionData, evmKitWrapper: EvmKitWrapper) {
+    init(wallet: Wallet, baseToken: Token, transactionData: TransactionData, evmKitWrapper: EvmKitWrapper) {
+        self.wallet = wallet
         self.baseToken = baseToken
         self.transactionData = transactionData
         self.evmKitWrapper = evmKitWrapper
@@ -60,7 +62,7 @@ extension CrossChainSendHandler: ISendHandler {
         }
 
         let transactionDecoration = evmKitWrapper.evmKit.decorate(transactionData: transactionData)
-        let decoration = decorator.decorate(baseToken: baseToken, transactionData: transactionData, transactionDecoration: transactionDecoration)
+        let decoration = decorator.decorate(baseToken: wallet.token, transactionData: transactionData, transactionDecoration: transactionDecoration)
 
         return EvmSendData(
             decoration: decoration,
@@ -69,7 +71,8 @@ extension CrossChainSendHandler: ISendHandler {
             gasPrice: gasPriceData?.userDefined,
             evmFeeData: evmFeeData,
             nonce: transactionSettings?.nonce,
-            timeLock: nil
+            timeLock: nil,
+            feeToken: baseToken
         )
     }
 
@@ -94,9 +97,8 @@ extension CrossChainSendHandler: ISendHandler {
             transactionData: transactionData,
             gasPrice: gasPrice,
             gasLimit: gasLimit,
-            privateSend: true,
-            nonce: data.nonce,
-            timeLock: nil
+            privateSend: false,
+            nonce: data.nonce
         )
     }
 }
@@ -111,16 +113,17 @@ extension CrossChainSendHandler {
 }
 
 extension CrossChainSendHandler {
-    static func instance(blockchainType: BlockchainType, transactionData: TransactionData) -> CrossChainSendHandler? {
-        guard let baseToken = try? Core.shared.coinManager.token(query: .init(blockchainType: blockchainType, tokenType: .native)) else {
+    static func instance(baseWallet: Wallet, transactionData: TransactionData) -> CrossChainSendHandler? {
+        guard let baseToken = try? Core.shared.coinManager.token(query: .init(blockchainType: baseWallet.token.blockchainType, tokenType: .native)) else {
             return nil
         }
 
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: baseWallet.token.blockchainType).evmKitWrapper else {
             return nil
         }
 
         return CrossChainSendHandler(
+            wallet: baseWallet,
             baseToken: baseToken,
             transactionData: transactionData,
             evmKitWrapper: evmKitWrapper

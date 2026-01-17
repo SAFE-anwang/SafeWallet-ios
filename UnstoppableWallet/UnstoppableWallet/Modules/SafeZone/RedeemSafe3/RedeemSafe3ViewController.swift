@@ -281,7 +281,7 @@ extension RedeemSafe3ViewController {
                 .margin4,
                 .text { (component: TextComponent) -> () in
                     component.font = valueFont
-                    let value = item.balance.safe4FomattedAmount + " SAFE"
+                    let value = (item.isEnabledRedeem ? item.balance.safe4FomattedAmount : item.balance.safe3FomattedAmount) + " SAFE"
                     if !item.existAvailable {
                         let attributeString: NSMutableAttributedString = NSMutableAttributedString(string: value)
                         attributeString.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: NSRange(location: 0, length: attributeString.length))
@@ -310,6 +310,26 @@ extension RedeemSafe3ViewController {
                         component.text = value
                     }
                 },
+                .margin4,
+                .text { (component: TextComponent) -> () in
+                    component.setContentHuggingPriority(.required, for: .vertical)
+                    component.font = titleFont
+                    component.textColor = .themeGray
+                    component.text = "小额锁仓余额".localized
+                },
+                .margin4,
+                .text { (component: TextComponent) -> () in
+                    component.font = valueFont
+                    let value = item.pettyBalance.safe4FomattedAmount + " SAFE"
+                    if !item.existPettyLocked {
+                        let attributeString: NSMutableAttributedString = NSMutableAttributedString(string: value)
+                        attributeString.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: NSRange(location: 0, length: attributeString.length))
+                        component.attributedText = attributeString
+                    }else {
+                        component.attributedText = nil
+                        component.text = value
+                    }
+                },
             ]),
             layoutMargins: layout,
             tableView: tableView,
@@ -327,7 +347,7 @@ extension RedeemSafe3ViewController {
                         .margin16,
                         .multiline,
                     ]
-                ) + 120
+                ) + 180
             },
             bind: { cell in
                 cell.set(backgroundStyle: backgroundStyle, isFirst: isFirst, isLast: isLast)
@@ -474,6 +494,7 @@ extension RedeemSafe3ViewController: SectionsDataSource {
                         headerState: .margin(height: CGFloat.margin12),
                         rows: [
                             tableView.multilineRow(id: "balance", title: "safe_zone.safe4..account.balance".localized, value: "\(info.balance.safe4FomattedAmount) SAFE", isFirst: true, isLineThrough: !viewModel.existAvailable),
+                            tableView.multilineRow(id: "pettyBalance", title: "小额锁仓余额:".localized, value: "\(info.pettyBalance.safe4FomattedAmount) SAFE", isFirst: true, isLineThrough: !viewModel.existPettyLocked),
                             tableView.multilineRow(id: "balance_lock", title: "账户余额（锁仓记录\(info.maxLockedCount)）".localized, value: "\(info.lockBalance.safe4FomattedAmount) SAFE", isLineThrough: !viewModel.existLocked),
                             tableView.multilineRow(id: "node", title: "主节点".localized, value: "\(info.masterNodeLockBalance.safe4FomattedAmount) SAFE" ,isLast: true, isLineThrough: !viewModel.existMasterNode),
                         ]

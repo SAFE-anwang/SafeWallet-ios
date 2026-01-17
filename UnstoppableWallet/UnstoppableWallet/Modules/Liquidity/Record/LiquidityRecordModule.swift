@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import UIKit
 import MarketKit
 import EvmKit
@@ -7,13 +8,13 @@ import UniswapKit
 
 class LiquidityRecordModule {
     
-    static func viewController() -> UIViewController? {
-                      
-        let viewModel = LiquidityRecordTabViewModel()
-        let viewController = LiquidityRecordTabViewController(viewModel: viewModel)
-
-        return viewController
-    }
+//    static func viewController() -> UIViewController? {
+//                      
+//        let viewModel = LiquidityRecordTabViewModel()
+//        let viewController = LiquidityRecordTabViewController(viewModel: viewModel)
+//
+//        return viewController
+//    }
     
     static func subViewController(dexType: UniswapKit.DexType, blockchainType: BlockchainType) -> LiquidityRecordViewController {
 
@@ -59,5 +60,24 @@ class LiquidityRecordModule {
     }
 }
 
+struct LiquidityRecordView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+    let viewController: LiquidityRecordViewController
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        return viewController
+    }
 
+    func updateUIViewController(_: UIViewController, context _: Context) {}
+}
 
+struct LiquidityViewRepresentable: UIViewControllerRepresentable {
+    let viewController: UIViewController
+    
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        return ThemeNavigationController(rootViewController: viewController)
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
+}

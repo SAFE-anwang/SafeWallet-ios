@@ -16,7 +16,7 @@ struct ProposalTabView: View {
         ThemeNavigationStack {
             VStack(spacing: 0) {
                 ScrollableTabHeaderView(
-                    tabs: SuperNodeModule.Tab.allCases.map {
+                    tabs: ProposalModule.Tab.allCases.map {
                         ScrollableTabHeaderView.Tab(
                             title: $0.title,
                             highlighted: false
@@ -54,7 +54,7 @@ struct ProposalTabView: View {
                 }
             }
             .tint(.themeJacob)
-            .navigationTitle("safe_zone.safe4.node.super.title".localized)
+            .navigationTitle("safe_zone.row.proposal".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar() }
         }

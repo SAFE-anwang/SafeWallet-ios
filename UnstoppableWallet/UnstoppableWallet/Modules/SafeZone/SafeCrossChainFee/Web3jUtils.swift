@@ -29,7 +29,7 @@ class Web3jUtils {
     }
     
     // cross chain to USDT-(SAFE4)
-    static func send_USDT_ETH_TransactionInput(address: String, amount: BigUInt) -> Data? {
+    static func send_USDT_ETH_TransactionInput(address: EvmKit.Address, amount: BigUInt) -> Data? {
         let methodId = "0xa9059cbb".hs.hexData ?? Data()
         let data = ContractMethodHelper.encodedABI(methodId: methodId, arguments: [address, amount])
         return data

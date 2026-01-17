@@ -91,10 +91,10 @@ struct SafeLineLockView: View {
             .navigationBarTitle("safe_zone.row.linear".localized)
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $presentDestination, onDismiss: {
-//                DispatchQueue.main.async {
-//                    HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
-//                    presentationMode.wrappedValue.dismiss()
-//                }
+                DispatchQueue.main.async {
+                    HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
+                    presentationMode.wrappedValue.dismiss()
+                }
             }) { present in
                 switch present {
                 case let .toConfirmation(vc):

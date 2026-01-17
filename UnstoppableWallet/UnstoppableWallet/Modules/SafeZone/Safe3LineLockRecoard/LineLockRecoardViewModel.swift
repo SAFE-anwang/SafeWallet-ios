@@ -28,16 +28,17 @@ class LineLockRecoardViewModel {
         guard let account = Core.shared.accountManager.activeAccount else { return }
         if let state = WalletAdapterService(account: account, adapterManager: Core.shared.adapterManager).state(wallet: wallet), state == .synced {
             let lockedBalanceData = adapter.balanceData
-            let title = "safe_lock.recoard.title".localized("\(lockedBalanceData.locked)")
-            lockedBalanceTitle = title
             let lockUxto = adapter.safeCoinKit.getConfirmedUnspentOutputProvider().getLockUxto()
-            syncLockedRecordItems(items: lockUxto)
+            let lockedValue = syncLockedRecordItems(items: lockUxto)
+            let title = "safe_lock.recoard.title".localized("\(lockedBalanceData.locked + lockedValue)")
+            lockedBalanceTitle = title
         }
     }
     
-    private func syncLockedRecordItems(items: [UnspentOutput]) {
+    private func syncLockedRecordItems(items: [UnspentOutput]) -> Decimal {
         
         let lastHeight: Int = adapter.lastBlockInfo?.height ?? 0
+        var totalLockedValue: Decimal = 0
         
         for item in items {
             var height: Int = 0
@@ -47,14 +48,16 @@ class LineLockRecoardViewModel {
                  height = lastHeight
             }
             if let unlockedHeight = item.output.unlockedHeight {
-                let lockAmount = "\((Decimal(item.output.value) / coinRate).formattedAmount)"
+                let lockAmount = (Decimal(item.output.value) / coinRate)
+                totalLockedValue += lockAmount
                 let lockMonth = (unlockedHeight - height) / 86300
                 let isLocked = lastHeight <= unlockedHeight
-                let viewItem = ViewItem(height: height, lockAmount: lockAmount, lockMonth: lockMonth, isLocked: isLocked, address: item.output.address ?? "")
+                let viewItem = ViewItem(height: height, lockAmount: lockAmount.formattedAmount, lockMonth: lockMonth, isLocked: isLocked, address: item.output.address ?? "")
                 viewItems.append(viewItem)
             }
         }
         viewItemsRelay.accept(viewItems.sorted(by: descending))
+        return totalLockedValue
     }
     
     private let descending: (ViewItem, ViewItem) -> Bool = { lhsItem, rhsItem in

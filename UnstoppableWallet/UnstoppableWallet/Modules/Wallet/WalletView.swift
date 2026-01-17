@@ -231,6 +231,19 @@ struct WalletView: View {
                 }
             }
 
+            Spacer()
+            
+            IconButton(icon: "arrow_swap_approval_2_24", style: .secondary, size: .small) {
+                Coordinator.shared.present { _ in
+                    LiquidityRecordTabView(viewModel: LiquidityRecordTabViewModel())
+                        .ignoresSafeArea()
+                }
+            }
+            
+            IconButton(icon: "transaction_filled", style: .secondary, size: .small) {
+                transactionsPresented = true
+            }
+            
             IconButton(icon: "manage", style: .secondary, size: .small) {
                 if let account = viewModel.account {
                     Coordinator.shared.present { _ in
@@ -239,15 +252,8 @@ struct WalletView: View {
                     stat(page: .balance, event: .open(page: .coinManager))
                 }
             }
-
-            Spacer()
-
             if !viewModel.isReachable {
                 ThemeText("alert.no_internet".localized, style: .subheadSB, colorStyle: .red)
-            }
-            
-            IconButton(icon: "transaction_filled", style: .secondary, size: .small) {
-                transactionsPresented = true
             }
         }
     }
@@ -266,7 +272,7 @@ struct WalletView: View {
                     if let vc = SwapModule.viewController() {
                         SwapView(viewController: vc)
                     }
-                    //MultiSwapView()
+                    MultiSwapView()
                 }
                 stat(page: .balance, event: .open(page: .swap))
             case .scan:

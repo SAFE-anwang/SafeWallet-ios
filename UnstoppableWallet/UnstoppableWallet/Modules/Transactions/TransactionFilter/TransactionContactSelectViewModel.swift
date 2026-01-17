@@ -27,21 +27,11 @@ class TransactionContactSelectViewModel: ObservableObject {
         var suitableBlockchainUids = Self.allowedBlockchainUids
 
         if let selectedBlockchain = transactionFilterViewModel.blockchain {
-            switch selectedBlockchain {
-            case let .blockchain(blockchain):
-                guard suitableBlockchainUids.contains(blockchain.type.uid) else {
-                    contacts = []
-                    return
-                }
-                suitableBlockchainUids = [blockchain.type.uid]
-                
-            case let .blockchainSeries(series):
-                guard let uids = transactionFilterViewModel.uids, Set(uids).isSubset(of: Set(suitableBlockchainUids)) else {
-                    contacts = []
-                    return
-                }
-                suitableBlockchainUids = uids
+            guard suitableBlockchainUids.contains(selectedBlockchain.type.uid) else {
+                contacts = []
+                return
             }
+            suitableBlockchainUids = [selectedBlockchain.type.uid]
         }
 
         contacts = allContacts.filter { $0.hasOne(of: suitableBlockchainUids) }

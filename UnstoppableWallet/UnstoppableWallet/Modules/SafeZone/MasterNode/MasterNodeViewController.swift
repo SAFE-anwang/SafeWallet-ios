@@ -62,7 +62,6 @@ class MasterNodeViewController: ThemeViewController {
             maker.center.equalToSuperview()
         }
         spinner.startAnimating()
-        viewModel.refresh()
         
         tipsCell.bind(text: "safe_zone.safe4.node.register.tips".localized, type: .normal)
         
@@ -82,6 +81,8 @@ class MasterNodeViewController: ThemeViewController {
             self?.nodeSearchCautionCell.set(caution: $0)
             self?.reloadTable()
         }
+        
+        viewModel.refresh()
     }
     
     private func sync(state: MasterNodeViewModel.State) {
@@ -124,6 +125,7 @@ class MasterNodeViewController: ThemeViewController {
 
     @objc 
     private func onRefresh() {
+        viewModel.clearCaches()
         viewModel.refresh()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             self?.refreshControl.endRefreshing()

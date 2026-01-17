@@ -18,7 +18,18 @@ class RedeemSafe3Service {
     }
 }
 extension RedeemSafe3Service {
-    
+    func getAllPettyNum() async throws -> BigUInt {
+        try await web3().safe4.safe3.getAllPettyNum()
+    }
+
+    func getPettyInfos(start: BigUInt, count: BigUInt) async throws -> [AvailableSafe3Info] {
+        try await web3().safe4.safe3.getPettyInfos(start, count)
+    }
+
+    func getPettyInfo(safe3Addr: String) async throws -> AvailableSafe3Info {
+        try await web3().safe4.safe3.getPettyInfo(safe3Addr)
+    }
+
     func safe3GetAvailableInfo(safe3address: String) async throws -> AvailableSafe3Info {
         try await web3().safe4.safe3.getAvailableInfo(safe3address)
     }
@@ -41,6 +52,10 @@ extension RedeemSafe3Service {
     
     func existMasterNodeNeedToRedeem(safe3Addr: String) async throws -> Bool {
         try await web3().safe4.safe3.existMasterNodeNeedToRedeem(safe3Addr)
+    }
+    
+    func existPettyNeedToRedeem(safe3Addr: String) async throws -> Bool {
+        try await web3().safe4.safe3.existPettyNeedToRedeem(safe3Addr)
     }
     
     func redeemSafe3(callerPrivateKey: Data, privateKeys: [Data], targetAddr: String) async throws -> [String] {

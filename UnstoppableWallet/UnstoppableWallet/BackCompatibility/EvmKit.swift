@@ -64,28 +64,6 @@ public extension Kit {
         rawTransaction(address: transactionData.to, value: transactionData.value, transactionInput: transactionData.input, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
     }
     
-    func safe4RawTransaction(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, lockDay: Int, nonce: Int? = nil) -> Single<RawTransaction> {
-        Single<RawTransaction>.create { [weak self] observer in
-            guard let strongSelf = self else {
-                observer(.error(DisposedError()))
-                return Disposables.create()
-            }
-            let task = Task {
-                do {
-                    let result = try await strongSelf.safe4LockRawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, lockDay: lockDay, nonce: nonce)
-                    observer(.success(result))
-                } catch {
-                    observer(.error(error))
-                }
-            }
-
-            return Disposables.create {
-                task.cancel()
-            }
-            
-        }
-    }
-
     func rawTransaction(address: EvmKit.Address, value: BigUInt, transactionInput: Data = Data(), gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) -> Single<RawTransaction> {
         Single<RawTransaction>.create { [weak self] observer in
             guard let strongSelf = self else {
@@ -130,7 +108,7 @@ public extension Kit {
         }
     }
 
-    func sendSingle(rawTransaction: RawTransaction, signature: Signature, privateKey: Data, timeLock: TimeLock? = nil) -> Single<FullTransaction> {
+    func sendSingle(rawTransaction: RawTransaction, signature: Signature, privateKey: Data) -> Single<FullTransaction> {
         Single<FullTransaction>.create { [weak self] observer in
             guard let strongSelf = self else {
                 observer(.error(DisposedError()))
@@ -139,7 +117,7 @@ public extension Kit {
 
             let task = Task {
                 do {
-                    let result = try await strongSelf.send(rawTransaction: rawTransaction, signature: signature, privateKey: privateKey, timeLock: timeLock)
+                    let result = try await strongSelf.send(rawTransaction: rawTransaction, signature: signature, privateKey: privateKey)
                     observer(.success(result))
                 } catch {
                     observer(.error(error))
@@ -161,9 +139,8 @@ public extension Kit {
 
             let task = Task {
                 do {
-                    if let result = try await strongSelf.sendSafe4LineLock(type: type, privateKey: privateKey, transactionData: transactionData) {
-                        observer(.success(result))
-                    }
+                    let result = try await strongSelf.sendSafe4LineLock(type: type, privateKey: privateKey, transactionData: transactionData)
+                    observer(.success(result))
                 } catch {
                     observer(.error(error))
                 }

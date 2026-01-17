@@ -60,7 +60,18 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
     }
 
     var explorerTitle: String {
-        evmTransactionSource.name
+        switch evmKitWrapper.blockchainType {
+        case .binanceSmartChain:
+            return "bscscan.com"
+        case .polygon:
+            return "polygonscan.com"
+        case .optimism:
+            return "optimistic.etherscan.io"
+        case .arbitrumOne:
+            return "arbiscan.io"
+        default:
+            return evmTransactionSource.name
+        }
     }
 
     var additionalTokenQueries: [TokenQuery] {
@@ -87,7 +98,21 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
     }
 
     func explorerUrl(transactionHash: String) -> String? {
-        evmTransactionSource.transactionUrl(hash: transactionHash)
+        let txBaseUrl: String
+        switch evmKitWrapper.blockchainType {
+        case .binanceSmartChain:
+            txBaseUrl = "https://bscscan.com"
+        case .polygon:
+            txBaseUrl = "https://polygonscan.com"
+        case .optimism:
+            txBaseUrl = "https://optimistic.etherscan.io"
+        case .arbitrumOne:
+            txBaseUrl = "https://arbiscan.io"
+        default:
+            return evmTransactionSource.transactionUrl(hash: transactionHash)
+        }
+        return "\(txBaseUrl)/tx/\(transactionHash)"
+        
     }
 
     func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {

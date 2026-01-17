@@ -8,6 +8,8 @@ struct TransactionLockInfo {
     let unlockedHeight: Int?
     
     init(lockedUntil: Date, originalAddress: String, lockTimeInterval: HodlerPlugin.LockTimeInterval, unlockedHeight: Int?) {
+
+//    init(lockedUntil: Date, originalAddress: String, lockTimeInterval: HodlerPlugin.LockTimeInterval) {
         self.lockedUntil = lockedUntil
         self.originalAddress = originalAddress
         self.lockTimeInterval = lockTimeInterval

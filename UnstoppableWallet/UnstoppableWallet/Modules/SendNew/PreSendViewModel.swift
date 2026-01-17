@@ -1,7 +1,9 @@
 import Combine
+import SwiftUI
 import Foundation
 import MarketKit
 import EvmKit
+import BigInt
 
 class PreSendViewModel: ObservableObject {
     private let wallet: Wallet
@@ -11,11 +13,8 @@ class PreSendViewModel: ObservableObject {
     private let walletManager = Core.shared.walletManager
     private let adapterManager = Core.shared.adapterManager
     private let decimalParser = AmountDecimalParser()
-
     private var cancellables = Set<AnyCancellable>()
-
     @Published var currency: Currency
-    
     var timeLockItems: [TimeLockService.Item] {
         TimeLockService.Item.allCases
     }
@@ -42,7 +41,6 @@ class PreSendViewModel: ObservableObject {
         didSet {
             syncFiatAmount()
             syncSendData()
-
             let amount = decimalParser.parseAnyDecimal(from: amountString)
 
             if amount != self.amount {
@@ -116,12 +114,12 @@ class PreSendViewModel: ObservableObject {
     var handler: IPreSendHandler?
     @Published var sendData: ExtendedSendData?
     @Published var cautions = [CautionNew]()
-
+    let allowanceHandler: PreSendAllowanceHandler
     init(wallet: Wallet, handler: IPreSendHandler?, resolvedAddress: ResolvedAddress, amount: Decimal?, memo: String?) {
         self.wallet = wallet
         self.handler = handler
         self.resolvedAddress = resolvedAddress
-
+        self.allowanceHandler = PreSendAllowanceHandler(token: wallet.token)
         currency = currencyManager.baseCurrency
 
         defer {
@@ -164,7 +162,7 @@ class PreSendViewModel: ObservableObject {
                 .sink { [weak self] _ in self?.syncSendData() }
                 .store(in: &cancellables)
         }
-
+        
         syncFiatAmount()
     }
 
@@ -228,44 +226,37 @@ extension PreSendViewModel {
             sendData = nil
             return
         }
+    
+        let trimmedMemo = memo.trimmingCharacters(in: .whitespaces)
+        let memo = hasMemo && !trimmedMemo.isEmpty ? trimmedMemo : nil
         
         if selectedTimeLock != .none {
             guard amount >= 1 else {
                 sendData = nil
                 return
             }
+            synceTimeLock()
         }
-
-        let trimmedMemo = memo.trimmingCharacters(in: .whitespaces)
-        let memo = hasMemo && !trimmedMemo.isEmpty ? trimmedMemo : nil
-        switch handler  {
-        case let handler as EvmPreSendHandler:
-            var timeLock: TimeLock?
-            if selectedTimeLock == .none {
-                timeLock = nil
+        
+        if let sendHandler = handler as? EvmPreSendHandler, sendHandler.timeLock != nil {
+            if let availableBalance {
+                allowanceHandler.getAllowanceState(amount: amount, availableBalance: availableBalance, onSuccess: { [weak self] state in
+                    self?.synceSendDataResult(handler: handler, amount: amount, memo: memo)
+                })
             }
-            if let days = selectedTimeLock.days {
-                if token.coin.uid == safe4CoinUid {
-                    timeLock = TimeLock(token: .native, lockDays: days)
-                } else if token.coin.uid.isSafeFourCustomCoin, let _ = SRC20SyncManager.logo(coinUid: token.coin.uid.lowercased()) {
-                    if case let .eip20(address) = token.type {
-                        timeLock = TimeLock(token: .src20(contract: try! EvmKit.Address(hex: address)), lockDays: days)
-                    } else {
-                        timeLock = nil
-                    }
-                }
-            }else {
-                timeLock = nil
-            }
-            handler.timeLock = timeLock
-        default:()
+        }else {
+            synceSendDataResult(handler: handler, amount: amount, memo: memo)
         }
+    }
+    
+    private func synceSendDataResult(handler: IPreSendHandler, amount: Decimal, memo: String?) {
         let result = handler.sendData(amount: amount, address: resolvedAddress.address, memo: memo)
-
         switch result {
         case let .valid(sendData):
-            self.sendData = ExtendedSendData(sendData: sendData, address: resolvedAddress.address)
-            cautions = []
+            DispatchQueue.main.async {
+                self.sendData = ExtendedSendData(sendData: sendData, address: self.resolvedAddress.address)
+                self.cautions = []
+            }
         case let .invalid(cautions):
             sendData = nil
             self.cautions = cautions
@@ -305,6 +296,32 @@ extension PreSendViewModel {
             case let .prefilled(_, amount): return amount
             default: return nil
             }
+        }
+    }
+}
+
+extension PreSendViewModel {
+    func synceTimeLock() {
+        switch handler  {
+        case let handler as EvmPreSendHandler:
+            var timeLock: TimeLock?
+
+            if selectedTimeLock == .none {
+                timeLock = nil
+            } else if let days = selectedTimeLock.days {
+                guard let amount, let evmAmount = BigUInt(amount.hs.roundedString(decimal: token.decimals)) else {
+                    return
+                }
+                if token.coin.uid == safe4CoinUid, token.type == .native {
+                    timeLock = TimeLock(token: .native, lockDays: days, value: evmAmount)
+                } else if token.coin.uid.isSafeFourCustomCoin, let _ = SRC20SyncManager.logo(coinUid: token.coin.uid.lowercased()) {
+                    if case let .eip20(address) = token.type {
+                        timeLock = TimeLock(token: .src20(contract: try! EvmKit.Address(hex: address)), lockDays: days, value: evmAmount)
+                    }
+                }
+            }
+            handler.timeLock = timeLock
+        default: ()
         }
     }
 }

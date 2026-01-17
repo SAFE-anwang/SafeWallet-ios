@@ -42,8 +42,16 @@ class TransactionsViewModel: ObservableObject {
 
     private var __sections: [Section] = [] {
         didSet {
-            DispatchQueue.main.async { [__sections] in
-                self.sections = __sections
+            DispatchQueue.main.async { [self, __sections] in
+                if let blockchain = transactionFilter.blockchain, blockchain.type == .dogecoin {
+                    self.sections = __sections.map{ section in
+                        var _section = section
+                        _section.viewItems = section.viewItems.removeDuplicates()
+                        return _section
+                    }
+                }else {
+                    self.sections = __sections
+                }
             }
         }
     }
@@ -60,7 +68,7 @@ class TransactionsViewModel: ObservableObject {
         }
     }
 
-    private var __items = [Item]()
+    private(set) var __items = [Item]()
     private var __poolGroup = PoolGroup(pools: [])
     private var __lastRequestedCount = TransactionsViewModel.pageLimit
     private var __loadMoreRequested = false
@@ -108,17 +116,9 @@ class TransactionsViewModel: ObservableObject {
     }
 
     // Queue protected methods
- 
-    var safe4IncomeEnabled: Bool {
-        true
-    }
 
-    var safe4NodestatusEnabled: Bool {
-        true
-    }
-    
     private func __syncPoolGroup() {
-        __poolGroup = poolGroupFactory.poolGroup(type: poolGroupType, filter: typeFilter, contact: transactionFilter.contact, scamFilterEnabled: transactionFilter.scamFilterEnabled, safe4IncomeEnabled: safe4IncomeEnabled, safe4NodestatusEnabled: safe4NodestatusEnabled)
+        __poolGroup = poolGroupFactory.poolGroup(type: poolGroupType, filter: typeFilter, contact: transactionFilter.contact, scamFilterEnabled: transactionFilter.scamFilterEnabled)
         __initPoolGroup()
     }
 
@@ -350,12 +350,7 @@ class TransactionsViewModel: ObservableObject {
         if let token = transactionFilter.token {
             return .token(token: token)
         } else if let blockchain = transactionFilter.blockchain {
-            switch blockchain {
-            case let .blockchain(blockchain):
-                return .blockchain(blockchainType: blockchain.type, wallets: walletManager.activeWallets)
-            case let .blockchainSeries(series):
-                return .blockchains(types: series.supportedTypes, wallets: walletManager.activeWallets)
-            }
+            return .blockchain(blockchainType: blockchain.type, wallets: walletManager.activeWallets)
         } else {
             return .all(wallets: walletManager.activeWallets)
         }

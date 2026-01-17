@@ -12,13 +12,14 @@ import HsExtensions
 
 class MasterNodeViewModel {
     private let service: MasterNodeService
-    private var safe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: true)
-    private var partnerSafe4Page = Safe4PageControl(initCount: 10, totalNum: 0, page: 0, isReverse: false)
+    private var safe4Page = Safe4PageControl(pageSize: 10, isReverse: true)
+    private var partnerSafe4Page = Safe4PageControl(pageSize: 10)
+    private var nodeStorageManager: NodeStorageManager
 
     private var stateRelay = PublishRelay<MasterNodeViewModel.State>()
     private var viewItems = [MasterNodeViewModel.ViewItem]()
+    private var cacheItems = [MasterNodeViewModel.ViewItem]()
     private var partnerAddressArray = [EthereumAddress]()
-
     let type: MasterNodeModule.MasterNodeType
 
     private(set) var state: MasterNodeViewModel.State = .loading {
@@ -36,9 +37,9 @@ class MasterNodeViewModel {
     init(service: MasterNodeService, type: MasterNodeModule.MasterNodeType) {
         self.service = service
         self.type = type
+        self.nodeStorageManager = NodeStorageManager(nodeType: .masterNode, pageControl: safe4Page)
     }
 }
-
 
 // Mine
 extension MasterNodeViewModel {
@@ -129,15 +130,17 @@ extension MasterNodeViewModel {
 
 // All
 extension MasterNodeViewModel {
+
     private func requestInfos(loadMore: Bool) {
         state = .loading
         Task { [service] in
             do{
-                if !loadMore {
-                    let totalNum = try await service.getTotalNum()
-                    safe4Page.set(totalNum: Int(totalNum))
-                    let _ = try await allPartnerAddrs()
+                if safe4Page.totalNum == 0 {
+                    async let totalNum = try service.getTotalNum()
+                    async let _ = try allPartnerAddrs()
+                    try await safe4Page.set(totalNum: Int(totalNum))
                 }
+                
                 guard safe4Page.totalNum > 0 else { return  state = .completed(datas: []) }
                 guard viewItems.count < safe4Page.totalNum else { return }
                 
@@ -167,13 +170,13 @@ extension MasterNodeViewModel {
                 }
                 results.sort{ Int($0.info.id) > Int($1.info.id) }
                 if results.count > 0 { safe4Page.plusPage() }
+                nodeStorageManager.save(pageControl: safe4Page, infos: results.map{Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, $0.info)})
                 viewItems.append(contentsOf: results)
                 state = .completed(datas: viewItems)
             }catch{
                 state = .failed(error: "")
             }
         }
-        
     }
 }
 
@@ -230,11 +233,15 @@ extension MasterNodeViewModel {
     
     private func nodeInfoBy(id: BigUInt) async throws -> ViewItem {
         let info = try await service.getInfoByID(id)
-        return try await nodeInfoBy(address: info.addr, isEnabledEdit: false)
+        return ViewItem(info: info, isNodeAddress: nodeType != .normal, isEnabledEdit: false, ownerType: ownerType(info: info))
     }
     
     private func nodeInfoBy(address: Web3Core.EthereumAddress, isEnabledEdit: Bool) async throws -> ViewItem {
         let info = try await service.getInfo(address: address)
+        return ViewItem(info: info, isNodeAddress: nodeType != .normal, isEnabledEdit: isEnabledEdit, ownerType: ownerType(info: info))
+    }
+    
+    private func ownerType(info: MasterNodeInfo) -> NodeOwnerType {
         var ownerType: NodeOwnerType = .None
         if info.creator.address.lowercased() == service.address.address.lowercased() {
             ownerType = .Creator
@@ -243,18 +250,34 @@ extension MasterNodeViewModel {
         }else if info.addr.address.lowercased() == service.address.address.lowercased() {
             ownerType = .Owner
         }
-        return ViewItem(info: info, isNodeAddress: nodeType != .normal, isEnabledEdit: isEnabledEdit, ownerType: ownerType)
+        return ownerType
     }
 }
 
 extension MasterNodeViewModel {
     func refresh() {
-        viewItems.removeAll()
         switch type {
         case .All:
-            requestInfos(loadMore: false)
+            viewItems.removeAll()
+            if let pageControl = nodeStorageManager.getPageControl(), nodeStorageManager.totalCacheNum > 0 {
+                safe4Page.update(totalNum: pageControl.totalNum, page: pageControl.page, indexPath: pageControl.targetIndexPath)
+                loadCache()
+            }else {
+                requestInfos(loadMore: false)
+            }
         case .Mine:
+            viewItems.removeAll()
             requestMineNodeInfos(loadMore: false)
+        }
+    }
+    
+    func clearCaches() {
+        if case .All = type {
+            safe4Page.reset()
+            nodeStorageManager.clearCaches()
+            cacheItems.removeAll()
+            viewItems.removeAll()
+            refresh()
         }
     }
     
@@ -264,7 +287,10 @@ extension MasterNodeViewModel {
         }
         switch type {
         case .All:
-            requestInfos(loadMore: true)
+            if safe4Page.isAbleLoadMore {
+                requestInfos(loadMore: true)
+            }
+    
         case .Mine:
             requestMineNodeInfos(loadMore: true)
         }
@@ -273,6 +299,20 @@ extension MasterNodeViewModel {
     func getLockId(viewItem: ViewItem) -> BigUInt? {
         return viewItem.info.founders
             .filter{$0.addr.address.lowercased() == service.address.address.lowercased()}.first?.lockID
+    }
+    
+    func loadCache() {
+        guard let pageControl = nodeStorageManager.getPageControl() else { return }
+        if let caches = nodeStorageManager.load() {
+            let cacheItems = caches.map { ViewItem(info: $0.transformToMaster(),
+                                        isNodeAddress: nodeType != .normal,
+                                        isEnabledEdit: false,
+                                        ownerType: ownerType(info: $0.transformToMaster()))
+                  }
+            self.viewItems = cacheItems
+            self.safe4Page = pageControl
+            state = .completed(datas: viewItems)
+        }
     }
 }
 

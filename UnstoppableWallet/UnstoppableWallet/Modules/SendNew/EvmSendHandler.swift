@@ -71,7 +71,8 @@ extension EvmSendHandler: ISendHandler {
             gasPrice: gasPriceData?.userDefined,
             evmFeeData: evmFeeData,
             nonce: transactionSettings?.nonce,
-            timeLock: timeLock
+            timeLock: timeLock,
+            feeToken: baseToken
         )
     }
 
@@ -91,15 +92,35 @@ extension EvmSendHandler: ISendHandler {
         guard let gasLimit = data.evmFeeData?.surchargedGasLimit else {
             throw SendError.noGasLimit
         }
-
-        _ = try await evmKitWrapper.send(
-            transactionData: transactionData,
-            gasPrice: gasPrice,
-            gasLimit: gasLimit,
-            privateSend: true,
-            nonce: data.nonce,
-            timeLock: data.timeLock
-        )
+        
+        if let timeLock = data.timeLock {
+            switch timeLock.token {
+            case .native:
+                _ = try await evmKitWrapper.sendSafe4TimeLock(
+                    transactionData: transactionData,
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    nonce: data.nonce,
+                    timeLock: timeLock
+                )
+            case .src20:
+                _ = try await evmKitWrapper.sendSrc20TimeLock(
+                    transactionData: transactionData,
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    nonce: data.nonce,
+                    timeLock: timeLock
+                )
+            }
+        } else {
+            _ = try await evmKitWrapper.send(
+                transactionData: transactionData,
+                gasPrice: gasPrice,
+                gasLimit: gasLimit,
+                privateSend: false,
+                nonce: data.nonce
+            )
+        }
     }
 }
 

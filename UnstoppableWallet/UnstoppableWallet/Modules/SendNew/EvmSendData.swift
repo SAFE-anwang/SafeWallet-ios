@@ -8,12 +8,14 @@ class EvmSendData: BaseSendEvmData, ISendData {
     let transactionData: TransactionData?
     let transactionError: Error?
     let timeLock: TimeLock?
+    let feeToken: Token?
     
-    init(decoration: EvmDecoration, transactionData: TransactionData?, transactionError: Error?, gasPrice: GasPrice?, evmFeeData: EvmFeeData?, nonce: Int?, timeLock: TimeLock?) {
+    init(decoration: EvmDecoration, transactionData: TransactionData?, transactionError: Error?, gasPrice: GasPrice?, evmFeeData: EvmFeeData?, nonce: Int?, timeLock: TimeLock?, feeToken: Token?) {
         self.decoration = decoration
         self.transactionData = transactionData
         self.transactionError = transactionError
         self.timeLock = timeLock
+        self.feeToken = feeToken
         
         super.init(gasPrice: gasPrice, evmFeeData: evmFeeData, nonce: nonce)
     }
@@ -55,7 +57,7 @@ class EvmSendData: BaseSendEvmData, ISendData {
             )
         }
 
-        sections.append(.init(feeFields(feeToken: baseToken, currency: currency, feeTokenRate: rates[baseToken.coin.uid])))
+        sections.append(.init(feeFields(feeToken: feeToken ?? baseToken, currency: currency, feeTokenRate: rates[baseToken.coin.uid])))
 
         return sections
     }

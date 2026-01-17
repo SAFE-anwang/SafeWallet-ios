@@ -132,17 +132,31 @@ extension ContactBookContactService {
     }
 
     func updateContact(address: ContactAddress) {
-        if let index = addresses.firstIndex(where: { $0.blockchainUid == address.blockchainUid }) {
-            addresses[index] = address
-        } else {
-            addresses.append(address)
+        let tempArray = addresses.filter{$0.blockchainUid == address.blockchainUid }
+        if tempArray.count < 5 {
+            if let index = addresses.firstIndex(where: { $0.address.lowercased() == address.address.lowercased() }) {
+                addresses[index] = address
+            }else {
+                addresses.append(address)
+            }
+        }else {
+            HudHelper.instance.show(banner: .error(string: "超出当前区块添加上限"))
         }
+
+//        if let index = tempArray.firstIndex(where: { $0.blockchainUid == address.blockchainUid }) {
+//            addresses[index] = address
+//        } else {
+//            addresses.append(address)
+//        }
     }
 
     func removeContact(address: ContactAddress?) {
-        if let address, let index = addresses.firstIndex(where: { $0.blockchainUid == address.blockchainUid }) {
+        if let address, let index = addresses.firstIndex(where: { $0.address.lowercased() == address.address.lowercased() }) {
             addresses.remove(at: index)
         }
+//        if let address, let index = addresses.firstIndex(where: { $0.blockchainUid == address.blockchainUid }) {
+//            addresses.remove(at: index)
+//        }
     }
 
     func save() throws {

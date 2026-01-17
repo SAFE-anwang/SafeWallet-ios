@@ -59,7 +59,7 @@ class ProposalViewController: ThemeViewController {
             maker.center.equalToSuperview()
         }
         spinner.startAnimating()
-        viewModel.refresh()
+//        viewModel.refresh()
         
         subscribe(disposeBag, viewModel.stateDriver) { [weak self] in self?.sync(state: $0) }
         
@@ -77,6 +77,8 @@ class ProposalViewController: ThemeViewController {
             self?.nodeSearchCautionCell.set(caution: $0)
             self?.reloadTable()
         }
+        
+        viewModel.proposalStorageManager.saveNeedShowTips(false)
     }
     
     private func sync(state: ProposalViewModel.State) {
@@ -116,6 +118,7 @@ class ProposalViewController: ThemeViewController {
     }
 
     @objc private func onRefresh() {
+        viewModel.clearCaches()
         viewModel.refresh()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             self?.refreshControl.endRefreshing()
