@@ -348,7 +348,8 @@ extension LockedRecordViewModel {
     }
     
     static func saveDidWithdrawIds(_ ids: [String]) {
-        Core.shared.userDefaultsStorage.set(value: ids, for: LockedRecordWithdrawIdsKey)
+        var oldIds = LockedRecordViewModel.getDidWithdrawIds()
+        Core.shared.userDefaultsStorage.set(value: oldIds.append(contentsOf: ids), for: LockedRecordWithdrawIdsKey)
     }
 }
 private let LockedRecordWithdrawIdsKey: String = "safe4_LockedRecord_WithdrawIds_key"
@@ -394,7 +395,7 @@ class WithdrawItemRecord: Identifiable {
         let addLockDayEnable = (record.type != 0 || votedddress == nullAddress) ? false : unlockHeight > 0
         let amount = (BigUInt(record.amount) ?? BigUInt.zero).safe4FomattedAmount + " SAFE"
         
-        let didWithdrawIds = WithdrawViewModel.getDidWithdrawIds()
+        let didWithdrawIds = LockedRecordViewModel.getDidWithdrawIds()
         let isWithdraw = didWithdrawIds.contains(record.id.description)
         self.id = record.id
         self.amount = amount

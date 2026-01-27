@@ -386,11 +386,13 @@ extension WithdrawViewModel {
     }
     
     static func saveDidWithdrawIds(_ ids: [String]) {
-        Core.shared.userDefaultsStorage.set(value: ids, for: WithdrawIdsKey)
+        var oldIds = WithdrawViewModel.getDidWithdrawIds()
+        Core.shared.userDefaultsStorage.set(value: oldIds.append(contentsOf: ids), for: WithdrawIdsKey)
     }
     
     static func saveRemoveVoteIds(_ ids: [String]) {
-        Core.shared.userDefaultsStorage.set(value: ids, for: WithdrawIdsKey)
+        var oldIds = WithdrawViewModel.getRemoveVoteIds()
+        Core.shared.userDefaultsStorage.set(value: oldIds.append(contentsOf: ids), for: WithdrawIdsKey)
     }
     
     static func getRemoveVoteIds() -> [String] {

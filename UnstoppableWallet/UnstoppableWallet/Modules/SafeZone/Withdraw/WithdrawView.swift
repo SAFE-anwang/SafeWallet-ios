@@ -102,7 +102,21 @@ struct WithdrawView: View {
             buttons: [
                 .init(style: .yellow, title: "button.ok".localized) {
                     viewModel.allWithdraw()
+                    viewModel.onSuccess = { sendState in
+                        switch sendState {
+                        case .normal, .loading:()
+                        case .completed:
+                            DispatchQueue.main.async {
+                                HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                            
+                        case .failed(_):
+                            HudHelper.instance.show(banner: .error(string: "transactions.failed".localized))
+                        }
+                    }
                     isPresented.wrappedValue = false
+                    
                 },
                 .init(style: .transparent, title: "button.cancel".localized) {
                     isPresented.wrappedValue = false
