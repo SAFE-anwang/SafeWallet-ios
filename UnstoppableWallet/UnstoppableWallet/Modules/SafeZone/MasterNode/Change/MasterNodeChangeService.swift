@@ -115,7 +115,7 @@ extension MasterNodeChangeService {
         }
         
         let isExist = try await exist(enode: enode)
-        guard !isExist else {
+        guard isExist else {
             caution = Caution(text: "safe_zone.safe4.node.master.input.endoe.used".localized, type: .error)
             enodeCautionRelay.accept(caution)
             return false
@@ -170,14 +170,14 @@ extension MasterNodeChangeService {
         let targetAddress = Web3Core.EthereumAddress(address)!
         async let existSuper = try web3().safe4.supernode.exist(targetAddress)
         async let existMaster = try web3().safe4.masternode.exist(targetAddress)
-        async let isMasterNodeFounder = try web3().safe4.supernode.existFounder(targetAddress)
-        async let isSuperNodeFounder  = try web3().safe4.masternode.existFounder(targetAddress)
-        let result = try await (existSuper, existMaster, isMasterNodeFounder, isSuperNodeFounder)
-        return result.0 || result.1 || result.2 || result.3
+//        async let isMasterNodeFounder = try web3().safe4.supernode.existFounder(targetAddress)
+//        async let isSuperNodeFounder  = try web3().safe4.masternode.existFounder(targetAddress)
+        let result = try await (existSuper, existMaster)//, isMasterNodeFounder, isSuperNodeFounder)
+        return result.0 || result.1 //|| result.2 || result.3
     }
 
     func exist(enode: String) async throws -> Bool {
-        try await web3().safe4.masternode.existEnode(enode)
+        try await web3().safe4.masternode.isValidEnode(enode)//existEnode(enode)
     }
     
     func changeAddress(address: Web3Core.EthereumAddress, newAddress: String) async throws -> String {

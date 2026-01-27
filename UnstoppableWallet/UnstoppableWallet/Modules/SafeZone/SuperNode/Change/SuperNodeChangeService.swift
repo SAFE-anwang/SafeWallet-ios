@@ -217,10 +217,10 @@ extension SuperNodeChangeService {
         let targetAddress = Web3Core.EthereumAddress(address)!
         async let existSuper = try web3().safe4.supernode.exist(targetAddress)
         async let existMaster = try web3().safe4.masternode.exist(targetAddress)
-        async let isMasterNodeFounder = try web3().safe4.supernode.existFounder(targetAddress)
-        async let isSuperNodeFounder  = try web3().safe4.masternode.existFounder(targetAddress)
-        let result = try await (existSuper, existMaster, isMasterNodeFounder, isSuperNodeFounder)
-        return result.0 || result.1 || result.2 || result.3
+//        async let isMasterNodeFounder = try web3().safe4.supernode.existFounder(targetAddress)
+//        async let isSuperNodeFounder  = try web3().safe4.masternode.existFounder(targetAddress)
+        let result = try await (existSuper, existMaster)//, isMasterNodeFounder, isSuperNodeFounder)
+        return result.0 || result.1// || result.2 || result.3
     }
     
     func exist(name: String) async throws -> Bool {

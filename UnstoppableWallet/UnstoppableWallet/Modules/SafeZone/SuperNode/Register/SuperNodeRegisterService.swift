@@ -110,10 +110,10 @@ extension SuperNodeRegisterService {
         let targetAddress = Web3Core.EthereumAddress(address)!
         async let existSuper = try web3().safe4.supernode.exist(targetAddress)
         async let existMaster = try web3().safe4.masternode.exist(targetAddress)
-        async let isMasterNodeFounder = try web3().safe4.supernode.existFounder(targetAddress)
-        async let isSuperNodeFounder  = try web3().safe4.masternode.existFounder(targetAddress)
-        let result = try await (existSuper, existMaster, isMasterNodeFounder, isSuperNodeFounder)
-        return result.0 || result.1 || result.2 || result.3
+//        async let isMasterNodeFounder = try web3().safe4.supernode.existFounder(targetAddress)
+//        async let isSuperNodeFounder  = try web3().safe4.masternode.existFounder(targetAddress)
+        let result = try await (existSuper, existMaster)//, isMasterNodeFounder, isSuperNodeFounder)
+        return result.0 || result.1 //|| result.2 || result.3
     }
     
     func isValid(address: String) async throws -> Bool {
@@ -143,14 +143,13 @@ extension SuperNodeRegisterService {
         return try await web3().safe4.supernode.register(privateKey: privateKey, value: amount, isUnion: isUnion, addr: addr, lockDay: lockDays, name: name, enode: enode, description: desc, creatorIncentive: superNodeIncentive.creatorIncentive, partnerIncentive: superNodeIncentive.partnerIncentive, voterIncentive: superNodeIncentive.voterIncentive)
     }
     
-    
-    func isMasterNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
-        try await web3().safe4.masternode.existFounder(addr)
-    }
-    
-    func isSuperNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
-        try await web3().safe4.supernode.existFounder(addr)
-    }
+//    func isMasterNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
+//        try await web3().safe4.masternode.existFounder(addr)
+//    }
+//    
+//    func isSuperNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
+//        try await web3().safe4.supernode.existFounder(addr)
+//    }
 }
 
 extension SuperNodeRegisterService {

@@ -127,13 +127,13 @@ extension SuperNodeService {
         return try await web3().safe4.supernode.getAddrs4Partner(partner, start, count)
     }
 
-    func isMasterNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
-        try await web3().safe4.masternode.existFounder(addr)
-    }
-    
-    func isSuperNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
-        try await web3().safe4.supernode.existFounder(addr)
-    }
+//    func isMasterNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
+//        try await web3().safe4.masternode.existFounder(addr)
+//    }
+//    
+//    func isSuperNodeFounder(_ addr: Web3Core.EthereumAddress) async throws -> Bool {
+//        try await web3().safe4.supernode.existFounder(addr)
+//    }
     
     func existID(_ id: BigUInt) async throws -> Bool {
         try await web3().safe4.supernode.existID(id)

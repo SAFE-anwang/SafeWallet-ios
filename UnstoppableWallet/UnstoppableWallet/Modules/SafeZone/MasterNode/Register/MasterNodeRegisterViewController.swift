@@ -251,7 +251,7 @@ private extension MasterNodeRegisterViewController {
             StaticRow(
                 cell: balanceCell(lockNum: viewModel.createMode.lockAmount.description, balance: viewModel.balance),
                 id: "safe-balance",
-                height: .heightCell48
+                height: .heightCell56
             ),
             StaticRow(
                     cell: balanceCautionCell,
