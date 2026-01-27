@@ -22,7 +22,7 @@ class EvmSyncSourceManager {
         switch blockchainType {
         case .safe4: return AppConfig.isSafe4TestNet ? .safeFourscanTestNet(apiKeys: AppConfig.etherscanKeys) : .safeFourscan(apiKeys: AppConfig.etherscanKeys)
         case .ethereum: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
-        case .binanceSmartChain: return .ethereumEtherscan(apiKeys: AppConfig.bscscanKeys)
+        case .binanceSmartChain: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
         case .polygon: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
         case .avalanche: return .snowtrace(apiKeys: AppConfig.snowtraceKeys)
         case .optimism: return .optimisticEtherscan(apiKeys: AppConfig.optimismEtherscanKeys)
@@ -144,21 +144,17 @@ extension EvmSyncSourceManager {
                 ]
             } else {
                 return [
-//                    EvmSyncSource(
-//                        name: "Binance",
-//                        rpcSource: .binanceSmartChainHttp(),
-//                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
-//                    ),
                     EvmSyncSource(
                         name: "BSC RPC",
                         rpcSource: .safeBscRpcHttp(),
-                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+                        transactionSource: .bscscan(apiKeys: AppConfig.bscscanKeys)
                     ),
+                    
                     EvmSyncSource(
                         name: "p2pify",
                         rpcSource: .p2pifyRpcHttp(),
-                        transactionSource: defaultTransactionSource(blockchainType: .binanceSmartChain)
-                    ),
+                        transactionSource: .bscscan(apiKeys: AppConfig.bscscanKeys)
+                    )
                 ]
             }
         case .polygon:
