@@ -15585,8 +15585,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SAFE-anwang/MarketKit.Swift.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.6.11;
+				kind = exactVersion;
+				version = 3.6.14;
 			};
 		};
 		C86A1BD62E98C36900C0769E /* XCRemoteSwiftPackageReference "OneInchKit.Swift" */ = {

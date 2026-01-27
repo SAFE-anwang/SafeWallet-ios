@@ -15,6 +15,7 @@ class SyncSafe4TokensService {
     private let evmKit: EvmKit.Kit
     private let marketKit: MarketKit.Kit
     private var dataRelay = PublishRelay<[Safe4CustomTokenRecord]>()
+    private var isSyncing = false
     
     lazy var cachedRecords: [Safe4CustomTokenRecord] = {
         let records = storage.allTokens().filter{$0.creator.lowercased() == evmKit.receiveAddress.eip55.lowercased()}
@@ -30,54 +31,56 @@ class SyncSafe4TokensService {
     }
     
     func requestTokens() {
+        guard !isSyncing else { return }
+        
         Task {
+            isSyncing = true
+            defer { isSyncing = false }
+            
             do{
                 let data = try await provider.requestTokens()
                 process(data: data)
-            }catch{}
+            }catch{
+                // 处理错误
+            }
         }
     }
     
     func process(data: Safe4TokensResponse) {
-        do {
-            try storage.clear()
-        }catch{}
-
         data.tokens.forEach {
             saveLogo(tokenInfo: $0)
         }
         
-        // save other
+        // 处理其他用户的token（已推广的）
         data.tokens
             .filter({$0.creator.lowercased() != evmKit.receiveAddress.eip55.lowercased()})
             .forEach { token in
                 if let url = token.logoURI, url.count > 0 { // 已推广
-                addToken(tokenInfo: token)
+                    addToken(tokenInfo: token)
+                }
+            }
+        
+        let userTokens = data.tokens.filter{$0.creator.lowercased() == evmKit.receiveAddress.eip55.lowercased()}
+        
+        userDefaultsStorage.set(value: userTokens.map{$0.address.lowercased()}, for: Safe4CustomTokenManager.safe4DeployContractsKey)
+        
+        let userTokenAddresses = Set(userTokens.map{$0.address.lowercased()})
+        cachedRecords.forEach { record in
+            if !userTokenAddresses.contains(record.address.lowercased()) {
+                storage.delete(by: record.address)
             }
         }
         
-        let filter = data.tokens.filter{$0.creator.lowercased() == evmKit.receiveAddress.eip55.lowercased()}
-        // cache user safe4custom token Contract
-        userDefaultsStorage.set(value: filter.map{$0.address.lowercased()}, for: Safe4CustomTokenManager.safe4DeployContractsKey)
-        
-        // delete user useless cache
-        let addressArray = filter.map{$0.address.lowercased()}
-            cachedRecords.forEach { record in
-                if !addressArray.contains(record.address) {
-                    storage.delete(by: record.address)
-                }
-        }
-        
-        // update logo
-        filter.forEach { token in
+        userTokens.forEach { token in
             addToken(tokenInfo: token)
             if let url = token.logoURI, !url.isEmpty {
                 storage.update(logo: url, address: token.address)
             }
         }
+        
         Task {
             do {
-                let results = try await requestVersion(tokens: filter)
+                let results = try await requestVersion(tokens: userTokens)
                 dataRelay.accept(results.sorted { lhsItem, rhsItem in
                     lhsItem.name.caseInsensitiveCompare(rhsItem.name) == .orderedAscending
                 })
@@ -125,23 +128,25 @@ class SyncSafe4TokensService {
         let tokenQuery = TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: tokenInfo.address))
         
         do{
-            try marketKit.removeToken(coinUid: tokenQuery.customCoinUid, reference: tokenInfo.address)
-            try marketKit.removeCoin(uid: tokenQuery.customCoinUid)
-            if try marketKit.token(query: tokenQuery) == nil {
+            let existingToken = try marketKit.token(query: tokenQuery)
+            if existingToken == nil {
                 let coin = Coin(uid: tokenQuery.customCoinUid, name: tokenInfo.name, code: tokenInfo.symbol)
                 try marketKit.insertCoin(coin: coin)
                 try marketKit.insertToken(coinUid: tokenQuery.customCoinUid, blockchainUid: BlockchainType.safe4.uid, type: "eip20", decimals: tokenInfo.decimals, reference: tokenInfo.address)
-                
-                if let _ = try storage.asset(address: tokenInfo.address) {
-                    storage.update(token: tokenInfo)
-                } else {
-                    storage.save(token: tokenInfo)
-                }
             }
-            if let account = Core.shared.accountManager.activeAccount {
+            
+            if let existingAsset = try storage.asset(address: tokenInfo.address) {
+                if existingAsset != tokenInfo {
+                    storage.update(token: tokenInfo)
+                }
+            } else {
+                storage.save(token: tokenInfo)
+            }
+            
+            if  let _ = Core.shared.accountManager.activeAccount {
                 let uids = Core.shared.walletManager.activeWallets.map{$0.token.coin.uid.lowercased()}
                 if !uids.contains(tokenQuery.customCoinUid.lowercased()) {
-//                    Core.shared.walletManager.preloadWallets()
+                    Core.shared.walletManager.preloadWallets()
                 }
             }
         }catch{}
