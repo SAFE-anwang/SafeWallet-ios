@@ -6,10 +6,14 @@ import Web3Core
 import BigInt
 import AdvancedList
 
+private let WithdrawIdsKey: String = "safe4_WithdrawIds_key"
+private let RemoveVoteIdsKey: String = "safe4_RemoveVoteIds_key"
+
 class WithdrawViewModel: ObservableObject {
     private let nullAddress = "0x0000000000000000000000000000000000000000"
     private let service: WithdrawViewService
     private let withdrawLockedStorage: Safe4WithdrawLockedStorage
+    private let userDefaultsStorage = Core.shared.userDefaultsStorage
     
     @Published private(set) var sendState: SendStatus = .normal
     @Published private(set) var dataState: ListState = .items
@@ -63,14 +67,17 @@ extension WithdrawViewModel {
                     let recordIDs = selectedItems.filter{$0.isRemoveVoteEnable}.map { $0.id }
                     if recordIDs.count > 0 {
                         _ = try await service.removeVoteOrApproval(recordIDs: recordIDs)
+                        WithdrawViewModel.saveRemoveVoteIds(recordIDs.map{$0.description})
                     }
                     let ids = selectedItems.filter{$0.isWithdrawEnable}.map { $0.id }
                     if  ids.count > 0 {
                         _ = try await service.withdrawByID(type: .native, ids: ids)
+                        WithdrawViewModel.saveDidWithdrawIds(ids.map{$0.description})
                     }
                 }else {
                     let ids = selectedItems.map { $0.id }
                     _ = try await service.withdrawByID(type: .native, ids: ids)
+                    WithdrawViewModel.saveDidWithdrawIds(ids.map{$0.description})
                 }
                 await MainActor.run {
                     sendState = .completed
@@ -252,17 +259,16 @@ extension WithdrawViewModel {
     
     private func ids(type: web3swift.AccountManager.ContractType, isLoadMore: Bool) async throws -> [BigUInt] {
         if !isLoadMore {
-//            switch service.type {
-//            case .masterNode:
-//                try withdrawLockedStorage.clear(type: .masterNode)
-//            case .superNode:
-//                try withdrawLockedStorage.clear(type: .superNode)
-//            case .voteLocked:
-//                try withdrawLockedStorage.clear(type: .voteLocked)
-//            case .proposal:
-//                try withdrawLockedStorage.clear(type: .proposal)
-//            }
-            
+            switch service.type {
+            case .masterNode:
+                try withdrawLockedStorage.clear(type: .masterNode)
+            case .superNode:
+                try withdrawLockedStorage.clear(type: .superNode)
+            case .voteLocked:
+                try withdrawLockedStorage.clear(type: .voteLocked)
+            case .proposal:
+                try withdrawLockedStorage.clear(type: .proposal)
+            }
             try await pageControl(type: type)
         }
         guard pageControl.isAbleLoadMore else {
@@ -374,6 +380,23 @@ extension WithdrawViewModel {
         }
         return results
     }
+    static func getDidWithdrawIds() -> [String] {
+        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: WithdrawIdsKey) else{ return [] }
+        return ids
+    }
+    
+    static func saveDidWithdrawIds(_ ids: [String]) {
+        Core.shared.userDefaultsStorage.set(value: ids, for: WithdrawIdsKey)
+    }
+    
+    static func saveRemoveVoteIds(_ ids: [String]) {
+        Core.shared.userDefaultsStorage.set(value: ids, for: WithdrawIdsKey)
+    }
+    
+    static func getRemoveVoteIds() -> [String] {
+        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: RemoveVoteIdsKey) else{ return [] }
+        return ids
+    }
 }
 
 extension WithdrawViewModel {
@@ -421,13 +444,19 @@ struct WithdrawItem: Equatable, Hashable, Identifiable {
         let isRemoveVoteEnable = type == .voteLocked ? (releaseHeight.isZero ? false : releaseHeight < lastBlockHeight) : false
         let amount = (BigUInt(record.amount) ?? BigUInt.zero).safe4FomattedAmount + " SAFE"
         
+        let didWithdrawIds = WithdrawViewModel.getDidWithdrawIds()
+        let isWithdraw = didWithdrawIds.contains(record.id.description)
+        
+        let didRemoveVoteIds = WithdrawViewModel.getRemoveVoteIds()
+        let isRemoveVote = didRemoveVoteIds.contains(record.id.description)
+        
         self.id = BigUInt(record.id)
         self.amount = amount
         self.unlockHeight = BigUInt(unlockHeight)
         self.releaseHeight = releaseHeight
         self.address = address
-        self.isWithdrawEnable = withdrawEnable
-        self.isRemoveVoteEnable = isRemoveVoteEnable
+        self.isWithdrawEnable = withdrawEnable && !isWithdraw
+        self.isRemoveVoteEnable = isRemoveVoteEnable && !isRemoveVote
     }
     
     init(id: BigUInt, amount: String, unlockHeight: BigUInt, releaseHeight: BigUInt, address: String, isWithdrawEnable: Bool, isRemoveVoteEnable: Bool) {
