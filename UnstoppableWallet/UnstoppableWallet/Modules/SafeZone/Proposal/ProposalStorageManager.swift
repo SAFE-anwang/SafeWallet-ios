@@ -6,7 +6,6 @@ class ProposalStorageManager: NSObject {
     private var proposalInfoStorage = Core.shared.safe4StorageManager.proposalInfoStorage
     private let userDefaultsStorage = Core.shared.userDefaultsStorage
     private let cachedPageControlKey: String = "safe4_proposal_info_key"
-    private let isShowNewProposalKey: String = "safe4_proposal_isShow_new_key"
 
     private(set) var pageControl: Safe4PageControl? = nil
     private(set) var totalCacheNum: Int = 0
@@ -46,12 +45,13 @@ class ProposalStorageManager: NSObject {
         return pageControl
     }
     
-    func getNeedShowTips() -> Bool {
-        guard let isNeed: Bool = userDefaultsStorage.value(for: isShowNewProposalKey) else{ return false }
+    static func getNeedShowTips() -> Bool {
+        guard let isNeed: Bool = Core.shared.userDefaultsStorage.value(for: isShowNewProposalKey) else{ return true }
         return isNeed
     }
     
-    func saveNeedShowTips(_ isNeed: Bool) {
-        userDefaultsStorage.set(value: isNeed, for: isShowNewProposalKey)
+    static func saveNeedShowTips(_ isNeed: Bool) {
+        Core.shared.userDefaultsStorage.set(value: isNeed, for: isShowNewProposalKey)
     }
 }
+private let isShowNewProposalKey: String = "safe4_proposal_isShow_new_key"

@@ -39,7 +39,6 @@ extension LockedRecordViewModel {
         sendState = .loading
         Task {
             do{
-                
                 let smallAmount_01 = intersectionUsingSet(lockedIds_01, ids)
                 let smallAmount_02 = intersectionUsingSet(lockedIds_02, ids)
                 let native = intersectionUsingSet(lockedIds, ids)
@@ -54,6 +53,13 @@ extension LockedRecordViewModel {
                 if native.count > 0 {
                     let _ = try await service.withdrawByID(type: .native, ids: ids)
                 }
+                
+                for id in ids {
+                    if let index = viewItems.firstIndex(where: { $0.id == id }) {
+                        viewItems.remove(at: index)
+                    }
+                }
+                LockedRecordViewModel.saveDidWithdrawIds(ids.map{$0.description})
                 
                 await MainActor.run {
                     sendState = .success(message: "safe_zone.safe4.withdraw".localized + "transactions.types.outgoing".localized)
@@ -335,7 +341,18 @@ extension LockedRecordViewModel {
             self
         }
     }
+    
+    static func getDidWithdrawIds() -> [String] {
+        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: LockedRecordWithdrawIdsKey) else{ return [] }
+        return ids
+    }
+    
+    static func saveDidWithdrawIds(_ ids: [String]) {
+        Core.shared.userDefaultsStorage.set(value: ids, for: LockedRecordWithdrawIdsKey)
+    }
 }
+private let LockedRecordWithdrawIdsKey: String = "safe4_LockedRecord_WithdrawIds_key"
+
 
 extension Sequence {
     func sorted(by first: (Element, Element) -> Bool, _ others: ((Element, Element) -> Bool)...) -> [Element] {
@@ -351,6 +368,7 @@ extension Sequence {
             return false
         }
     }
+    
 }
 
 class WithdrawItemRecord: Identifiable {
@@ -376,12 +394,14 @@ class WithdrawItemRecord: Identifiable {
         let addLockDayEnable = (record.type != 0 || votedddress == nullAddress) ? false : unlockHeight > 0
         let amount = (BigUInt(record.amount) ?? BigUInt.zero).safe4FomattedAmount + " SAFE"
         
+        let didWithdrawIds = WithdrawViewModel.getDidWithdrawIds()
+        let isWithdraw = didWithdrawIds.contains(record.id.description)
         self.id = record.id
         self.amount = amount
         self.unlockHeight = Int(unlockHeight)
         self.releaseHeight = releaseHeight.isZero ? nil : Int(releaseHeight)
         self.address = votedddress == nullAddress ? nil : votedddress
-        self.withdrawEnable = withdrawEnable
+        self.withdrawEnable = withdrawEnable && !isWithdraw
         self.addLockDayEnable = addLockDayEnable
     }
     
@@ -394,6 +414,5 @@ class WithdrawItemRecord: Identifiable {
         self.withdrawEnable = withdrawEnable
         self.addLockDayEnable = addLockDayEnable
     }
-    
 }
 

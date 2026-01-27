@@ -104,12 +104,12 @@ class EvmTransactionConverter {
         }
     }
     
-//    private func convertToAppValue(token: RemoveLiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> AppValue {
-//        switch token {
-//        case .evmCoin: return baseAppValue(value: value, sign: sign)
-//        case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
-//        }
-//    }
+    private func convertToAppValue(token: RemoveLiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> AppValue {
+        switch token {
+        case .evmCoin: return baseAppValue(value: value, sign: sign)
+        case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
+        }
+    }
 
     private func transferEvents(incomingEip20Transfers: [TransferEventInstance]) -> [TransferEvent] {
         incomingEip20Transfers.map { transfer in

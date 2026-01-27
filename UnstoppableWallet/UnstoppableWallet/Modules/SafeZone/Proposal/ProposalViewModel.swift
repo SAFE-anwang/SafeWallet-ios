@@ -97,6 +97,7 @@ extension ProposalViewModel {
 // load new Proposal
 extension ProposalViewModel {
     func loadNewProposals() {
+        self.hasNewProposal = ProposalStorageManager.getNeedShowTips()
         if case .All = service.type {
             Task {
                 let totalNum = try await service.getTotalNum()
@@ -105,10 +106,12 @@ extension ProposalViewModel {
                     requestInfos(loadMore: false) {
                         self.hasNewProposal = true
                         self.proposalStorageManager.savePageControl(self.safe4Page)
+                        ProposalStorageManager.saveNeedShowTips(self.hasNewProposal)
                     }
                 }else {
                     requestInfos(loadMore: true) {
                         self.hasNewProposal = self.viewItems.count > 0
+                        ProposalStorageManager.saveNeedShowTips(self.hasNewProposal)
                     }
                 }
             }

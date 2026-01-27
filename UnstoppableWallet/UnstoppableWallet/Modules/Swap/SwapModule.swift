@@ -164,16 +164,16 @@ extension SwapModule {
 extension BlockchainType {
     var allowedProviders: [SwapModule.Dex.Provider] {
         switch self {
-        case .ethereum: return [.oneInch, .uniswap, .uniswapV3, .pancakeV3, .safeSwap]
-        case .binanceSmartChain: return [.oneInch, .pancake, .pancakeV3, .uniswapV3, .safeSwap]
-        case .polygon: return [.oneInch, .quickSwap, .uniswapV3, .safeSwap]
+        case .ethereum: return [.uniswap, .uniswapV3, .pancakeV3, .safeSwap]
+        case .binanceSmartChain: return [ .pancake, .pancakeV3, .uniswapV3, .safeSwap]
+        case .polygon: return [.quickSwap, .uniswapV3, .safeSwap]
         case .avalanche: return [.oneInch]
         case .optimism: return [.oneInch]
         case .arbitrumOne: return [.oneInch, .uniswapV3]
         case .gnosis: return [.oneInch]
         case .fantom: return [.oneInch]
         case .safe4: return [.safeSwap]
-        case .base: return [.oneInch, .uniswap, .uniswapV3]
+        case .base: return [.uniswap, .uniswapV3]
         case .zkSync: return [.uniswapV3, .pancakeV3]
         default: return []
         }

@@ -46,12 +46,13 @@ extension AppViewModel {
         viewModel.$hasNewProposal
             .sink { [weak self] hasNewProposal in
                 if hasNewProposal {
-                    self?.showAlerView()
+                    self?.showAlerView(viewModel: viewModel)
                 }
             }.store(in: &cancellables)
-        
     }
-    private func showAlerView() {
+    
+    private func showAlerView(viewModel: ProposalViewModel) {
+        guard Core.shared.accountManager.activeAccount != nil else { return }
         Coordinator.shared.present(type: .bottomSheet) { isPresented in
             BottomSheetView(
                 icon: .info,
@@ -69,7 +70,7 @@ extension AppViewModel {
                         isPresented.wrappedValue = false
                     },
                     .init(style: .transparent, title: "不再提醒") {
-
+                        ProposalStorageManager.saveNeedShowTips(false)
                         isPresented.wrappedValue = false
                     }
                 ],

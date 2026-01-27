@@ -38,11 +38,9 @@ class RewardsService {
     
     private func handle(datas: [Safe4Reward]) {
         
-        
     }
     
     private func fetch(address: String) {
-        disposeBag = DisposeBag()
 
         provider.getRewardsSingle(address: address)
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
