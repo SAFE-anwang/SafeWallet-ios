@@ -36,20 +36,20 @@ struct Safe4SwapView: View {
         }
         .navigationTitle("swap.safe4.title".localized)
         .navigationDestination(isPresented: $sendPresented) {
-//                    if let tokenIn = viewModel.tokenIn,
-//                       let tokenOut = viewModel.tokenOut,
-//                       let amountIn = viewModel.amountIn,
-//                       let transactionData = viewModel.transactionData()
-//                       let currentQuote = viewModel.currentQuote
-//                    {
-//                        MultiSwapSendView(
-//                            tokenIn: tokenIn,
-//                            tokenOut: tokenOut,
-//                            amountIn: amountIn,
-//                            provider: currentQuote.provider,
-//                            swapPresentationMode: presentationMode
-//                        )
-//                    }
+                    if let tokenIn = viewModel.tokenIn,
+                    let tokenOut = viewModel.tokenOut,
+                    let amountIn = viewModel.amountIn,
+                     let transactionData = viewModel.transactionData()
+                 {
+                        Safe4SwapSendView(
+                         transactionData: transactionData,
+                         tokenIn: tokenIn,
+                         tokenOut: tokenOut,
+                         amountIn: amountIn,
+                         swapPresentationMode: presentationMode
+                     )
+                 }
+
             }
             .onChange(of: sendPresented) { presented in
 //                    if !presented {

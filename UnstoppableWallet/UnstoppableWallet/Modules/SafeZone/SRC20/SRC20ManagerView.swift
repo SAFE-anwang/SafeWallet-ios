@@ -30,19 +30,19 @@ struct SRC20ManagerView: View {
                                             ItemView(token: item.token) {
                                                 guard let viewMoel = SRC20ManagerModule.detailViewModel(token: item.token, type: .edit) as? SRC20EditViewModel else { return }
                                                 selectedViewModel = viewMoel
-                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .edit))
+                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .edit, viewModel: viewMoel))
                                             } promotionAction: {
                                                 guard let viewMoel = SRC20ManagerModule.detailViewModel(token: item.token, type: .promotion) as? SRC20PromotionViewModel else { return }
                                                 selectedViewModel = viewMoel
-                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .promotion))
+                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .promotion, viewModel: viewMoel))
                                             } addAction: {
                                                 guard let viewMoel = SRC20ManagerModule.detailViewModel(token: item.token, type: .additional) as? SRC20AdditionalViewModel else { return }
                                                 selectedViewModel = viewMoel
-                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .additional))
+                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .additional, viewModel: viewMoel))
                                             } destroyAction: {
                                                 guard let viewMoel = SRC20ManagerModule.detailViewModel(token: item.token, type: .destroy) as? SRC20DestroyViewModel else { return }
                                                 selectedViewModel = viewMoel
-                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .destroy))
+                                                path.append(SRC20ManagerViewModel.DetailViewType(editType: .destroy, viewModel: viewMoel))
                                             }
                                         }
                                     }
@@ -54,27 +54,26 @@ struct SRC20ManagerView: View {
                         .navigationDestination(for: SRC20ManagerViewModel.DetailViewType.self) { type in
                             switch type.editType {
                             case .edit:
-                                if let viewModel = selectedViewModel as? SRC20EditViewModel {
+                                if let viewModel = type.viewModel as? SRC20EditViewModel {
                                     SRC20EditView(viewModel: viewModel)
                                 }
                                 
                             case .promotion:
-                                if let viewModel = selectedViewModel as? SRC20PromotionViewModel {
+                                if let viewModel = type.viewModel as? SRC20PromotionViewModel {
                                     SRC20PromotionView(viewModel: viewModel)
                                 }
                                 
                             case .additional:
-                                if let viewModel = selectedViewModel as? SRC20AdditionalViewModel {
+                                if let viewModel = type.viewModel as? SRC20AdditionalViewModel {
                                     SRC20AdditionalView(viewModel: viewModel)
                                 }
                                 
                             case .destroy:
-                                if let viewModel = selectedViewModel as? SRC20DestroyViewModel {
+                                if let viewModel = type.viewModel as? SRC20DestroyViewModel {
                                     SRC20DestroyView(viewModel: viewModel)
                                 }
                             }
                         }
-
                     }
 
                 case .failed(_):

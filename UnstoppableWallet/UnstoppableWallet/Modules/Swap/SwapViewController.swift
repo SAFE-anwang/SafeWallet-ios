@@ -35,7 +35,7 @@ class SwapViewController: ThemeViewController {
         title = "swap.title".localized
 
         navigationItem.largeTitleDisplayMode = .never
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onClose))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "button.close".localized, style: .plain, target: self, action: #selector(onClose))
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
 
         view.addSubview(tableView)
@@ -101,6 +101,16 @@ class SwapViewController: ThemeViewController {
     @objc func onClose() {
         dismiss(animated: true)
     }
+    
+    @objc func onkLines() {
+        guard let token0 = dataSource?.state.tokenFrom, let token1 = dataSource?.state.tokenTo else { return }
+        guard token0.blockchainType == .safe4, token1.blockchainType == .safe4 else { return }
+        Coordinator.shared.present { _ in
+            ThemeNavigationStack {
+                KLineChartView(provider: Safe4Provider(networkManager: Core.shared.networkManager), token0: token0, token1: token1)
+            }
+        }
+    }
 
     @objc func onOpenSettings() {
         guard let viewController = SwapSettingsModule.viewController(
@@ -119,7 +129,7 @@ class SwapViewController: ThemeViewController {
 
     private func reloadTable() {
         tableView.buildSections()
-
+        udpateKlineBtn()
         guard isLoaded else {
             return
         }
@@ -128,6 +138,14 @@ class SwapViewController: ThemeViewController {
             tableView.beginUpdates()
             tableView.endUpdates()
         }
+    }
+    
+    private func udpateKlineBtn() {
+        guard let token0 = dataSource?.state.tokenFrom, let token1 = dataSource?.state.tokenTo, token0.blockchainType == .safe4, token1.blockchainType == .safe4 else {
+            navigationItem.rightBarButtonItem = nil
+            return
+        }
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "行情".localized, style: .plain, target: self, action: #selector(onkLines))
     }
 }
 

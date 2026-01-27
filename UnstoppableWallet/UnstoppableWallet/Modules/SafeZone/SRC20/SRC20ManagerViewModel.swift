@@ -56,15 +56,15 @@ class SRC20ManagerViewModel: ObservableObject {
     
     struct DetailViewType: Hashable {
         let editType: SRC20EditType
-        //let viewModel: AnyObject
+        let viewModel: AnyObject
         
         static func == (lhs: DetailViewType, rhs: DetailViewType) -> Bool {
-            lhs.editType == rhs.editType //&& lhs.viewModel == rhs.token
+            lhs.editType == rhs.editType && lhs.viewModel === rhs.viewModel
         }
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(editType)
-           // hasher.combine(token)
+            hasher.combine(ObjectIdentifier(viewModel))
         }
     }
 }
