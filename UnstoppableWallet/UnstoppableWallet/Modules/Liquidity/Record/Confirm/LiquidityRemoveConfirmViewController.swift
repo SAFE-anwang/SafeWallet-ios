@@ -62,7 +62,7 @@ class LiquidityRemoveConfirmViewController: ThemeViewController {
                 self?.show(error: error)
             case .removeSuccess:
                 self?.show(message: "liquidity.remove.succ".localized)
-                self?.navigationController?.popToRootViewController(animated: true)
+                self?.dismiss(animated: true)//navigationController?.popToRootViewController(animated: true)
             default: ()
             }
         }
