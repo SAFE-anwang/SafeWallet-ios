@@ -12,7 +12,7 @@ class Safe4Reward: ImmutableMappable {
     }
 }
 
-struct KLineWSafeTokenPriceModel: Codable, Identifiable, ImmutableMappable {
+struct KLineWSafeTokenPriceModel: Codable, Identifiable, ImmutableMappable, Hashable {
     var id: String { address }
     
     let address: String

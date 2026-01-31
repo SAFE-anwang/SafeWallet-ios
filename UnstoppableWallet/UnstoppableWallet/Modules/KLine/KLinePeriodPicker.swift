@@ -6,18 +6,9 @@ struct KLinePeriodPicker: View {
     @Binding var period: KLinePeriod
     
     private let allPeriods: [(KLinePeriod, String)] = [
-
         (.thirtyMinutes, "30分"),
-//        (.oneHour, "1时"),
-        (.twoHours, "2时"),
         (.fourHours, "4时"),
-//        (.sixHours, "6时"),
-        (.eightHours, "8时"),
-        (.twelveHours, "12时"),
         (.oneDay, "1天"),
-//        (.threeDays, "3天"),
-//        (.oneWeek, "1周"),
-//        (.oneMonth, "1月")
     ]
     
     var body: some View {

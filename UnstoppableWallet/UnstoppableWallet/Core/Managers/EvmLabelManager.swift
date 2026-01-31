@@ -118,6 +118,7 @@ extension EvmLabelManager {
         case lockRedeem2
         case lockRedeem3
         case lockRedeem4
+        case registerMN
         
         var id: String {
             switch self {
@@ -138,6 +139,7 @@ extension EvmLabelManager {
             case .lockRedeem2: "0x4c9e906a"
             case .lockRedeem3: "0x43594feb"
             case .lockRedeem4: "0x6d5b08d3"
+            case .registerMN: "0x082ed4d5"
             }
         }
         
@@ -153,6 +155,7 @@ extension EvmLabelManager {
             case .src20Lock: "SRC20 锁仓".localized
             case .usdtCross, .usdtCrossToSafe: "跨链".localized
             case .lockRedeem1, .lockRedeem2, .lockRedeem3, .lockRedeem4: "锁仓余额迁移".localized
+            case .registerMN: "注册主节点".localized
             }
         }
     }

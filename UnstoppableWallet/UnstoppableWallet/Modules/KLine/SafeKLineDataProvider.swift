@@ -5,21 +5,36 @@ import RxSwift
 import ObjectMapper
 
 final class SafeKLineDataProvider: KLineItemProvider {
+
+    
     private var disposeBag = DisposeBag()
-    private let period: KLinePeriod
+    private var period: KLinePeriod
     private lazy var endDate = Date()
     
     private let provider: Safe4Provider
     private let token0: MarketKit.Token
     private let token1: MarketKit.Token
     
-    var originalData = [SafeKLineItem]()
+    private var cachedData: [KLinePeriod: [SafeKLineItem]] = [:]
     
-    init(period: KLinePeriod = .thirtyMinutes, provider: Safe4Provider, token0: MarketKit.Token, token1: MarketKit.Token) {
+    var originalData: [SafeKLineItem] {
+        return cachedData[period] ?? []
+    }
+    
+    init(period: KLinePeriod = .fourHours, provider: Safe4Provider, token0: MarketKit.Token, token1: MarketKit.Token) {
         self.period = period
         self.provider = provider
         self.token0 = token0
         self.token1 = token1
+    }
+    
+    func updatePeriod(_ newPeriod: KLinePeriod) -> [SafeKLineItem] {
+        self.period = newPeriod
+        return originalData
+    }
+    
+    func reloadData() async throws -> [SafeKLineItem] {
+        return try await fetchKLineItemsFromProvider()
     }
 
     
@@ -49,22 +64,38 @@ final class SafeKLineDataProvider: KLineItemProvider {
     }
     
     func fetchKLineItems(forPage page: Int) async throws -> [any KLineItem] {
-        if originalData.isEmpty {
-            return try await fetchKLineItemsFromProvider()
-        }else {
-            return []
-        }
+        return []
     }
     
     func fetchKLineItems(from start: Date, to end: Date) async throws -> [any SwiftKLine.KLineItem] {
-        if originalData.isEmpty {
-            return try await fetchKLineItemsFromProvider()
-        }else {
-            return []
+        return []
+    }
+    
+    func liveStream() -> AsyncStream<any KLineItem> {
+        AsyncStream {continuation in
+            Task {
+                do {
+                    let cachedItems = cachedData[period] ?? []
+                    if !cachedItems.isEmpty {
+                        for item in cachedItems {
+                            continuation.yield(item)
+                        }
+                    }else {
+                        let newItems = try await fetchKLineItemsFromProvider()
+                        for item in newItems {
+                            continuation.yield(item)
+                        }
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish()
+                }
+            }
         }
     }
-        
+            
     private func fetchKLineItemsFromProvider() async throws -> [SafeKLineItem] {
+        
         guard case let .eip20(token0Address) = token0.type, case let .eip20(token1Address) = token1.type else {
             throw NSError(domain: "SafeKLineDataProvider", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid token types"])
         }
@@ -80,11 +111,12 @@ final class SafeKLineDataProvider: KLineItemProvider {
         }
         
         return try await withCheckedThrowingContinuation { continuation in
-            provider.marketkLinesSingle(token0: token0Addr, token1: token1Addr, interval: intervalToString(period.seconds < 2800 ? .thirtyMinutes : period ))
+            let p = period.seconds < KLinePeriod.thirtyMinutes.seconds ? KLinePeriod.thirtyMinutes : period
+            provider.marketkLinesSingle(token0: token0Addr, token1: token1Addr, interval: p.identifier)
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
                 .subscribe(onSuccess: { datas in
                     let sortedData = datas.sorted { $0.timestamp < $1.timestamp }
-                    self.originalData = sortedData
+                    self.cachedData[self.period] = sortedData
                     continuation.resume(returning: sortedData)
                 }, onError: { error in
                     continuation.resume(throwing: error)
@@ -100,7 +132,7 @@ struct SafeKLineItem: KLineItem, ImmutableMappable {
     let highest: Double
     let lowest: Double
     let volume: Double
-    let value: Double = 0       // 成交额
+    let value: Double = 0       
     let timestamp: Int
     
     init(map: Map) throws {
@@ -147,5 +179,12 @@ class StringToIntTransform: TransformType {
     
     func transformToJSON(_ value: Int?) -> Any? {
         return value
+    }
+}
+
+extension KLinePeriod: @retroactive Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(seconds)
+        hasher.combine(identifier)
     }
 }

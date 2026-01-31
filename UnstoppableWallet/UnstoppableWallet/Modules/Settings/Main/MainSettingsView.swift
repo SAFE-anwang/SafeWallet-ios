@@ -93,12 +93,12 @@ struct MainSettingsView: View {
 
                     Spacer().frame(height: .margin32)
 
-                    footer()
-
-                    if viewModel.showTestSwitchers {
-                        Spacer().frame(height: .margin32)
-                        testSwitchersSection()
-                    }
+//                    footer()
+//
+//                    if viewModel.showTestSwitchers {
+//                        Spacer().frame(height: .margin32)
+//                        testSwitchersSection()
+//                    }
                 }
                 .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
             }

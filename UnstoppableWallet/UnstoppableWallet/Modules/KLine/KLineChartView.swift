@@ -38,6 +38,7 @@ struct KLineChartView: View {
                     priceView()
                     KLinePeriodPicker(period: $period)
                     KLineSwiftUIView(period: period, mode: chartMode, provider: provider, token0: token0, token1: token1)
+                        .padding(.top, .margin10)
                 }
             }
         }
@@ -56,9 +57,6 @@ struct KLineChartView: View {
         if let price = viewModel.price {
             VStack {
                 HStack(spacing: .margin4) {
-//                    KFImage(URL(string: price.logoURI))
-//                        .resizable()
-//                        .frame(size: 40)
                     VStack {
                         Text("\(token0.coin.name)/USDT")
                             .themeHeadline1()

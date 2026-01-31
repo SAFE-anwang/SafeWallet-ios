@@ -40,10 +40,24 @@ private struct KLineRepresentable: UIViewRepresentable {
 
     func updateUIView(_ uiView: KLineView, context: Context) {
         if context.coordinator.period != period {
-            let provider = SafeKLineDataProvider(period: period, provider: provider, token0: token0, token1: token1)
-            uiView.setProvider(provider)
-            uiView.invalidateIntrinsicContentSize()
-            context.coordinator.period = period
+            if context.coordinator.provider == nil {
+                context.coordinator.provider = SafeKLineDataProvider(period: period, provider: provider, token0: token0, token1: token1)
+            } else {
+                let _ = context.coordinator.provider?.updatePeriod(period)
+            }
+            
+            if let provider = context.coordinator.provider {
+                uiView.setProvider(provider)
+                uiView.invalidateIntrinsicContentSize()
+                context.coordinator.period = period
+                Task {
+                    do {
+                        _ = try await provider.reloadData()
+                    } catch {
+    
+                    }
+                }
+            }
         }
 
         switch mode {
@@ -55,7 +69,8 @@ private struct KLineRepresentable: UIViewRepresentable {
     }
 
     final class Coordinator {
-        var period: KLinePeriod?
+        var period: KLinePeriod = .fourHours
+        var provider: SafeKLineDataProvider?
     }
 }
 
