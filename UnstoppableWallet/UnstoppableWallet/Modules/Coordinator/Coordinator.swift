@@ -106,6 +106,12 @@ extension Coordinator {
         }
         stat(page: page, section: section, event: .openCoin(coinUid: coin.uid))
     }
+    
+    func presentSrc20Info(token: Token, page: StatPage, section: StatSection? = nil) {
+        present { _ in
+            Src20TokenInfoView(provider: Safe4Provider(networkManager: Core.shared.networkManager), token: token)
+        }
+    }
 
     func presentAfterAcceptTerms(@ViewBuilder content: @escaping (Binding<Bool>) -> some View, onDismiss: (() -> Void)? = nil, onPresent: (() -> Void)? = nil) {
         let onAccept = {

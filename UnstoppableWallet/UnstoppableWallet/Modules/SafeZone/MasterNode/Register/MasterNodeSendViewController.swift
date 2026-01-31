@@ -76,7 +76,7 @@ private extension MasterNodeSendViewController {
     
     func showSuccess() {
         show(message: "safe_zone.safe4.node.master.register.success".localized)
-        navigationController?.popToRootViewController(animated: true)
+        dismiss(animated: true)
     }
     
     func show(error: String) {

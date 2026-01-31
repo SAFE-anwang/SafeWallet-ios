@@ -349,7 +349,8 @@ extension LockedRecordViewModel {
     
     static func saveDidWithdrawIds(_ ids: [String]) {
         var oldIds = LockedRecordViewModel.getDidWithdrawIds()
-        Core.shared.userDefaultsStorage.set(value: oldIds.append(contentsOf: ids), for: LockedRecordWithdrawIdsKey)
+        oldIds.append(contentsOf: ids)
+        Core.shared.userDefaultsStorage.set(value: oldIds, for: LockedRecordWithdrawIdsKey)
     }
 }
 private let LockedRecordWithdrawIdsKey: String = "safe4_LockedRecord_WithdrawIds_key"

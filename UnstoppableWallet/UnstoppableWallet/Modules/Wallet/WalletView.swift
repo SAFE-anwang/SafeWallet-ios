@@ -9,7 +9,7 @@ struct WalletView: View {
     var body: some View {
         Group {
             if let account = viewModel.account {
-                ThemeNavigationStack(path: $path) {
+//                ThemeNavigationStack(path: $path) {
                     ThemeView(style: .list) {
                         ScrollViewReader { proxy in
                             ThemeList(bottomSpacing: .margin16) {
@@ -44,7 +44,7 @@ struct WalletView: View {
                             .themeListScrollHeader()
                         }
                     }
-                }
+//                }
             } else {
                 ThemeView {
                     PlaceholderViewNew(icon: "wallet_add", layoutType: .middle) {
@@ -272,7 +272,7 @@ struct WalletView: View {
                     if let vc = SwapModule.viewController() {
                         SwapView(viewController: vc)
                     }
-                    MultiSwapView()
+//                    MultiSwapView()
                 }
                 stat(page: .balance, event: .open(page: .swap))
             case .scan:

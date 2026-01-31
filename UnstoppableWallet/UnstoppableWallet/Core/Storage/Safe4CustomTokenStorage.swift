@@ -22,7 +22,7 @@ class Safe4CustomTokenStorage {
                 t.column(Safe4CustomTokenRecord.Columns.type.name, .integer)
                 t.column(Safe4CustomTokenRecord.Columns.logoURI.name, .text)
                 t.column(Safe4CustomTokenRecord.Columns.version.name, .text)
-
+                
                 t.primaryKey([Redeem.Columns.address.name], onConflict: .replace)
             }
         }

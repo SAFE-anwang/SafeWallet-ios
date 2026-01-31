@@ -72,7 +72,12 @@ struct WalletTokenTopView: View {
                     //MultiSwapView(token: viewModel.wallet.token)
                 }
                 stat(page: .tokenPage, event: .open(page: .swap))
-            case .chart: Coordinator.shared.presentCoinPage(coin: viewModel.wallet.coin, page: .tokenPage)
+            case .chart:
+                if isSafeSrc20Token {
+                    Coordinator.shared.presentSrc20Info(token: viewModel.wallet.token, page: .tokenPage)
+                }else {
+                    Coordinator.shared.presentCoinPage(coin: viewModel.wallet.coin, page: .tokenPage)
+                }
             case .liquidity:
                 Coordinator.shared.present { _ in
                     LiquidityMainView(tokenFrom: viewModel.wallet.token)
@@ -81,9 +86,16 @@ struct WalletTokenTopView: View {
             default: ()
             }
         }
-        .disabled(button == .chart && viewModel.priceItem == nil)
+//        .disabled(button == .chart && viewModel.priceItem == nil)
     }
-
+    
+    var isSafeSrc20Token: Bool {
+        if case .eip20 = viewModel.wallet.token.type, viewModel.wallet.token.blockchainType == .safe4 {
+            return true
+        }
+        return false
+    }
+    
     private var primaryValue: CustomStringConvertible {
         if viewModel.balanceHidden {
             return BalanceHiddenManager.placeholder

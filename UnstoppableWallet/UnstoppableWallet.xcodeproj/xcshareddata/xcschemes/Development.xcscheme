@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D38404E1218317DF007D50AD"
-               BuildableName = "SafeWallet D.app"
+               BuildableName = "SafeWallet.app"
                BlueprintName = "Development"
                ReferencedContainer = "container:UnstoppableWallet.xcodeproj">
             </BuildableReference>
@@ -44,7 +44,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D38404E1218317DF007D50AD"
-            BuildableName = "SafeWallet D.app"
+            BuildableName = "SafeWallet.app"
             BlueprintName = "Development"
             ReferencedContainer = "container:UnstoppableWallet.xcodeproj">
          </BuildableReference>

@@ -18,10 +18,14 @@ class SafeProvider {
     }
 }
 
-
 extension SafeProvider {
-    func getSafeInfo(netType: String) -> Single<SafeChainInfo> {
-        let parameters: Parameters = [:]
-        return networkManager.single(url: "\(baseUrl)/v1/gate/\(netType)", method: .get, parameters: parameters, headers: nil)
+    func getCrossChainConfigForSafe4Native() -> Single<CrossChainSafe4NativeConfig> {
+        let netType = AppConfig.isSafe4TestNet ? "testnet4" : "mainnet4"
+        return networkManager.single(url: "\(baseUrl)/v1/gate/\(netType)", method: .get, parameters: [:], headers: nil)
+    }
+    
+    func getCrossChainConfigForSafe4USDT() -> Single<CrossChainSafe4USDTConfig> {
+        let netType = AppConfig.isSafe4TestNet ? "testnet4" : "mainnet4"
+        return networkManager.single(url: "\(baseUrl)/v1/gate/\(netType)/usdt", method: .get, parameters: [:], headers: nil)
     }
 }

@@ -233,7 +233,7 @@ enum AppConfig {
     }
     
     static var safe4ApiUrl: String {
-        isSafe4TestNet == true ? "https://safe4testnet.anwang.com/api" : "https://safe4.anwang.com/api/"
+        isSafe4TestNet == true ? "https://safe4testnet.anwang.com/api" : "https://safe4.anwang.com/api"
     }
 }
 

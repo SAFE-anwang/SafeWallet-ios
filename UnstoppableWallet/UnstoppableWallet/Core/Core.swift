@@ -125,7 +125,7 @@ class Core {
     let apiKeyManager: ApiKeyManager
     let safe4CustomTokenStorage: Safe4CustomTokenStorage
     let safe4StorageManager: Safe4StorageManager
-    let safeInfoManager: SafeInfoManager
+    let safeCrossChainManager: SafeCrossChainManager
     
     init() throws {
         let databaseURL = try FileManager.default
@@ -143,7 +143,8 @@ class Core {
         marketKit = try MarketKit.Kit.instance(
             hsApiBaseUrl: AppConfig.marketApiUrl,
             hsProviderApiKey: AppConfig.hsProviderApiKey,
-            minLogLevel: .error
+            minLogLevel: .error,
+            isSafe4Test: AppConfig.isSafe4TestNet
         )
         marketKit.sync()
 
@@ -238,8 +239,7 @@ class Core {
         feeRateProviderFactory = FeeRateProviderFactory()
                 
         let safeProvider = SafeProvider(networkManager: networkManager)
-        safeInfoManager = SafeInfoManager(evmBlockchainManager: evmBlockchainManager, safeProvider: safeProvider)
-        safeInfoManager.startNet(blockchainType: .ethereum)
+        safeCrossChainManager = SafeCrossChainManager(userDefaultsStorage: userDefaultsStorage, evmBlockchainManager: evmBlockchainManager, safeProvider: safeProvider)
         
         redeemStorage = try RedeemStorage(dbPool: dbPool)
         
