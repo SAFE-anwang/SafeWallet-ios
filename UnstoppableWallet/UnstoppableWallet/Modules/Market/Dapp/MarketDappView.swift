@@ -29,19 +29,13 @@ struct MarketDappView: View {
             )
             ZStack {
                 ForEach(MarketDappModule.Tab.allCases, id: \.id) { tab in
-                    MarketDappListView(tab: tab, onOpenUrl: { url in
-                        Coordinator.shared.present(url: URL(string: url))
-                        stat(page: .vault, event: .open(page: .dapp))
-                    })
+                    MarketDappListView(tab: tab)
                     .tag(tab.id)
                     .ignoresSafeArea()
                     .opacity(viewModel.currentTab == tab ? 1 : 0)
                 }
             }
         }
-        .tint(.themeJacob)
-        .navigationTitle("safe_zone.safe4.node.super.title".localized)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

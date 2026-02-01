@@ -84,7 +84,7 @@ enum AccountType: Identifiable {
             case (.dogecoin, .native): return true
             case (.dash, .native): return true
             case (.zcash, .native): return true
-            case (.monero, .native): return true
+            case (.monero, .native), (.monero, .unsupported(type: "native", reference: nil)): return true
             case (.ethereum, .native), (.ethereum, .eip20): return true
             case (.binanceSmartChain, .native), (.binanceSmartChain, .eip20): return true
             case (.polygon, .native), (.polygon, .eip20): return true
@@ -99,7 +99,7 @@ enum AccountType: Identifiable {
             case (.safe, .native), (.safe, .eip20): return true
             case (.safe4, .native), (.safe4, .eip20): return true
             case (.ton, .native), (.ton, .jetton): return true
-            case (.stellar, .native), (.stellar, .stellar): return true
+            case (.stellar, .native), (.stellar, .stellar), (.stellar, .unsupported(type: "native", reference: nil)): return true
             default: return false
             }
         case let .hdExtendedKey(key):
