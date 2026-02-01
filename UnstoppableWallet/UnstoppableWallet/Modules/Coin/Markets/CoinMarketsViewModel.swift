@@ -8,7 +8,6 @@ class CoinMarketsViewModel: ObservableObject {
     private let marketKit = Core.shared.marketKit
     private let currency = Core.shared.currencyManager.baseCurrency
     private var tasks = Set<AnyTask>()
-
     private var tickers: [MarketTicker]?
 
     @Published private(set) var state: State = .loading
@@ -43,10 +42,9 @@ class CoinMarketsViewModel: ObservableObject {
         if case .failed = state {
             state = .loading
         }
-
         Task { [weak self, marketKit, coinUid, currency] in
             do {
-                let tickers = try await marketKit.marketTickers(coinUid: coinUid.isSafeCoin ? safeCoinUid : coinUid, currencyCode: currency.code)
+                let tickers = try await marketKit.marketTickers(coinUid: coinUid.isSafeCoin ? "safe" : coinUid, currencyCode: currency.code)
                 self?.tickers = tickers
                 self?.syncState()
             } catch {

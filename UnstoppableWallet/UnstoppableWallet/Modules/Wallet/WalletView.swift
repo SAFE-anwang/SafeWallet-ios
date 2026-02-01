@@ -5,46 +5,43 @@ struct WalletView: View {
     @StateObject var accountWarningViewModel = AccountWarningViewModel(ignoreType: .always)
     @StateObject var transactionsViewModel = TransactionsViewModel()
     @State private var transactionsPresented = false
+    
     @Binding var path: NavigationPath
+    
     var body: some View {
         Group {
             if let account = viewModel.account {
-//                ThemeNavigationStack(path: $path) {
-                    ThemeView(style: .list) {
-                        ScrollViewReader { proxy in
-                            ThemeList(bottomSpacing: .margin16) {
-                                topView(account: account)
-                                    .listRowBackground(Color.themeTyler)
-                                    .listRowInsets(EdgeInsets())
-                                    .listRowSeparator(.hidden)
-                                    .themeListTopView()
-                                
-                                AccountWarningView(viewModel: accountWarningViewModel)
-                                    .listRowBackground(Color.themeTyler)
-                                    .listRowInsets(EdgeInsets())
-                                    .listRowSeparator(.hidden)
-                                    .padding(.horizontal, .margin16)
-                                    .padding(.top, .margin8)
-                                    .padding(.bottom, .margin12)
-                                
-                                Section {
-                                    itemsView()
-                                } header: {
-                                    headerView(account: account)
-                                }
+                ThemeView(style: .list) {
+                    ScrollViewReader { proxy in
+                        ThemeList(bottomSpacing: .margin16) {
+                            topView(account: account)
+                                .listRowBackground(Color.themeTyler)
+                                .listRowInsets(EdgeInsets())
+                                .listRowSeparator(.hidden)
+                                .themeListTopView()
+                            
+                            AccountWarningView(viewModel: accountWarningViewModel)
+                                .listRowBackground(Color.themeTyler)
+                                .listRowInsets(EdgeInsets())
+                                .listRowSeparator(.hidden)
+                                .padding(.horizontal, .margin16)
+                                .padding(.top, .margin8)
+                                .padding(.bottom, .margin12)
+                            
+                            Section {
+                                itemsView()
+                            } header: {
+                                headerView(account: account)
                             }
-                            .navigationDestination(for: Wallet.self) { wallet in
-                                WalletTokenModule.view(wallet: wallet)
-                            }
-                            .animation(.default, value: accountWarningViewModel.item)
-                            .refreshable {
-                                await viewModel.refresh()
-                            }
-                            .onChange(of: viewModel.sortType) { _ in withAnimation { proxy.scrollTo(THEME_LIST_TOP_VIEW_ID) } }
-                            .themeListScrollHeader()
                         }
+                        .animation(.default, value: accountWarningViewModel.item)
+                        .refreshable {
+                            await viewModel.refresh()
+                        }
+                        .onChange(of: viewModel.sortType) { _ in withAnimation { proxy.scrollTo(THEME_LIST_TOP_VIEW_ID) } }
+                        .themeListScrollHeader()
                     }
-//                }
+                }
             } else {
                 ThemeView {
                     PlaceholderViewNew(icon: "wallet_add", layoutType: .middle) {

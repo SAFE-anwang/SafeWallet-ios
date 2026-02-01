@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MainView: View {
-    @EnvironmentObject var viewModel: MainViewModel//()
+    @StateObject var viewModel = MainViewModel()
     @StateObject var badgeViewModel = MainBadgeViewModel()
     @StateObject var walletViewModel = WalletViewModel()
 

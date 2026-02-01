@@ -8,11 +8,7 @@ struct AboutView: View {
             VStack(spacing: .margin32) {
                 if let releaseNotesUrl = viewModel.releaseNotesUrl {
                     ListSection {
-                        NavigationRow(spacing: .margin8, destination: {
-                            MarkdownModule.gitReleaseNotesMarkdownView(url: releaseNotesUrl, presented: false)
-                                .onFirstAppear { stat(page: .aboutApp, event: .open(page: .whatsNews)) }
-                                .ignoresSafeArea()
-                        }) {
+                        ListRow(padding: EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin12, trailing: .margin16), spacing: .margin8, minHeight: .heightCell48) {
                             HStack(spacing: .margin16) {
                                 Image("circle_information_24").themeIcon()
                                 Text("settings.about_app.app_version".localized).textBody()
@@ -21,6 +17,13 @@ struct AboutView: View {
                             Text(viewModel.appVersion).textSubhead1()
                             Image.disclosureIcon
                         }
+//                        NavigationRow(spacing: .margin8, destination: {
+////                            MarkdownModule.gitReleaseNotesMarkdownView(url: releaseNotesUrl, presented: false)
+////                                .onFirstAppear { stat(page: .aboutApp, event: .open(page: .whatsNews)) }
+////                                .ignoresSafeArea()
+//                        }) {
+//                            
+//                        }
                     }
                 }
 

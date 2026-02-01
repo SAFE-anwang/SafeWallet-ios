@@ -9,7 +9,6 @@ struct AppView: View {
             case .passcodeSet:
                 ZStack {
                     MainView()
-                        .environmentObject(MainViewModel())
 
                     if viewModel.introVisible {
                         WelcomeScreenView {
