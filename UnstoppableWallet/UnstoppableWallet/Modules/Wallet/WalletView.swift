@@ -266,10 +266,10 @@ struct WalletView: View {
             case .receive: viewModel.onTapReceive()
             case .swap:
                 Coordinator.shared.present { _ in
-                    if let vc = SwapModule.viewController() {
-                        SwapView(viewController: vc)
-                    }
-//                    MultiSwapView()
+//                    if let vc = SwapModule.viewController() {
+//                        SwapView(viewController: vc)
+//                    }
+                    MultiSwapView()
                 }
                 stat(page: .balance, event: .open(page: .swap))
             case .scan:

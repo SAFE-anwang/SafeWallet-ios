@@ -69,7 +69,7 @@ struct MainSettingsView: View {
                         rateUs()
                         tellFriend()
                         faq()
-                        academy()
+//                        academy()
                     }
 
                     Spacer().frame(height: .margin24)
@@ -510,17 +510,17 @@ struct MainSettingsView: View {
         }
     }
 
-    @ViewBuilder private func academy() -> some View {
-        NavigationRow(destination: {
-            EducationView().onFirstAppear {
-                stat(page: .settings, event: .open(page: .education))
-            }
-        }) {
-            Image("academy_1_24").themeIcon()
-            Text("education.title".localized).themeBody()
-            Image.disclosureIcon
-        }
-    }
+//    @ViewBuilder private func academy() -> some View {
+//        NavigationRow(destination: {
+//            EducationView().onFirstAppear {
+//                stat(page: .settings, event: .open(page: .education))
+//            }
+//        }) {
+//            Image("academy_1_24").themeIcon()
+//            Text("education.title".localized).themeBody()
+//            Image.disclosureIcon
+//        }
+//    }
 
     @ViewBuilder private func telegram() -> some View {
         ClickableRow(action: {

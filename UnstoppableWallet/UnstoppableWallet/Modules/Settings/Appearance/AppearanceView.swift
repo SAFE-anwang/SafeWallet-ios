@@ -135,14 +135,14 @@ struct AppearanceView: View {
                     ListSectionHeader(text: "appearance.balance_tab".localized)
 
                     ListSection {
-                        Cell(
-                            middle: {
-                                MultiText(title: "appearance.hide_buttons".localized, subtitle: "appearance.hide_buttons.description".localized)
-                            },
-                            right: {
-                                ThemeToggle(isOn: $viewModel.hideBalanceButtons.animation(), style: .yellow)
-                            }
-                        )
+//                        Cell(
+//                            middle: {
+//                                MultiText(title: "appearance.hide_buttons".localized, subtitle: "appearance.hide_buttons.description".localized)
+//                            },
+//                            right: {
+//                                ThemeToggle(isOn: $viewModel.hideBalanceButtons.animation(), style: .yellow)
+//                            }
+//                        )
                         Cell(
                             middle: {
                                 MultiText(title: "appearance.amount_rounding".localized, subtitle: "appearance.amount_rounding.description".localized)
@@ -175,29 +175,29 @@ struct AppearanceView: View {
                     }
                 }
 
-                VStack(spacing: 0) {
-                    ListSectionHeader(text: "appearance.app_icon".localized)
-                    ListSection {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: .margin16) {
-                            ForEach(AppIconManager.allAppIcons, id: \.self) { appIcon in
-                                Button(action: {
-                                    viewModel.appIcon = appIcon
-                                }) {
-                                    VStack(spacing: .margin12) {
-                                        Image(appIcon.imageName)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .clipShape(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous))
-                                            .frame(width: 60, height: 60)
-                                        ThemeText(appIcon.title, style: .subhead, colorStyle: viewModel.appIcon == appIcon ? .yellow : .primary)
-                                            .frame(maxWidth: .infinity, alignment: .center)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.margin16)
-                    }
-                }
+//                VStack(spacing: 0) {
+//                    ListSectionHeader(text: "appearance.app_icon".localized)
+//                    ListSection {
+//                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: .margin16) {
+//                            ForEach(AppIconManager.allAppIcons, id: \.self) { appIcon in
+//                                Button(action: {
+//                                    viewModel.appIcon = appIcon
+//                                }) {
+//                                    VStack(spacing: .margin12) {
+//                                        Image(appIcon.imageName)
+//                                            .resizable()
+//                                            .scaledToFit()
+//                                            .clipShape(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous))
+//                                            .frame(width: 60, height: 60)
+//                                        ThemeText(appIcon.title, style: .subhead, colorStyle: viewModel.appIcon == appIcon ? .yellow : .primary)
+//                                            .frame(maxWidth: .infinity, alignment: .center)
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        .padding(.margin16)
+//                    }
+//                }
             }
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
         }
