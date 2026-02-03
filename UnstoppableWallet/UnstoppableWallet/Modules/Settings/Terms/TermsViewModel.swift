@@ -7,6 +7,7 @@ class TermsViewModel: ObservableObject {
 
     init() {
         termsAccepted = termsManager.termsAccepted
+        Core.shared.marketKit.sync()
     }
 }
 
