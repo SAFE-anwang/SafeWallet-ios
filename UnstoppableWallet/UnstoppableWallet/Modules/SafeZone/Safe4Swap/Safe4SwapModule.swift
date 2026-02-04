@@ -10,11 +10,11 @@ class Safe4SwapModule {
     static func viewModel() -> Safe4SwapViewModel? {
         let walletList = Core.shared.walletManager.activeWallets
         
-        guard let tokenIn = walletList.filter({$0.coin.uid == safe4CoinUid && $0.token.blockchain.type == .safe4 && $0.token.type == .native}).first?.token else {
+        guard let tokenIn = walletList.filter({$0.token.isSafe4Native}).first?.token else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
-        guard let tokenOut = walletList.filter({$0.token.blockchain.type == .safe4 && $0.token.type == .eip20(address: "0x0000000000000000000000000000000000001101")}).first?.token else {
+        guard let tokenOut = walletList.filter({$0.token.isSafe4SRC}).first?.token else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE SRC20")))
             return nil
         }

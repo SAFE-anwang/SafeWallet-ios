@@ -80,21 +80,24 @@ class SafeCoinAdapter: BitcoinBaseAdapter {
     
 }
 
-extension SafeCoinAdapter: SafeCoinKitDelegate {
+extension SafeCoinAdapter: DashKitDelegate {
 
     public func transactionsUpdated(inserted: [DashTransactionInfo], updated: [DashTransactionInfo]) {
-        var records = [BitcoinTransactionRecord]()
+        DispatchQueue.global(qos: .userInitiated).async {
+            var records = [BitcoinTransactionRecord]()
 
-        for info in inserted {
-            records.append(transactionRecord(fromTransaction: info))
-        }
-        for info in updated {
-            records.append(transactionRecord(fromTransaction: info))
-        }
+            for info in inserted {
+                records.append(self.transactionRecord(fromTransaction: info))
+            }
+            for info in updated {
+                records.append(self.transactionRecord(fromTransaction: info))
+            }
 
-        transactionRecordsSubject.onNext(records)
+            DispatchQueue.main.async {
+                self.transactionRecordsSubject.onNext(records)
+            }
+        }
     }
-
 }
 
 extension SafeCoinAdapter {

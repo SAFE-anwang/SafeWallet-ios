@@ -26,6 +26,10 @@ struct MainSafeZoneView: View {
             }
             .padding(EdgeInsets(top: .margin2, leading: .margin16, bottom: .margin32, trailing: .margin16))
         }
+        .onAppear(perform: {
+            viewModel.getConfig()
+        })
+        
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("safe_zone.nav.title".localized)
     }

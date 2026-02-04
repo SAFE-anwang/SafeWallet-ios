@@ -36,7 +36,7 @@ class SRC20ManagerModule {
             return viewModel
             
         case .promotion:
-            guard let safeWallet = walletList.filter({$0.coin.uid.lowercased() == safe4CoinUid.lowercased() && $0.token.blockchain.type == .safe4 && $0.token.type == .native}).first else {
+            guard let safeWallet = walletList.filter({$0.token.isSafe4Native}).first else {
                 HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
                 return nil
             }

@@ -5,7 +5,7 @@ import SwiftUI
 struct SafeLineLockModule {
 
     static func viewModel() -> SafeLineLockViewModel? {
-        guard let wallet = Core.shared.walletManager.activeWallets.filter({ $0.coin.uid == safe4CoinUid && $0.token.blockchain.type == .safe4 }).first else {
+        guard let wallet = Core.shared.walletManager.activeWallets.filter({ $0.coin.uid.isSafeCoin && $0.token.blockchain.type == .safe4 }).first else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }

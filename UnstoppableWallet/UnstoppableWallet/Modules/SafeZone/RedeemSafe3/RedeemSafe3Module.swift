@@ -35,44 +35,6 @@ struct RedeemSafe3Module {
         return viewModel
     }
     
-//    static func viewController() -> UIViewController? {
-//        let walletList = Core.shared.walletManager.activeWallets
-//        var safe4Wallet: Wallet?
-//        
-//        for wallet in walletList {
-//            if wallet.coin.uid == safe4CoinUid {
-//                if wallet.token.blockchain.type == .safe4 {
-//                    safe4Wallet = wallet
-//                }
-//            }
-//        }
-//        
-//        guard let safe4Wallet else {
-//            HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
-//            return nil
-//        }
-//        guard let account = Core.shared.accountManager.activeAccount else { return nil }
-//        
-//        guard let state = WalletAdapterService(account: account, adapterManager: Core.shared.adapterManager).state(wallet: safe4Wallet), state == .synced else {
-//            HudHelper.instance.show(banner: .error(string: "SAFE" + "balance.syncing".localized))
-//            return nil
-//        }
-//        
-//        guard let safe4EvmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
-//            return nil
-//        }
-//
-//        let  viewModel = RedeemSafe3TabViewModel()
-//        return RedeemSafe3TabViewController(account: account, viewModel: viewModel, safe4EvmKitWrapper: safe4EvmKitWrapper)
-//    }
-    
-//    static func subViewController(account: Account, safe4EvmKitWrapper: EvmKitWrapper, type: RedeemWalletType) -> RedeemSafe3ViewController {
-//        let service = RedeemSafe3Service()
-//        let addressService = AddressService(mode: .blockchainType, marketKit: Core.shared.marketKit, contactBookManager: nil, blockchainType: .safe)
-//        let viewModel = RedeemSafe3ViewModel(service: service, addressService: addressService, safe4EvmKitWrapper: safe4EvmKitWrapper, redeemWalletType: type)
-//        return RedeemSafe3ViewController(account: account, viewModel: viewModel)
-//    }
-    
     static func viewModel(account: Account, safe4EvmKitWrapper: EvmKitWrapper, type: RedeemWalletType) -> RedeemSafe3ViewModel {
         let service = RedeemSafe3Service()
         let addressService = AddressService(mode: .blockchainType, marketKit: Core.shared.marketKit, contactBookManager: nil, blockchainType: .safe)

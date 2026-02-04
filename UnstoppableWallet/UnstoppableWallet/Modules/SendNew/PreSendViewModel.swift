@@ -29,7 +29,7 @@ class PreSendViewModel: ObservableObject {
     }
     
     var isSupportedTimeLockToken: Bool {
-        if token.coin.uid == safe4CoinUid {
+        if token.isSafe4Native || token.isSafe4ETH || token.isSafe4BSC || token.isSafe4POL || token.isSafe4SRC {
             return true
         } else if token.coin.uid.isSafeFourCustomCoin, let _ = SRC20SyncManager.logo(coinUid: token.coin.uid.lowercased()) {
             return true

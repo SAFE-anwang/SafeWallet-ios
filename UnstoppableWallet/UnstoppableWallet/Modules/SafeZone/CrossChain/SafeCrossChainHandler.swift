@@ -25,7 +25,7 @@ class SafeCrossChainHandler {
             }
         case .other_CrossChain_to_SAFE:
             if let wallet = activeWallets.filter({
-                $0.coin.uid == crossChain.coinUid &&
+                $0.coin.uid.lowercased() == crossChain.coinUid.lowercased() &&
                 $0.token.blockchain.type == crossChain.blockchainType
             }).first {
                 self.baseWallet = wallet
@@ -119,7 +119,12 @@ enum SAFE_CrossChain: CaseIterable {
     
     var coinUid: String {
         switch self {
-        case .ETH, .BSC, .POL: return safe4CoinUid
+        case .ETH: return safe4CoinUid_eth
+            
+        case .BSC: return safe4CoinUid_bsc
+            
+        case .POL: return safe4CoinUid_pol
+            
         }
     }
     
