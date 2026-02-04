@@ -3,6 +3,7 @@ import Foundation
 import MarketKit
 import RxRelay
 import RxSwift
+import Combine
 
 class ManageWalletsService {
     private var queue = DispatchQueue(label: "\(AppConfig.label).manage-wallets-service.tokens", qos: .userInitiated)
@@ -16,13 +17,12 @@ class ManageWalletsService {
     private var tokens = [Token]()
     private var wallets = Set<Wallet>()
     private var filter: String = ""
-
-    private let itemsRelay = PublishRelay<[Item]>()
+    private let itemsSubject = PassthroughSubject<[Item], Never>()
     private let cancelEnableRelay = PublishRelay<Int>()
 
     var items: [Item] = [] {
         didSet {
-            itemsRelay.accept(items)
+            itemsSubject.send(items)
         }
     }
 
@@ -213,10 +213,11 @@ class ManageWalletsService {
 }
 
 extension ManageWalletsService {
-    var itemsObservable: Observable<[Item]> {
-        itemsRelay.asObservable()
-    }
 
+    var itemsPublisher: AnyPublisher<[Item], Never> {
+        itemsSubject.eraseToAnyPublisher()
+    }
+    
     var cancelEnableObservable: Observable<Int> {
         cancelEnableRelay.asObservable()
     }

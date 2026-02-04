@@ -3,11 +3,12 @@ import MarketKit
 import RxCocoa
 import RxRelay
 import RxSwift
+import Combine
 
 class ManageWalletsViewModel {
     private let service: ManageWalletsService
     private let disposeBag = DisposeBag()
-
+    private var cancellables = Set<AnyCancellable>()
     private let viewItemsRelay = BehaviorRelay<[ViewItem]>(value: [])
     private let notFoundVisibleRelay = BehaviorRelay<Bool>(value: false)
     private let disableItemRelay = PublishRelay<Int>()
@@ -17,8 +18,11 @@ class ManageWalletsViewModel {
 
     init(service: ManageWalletsService) {
         self.service = service
-
-        subscribe(disposeBag, service.itemsObservable) { [weak self] in self?.sync(items: $0) }
+        service.itemsPublisher
+            .sink { [weak self] in
+                self?.sync(items: $0)
+            }
+            .store(in: &cancellables)
         subscribe(disposeBag, service.cancelEnableObservable) { [weak self] in self?.disableItemRelay.accept($0) }
 
         sync(items: service.items)
