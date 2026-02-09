@@ -59,10 +59,11 @@ extension EvmPreSendHandler: IPreSendHandler {
         guard let evmAddress = try? EvmKit.Address(hex: address) else {
             return .invalid(cautions: [])
         }
-        let transactionData = adapter.transactionData(amount: evmAmount, address: evmAddress)
         if let timeLock {
+            let transactionData = TransactionData(to: evmAddress, value: .zero, input: Data())
             return .valid(sendData: .evmSafe4TimeLock(blockchainType: token.blockchainType, transactionData: transactionData, timeLock: timeLock))
         }else {
+            let transactionData = adapter.transactionData(amount: evmAmount, address: evmAddress)
             return .valid(sendData: .evm(blockchainType: token.blockchainType, transactionData: transactionData))
         }
     }

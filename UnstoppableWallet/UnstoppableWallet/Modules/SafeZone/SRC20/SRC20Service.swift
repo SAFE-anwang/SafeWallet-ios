@@ -6,9 +6,10 @@ import EvmKit
 
 class SRC20Service {
 
-    private let contract: String
+    let contract: String
     private let privateKey: Data
-    
+    private let lockAddress: String
+
     private func src20() async throws -> SRC20 {
         return try await SRC20(web3: web3(), contractAddr: contract)
     }
@@ -21,9 +22,14 @@ class SRC20Service {
         return try await SRC20Mintable(web3: web3(), contractAddr: contract)
     }
     
-    init(token: Safe4CustomTokenRecord? = nil, privateKey: Data) {
+    private func src20LockFactory() async throws -> SRC20LockFactory {
+        return try await SRC20LockFactory(web3: web3(), contractAddr: scr20TimeLockAddress)
+    }
+    
+    init(token: Safe4CustomTokenRecord? = nil, privateKey: Data, lockAddress: String) {
         self.contract = token?.address ?? ""
         self.privateKey = privateKey
+        self.lockAddress = lockAddress
     }
     
     private func web3() async throws -> Web3 {
@@ -175,7 +181,6 @@ class SRC20Service {
         return try await src20.version()
     }
 
-
     func totalSupply(type: DeployType) async throws -> BigUInt {
         switch type {
         case .SRC20:
@@ -196,6 +201,40 @@ class SRC20Service {
         case .SRC20Burnable:
             try await src20Burnable().balanceOf(account: account)
         }
+    }
+}
+
+// locked
+extension SRC20Service {
+    
+    var scr20TimeLockAddress: String {
+        if AppConfig.isSafe4TestNet {
+            "0x4f203092FB68732D8484c099a72dDc5a195f26f9"
+        } else {
+            "0x6A6dFAF83cc1741FE08A9EFDea596dEad68f7420"
+        }
+    }
+
+//    func getLock() async throws -> Web3Core.EthereumAddress {
+//        let token = Web3Core.EthereumAddress(from: contract)!
+//        return try await src20LockFactory().getLock(token)
+//    }
+    
+    func getLockedIDNum() async throws -> BigUInt {
+        let token = Web3Core.EthereumAddress(from: contract)!
+        let address = Web3Core.EthereumAddress(from: lockAddress)!
+        return try await src20LockFactory().getLockedIDNum(token, address)
+    }
+
+    func getLockedIDs(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        let token = Web3Core.EthereumAddress(from: contract)!
+        let address = Web3Core.EthereumAddress(from: lockAddress)!
+        return try await src20LockFactory().getLockedIDs(token, address, start, count)
+    }
+
+    func getRecordByID(id: BigUInt) async throws -> LockRecord {
+        let token = Web3Core.EthereumAddress(from: contract)!
+        return try await src20LockFactory().getRecordByID(token, id)
     }
 }
 

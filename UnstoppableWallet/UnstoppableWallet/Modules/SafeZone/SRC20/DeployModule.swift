@@ -12,7 +12,7 @@ class DeployModule {
         guard let privateKey = evmKitWrapper.signer?.privateKey else {
             return nil
         }
-        let service = SRC20Service(privateKey: privateKey)
+        let service = SRC20Service(privateKey: privateKey, lockAddress: evmKitWrapper.evmKit.receiveAddress.eip55)
         let viewModel = DeployViewModel(service: service, evmKitWrapper: evmKitWrapper)
         return viewModel
     }

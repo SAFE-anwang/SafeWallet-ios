@@ -33,7 +33,9 @@ struct CrossChainModule {
 }
 
 enum CrossChainToken {
+    // SAFE native
     case SAFE(chain: SAFE_CrossChain, direction: Direction)
+    // USDT safe
     case USDT(chain: USDT_CrossChain, direction: Direction)
     
     enum Direction {

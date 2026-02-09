@@ -46,7 +46,7 @@ extension Safe4CustomTokenStorage {
     func save(token: Safe4CustomTokenRecord) {
         _ = try? dbPool.write { db in
             guard let record = try Safe4CustomTokenRecord
-                .filter(Safe4CustomTokenRecord.Columns.address == token.address)
+                .filter(Safe4CustomTokenRecord.Columns.address.lowercased == token.address.lowercased())
                 .fetchOne(db) else {
                 try token.insert(db)
                 return
@@ -58,7 +58,7 @@ extension Safe4CustomTokenStorage {
     func asset(address: String) throws -> Safe4CustomTokenRecord? {
         try dbPool.read { db in
             try Safe4CustomTokenRecord
-                .filter(Safe4CustomTokenRecord.Columns.address == address)
+                .filter(Safe4CustomTokenRecord.Columns.address.lowercased == address.lowercased())
                 .fetchOne(db)
         }
     }
@@ -72,7 +72,7 @@ extension Safe4CustomTokenStorage {
     func update(logo: String, address: String) {
         _ = try? dbPool.write { db in
             guard let record = try Safe4CustomTokenRecord
-                .filter(Safe4CustomTokenRecord.Columns.address == address)
+                .filter(Safe4CustomTokenRecord.Columns.address.lowercased == address.lowercased())
                 .fetchOne(db) else {
                 return
             }
@@ -84,7 +84,7 @@ extension Safe4CustomTokenStorage {
     func delete(by address: String) {
         _ = try! dbPool.write { db in
             try Safe4CustomTokenRecord
-                .filter(Safe4CustomTokenRecord.Columns.address == address)
+                .filter(Safe4CustomTokenRecord.Columns.address.lowercased == address.lowercased())
                 .deleteAll(db)
         }
     }

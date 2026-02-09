@@ -105,7 +105,7 @@ extension EvmSendHandler: ISendHandler {
                 )
             case .src20:
                 _ = try await evmKitWrapper.sendSrc20TimeLock(
-                    transactionData: transactionData,
+                    to: transactionData.to,
                     gasPrice: gasPrice,
                     gasLimit: gasLimit,
                     nonce: data.nonce,

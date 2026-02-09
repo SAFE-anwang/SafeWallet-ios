@@ -252,12 +252,12 @@ class EvmKitWrapper {
         }
     }
     
-    func sendSrc20TimeLock(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, timeLock: TimeLock) async throws -> String {
+    func sendSrc20TimeLock(to: EvmKit.Address, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, timeLock: TimeLock) async throws -> String {
         guard let signer else {
             throw SignerError.signerNotSupported
         }
         if case let .src20(token) = timeLock.token {
-            return try await evmKit.src20TimeLock(privateKey: signer.privateKey, token: token, to: transactionData.to, amount: timeLock.value, lockDays: timeLock.lockDays)
+            return try await evmKit.src20TimeLock(privateKey: signer.privateKey, token: token, to: to, amount: timeLock.value, lockDays: timeLock.lockDays)
         }else {
             throw SignerError.signerNotSupported
         }

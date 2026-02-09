@@ -1558,6 +1558,10 @@
 		673369372EE01E460041B5E2 /* MarketDappView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 673369352EE01E460041B5E2 /* MarketDappView.swift */; };
 		673369392EE026E50041B5E2 /* MarketDappListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 673369382EE026E50041B5E2 /* MarketDappListViewModel.swift */; };
 		6733693A2EE026E50041B5E2 /* MarketDappListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 673369382EE026E50041B5E2 /* MarketDappListViewModel.swift */; };
+		677E5A5F2F381A5500F3943E /* SRC20LockedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677E5A5E2F381A5500F3943E /* SRC20LockedService.swift */; };
+		677E5A602F381A5500F3943E /* SRC20LockedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677E5A5E2F381A5500F3943E /* SRC20LockedService.swift */; };
+		677E5A652F381B5000F3943E /* Src20LockedRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677E5A642F381B5000F3943E /* Src20LockedRecordStorage.swift */; };
+		677E5A662F381B5000F3943E /* Src20LockedRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677E5A642F381B5000F3943E /* Src20LockedRecordStorage.swift */; };
 		677F6B732F23256F00FFC017 /* KLineChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677F6B722F23256F00FFC017 /* KLineChartView.swift */; };
 		677F6B742F23256F00FFC017 /* KLineChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677F6B722F23256F00FFC017 /* KLineChartView.swift */; };
 		677F6BC02F28612C00FFC017 /* KLineChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677F6BBF2F28612C00FFC017 /* KLineChartViewModel.swift */; };
@@ -4729,6 +4733,8 @@
 		673369262EE01D1F0041B5E2 /* MarketDappViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDappViewModel.swift; sourceTree = "<group>"; };
 		673369352EE01E460041B5E2 /* MarketDappView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDappView.swift; sourceTree = "<group>"; };
 		673369382EE026E50041B5E2 /* MarketDappListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDappListViewModel.swift; sourceTree = "<group>"; };
+		677E5A5E2F381A5500F3943E /* SRC20LockedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRC20LockedService.swift; sourceTree = "<group>"; };
+		677E5A642F381B5000F3943E /* Src20LockedRecordStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Src20LockedRecordStorage.swift; sourceTree = "<group>"; };
 		677F6B722F23256F00FFC017 /* KLineChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KLineChartView.swift; sourceTree = "<group>"; };
 		677F6BBF2F28612C00FFC017 /* KLineChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KLineChartViewModel.swift; sourceTree = "<group>"; };
 		677FAA922F29EB8900FFC017 /* Src20TokenInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Src20TokenInfoView.swift; sourceTree = "<group>"; };
@@ -8304,6 +8310,14 @@
 			path = Twiitter;
 			sourceTree = "<group>";
 		};
+		677E5A5D2F381A3500F3943E /* Locked */ = {
+			isa = PBXGroup;
+			children = (
+				677E5A5E2F381A5500F3943E /* SRC20LockedService.swift */,
+			);
+			path = Locked;
+			sourceTree = "<group>";
+		};
 		677F6B6E2F23254600FFC017 /* KLine */ = {
 			isa = PBXGroup;
 			children = (
@@ -10130,6 +10144,7 @@
 		C8B86ED82E9F8F7C008BB1A5 /* SRC20 */ = {
 			isa = PBXGroup;
 			children = (
+				677E5A5D2F381A3500F3943E /* Locked */,
 				C8B86EC62E9F8F7C008BB1A5 /* DeployModule.swift */,
 				C8B86EC72E9F8F7C008BB1A5 /* DeployView.swift */,
 				C8B86EC82E9F8F7C008BB1A5 /* DeployViewModel.swift */,
@@ -10160,6 +10175,7 @@
 				C8B86EDC2E9F8F7C008BB1A5 /* Safe4WithdrawLockedStorage.swift */,
 				C81D40462EF6F0E4006752FE /* Safe4NodeInfoStorage.swift */,
 				C8CB1A982EFD9AF8000B6154 /* ProposalInfoStorage.swift */,
+				677E5A642F381B5000F3943E /* Src20LockedRecordStorage.swift */,
 			);
 			path = Storage;
 			sourceTree = "<group>";
@@ -11721,6 +11737,7 @@
 				58AAA0D14CD9EDAE2DBF7540 /* SwapApproveViewController.swift in Sources */,
 				58AAAAD2D124AA0323629B0E /* SwapApproveModule.swift in Sources */,
 				58AAAFDBA357FC699C07C334 /* AdditionalDataWithErrorView.swift in Sources */,
+				677E5A602F381A5500F3943E /* SRC20LockedService.swift in Sources */,
 				D3B73E2B2BDBC61D0067429D /* EvmPreSendHandler.swift in Sources */,
 				D3E36BEE2E0A8496007F99CA /* ManageAccountsViewModel.swift in Sources */,
 				58AAA9053CD38F13CD944E2A /* SwapApproveAmountView.swift in Sources */,
@@ -12888,6 +12905,7 @@
 				ABC9A09E0B614E5B4E32B7F9 /* InputTextView.swift in Sources */,
 				ABC9ABE3F52BF2307533D8FB /* InputTextRow.swift in Sources */,
 				ABC9A36D3A4EEABF6EA6DBA0 /* Shake.swift in Sources */,
+				677E5A662F381B5000F3943E /* Src20LockedRecordStorage.swift in Sources */,
 				ABC9A4A21CFBA188A7EEC930 /* ActivityView.swift in Sources */,
 				6BB14F812C06F19300E879B2 /* DefiCoin.swift in Sources */,
 				11B357740CC018527301C4AE /* AppStatusView.swift in Sources */,
@@ -13599,6 +13617,7 @@
 				58AAA7B99324DDA9C53692AD /* SwapApproveViewController.swift in Sources */,
 				58AAA64C3C4E4FA0E4213000 /* SwapApproveModule.swift in Sources */,
 				58AAAAC61D3D8AD1AC4BEEAE /* AdditionalDataWithErrorView.swift in Sources */,
+				677E5A5F2F381A5500F3943E /* SRC20LockedService.swift in Sources */,
 				D3B73E2A2BDBC61D0067429D /* EvmPreSendHandler.swift in Sources */,
 				D3E36BED2E0A8496007F99CA /* ManageAccountsViewModel.swift in Sources */,
 				58AAACD7A57AA93736CDB54D /* SwapApproveAmountView.swift in Sources */,
@@ -14766,6 +14785,7 @@
 				ABC9A99A45187C36D48840F8 /* BackupAppModule.swift in Sources */,
 				ABC9AE51262C09EABF5CCEEE /* InputTextView.swift in Sources */,
 				6BB14F802C06F19300E879B2 /* DefiCoin.swift in Sources */,
+				677E5A652F381B5000F3943E /* Src20LockedRecordStorage.swift in Sources */,
 				ABC9A542CA987F09C93F04A9 /* InputTextRow.swift in Sources */,
 				ABC9A7C2087C3A641C3F9AD4 /* Shake.swift in Sources */,
 				ABC9A12A4D114A2E4F4C711A /* ActivityView.swift in Sources */,

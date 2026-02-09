@@ -29,7 +29,7 @@ class Src20TokenInfoViewModel: ObservableObject {
         
         if case let .eip20(address) = token.type {
             if let tokenRecord = try? storage.asset(address: address) {
-                let service = SRC20Service(token: tokenRecord, privateKey: privateKey)
+                let service = SRC20Service(token: tokenRecord, privateKey: privateKey, lockAddress: evmKitWrapper.evmKit.receiveAddress.eip55)
                 self.canAdditionalIssuance = tokenRecord.canAdditionalIssuance
                 Task {
                     do {

@@ -1,4 +1,5 @@
 import BigInt
+import Combine
 import Eip20Kit
 import EvmKit
 import Foundation
@@ -11,7 +12,11 @@ class Eip20Adapter: BaseEvmAdapter {
     let eip20Kit: Eip20Kit.Kit
     private let contractAddress: EvmKit.Address
     private let transactionConverter: EvmTransactionConverter
-
+    private let balanceDataSubject = PublishSubject<BalanceData>()
+    private var lockedAmount: Decimal = 0
+    private var lockedAmountCancellable: AnyCancellable?
+    private var lockedService: SRC20LockedService?
+    
     init(evmKitWrapper: EvmKitWrapper, contractAddress: String, wallet: Wallet, baseToken: Token, coinManager: CoinManager, evmLabelManager: EvmLabelManager) throws {
         let address = try EvmKit.Address(hex: contractAddress)
         eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: address)
@@ -21,8 +26,8 @@ class Eip20Adapter: BaseEvmAdapter {
             source: wallet.transactionSource, baseToken: baseToken, coinManager: coinManager, evmKitWrapper: evmKitWrapper, blockchainType: evmKitWrapper.blockchainType,
             userAddress: evmKitWrapper.evmKit.address, evmLabelManager: evmLabelManager
         )
-
         super.init(evmKitWrapper: evmKitWrapper, decimals: wallet.decimals)
+        synceSrc20LockedRecord()
     }
 }
 
@@ -39,6 +44,7 @@ extension Eip20Adapter: IAdapter {
 
     func refresh() {
         start()
+        synceSrc20LockedRecord()
     }
 }
 
@@ -52,15 +58,23 @@ extension Eip20Adapter: IBalanceAdapter {
             self?.convertToAdapterState(evmSyncState: $0) ?? .syncing(progress: nil, lastBlockDate: nil)
         }
     }
-
+    
     var balanceData: BalanceData {
-        balanceData(balance: eip20Kit.balance)
+        let available = balanceDecimal(kitBalance: eip20Kit.balance, decimals: decimals)
+        return BalanceData(balance: available, locked: lockedAmount)
     }
 
     var balanceDataUpdatedObservable: Observable<BalanceData> {
-        eip20Kit.balanceObservable.map { [weak self] in
-            self?.balanceData(balance: $0) ?? BalanceData(balance: 0)
-        }
+        Observable.merge(
+            eip20Kit.balanceObservable.map { [weak self] in
+                guard let self else {
+                    return BalanceData(balance: 0)
+                }
+                let available = self.balanceDecimal(kitBalance: $0, decimals: self.decimals)
+                return BalanceData(balance: available, locked: self.lockedAmount)
+            },
+            balanceDataSubject.asObservable()
+        )
     }
 }
 
@@ -103,6 +117,30 @@ extension DefaultBlockParameter {
         case .latest: self = .latest
         case .earliest: self = .earliest
         case let .blockNumber(value): self = .blockNumber(value: value)
+        }
+    }
+}
+extension Eip20Adapter {
+
+    func synceSrc20LockedRecord() {
+        if let lockedService {
+            lockedService.start()
+            lockedAmountCancellable?.cancel()
+            lockedAmountCancellable = lockedService.lockedAmountPublisher.sink { [weak self] lockedAmount in
+                guard let self else { return }
+                self.lockedAmount = self.balanceDecimal(kitBalance: lockedAmount, decimals: self.decimals)
+                let available = self.balanceDecimal(kitBalance: self.eip20Kit.balance, decimals: self.decimals)
+                self.balanceDataSubject.onNext(BalanceData(balance: available, locked: self.lockedAmount))
+            }
+        }else {
+            let lockedRecordStorage = Core.shared.safe4CustomTokenStorage
+            if let token = try? lockedRecordStorage.asset(address: contractAddress.eip55), let privateKey = evmKitWrapper.signer?.privateKey  {
+                let service = SRC20Service(token: token, privateKey: privateKey, lockAddress: receiveAddress.address)
+                let storage = Core.shared.safe4StorageManager.src20AllTokenLockedsRecordStorage
+                let lockedService = SRC20LockedService(service: service, lockedRecordStorage: storage)
+                self.lockedService = lockedService
+                synceSrc20LockedRecord()
+            }
         }
     }
 }

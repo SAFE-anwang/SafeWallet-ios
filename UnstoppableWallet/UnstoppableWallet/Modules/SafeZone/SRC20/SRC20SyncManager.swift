@@ -12,7 +12,7 @@ class SRC20SyncManager {
             guard let privateKey = adapter.evmKitWrapper.signer?.privateKey else {
                 return
             }
-            let service = SyncSafe4TokensService(provider: provider, srC20Service: SRC20Service(privateKey: privateKey), evmKit: adapter.evmKitWrapper.evmKit, storage: Core.shared.safe4CustomTokenStorage, marketKit: Core.shared.marketKit)
+            let service = SyncSafe4TokensService(provider: provider, srC20Service: SRC20Service(privateKey: privateKey, lockAddress: adapter.evmKitWrapper.evmKit.receiveAddress.eip55), evmKit: adapter.evmKitWrapper.evmKit, storage: Core.shared.safe4CustomTokenStorage, marketKit: Core.shared.marketKit)
             service.requestTokens()
             self.service = service
         default: ()
