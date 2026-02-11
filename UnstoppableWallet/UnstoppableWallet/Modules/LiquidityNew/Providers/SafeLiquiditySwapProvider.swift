@@ -1,0 +1,22 @@
+import MarketKit
+
+class SafeLiquiditySwapProvider: BaseUniswapV2LiquiditySwapProvider {
+    override var id: String {
+        "safeswap"
+    }
+
+    override var name: String {
+        "SafeSwap"
+    }
+
+    override var icon: String {
+        "safe-anwang_trx_32"
+    }
+
+    override func supports(token0 tokenIn: MarketKit.Token, token1 tokenOut: MarketKit.Token) -> Bool {
+        switch (tokenIn.blockchainType, tokenOut.blockchainType) {
+        case (.safe4, .safe4): return true
+        default: return false
+        }
+    }
+}
