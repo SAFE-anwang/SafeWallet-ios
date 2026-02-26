@@ -4,7 +4,6 @@ import Kingfisher
 import MarketKit
 import SwiftUI
 import UIKit
-import AdvancedList
 import BigInt
 
 struct LockedRecordView: View {
@@ -74,10 +73,18 @@ struct LockedRecordView: View {
     
     @ViewBuilder
     private func list() -> some View {
-        AdvancedList(viewModel.viewItems, content: { item in
-            view(for: item)
-        }, emptyStateView: {}, errorStateView: {_ in }, loadingStateView: {})
-        .pagination(.init(type: .lastItem, shouldLoadNextPage: loadNextItems) {})
+        ScrollView {
+            LazyVStack(spacing: .margin12) {
+                ForEach(viewModel.viewItems) { item in
+                    view(for: item)
+                        .onAppear {
+                            if item.id == viewModel.viewItems.last?.id {
+                                loadNextItems()
+                            }
+                        }
+                }
+            }
+        }
     }
     
     @ViewBuilder

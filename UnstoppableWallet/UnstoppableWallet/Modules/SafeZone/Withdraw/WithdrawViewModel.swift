@@ -4,7 +4,6 @@ import HsExtensions
 import web3swift
 import Web3Core
 import BigInt
-import AdvancedList
 
 private let WithdrawIdsKey: String = "safe4_WithdrawIds_key"
 private let RemoveVoteIdsKey: String = "safe4_RemoveVoteIds_key"
