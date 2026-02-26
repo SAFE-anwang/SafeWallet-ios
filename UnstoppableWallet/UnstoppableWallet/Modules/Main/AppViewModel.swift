@@ -5,6 +5,7 @@ class AppViewModel: ObservableObject {
     private let passcodeLockManager = Core.shared.passcodeLockManager
     private let localStorage = Core.shared.localStorage
     private let themeManager = Core.shared.themeManager
+    private let accountManager = Core.shared.accountManager
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var passcodeLockState: PasscodeLockState
@@ -26,6 +27,14 @@ class AppViewModel: ObservableObject {
         themeManager.$themeMode
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.themeMode = $0 }
+            .store(in: &cancellables)
+        
+        accountManager.activeAccountPublisher
+            .sink { [weak self] account in
+                if account != nil {
+                    self?.checkProposalUpdate()
+                }
+            }
             .store(in: &cancellables)
     }
 }
