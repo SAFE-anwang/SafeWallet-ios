@@ -1,5 +1,3 @@
-//
-//  LiquidityAddSendHandler.swift
 import BigInt
 import Eip20Kit
 import EvmKit
@@ -125,13 +123,13 @@ extension LiquidityAddSendHandler {
                         currencyValue: rates[token1.coin.uid].map { CurrencyValue(currency: currency, value: amount1 * $0) },
                         type: .neutral
                     ),
-                    .amount(
-                        title: "swap.you_get".localized,
-                        token: ,
-                        appValueType: .regular(appValue: AppValue(token: token1, value: quote.amountOut)),
-                        currencyValue: rates[token1.coin.uid].map { CurrencyValue(currency: currency, value: quote.amountOut * $0) },
-                        type: .incoming
-                    ),
+//                    .amount(
+//                        title: "swap.you_get".localized,
+//                        token: ,
+//                        appValueType: .regular(appValue: AppValue(token: token1, value: quote.amountOut)),
+//                        currencyValue: rates[token1.coin.uid].map { CurrencyValue(currency: currency, value: quote.amountOut * $0) },
+//                        type: .incoming
+//                    ),
                 ]),
             ]
 

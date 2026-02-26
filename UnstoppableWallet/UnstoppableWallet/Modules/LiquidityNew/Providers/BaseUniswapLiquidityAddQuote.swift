@@ -21,6 +21,23 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
         tradeOptions.allowedSlippage != MultiSwapSlippage.default
     }
 
+    private var deadlineModified: Bool {
+        tradeOptions.ttl != TradeOptions.defaultTtl
+    }
+
+    private var deadlineValue: String? {
+        guard deadlineModified else {
+            return nil
+        }
+
+        let ttlMinutes = Decimal(floatLiteral: floor(tradeOptions.ttl / 60))
+        return "swap.advanced_settings.deadline_minute".localized(ttlMinutes.description)
+    }
+
+    var deadline: String? {
+        deadlineValue
+    }
+
     override var amountOut: Decimal {
         trade.amountOut ?? 0
     }
@@ -34,7 +51,7 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
     }
 
     override var settingsModified: Bool {
-        super.settingsModified || recipient != nil || slippageModified
+        super.settingsModified || recipient != nil || slippageModified || deadlineModified
     }
 
     override func fields(token0: MarketKit.Token, token1: MarketKit.Token, currency: Currency, token0Rate: Decimal?, token1Rate: Decimal?) -> [MultiSwapMainField] {
@@ -57,6 +74,10 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
 
         let slippage = tradeOptions.allowedSlippage
         fields.append(.slippage(slippage, settingId: MultiSwapMainField.slippageSettingId, modified: slippageModified))
+
+        if let deadlineValue {
+            fields.append(.deadline(deadlineValue))
+        }
 
         return fields
     }
@@ -94,4 +115,3 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
         }
     }
 }
-

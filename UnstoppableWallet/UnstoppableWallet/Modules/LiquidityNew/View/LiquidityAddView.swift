@@ -51,6 +51,7 @@ struct LiquidityAddView: View {
                         token0: tokenIn,
                         token1: tokenOut,
                         amount0: amountIn,
+                        amount1: currentQuote.quote.amountOut,
                         provider: currentQuote.provider,
                         swapPresentationMode: presentationMode
                     )

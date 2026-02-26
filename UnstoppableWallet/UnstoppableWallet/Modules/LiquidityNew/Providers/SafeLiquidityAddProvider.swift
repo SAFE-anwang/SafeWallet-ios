@@ -15,7 +15,7 @@ class SafeLiquidityAddProvider: BaseUniswapV2LiquidityAddProvider {
         "safe-anwang_trx_32"
     }
     
-    override func spenderAddress(chain: Chain) throws -> Address {
+    override func spenderAddress(chain: Chain) throws -> EvmKit.Address {
         try super.kit.routerAddress(chain: chain, isSafeSwap: true)
     }
 

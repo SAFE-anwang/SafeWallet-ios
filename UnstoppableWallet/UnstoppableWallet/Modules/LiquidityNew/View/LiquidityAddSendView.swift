@@ -1,6 +1,3 @@
-//
-//  LiquidityAddSendView.swift
-
 import MarketKit
 import SwiftUI
 
@@ -8,8 +5,8 @@ struct LiquidityAddSendView: View {
     @StateObject var sendViewModel: SendViewModel
     @Binding private var swapPresentationMode: PresentationMode
 
-    init(token0: Token, token1: Token, amount0: Decimal, provider: ILiquidityAddProvider, swapPresentationMode: Binding<PresentationMode>) {
-        _sendViewModel = .init(wrappedValue: SendViewModel(sendData: .liquidityAdd(token0: token0, token1: token1, amount0: amount0, provider: provider)))
+    init(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, swapPresentationMode: Binding<PresentationMode>) {
+        _sendViewModel = .init(wrappedValue: SendViewModel(sendData: .liquidityAdd(token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider)))
         _swapPresentationMode = swapPresentationMode
     }
 
