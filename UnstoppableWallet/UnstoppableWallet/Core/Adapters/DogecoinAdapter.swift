@@ -13,6 +13,7 @@ class DogecoinAdapter: BitcoinBaseAdapter {
     private let dogecoinKit: DogecoinKit.Kit
 
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
+        let effectiveSyncMode: BitcoinCore.SyncMode = syncMode == .full ? .full : .blockchair
         let networkType: DogecoinKit.Kit.NetworkType = .mainNet
         let logger = Core.shared.logger.scoped(with: "DogeecoinKit")
         
@@ -41,14 +42,14 @@ class DogecoinAdapter: BitcoinBaseAdapter {
 //            }
 
             dogecoinKit = try DogecoinKit.Kit(
-                    seed: seed,
-                    purpose: .bip44,//derivation.purpose,
-                    walletId: wallet.account.id,
-                    syncMode: .full,
-                    hasher: hasher,
-                    networkType: networkType,
-                    confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
-                    logger: logger
+                seed: seed,
+                purpose: .bip44,//derivation.purpose,
+                walletId: wallet.account.id,
+                syncMode: effectiveSyncMode,
+                hasher: hasher,
+                networkType: networkType,
+                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                logger: logger
             )
         case let .hdExtendedKey(key):
 //            guard let derivation = wallet.token.type.derivation else {
@@ -56,20 +57,20 @@ class DogecoinAdapter: BitcoinBaseAdapter {
 //            }
 
             dogecoinKit = try DogecoinKit.Kit(
-                    extendedKey: key,
-                    purpose: .bip44,//derivation.purpose,
-                    walletId: wallet.account.id,
-                    syncMode: .full, 
-                    hasher: hasher,
-                    networkType: networkType,
-                    confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
-                    logger: logger
+                extendedKey: key,
+                purpose: .bip44,//derivation.purpose,
+                walletId: wallet.account.id,
+                syncMode: effectiveSyncMode,
+                hasher: hasher,
+                networkType: networkType,
+                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                logger: logger
             )
         default:
             throw AdapterError.unsupportedAccount
         }
 
-        super.init(abstractKit: dogecoinKit, wallet: wallet, syncMode: syncMode)
+        super.init(abstractKit: dogecoinKit, wallet: wallet, syncMode: effectiveSyncMode)
 
         dogecoinKit.delegate = self
     }

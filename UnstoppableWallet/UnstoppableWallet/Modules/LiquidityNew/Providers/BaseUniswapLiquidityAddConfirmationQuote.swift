@@ -49,6 +49,10 @@ class BaseUniswapLiquidityAddConfirmationQuote: BaseEvmLiquidityAddConfirmationQ
         let slippage = quote.tradeOptions.allowedSlippage
         fields.append(.slippage(slippage))
 
+        if let deadline = quote.deadline {
+            fields.append(.deadline(deadline))
+        }
+
         let minAmountOut = amountOut * (1 - slippage / 100)
 
         fields.append(
@@ -64,4 +68,3 @@ class BaseUniswapLiquidityAddConfirmationQuote: BaseEvmLiquidityAddConfirmationQ
         return fields
     }
 }
-

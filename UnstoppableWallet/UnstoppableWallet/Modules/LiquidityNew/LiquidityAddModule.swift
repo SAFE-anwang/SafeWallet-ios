@@ -1,5 +1,3 @@
-//
-//  LiquidityAddModule.swift
 import MarketKit
 import UniswapKit
 
@@ -14,10 +12,10 @@ extension LiquidityAddViewModel {
             providers.append(SafeLiquidityAddProvider(kit: kit, storage: storage))
         }
 
-//        if let kit = try? UniswapKit.KitV3.instance(dexType: .pancakeSwap) {
-//            providers.append(PancakeV3LiquidityAddProvider(kit: kit, storage: storage))
-//        }
-        
+        if let kit = try? UniswapKit.KitV3.instance(dexType: .pancakeSwap),
+           let rpcSource = Core.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .binanceSmartChain)?.rpcSource {
+            providers.append(PancakeV3LiquidityAddProvider(kit: kit, storage: storage, rpcSource: rpcSource))
+        }
         return LiquidityAddViewModel(providers: providers, token: token)
     }
 }

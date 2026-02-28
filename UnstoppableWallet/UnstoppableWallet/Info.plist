@@ -67,6 +67,8 @@
 	<string>${ftmscan_api_keys}</string>
 	<key>GnosisscanApiKeys</key>
 	<string>${gnosisscan_api_keys}</string>
+	<key>BlockchairApiKey</key>
+	<string>${blockchair_api_key}</string>
 	<key>HashDitApiKey</key>
 	<string>${hashdit_api_key}</string>
 	<key>HsProviderApiKey</key>

@@ -87,6 +87,10 @@ enum AppConfig {
         apiKeys(.gnosisscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "GnosisscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
+    static var blockchairApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "BlockchairApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
     static var ftmscanKeys: [String] {
         apiKeys(.ftmscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "FtmscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
