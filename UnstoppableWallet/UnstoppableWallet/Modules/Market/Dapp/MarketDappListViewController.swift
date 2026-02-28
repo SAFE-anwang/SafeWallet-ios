@@ -2,6 +2,7 @@ import UIKit
 import RxSwift
 import SectionsTableView
 import SwiftUI
+import MarketKit
 
 class MarketDappListViewController: ThemeViewController {
     private let viewModel: MarketDappListViewModel
@@ -108,14 +109,32 @@ class MarketDappListViewController: ThemeViewController {
             return
         }
 
-        let hostingController = UIHostingController(rootView: MarketDappBrowserView(url: url, onClose: {}))
-        hostingController.modalPresentationStyle = .fullScreen
-        hostingController.rootView = MarketDappBrowserView(url: url, onClose: { [weak hostingController] in
-            hostingController?.dismiss(animated: true)
-        })
+        let connectInfo: MarketDappBrowserConnectInfo?
 
-        let presenter = parentNavigationController ?? navigationController ?? self
-        presenter.present(hostingController, animated: true)
+        if let account = Core.shared.accountManager.activeAccount {
+            let blockchainType: BlockchainType
+
+            switch _tab {
+            case .ALL, .ETH: blockchainType = .ethereum
+            case .BSC: blockchainType = .binanceSmartChain
+            case .SAFE: blockchainType = .safe4
+            }
+
+            if let chain = try? Core.shared.evmBlockchainManager.chain(blockchainType: blockchainType),
+               let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper(account: account, blockchainType: blockchainType) {
+                connectInfo = MarketDappBrowserConnectInfo(chainId: chain.id, address: evmKitWrapper.evmKit.receiveAddress.eip55)
+            } else {
+                connectInfo = nil
+            }
+        } else {
+            connectInfo = nil
+        }
+
+        Coordinator.shared.present(type: .alert) { isPresented in
+            MarketDappBrowserView(url: url, connectInfo: connectInfo, onClose: {
+                isPresented.wrappedValue = false
+            })
+        }
     }
     
 }
@@ -213,4 +232,3 @@ extension MarketDappListViewController: SectionsDataSource {
         return sections
     }
 }
-
