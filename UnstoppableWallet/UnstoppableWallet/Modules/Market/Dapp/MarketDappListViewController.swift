@@ -1,10 +1,10 @@
 import UIKit
 import RxSwift
 import SectionsTableView
+import SwiftUI
 
 class MarketDappListViewController: ThemeViewController {
     private let viewModel: MarketDappListViewModel
-    private let urlManager: UrlManager
     private let disposeBag = DisposeBag()
 
     private let tableView = SectionsTableView(style: .grouped)
@@ -16,9 +16,8 @@ class MarketDappListViewController: ThemeViewController {
     weak var parentNavigationController: UINavigationController?
     var headerView: UITableViewHeaderFooterView? { nil }
 
-    init(viewModel: MarketDappListViewModel, urlManager: UrlManager, tab: MarketDappModule.Tab) {
+    init(viewModel: MarketDappListViewModel, tab: MarketDappModule.Tab) {
         self.viewModel = viewModel
-        self.urlManager = urlManager
         self._tab = tab
         super.init()
     }
@@ -105,7 +104,18 @@ class MarketDappListViewController: ThemeViewController {
     }
 
     private func open(url: String) {
-        urlManager.open(url: url, from: parentNavigationController)//openWkwebView(url: url, from: parentNavigationController)
+        guard let url = MarketDappBrowserUrlParser.url(string: url) else {
+            return
+        }
+
+        let hostingController = UIHostingController(rootView: MarketDappBrowserView(url: url, onClose: {}))
+        hostingController.modalPresentationStyle = .fullScreen
+        hostingController.rootView = MarketDappBrowserView(url: url, onClose: { [weak hostingController] in
+            hostingController?.dismiss(animated: true)
+        })
+
+        let presenter = parentNavigationController ?? navigationController ?? self
+        presenter.present(hostingController, animated: true)
     }
     
 }
@@ -203,6 +213,4 @@ extension MarketDappListViewController: SectionsDataSource {
         return sections
     }
 }
-
-
 

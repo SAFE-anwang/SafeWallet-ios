@@ -2989,7 +2989,6 @@
 		C8B870F62E9F8F7C008BB1A5 /* SuperNodeChangeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B86EE12E9F8F7C008BB1A5 /* SuperNodeChangeViewController.swift */; };
 		C8B870F72E9F8F7C008BB1A5 /* MasterNodeRegisterModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B86E882E9F8F7C008BB1A5 /* MasterNodeRegisterModule.swift */; };
 		C8B870F82E9F8F7C008BB1A5 /* LiquidityPendingAllowanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B86DF62E9F8F7C008BB1A5 /* LiquidityPendingAllowanceService.swift */; };
-		C8B870FA2E9F9825008BB1A5 /* AdvancedList in Frameworks */ = {isa = PBXBuildFile; productRef = C8B870F92E9F9825008BB1A5 /* AdvancedList */; };
 		C8B870FF2E9FA6E4008BB1A5 /* ApiKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B870FB2E9FA6E4008BB1A5 /* ApiKeyManager.swift */; };
 		C8B871002E9FA6E4008BB1A5 /* ApiKeyProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B870FC2E9FA6E4008BB1A5 /* ApiKeyProvider.swift */; };
 		C8B871012E9FA6E4008BB1A5 /* ApiKeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B870FD2E9FA6E4008BB1A5 /* ApiKeyService.swift */; };
@@ -3043,7 +3042,6 @@
 		C8C558B32EA339BA0062F13E /* NftKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B22EA339BA0062F13E /* NftKit */; };
 		C8C558B52EA339C50062F13E /* OneInchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B42EA339C50062F13E /* OneInchKit */; };
 		C8C558B72EA339DB0062F13E /* SafeSwapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B62EA339DB0062F13E /* SafeSwapKit */; };
-		C8C558B92EA33B690062F13E /* AdvancedList in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B82EA33B690062F13E /* AdvancedList */; };
 		C8C558BB2EA33E230062F13E /* UniswapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558BA2EA33E230062F13E /* UniswapKit */; };
 		C8CB1A962EFD9298000B6154 /* ProposalInfoRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CB1A952EFD9298000B6154 /* ProposalInfoRecord.swift */; };
 		C8CB1A972EFD9298000B6154 /* ProposalInfoRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CB1A952EFD9298000B6154 /* ProposalInfoRecord.swift */; };
@@ -5884,7 +5882,6 @@
 				D3E41E082C244CE200499F50 /* TonSwift in Frameworks */,
 				D3993DC428F429AA008720FB /* UnstoppableDomainsResolution in Frameworks */,
 				D023D2652A24B9DC004F65B0 /* TronKit in Frameworks */,
-				C8C558B92EA33B690062F13E /* AdvancedList in Frameworks */,
 				D3AF5A9329FFD87500C1399E /* RxSwift in Frameworks */,
 				6BDDB59C2C1816B500DE9D56 /* TonKit in Frameworks */,
 				D38405B8218317DF007D50AD /* LocalAuthentication.framework in Frameworks */,
@@ -5958,7 +5955,6 @@
 				C89BE95E2E9A449200039AD8 /* SafeSwapKit in Frameworks */,
 				D38406A821831B3D007D50AD /* AVFoundation.framework in Frameworks */,
 				D3C187B32907A60800FE1900 /* HdWalletKit in Frameworks */,
-				C8B870FA2E9F9825008BB1A5 /* AdvancedList in Frameworks */,
 				D3BF1E63274CBBCE00229A00 /* DeepDiff in Frameworks */,
 				C86A1C052E993F6400C0769E /* MarketKit in Frameworks */,
 				C8B86DCC2E9F4A9C008BB1A5 /* NftKit in Frameworks */,
@@ -11079,7 +11075,6 @@
 				C8C558B22EA339BA0062F13E /* NftKit */,
 				C8C558B42EA339C50062F13E /* OneInchKit */,
 				C8C558B62EA339DB0062F13E /* SafeSwapKit */,
-				C8C558B82EA33B690062F13E /* AdvancedList */,
 				C8C558BA2EA33E230062F13E /* UniswapKit */,
 				C80FEB282F27BFBA002DA812 /* SwiftKLine */,
 			);
@@ -11145,7 +11140,6 @@
 				C89BE9632E9A5DAC00039AD8 /* SafeCoinKit */,
 				C8B86DCB2E9F4A9C008BB1A5 /* NftKit */,
 				C8B86DCD2E9F4B0E008BB1A5 /* DogecoinKit */,
-				C8B870F92E9F9825008BB1A5 /* AdvancedList */,
 				C80FEB2A2F27C023002DA812 /* SwiftKLine */,
 			);
 			productName = Wallet;
@@ -11216,7 +11210,6 @@
 				6B1D8DF42DEACFA200A52B01 /* XCRemoteSwiftPackageReference "SnapKit" */,
 				6B1D8DF62DEAD10900A52B01 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				D092D63B2E3116780039BDB4 /* XCRemoteSwiftPackageReference "MoneroKit.Swift" */,
-				C86A1BBA2E98A82200C0769E /* XCRemoteSwiftPackageReference "AdvancedList" */,
 				C86A1BC12E98B19D00C0769E /* XCRemoteSwiftPackageReference "Checkpoints" */,
 				C86A1BC42E98B2C800C0769E /* XCRemoteSwiftPackageReference "BitcoinCore.Swift" */,
 				C86A1BC72E98B3FC00C0769E /* XCRemoteSwiftPackageReference "BitcoinCashKit.Swift" */,
@@ -15452,14 +15445,6 @@
 				kind = branch;
 			};
 		};
-		C86A1BBA2E98A82200C0769E /* XCRemoteSwiftPackageReference "AdvancedList" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/chris-swift-dev/AdvancedList.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 8.0.0;
-			};
-		};
 		C86A1BC12E98B19D00C0769E /* XCRemoteSwiftPackageReference "Checkpoints" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SAFE-anwang/Checkpoints.git";
@@ -15521,7 +15506,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/MarketKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.6.19;
+				version = 3.6.22;
 			};
 		};
 		C86A1BD62E98C36900C0769E /* XCRemoteSwiftPackageReference "OneInchKit.Swift" */ = {
@@ -15891,11 +15876,6 @@
 			package = C86A1BEC2E991C6A00C0769E /* XCRemoteSwiftPackageReference "DogecoinKit.Swift" */;
 			productName = DogecoinKit;
 		};
-		C8B870F92E9F9825008BB1A5 /* AdvancedList */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C86A1BBA2E98A82200C0769E /* XCRemoteSwiftPackageReference "AdvancedList" */;
-			productName = AdvancedList;
-		};
 		C8C5589A2EA337350062F13E /* SafeCoinKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C89BE95B2E99F15000039AD8 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */;
@@ -15970,11 +15950,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C89BE95C2E9A449100039AD8 /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */;
 			productName = SafeSwapKit;
-		};
-		C8C558B82EA33B690062F13E /* AdvancedList */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C86A1BBA2E98A82200C0769E /* XCRemoteSwiftPackageReference "AdvancedList" */;
-			productName = AdvancedList;
 		};
 		C8C558BA2EA33E230062F13E /* UniswapKit */ = {
 			isa = XCSwiftPackageProductDependency;

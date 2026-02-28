@@ -19,7 +19,7 @@ struct MarketDappListView: UIViewControllerRepresentable {
         let dappProvider = MarketDappProvider(networkManager: Core.shared.networkManager)
         let service = MarketDappService(provider: dappProvider, currentTab: tab)
         let viewModel = MarketDappListViewModel(service: service)
-        return MarketDappListViewController(viewModel: viewModel, urlManager: UrlManager(inApp: true), tab: tab)
+        return MarketDappListViewController(viewModel: viewModel, tab: tab)
     }
 
     func updateUIViewController(_: UIViewController, context _: Context) {}
@@ -47,5 +47,4 @@ extension MarketDappModule {
         }
     }
 }
-
 
