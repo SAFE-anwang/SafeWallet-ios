@@ -3,7 +3,6 @@ import EvmKit
 import Kingfisher
 import MarketKit
 import SwiftUI
-import AdvancedList
 import BigInt
 
 struct WithdrawView: View {
@@ -136,27 +135,36 @@ struct WithdrawView: View {
     
     @ViewBuilder
     private func list(items: [WithdrawItem]) -> some View {
-        AdvancedList(items, content: { item in
-            ClickableRow(action: {
-                if item.isSelEnable {
-                    viewModel.choose(item: item)
-                }else {
-                    HudHelper.instance.show(banner: .error(string: "safe_withdraw.votelocked.error".localized))
+        ScrollView {
+            LazyVStack(spacing: .margin12) {
+                ForEach(items) { item in
+                    ClickableRow(action: {
+                        if item.isSelEnable {
+                            viewModel.choose(item: item)
+                        } else {
+                            HudHelper.instance.show(banner: .error(string: "safe_withdraw.votelocked.error".localized))
+                        }
+                    }) {
+                        ItemView(
+                            id: item.idStr,
+                            amount: item.amount,
+                            unlockHeight: item.unlockHeight.description,
+                            releaseHeight: item.releaseHeight.description,
+                            address: item.address,
+                            isSelected: viewModel.isSelected(item: item),
+                            isEnable: item.isSelEnable,
+                            isVoteLock: viewModel.withdrawType == .voteLocked
+                        )
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .onAppear {
+                        if item.id == items.last?.id {
+                            loadNextItems()
+                        }
+                    }
                 }
-            }) {
-                ItemView(id: item.idStr,
-                         amount: item.amount,
-                         unlockHeight: item.unlockHeight.description,
-                         releaseHeight: item.releaseHeight.description,
-                         address: item.address,
-                         isSelected: viewModel.isSelected(item: item),
-                         isEnable: item.isSelEnable,
-                         isVoteLock: viewModel.withdrawType == .voteLocked
-                )
             }
-            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-        }, emptyStateView: {}, errorStateView: {_ in }, loadingStateView: {})
-        .pagination(.init(type: .lastItem, shouldLoadNextPage: loadNextItems) {})
+        }
     }
     
     private func loadNextItems() {

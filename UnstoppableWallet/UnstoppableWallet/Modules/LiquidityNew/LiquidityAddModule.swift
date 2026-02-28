@@ -1,0 +1,23 @@
+//
+//  LiquidityAddModule.swift
+import MarketKit
+import UniswapKit
+
+extension LiquidityAddViewModel {
+    static func instance(token: MarketKit.Token? = nil) -> LiquidityAddViewModel {
+        let storage = MultiSwapSettingStorage()
+        var providers = [ILiquidityAddProvider]()
+
+        if let kit = try? UniswapKit.Kit.instance() {
+            providers.append(UniswapV2LiquidityAddProvider(kit: kit, storage: storage))
+            providers.append(PancakeV2LiquidityAddProvider(kit: kit, storage: storage))
+            providers.append(SafeLiquidityAddProvider(kit: kit, storage: storage))
+        }
+
+//        if let kit = try? UniswapKit.KitV3.instance(dexType: .pancakeSwap) {
+//            providers.append(PancakeV3LiquidityAddProvider(kit: kit, storage: storage))
+//        }
+        
+        return LiquidityAddViewModel(providers: providers, token: token)
+    }
+}
