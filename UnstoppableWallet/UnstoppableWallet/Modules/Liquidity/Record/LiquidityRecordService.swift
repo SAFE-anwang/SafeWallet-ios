@@ -197,12 +197,83 @@ extension LiquidityRecordService {
                 guard let evmKitWrapper = evmKitWrapper else { return }
                 let pairAddress = viewItem.pair.pairAddress
                 let poolInfo = try await liquiditypoolInfo(evmKit: evmKitWrapper.evmKit, pairAddress: pairAddress, receiveAddress: receiveAddress)
+//                try await removeWithPermit(viewItem: viewItem, pairAddress: pairAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
                 let eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: pairAddress)
                 try await allowance(eip20Kit: eip20Kit, viewItem: viewItem, pairAddress: pairAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
             }catch {
                 state = .failed(error: error.localizedDescription)
             }
         }
+    }
+
+    private func removeWithPermit(viewItem: LiquidityRecordViewModel.RecordItem, pairAddress: EvmKit.Address, receiveAddress: EvmKit.Address, poolInfo: PoolInfo) async throws {
+        guard let evmKitWrapper else {
+            throw LiquidityRecordError.evmKitWrapperError
+        }
+        guard let signer = evmKitWrapper.signer else {
+            throw LiquidityRecordError.evmKitWrapperError
+        }
+
+        let evmKit = evmKitWrapper.evmKit
+        let routerAddressString = try Constants.routerAddressString(chain: evmKit.chain)
+        let routerAddress = try EvmKit.Address(hex: routerAddressString)
+
+        let addressA = viewItem.pair.item0.address
+        let addressB = viewItem.pair.item1.address
+        let slippage: (BigUInt, BigUInt) = (5, 1000)
+        let amountAMin = (viewItem.poolInfo.userToken0Amount * slippage.0 / slippage.1) * ratio / 100
+        let amountBMin = (viewItem.poolInfo.userToken1Amount * slippage.0 / slippage.1) * ratio / 100
+
+        let deadline = Constants.getDeadLine()
+        let liquidity = poolInfo.balanceOfAccount * ratio / 100
+
+        let nonce = try await getNonces(evmKit: evmKit, contractAddress: pairAddress, receiveAddress: receiveAddress)
+        let name = try await getName(evmKit: evmKit, contractAddress: pairAddress)
+        let chainId = evmKit.chain.id
+
+        let signature = try signer.sign(eip712TypedData: try permitTypedData(
+            name: name,
+            chainId: chainId,
+            verifyingContract: pairAddress.eip55,
+            owner: receiveAddress.eip55,
+            spender: routerAddress.eip55,
+            value: liquidity,
+            nonce: nonce,
+            deadline: deadline
+        ))
+
+        let (v, r, s) = try signatureComponents(signature: signature)
+
+        let method = RemoveLiquidityWithPermitMethod(
+            tokenA: addressA,
+            tokenB: addressB,
+            liquidity: liquidity,
+            amountAMin: amountAMin,
+            amountBMin: amountBMin,
+            to: receiveAddress,
+            deadline: deadline,
+            approveMax: false,
+            v: v,
+            r: r,
+            s: s
+        )
+
+        let transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+
+        try await send(transactionData: transactionData)
+            .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+            .subscribe(onSuccess: { [weak self] _ in
+                guard let self else { return }
+                if let index = self.viewItems.firstIndex(where: { $0.pair.pairAddress == viewItem.pair.pairAddress }) {
+                    self.viewItems.remove(at: index)
+                    self.state = .removeSuccess
+                }
+            }, onError: { [weak self] error in
+                guard let self else { return }
+                let message = self.errorMessage(error: error, item: viewItem)
+                self.state = .removeFailed(error: message)
+            })
+            .disposed(by: disposeBag)
     }
     
     private func allowance(eip20Kit: Eip20Kit.Kit, viewItem: LiquidityRecordViewModel.RecordItem, pairAddress: EvmKit.Address, receiveAddress: EvmKit.Address, poolInfo: PoolInfo) async throws {
@@ -334,6 +405,93 @@ extension LiquidityRecordService {
         }
         return rawReserve
     }
+
+    private func getName(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address) async throws -> String {
+        let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: GetNameMethod().encodedABI())
+        guard data.count >= 64 else {
+            throw LiquidityRecordError.invalidAddress
+        }
+
+        let offset = Int(BigUInt(data[0 ..< 32]))
+        guard data.count >= offset + 32 else {
+            throw LiquidityRecordError.invalidAddress
+        }
+
+        let length = Int(BigUInt(data[offset ..< offset + 32]))
+        let start = offset + 32
+        let end = start + length
+
+        guard data.count >= end else {
+            throw LiquidityRecordError.invalidAddress
+        }
+
+        guard let name = String(data: data[start ..< end], encoding: .utf8) else {
+            throw LiquidityRecordError.invalidAddress
+        }
+
+        return name
+    }
+
+    private func permitTypedData(name: String, chainId: Int, verifyingContract: String, owner: String, spender: String, value: BigUInt, nonce: BigUInt, deadline: BigUInt) throws -> EvmKit.EIP712TypedData {
+        let escapedName = name
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+
+        let json = """
+        {
+          "types": {
+            "EIP712Domain": [
+              { "name": "name", "type": "string" },
+              { "name": "version", "type": "string" },
+              { "name": "chainId", "type": "uint256" },
+              { "name": "verifyingContract", "type": "address" }
+            ],
+            "Permit": [
+              { "name": "owner", "type": "address" },
+              { "name": "spender", "type": "address" },
+              { "name": "value", "type": "uint256" },
+              { "name": "nonce", "type": "uint256" },
+              { "name": "deadline", "type": "uint256" }
+            ]
+          },
+          "primaryType": "Permit",
+          "domain": {
+            "name": "\(escapedName)",
+            "version": "1",
+            "chainId": \(chainId),
+            "verifyingContract": "\(verifyingContract)"
+          },
+          "message": {
+            "owner": "\(owner)",
+            "spender": "\(spender)",
+            "value": "\(value)",
+            "nonce": "\(nonce)",
+            "deadline": "\(deadline)"
+          }
+        }
+        """
+
+        guard let data = json.data(using: .utf8) else {
+            throw LiquidityRecordError.dataError
+        }
+
+        return try EvmKit.EIP712TypedData.parseFrom(rawJson: data)
+    }
+
+    private func signatureComponents(signature: Data) throws -> (Int, BigUInt, BigUInt) {
+        guard signature.count == 65 else {
+            throw LiquidityRecordError.invalidAddress
+        }
+
+        let r = BigUInt(signature[0 ..< 32])
+        let s = BigUInt(signature[32 ..< 64])
+        var v = Int(signature[64])
+        if v < 27 {
+            v += 27
+        }
+
+        return (v, r, s)
+    }
     
     private func getTotalSupply(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address) async throws -> BigUInt {
         let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: GetTotalSupplyMethod().encodedABI())
@@ -423,4 +581,3 @@ extension LiquidityRecordService {
         case removeFailed(error: String)
     }
 }
-

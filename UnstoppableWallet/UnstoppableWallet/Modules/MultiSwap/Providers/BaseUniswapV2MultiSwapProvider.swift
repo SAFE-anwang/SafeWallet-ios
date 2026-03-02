@@ -4,7 +4,7 @@ import MarketKit
 import UniswapKit
 
 class BaseUniswapV2MultiSwapProvider: BaseUniswapMultiSwapProvider {
-    private let kit: UniswapKit.Kit
+    let kit: UniswapKit.Kit
 
     init(kit: UniswapKit.Kit, storage: MultiSwapSettingStorage) {
         self.kit = kit
