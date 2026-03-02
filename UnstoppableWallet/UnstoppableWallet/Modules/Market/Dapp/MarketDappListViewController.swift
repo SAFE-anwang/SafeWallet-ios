@@ -1,10 +1,11 @@
 import UIKit
 import RxSwift
 import SectionsTableView
+import SwiftUI
+import MarketKit
 
 class MarketDappListViewController: ThemeViewController {
     private let viewModel: MarketDappListViewModel
-    private let urlManager: UrlManager
     private let disposeBag = DisposeBag()
 
     private let tableView = SectionsTableView(style: .grouped)
@@ -16,9 +17,8 @@ class MarketDappListViewController: ThemeViewController {
     weak var parentNavigationController: UINavigationController?
     var headerView: UITableViewHeaderFooterView? { nil }
 
-    init(viewModel: MarketDappListViewModel, urlManager: UrlManager, tab: MarketDappModule.Tab) {
+    init(viewModel: MarketDappListViewModel, tab: MarketDappModule.Tab) {
         self.viewModel = viewModel
-        self.urlManager = urlManager
         self._tab = tab
         super.init()
     }
@@ -105,7 +105,36 @@ class MarketDappListViewController: ThemeViewController {
     }
 
     private func open(url: String) {
-        urlManager.open(url: url, from: parentNavigationController)//openWkwebView(url: url, from: parentNavigationController)
+        guard let url = MarketDappBrowserUrlParser.url(string: url) else {
+            return
+        }
+
+        let connectInfo: MarketDappBrowserConnectInfo?
+
+        if let account = Core.shared.accountManager.activeAccount {
+            let blockchainType: BlockchainType
+
+            switch _tab {
+            case .ALL, .ETH: blockchainType = .ethereum
+            case .BSC: blockchainType = .binanceSmartChain
+            case .SAFE: blockchainType = .safe4
+            }
+
+            if let chain = try? Core.shared.evmBlockchainManager.chain(blockchainType: blockchainType),
+               let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper(account: account, blockchainType: blockchainType) {
+                connectInfo = MarketDappBrowserConnectInfo(chainId: chain.id, address: evmKitWrapper.evmKit.receiveAddress.eip55)
+            } else {
+                connectInfo = nil
+            }
+        } else {
+            connectInfo = nil
+        }
+
+        Coordinator.shared.present(type: .alert) { isPresented in
+            MarketDappBrowserView(url: url, connectInfo: connectInfo, onClose: {
+                isPresented.wrappedValue = false
+            })
+        }
     }
     
 }
@@ -203,6 +232,3 @@ extension MarketDappListViewController: SectionsDataSource {
         return sections
     }
 }
-
-
-

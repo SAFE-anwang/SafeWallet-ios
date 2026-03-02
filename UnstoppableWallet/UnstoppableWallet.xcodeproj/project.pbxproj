@@ -1572,6 +1572,12 @@
 		677FAA942F29EB8900FFC017 /* Src20TokenInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677FAA922F29EB8900FFC017 /* Src20TokenInfoView.swift */; };
 		677FAA962F29EC7400FFC017 /* Src20TokenInfoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677FAA952F29EC7400FFC017 /* Src20TokenInfoViewModel.swift */; };
 		677FAA972F29EC7400FFC017 /* Src20TokenInfoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677FAA952F29EC7400FFC017 /* Src20TokenInfoViewModel.swift */; };
+		67CEBC872F52D95400028988 /* MarketDappBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CEBC862F52D95400028988 /* MarketDappBrowserView.swift */; };
+		67CEBC882F52D95400028988 /* MarketDappBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CEBC862F52D95400028988 /* MarketDappBrowserView.swift */; };
+		67CEBC8F2F52E48900028988 /* MarketDappWeb3Handler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CEBC8D2F52E48900028988 /* MarketDappWeb3Handler.swift */; };
+		67CEBC912F52E48900028988 /* MarketDappWeb3Handler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CEBC8D2F52E48900028988 /* MarketDappWeb3Handler.swift */; };
+		67CEBC932F52F39200028988 /* MarketDappSendEvmConfirmationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CEBC922F52F39200028988 /* MarketDappSendEvmConfirmationModule.swift */; };
+		67CEBC942F52F39200028988 /* MarketDappSendEvmConfirmationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CEBC922F52F39200028988 /* MarketDappSendEvmConfirmationModule.swift */; };
 		6B0B6E752E092C0600A0F0C9 /* SpamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B0B6E742E092C0200A0F0C9 /* SpamManager.swift */; };
 		6B0B6E762E092C0600A0F0C9 /* SpamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B0B6E742E092C0200A0F0C9 /* SpamManager.swift */; };
 		6B0B6E7C2E09508600A0F0C9 /* TransferEventFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B0B6E7B2E09507E00A0F0C9 /* TransferEventFactory.swift */; };
@@ -4740,6 +4746,9 @@
 		677F6BBF2F28612C00FFC017 /* KLineChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KLineChartViewModel.swift; sourceTree = "<group>"; };
 		677FAA922F29EB8900FFC017 /* Src20TokenInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Src20TokenInfoView.swift; sourceTree = "<group>"; };
 		677FAA952F29EC7400FFC017 /* Src20TokenInfoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Src20TokenInfoViewModel.swift; sourceTree = "<group>"; };
+		67CEBC862F52D95400028988 /* MarketDappBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDappBrowserView.swift; sourceTree = "<group>"; };
+		67CEBC8D2F52E48900028988 /* MarketDappWeb3Handler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDappWeb3Handler.swift; sourceTree = "<group>"; };
+		67CEBC922F52F39200028988 /* MarketDappSendEvmConfirmationModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDappSendEvmConfirmationModule.swift; sourceTree = "<group>"; };
 		6B0B6E742E092C0200A0F0C9 /* SpamManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpamManager.swift; sourceTree = "<group>"; };
 		6B0B6E7B2E09507E00A0F0C9 /* TransferEventFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferEventFactory.swift; sourceTree = "<group>"; };
 		6B146A932A52A69400648C10 /* ChartIndicatorSettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChartIndicatorSettingsViewController.swift; sourceTree = "<group>"; };
@@ -8290,6 +8299,9 @@
 		6733691E2EE01BA00041B5E2 /* Dapp */ = {
 			isa = PBXGroup;
 			children = (
+				67CEBC922F52F39200028988 /* MarketDappSendEvmConfirmationModule.swift */,
+				67CEBC8D2F52E48900028988 /* MarketDappWeb3Handler.swift */,
+				67CEBC862F52D95400028988 /* MarketDappBrowserView.swift */,
 				673369202EE01D1F0041B5E2 /* MarketDappLinkViewController.swift */,
 				673369212EE01D1F0041B5E2 /* MarketDappListViewController.swift */,
 				673369222EE01D1F0041B5E2 /* MarketDappModule.swift */,
@@ -12584,6 +12596,7 @@
 				2FA5D1E33A714D64DDAFA119 /* SendFeeCautionViewModel.swift in Sources */,
 				2FA5DCCE2273577F8F12004F /* SendFeeSettingsAmountCautionViewModel.swift in Sources */,
 				2FA5D7C2BEF5739328BA8239 /* TimeLockDataSource.swift in Sources */,
+				67CEBC942F52F39200028988 /* MarketDappSendEvmConfirmationModule.swift in Sources */,
 				2FA5DE46C61524144F406FDB /* TimeLockService.swift in Sources */,
 				6B5FD7D82E42169600FEF510 /* DestinationHelper.swift in Sources */,
 				11B3593B114BFE4B6CCD6E19 /* MarketWideCardCell.swift in Sources */,
@@ -12891,6 +12904,7 @@
 				11B3553AD73FD1179249F277 /* SecondaryButtonStyle.swift in Sources */,
 				11B3523E8B466F259DB32E37 /* SecondaryCircleButtonStyle.swift in Sources */,
 				D34637F62DDB23C900187698 /* BackupRequiredView.swift in Sources */,
+				67CEBC882F52D95400028988 /* MarketDappBrowserView.swift in Sources */,
 				ABC9AD46006A85E907826E2B /* EnabledWalletCache_v_0_36.swift in Sources */,
 				11B35309CE9FBDA200067C4F /* ActiveAccount_v_0_36.swift in Sources */,
 				11B357FF80E87451A99BEE4A /* AccountRecord_v_0_36.swift in Sources */,
@@ -12972,6 +12986,7 @@
 				11B35993ADB991F644E5EE98 /* PasscodeLockState.swift in Sources */,
 				C881C5292EA22358004E97C9 /* SafeTimeLockDataSource.swift in Sources */,
 				11B35F906F9708CFC86E53FB /* NoPasscodeViewController.swift in Sources */,
+				67CEBC8F2F52E48900028988 /* MarketDappWeb3Handler.swift in Sources */,
 				ABC9A5E5EFF9D46D036F52B9 /* ProposalChain.swift in Sources */,
 				D3A87D5D2C8EFB1A00F6F619 /* EvmAccountRestoreState.swift in Sources */,
 				ABC9A220C97C81DC578AA3C7 /* ProposalValidator.swift in Sources */,
@@ -14465,6 +14480,7 @@
 				2FA5DA3E8B501D515A25E8A2 /* TimeLockDataSource.swift in Sources */,
 				2FA5D4AB0DEF37A103E1E130 /* TimeLockService.swift in Sources */,
 				11B35F594D24B0B55FD169D7 /* MarketWideCardCell.swift in Sources */,
+				67CEBC932F52F39200028988 /* MarketDappSendEvmConfirmationModule.swift in Sources */,
 				11B355410F06EE3FC3A5DE26 /* PlaceholderCell.swift in Sources */,
 				ABC9A06BE632BD33E5CA4106 /* Contact.swift in Sources */,
 				D3E36BE12E05887B007F99CA /* MainBadgeViewModel.swift in Sources */,
@@ -14772,6 +14788,7 @@
 				D34637F42DDB23C900187698 /* BackupRequiredView.swift in Sources */,
 				11B350A27335B798701EE7B3 /* InteractiveDismiss.swift in Sources */,
 				11B35DDBD7EC98FAE5794F76 /* SecondaryButtonStyle.swift in Sources */,
+				67CEBC872F52D95400028988 /* MarketDappBrowserView.swift in Sources */,
 				11B35224D7A5A864C1C6F167 /* SecondaryCircleButtonStyle.swift in Sources */,
 				D34DB1A22E1BEBF400DD30D3 /* CoordinatorViewModifier.swift in Sources */,
 				ABC9AB2E235EA006E2DAD8DD /* EnabledWalletCache_v_0_36.swift in Sources */,
@@ -14853,6 +14870,7 @@
 				11B35051B85C51018A1C7A3A /* KeychainStorage.swift in Sources */,
 				C881C52A2EA22358004E97C9 /* SafeTimeLockDataSource.swift in Sources */,
 				11B35A81895CBF7E86C0C437 /* UserDefaultsStorage.swift in Sources */,
+				67CEBC912F52E48900028988 /* MarketDappWeb3Handler.swift in Sources */,
 				11B35259209EA0C688BB2EC9 /* PasscodeLockState.swift in Sources */,
 				D3A87D5C2C8EFB1A00F6F619 /* EvmAccountRestoreState.swift in Sources */,
 				11B35F3DB270A794ADF675FB /* NoPasscodeViewController.swift in Sources */,

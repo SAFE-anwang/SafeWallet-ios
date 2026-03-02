@@ -66,16 +66,40 @@ extension WKWebViewConfiguration {
                 this.chainId = "0x\(String(chainId, radix: 16))";
                 this.selectedAddress = "\(address)";
                 this.isConnected = true;
+                this.isMetaMask = true;
+                this.isSafeWallet = true;
                 this._listeners = {};
                 this._nextId = 1;
                 this._pendingRequests = {};
+            }
+            enable() {
+                return this.request({ method: 'eth_requestAccounts' });
+            }
+            isConnected() {
+                return true;
             }
             request(request) {
                 return new Promise((resolve, reject) => {
                     const id = this._nextId++;
                     this._pendingRequests[id] = { resolve, reject };
                     
-                    if (request.method === '\(Web3Method.ethSendTransaction.name)') {
+                    const finalizeResolve = (value) => {
+                        resolve(value);
+                        delete this._pendingRequests[id];
+                    };
+                    
+                    const finalizeReject = (error) => {
+                        reject(error);
+                        delete this._pendingRequests[id];
+                    };
+                    
+                    if (
+                        request.method === '\(Web3Method.ethSendTransaction.name)' ||
+                        request.method === '\(Web3Method.personalSign.name)' ||
+                        request.method === 'eth_sign' ||
+                        request.method === 'eth_signTypedData' ||
+                        request.method === 'eth_signTypedData_v4'
+                    ) {
                         
                         window.webkit.messageHandlers.transactionHandler.postMessage({
                             type: 'transaction',
@@ -88,35 +112,26 @@ extension WKWebViewConfiguration {
                     
                     switch(request.method) {
                         case 'eth_requestAccounts':
-                            resolve([this.selectedAddress]);
+                            this.emit('accountsChanged', [this.selectedAddress]);
+                            finalizeResolve([this.selectedAddress]);
                             break;
                         case 'eth_accounts':
-                            resolve([this.selectedAddress]);
+                            finalizeResolve([this.selectedAddress]);
                             break;
                         case 'eth_chainId':
-                            resolve(this.chainId);
+                            finalizeResolve(this.chainId);
                             break;
                         case 'wallet_addEthereumChain':
-                            resolve();
+                            finalizeResolve();
                             break;
                         case 'wallet_switchEthereumChain':
                             this.chainId = request.params[0].chainId;
                             this.emit('chainChanged', this.chainId);
-                            resolve();
+                            finalizeResolve();
                             break;
                         default:
                             console.log('[CustomProvider] Unhandled request:', request);
-                            reject(new Error('Method not implemented'));
-                    }
-        
-                    if (request.method === '\(Web3Method.walletSwitchChain.name)') {
-                        window.webkit.messageHandlers.transactionHandler.postMessage({
-                            type: 'transaction',
-                            id: id,
-                            method: request.method,
-                            params: request.params
-                        });
-                        return;
+                            finalizeReject(new Error('Method not implemented'));
                     }
                 });
             } 
@@ -146,10 +161,8 @@ extension WKWebViewConfiguration {
             }
         }
 
-        window.ethereum = new CustomEthereumProvider(
-            "\(address)",
-            "0x\(String(chainId, radix: 16))"
-        );
+        window.ethereum = new CustomEthereumProvider();
+        window.ethereum.providers = [window.ethereum];
         
         // 触发连接事件
         setTimeout(() => {
@@ -180,4 +193,3 @@ extension WKWebViewConfiguration {
         return webViewConfig
     }
 }
-
