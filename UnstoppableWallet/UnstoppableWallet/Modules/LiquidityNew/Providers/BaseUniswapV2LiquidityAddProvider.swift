@@ -37,4 +37,3 @@ class BaseUniswapV2LiquidityAddProvider: BaseUniswapLiquidityAddProvider {
         return try kit.transactionLiquidityData(tradeData: tradeData, type: .add, chain: chain, recipient: receiveAddress)
     }
 }
-

@@ -125,13 +125,18 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
         )
 
         let trade = try await trade(rpcSource: rpcSource, chain: chain, token0: kittoken0, token1: kittoken1, amountIn: amount0, tradeOptions: tradeOptions)
+        let amount1 = trade.amountOut ?? 0
+
+        async let allowanceState0 = allowanceState(token: token0, amount: amount0)
+        async let allowanceState1 = allowanceState(token: token1, amount: amount1)
 
         return await BaseUniswapLiquidityAddQuote(
             trade: trade,
             tradeOptions: tradeOptions,
             recipient: recipient,
             providerName: name,
-            allowanceState: allowanceState(token: token0, amount: amount0),
+            allowanceState0: allowanceState0,
+            allowanceState1: allowanceState1
         )
     }
 }
@@ -176,4 +181,3 @@ extension BaseUniswapLiquidityAddProvider {
         }
     }
 }
-

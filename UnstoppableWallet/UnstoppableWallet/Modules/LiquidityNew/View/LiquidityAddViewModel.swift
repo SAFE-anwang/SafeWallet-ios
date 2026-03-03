@@ -10,13 +10,17 @@ class LiquidityAddViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var quotesTask: AnyTask?
     private var swapTask: AnyTask?
+    private var manualAllowanceTask: AnyTask?
     private var rateInCancellable: AnyCancellable?
     private var rateOutCancellable: AnyCancellable?
     private var timer: Timer?
 
     private var balanceDisposeBag = DisposeBag()
+    private var balanceOutDisposeBag = DisposeBag()
 
     private let providers: [ILiquidityAddProvider]
+    private let evmBlockchainManager = Core.shared.evmBlockchainManager
+    private let manualAllowanceHelper = LiquidityAddAllowanceHelper()
     private let currencyManager = Core.shared.currencyManager
     private let marketKit = Core.shared.marketKit
     private let walletManager = Core.shared.walletManager
@@ -94,6 +98,9 @@ class LiquidityAddViewModel: ObservableObject {
                 amountIn = nil
             }
 
+            manualAmountOut = nil
+            manualAmountOutString = ""
+
             internalTokenIn = tokenIn
 
             if internalTokenOut == tokenIn {
@@ -128,6 +135,35 @@ class LiquidityAddViewModel: ObservableObject {
                 rateOut = nil
                 rateOutCancellable = nil
             }
+
+            balanceOutDisposeBag = .init()
+
+            if let internalTokenOut,
+               let wallet = walletManager.activeWallets.first(where: { $0.token == internalTokenOut }),
+               let adapter = adapterManager.balanceAdapter(for: wallet)
+            {
+                adapterStateOut = adapter.balanceState
+                availableBalanceOut = adapter.balanceData.available
+
+                adapter.balanceStateUpdatedObservable
+                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .observeOn(MainScheduler.instance)
+                    .subscribe { [weak self] state in
+                        self?.adapterStateOut = state
+                    }
+                    .disposed(by: balanceOutDisposeBag)
+
+                adapter.balanceDataUpdatedObservable
+                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .observeOn(MainScheduler.instance)
+                    .subscribe { [weak self] balanceData in
+                        self?.availableBalanceOut = balanceData.available
+                    }
+                    .disposed(by: balanceOutDisposeBag)
+            } else {
+                adapterStateOut = nil
+                availableBalanceOut = nil
+            }
         }
     }
 
@@ -138,6 +174,9 @@ class LiquidityAddViewModel: ObservableObject {
             }
 
             internalTokenOut = tokenOut
+
+            manualAmountOut = nil
+            manualAmountOutString = ""
 
             if internalTokenIn == tokenOut {
                 amountIn = nil
@@ -153,6 +192,8 @@ class LiquidityAddViewModel: ObservableObject {
 
     @Published var adapterState: AdapterState?
     @Published var availableBalance: Decimal?
+    @Published var adapterStateOut: AdapterState?
+    @Published var availableBalanceOut: Decimal?
 
     @Published var coinPriceIn: CoinPrice? {
         didSet {
@@ -171,6 +212,7 @@ class LiquidityAddViewModel: ObservableObject {
             internalUserSelectedProviderId = nil
 
             syncQuotes()
+            syncManualAllowance()
             syncFiatAmountIn()
 
             let amount = decimalParser.parseAnyDecimal(from: amountString)
@@ -220,6 +262,33 @@ class LiquidityAddViewModel: ObservableObject {
             fiatAmountIn = amount
         }
     }
+
+    @Published var manualAmountOut: Decimal? {
+        didSet {
+            syncManualAllowance()
+
+            let amount = decimalParser.parseAnyDecimal(from: manualAmountOutString)
+            if amount != manualAmountOut {
+                manualAmountOutString = manualAmountOut?.description ?? ""
+            }
+        }
+    }
+
+    @Published var manualAmountOutString: String = "" {
+        didSet {
+            let amount = decimalParser.parseAnyDecimal(from: manualAmountOutString)
+
+            guard amount != manualAmountOut else {
+                return
+            }
+
+            manualAmountOut = amount
+        }
+    }
+
+    @Published var manualAllowanceState0: LiquidityAddAllowanceHelper.AllowanceState?
+    @Published var manualAllowanceState1: LiquidityAddAllowanceHelper.AllowanceState?
+    @Published var manualAllowanceSyncing = false
 
     @Published var currentQuote: Quote? {
         didSet {
@@ -313,6 +382,8 @@ class LiquidityAddViewModel: ObservableObject {
         } else {
             validProviders = []
         }
+
+        syncManualAllowance()
     }
 
     private func syncCurrentQuote() {
@@ -350,12 +421,18 @@ class LiquidityAddViewModel: ObservableObject {
     }
 
     private func syncFiatAmountOut() {
-        guard let rateOut, let currentQuote else {
+        guard let rateOut else {
             fiatAmountOut = nil
             return
         }
 
-        fiatAmountOut = (currentQuote.quote.amountOut * rateOut).rounded(decimal: 2)
+        let amountOut = currentQuote?.quote.amountOut ?? manualAmountOut
+        guard let amountOut else {
+            fiatAmountOut = nil
+            return
+        }
+
+        fiatAmountOut = (amountOut * rateOut).rounded(decimal: 2)
     }
 
     func syncPriceImpact() {
@@ -384,6 +461,13 @@ class LiquidityAddViewModel: ObservableObject {
                 quoting = false
             }
 
+            return
+        }
+
+        if manualAmountOut != nil {
+            if quoting {
+                quoting = false
+            }
             return
         }
 
@@ -460,6 +544,205 @@ class LiquidityAddViewModel: ObservableObject {
         } else {
             price = nil
         }
+    }
+}
+
+extension LiquidityAddViewModel {
+    struct ApprovalButton {
+        let title: String
+        let state: MultiSwapButtonState
+        let token: Token
+        let otherToken: Token
+        let amount: Decimal
+        let provider: ILiquidityAddProvider
+    }
+
+    var approvalButtons: [ApprovalButton] {
+        guard let tokenIn, let tokenOut, let amountIn, amountIn > 0 else {
+            return []
+        }
+
+        if let currentQuote, let quote = currentQuote.quote as? BaseUniswapLiquidityAddQuote {
+            let amountOut = quote.amountOut
+
+            var buttons = [ApprovalButton]()
+            if let state0 = quote.allowanceState.customButtonState {
+                buttons.append(
+                    ApprovalButton(
+                        title: "\(state0.title) 1",
+                        state: state0,
+                        token: tokenIn,
+                        otherToken: tokenOut,
+                        amount: amountIn,
+                        provider: currentQuote.provider
+                    )
+                )
+            }
+
+            if let state1 = quote.allowanceState1.customButtonState {
+                buttons.append(
+                    ApprovalButton(
+                        title: "\(state1.title) 2",
+                        state: state1,
+                        token: tokenOut,
+                        otherToken: tokenIn,
+                        amount: amountOut,
+                        provider: currentQuote.provider
+                    )
+                )
+            }
+
+            return buttons
+        }
+
+        if let amountOut = manualAmountOut, amountOut > 0, let provider = manualProviderForSend {
+            var buttons = [ApprovalButton]()
+
+            if let state0 = manualAllowanceState0?.customButtonState {
+                buttons.append(
+                    ApprovalButton(
+                        title: "\(state0.title) 1",
+                        state: state0,
+                        token: tokenIn,
+                        otherToken: tokenOut,
+                        amount: amountIn,
+                        provider: provider
+                    )
+                )
+            }
+
+            if let state1 = manualAllowanceState1?.customButtonState {
+                buttons.append(
+                    ApprovalButton(
+                        title: "\(state1.title) 2",
+                        state: state1,
+                        token: tokenOut,
+                        otherToken: tokenIn,
+                        amount: amountOut,
+                        provider: provider
+                    )
+                )
+            }
+
+            return buttons
+        }
+
+        return []
+    }
+
+    func refreshAfterPreSwap() {
+        syncQuotes()
+        syncManualAllowance()
+    }
+
+    var manualPreSwap: (step: MultiSwapPreSwapStep, token: Token, amount: Decimal)? {
+        guard let tokenIn, let tokenOut, let amountIn, let amountOut = manualAmountOut else {
+            return nil
+        }
+
+        if let state0 = manualAllowanceState0, let step = state0.customButtonState?.preSwapStep {
+            return (step, tokenIn, amountIn)
+        }
+
+        if let state1 = manualAllowanceState1, let step = state1.customButtonState?.preSwapStep {
+            return (step, tokenOut, amountOut)
+        }
+
+        return nil
+    }
+
+    var manualCustomButtonState: MultiSwapButtonState? {
+        if let state0 = manualAllowanceState0, let buttonState = state0.customButtonState {
+            return buttonState
+        }
+
+        if let state1 = manualAllowanceState1, let buttonState = state1.customButtonState {
+            return buttonState
+        }
+
+        if manualAllowanceState0 == nil || manualAllowanceState1 == nil {
+            return .init(title: "swap.allowance_error".localized, disabled: true)
+        }
+
+        return nil
+    }
+
+    var manualProviderForSend: ILiquidityAddProvider? {
+        guard let tokenIn, let tokenOut, let amountOut = manualAmountOut else {
+            return nil
+        }
+
+        guard let baseProvider = validProviders.first(where: { $0 is BaseUniswapV2LiquidityAddProvider }) as? BaseUniswapV2LiquidityAddProvider else {
+            return nil
+        }
+
+        return ManualUniswapV2LiquidityAddProvider(
+            id: baseProvider.id,
+            name: baseProvider.name,
+            icon: baseProvider.icon,
+            storage: baseProvider.storage,
+            token1Amount: amountOut,
+            supports: { baseProvider.supports(token0: $0, token1: $1) },
+            spenderAddress: { try baseProvider.spenderAddress(chain: $0) }
+        )
+    }
+
+    private func syncManualAllowance() {
+        manualAllowanceTask = nil
+
+        manualAllowanceSyncing = false
+        manualAllowanceState0 = nil
+        manualAllowanceState1 = nil
+
+        guard let tokenIn, let tokenOut, let amountIn, amountIn > 0, let amountOut = manualAmountOut, amountOut > 0 else {
+            return
+        }
+
+        guard !validProviders.isEmpty else {
+            return
+        }
+
+        guard let baseProvider = validProviders.first(where: { $0 is BaseUniswapV2LiquidityAddProvider }) as? BaseUniswapV2LiquidityAddProvider else {
+            return
+        }
+
+        manualAllowanceSyncing = true
+
+        manualAllowanceTask = Task { [weak self] in
+            do {
+                guard let self else {
+                    return
+                }
+
+                let chain = try self.evmBlockchainManager.chain(blockchainType: tokenIn.blockchainType)
+
+                let spenderAddress = try baseProvider.spenderAddress(chain: chain)
+                let spender = Address(raw: spenderAddress.eip55)
+
+                async let state0 = manualAllowanceHelper.allowanceState(spenderAddress: spender, token: tokenIn, amount: amountIn)
+                async let state1 = manualAllowanceHelper.allowanceState(spenderAddress: spender, token: tokenOut, amount: amountOut)
+
+                let allowanceState0 = await state0
+                let allowanceState1 = await state1
+
+                if !Task.isCancelled {
+                    await MainActor.run { [weak self] in
+                        self?.manualAllowanceSyncing = false
+                        self?.manualAllowanceState0 = allowanceState0
+                        self?.manualAllowanceState1 = allowanceState1
+                    }
+                }
+            } catch {
+                if !Task.isCancelled {
+                    await MainActor.run { [weak self] in
+                        self?.manualAllowanceSyncing = false
+                        self?.manualAllowanceState0 = .unknown
+                        self?.manualAllowanceState1 = .unknown
+                    }
+                }
+            }
+        }
+        .erased()
     }
 }
 
@@ -555,4 +838,3 @@ extension LiquidityAddViewModel {
         }
     }
 }
-

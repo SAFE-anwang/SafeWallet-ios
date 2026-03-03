@@ -7,14 +7,16 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
     let tradeOptions: TradeOptions
     let recipient: Address?
     let providerName: String
+    let allowanceState1: LiquidityAddAllowanceHelper.AllowanceState
 
-    init(trade: Trade, tradeOptions: TradeOptions, recipient: Address?, providerName: String, allowanceState: LiquidityAddAllowanceHelper.AllowanceState) {
+    init(trade: Trade, tradeOptions: TradeOptions, recipient: Address?, providerName: String, allowanceState0: LiquidityAddAllowanceHelper.AllowanceState, allowanceState1: LiquidityAddAllowanceHelper.AllowanceState) {
         self.trade = trade
         self.tradeOptions = tradeOptions
         self.recipient = recipient
         self.providerName = providerName
+        self.allowanceState1 = allowanceState1
 
-        super.init(allowanceState: allowanceState)
+        super.init(allowanceState: allowanceState0)
     }
 
     private var slippageModified: Bool {
@@ -47,7 +49,7 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
             return .init(title: "swap.high_price_impact".localized, disabled: true)
         }
 
-        return super.customButtonState
+        return nil
     }
 
     override var settingsModified: Bool {
@@ -56,6 +58,7 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
 
     override func fields(token0: MarketKit.Token, token1: MarketKit.Token, currency: Currency, token0Rate: Decimal?, token1Rate: Decimal?) -> [MultiSwapMainField] {
         var fields = super.fields(token0: token0, token1: token1, currency: currency, token0Rate: token0Rate, token1Rate: token1Rate)
+        fields.append(contentsOf: allowanceState1.fields())
 
         if let priceImpact = trade.priceImpact, BaseUniswapLiquidityAddProvider.PriceImpactLevel(priceImpact: priceImpact) != .negligible {
             fields.append(
@@ -75,15 +78,16 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
         let slippage = tradeOptions.allowedSlippage
         fields.append(.slippage(slippage, settingId: MultiSwapMainField.slippageSettingId, modified: slippageModified))
 
-        if let deadlineValue {
-            fields.append(.deadline(deadlineValue))
-        }
+//        if let deadlineValue {
+//            fields.append(.deadline(deadlineValue))
+//        }
 
         return fields
     }
 
     override func cautions() -> [CautionNew] {
         var cautions = super.cautions()
+        cautions.append(contentsOf: allowanceState1.cautions())
 
         if let priceImpact = trade.priceImpact {
             switch BaseUniswapLiquidityAddProvider.PriceImpactLevel(priceImpact: priceImpact) {

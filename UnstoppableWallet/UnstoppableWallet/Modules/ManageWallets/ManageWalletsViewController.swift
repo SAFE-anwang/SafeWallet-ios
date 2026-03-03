@@ -19,6 +19,8 @@ class ManageWalletsViewController: ThemeSearchViewController {
 
     private var viewItems: [ManageWalletsViewModel.ViewItem] = []
     private var isLoaded = false
+    private let button = UIButton()
+
 
     init(viewModel: ManageWalletsViewModel, restoreSettingsView: RestoreSettingsView) {
         self.viewModel = viewModel
@@ -44,10 +46,29 @@ class ManageWalletsViewController: ThemeSearchViewController {
         if viewModel.addTokenEnabled {
             navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(onTapAddTokenButton))
         }
-
+        
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.semanticContentAttribute = .forceRightToLeft
+        button.setImage(UIImage(named: "arrow_small_down_20"), for: .normal)
+        button.setImage(UIImage(named: "arrow_big_up_20"), for: .selected)
+        button.setTitleColor(.themeLeah, for: .normal)
+        button.titleLabel?.font = UIFont.subhead1
+        button.setTitle("全部区块链", for: .normal)
+        button.addTarget(self, action: #selector(onTapFilterButton), for: .touchUpInside)
+        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: .margin8, bottom: 0, right: .margin16)
+        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: -.margin8, bottom: 0, right: .margin8)
+        view.addSubview(button)
+        button.snp.makeConstraints { make in
+            make.leading.top.equalToSuperview()
+            make.height.equalTo(44)
+            make.width.equalTo(100)
+        }
+        
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()
+            maker.top.equalTo(button.snp.bottom)
         }
 
         tableView.backgroundColor = .clear
@@ -158,6 +179,10 @@ class ManageWalletsViewController: ThemeSearchViewController {
         }
 
         CellBuilderNew.buildStatic(cell: cell, rootElement: rootElement(index: index, viewItem: viewItems[index], forceToggleOn: on))
+    }
+    
+    @objc private func onTapFilterButton() {
+        
     }
 }
 

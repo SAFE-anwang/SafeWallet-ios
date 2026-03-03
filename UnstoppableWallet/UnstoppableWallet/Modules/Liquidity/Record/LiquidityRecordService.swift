@@ -253,7 +253,7 @@ extension LiquidityRecordService {
             to: receiveAddress,
             deadline: deadline,
             approveMax: false,
-            v: v,
+            v: BigUInt(v),
             r: r,
             s: s
         )

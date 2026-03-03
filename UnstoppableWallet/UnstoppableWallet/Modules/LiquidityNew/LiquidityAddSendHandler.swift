@@ -51,7 +51,7 @@ extension LiquidityAddSendHandler: ISendHandler {
             transactionSettings: transactionSettings
         )
 
-        return SendData(token0: token0, token1: token1, amount0: amount0, amount1: amount1, quote: quote, otherSections: otherSections)
+        return SendData(token0: token0, token1: token1, amount0: amount0, amount1: quote.amountOut, quote: quote, otherSections: otherSections)
     }
 
     func send(data: ISendData) async throws {
@@ -200,4 +200,3 @@ extension LiquidityAddSendHandler {
         return LiquidityAddSendHandler(baseToken: baseToken, token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider)
     }
 }
-

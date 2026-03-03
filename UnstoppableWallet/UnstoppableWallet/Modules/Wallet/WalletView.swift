@@ -178,10 +178,10 @@ struct WalletView: View {
                 if !item.wallet.account.watchAccount, item.wallet.token.swappable {
                     Button {
                         Coordinator.shared.present { _ in
-                            if let vc = SwapModule.viewController(tokenFrom: item.wallet.token) {
-                                SwapView(viewController: vc)
-                            }
-//                            MultiSwapView(token: item.wallet.token)
+//                            if let vc = SwapModule.viewController(tokenFrom: item.wallet.token) {
+//                                SwapView(viewController: vc)
+//                            }
+                            MultiSwapView(token: item.wallet.token)
                         }
                         stat(page: .tokenPage, event: .open(page: .swap))
                     } label: {

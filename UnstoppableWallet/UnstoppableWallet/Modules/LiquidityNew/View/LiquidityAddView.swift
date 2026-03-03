@@ -26,7 +26,7 @@ struct LiquidityAddView: View {
                         VStack(spacing: .margin16) {
                             VStack(spacing: .margin8) {
                                 amountsView()
-                                availableBalanceView(value: balanceValue())
+                                availableBalanceView(valueIn: balanceValue(), valueOut: balanceValueOut())
                             }
 
                             buttonView()
@@ -44,17 +44,21 @@ struct LiquidityAddView: View {
             .navigationDestination(isPresented: $sendPresented) {
                 if let tokenIn = viewModel.tokenIn,
                    let tokenOut = viewModel.tokenOut,
-                   let amountIn = viewModel.amountIn,
-                   let currentQuote = viewModel.currentQuote
+                   let amountIn = viewModel.amountIn
                 {
+                    let amountOut = viewModel.currentQuote?.quote.amountOut ?? viewModel.manualAmountOut
+                    let provider = viewModel.currentQuote?.provider ?? viewModel.manualProviderForSend
+
+                    if let amountOut, let provider {
                     LiquidityAddSendView(
                         token0: tokenIn,
                         token1: tokenOut,
                         amount0: amountIn,
-                        amount1: currentQuote.quote.amountOut,
-                        provider: currentQuote.provider,
+                        amount1: amountOut,
+                        provider: provider,
                         swapPresentationMode: presentationMode
                     )
+                    }
                 }
             }
             .onChange(of: sendPresented) { presented in
@@ -213,12 +217,20 @@ struct LiquidityAddView: View {
     @ViewBuilder private func boxOutView() -> some View {
         HStack(spacing: .margin8) {
             VStack(spacing: 3) {
-                if let amountOutString = viewModel.amountOutString {
-                    Text(amountOutString)
-                        .themeHeadline1(color: .themeLeah, alignment: .leading)
-                        .lineLimit(1)
+                if viewModel.currentQuote == nil {
+                    TextField("", text: $viewModel.manualAmountOutString, prompt: Text("0").foregroundColor(.themeGray))
+                        .foregroundColor(.themeLeah)
+                        .font(.themeHeadline1)
+                        .keyboardType(.decimalPad)
+                        .focused($isInputActive)
                 } else {
-                    Text("0").themeHeadline1(color: .themeGray, alignment: .leading)
+                    if let amountOutString = viewModel.amountOutString {
+                        Text(amountOutString)
+                            .themeHeadline1(color: .themeLeah, alignment: .leading)
+                            .lineLimit(1)
+                    } else {
+                        Text("0").themeHeadline1(color: .themeGray, alignment: .leading)
+                    }
                 }
 
                 if viewModel.tokenOut != nil {
@@ -297,55 +309,82 @@ struct LiquidityAddView: View {
     }
 
     @ViewBuilder private func buttonView() -> some View {
-        let (title, style, disabled, showProgress, preSwapStep) = buttonState()
+        let approvalButtons = viewModel.approvalButtons
 
+        if !approvalButtons.isEmpty {
+            if approvalButtons.count == 1 {
+                approvalButton(approvalButtons[0])
+            } else {
+                HStack(spacing: .margin12) {
+                    approvalButton(approvalButtons[0])
+                    approvalButton(approvalButtons[1])
+                }
+            }
+        } else {
+            let (title, style, disabled, showProgress, _) = buttonState()
+
+            Button(action: {
+                viewModel.stopAutoQuoting()
+                sendPresented = true
+            }) {
+                HStack(spacing: .margin8) {
+                    if showProgress {
+                        ProgressView()
+                    }
+
+                    Text(title)
+                }
+            }
+            .disabled(disabled)
+            .buttonStyle(PrimaryButtonStyle(style: style))
+        }
+    }
+
+    @ViewBuilder private func approvalButton(_ item: LiquidityAddViewModel.ApprovalButton) -> some View {
         Button(action: {
             viewModel.stopAutoQuoting()
 
-            if let preSwapStep {
-                if let currentQuote = viewModel.currentQuote,
-                   let tokenIn = viewModel.tokenIn,
-                   let tokenOut = viewModel.tokenOut,
-                   let amount = viewModel.amountIn
-                {
-                    Coordinator.shared.present { isPresented in
-                        currentQuote.provider.preSwapView(
-                            step: preSwapStep,
-                            token0: tokenIn,
-                            token1: tokenOut,
-                            amount: amount,
-                            isPresented: isPresented
-                        ) {
-                            viewModel.syncQuotes()
-                        }
-
-                    } onDismiss: {
-                        viewModel.autoQuoteIfRequired()
+            if let step = item.state.preSwapStep {
+                Coordinator.shared.present { isPresented in
+                    item.provider.preSwapView(
+                        step: step,
+                        token0: item.token,
+                        token1: item.otherToken,
+                        amount: item.amount,
+                        isPresented: isPresented
+                    ) {
+                        viewModel.refreshAfterPreSwap()
                     }
+                } onDismiss: {
+                    viewModel.refreshAfterPreSwap()
+                    viewModel.autoQuoteIfRequired()
                 }
-            } else {
-                sendPresented = true
             }
         }) {
             HStack(spacing: .margin8) {
-                if showProgress {
+                if item.state.showProgress {
                     ProgressView()
                 }
 
-                Text(title)
+                Text(item.title)
             }
         }
-        .disabled(disabled)
-        .buttonStyle(PrimaryButtonStyle(style: style))
+        .disabled(item.state.disabled)
+        .buttonStyle(PrimaryButtonStyle(style: item.state.style))
     }
 
-    @ViewBuilder private func availableBalanceView(value: String?) -> some View {
+    @ViewBuilder private func availableBalanceView(valueIn: String?, valueOut: String?) -> some View {
         HStack(spacing: .margin8) {
             Text("send.available_balance".localized).textCaption()
             Spacer()
-            Text(value ?? "---")
-                .textCaption()
-                .multilineTextAlignment(.trailing)
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(valueIn ?? "---")
+                    .textCaption()
+                    .multilineTextAlignment(.trailing)
+                Text(valueOut ?? "---")
+                    .textCaption()
+                    .multilineTextAlignment(.trailing)
+            }
         }
         .padding(.horizontal, .margin16)
     }
@@ -508,12 +547,20 @@ struct LiquidityAddView: View {
         return AppValue(token: tokenIn, value: availableBalance).formattedFull()
     }
 
-    private func buttonState() -> (String, PrimaryButtonStyle.Style, Bool, Bool, MultiSwapPreSwapStep?) {
+    private func balanceValueOut() -> String? {
+        guard let availableBalance = viewModel.availableBalanceOut, let tokenOut = viewModel.tokenOut else {
+            return nil
+        }
+
+        return AppValue(token: tokenOut, value: availableBalance).formattedFull()
+    }
+
+    private func buttonState() -> (String, PrimaryButtonStyle.Style, Bool, Bool, (step: MultiSwapPreSwapStep, token: Token, amount: Decimal, provider: ILiquidityAddProvider)?) {
         let title: String
         var style: PrimaryButtonStyle.Style = .yellow
         var disabled = true
         var showProgress = false
-        var preSwapStep: MultiSwapPreSwapStep?
+        var preSwap: (step: MultiSwapPreSwapStep, token: Token, amount: Decimal, provider: ILiquidityAddProvider)?
 
         if viewModel.quoting {
             title = "swap.quoting".localized
@@ -526,29 +573,61 @@ struct LiquidityAddView: View {
             title = "swap.no_providers".localized
         } else if viewModel.amountIn == nil {
             title = "swap.enter_amount".localized
-        } else if viewModel.currentQuote == nil {
-            title = "swap.no_quotes".localized
-        } else if viewModel.adapterState == nil {
+        } else if viewModel.adapterState == nil || viewModel.adapterStateOut == nil {
             title = "swap.token_not_enabled".localized
         } else if let adapterState = viewModel.adapterState, adapterState.syncing {
             title = "swap.token_syncing".localized
             showProgress = true
+        } else if let adapterStateOut = viewModel.adapterStateOut, adapterStateOut.syncing {
+            title = "swap.token_syncing".localized
+            showProgress = true
         } else if let adapterState = viewModel.adapterState, !adapterState.isSynced {
+            title = "swap.token_not_synced".localized
+        } else if let adapterStateOut = viewModel.adapterStateOut, !adapterStateOut.isSynced {
             title = "swap.token_not_synced".localized
         } else if let availableBalance = viewModel.availableBalance, let amountIn = viewModel.amountIn, amountIn > availableBalance {
             title = "swap.insufficient_balance".localized
+        } else if let amountOut = viewModel.currentQuote?.quote.amountOut ?? viewModel.manualAmountOut,
+                  let availableBalanceOut = viewModel.availableBalanceOut,
+                  amountOut > availableBalanceOut
+        {
+            title = "swap.insufficient_balance".localized
+        } else if viewModel.currentQuote == nil {
+            if viewModel.manualAllowanceSyncing {
+                title = "swap.quoting".localized
+                showProgress = true
+            } else if let tokenOutAmount = viewModel.manualAmountOut, tokenOutAmount > 0, let state = viewModel.manualCustomButtonState {
+                title = state.title
+                style = state.style
+                disabled = state.disabled
+                showProgress = state.showProgress
+
+                if let manualPreSwap = viewModel.manualPreSwap,
+                   let provider = viewModel.validProviders.first(where: { $0 is BaseUniswapV2LiquidityAddProvider })
+                {
+                    preSwap = (manualPreSwap.step, manualPreSwap.token, manualPreSwap.amount, provider)
+                }
+            } else if viewModel.manualAmountOut == nil || viewModel.manualAmountOut == 0 {
+                title = "swap.enter_amount".localized
+            } else {
+                title = "swap.proceed_button".localized
+                disabled = false
+            }
         } else if let currentQuote = viewModel.currentQuote, let state = currentQuote.quote.customButtonState {
             title = state.title
             style = state.style
             disabled = state.disabled
             showProgress = state.showProgress
-            preSwapStep = state.preSwapStep
+
+            if let step = state.preSwapStep, let tokenIn = viewModel.tokenIn, let amount = viewModel.amountIn {
+                preSwap = (step, tokenIn, amount, currentQuote.provider)
+            }
         } else {
             title = "swap.proceed_button".localized
             disabled = false
         }
 
-        return (title, style, disabled, showProgress, preSwapStep)
+        return (title, style, disabled, showProgress, preSwap)
     }
 
     func presentTokenIn() {
@@ -562,4 +641,3 @@ struct LiquidityAddView: View {
         }
     }
 }
-

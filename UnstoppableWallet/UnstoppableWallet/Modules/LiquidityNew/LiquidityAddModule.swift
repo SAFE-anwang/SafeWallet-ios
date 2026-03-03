@@ -9,7 +9,10 @@ extension LiquidityAddViewModel {
         if let kit = try? UniswapKit.Kit.instance() {
             providers.append(UniswapV2LiquidityAddProvider(kit: kit, storage: storage))
             providers.append(PancakeV2LiquidityAddProvider(kit: kit, storage: storage))
-            providers.append(SafeLiquidityAddProvider(kit: kit, storage: storage))
+        }
+
+        if let safeKit = try? UniswapKit.Kit.instance(isSafeSwap: true) {
+            providers.append(SafeLiquidityAddProvider(kit: safeKit, storage: storage))
         }
 
         if let kit = try? UniswapKit.KitV3.instance(dexType: .pancakeSwap),

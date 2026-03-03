@@ -35,24 +35,26 @@ class LiquidityAddAllowanceHelper {
         }
 
         do {
-            if let pendingAllowance = pendingAllowance(pendingTransactions: adapter.pendingTransactions, spenderAddress: spenderAddress) {
+            let pendingAllowance = pendingAllowance(pendingTransactions: adapter.pendingTransactions, spenderAddress: spenderAddress)
+            let allowance = try await adapter.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
+
+            if amount <= allowance {
+                return .allowed
+            }
+
+            if let pendingAllowance {
                 if pendingAllowance == 0 {
-                    return .pendingRevoke
+                    return allowance == 0 ? .notEnough(appValue: AppValue(token: token, value: allowance), spenderAddress: spenderAddress, revokeRequired: false) : .pendingRevoke
                 } else {
                     return .pendingAllowance(appValue: AppValue(token: token, value: pendingAllowance))
                 }
             }
 
-            let allowance = try await adapter.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
-            if amount <= allowance {
-                return .allowed
-            } else {
-                return .notEnough(
-                    appValue: AppValue(token: token, value: allowance),
-                    spenderAddress: spenderAddress,
-                    revokeRequired: allowance > 0 && mustBeRevoked(token: token)
-                )
-            }
+            return .notEnough(
+                appValue: AppValue(token: token, value: allowance),
+                spenderAddress: spenderAddress,
+                revokeRequired: allowance > 0 && mustBeRevoked(token: token)
+            )
         } catch {
             return .unknown
         }

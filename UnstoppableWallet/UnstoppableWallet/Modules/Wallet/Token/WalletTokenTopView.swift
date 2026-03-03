@@ -80,7 +80,8 @@ struct WalletTokenTopView: View {
                 }
             case .liquidity:
                 Coordinator.shared.present { _ in
-                    LiquidityMainView(tokenFrom: viewModel.wallet.token)
+//                    LiquidityMainView(tokenFrom: viewModel.wallet.token)
+                    LiquidityAddView(token: viewModel.wallet.token)
                 }
                 stat(page: .tokenPage, event: .open(page: .addLiquidity))
             default: ()
