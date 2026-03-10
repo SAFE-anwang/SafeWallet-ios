@@ -114,6 +114,20 @@ extension ManageWalletsViewModel {
             self?.service.set(filter: filter)
         }
     }
+
+    var currentBlockchainFilter: ManageWalletsService.BlockchainFilter {
+        service.currentBlockchainFilter
+    }
+
+    func onUpdate(blockchainFilter: ManageWalletsService.BlockchainFilter) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.service.set(blockchainFilter: blockchainFilter)
+        }
+    }
+
+    func blockchainName(blockchainType: BlockchainType) -> String? {
+        service.blockchainName(blockchainType: blockchainType)
+    }
 }
 
 extension ManageWalletsViewModel {

@@ -17,6 +17,7 @@ class ManageWalletsService {
     private var tokens = [Token]()
     private var wallets = Set<Wallet>()
     private var filter: String = ""
+    private var blockchainFilter: BlockchainFilter = .all
     private let itemsSubject = PassthroughSubject<[Item], Never>()
     private let cancelEnableRelay = PublishRelay<Int>()
 
@@ -62,47 +63,139 @@ class ManageWalletsService {
         cancelEnableRelay.accept(index)
     }
 
+    private func matchesBlockchainFilter(token: Token) -> Bool {
+        guard blockchainFilter != .all else {
+            return true
+        }
+        
+        let tokenBlockchainType = token.blockchainType
+        
+        switch blockchainFilter {
+        case .all:
+            return true
+        case .bitcoinSeries:
+            let bitcoinTypes: Set<BlockchainType> = [.bitcoin, .bitcoinCash, .litecoin, .dash, .dogecoin, .ecash]
+            return bitcoinTypes.contains(tokenBlockchainType)
+        case .blockchain(let filterType):
+            if filterType == .safe || filterType == .safe4 {
+                let safeTypes: Set<BlockchainType> = [.safe, .safe4]
+                return safeTypes.contains(tokenBlockchainType)
+            }
+            return tokenBlockchainType == filterType
+        }
+    }
+
     private func fetchTokens() -> [Token] {
         do {
+            var allTokens: [Token]
+            
             if filter.trimmingCharacters(in: .whitespaces).isEmpty {
-                let tokenQueries: [TokenQuery]
+                var tokens: [Token]
+                
                 if case .hdExtendedKey = account.type {
-                    tokenQueries = BtcBlockchainManager.blockchainTypes.map(\.nativeTokenQueries).flatMap { $0 }
+                    let tokenQueries = BtcBlockchainManager.blockchainTypes.map(\.nativeTokenQueries).flatMap { $0 }
+                    tokens = try marketKit.tokens(queries: tokenQueries)
                 } else {
-                    tokenQueries = BlockchainType.supported.map(\.defaultTokenQuery)
+                    if blockchainFilter == .all {
+                        let tokenQueries = BlockchainType.supported.map(\.defaultTokenQuery)
+                        tokens = try marketKit.tokens(queries: tokenQueries)
+                    } else {
+                        switch blockchainFilter {
+                        case .bitcoinSeries:
+                            let bitcoinTypes: Set<BlockchainType> = [.bitcoin, .bitcoinCash, .litecoin, .dash, .dogecoin, .ecash]
+                            var allBitcoinTokens: [Token] = []
+                            for blockchainType in bitcoinTypes {
+                                let blockchainTokens = try marketKit.tokens(blockchainType: blockchainType, filter: "")
+                                allBitcoinTokens.append(contentsOf: blockchainTokens)
+                            }
+                            tokens = allBitcoinTokens
+                        case .blockchain(let type):
+                            if type == .safe || type == .safe4 {
+                                let safeTypes: Set<BlockchainType> = [.safe, .safe4]
+                                var allSafeTokens: [Token] = []
+                                for blockchainType in safeTypes {
+                                    let blockchainTokens = try marketKit.tokens(blockchainType: blockchainType, filter: "")
+                                    allSafeTokens.append(contentsOf: blockchainTokens)
+                                }
+                                tokens = allSafeTokens
+                            } else {
+                                tokens = try marketKit.tokens(blockchainType: type, filter: "")
+                            }
+                        default:
+                            tokens = []
+                        }
+                    }
                 }
-                let safe4CustomTokenQueries = Core.shared.safe4CustomTokenStorage.allTokens().map{
-                    TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: $0.address))
-                }
-                let safe4CustomTokens = try marketKit.tokens(queries: safe4CustomTokenQueries)
 
-                let tokens = try marketKit.tokens(queries: tokenQueries)
                 let featuredTokens = tokens.filter { account.type.supports(token: $0) }
                 let enabledTokens = wallets.map(\.token)
                 
                 let featuredUids = featuredTokens.map{$0.coin.uid.lowercased()}
                 let enabledUids = enabledTokens.map{$0.coin.uid.lowercased()}
-                let result = safe4CustomTokens.filter({
+                let customTokens = try safe4CustomTokens()
+                let result = customTokens.filter({
                     !featuredUids.contains($0.coin.uid.lowercased()) &&
                     !enabledUids.contains($0.coin.uid.lowercased())
                 })
-                return (enabledTokens + featuredTokens + result).removeDuplicates()
+                
+                var allEnabledTokens = enabledTokens
+                if blockchainFilter != .all {
+                    allEnabledTokens = enabledTokens.filter { matchesBlockchainFilter(token: $0) }
+                }
+                
+                allTokens = (allEnabledTokens + featuredTokens + result).removeDuplicates()
             } else if let ethAddress = try? EvmKit.Address(hex: filter) {
                 let address = ethAddress.hex
                 let tokens = try marketKit.tokens(reference: address)
-
-                return tokens.filter { account.type.supports(token: $0) }
+                allTokens = tokens.filter { account.type.supports(token: $0) }
+                
+                if blockchainFilter != .all {
+                    allTokens = allTokens.filter { matchesBlockchainFilter(token: $0) }
+                }
             } else {
                 let allFullCoins = try marketKit.fullCoins(filter: filter, limit: 100)
                 let tokens = allFullCoins.map(\.tokens).flatMap { $0 }
-
-                return tokens.filter { account.type.supports(token: $0) }
+                allTokens = tokens.filter { account.type.supports(token: $0) }
+                
+                if blockchainFilter != .all {
+                    allTokens = allTokens.filter { matchesBlockchainFilter(token: $0) }
+                }
             }
+            
+            return allTokens
         } catch {
             return []
         }
     }
-
+    
+    private func safe4CustomTokens() throws -> [Token] {
+        let shouldFetchCustomTokens: Bool
+        switch blockchainFilter {
+        case .all:
+            shouldFetchCustomTokens = true
+        case .blockchain(let type):
+            shouldFetchCustomTokens = (type == .safe || type == .safe4)
+        default:
+            shouldFetchCustomTokens = false
+        }
+        
+        guard shouldFetchCustomTokens else {
+            return []
+        }
+        
+        let allCustomTokens = Core.shared.safe4CustomTokenStorage.allTokens()
+        guard !allCustomTokens.isEmpty else {
+            return []
+        }
+        
+        let safe4CustomTokenQueries = allCustomTokens.map{
+            TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: $0.address))
+        }
+        
+        let safe4CustomTokens = try marketKit.tokens(queries: safe4CustomTokenQueries)
+        return safe4CustomTokens
+    }
+    
     private func syncTokens(force: Bool = true) {
         queue.async { [weak self] in
             guard let self else { return }
@@ -232,6 +325,20 @@ extension ManageWalletsService {
         syncTokens()
     }
 
+    func set(blockchainFilter: BlockchainFilter) {
+        self.blockchainFilter = blockchainFilter
+
+        syncTokens()
+    }
+
+    var currentBlockchainFilter: BlockchainFilter {
+        blockchainFilter
+    }
+
+    func blockchainName(blockchainType: BlockchainType) -> String? {
+        (try? marketKit.blockchain(uid: blockchainType.uid))?.name
+    }
+
     func enable(index: Int) {
         let token = tokens[index]
 
@@ -303,5 +410,11 @@ extension ManageWalletsService {
         case bitcoinCashCoinType
         case birthdayHeight(height: Int)
         case contractAddress(value: String, explorerUrl: String?)
+    }
+    
+    enum BlockchainFilter: Equatable {
+        case all
+        case bitcoinSeries
+        case blockchain(BlockchainType)
     }
 }

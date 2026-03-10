@@ -66,7 +66,7 @@ extension WKWebViewConfiguration {
                 this.chainId = "0x\(String(chainId, radix: 16))";
                 this.selectedAddress = "\(address)";
                 this.isConnected = true;
-                this.isMetaMask = true;
+                this.isMetaMask = false;
                 this.isSafeWallet = true;
                 this._listeners = {};
                 this._nextId = 1;

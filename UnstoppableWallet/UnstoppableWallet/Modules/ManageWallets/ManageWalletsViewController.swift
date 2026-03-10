@@ -15,6 +15,7 @@ class ManageWalletsViewController: ThemeSearchViewController {
     private var cancellables = Set<AnyCancellable>()
 
     private let tableView = SectionsTableView(style: .grouped)
+    private let filterButton = SecondaryButton()
     private let notFoundPlaceholder = PlaceholderView(layoutType: .keyboard)
 
     private var viewItems: [ManageWalletsViewModel.ViewItem] = []
@@ -44,10 +45,12 @@ class ManageWalletsViewController: ThemeSearchViewController {
         if viewModel.addTokenEnabled {
             navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(onTapAddTokenButton))
         }
-
+        setupFilterButton()
+        
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
-            maker.edges.equalToSuperview()
+            maker.top.equalTo(filterButton.snp.bottom).offset(CGFloat.margin8)
+            maker.leading.trailing.bottom.equalToSuperview()
         }
 
         tableView.backgroundColor = .clear
@@ -100,6 +103,95 @@ class ManageWalletsViewController: ThemeSearchViewController {
         present(module, animated: true)
 
         stat(page: .coinManager, event: .open(page: .addToken))
+    }
+
+    private func setupFilterButton() {
+        view.addSubview(filterButton)
+        filterButton.snp.makeConstraints { maker in
+            maker.top.equalTo(view.safeAreaLayoutGuide).offset(CGFloat.margin8)
+            maker.leading.equalToSuperview().inset(CGFloat.margin16)
+            maker.height.equalTo(SecondaryButton.height(style: .default))
+        }
+
+        filterButton.set(style: .default, image: UIImage(named: "arrow_small_down_20"))
+        updateFilterButtonTitle()
+        filterButton.addTarget(self, action: #selector(onTapFilterButton), for: .touchUpInside)
+    }
+
+    private func updateFilterButtonTitle() {
+        let filter = viewModel.currentBlockchainFilter
+        updateFilterButtonTitle(filter: filter)
+    }
+
+    private func updateFilterButtonTitle(filter: ManageWalletsService.BlockchainFilter) {
+        let title: String
+        switch filter {
+        case .all:
+            title = "manage_wallets.filter_all_blockchains".localized
+        case .bitcoinSeries:
+            title = "manage_wallets.filter_bitcoin_series".localized
+        case .blockchain(let type):
+            title = viewModel.blockchainName(blockchainType: type) ?? type.uid
+        }
+        
+        filterButton.setTitle(title, for: .normal)
+        
+        let imageName = "arrow_small_down_20"
+        filterButton.setImage(UIImage(named: imageName), for: .normal)
+    }
+
+    @objc private func onTapFilterButton() {
+        typealias BlockchainFilter = ManageWalletsService.BlockchainFilter
+        
+        let filters: [BlockchainFilter] = [
+            .all,
+            .bitcoinSeries,
+            .blockchain(.safe4),
+            .blockchain(.ethereum),
+            .blockchain(.binanceSmartChain),
+            .blockchain(.polygon),
+            .blockchain(.arbitrumOne),
+            .blockchain(.optimism),
+            .blockchain(.avalanche),
+            .blockchain(.tron),
+            .blockchain(.zcash)
+        ]
+
+        let viewItems: [SelectorModule.ViewItem] = filters.map { filter in
+            let title: String
+            let image: CellBuilderNew.CellElement.Image?
+            
+            switch filter {
+            case .all:
+                title = "manage_wallets.filter_all_blockchains".localized
+                image = nil
+            case .bitcoinSeries:
+                title = "manage_wallets.filter_bitcoin_series".localized
+                image = .local(UIImage(named: "bitcoin_32"))
+            case .blockchain(let type):
+                title = viewModel.blockchainName(blockchainType: type) ?? type.uid
+                image = .url(type.imageUrl, placeholder: "placeholder_circle_32")
+            }
+            
+            let selected = viewModel.currentBlockchainFilter == filter
+            return SelectorModule.ViewItem(
+                image: image,
+                title: title,
+                selected: selected
+            )
+        }
+
+        let viewController = SelectorModule.bottomSingleSelectorViewController(
+            title: "manage_wallets.filter_by_blockchain".localized,
+            viewItems: viewItems
+        ) { [weak self] index in
+            guard let self else { return }
+            let selectedFilter = filters[index]
+            self.updateFilterButtonTitle(filter: selectedFilter)
+            self.viewModel.onUpdate(blockchainFilter: selectedFilter)
+        }
+
+        present(viewController, animated: true)
     }
 
     private func onUpdate(viewItems: [ManageWalletsViewModel.ViewItem]) {
