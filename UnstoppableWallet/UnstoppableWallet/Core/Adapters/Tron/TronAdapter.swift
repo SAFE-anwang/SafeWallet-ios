@@ -39,7 +39,7 @@ extension TronAdapter: IBalanceAdapter {
 
     var balanceStateUpdatedObservable: Observable<AdapterState> {
         tronKit.syncStatePublisher.asObservable().map { [weak self] in
-            self?.convertToAdapterState(tronSyncState: $0) ?? .syncing(progress: nil, lastBlockDate: nil)
+            self?.convertToAdapterState(tronSyncState: $0) ?? .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
         }
     }
 
@@ -50,6 +50,16 @@ extension TronAdapter: IBalanceAdapter {
     var balanceDataUpdatedObservable: Observable<BalanceData> {
         tronKit.trxBalancePublisher.asObservable().map { [weak self] in
             self?.balanceData(balance: $0) ?? BalanceData(balance: 0)
+        }
+    }
+
+    var caution: CautionNew? {
+        balanceCaution(active: tronKit.accountActive)
+    }
+
+    var cautionUpdatedObservable: Observable<CautionNew?> {
+        tronKitWrapper.tronKit.accountActivePublisher.asObservable().map { [weak self] in
+            self?.balanceCaution(active: $0)
         }
     }
 }

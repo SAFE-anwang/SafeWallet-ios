@@ -8,18 +8,11 @@ struct MainSettingsView: View {
     @State private var manageWalletsPresented = false
     @State private var addressCheckerPresented = false
     @State private var walletConnectPresented = false
-    @State private var showSelectorPresented = false
+
     @StateObject var walletConnectVerificationModel = WalletConnectVerificationModel(
         accountManager: Core.shared.accountManager,
         cloudBackupManager: Core.shared.cloudBackupManager
     )
-    
-    private lazy var fallbackBlockViewModel: FallbackBlockViewModel = {
-        let viewModel = FallbackBlockViewModel(walletManager: Core.shared.walletManager,
-                                               accountManager: Core.shared.accountManager,
-                                               adapterManager: Core.shared.adapterManager)
-        return viewModel
-    }()
 
     @State private var currentSlideIndex: Int = 0
     @State private var isFirstAppear = true
@@ -27,17 +20,15 @@ struct MainSettingsView: View {
     var body: some View {
         ScrollableThemeView {
             VStack(spacing: .margin12) {
-//                slider()
+                slider()
 
                 VStack(spacing: 0) {
                     ListSection {
                         manageWallets()
                         blockchainSettings()
                         security()
-//                        privacy()
+                        privacy()
                         dAppConnection()
-                        fallbackBlock()
-                        revokeCash()
                         // tonConnect()
                     }
 
@@ -45,22 +36,22 @@ struct MainSettingsView: View {
 
                     ListSection {
                         appSettings()
-//                        subscription()
+                        subscription()
                         contacts()
-//                        backupManager()
+                        backupManager()
                     }
 
-//                    Spacer().frame(height: .margin24)
-//
-//                    VStack(spacing: 0) {
-//                        premiumHeader()
-//
-//                        ListSection {
-//                            vipSupport()
-//                            addressChecker()
-//                        }
-//                        .modifier(ThemeListStyleModifier(themeListStyle: .borderedLawrence, selected: true))
-//                    }
+                    Spacer().frame(height: .margin24)
+
+                    VStack(spacing: 0) {
+                        premiumHeader()
+
+                        ListSection {
+                            vipSupport()
+                            addressChecker()
+                        }
+                        .modifier(ThemeListStyleModifier(themeListStyle: .borderedLawrence, selected: true))
+                    }
 
                     Spacer().frame(height: .margin32)
 
@@ -69,7 +60,7 @@ struct MainSettingsView: View {
                         rateUs()
                         tellFriend()
                         faq()
-//                        academy()
+                        academy()
                     }
 
                     Spacer().frame(height: .margin24)
@@ -83,31 +74,37 @@ struct MainSettingsView: View {
                         }
                     }
 
-//                    if AppConfig.donateEnabled {
-//                        Spacer().frame(height: .margin32)
-//
-//                        ListSection {
-//                            donate()
-//                        }
-//                    }
+                    // Spacer().frame(height: .margin32)
+
+                    // ListSection {
+                    //     donate()
+                    // }
 
                     Spacer().frame(height: .margin32)
 
-//                    footer()
-//
-//                    if viewModel.showTestSwitchers {
-//                        Spacer().frame(height: .margin32)
-//                        testSwitchersSection()
-//                    }
+                    footer()
+
+                    if viewModel.showTestSwitchers {
+                        Spacer().frame(height: .margin32)
+                        testSwitchersSection()
+                    }
                 }
                 .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
             }
             .padding(EdgeInsets(top: .margin12, leading: 0, bottom: .margin32, trailing: 0))
         }
         .navigationDestination(isPresented: $addressCheckerPresented) {
-            AddressCheckerView()
+            CheckAddressView()
                 .onFirstAppear {
                     stat(page: .settings, event: .open(page: .addressChecker))
+                }
+        }
+        .navigationDestination(isPresented: $walletConnectPresented) {
+            WalletConnectListView()
+                .navigationTitle("wallet_connect_list.title".localized)
+                .ignoresSafeArea()
+                .onFirstAppear {
+                    stat(page: .settings, event: .open(page: .walletConnect))
                 }
         }
     }
@@ -143,14 +140,14 @@ struct MainSettingsView: View {
                 return
             }
 
-            currentSlideIndex = (currentSlideIndex + 1) % viewModel.slides.count
+            currentSlideIndex = PremiumFactory.forceShowingPremium ? 0 : (currentSlideIndex + 1) % viewModel.slides.count
         }
     }
 
     @ViewBuilder private func slide(slide: MainSettingsViewModel.Slide) -> some View {
         switch slide {
         case .premium:
-            premiumSlide()
+            PremiumFactory.slide(offer: viewModel.introductoryOffer)
                 .onTapGesture {
                     Coordinator.shared.presentPurchase(page: .settings, trigger: .banner)
                 }
@@ -160,32 +157,6 @@ struct MainSettingsView: View {
                     UrlManager.open(url: "https://t.me/\(AppConfig.appTokenTelegramAccount)/app")
                 }
         }
-    }
-
-    @ViewBuilder private func premiumSlide() -> some View {
-        ZStack(alignment: .trailing) {
-            GeometryReader { geometry in
-                Image("banner_premium")
-                    .clipped()
-                    .frame(width: geometry.size.width, alignment: .trailing)
-            }
-
-            VStack(alignment: .leading, spacing: .margin2) {
-                Text("premium.cell.title".localized).textHeadline1(color: .themeYellow)
-                Spacer(minLength: 0)
-
-                VStack(alignment: .leading, spacing: .margin4) {
-                    Text("premium.cell.description".localized("premium.cell.description.key".localized)).textSubhead1(color: .themeLight)
-
-                    if let introductoryOffer = viewModel.introductoryOffer {
-                        Text(introductoryOffer).textCaptionSB(color: .themeGreen)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(EdgeInsets(top: .margin16, leading: .margin16, bottom: .margin16, trailing: 138))
-        }
-        .background(Color.themeDarker)
     }
 
     @ViewBuilder private func miniAppSlide() -> some View {
@@ -241,7 +212,7 @@ struct MainSettingsView: View {
 
     @ViewBuilder private func security() -> some View {
         NavigationRow(spacing: .margin8, destination: {
-            SecuritySettingsModule.view()
+            SecuritySettingsView()
                 .onFirstAppear {
                     stat(page: .settings, event: .open(page: .security))
                 }
@@ -295,44 +266,6 @@ struct MainSettingsView: View {
 
             Image.disclosureIcon
         }
-        .navigationDestination(isPresented: $walletConnectPresented) {
-            WalletConnectListView()
-                .navigationTitle("wallet_connect_list.title".localized)
-                .ignoresSafeArea()
-                .onFirstAppear {
-                    stat(page: .settings, event: .open(page: .walletConnect))
-                }
-        }
-    }
-    
-    @ViewBuilder private func fallbackBlock() -> some View {
-        ClickableRow(spacing: .margin8) {
-            Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                FallbackBlockView()
-            }
-        } content: {
-            HStack(spacing: .margin16) {
-                Image("safe_logo_24")//.themeIcon()
-                Text("settings_security.safe_block_height".localized).textBody()
-            }
-            Spacer()
-            Image.disclosureIcon
-        }
-    }
-    
-    @ViewBuilder private func revokeCash() -> some View {
-        NavigationRow(destination: {
-            if let viewModel = RevokeCashModule.viewModel(blockchainType: .binanceSmartChain) {
-                RevokeCashView(viewModel: viewModel)
-            }
-        }) {
-            HStack(spacing: .margin16) {
-                Image("icloud_24").themeIcon()
-                Text("Revoke_Manager".localized).textBody()
-            }
-            Spacer()
-            Image.disclosureIcon
-        }
     }
 
     @ViewBuilder private func tonConnect() -> some View {
@@ -356,7 +289,7 @@ struct MainSettingsView: View {
                 }
         }) {
             Image("uw_24").themeIcon()
-            Text("settings.app_settings".localized).themeBody()
+            Text("settings.appearance".localized).themeBody()
             Image.disclosureIcon
         }
     }
@@ -423,18 +356,13 @@ struct MainSettingsView: View {
 
     @ViewBuilder private func vipSupport() -> some View {
         ClickableRow(action: {
-            Coordinator.shared.performAfterPurchase(premiumFeature: .vipSupport, page: .settings, trigger: .vipSupport) {
-                Coordinator.shared.present(type: .bottomSheet) { _ in
-                    SupportView { telegramUrl in
-                        UrlManager.open(url: telegramUrl)
-                    }
-                }
-
+            Coordinator.shared.performAfterPurchase(premiumFeature: .prioritySupport, page: .settings, trigger: .vipSupport) {
+                UrlManager.open(url: MainSettingsViewModel.supportLink)
                 stat(page: .settings, event: .open(page: .vipSupport))
             }
         }) {
             Image("support_2_24").themeIcon(color: .themeJacob)
-            Text("purchases.vip_support".localized).themeBody()
+            Text("purchases.priority_support".localized).themeBody()
             Image.disclosureIcon
         }
     }
@@ -510,17 +438,17 @@ struct MainSettingsView: View {
         }
     }
 
-//    @ViewBuilder private func academy() -> some View {
-//        NavigationRow(destination: {
-//            EducationView().onFirstAppear {
-//                stat(page: .settings, event: .open(page: .education))
-//            }
-//        }) {
-//            Image("academy_1_24").themeIcon()
-//            Text("education.title".localized).themeBody()
-//            Image.disclosureIcon
-//        }
-//    }
+    @ViewBuilder private func academy() -> some View {
+        NavigationRow(destination: {
+            EducationView().onFirstAppear {
+                stat(page: .settings, event: .open(page: .education))
+            }
+        }) {
+            Image("academy_1_24").themeIcon()
+            Text("education.title".localized).themeBody()
+            Image.disclosureIcon
+        }
+    }
 
     @ViewBuilder private func telegram() -> some View {
         ClickableRow(action: {
@@ -590,6 +518,13 @@ struct MainSettingsView: View {
     @ViewBuilder private func testSwitchersSection() -> some View {
         ListSection {
             ListRow {
+                Toggle(isOn: $viewModel.forceEnableSwap) {
+                    Text("Force Enable Swap").themeBody()
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
+            }
+
+            ListRow {
                 Toggle(isOn: $viewModel.emulatePurchase) {
                     Text("Emulate Purchase").themeBody()
                 }
@@ -602,41 +537,13 @@ struct MainSettingsView: View {
                 }
                 .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
             }
+
+            ListRow {
+                Toggle(isOn: $viewModel.mayaStagenetEnabled) {
+                    Text("Maya Stagenet Enabled").themeBody()
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
+            }
         }
     }
-    
-//    @ViewBuilder private func confirmFallbackBlockView(isPresented: Binding<Bool>) -> some View {
-//        BottomSheetView(
-//            icon: .info,
-//            title: "safe_setting.fallback.title".localized,
-//            items: [
-//                fallbackBlockViewModel
-//            ],
-//            buttons: [
-//                .init(style: .red, title: "safe_setting.fallback.sheet.button".localized) {
-//                    fallbackBlockViewModel.fallbackBlock(item: <#T##FallbackBlockViewItem#>)
-//                },
-//            ],
-//            isPresented: isPresented
-//        )
-//    }
 }
-//extension MainSettingsViewController {
-//    
-//
-//    
-//    private func showSelector(onSelect: @escaping (Int) -> ()) {
-//        let viewController = FallbackBlockModule.viewController(
-//                image: nil,
-//                title: "safe_setting.fallback.title".localized,
-//                viewItems: fallbackBlockViewModel.fallbackBlockViewItems.map{$0.item},
-//                onSelect: onSelect
-//        )
-//
-//        DispatchQueue.main.async {
-//            self.present(viewController, animated: true)
-//        }
-//    }
-//    
-//
-//}

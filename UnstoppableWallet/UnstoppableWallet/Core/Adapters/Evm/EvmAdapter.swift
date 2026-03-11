@@ -41,27 +41,17 @@ extension EvmAdapter: IBalanceAdapter {
 
     var balanceStateUpdatedObservable: Observable<AdapterState> {
         evmKit.syncStateObservable.map { [weak self] in
-            self?.convertToAdapterState(evmSyncState: $0) ?? .syncing(progress: nil, lastBlockDate: nil)
+            self?.convertToAdapterState(evmSyncState: $0) ?? .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
         }
     }
 
     var balanceData: BalanceData {
-        let available = balanceData(balance: evmKit.accountState?.balance).available
-        let locked = balanceData(balance: evmKit.accountState?.timeLockBalance).available
-        return BalanceData(
-            balance: available,
-            locked: locked
-        )
+        balanceData(balance: evmKit.accountState?.balance)
     }
 
     var balanceDataUpdatedObservable: Observable<BalanceData> {
         evmKit.accountStateObservable.map { [weak self] in
-            if let available = self?.balanceData(balance: $0.balance).available,
-               let locked = self?.balanceData(balance: $0.timeLockBalance).available {
-                return BalanceData(balance: available, locked: locked)
-            }else {
-                return BalanceData(balance: 0)
-            }
+            self?.balanceData(balance: $0.balance) ?? BalanceData(balance: 0)
         }
     }
 }

@@ -4,8 +4,7 @@ enum WalletButton {
     case swap
     case chart
     case scan
-    case liquidity
-    
+
     var title: String {
         switch self {
         case .send: return "balance.send".localized
@@ -13,7 +12,6 @@ enum WalletButton {
         case .swap: return "balance.swap".localized
         case .chart: return "balance.chart".localized
         case .scan: return "balance.scan".localized
-        case .liquidity: return "liquidity.title.add".localized
         }
     }
 
@@ -24,7 +22,6 @@ enum WalletButton {
         case .swap: return "swap_e"
         case .chart: return "chart"
         case .scan: return "scan"
-        case .liquidity: return "arrow_swap_approval_2_24"
         }
     }
 

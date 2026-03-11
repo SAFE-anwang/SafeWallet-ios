@@ -41,8 +41,8 @@ struct WalletListItemView: View, Equatable {
         }
 
         switch item.state {
-        case let .syncing(progress, _):
-            return progress.map { "balance.syncing_percent".localized("\($0)%") } ?? "balance.syncing".localized
+        case let .syncing(_, remaining, _):
+            return remaining.map { "balance.remaining".localized("\($0)") } ?? "balance.syncing".localized
         case let .customSyncing(main, _, _):
             return main
         case .connecting:
@@ -62,7 +62,7 @@ struct WalletListItemView: View, Equatable {
             if let priceItem = item.priceItem {
                 return ComponentText(text: ValueFormatter.instance.formatFull(currencyValue: priceItem.price) ?? String.placeholder, dimmed: priceItem.expired)
             } else {
-                return ""//"n/a".localized
+                return "n/a".localized
             }
         case .coinName:
             return item.wallet.coin.name
@@ -97,8 +97,9 @@ struct WalletListItemView: View, Equatable {
         }
 
         switch item.state {
-        case let .syncing(_, lastBlockDate):
-            return lastBlockDate.map { "balance.synced_through".localized(DateHelper.instance.formatSyncedThroughDate(from: $0)) } ?? secondaryValue
+        case .syncing:
+//            return lastBlockDate.map { "balance.synced_through".localized(DateHelper.instance.formatSyncedThroughDate(from: $0)) } ?? secondaryValue
+            return secondaryValue
         case let .customSyncing(_, secondary, _):
             return secondary
         case .stopped:
@@ -108,9 +109,13 @@ struct WalletListItemView: View, Equatable {
         }
     }
 
-    private var primaryValue: CustomStringConvertible {
+    private var primaryValue: CustomStringConvertible? {
         if balanceHidden {
             return BalanceHiddenManager.placeholder
+        }
+
+        if item.caution != nil {
+            return nil
         }
 
         switch balancePrimaryValue {
@@ -122,6 +127,10 @@ struct WalletListItemView: View, Equatable {
     private var secondaryValue: CustomStringConvertible? {
         if balanceHidden {
             return nil
+        }
+
+        if let caution = item.caution {
+            return ComponentText(text: caution.text, colorStyle: caution.type.colorStyle)
         }
 
         switch balancePrimaryValue {

@@ -9,13 +9,11 @@ class EvmSendHandler {
     private let evmKitWrapper: EvmKitWrapper
     private let decorator = EvmDecorator()
     private let evmFeeEstimator = EvmFeeEstimator()
-    private let timeLock: TimeLock?
-    
-    init(baseToken: Token, transactionData: TransactionData, evmKitWrapper: EvmKitWrapper, timeLock: TimeLock? = nil) {
+
+    init(baseToken: Token, transactionData: TransactionData, evmKitWrapper: EvmKitWrapper) {
         self.baseToken = baseToken
         self.transactionData = transactionData
         self.evmKitWrapper = evmKitWrapper
-        self.timeLock = timeLock
     }
 }
 
@@ -70,9 +68,7 @@ extension EvmSendHandler: ISendHandler {
             transactionError: transactionError,
             gasPrice: gasPriceData?.userDefined,
             evmFeeData: evmFeeData,
-            nonce: transactionSettings?.nonce,
-            timeLock: timeLock,
-            feeToken: baseToken
+            nonce: transactionSettings?.nonce
         )
     }
 
@@ -92,35 +88,14 @@ extension EvmSendHandler: ISendHandler {
         guard let gasLimit = data.evmFeeData?.surchargedGasLimit else {
             throw SendError.noGasLimit
         }
-        
-        if let timeLock = data.timeLock {
-            switch timeLock.token {
-            case .native:
-                _ = try await evmKitWrapper.sendSafe4TimeLock(
-                    transactionData: transactionData,
-                    gasPrice: gasPrice,
-                    gasLimit: gasLimit,
-                    nonce: data.nonce,
-                    timeLock: timeLock
-                )
-            case .src20:
-                _ = try await evmKitWrapper.sendSrc20TimeLock(
-                    to: transactionData.to,
-                    gasPrice: gasPrice,
-                    gasLimit: gasLimit,
-                    nonce: data.nonce,
-                    timeLock: timeLock
-                )
-            }
-        } else {
-            _ = try await evmKitWrapper.send(
-                transactionData: transactionData,
-                gasPrice: gasPrice,
-                gasLimit: gasLimit,
-                privateSend: false,
-                nonce: data.nonce
-            )
-        }
+
+        _ = try await evmKitWrapper.send(
+            transactionData: transactionData,
+            gasPrice: gasPrice,
+            gasLimit: gasLimit,
+            privateSend: false,
+            nonce: data.nonce
+        )
     }
 }
 
@@ -134,7 +109,7 @@ extension EvmSendHandler {
 }
 
 extension EvmSendHandler {
-    static func instance(blockchainType: BlockchainType, transactionData: TransactionData, timeLock: TimeLock? = nil) -> EvmSendHandler? {
+    static func instance(blockchainType: BlockchainType, transactionData: TransactionData) -> EvmSendHandler? {
         guard let baseToken = try? Core.shared.coinManager.token(query: .init(blockchainType: blockchainType, tokenType: .native)) else {
             return nil
         }
@@ -146,8 +121,7 @@ extension EvmSendHandler {
         return EvmSendHandler(
             baseToken: baseToken,
             transactionData: transactionData,
-            evmKitWrapper: evmKitWrapper,
-            timeLock: timeLock
+            evmKitWrapper: evmKitWrapper
         )
     }
 }

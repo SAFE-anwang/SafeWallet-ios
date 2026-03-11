@@ -1,6 +1,7 @@
 import Alamofire
 import BigInt
 import BitcoinCore
+import Combine
 import EvmKit
 import Foundation
 import HsToolKit
@@ -9,46 +10,36 @@ import ObjectMapper
 import SwiftUI
 
 class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
-    private let networkManager = Core.shared.networkManager
-    // private let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
-    private let marketKit = Core.shared.marketKit
+    private let assetMapExpiration: TimeInterval = 60 * 60
+
+    let networkManager = Core.shared.networkManager
+    let adapterManager = Core.shared.adapterManager
+    // let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
     private let evmBlockchainManager = Core.shared.evmBlockchainManager
-    private let btcBlockchainManager = Core.shared.btcBlockchainManager
-    private let accountManager = Core.shared.accountManager
-    private let adapterManager = Core.shared.adapterManager
-    private let localStorage = Core.shared.localStorage
-    private let storage: MultiSwapSettingStorage
+    private let swapAssetStorage = Core.shared.swapAssetStorage
     private let allowanceHelper = MultiSwapAllowanceHelper()
     private let evmFeeEstimator = EvmFeeEstimator()
     private let utxoFilters = UtxoFilters(
-        scriptTypes: [.p2pkh, .p2wpkhSh, .p2wpkh],
-        maxOutputsCountForInputs: 10
+        scriptTypes: [.p2pkh, .p2wpkhSh, .p2wpkh]
     )
 
-    var assets = [Asset]()
+    private var assetMap = [String: String]()
+    private let syncSubject = PassthroughSubject<Void, Never>()
 
-    @Published private var useMevProtection: Bool = false
-
-    init(storage: MultiSwapSettingStorage) {
-        self.storage = storage
-
-        syncPools()
+    init() {
+        assetMap = (try? swapAssetStorage.swapAssetMap(provider: id, as: String.self)) ?? [:]
+        syncAssets()
     }
 
-    var baseUrl: String {
-        fatalError("Must be overridden by subclass")
-    }
+    var baseUrl: String { fatalError("Must be overridden by subclass") }
+    var id: String { fatalError("Must be overridden by subclass") }
+    var name: String { fatalError("Must be overridden by subclass") }
+    var type: SwapProviderType { fatalError("Must be overridden by subclass") }
+    var aml: Bool { false }
+    var icon: String { fatalError("Must be overridden by subclass") }
 
-    var id: String {
-        fatalError("Must be overridden by subclass")
-    }
-
-    var name: String {
-        fatalError("Must be overridden by subclass")
-    }
-
-    var icon: String {
-        fatalError("Must be overridden by subclass")
+    var syncPublisher: AnyPublisher<Void, Never>? {
+        syncSubject.eraseToAnyPublisher()
     }
 
     var affiliate: String? {
@@ -60,15 +51,13 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
     }
 
     func supports(tokenIn: Token, tokenOut: Token) -> Bool {
-        let tokens = assets.map(\.token)
-        return tokens.contains(tokenIn) && tokens.contains(tokenOut)
+        assetMap[tokenIn.tokenQuery.id.lowercased()] != nil && assetMap[tokenOut.tokenQuery.id.lowercased()] != nil
     }
 
-    func quote(tokenIn: Token, tokenOut: Token, amountIn: Decimal) async throws -> IMultiSwapQuote {
+    func quote(tokenIn: Token, tokenOut: Token, amountIn: Decimal) async throws -> MultiSwapQuote {
         let swapQuote = try await swapQuote(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn)
 
         let blockchainType = tokenIn.blockchainType
-        let slippage: Decimal = storage.value(for: MultiSwapSettingStorage.LegacySetting.slippage) ?? MultiSwapSlippage.default
 
         switch blockchainType {
         case .arbitrumOne, .avalanche, .base, .binanceSmartChain, .ethereum:
@@ -76,26 +65,19 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
                 throw SwapError.noRouterAddress
             }
 
-            return await ThorChainMultiSwapEvmQuote(
-                swapQuote: swapQuote,
-                recipient: storage.recipient(blockchainType: blockchainType),
-                slippage: slippage,
+            return await EvmMultiSwapQuote(
+                expectedBuyAmount: swapQuote.expectedAmountOut,
                 allowanceState: allowanceHelper.allowanceState(spenderAddress: .init(raw: router), token: tokenIn, amount: amountIn)
             )
-        case .bitcoin, .bitcoinCash, .dash, .litecoin:
-            return ThorChainMultiSwapBtcQuote(
-                swapQuote: swapQuote,
-                recipient: storage.recipient(blockchainType: blockchainType),
-                slippage: slippage
-            )
+        case .bitcoin, .bitcoinCash, .dash, .litecoin, .zcash:
+            return MultiSwapQuote(expectedBuyAmount: swapQuote.expectedAmountOut)
         default:
             throw SwapError.unsupportedTokenIn
         }
     }
 
-    func confirmationQuote(tokenIn: Token, tokenOut: Token, amountIn: Decimal, transactionSettings: TransactionSettings?) async throws -> IMultiSwapConfirmationQuote {
-        let swapQuote = try await swapQuote(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn)
-        let slippage = storage.value(for: MultiSwapSettingStorage.LegacySetting.slippage) ?? MultiSwapSlippage.default
+    func confirmationQuote(tokenIn: Token, tokenOut: Token, amountIn: Decimal, slippage: Decimal, recipient: String?, transactionSettings: TransactionSettings?) async throws -> SwapFinalQuote {
+        let swapQuote = try await swapQuote(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, slippage: slippage, recipient: recipient)
 
         switch tokenIn.blockchainType {
         case .arbitrumOne, .avalanche, .base, .binanceSmartChain, .ethereum:
@@ -137,29 +119,32 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
 
             if let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper, let gasPriceData {
                 do {
-                    evmFeeData = try await evmFeeEstimator.estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData)
+                    let _evmFeeData = try await evmFeeEstimator.estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData)
+                    evmFeeData = _evmFeeData
+
+                    try BaseEvmMultiSwapProvider.validateBalance(evmKitWrapper: evmKitWrapper, transactionData: transactionData, evmFeeData: _evmFeeData, gasPriceData: gasPriceData)
                 } catch {
                     transactionError = error
                 }
             }
 
-            return ThorChainMultiSwapEvmConfirmationQuote(
-                swapQuote: swapQuote,
-                recipient: storage.recipient(blockchainType: blockchainType),
-                slippage: slippage,
+            return EvmSwapFinalQuote(
+                expectedBuyAmount: swapQuote.expectedAmountOut,
                 transactionData: transactionData,
                 transactionError: transactionError,
+                slippage: slippage,
+                recipient: recipient,
+                estimatedTime: swapQuote.totalSwapSeconds,
                 gasPrice: gasPriceData?.userDefined,
                 evmFeeData: evmFeeData,
                 nonce: transactionSettings?.nonce
             )
         case .bitcoin, .bitcoinCash, .dash, .litecoin:
             var transactionError: Error?
-            var satoshiPerByte: Int?
             var sendInfo: SendInfo?
             var params: SendParameters?
 
-            if let _satoshiPerByte = transactionSettings?.satoshiPerByte,
+            if let satoshiPerByte = transactionSettings?.satoshiPerByte,
                let adapter = adapterManager.adapter(for: tokenIn) as? BitcoinBaseAdapter
             {
                 do {
@@ -168,15 +153,11 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
                         throw BitcoinCoreErrors.SendValueErrors.dust(dustThreshold + 1)
                     }
 
-                    satoshiPerByte = _satoshiPerByte
                     let _params = SendParameters(
                         address: swapQuote.inboundAddress,
                         value: value,
-                        feeRate: _satoshiPerByte,
-                        sortType: .none,
-                        rbfEnabled: true,
+                        feeRate: satoshiPerByte,
                         memo: swapQuote.memo,
-                        unspentOutputs: nil,
                         utxoFilters: utxoFilters,
                         changeToFirstInput: true
                     )
@@ -188,129 +169,39 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
                 }
             }
 
-            return ThorChainMultiSwapBtcConfirmationQuote(
-                swapQuote: swapQuote,
-                recipient: storage.recipient(blockchainType: tokenIn.blockchainType),
-                slippage: slippage,
-                satoshiPerByte: satoshiPerByte,
-                fee: sendInfo?.fee,
+            return UtxoSwapFinalQuote(
+                expectedBuyAmount: swapQuote.expectedAmountOut,
                 sendParameters: params,
-                transactionError: transactionError
+                slippage: slippage,
+                recipient: recipient,
+                estimatedTime: swapQuote.totalSwapSeconds,
+                transactionError: transactionError,
+                fee: sendInfo?.fee
             )
         default:
             throw SwapError.unsupportedTokenIn
         }
     }
 
-    func otherSections(tokenIn: Token, tokenOut _: Token, amountIn _: Decimal, transactionSettings _: TransactionSettings?) -> [SendDataSection] {
-        guard MerkleTransactionAdapter.allowProtection(blockchainType: tokenIn.blockchainType) else {
-            useMevProtection = false
-            return []
-        }
-
-        useMevProtection = localStorage.useMevProtection
-
-        let binding = Binding<Bool>(
-            get: { [weak self] in
-                if Core.shared.purchaseManager.activated(.vipSupport) {
-                    self?.useMevProtection ?? false
-                } else {
-                    false
-                }
-            },
-            set: { [weak self] newValue in
-                let successBlock = { [weak self] in
-                    self?.useMevProtection = newValue
-                    self?.localStorage.useMevProtection = newValue
-                }
-
-                guard Core.shared.purchaseManager.activated(.vipSupport) else {
-                    // Coordinator.shared.presentPurchases(onSuccess: successBlock)
-                    return
-                }
-
-                successBlock()
-            }
-        )
-
-        return [.init([
-            .mevProtection(isOn: binding),
-        ], isList: false)]
-    }
-
-    private func settingsView(tokenOut: MarketKit.Token, onChangeSettings: @escaping () -> Void) -> AnyView {
-        let view = ThemeNavigationStack {
-            RecipientAndSlippageMultiSwapSettingsView(tokenOut: tokenOut, storage: storage, slippageMode: .adjustable, onChangeSettings: onChangeSettings)
-        }
-
-        return AnyView(view)
-    }
-
-    func settingsView(tokenIn _: MarketKit.Token, tokenOut: MarketKit.Token, quote _: IMultiSwapQuote, onChangeSettings: @escaping () -> Void) -> AnyView {
-        settingsView(tokenOut: tokenOut, onChangeSettings: onChangeSettings)
-    }
-
-    func settingView(settingId: String, tokenOut: MarketKit.Token, onChangeSetting: @escaping () -> Void) -> AnyView {
-        if settingId == MultiSwapMainField.slippageSettingId {
-            return settingsView(tokenOut: tokenOut, onChangeSettings: onChangeSetting)
-        }
-
-        fatalError("settingView(settingId:) has not been implemented")
-    }
-
     func preSwapView(step: MultiSwapPreSwapStep, tokenIn: Token, tokenOut _: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
         allowanceHelper.preSwapView(step: step, tokenIn: tokenIn, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
     }
 
-    func swap(tokenIn: Token, tokenOut _: Token, amountIn _: Decimal, quote: IMultiSwapConfirmationQuote) async throws {
-        if let quote = quote as? ThorChainMultiSwapEvmConfirmationQuote {
-            guard let gasLimit = quote.evmFeeData?.surchargedGasLimit else {
-                throw SwapError.noGasLimit
-            }
-
-            guard let gasPrice = quote.gasPrice else {
-                throw SwapError.noGasPrice
-            }
-
-            guard let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: tokenIn.blockchainType).evmKitWrapper else {
-                throw SwapError.noEvmKitWrapper
-            }
-
-            _ = try await evmKitWrapper.send(
-                transactionData: quote.transactionData,
-                gasPrice: gasPrice,
-                gasLimit: gasLimit,
-                privateSend: useMevProtection,
-                nonce: quote.nonce
-            )
-        } else if let quote = quote as? ThorChainMultiSwapBtcConfirmationQuote {
-            guard let adapter = adapterManager.adapter(for: tokenIn) as? BitcoinBaseAdapter else {
-                throw SwapError.noBitcoinAdapter
-            }
-
-            guard let sendParameters = quote.sendParameters else {
-                throw SwapError.noSendParameters
-            }
-
-            try adapter.send(params: sendParameters)
-        }
-    }
-
-    private func swapQuote(tokenIn: Token, tokenOut: Token, amountIn: Decimal, slippage: Decimal? = nil) async throws -> SwapQuote {
-        guard let assetIn = assets.first(where: { $0.token == tokenIn }) else {
+    func swapQuote(tokenIn: Token, tokenOut: Token, amountIn: Decimal, slippage: Decimal? = nil, recipient: String? = nil, params: Parameters? = nil) async throws -> SwapQuote {
+        guard let assetIn = assetMap[tokenIn.tokenQuery.id.lowercased()] else {
             throw SwapError.unsupportedTokenIn
         }
 
-        guard let assetOut = assets.first(where: { $0.token == tokenOut }) else {
+        guard let assetOut = assetMap[tokenOut.tokenQuery.id.lowercased()] else {
             throw SwapError.unsupportedTokenOut
         }
 
         let amount = (amountIn * pow(10, 8)).roundedDown(decimal: 0)
-        let destination = try resolveDestination(token: tokenOut)
+        let destination = try await resolveDestination(recipient: recipient, token: tokenOut)
 
         var parameters: Parameters = [
-            "from_asset": assetIn.id,
-            "to_asset": assetOut.id,
+            "from_asset": assetIn,
+            "to_asset": assetOut,
             "amount": amount.description,
             "destination": destination,
             "streaming_interval": 1,
@@ -326,18 +217,30 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
             parameters["affiliate_bps"] = affiliateBps
         }
 
+        if let params {
+            parameters.merge(params) { _, custom in
+                custom
+            }
+        }
+
         return try await networkManager.fetch(url: "\(baseUrl)/quote/swap", parameters: parameters)
     }
 
-    private func resolveDestination(token: Token) throws -> String {
-        if let recipient = storage.recipient(blockchainType: token.blockchainType) {
-            return recipient.raw
+    func resolveDestination(recipient: String?, token: Token) async throws -> String {
+        if let recipient {
+            return recipient
         }
 
-        return try DestinationHelper.resolveDestination(token: token)
+        return try await DestinationHelper.resolveDestination(token: token).address
     }
 
-    private func syncPools() {
+    private func syncAssets() {
+        let lastSyncTimetamp = try? swapAssetStorage.lastSyncTimetamp(provider: id)
+
+        if let lastSyncTimetamp, Date().timeIntervalSince1970 - lastSyncTimetamp < assetMapExpiration {
+            return
+        }
+
         Task { [weak self, networkManager, baseUrl] in
             let pools: [Pool] = try await networkManager.fetch(url: "\(baseUrl)/pools")
             self?.sync(pools: pools)
@@ -345,7 +248,7 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
     }
 
     private func sync(pools: [Pool]) {
-        assets = []
+        var assetMap = [String: String]()
 
         let availablePools = pools.filter { $0.status.caseInsensitiveCompare("available") == .orderedSame }
 
@@ -363,7 +266,7 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
             var tokenQueries: [TokenQuery] = []
 
             switch blockchainType {
-            case .arbitrumOne, .avalanche, .base, .binanceSmartChain, .ethereum:
+            case .arbitrumOne, .avalanche, .base, .binanceSmartChain, .ethereum, .stellar:
                 let components = assetId.components(separatedBy: "-")
 
                 let tokenType: TokenType
@@ -388,9 +291,17 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
             default: ()
             }
 
-            if let tokens = try? marketKit.tokens(queries: tokenQueries) {
-                assets.append(contentsOf: tokens.map { Asset(id: pool.asset, token: $0) })
+            for tokenQuery in tokenQueries {
+                assetMap[tokenQuery.id.lowercased()] = pool.asset
             }
+        }
+
+        try? swapAssetStorage.save(swapAssetMap: assetMap, provider: id)
+        try? swapAssetStorage.save(lastSyncTimestamp: Date().timeIntervalSince1970, provider: id)
+
+        DispatchQueue.main.async {
+            self.assetMap = assetMap
+            self.syncSubject.send()
         }
     }
 
@@ -405,7 +316,7 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
         case "DASH": return .dash
         case "ETH": return .ethereum
         case "LTC": return .litecoin
-        // case "ZEC": return .zcash
+        case "ZEC": return .zcash
         default: return nil
         }
     }
@@ -439,6 +350,7 @@ extension BaseThorChainMultiSwapProvider {
         let totalFee: Decimal
 
         let dustThreshold: Int?
+        let totalSwapSeconds: TimeInterval?
 
         init(map: Map) throws {
             inboundAddress = try map.value("inbound_address")
@@ -452,6 +364,7 @@ extension BaseThorChainMultiSwapProvider {
             totalFee = try map.value("fees.total", using: Transform.stringToDecimalTransform) / pow(10, 8)
 
             dustThreshold = try? map.value("dust_threshold", using: Transform.stringToIntTransform)
+            totalSwapSeconds = try? map.value("total_swap_seconds")
         }
     }
 
@@ -460,12 +373,7 @@ extension BaseThorChainMultiSwapProvider {
         case unsupportedTokenOut
         case noRouterAddress
         case invalidTokenInType
-        case noDestinationAddress
-        case noGasPrice
-        case noGasLimit
-        case noEvmKitWrapper
-        case noBitcoinAdapter
-        case noSendParameters
+        case noZcashAdapter
     }
 }
 

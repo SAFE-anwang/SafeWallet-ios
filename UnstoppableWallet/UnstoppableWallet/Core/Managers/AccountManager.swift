@@ -13,7 +13,7 @@ class AccountManager {
 
     private var lastCreatedAccount: Account?
 
-    @PostPublished var accountsLost = false
+    @PostPublished var lostAccountRecords: [AccountRecord]?
 
     init(passcodeManager: PasscodeManager, accountStorage: AccountStorage, activeAccountStorage: ActiveAccountStorage) {
         self.passcodeManager = passcodeManager
@@ -52,16 +52,6 @@ class AccountManager {
 
         accountsSubject.send(storage.accounts)
     }
-
-    private func clearAccounts(ids: [String]) {
-        for id in ids {
-            storage.delete(accountId: id)
-        }
-
-        if storage.allAccounts.isEmpty {
-            accountsLost = true
-        }
-    }
 }
 
 extension AccountManager {
@@ -93,10 +83,6 @@ extension AccountManager {
         guard storage.activeAccount?.id != activeAccountId else {
             return
         }
-        do {
-            try Core.shared.safe4StorageManager.superNodeLockRecordStorage.clear()
-        }catch{}
-        ProposalStorageManager.saveNeedShowTips(true)
 
         storage.set(activeAccountId: activeAccountId)
         activeAccountSubject.send(storage.activeAccount)
@@ -156,33 +142,9 @@ extension AccountManager {
     }
 
     func handleLaunch() {
-        let lostAccountIds = storage.lostAccountIds
-        guard !lostAccountIds.isEmpty else {
-            return
+        if !storage.lostAccountRecords.isEmpty {
+            lostAccountRecords = storage.lostAccountRecords
         }
-
-        clearAccounts(ids: lostAccountIds)
-    }
-
-    func handleForeground() {
-        let oldAccounts = storage.accounts
-
-        let lostAccountIds = storage.lostAccountIds
-        guard !lostAccountIds.isEmpty else {
-            return
-        }
-
-        clearAccounts(ids: lostAccountIds)
-
-        let lostAccounts = oldAccounts.filter { account in
-            lostAccountIds.contains(account.id)
-        }
-
-        for account in lostAccounts {
-            accountDeletedSubject.send(account)
-        }
-
-        accountsSubject.send(storage.accounts)
     }
 
     func set(lastCreatedAccount: Account) {
@@ -214,6 +176,7 @@ class AccountCachedStorage {
     private let activeAccountStorage: ActiveAccountStorage
 
     private var _allAccounts: [String: Account]
+    let lostAccountRecords: [AccountRecord]
 
     private var level: Int
     private var _accounts = [String: Account]()
@@ -224,7 +187,10 @@ class AccountCachedStorage {
         self.accountStorage = accountStorage
         self.activeAccountStorage = activeAccountStorage
 
-        _allAccounts = accountStorage.allAccounts.reduce(into: [String: Account]()) { $0[$1.id] = $1 }
+        let (accounts, lostAccountRecords) = accountStorage.allAccounts
+
+        _allAccounts = accounts.reduce(into: [String: Account]()) { $0[$1.id] = $1 }
+        self.lostAccountRecords = lostAccountRecords
 
         syncAccounts()
     }
@@ -244,10 +210,6 @@ class AccountCachedStorage {
 
     var activeAccount: Account? {
         _activeAccount
-    }
-
-    var lostAccountIds: [String] {
-        accountStorage.lostAccountIds
     }
 
     func set(level: Int) {

@@ -122,21 +122,21 @@ extension WalletConnectStellarTransactionHandler {
             var transactionFields = [SendField]()
             let operations = transaction.operations.map { String(describing: type(of: $0)) }
             transactionFields.append(contentsOf: operations.map {
-                .simpleValue(title: "send.confirmation.operation".localized, value: $0, copying: false)
+                .simpleValue(title: "send.confirmation.operation".localized, value: $0)
             })
 
-            transactionFields.append(.simpleValue(title: "send.confirmation.transaction_xdr".localized, value: xdr.shortened, copying: true))
+            transactionFields.append(.simpleValue(title: "send.confirmation.transaction_xdr".localized, value: xdr.shortened))
 
             sections.append(.init(transactionFields))
 
             var chainFields = [SendField]()
-            chainFields.append(.simpleValue(title: "wallet_connect.sign.dapp_name".localized, value: dAppName, copying: false))
+            chainFields.append(.simpleValue(title: "wallet_connect.sign.dapp_name".localized, value: dAppName))
 
             if let chainName = chain.chainName?.capitalized {
-                chainFields.append(.simpleValue(title: chainName, value: chain.address?.shortened ?? "", copying: false))
+                chainFields.append(.simpleValue(title: chainName, value: chain.address?.shortened ?? ""))
             }
 
-            sections.append(.init(chainFields))
+            sections.append(.init(chainFields, isMain: false))
 
             return sections
         }
@@ -159,7 +159,7 @@ extension WalletConnectStellarTransactionHandler {
 
         var customSendButtonTitle: String? { "button.sign".localized }
 
-        func cautions(baseToken _: Token) -> [CautionNew] {
+        func cautions(baseToken _: Token, currency _: Currency, rates _: [String: Decimal]) -> [CautionNew] {
             []
         }
 
@@ -214,7 +214,7 @@ extension WalletConnectStellarTransactionHandler {
             return CautionNew(title: title, text: text, type: .error)
         }
 
-        func cautions(baseToken: Token) -> [CautionNew] {
+        func cautions(baseToken: Token, currency _: Currency, rates _: [String: Decimal]) -> [CautionNew] {
             transactionError.map { [caution(transactionError: $0, feeToken: baseToken)] } ?? []
         }
 
@@ -222,15 +222,16 @@ extension WalletConnectStellarTransactionHandler {
             var sections = super.sections
 
             if let fee {
+                let infoDescription = InfoDescription(title: "send.max_fee".localized, description: "fee_settings.network_fee.info".localized)
+
                 let feeSection = SendDataSection([
                     .value(
-                        title: "send.max_fee".localized,
-                        description: .init(title: "send.max_fee".localized, description: "fee_settings.network_fee.info".localized),
+                        title: ComponentInformedTitle("send.max_fee".localized, info: infoDescription),
                         appValue: AppValue(token: baseToken, value: fee),
                         currencyValue: rates[baseToken.coin.uid].map { CurrencyValue(currency: currency, value: fee * $0) },
                         formatFull: true
                     ),
-                ])
+                ], isMain: false)
                 sections.append(feeSection)
             }
 

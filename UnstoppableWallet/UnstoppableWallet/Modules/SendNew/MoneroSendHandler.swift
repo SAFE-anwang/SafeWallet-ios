@@ -28,14 +28,13 @@ extension MoneroSendHandler: ISendHandler {
     }
 
     func sendData(transactionSettings: TransactionSettings?) async throws -> ISendData {
-        let priority = transactionSettings?.priority
-        var feeData: BitcoinFeeData?
+        let priority = transactionSettings?.moneroPriority
+        var fee: Decimal?
         var transactionError: Error?
 
         if let priority {
             do {
-                let fee = try adapter.estimateFee(amount: amount, address: address, priority: priority)
-                feeData = .init(fee: fee)
+                fee = try adapter.estimateFee(amount: amount, address: address, priority: priority)
             } catch {
                 transactionError = error
             }
@@ -48,7 +47,7 @@ extension MoneroSendHandler: ISendHandler {
             priority: priority ?? .default,
             memo: memo,
             transactionError: transactionError,
-            fee: feeData
+            fee: fee
         )
     }
 
@@ -66,12 +65,12 @@ extension MoneroSendHandler {
         let token: Token
         let amount: MoneroSendAmount
         let address: String
-        let priority: SendPriority
+        let priority: MoneroKit.SendPriority
         let memo: String?
         let transactionError: Error?
-        let fee: BitcoinFeeData?
+        let fee: Decimal?
 
-        init(token: Token, amount: MoneroSendAmount, address: String, priority: SendPriority, memo: String?, transactionError: Error?, fee: BitcoinFeeData?) {
+        init(token: Token, amount: MoneroSendAmount, address: String, priority: MoneroKit.SendPriority, memo: String?, transactionError: Error?, fee: Decimal?) {
             self.token = token
             self.amount = amount
             self.address = address
@@ -82,7 +81,7 @@ extension MoneroSendHandler {
         }
 
         var feeData: FeeData? {
-            fee.map { .bitcoin(bitcoinFeeData: $0) }
+            .monero(amount: amount, address: address)
         }
 
         var canSend: Bool {
@@ -97,38 +96,12 @@ extension MoneroSendHandler {
             [token.coin]
         }
 
-        private func caution(transactionError: Error, feeToken: Token) -> CautionNew {
-            let title: String
-            let text: String
-
-            if let moneroError = transactionError as? MoneroCoreError {
-                switch moneroError {
-                case let .insufficientFunds(balance):
-                    let appValue = AppValue(token: feeToken, value: Decimal(string: balance) ?? 0)
-                    let balanceString = appValue.formattedShort()
-
-                    title = "fee_settings.errors.insufficient_balance".localized
-                    text = "fee_settings.errors.insufficient_balance.info".localized(balanceString ?? "")
-                default:
-                    title = "ethereum_transaction.error.title".localized
-                    text = transactionError.convertedError.smartDescription
-                }
-            } else {
-                title = "ethereum_transaction.error.title".localized
-                text = transactionError.convertedError.smartDescription
+        func cautions(baseToken: Token, currency _: Currency, rates _: [String: Decimal]) -> [CautionNew] {
+            guard let transactionError else {
+                return []
             }
 
-            return CautionNew(title: title, text: text, type: .error)
-        }
-
-        func cautions(baseToken: Token) -> [CautionNew] {
-            var cautions = [CautionNew]()
-
-            if let transactionError {
-                cautions.append(caution(transactionError: transactionError, feeToken: baseToken))
-            }
-
-            return cautions
+            return [MoneroSendHelper.caution(transactionError: transactionError, feeToken: baseToken)]
         }
 
         func feeData(feeToken: Token, currency: Currency, feeTokenRate: Decimal?) -> AmountData? {
@@ -137,8 +110,8 @@ extension MoneroSendHandler {
             }
 
             return AmountData(
-                appValue: AppValue(token: feeToken, value: fee.fee),
-                currencyValue: feeTokenRate.map { CurrencyValue(currency: currency, value: fee.fee * $0) }
+                appValue: AppValue(token: feeToken, value: fee),
+                currencyValue: feeTokenRate.map { CurrencyValue(currency: currency, value: fee * $0) }
             )
         }
 
@@ -146,7 +119,7 @@ extension MoneroSendHandler {
             let value: Decimal
             switch amount {
             case let .all(_value):
-                if let fee = fee?.fee {
+                if let fee {
                     value = _value - fee
                 } else {
                     value = _value
@@ -161,50 +134,34 @@ extension MoneroSendHandler {
             )
         }
 
-        func feeFields(feeToken: Token, currency: Currency, feeTokenRate: Decimal?) -> [SendField] {
-            let feeData = feeData(feeToken: feeToken, currency: currency, feeTokenRate: feeTokenRate)
-
-            return [
-                .value(
-                    title: "fee_settings.network_fee".localized,
-                    description: .init(title: "fee_settings.network_fee".localized, description: "fee_settings.network_fee.info".localized),
-                    appValue: feeData?.appValue,
-                    currencyValue: feeData?.currencyValue,
-                    formatFull: true
-                ),
-            ]
-        }
-
         func sections(baseToken _: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
-            var fields = [SendField]()
             let rate = rates[token.coin.uid]
             let amountData = amountData(amountToken: token, currency: currency, amountTokenRate: rate)
 
-            fields.append(contentsOf: [
+            var sections = [SendDataSection]()
+            sections.append(.init([
                 .amount(
-                    title: "send.confirmation.you_send".localized,
                     token: token,
                     appValueType: .regular(appValue: amountData.appValue),
                     currencyValue: amountData.currencyValue,
-                    type: .neutral
                 ),
                 .address(
-                    title: "send.confirmation.to".localized,
                     value: address,
                     blockchainType: .monero
                 ),
-                .levelValue(
-                    title: "monero.priority".localized,
-                    value: priority.description,
-                    level: priority.level
-                ),
-            ])
+            ], isFlow: true))
+
+            var fields = [SendField]()
 
             if let memo {
-                fields.append(.levelValue(title: "send.confirmation.memo".localized, value: memo, level: .regular))
+                fields.append(.simpleValue(title: "send.confirmation.memo".localized, value: memo))
             }
 
-            return [.init(fields), .init(feeFields(feeToken: token, currency: currency, feeTokenRate: rate))]
+            sections.append(
+                .init(fields + MoneroSendHelper.feeFields(fee: fee, feeToken: token, currency: currency, feeTokenRate: rate, priority: priority), isMain: false)
+            )
+
+            return sections
         }
     }
 }

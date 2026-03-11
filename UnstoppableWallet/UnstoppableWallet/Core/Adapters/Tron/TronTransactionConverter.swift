@@ -100,7 +100,6 @@ extension TronTransactionConverter {
             case let transfer as TransferContract:
                 if transfer.ownerAddress != tronKit.address {
                     let appValue = baseAppValue(value: transfer.amount, sign: .plus)
-                    let spam = SpamManager.isSpam(events: [.init(address: transfer.ownerAddress.base58, value: appValue)])
 
                     return TronIncomingTransactionRecord(
                         source: source,
@@ -108,7 +107,6 @@ extension TronTransactionConverter {
                         baseToken: baseToken,
                         from: transfer.ownerAddress.base58,
                         value: appValue,
-                        spam: spam
                     )
                 } else {
                     return TronOutgoingTransactionRecord(
@@ -174,15 +172,12 @@ extension TronTransactionConverter {
                     outgoingEvents: transferEvents(contractAddress: contractAddress, value: value) + outgoingEvents
                 )
             } else if decoration.fromAddress != address, decoration.toAddress != address {
-                let spam = SpamManager.isSpam(events: incomingEvents + outgoingEvents)
-
                 return TronExternalContractCallTransactionRecord(
                     source: source,
                     transaction: transaction,
                     baseToken: baseToken,
                     incomingEvents: incomingEvents,
                     outgoingEvents: outgoingEvents,
-                    spam: spam
                 )
             }
 

@@ -2,11 +2,11 @@ import Foundation
 import MarketKit
 import TronKit
 
-class TronExternalContractCallTransactionRecord: TronTransactionRecord {
+class TronExternalContractCallTransactionRecord: TronTransactionRecord, TransferEventsProvider {
     let incomingEvents: [TransferEvent]
     let outgoingEvents: [TransferEvent]
 
-    init(source: TransactionSource, transaction: Transaction, baseToken: Token, incomingEvents: [TransferEvent], outgoingEvents: [TransferEvent], spam: Bool) {
+    init(source: TransactionSource, transaction: Transaction, baseToken: Token, incomingEvents: [TransferEvent], outgoingEvents: [TransferEvent], spam: Bool = false) {
         self.incomingEvents = incomingEvents
         self.outgoingEvents = outgoingEvents
 
@@ -27,5 +27,9 @@ class TronExternalContractCallTransactionRecord: TronTransactionRecord {
         } else {
             return nil
         }
+    }
+
+    var transferEvents: TransferEvents {
+        .init(incoming: incomingEvents, outgoing: outgoingEvents)
     }
 }

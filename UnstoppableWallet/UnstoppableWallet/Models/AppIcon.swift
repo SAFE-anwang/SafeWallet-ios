@@ -18,7 +18,7 @@ enum AppIcon {
 
     var imageName: String {
         switch self {
-        case .main: return "safelog"//"app_icon_main"
+        case .main: return "app_icon_main"
         case let .alternate(_, imageName, _): return imageName
         }
     }

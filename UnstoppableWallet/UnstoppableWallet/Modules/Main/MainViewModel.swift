@@ -12,6 +12,7 @@ class MainViewModel: ObservableObject {
     private let disposeBag = DisposeBag()
 
     @Published private(set) var showMarket: Bool
+
     @Published var selectedTab: Tab = .wallet {
         didSet {
             userDefaultsStorage.set(value: selectedTab.rawValue, for: keyTab)
@@ -24,6 +25,7 @@ class MainViewModel: ObservableObject {
                         Coordinator.shared.present(type: .bottomSheet) { _ in
                             SwitchAccountView()
                         }
+
                         stat(page: .main, event: .open(page: .switchWallet))
                     }
                 } else {
@@ -71,7 +73,7 @@ extension MainViewModel {
     }
 
     var tabs: [Tab] {
-        (showMarket ? [.markets] : []) + [.wallet, .safe, .settings]
+        (showMarket ? [.markets] : []) + [.wallet, .transactions, .settings]
     }
 }
 
@@ -79,16 +81,20 @@ extension MainViewModel {
     enum Tab: String, Hashable, CaseIterable, Identifiable {
         case markets
         case wallet
-        case safe
+        case swap
+        case transactions
         case settings
+
         var id: String {
             rawValue
         }
+
         var image: String {
             switch self {
             case .markets: return "market_filled"
             case .wallet: return "wallet_filled"
-            case .safe: return "safe_logo_24"
+            case .swap: return "swap_filled"
+            case .transactions: return "transaction_filled"
             case .settings: return "settings_filled"
             }
         }

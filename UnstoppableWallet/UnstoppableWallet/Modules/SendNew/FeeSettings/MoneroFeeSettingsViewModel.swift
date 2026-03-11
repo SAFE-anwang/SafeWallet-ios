@@ -4,64 +4,46 @@ import MarketKit
 import MoneroKit
 
 class MoneroFeeSettingsViewModel: ObservableObject {
-    let service: MoneroTransactionService
-
-    init(service: MoneroTransactionService) {
-        self.service = service
-        priority = SendPriority.default.description
-
-        syncFromService()
-    }
-
-    @Published var priority: String = "" {
-        didSet {
-            DispatchQueue.main.async { [weak self] in
-                self?.handle()
-            }
-        }
-    }
+    private let service: MoneroTransactionService
+    private let amount: MoneroSendAmount
+    private let address: String
 
     @Published var priorityCautionState: FieldCautionState = .none
     @Published var resetEnabled = false
+    @Published var applyEnabled = false
 
-    private func syncFromService() {
-        if let priority = service.priority {
-            self.priority = priority.description
+    @Published var fee: Decimal?
+    @Published var priority: MoneroKit.SendPriority {
+        didSet {
+            sync()
         }
+    }
+
+    init(service: MoneroTransactionService, amount: MoneroSendAmount, address: String) {
+        self.service = service
+        self.amount = amount
+        self.address = address
+
+        priority = service.priority
 
         sync()
     }
 
     private func sync() {
-        resetEnabled = service.modified
+        fee = try? service.resolveFee(amount: amount, address: address, priority: priority)
 
-        if let caution = service.cautions.first {
-            priorityCautionState = .caution(caution.type)
-        } else {
-            priorityCautionState = .none
-        }
-    }
-
-    private func handle() {
-        guard let priorityEnum = SendPriority.from(string: priority) else {
-            priorityCautionState = .caution(.error)
-            return
-        }
-
-        service.set(priority: priorityEnum)
-        sync()
+        applyEnabled = service.priority != priority
+        resetEnabled = priority != .default
     }
 }
 
 extension MoneroFeeSettingsViewModel {
-    func set(priorityAtIndex: Int) {
-        if let newValue = SendPriority(rawValue: priorityAtIndex) {
-            priority = newValue.description
-        }
+    func onReset() {
+        priority = .default
+        sync()
     }
 
-    func onReset() {
-        service.useRecommended()
-        syncFromService()
+    func apply() {
+        service.set(priority: priority)
     }
 }

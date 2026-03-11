@@ -545,6 +545,62 @@ class TransactionInfoViewItemFactory {
                 ], footer: "tx_info.resend_description".localized))
             }
 
+        case let record as MoneroIncomingTransactionRecord:
+            sections.append(.init(receiveSection(source: record.source, appValue: record.value, from: record.from, rates: item.rates, to: record.to, balanceHidden: balanceHidden)))
+
+        case let record as MoneroOutgoingTransactionRecord:
+            sections.append(.init(sendSection(source: record.source, appValue: record.value, to: record.to, rates: item.rates, sentToSelf: record.sentToSelf, balanceHidden: balanceHidden)))
+
+            var additionalViewItems = [TransactionInfoModule.ViewItem]()
+
+            if let memo = record.memo {
+                additionalViewItems.append(.memo(text: memo))
+            }
+
+            if let txSecretKey = record.txSecretKey {
+                additionalViewItems.insert(.txSecretKey(text: txSecretKey), at: additionalViewItems.endIndex)
+            }
+
+            if record.sentToSelf {
+                additionalViewItems.insert(.sentToSelf, at: 0)
+            }
+
+            if !additionalViewItems.isEmpty {
+                sections.append(.init(additionalViewItems))
+            }
+
+            if let fee = record.fee {
+                feeViewItem = .fee(title: "tx_info.fee".localized, value: feeString(appValue: fee, rate: _rate(fee.coin)))
+            }
+
+        case let record as ZanoIncomingTransactionRecord:
+            sections.append(.init(receiveSection(source: record.source, appValue: record.value, from: record.from, rates: item.rates, to: record.to, balanceHidden: balanceHidden)))
+
+            if let memo = record.memo {
+                sections.append(.init([.memo(text: memo)]))
+            }
+
+        case let record as ZanoOutgoingTransactionRecord:
+            sections.append(.init(sendSection(source: record.source, appValue: record.value, to: record.to, rates: item.rates, sentToSelf: record.sentToSelf, balanceHidden: balanceHidden)))
+
+            var additionalViewItems = [TransactionInfoModule.ViewItem]()
+
+            if let memo = record.memo {
+                additionalViewItems.append(.memo(text: memo))
+            }
+
+            if record.sentToSelf {
+                additionalViewItems.insert(.sentToSelf, at: 0)
+            }
+
+            if !additionalViewItems.isEmpty {
+                sections.append(.init(additionalViewItems))
+            }
+
+            if let fee = record.fee {
+                feeViewItem = .fee(title: "tx_info.fee".localized, value: feeString(appValue: fee, rate: _rate(fee.coin)))
+            }
+
         case let record as TonTransactionRecord:
             for action in record.actions {
                 var viewItems: [TransactionInfoModule.ViewItem]
@@ -667,37 +723,6 @@ class TransactionInfoViewItemFactory {
             if let fee = record.fee {
                 feeViewItem = .fee(title: "tx_info.fee".localized, value: feeString(appValue: fee, rate: _rate(fee.coin)))
             }
-            
-        case let record as Safe4DepositEvmIncomingTransactionRecord:
-            sections.append(.init(receiveSection(source: record.source, appValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden)))
-            
-        case let record as Safe4WithdrawTransactionRecord:
-            sections.append(.init(receiveSection(source: record.source, appValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden)))
-            
-        case let record as Safe4VoteTransactionRecoard:
-            sections.append(.init(sendSection(source: record.source, appValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: false, balanceHidden: balanceHidden)))
-            
-        case let record as Safe4NodeRegisterTransactionRecoard:
-            sections.append(.init(sendSection(source: record.source, appValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: false, balanceHidden: balanceHidden)))
-        
-        case let record as Safe4CrossChainIncomingRecoard:
-            sections.append(.init(receiveSection(source: record.source, appValue: record.value, from: record.from, rates: item.rates, balanceHidden: balanceHidden)))
-
-        case let record as Safe4CrossChainOutgoingRecoard:
-            sections.append(.init(sendSection(source: record.source, appValue: record.value, to: record.to, rates: item.rates, nftMetadata: item.nftMetadata, sentToSelf: false, balanceHidden: balanceHidden)))
-            
-//        case let record as LiquidityTransactionRecord:
-//            sections.append([
-//                .actionTitle(iconName: record.source.blockchainType.iconPlain32, iconDimmed: false, title: record.method ?? "transactions.contract_call".localized, subTitle: evmLabelManager.mapped(address: record.contractAddress)),
-//            ])
-//
-//            for event in record.outgoingEvents {
-//                sections.append(sendSection(source: record.source, transactionValue: event.value, to: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden))
-//            }
-//
-//            for event in record.incomingEvents {
-//                sections.append(receiveSection(source: record.source, transactionValue: event.value, from: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden))
-//            }
 
         default: ()
         }

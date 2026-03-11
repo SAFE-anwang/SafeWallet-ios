@@ -73,7 +73,7 @@ class CloudBackupManager {
             forceDownloadContainerFiles(url: url)
 
             var oneWalletItems: [String: WalletBackup] = try Self.downloadItems(url: url, fileStorage: fileStorage, logger: logger)
-            let oneWalletItemsV2: [String: RestoreCloudModule.RestoredBackup] = try Self.downloadItems(url: url, fileStorage: fileStorage, logger: logger)
+            let oneWalletItemsV2: [String: CloudRestoreBackupListModule.RestoredBackup] = try Self.downloadItems(url: url, fileStorage: fileStorage, logger: logger)
             let mapped = oneWalletItemsV2.reduce(into: [:]) { $0[$1.value.name] = $1.value.walletBackup }
 
             oneWalletItems.merge(mapped) { _, backup2 in backup2 }
@@ -188,6 +188,20 @@ extension CloudBackupManager {
             throw FileStorage.StorageError.cantCreateFile
         }
 
+        try data.write(to: temporaryFileUrl)
+        return temporaryFileUrl
+    }
+
+    func file(account: Account, passphrase: String, name: String) throws -> URL {
+        let wallets = appBackupProvider.enabledWallets(account: account)
+        let backup = try AppBackupProvider.encrypt(account: account, wallets: wallets, passphrase: passphrase)
+
+        let fileName = "\(name).json"
+        guard let temporaryFileUrl = ContactBookManager.localUrl?.appendingPathComponent(fileName) else {
+            throw FileStorage.StorageError.cantCreateFile
+        }
+
+        let data = try JSONEncoder().encode(backup)
         try data.write(to: temporaryFileUrl)
         return temporaryFileUrl
     }

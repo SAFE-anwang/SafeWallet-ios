@@ -1,28 +1,54 @@
+import Foundation
 import SwiftUI
-import UIKit
 
 enum BackupModule {
-    static func manualViewController(account: Account, onComplete: (() -> Void)? = nil) -> UIViewController? {
-        guard let service = BackupService(account: account) else {
-            return nil
+    enum BackupType {
+        case wallet(String) // single account id
+        case app(Set<String>) // selected account ids + settings
+    }
+
+    enum Destination: String, CaseIterable, Identifiable {
+        case cloud
+        case files
+
+        var id: String {
+            rawValue
         }
-        let viewModel = BackupViewModel(service: service)
-        let viewController = BackupViewController(viewModel: viewModel)
-        viewController.onComplete = onComplete
-
-        return ThemeNavigationController(rootViewController: viewController)
     }
 
-    static func cloudViewController(account: Account) -> UIViewController {
-        let service = ICloudBackupTermsService(cloudAccountBackupManager: Core.shared.cloudBackupManager, account: account)
-        let viewModel = ICloudBackupTermsViewModel(service: service)
-        let viewController = ICloudBackupTermsViewController(viewModel: viewModel)
-
-        return ThemeNavigationController(rootViewController: viewController)
+    enum Step: Hashable {
+        case selectDestination // choose cloud/files (shown when destination is nil)
+        case selectContent // choose accounts and settings (app only)
+        case form // enter password and confirm
     }
-}
 
-extension BackupModule {
+    enum BackupResult {
+        case saved // cloud: show .savedToCloud
+        case share(URL) // files: show share sheet
+    }
+
+    enum BackupError: Error {
+        case accountNotFound
+    }
+
+    // backups data
+    struct AccountItem: Identifiable {
+        let accountId: String
+        let name: String
+        let description: String
+        let cautionType: CautionType?
+
+        var id: String { accountId }
+    }
+
+    struct ContentItem: Identifiable {
+        let title: String
+        var value: String?
+        var description: String?
+
+        var id: String { title }
+    }
+
     enum Source {
         case wallet(WalletBackup)
         case full(FullBackup)
@@ -50,39 +76,51 @@ extension BackupModule {
     struct NamedSource {
         let name: String
         let source: Source
+        let origin: Destination
     }
 }
 
-struct BackupView: UIViewControllerRepresentable {
-    typealias UIViewControllerType = UIViewController
-
-    private let account: Account
-    private let onComplete: (() -> Void)?
-
-    init(account: Account, onComplete: (() -> Void)? = nil) {
-        self.account = account
-        self.onComplete = onComplete
+extension BackupModule {
+    static func backupWallet(accountId: String, destination: Destination, isPresented: Binding<Bool>) -> some View {
+        BackupView(
+            type: .wallet(accountId),
+            destination: destination,
+            isPresented: isPresented
+        )
     }
 
-    func makeUIViewController(context _: Context) -> UIViewController {
-        BackupModule.manualViewController(account: account, onComplete: onComplete) ?? UIViewController()
-    }
+    static func backupApp(isPresented: Binding<Bool>) -> some View {
+        let accountManager = Core.shared.accountManager
+        let accountIds = Set(accountManager.accounts.filter { !$0.watchAccount }.map(\.id))
 
-    func updateUIViewController(_: UIViewController, context _: Context) {}
+        return BackupView(
+            type: .app(accountIds),
+            destination: nil,
+            isPresented: isPresented
+        )
+    }
 }
 
-struct ICloudBackupTermsView: UIViewControllerRepresentable {
-    typealias UIViewControllerType = UIViewController
+extension BackupModule {
+    static let minimumPassphraseLength = 8
 
-    private let account: Account
+    enum PassphraseCharacterSet: CaseIterable {
+        case lowerCased
+        case upperCased
+        case digits
+        case customSymbols
 
-    init(account: Account) {
-        self.account = account
+        var set: CharacterSet {
+            switch self {
+            case .upperCased: return CharacterSet.uppercaseLetters
+            case .lowerCased: return CharacterSet.lowercaseLetters
+            case .digits: return CharacterSet.decimalDigits
+            case .customSymbols: return CharacterSet(charactersIn: " '\"`&/?!:;.,~*$=+-[](){}<>\\_#@|%")
+            }
+        }
+
+        func contains(_ string: String) -> Bool {
+            string.rangeOfCharacter(from: set) != nil
+        }
     }
-
-    func makeUIViewController(context _: Context) -> UIViewController {
-        BackupModule.cloudViewController(account: account)
-    }
-
-    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

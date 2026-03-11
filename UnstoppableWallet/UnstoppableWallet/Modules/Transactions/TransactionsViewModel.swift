@@ -42,16 +42,8 @@ class TransactionsViewModel: ObservableObject {
 
     private var __sections: [Section] = [] {
         didSet {
-            DispatchQueue.main.async { [self, __sections] in
-                if let blockchain = transactionFilter.blockchain, blockchain.type == .dogecoin {
-                    self.sections = __sections.map{ section in
-                        var _section = section
-                        _section.viewItems = section.viewItems.removeDuplicates()
-                        return _section
-                    }
-                }else {
-                    self.sections = __sections
-                }
+            DispatchQueue.main.async { [__sections] in
+                self.sections = __sections
             }
         }
     }
@@ -68,7 +60,7 @@ class TransactionsViewModel: ObservableObject {
         }
     }
 
-    private(set) var __items = [Item]()
+    private var __items = [Item]()
     private var __poolGroup = PoolGroup(pools: [])
     private var __lastRequestedCount = TransactionsViewModel.pageLimit
     private var __loadMoreRequested = false

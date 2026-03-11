@@ -84,22 +84,14 @@ class CoinChartService {
     }
 
     private func fetchStartTime() {
-        if coinUid.isSafeCoin {
-            self.startTime = 1658966400
-            self.fetchData()
-        }else {
-            Task { [weak self, marketKit, coinUid] in
-                do {
-                    
-                    let uid = coinUid.isSafeCoin ? "safe" : coinUid
-                    self?.startTime = try await marketKit.chartPriceStart(coinUid: uid)
-                    self?.fetchData()
-                } catch {
-                    self?.state = .failed(error)
-                }
-            }.store(in: &tasks)
-        }
-
+        Task { [weak self, marketKit, coinUid] in
+            do {
+                self?.startTime = try await marketKit.chartPriceStart(coinUid: coinUid)
+                self?.fetchData()
+            } catch {
+                self?.state = .failed(error)
+            }
+        }.store(in: &tasks)
     }
 
     private func fetchChartInfo() {

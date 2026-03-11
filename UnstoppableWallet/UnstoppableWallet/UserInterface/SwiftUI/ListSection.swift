@@ -4,19 +4,21 @@ struct ListSection<Content: View>: View {
     @Environment(\.themeListStyle) var themeListStyle
 
     private let selected: Bool
+    private let uppercased: Bool
     private let header: String?
     private let footer: String?
     private let content: Content
 
-    init(selected: Bool = false, header: String? = nil, footer: String? = nil, @ViewBuilder content: () -> Content) {
+    init(selected: Bool = false, header: String? = nil, footer: String? = nil, uppercased: Bool = true, @ViewBuilder content: () -> Content) {
         self.selected = selected
         self.header = header
         self.footer = footer
+        self.uppercased = uppercased
         self.content = content()
     }
 
     var body: some View {
-        _VariadicView.Tree(Layout(themeListStyle: themeListStyle, selected: selected, header: header, footer: footer)) {
+        _VariadicView.Tree(Layout(themeListStyle: themeListStyle, selected: selected, uppercased: uppercased, header: header, footer: footer)) {
             content
         }
     }
@@ -24,6 +26,7 @@ struct ListSection<Content: View>: View {
     struct Layout: _VariadicView_MultiViewRoot {
         let themeListStyle: ThemeListStyle
         let selected: Bool
+        var uppercased: Bool = true
         let header: String?
         let footer: String?
 
@@ -36,12 +39,12 @@ struct ListSection<Content: View>: View {
 
                 VStack(spacing: 0) {
                     if let header {
-                        ListSectionHeader(text: header)
+                        ListSectionHeader(text: header, uppercased: uppercased)
                     }
 
                     VStack(spacing: 0) {
                         switch themeListStyle {
-                        case .lawrence, .bordered, .transparentInline, .blur, .steel10WithCorners:
+                        case .lawrence, .bordered, .borderedPremium, .transparentInline, .blur, .steel10WithCorners:
                             ForEach(children) { child in
                                 child
 

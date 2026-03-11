@@ -27,41 +27,6 @@ struct MainTransactionsView: View {
                     .frame(maxHeight: .infinity)
                 }
             }
-            .navigationTitle("transactions.title".localized)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbar() }
-        }
-    }
-    
-    @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
-        ToolbarItem(placement: .navigationBarLeading) {
-            if transactionsViewModel.syncing {
-                ProgressView()
-            }
-        }
-
-        ToolbarItem(placement: .navigationBarTrailing) {
-            Button(action: {
-                Coordinator.shared.present { isPresented in
-                    TransactionFilterView(transactionsViewModel: transactionsViewModel, isPresented: isPresented)
-                }
-                stat(page: .transactions, event: .open(page: .transactionFilter))
-            }) {
-                ZStack {
-                    Image("manage_2_24").themeIcon(color: .themeGray)
-
-                    if transactionsViewModel.transactionFilter.hasChanges {
-                        VStack {
-                            HStack {
-                                Spacer()
-                                Circle().fill(Color.red).frame(width: 8, height: 8)
-                            }
-                            Spacer()
-                        }
-                    }
-                }
-                .frame(width: 28, height: 28)
-            }
         }
     }
 }

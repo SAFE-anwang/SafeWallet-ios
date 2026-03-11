@@ -13,13 +13,15 @@ class AdapterFactory {
     private let tronKitManager: TronKitManager
     private let tonKitManager: TonKitManager
     private let stellarKitManager: StellarKitManager
+    private let zanoKitManager: ZanoKitManager
     private let restoreSettingsManager: RestoreSettingsManager
     private let coinManager: CoinManager
+    private let spamWrapper: SpamWrapper
     private let evmLabelManager: EvmLabelManager
 
     init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, moneroNodeManager: MoneroNodeManager,
          btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager,
-         restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager, evmLabelManager: EvmLabelManager)
+         zanoKitManager: ZanoKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager, spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager)
     {
         self.evmBlockchainManager = evmBlockchainManager
         self.evmSyncSourceManager = evmSyncSourceManager
@@ -28,8 +30,10 @@ class AdapterFactory {
         self.tronKitManager = tronKitManager
         self.tonKitManager = tonKitManager
         self.stellarKitManager = stellarKitManager
+        self.zanoKitManager = zanoKitManager
         self.restoreSettingsManager = restoreSettingsManager
         self.coinManager = coinManager
+        self.spamWrapper = spamWrapper
         self.evmLabelManager = evmLabelManager
     }
 
@@ -55,7 +59,14 @@ class AdapterFactory {
             return nil
         }
 
-        return try? Eip20Adapter(evmKitWrapper: evmKitWrapper, contractAddress: address, wallet: wallet, baseToken: baseToken, coinManager: coinManager, evmLabelManager: evmLabelManager)
+        return try? Eip20Adapter(
+            evmKitWrapper: evmKitWrapper,
+            contractAddress: address,
+            wallet: wallet,
+            baseToken: baseToken,
+            coinManager: coinManager,
+            evmLabelManager: evmLabelManager
+        )
     }
 
     private func tronAdapter(wallet: Wallet) -> IAdapter? {
@@ -92,7 +103,15 @@ extension AdapterFactory {
            let baseToken = evmBlockchainManager.baseToken(blockchainType: blockchainType)
         {
             let syncSource = evmSyncSourceManager.syncSource(blockchainType: blockchainType)
-            return EvmTransactionsAdapter(evmKitWrapper: evmKitWrapper, source: transactionSource, baseToken: baseToken, evmTransactionSource: syncSource.transactionSource, coinManager: coinManager, evmLabelManager: evmLabelManager)
+            return EvmTransactionsAdapter(
+                evmKitWrapper: evmKitWrapper,
+                source: transactionSource,
+                baseToken: baseToken,
+                evmTransactionSource: syncSource.transactionSource,
+                coinManager: coinManager,
+                spamWrapper: spamWrapper,
+                evmLabelManager: evmLabelManager
+            )
         }
 
         return nil
@@ -102,7 +121,14 @@ extension AdapterFactory {
         let query = TokenQuery(blockchainType: .tron, tokenType: .native)
 
         if let tronKitWrapper = tronKitManager.tronKitWrapper, let baseToken = try? coinManager.token(query: query) {
-            return TronTransactionsAdapter(tronKitWrapper: tronKitWrapper, source: transactionSource, baseToken: baseToken, coinManager: coinManager, evmLabelManager: evmLabelManager)
+            return TronTransactionsAdapter(
+                tronKitWrapper: tronKitWrapper,
+                source: transactionSource,
+                baseToken: baseToken,
+                coinManager: coinManager,
+                spamWrapper: spamWrapper,
+                evmLabelManager: evmLabelManager
+            )
         }
 
         return nil
@@ -122,7 +148,7 @@ extension AdapterFactory {
         let query = TokenQuery(blockchainType: .stellar, tokenType: .native)
 
         if let stellarKit = stellarKitManager.stellarKit, let baseToken = try? coinManager.token(query: query) {
-            return StellarTransactionAdapter(stellarKit: stellarKit, source: transactionSource, baseToken: baseToken, coinManager: coinManager)
+            return StellarTransactionAdapter(stellarKit: stellarKit, source: transactionSource, baseToken: baseToken, coinManager: coinManager, spamWrapper: spamWrapper)
         }
 
         return nil
@@ -145,10 +171,6 @@ extension AdapterFactory {
         case (.derived, .litecoin):
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .litecoin, accountOrigin: wallet.account.origin)
             return try? LitecoinAdapter(wallet: wallet, syncMode: syncMode)
-            
-        case (.native, .dogecoin):
-            let syncMode = btcBlockchainManager.syncMode(blockchainType: .dogecoin, accountOrigin: wallet.account.origin)
-            return try? DogecoinAdapter(wallet: wallet, syncMode: syncMode)
 
         case (.native, .dash):
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .dash, accountOrigin: wallet.account.origin)
@@ -163,22 +185,30 @@ extension AdapterFactory {
             let moneroNode = moneroNodeManager.node(blockchainType: .monero)
             return try? MoneroAdapter(wallet: wallet, restoreSettings: restoreSettings, node: moneroNode.node)
 
+        case (.native, .zano):
+            if let kit = try? zanoKitManager.kit(account: wallet.account) {
+                return ZanoAdapter(kit: kit, wallet: wallet, zanoKitManager: zanoKitManager)
+            }
+
+        case let (.zanoAsset(assetId), .zano):
+            if let kit = try? zanoKitManager.kit(account: wallet.account),
+               let baseToken = try? coinManager.token(query: .init(blockchainType: .zano, tokenType: .native))
+            {
+                return ZanoAdapter(
+                    kit: kit,
+                    assetId: assetId,
+                    token: wallet.token,
+                    baseToken: baseToken,
+                    transactionSource: wallet.transactionSource,
+                    zanoKitManager: zanoKitManager
+                )
+            }
+
         case (.native, .ethereum), (.native, .binanceSmartChain), (.native, .polygon), (.native, .avalanche), (.native, .optimism), (.native, .arbitrumOne), (.native, .gnosis), (.native, .fantom), (.native, .base), (.native, .zkSync):
             return evmAdapter(wallet: wallet)
 
         case let (.eip20(address), .ethereum), let (.eip20(address), .binanceSmartChain), let (.eip20(address), .polygon), let (.eip20(address), .avalanche), let (.eip20(address), .optimism), let (.eip20(address), .arbitrumOne), let (.eip20(address), .gnosis), let (.eip20(address), .fantom), let (.eip20(address), .base), let (.eip20(address), .zkSync):
             return eip20Adapter(address: address, wallet: wallet, coinManager: coinManager)
-            
-        case let (.eip20(address), .safe4):
-            return eip20Adapter(address: address, wallet: wallet, coinManager: coinManager)
-            
-        case (.native, .safe):
-            let syncMode = btcBlockchainManager.syncMode(blockchainType: .safe, accountOrigin: wallet.account.origin)
-            return try? SafeCoinAdapter(wallet: wallet, syncMode: syncMode)
-            
-        case (.native, .safe4):
-            return evmAdapter(wallet: wallet)
-            
 
         case (.native, .tron):
             return tronAdapter(wallet: wallet)

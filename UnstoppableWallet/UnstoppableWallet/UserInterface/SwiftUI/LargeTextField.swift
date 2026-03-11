@@ -17,15 +17,15 @@ struct LargeTextField: View {
             .lineLimit(3...)
             .autocorrectionDisabled()
             .font(TextStyle.body.font)
-            .accentColor(.themeLeah)
+            .tint(.themeInputFieldTintColor)
 
             HStack(spacing: .margin8) {
                 Spacer()
 
                 if text.isEmpty {
                     IconButton(icon: "scan", style: .secondary, size: .small) {
-                        Coordinator.shared.present { _ in
-                            ScanQrViewNew { text in
+                        Coordinator.shared.present { isPresented in
+                            ScanQrViewNew(options: [.picker], isPresented: isPresented) { text in
                                 self.text = text
                                 onButtonTap?()
                                 stat(page: statPage, event: .scanQr(entity: statEntity))

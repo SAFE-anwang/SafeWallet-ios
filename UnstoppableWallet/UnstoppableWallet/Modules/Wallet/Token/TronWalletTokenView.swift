@@ -6,12 +6,12 @@ struct TronWalletTokenView: View {
     private let wallet: Wallet
 
     init(wallet: Wallet, adapter: BaseTronAdapter) {
-        _viewModel = StateObject(wrappedValue: TronWalletTokenViewModel(tronKit: adapter.tronKit))
+        _viewModel = StateObject(wrappedValue: TronWalletTokenViewModel(tronKit: adapter.tronKit, wallet: wallet))
         self.wallet = wallet
     }
 
     var body: some View {
-        BaseWalletTokenView(wallet: wallet) { walletTokenViewModel, transactionsViewModel in
+        TronToolbarWalletTokenView(wallet: wallet, tronWalletViewModel: viewModel) { walletTokenViewModel, transactionsViewModel in
             let transactionListStatus = viewModel.accountActive ? transactionsViewModel.transactionListStatus : .inactiveWallet
 
             ViewWithTransactionList(
@@ -24,14 +24,16 @@ struct TronWalletTokenView: View {
                 }
             )
         }
+        .onFirstAppear {
+            viewModel.onFirstAppear()
+        }
     }
 }
 
 extension TransactionListStatus {
     static let inactiveWallet = TransactionListStatus(
         id: "inactive_wallet",
-        icon: "warning_filled",
-        title: "balance.token.account.inactive.title".localized,
+        icon: "outgoingraw",
         subtitle: "balance.token.account.inactive.description".localized
     )
 }

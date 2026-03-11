@@ -10,10 +10,10 @@ extension BlockchainType {
         .bitcoinCash,
         .ecash,
         .litecoin,
-        .dogecoin,
         .dash,
         .zcash,
         .monero,
+        .zano,
         .ethereum,
         .polygon,
         .avalanche,
@@ -26,84 +26,38 @@ extension BlockchainType {
         .binanceSmartChain,
         .tron,
         .ton,
-        .safe,
-        .safe4,
         .stellar,
     ]
-    
-    static let swappable: [BlockchainType] = [
-        .arbitrumOne,
-        .avalanche,
-        .base,
-        .binanceSmartChain,
-        .bitcoin,
-        .bitcoinCash,
-        .dash,
-        .ethereum,
-        .fantom,
-        .gnosis,
-        .litecoin,
-        .optimism,
-        .polygon,
-        .stellar,
-        .tron,
-        .zkSync,
-        .safe4,
-        // .zcash,
-    ]
-    
+
     func placeholderImageName(tokenProtocol: TokenProtocol?) -> String {
-        if isSafeChainUid {
-            return "safe-anwang_trx_32"
-        }else {
-            return tokenProtocol.map { "\(uid)_\($0)_32" } ?? "placeholder_circle_32"
-        }
+        tokenProtocol.map { "\(uid)_\($0)_32" } ?? "placeholder_circle_32"
     }
-    
-    var isSafeChainUid: Bool {
-        uid.contains("custom-safe4-anwang") || uid.contains("custom-safe-anwang") || uid.isSafeCoin
-    }
-    
+
     var iconPlain32: String {
-        if isSafeChainUid {
-            return "safe-anwang_trx_32"
-        }else {
-            return "\(uid)_trx_32"
-        }
+        "\(uid)_trx_32"
     }
 
     var imageUrl: String {
-        if isSafeChainUid {
-            if let logoUrl = SRC20SyncManager.logo(coinUid: uid.lowercased()) {
-                return logoUrl
-            }
-            return "https://anwang.com/img/logos/safe.png"
-        }else if uid == dogeCoinUid {
-            let scale = Int(UIScreen.main.scale)
-            return "https://cdn.blocksdecoded.com/coin-icons/32px/\(uid)@\(scale)x.png"
-        }else {
-            let scale = Int(UIScreen.main.scale)
-            return "https://cdn.blocksdecoded.com/blockchain-icons/32px/\(uid)@\(scale)x.png"
-        }
+        let scale = Int(UIScreen.main.scale)
+        return "https://cdn.blocksdecoded.com/blockchain-icons/32px/\(uid)@\(scale)x.png"
     }
 
     var restoreSettingTypes: [RestoreSettingType] {
         switch self {
-        case .zcash, .monero: return [.birthdayHeight]
+        case .zcash, .monero, .zano: return [.birthdayHeight]
         default: return []
         }
     }
 
     var order: Int {
         let blockchainTypes: [BlockchainType] = [
-            .safe4,
-            .safe,
             .bitcoin,
             .ethereum,
             .monero,
             .tron,
             .zcash,
             .dash,
+            .zano,
             .litecoin,
             .binanceSmartChain,
             .polygon,
@@ -216,13 +170,13 @@ extension BlockchainType {
         case .arbitrumOne: return "L2 chain"
         case .zcash: return "ZEC"
         case .monero: return "XMR"
+        case .zano: return "ZANO, confidential assets"
         case .dash: return "DASH"
         case .bitcoinCash: return "BCH (Legacy, CashAddress)"
         case .ecash: return "XEC"
         case .litecoin: return "LTC (BIP44, BIP49, BIP84, BIP86)"
         case .tron: return "TRX, TRC20 tokens"
         case .ton: return "TON"
-        case .dogecoin: return "Dogecoin"
         case .stellar: return "Stellar"
         default: return ""
         }
@@ -294,8 +248,18 @@ extension BlockchainType {
         }
 
         switch self {
-        case .bitcoin, .bitcoinCash, .litecoin, .dogecoin: return true
+        case .bitcoin, .bitcoinCash, .litecoin: return true
         default: return false
+        }
+    }
+
+    var blockTime: TimeInterval? {
+        switch self {
+        case .ethereum: return 15
+        case .binanceSmartChain, .tron: return 3
+        case .polygon, .avalanche, .optimism, .arbitrumOne, .fantom, .base, .zkSync: return 2
+        case .gnosis, .stellar: return 5
+        default: return nil
         }
     }
 }

@@ -2,11 +2,11 @@ import EvmKit
 import Foundation
 import MarketKit
 
-class EvmIncomingTransactionRecord: EvmTransactionRecord {
+class EvmIncomingTransactionRecord: EvmTransactionRecord, TransferEventsProvider {
     let from: String
     let value: AppValue
 
-    init(source: TransactionSource, transaction: Transaction, baseToken: Token, from: String, value: AppValue, spam: Bool) {
+    init(source: TransactionSource, transaction: Transaction, baseToken: Token, from: String, value: AppValue, spam: Bool = false) {
         self.from = from
         self.value = value
 
@@ -15,5 +15,9 @@ class EvmIncomingTransactionRecord: EvmTransactionRecord {
 
     override var mainValue: AppValue? {
         value
+    }
+
+    var transferEvents: TransferEvents {
+        .init(incoming: [.init(address: from, value: value)])
     }
 }

@@ -29,12 +29,7 @@ struct Wallet {
     }
 
     var priceCoinUid: String? {
-        if coin.uid.isSafeSrc20CustomCoin {
-            return coin.uid//.lowercased()
-        }else {
-            return coin.uid
-        }
-         //        token.isCustom ? nil : coin.uid
+        token.isCustom ? nil : coin.uid
     }
 }
 

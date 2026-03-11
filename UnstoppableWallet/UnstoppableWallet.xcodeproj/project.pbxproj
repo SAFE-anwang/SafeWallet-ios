@@ -2605,6 +2605,10 @@
 		C89BE9642E9A5DAC00039AD8 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE9632E9A5DAC00039AD8 /* SafeCoinKit */; };
 		C8B44A8D2EF7EFCB0037F80D /* NodeStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B44A8C2EF7EFCB0037F80D /* NodeStorageManager.swift */; };
 		C8B44A8E2EF7EFCB0037F80D /* NodeStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B44A8C2EF7EFCB0037F80D /* NodeStorageManager.swift */; };
+		C8B7101A2F61BBE500123ABE /* AddressSecurityCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B710182F61BBE500123ABE /* AddressSecurityCheckView.swift */; };
+		C8B7101B2F61BBE500123ABE /* AddressSecurityCheckViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B710192F61BBE500123ABE /* AddressSecurityCheckViewModel.swift */; };
+		C8B7101C2F61BBE500123ABE /* AddressSecurityCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B710182F61BBE500123ABE /* AddressSecurityCheckView.swift */; };
+		C8B7101D2F61BBE500123ABE /* AddressSecurityCheckViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B710192F61BBE500123ABE /* AddressSecurityCheckViewModel.swift */; };
 		C8B86DCC2E9F4A9C008BB1A5 /* NftKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8B86DCB2E9F4A9C008BB1A5 /* NftKit */; };
 		C8B86DCE2E9F4B0E008BB1A5 /* DogecoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8B86DCD2E9F4B0E008BB1A5 /* DogecoinKit */; };
 		C8B86F0D2E9F8F7C008BB1A5 /* AddLiquidityTransactionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B86E222E9F8F7C008BB1A5 /* AddLiquidityTransactionService.swift */; };
@@ -5298,6 +5302,8 @@
 		C8868B232EEDCF1F0010ED97 /* Safe4SwapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4SwapViewModel.swift; sourceTree = "<group>"; };
 		C8868B4C2EEED1900010ED97 /* PreSendAllowanceHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreSendAllowanceHandler.swift; sourceTree = "<group>"; };
 		C8B44A8C2EF7EFCB0037F80D /* NodeStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeStorageManager.swift; sourceTree = "<group>"; };
+		C8B710182F61BBE500123ABE /* AddressSecurityCheckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressSecurityCheckView.swift; sourceTree = "<group>"; };
+		C8B710192F61BBE500123ABE /* AddressSecurityCheckViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressSecurityCheckViewModel.swift; sourceTree = "<group>"; };
 		C8B86DE32E9F8F7C008BB1A5 /* LiquidityV3DataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3DataSource.swift; sourceTree = "<group>"; };
 		C8B86DE42E9F8F7C008BB1A5 /* LiquidityV3Module.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3Module.swift; sourceTree = "<group>"; };
 		C8B86DE52E9F8F7C008BB1A5 /* LiquidityV3Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3Provider.swift; sourceTree = "<group>"; };
@@ -8424,17 +8430,9 @@
 			path = Providers;
 			sourceTree = "<group>";
 		};
-		675DA0B82F56BCD600C27CF5 /* V3 */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = V3;
-			sourceTree = "<group>";
-		};
 		675DA0BD2F56BCD600C27CF5 /* View */ = {
 			isa = PBXGroup;
 			children = (
-				675DA0B82F56BCD600C27CF5 /* V3 */,
 				675DA0B92F56BCD600C27CF5 /* LiquidityAddQuotesView.swift */,
 				675DA0BA2F56BCD600C27CF5 /* LiquidityAddSendView.swift */,
 				675DA0BB2F56BCD600C27CF5 /* LiquidityAddView.swift */,
@@ -10740,6 +10738,8 @@
 		D30C4D3F2D392FBF0082B487 /* Address */ = {
 			isa = PBXGroup;
 			children = (
+				C8B710182F61BBE500123ABE /* AddressSecurityCheckView.swift */,
+				C8B710192F61BBE500123ABE /* AddressSecurityCheckViewModel.swift */,
 				D38955942DE5B3E70012114F /* CheckAddressViewModel.swift */,
 				D38955952DE5B3E70012114F /* CheckAddressView.swift */,
 				D30C4D432D392FD00082B487 /* AddressViewModel.swift */,
@@ -11504,6 +11504,8 @@
 				C8B86F232E9F8F7C008BB1A5 /* NodeDetailVoteRecordHeaderView.swift in Sources */,
 				C8B86F242E9F8F7C008BB1A5 /* RewardsViewModel.swift in Sources */,
 				C8B86F252E9F8F7C008BB1A5 /* AddLiquidityTransactionViewController.swift in Sources */,
+				C8B7101A2F61BBE500123ABE /* AddressSecurityCheckView.swift in Sources */,
+				C8B7101B2F61BBE500123ABE /* AddressSecurityCheckViewModel.swift in Sources */,
 				C8B86F262E9F8F7C008BB1A5 /* RevokeCashMessageHandler.swift in Sources */,
 				C8B86F272E9F8F7C008BB1A5 /* WithdrawView.swift in Sources */,
 				C8B86F282E9F8F7C008BB1A5 /* LockedRecordViewModel.swift in Sources */,
@@ -13412,6 +13414,8 @@
 				C8B870192E9F8F7C008BB1A5 /* NodeDetailVoteRecordHeaderView.swift in Sources */,
 				C8B8701A2E9F8F7C008BB1A5 /* RewardsViewModel.swift in Sources */,
 				C8B8701B2E9F8F7C008BB1A5 /* AddLiquidityTransactionViewController.swift in Sources */,
+				C8B7101C2F61BBE500123ABE /* AddressSecurityCheckView.swift in Sources */,
+				C8B7101D2F61BBE500123ABE /* AddressSecurityCheckViewModel.swift in Sources */,
 				C8B8701C2E9F8F7C008BB1A5 /* RevokeCashMessageHandler.swift in Sources */,
 				C8B8701D2E9F8F7C008BB1A5 /* WithdrawView.swift in Sources */,
 				C8B8701E2E9F8F7C008BB1A5 /* LockedRecordViewModel.swift in Sources */,

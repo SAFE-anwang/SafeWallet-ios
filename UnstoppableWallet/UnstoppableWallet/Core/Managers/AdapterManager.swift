@@ -12,6 +12,7 @@ class AdapterManager {
     private let tronKitManager: TronKitManager
     private let tonKitManager: TonKitManager
     private let stellarKitManager: StellarKitManager
+    private let zanoKitManager: ZanoKitManager
     private let moneroNodeManager: MoneroNodeManager
 
     private let adapterDataReadyRelay = PublishRelay<AdapterData>()
@@ -19,10 +20,9 @@ class AdapterManager {
     private let queue = DispatchQueue(label: "\(AppConfig.label).adapter_manager", qos: .userInitiated)
     private let initAdaptersQueue = DispatchQueue(label: "\(AppConfig.label).adapter_manager.init_adapters", qos: .userInitiated)
     private var _adapterData = AdapterData(adapterMap: [:], account: nil)
-    private(set) var src20SyncManager: SRC20SyncManager?
 
     init(adapterFactory: AdapterFactory, walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager,
-         tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager, btcBlockchainManager: BtcBlockchainManager, moneroNodeManager: MoneroNodeManager)
+         tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager, zanoKitManager: ZanoKitManager, btcBlockchainManager: BtcBlockchainManager, moneroNodeManager: MoneroNodeManager)
     {
         self.adapterFactory = adapterFactory
         self.walletManager = walletManager
@@ -30,6 +30,7 @@ class AdapterManager {
         self.tronKitManager = tronKitManager
         self.tonKitManager = tonKitManager
         self.stellarKitManager = stellarKitManager
+        self.zanoKitManager = zanoKitManager
         self.moneroNodeManager = moneroNodeManager
 
         walletManager.activeWalletDataUpdatedObservable
@@ -45,7 +46,7 @@ class AdapterManager {
             }
         }
         subscribe(disposeBag, btcBlockchainManager.restoreModeUpdatedObservable) { [weak self] in self?.handleUpdatedRestoreMode(blockchainType: $0) }
-        subscribe(disposeBag, moneroNodeManager.nodeObservable) { [weak self] in self?.handleUpdatedMoneroNode(blockchainType: $0) }
+        subscribe(disposeBag, moneroNodeManager.nodeObservable) { [weak self] in self?.recreateAdapter(blockchainType: $0) }
     }
 
     private func initAdapters(wallets: [Wallet], account: Account?) {
@@ -62,9 +63,6 @@ class AdapterManager {
                 continue
             }
             if let adapter = adapterFactory.adapter(wallet: wallet) {
-                if wallet.token.blockchain.type == .safe4, wallet.token.type == .native {
-                    src20SyncManager = SRC20SyncManager(wallet: wallet, adapter: adapter)
-                }
                 newAdapterMap[wallet] = adapter
                 adapter.start()
             }
@@ -103,14 +101,6 @@ class AdapterManager {
 
         refreshAdapters(wallets: wallets.filter {
             $0.token.blockchain.type == blockchainType && $0.account.origin == .restored
-        })
-    }
-
-    private func handleUpdatedMoneroNode(blockchainType: BlockchainType) {
-        let wallets = queue.sync { _adapterData.adapterMap.keys }
-
-        refreshAdapters(wallets: wallets.filter {
-            $0.token.blockchain.type == blockchainType
         })
     }
 
@@ -162,8 +152,22 @@ extension AdapterManager {
         queue.sync { _adapterData.adapterMap[wallet] as? IDepositAdapter }
     }
 
+    func recreateAdapter(blockchainType: BlockchainType) {
+        Task {
+            if blockchainType == .zano {
+                self.zanoKitManager.recreateKit()
+            }
+
+            let wallets = queue.sync { _adapterData.adapterMap.keys }
+
+            refreshAdapters(wallets: wallets.filter {
+                $0.token.blockchain.type == blockchainType
+            })
+        }
+    }
+
     func refresh() {
-        queue.async {
+        DispatchQueue.global(qos: .background).async {
             for blockchain in self.evmBlockchainManager.allBlockchains {
                 try? self.evmBlockchainManager.evmKitManager(blockchainType: blockchain.type).evmKitWrapper?.evmKit.refresh()
             }
@@ -175,11 +179,12 @@ extension AdapterManager {
             self.tronKitManager.tronKitWrapper?.tronKit.refresh()
             self.tonKitManager.tonKit?.sync()
             self.stellarKitManager.stellarKit?.sync()
+            self.zanoKitManager.kit?.refresh()
         }
     }
 
     func refresh(wallet: Wallet) {
-        queue.async {
+        DispatchQueue.global(qos: .background).async {
             if let blockchainType = self.evmBlockchainManager.blockchain(token: wallet.token)?.type {
                 try? self.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper?.evmKit.refresh()
             } else if wallet.token.blockchainType == .tron {
@@ -190,15 +195,12 @@ extension AdapterManager {
                 self.stellarKitManager.stellarKit?.sync()
             } else if wallet.token.blockchainType == .monero {
                 (self._adapterData.adapterMap[wallet] as? MoneroAdapter)?.restart()
+            } else if wallet.token.blockchainType == .zano {
+                self.zanoKitManager.kit?.restart()
             } else {
                 self._adapterData.adapterMap[wallet]?.refresh()
             }
         }
-    }
-    
-    func preloadAdapters() {
-        let activeWalletData = walletManager.activeWalletData
-        initAdapters(wallets: activeWalletData.wallets, account: activeWalletData.account)
     }
 }
 

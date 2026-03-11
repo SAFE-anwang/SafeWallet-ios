@@ -2,56 +2,49 @@ import SwiftUI
 
 struct ScrollableTabHeaderView: View {
     private let tabs: [Tab]
-    private let isAequilate: Bool
 
     @Binding var currentTabIndex: Int
     @Namespace var menuItemTransition
-    init(tabs: [Tab], currentTabIndex: Binding<Int>, isAequilate: Bool = false) {
+
+    init(tabs: [Tab], currentTabIndex: Binding<Int>) {
         self.tabs = tabs
-        self.isAequilate = isAequilate
         _currentTabIndex = currentTabIndex
     }
 
-    init(tabs: [String], currentTabIndex: Binding<Int>, isAequilate: Bool = false) {
+    init(tabs: [String], currentTabIndex: Binding<Int>) {
         self.tabs = tabs.map { Tab(title: $0, highlighted: false) }
-        self.isAequilate = isAequilate
         _currentTabIndex = currentTabIndex
     }
 
     var body: some View {
         ScrollViewReader { proxy in
-            GeometryReader { geometry in
-                let totalWidth = geometry.size.width - CGFloat((tabs.count + 1) * 8)
-                let itemWidth: CGFloat? = isAequilate == true ? (totalWidth / CGFloat(tabs.count)) : nil
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: .margin8) {
-                        ForEach(tabs.indices, id: \.self) { index in
-                            item(tab: tabs[index], width: itemWidth, isActive: index == currentTabIndex, namespace: menuItemTransition)
-                                .onTapGesture {
-                                    withAnimation(.spring().speed(1.5)) {
-                                        currentTabIndex = index
-                                    }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: .margin8) {
+                    ForEach(tabs.indices, id: \.self) { index in
+                        item(tab: tabs[index], isActive: index == currentTabIndex, namespace: menuItemTransition)
+                            .onTapGesture {
+                                withAnimation(.spring().speed(1.5)) {
+                                    currentTabIndex = index
                                 }
-                        }
-                    }
-                    .padding(.horizontal, .margin12)
-                }
-                .onChange(of: currentTabIndex) { index in
-                    withAnimation(.spring().speed(1.5)) {
-                        proxy.scrollTo(index, anchor: .center)
+                            }
                     }
                 }
-                .onFirstAppear {
-                    proxy.scrollTo(currentTabIndex, anchor: .center)
+                .padding(.horizontal, .margin12)
+            }
+            .onChange(of: currentTabIndex) { index in
+                withAnimation(.spring().speed(1.5)) {
+                    proxy.scrollTo(index, anchor: .center)
                 }
             }
-            .frame(height: 52)
+            .onFirstAppear {
+                proxy.scrollTo(currentTabIndex, anchor: .center)
+            }
         }
         .background(Color.themeTyler)
         .animation(.spring().speed(1.5), value: currentTabIndex)
     }
 
-    @ViewBuilder private func item(tab: Tab, width: CGFloat?, isActive: Bool, namespace: Namespace.ID) -> some View {
+    @ViewBuilder private func item(tab: Tab, isActive: Bool, namespace: Namespace.ID) -> some View {
         ThemeText(
             tab.title,
             style: isActive || tab.highlighted ? .subheadSB : .subhead,
@@ -59,7 +52,7 @@ struct ScrollableTabHeaderView: View {
         )
         .contentShape(Rectangle())
         .padding(.horizontal, .margin12)
-        .frame(width: width, height: 52)
+        .frame(height: 52)
         .overlay(alignment: .bottom) {
             if isActive {
                 Rectangle()

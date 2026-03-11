@@ -48,8 +48,6 @@ extension MarketModule.Tab {
         case .watchlist: return .watchlist
         case .sectors: return .sectors
         case .vaults: return .vaults
-        case .dapp: return .dapp
-//        case .twiitter: return .twiitter
         }
     }
 }
