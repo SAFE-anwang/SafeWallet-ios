@@ -7,38 +7,50 @@ struct MultiSwapQuotesView: View {
     var body: some View {
         ThemeNavigationStack {
             ScrollableThemeView {
-                ListSection {
+                VStack {
                     ForEach(viewModel.quotes, id: \.provider.id) { (quote: MultiSwapViewModel.Quote) in
-                        Cell(
-                            left: {
+                        ListSection(selected: quote.provider.id == viewModel.currentQuote?.provider.id) {
+                            ClickableRow(action: {
+                                viewModel.userSelectedProviderId = quote.provider.id
+                                isPresented = false
+                            }) {
                                 Image(quote.provider.icon)
                                     .resizable()
                                     .scaledToFit()
-                                    .cornerRadius(6)
                                     .frame(width: .iconSize32, height: .iconSize32)
-                            },
-                            middle: {
-                                MultiText(
-                                    subtitle: ComponentText(text: quote.provider.name, colorStyle: .primary),
-                                    description: ([quote.provider.type.title] + (quote.provider.aml ? ["swap.aml".localized] : [])).joined(separator: ", "),
-                                )
-                            },
-                            right: {
-                                RightTextCheckbox(
-                                    subheadSB: quoteCoinValue(quote: quote).map { ComponentText(text: $0, colorStyle: .primary) },
-                                    description: quoteCurrencyValue(quote: quote),
-                                    description2: priceImpact(quote: quote).map { ComponentText(text: "(\($0.0.rounded(decimal: 2).description)%)", colorStyle: $0.1.colorStyle) },
-                                    checked: quote.provider.id == viewModel.currentQuote?.provider.id
-                                )
-                            },
-                            action: {
-                                viewModel.userSelectedProviderId = quote.provider.id
-                                isPresented = false
+
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(quote.provider.name).textSubhead2(color: .themeLeah)
+
+                                    // if quote.provider.id == viewModel.bestQuote?.provider.id {
+                                    //     Text("swap.quotes.best_price".localized).textSubhead2(color: .themeRemus)
+                                    // }
+                                }
+
+                                Spacer()
+
+                                VStack(alignment: .trailing, spacing: 1) {
+                                    if let value = quoteCoinValue(quote: quote) {
+                                        Text(value)
+                                            .textSubhead2(color: .themeLeah)
+                                            .multilineTextAlignment(.trailing)
+                                    } else {
+                                        Text("n/a".localized).textSubhead2(color: .themeGray50)
+                                    }
+
+                                    if let value = quoteCurrencyValue(quote: quote) {
+                                        Text(value)
+                                            .textCaption(color: .themeGray)
+                                            .multilineTextAlignment(.trailing)
+                                    }
+                                }
                             }
-                        )
+                        }
+                        .themeListStyle(.bordered)
+                        .padding(.bottom, .margin8)
                     }
                 }
-                .padding(EdgeInsets(top: 16, leading: 16, bottom: 32, trailing: 16))
+                .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
             }
             .navigationTitle("swap.quotes.providers".localized)
             .navigationBarTitleDisplayMode(.inline)
@@ -55,7 +67,7 @@ struct MultiSwapQuotesView: View {
             return nil
         }
 
-        return AppValue(token: tokenOut, value: quote.quote.expectedBuyAmount).formattedFull()
+        return AppValue(token: tokenOut, value: quote.quote.amountOut).formattedFull()
     }
 
     private func quoteCurrencyValue(quote: MultiSwapViewModel.Quote) -> String? {
@@ -63,30 +75,6 @@ struct MultiSwapQuotesView: View {
             return nil
         }
 
-        return ValueFormatter.instance.formatFull(currency: viewModel.currency, value: quote.quote.expectedBuyAmount * rateOut)
-    }
-
-    private func priceImpact(quote: MultiSwapViewModel.Quote) -> (Decimal, ValueLevel)? {
-        guard let amountIn = viewModel.amountIn, let coinPriceIn = viewModel.coinPriceIn, let rateOut = viewModel.rateOut else {
-            return nil
-        }
-
-        let fiatAmountIn = amountIn * coinPriceIn.value
-        let fiatAmountOut = quote.quote.expectedBuyAmount * rateOut
-
-        guard fiatAmountIn != 0, fiatAmountIn > fiatAmountOut else {
-            return nil
-        }
-
-        let priceImpact = (fiatAmountOut * 100 / fiatAmountIn) - 100
-
-        let level = MultiSwapViewModel.PriceImpactLevel(priceImpact: abs(priceImpact))
-
-        switch level {
-        case .negligible, .low:
-            return nil
-        default:
-            return (priceImpact, level.valueLevel)
-        }
+        return ValueFormatter.instance.formatShort(currency: viewModel.currency, value: quote.quote.amountOut * rateOut)
     }
 }

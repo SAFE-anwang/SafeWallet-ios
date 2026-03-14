@@ -1,212 +1,150 @@
-import Combine
 import Foundation
 import MarketKit
+import RxCocoa
+import RxRelay
+import RxSwift
+import Combine
 
-class ManageWalletsViewModel: ObservableObject {
-    private let account: Account
-    private let walletManager = Core.shared.walletManager
-    private let restoreSettingsService: RestoreSettingsService
-
-    private let tokenFetcher = ManageWalletsTokenFetcher()
-    private let tokenSorter = ManageWalletsTokenSorter()
-    private let tokenInfoProvider: ManageWalletsTokenInfoProvider
-
-    private var tokens = [Token]()
-    private var wallets = Set<Wallet>()
+class ManageWalletsViewModel {
+    private let service: ManageWalletsService
+    private let disposeBag = DisposeBag()
     private var cancellables = Set<AnyCancellable>()
+    private let viewItemsRelay = BehaviorRelay<[ViewItem]>(value: [])
+    private let notFoundVisibleRelay = BehaviorRelay<Bool>(value: false)
+    private let disableItemRelay = PublishRelay<Int>()
+    private let showInfoRelay = PublishRelay<InfoViewItem>()
+    private let showBirthdayHeightRelay = PublishRelay<BirthdayHeightViewItem>()
+    private let showContractRelay = PublishRelay<ContractViewItem>()
 
-    @Published var items = [Item]()
-    @Published var enabledTokens: [Int: Bool] = [:]
-
-    @Published var filter = ""
-
-    let blockchains: [Blockchain]
-    @Published var blockchainFilter: Blockchain? = nil {
-        didSet {
-            guard blockchainFilter != oldValue else {
-                return
-            }
-
-            reloadTokens()
-        }
-    }
-
-    var canAddToken: Bool {
-        account.type.canAddTokens
-    }
-
-    init(account: Account, restoreSettingsService: RestoreSettingsService) {
-        self.account = account
-        self.restoreSettingsService = restoreSettingsService
-        tokenInfoProvider = ManageWalletsTokenInfoProvider(restoreSettingsService: restoreSettingsService)
-
-        wallets = Set(walletManager.activeWallets)
-
-        let supported = (try? Core.shared.marketKit.blockchains(uids: BlockchainType.supported.map(\.uid))) ?? []
-
-        blockchains = supported.sorted(by: { $0.type.order < $1.type.order })
-        setupBindings()
-        reloadTokens(initial: true)
-    }
-
-    private func setupBindings() {
-        $filter
-            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.global(qos: .userInitiated))
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.reloadTokens()
+    init(service: ManageWalletsService) {
+        self.service = service
+        service.itemsPublisher
+            .sink { [weak self] in
+                self?.sync(items: $0)
             }
             .store(in: &cancellables)
+        subscribe(disposeBag, service.cancelEnableObservable) { [weak self] in self?.disableItemRelay.accept($0) }
 
-        walletManager.activeWalletDataUpdatedPublisher
-            .receive(on: DispatchQueue.global(qos: .userInitiated))
-            .sink { [weak self] walletData in
-                self?.handleWalletsUpdated(walletData.wallets)
-            }
-            .store(in: &cancellables)
-
-        restoreSettingsService.approveSettingsPublisher
-            .receive(on: DispatchQueue.global(qos: .userInitiated))
-            .sink { [weak self] tokenWithSettings in
-                self?.handleApproveRestoreSettings(token: tokenWithSettings.token, settings: tokenWithSettings.settings)
-            }
-            .store(in: &cancellables)
-
-        restoreSettingsService.rejectApproveSettingsPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.reloadTokens()
-            }
-            .store(in: &cancellables)
+        sync(items: service.items)
     }
 
-    private func reloadTokens(initial: Bool = false) {
-        let enabledTokens = wallets
-            .map(\.token)
+    private func viewItem(item: ManageWalletsService.Item) -> ViewItem {
+        let token = item.token
 
-        let fetched = tokenFetcher.fetch(
-            filter: filter,
-            account: account,
-            preferredTokens: enabledTokens,
-            allowedBlockchainTypes: blockchainFilter.map { [$0.type] }
-        )
-        let sorted = tokenSorter.sorted(fetched, filter: filter, preferredTokens: enabledTokens)
-
-        tokens = sorted
-        reloadItems(initial: initial)
-    }
-
-    private func reloadItems(initial: Bool = false) {
-        var enabled: [Int: Bool] = [:]
-        let items = tokens.map { token in
-            let (item, isEnabled) = item(token: token)
-            enabled[token.hashValue] = isEnabled
-
-            return item
-        }
-
-        if initial {
-            self.items = items
-            enabledTokens = enabled
-        } else {
-            DispatchQueue.main.async {
-                self.items = items
-                self.enabledTokens = enabled
-            }
-        }
-    }
-
-    private func item(token: Token) -> (Item, Bool) {
-        let isEnabled = wallets.contains { $0.token == token }
-
-        return (
-            Item(
-                token: token,
-                hasInfo: tokenInfoProvider.hasInfo(token: token, isEnabled: isEnabled)
-            ),
-            isEnabled
+        return ViewItem(
+            uid: String(item.token.hashValue),
+            coin: token.coin,
+            placeholderImageName: token.placeholderImageName,
+            badge: item.token.badge,
+            enabled: item.enabled,
+            hasInfo: item.hasInfo
         )
     }
 
-    private func handleWalletsUpdated(_ newWallets: [Wallet]) {
-        wallets = Set(newWallets)
-        reloadItems()
-    }
-
-    private func handleApproveRestoreSettings(token: Token, settings: RestoreSettings) {
-        if !settings.isEmpty {
-            restoreSettingsService.save(settings: settings, account: account, blockchainType: token.blockchainType)
-        }
-
-        saveWallet(for: token)
-    }
-
-    private func saveWallet(for token: Token) {
-        let wallet = Wallet(token: token, account: account)
-        walletManager.save(wallets: [wallet])
+    private func sync(items: [ManageWalletsService.Item]) {
+        viewItemsRelay.accept(items.map { viewItem(item: $0) })
+        notFoundVisibleRelay.accept(items.isEmpty)
     }
 }
 
 extension ManageWalletsViewModel {
-    var blockchainFilterIndex: Int {
-        guard let blockchainFilter, let index = blockchains.firstIndex(of: blockchainFilter) else { // all
-            return 0
-        }
-
-        return index + 1
+    var viewItemsDriver: Driver<[ViewItem]> {
+        viewItemsRelay.asDriver()
     }
 
-    func setBlockchainFilter(index: Int) {
-        if index <= 0 {
-            blockchainFilter = nil
-        } else {
-            blockchainFilter = blockchains[index - 1]
-        }
+    var notFoundVisibleDriver: Driver<Bool> {
+        notFoundVisibleRelay.asDriver()
     }
 
-    func toggle(item: Item, enabled: Bool) {
-        if enabled {
-            enable(token: item.token)
-        } else {
-            disable(token: item.token)
-        }
+    var disableItemSignal: Signal<Int> {
+        disableItemRelay.asSignal()
     }
 
-    func showInfo(item: Item) -> ManageWalletsTokenInfoProvider.InfoItem? {
-        guard let infoItem = tokenInfoProvider.infoItem(token: item.token, accountId: account.id) else {
-            return nil
-        }
-
-        stat(page: .coinManager, event: .openTokenInfo(token: item.token))
-
-        return infoItem
+    var showInfoSignal: Signal<InfoViewItem> {
+        showInfoRelay.asSignal()
     }
 
-    private func enable(token: Token) {
-        if !token.blockchainType.restoreSettingTypes.isEmpty {
-            restoreSettingsService.approveSettings(token: token, account: account)
-        } else {
-            saveWallet(for: token)
-            stat(page: .coinManager, event: .enableToken(token: token))
-        }
+    var showBirthdayHeightSignal: Signal<BirthdayHeightViewItem> {
+        showBirthdayHeightRelay.asSignal()
     }
 
-    private func disable(token: Token) {
-        let walletsToDelete = wallets.filter { $0.token == token }
-        walletManager.delete(wallets: Array(walletsToDelete))
-        stat(page: .coinManager, event: .disableToken(token: token))
+    var showContractSignal: Signal<ContractViewItem> {
+        showContractRelay.asSignal()
+    }
+
+    var addTokenEnabled: Bool {
+        service.accountType.canAddTokens
+    }
+
+    func onEnable(index: Int) {
+        service.enable(index: index)
+    }
+
+    func onDisable(index: Int) {
+        service.disable(index: index)
+    }
+
+    func onTapInfo(index: Int) {
+        guard let infoItem = service.infoItem(index: index) else {
+            return
+        }
+
+        let coinViewItem = CoinViewItem(
+            coin: infoItem.token.coin,
+            coinPlaceholderImageName: infoItem.token.placeholderImageName
+        )
+
+        switch infoItem.type {
+        case .derivation:
+            let coinName = infoItem.token.coin.name
+            showInfoRelay.accept(InfoViewItem(coin: coinViewItem, text: "manage_wallets.derivation_description".localized(coinName, AppConfig.appName, coinName)))
+        case .bitcoinCashCoinType:
+            showInfoRelay.accept(InfoViewItem(coin: coinViewItem, text: "manage_wallets.bitcoin_cash_coin_type_description".localized(AppConfig.appName)))
+        case let .birthdayHeight(height):
+            showBirthdayHeightRelay.accept(BirthdayHeightViewItem(coin: coinViewItem, height: String(height)))
+        case let .contractAddress(value, explorerUrl):
+            showContractRelay.accept(ContractViewItem(coin: coinViewItem, blockchainImageUrl: infoItem.token.blockchainType.imageUrl, value: value, explorerUrl: explorerUrl))
+        }
+
+        stat(page: .coinManager, event: .openTokenInfo(token: infoItem.token))
+    }
+
+    func onUpdate(filter: String) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.service.set(filter: filter)
+        }
     }
 }
 
 extension ManageWalletsViewModel {
-    struct Item: Identifiable, Equatable, Hashable {
-        let token: Token
+    struct ViewItem {
+        let uid: String
+        let coin: Coin
+        let placeholderImageName: String?
+        let badge: String?
+        let enabled: Bool
         let hasInfo: Bool
+    }
 
-        var id: Int { token.hashValue }
+    struct CoinViewItem {
+        let coin: Coin
+        let coinPlaceholderImageName: String
+    }
 
-        static func == (lhs: Item, rhs: Item) -> Bool {
-            lhs.id == rhs.id && lhs.hasInfo == rhs.hasInfo
-        }
+    struct InfoViewItem {
+        let coin: CoinViewItem
+        let text: String
+    }
+
+    struct BirthdayHeightViewItem {
+        let coin: CoinViewItem
+        let height: String
+    }
+
+    struct ContractViewItem {
+        let coin: CoinViewItem
+        let blockchainImageUrl: String
+        let value: String
+        let explorerUrl: String?
     }
 }

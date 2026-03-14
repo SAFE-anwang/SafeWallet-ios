@@ -25,8 +25,7 @@ class BitcoinTransactionRecord: TransactionRecord {
             blockHeight: blockHeight,
             confirmationsThreshold: confirmationsThreshold,
             date: date,
-            failed: failed,
-            paginationRaw: uid
+            failed: failed
         )
     }
 

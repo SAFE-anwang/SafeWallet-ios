@@ -36,11 +36,78 @@ class TronSendData: ISendData {
         nil
     }
 
-    func flowSection(baseToken _: Token, currency: Currency, rates: [String: Decimal]) -> SendDataSection? {
+    private func feeFields(currency: Currency, feeTokenRate: Decimal?) -> [SendField] {
+        var viewItems = [SendField]()
+
+        if let totalFees {
+            let decimalAmount = Decimal(totalFees) / pow(10, baseToken.decimals)
+            let appValue = AppValue(token: baseToken, value: decimalAmount)
+            let currencyValue = feeTokenRate.map { CurrencyValue(currency: currency, value: decimalAmount * $0) }
+
+            viewItems.append(
+                .value(
+                    title: "fee_settings.network_fee".localized,
+                    description: .init(title: "fee_settings.network_fee".localized, description: "fee_settings.network_fee.info".localized),
+                    appValue: appValue,
+                    currencyValue: currencyValue,
+                    formatFull: true
+                )
+            )
+        }
+
+        if let fees {
+            var bandwidth: String?
+            var energy: String?
+
+            for fee in fees {
+                switch fee {
+                case let .accountActivation(amount):
+                    let decimalAmount = Decimal(amount) / pow(10, baseToken.decimals)
+                    let appValue = AppValue(token: baseToken, value: decimalAmount)
+                    let currencyValue = feeTokenRate.map { CurrencyValue(currency: currency, value: decimalAmount * $0) }
+
+                    viewItems.append(
+                        .value(
+                            title: "tron.send.activation_fee".localized,
+                            description: .init(title: "tron.send.activation_fee".localized, description: "tron.send.activation_fee.info".localized),
+                            appValue: appValue,
+                            currencyValue: currencyValue,
+                            formatFull: true
+                        )
+                    )
+
+                case let .bandwidth(points, _):
+                    bandwidth = ValueFormatter.instance.formatShort(value: Decimal(points), decimalCount: 0)
+
+                case let .energy(required, _):
+                    energy = ValueFormatter.instance.formatShort(value: Decimal(required), decimalCount: 0)
+                }
+            }
+
+            if bandwidth != nil || energy != nil {
+                viewItems.append(
+                    .doubleValue(
+                        title: "tron.send.resources_consumed".localized,
+                        description: .init(title: "tron.send.resources_consumed".localized, description: "tron.send.resources_consumed.info".localized),
+                        value1: bandwidth.flatMap { "\($0) \("tron.send.bandwidth".localized)" } ?? "",
+                        value2: energy.flatMap { "\($0) \("tron.send.energy".localized)" }
+                    )
+                )
+            }
+        }
+
+        return viewItems
+    }
+
+    private func decorationSections(currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
+        guard let decoration else {
+            return []
+        }
+
         switch decoration {
         case let decoration as NativeTransactionDecoration:
             guard let transfer = decoration.contract as? TransferContract else {
-                return nil
+                return []
             }
 
             return sendFields(
@@ -49,6 +116,7 @@ class TronSendData: ISendData {
                 currency: currency,
                 rate: rates[token.coin.uid]
             )
+
         case let decoration as OutgoingEip20Decoration:
             return sendFields(
                 to: decoration.to,
@@ -56,13 +124,7 @@ class TronSendData: ISendData {
                 currency: currency,
                 rate: rates[token.coin.uid]
             )
-        default:
-            return nil
-        }
-    }
 
-    private func decorationFields(currency: Currency, rates: [String: Decimal]) -> [SendField] {
-        switch decoration {
         case let decoration as ApproveEip20Decoration:
             return approveFields(
                 spender: decoration.spender,
@@ -77,26 +139,26 @@ class TronSendData: ISendData {
         }
     }
 
-    private func sendFields(to: TronKit.Address, value: Decimal, currency: Currency, rate: Decimal?) -> SendDataSection {
+    private func sendFields(to: TronKit.Address, value: Decimal, currency: Currency, rate: Decimal?) -> [SendDataSection] {
         let appValue = AppValue(token: token, value: Decimal(sign: .plus, exponent: value.exponent, significand: value.significand))
 
-        return .init(
-            [
-                .amount(
-                    token: token,
-                    appValueType: appValue.isMaxValue ? .infinity(code: appValue.code) : .regular(appValue: appValue),
-                    currencyValue: appValue.isMaxValue ? nil : rate.map { CurrencyValue(currency: currency, value: $0 * value) }
-                ),
-                .address(
-                    value: to.base58,
-                    blockchainType: token.blockchainType
-                ),
-            ],
-            isFlow: true
-        )
+        return [.init([
+            .amount(
+                title: "send.confirmation.you_send".localized,
+                token: token,
+                appValueType: appValue.isMaxValue ? .infinity(code: appValue.code) : .regular(appValue: appValue),
+                currencyValue: appValue.isMaxValue ? nil : rate.map { CurrencyValue(currency: currency, value: $0 * value) },
+                type: .neutral
+            ),
+            .address(
+                title: "send.confirmation.to".localized,
+                value: to.base58,
+                blockchainType: token.blockchainType
+            ),
+        ])]
     }
 
-    private func approveFields(spender: TronKit.Address, value: BigUInt, contractAddress: TronKit.Address, currency: Currency, rates: [String: Decimal]) -> [SendField] {
+    private func approveFields(spender: TronKit.Address, value: BigUInt, contractAddress: TronKit.Address, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
         guard
             let coinServiceFactory = EvmCoinServiceFactory(
                 blockchainType: .tron,
@@ -117,51 +179,75 @@ class TronSendData: ISendData {
         if isRevokeAllowance {
             fields.append(
                 .amount(
+                    title: "approve.confirmation.you_revoke".localized,
                     token: coinService.token,
                     appValueType: .withoutAmount(code: coinService.token.coin.code),
                     currencyValue: nil,
+                    type: .neutral
                 )
             )
         } else {
             fields.append(
                 .amount(
+                    title: "approve.confirmation.you_approve".localized,
                     token: coinService.token,
                     appValueType: approveValue.isMaxValue ? .infinity(code: approveValue.code) : .regular(appValue: approveValue),
                     currencyValue: approveValue.isMaxValue ? nil : rates[contractAddress.base58].map { CurrencyValue(currency: currency, value: $0 * value) },
+                    type: .neutral
                 )
             )
         }
 
         fields.append(
             .address(
+                title: "approve.confirmation.spender".localized,
                 value: spender.base58,
                 blockchainType: coinService.token.blockchainType
             )
         )
 
-        return fields
+        return [.init(fields)]
     }
 
-    func cautions(baseToken: Token, currency _: Currency, rates _: [String: Decimal]) -> [CautionNew] {
+    func caution(transactionError: Error, feeToken: Token) -> CautionNew {
+        let title: String
+        let text: String
+
+        if let tronError = transactionError as? TronSendHandler.TransactionError {
+            switch tronError {
+            case let .insufficientBalance(balance):
+                let appValue = AppValue(token: feeToken, value: balance.toDecimal(decimals: feeToken.decimals) ?? 0)
+                let balanceString = appValue.formattedShort()
+
+                title = "fee_settings.errors.insufficient_balance".localized
+                text = "fee_settings.errors.insufficient_balance.info".localized(balanceString ?? "")
+
+            case .zeroAmount:
+                title = "alert.error".localized
+                text = "fee_settings.errors.zero_amount.info".localized
+            }
+        } else {
+            title = "Error"
+            text = transactionError.convertedError.smartDescription
+        }
+
+        return CautionNew(title: title, text: text, type: .error)
+    }
+
+    func cautions(baseToken: Token) -> [CautionNew] {
         var cautions = [CautionNew]()
 
         if let transactionError {
-            cautions.append(TronSendHelper.caution(transactionError: transactionError, feeToken: baseToken))
+            cautions.append(caution(transactionError: transactionError, feeToken: baseToken))
         }
 
         return cautions
     }
 
-    func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
-        var sections = [SendDataSection]()
-        if let flow = flowSection(baseToken: baseToken, currency: currency, rates: rates) {
-            sections.append(flow)
-        }
+    func sections(baseToken _: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
+        var sections = decorationSections(currency: currency, rates: rates)
 
-        let decorationFields = decorationFields(currency: currency, rates: rates)
-        let feeFields = TronSendHelper.feeFields(baseToken: self.baseToken, totalFees: totalFees, fees: fees, currency: currency, feeTokenRate: rates[baseToken.coin.uid])
-
-        sections.append(.init(decorationFields + feeFields, isMain: false))
+        sections.append(.init(feeFields(currency: currency, feeTokenRate: rates[baseToken.coin.uid])))
 
         return sections
     }

@@ -5,14 +5,16 @@ class BtcBlockchainSettingsService {
     let blockchain: Blockchain
     private let btcBlockchainManager: BtcBlockchainManager
 
-    let restoreModes: [BtcRestoreMode]
+    let restoreModes: [BtcSyncModeItem]
     let currentRestoreMode: BtcRestoreMode
 
     init(blockchain: Blockchain, btcBlockchainManager: BtcBlockchainManager) {
         self.blockchain = blockchain
         self.btcBlockchainManager = btcBlockchainManager
 
-        restoreModes = BtcRestoreMode.allCases.filter { blockchain.type.supports(restoreMode: $0) }
+        restoreModes = BtcRestoreMode.allCases
+            .filter { blockchain.type.supports(restoreMode: $0) }
+            .map { BtcSyncModeItem(blockchain: blockchain, restoreMode: $0) }
         currentRestoreMode = btcBlockchainManager.restoreMode(blockchainType: blockchain.type)
     }
 }

@@ -1,19 +1,10 @@
 import SwiftUI
 
-struct WalletTokenTopView<Content: View>: View {
+struct WalletTokenTopView: View {
     @ObservedObject var viewModel: WalletTokenViewModel
-    let content: () -> Content
-
-    init(
-        viewModel: WalletTokenViewModel,
-        @ViewBuilder content: @escaping () -> Content = { EmptyView() }
-    ) {
-        self.viewModel = viewModel
-        self.content = content
-    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: .margin24) {
             VStack(alignment: .leading, spacing: 0) {
                 ThemeText(primaryValue, style: .title2)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -25,41 +16,37 @@ struct WalletTokenTopView<Content: View>: View {
 
                 ThemeText(secondaryValue, style: .body, colorStyle: .secondary)
             }
-            .padding(.horizontal, 16)
 
-            VStack(spacing: 0) {
-                if !viewModel.wallet.account.watchAccount {
-                    let buttons = viewModel.buttons
+            if !viewModel.wallet.account.watchAccount {
+                let buttons = viewModel.buttons
 
-                    HStack(spacing: 0) {
-                        ForEach(buttons, id: \.self) { button in
-                            buttonView(button: button)
+                HStack(spacing: 0) {
+                    ForEach(buttons, id: \.self) { button in
+                        buttonView(button: button)
 
-                            if button != buttons.last {
-                                Spacer()
-                            }
+                        if button != buttons.last {
+                            Spacer()
                         }
                     }
-                    .padding(.bottom, 24)
-                    .padding(.horizontal, 16)
-                } else if let address = viewModel.wallet.account.type.watchAddress {
-                    Cell(
-                        middle: {
-                            MiddleTextIcon(text: "balance.token.receive_address".localized)
-                        },
-                        right: {
-                            RightTextIcon(text: address.shortened, icon: "arrow_b_right")
-                        },
-                        action: {
-                            viewModel.onTapReceive()
-                        }
-                    )
                 }
+                .padding(.bottom, .margin24)
+            } else {
+                VStack(spacing: .margin16) {
+                    Button(action: {
+                        viewModel.onTapReceive()
+                    }) {
+                        WatchAddressView(wallet: viewModel.wallet)
+                    }
 
-                content()
+                    if case .moneroWatchAccount = viewModel.wallet.account.type {
+                        AlertCardView(.init(text: "watch_address.monero_warning.description".localized))
+                    }
+                }
+                .padding(.vertical, .margin16)
             }
         }
-        .padding(.top, 24)
+        .padding(.top, .margin24)
+        .padding(.horizontal, .margin16)
         .background(Color.themeTyler)
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets())
@@ -71,28 +58,45 @@ struct WalletTokenTopView<Content: View>: View {
             switch button {
             case .send:
                 Coordinator.shared.present { isPresented in
-                    SendAddressViewWrapper(wallet: viewModel.wallet, isPresented: isPresented)
+                    ThemeNavigationStack {
+                        SendAddressView(wallet: viewModel.wallet, isPresented: isPresented)
+                    }
                 }
                 stat(page: .tokenPage, event: .openSend(token: viewModel.wallet.token))
             case .receive: viewModel.onTapReceive()
             case .swap:
-                if viewModel.swapEnabled {
-                    Coordinator.shared.present { _ in
-                        RegularMultiSwapView(token: viewModel.wallet.token)
+                Coordinator.shared.present { _ in
+                    if let vc = SwapModule.viewController(tokenFrom: viewModel.wallet.token) {
+                        SwapView(viewController: vc)
                     }
-                    stat(page: .tokenPage, event: .open(page: .swap))
-                } else {
-                    Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                        SwapOptionsView(isPresented: isPresented)
-                    }
+                    //MultiSwapView(token: viewModel.wallet.token)
                 }
-            case .chart: Coordinator.shared.presentCoinPage(coin: viewModel.wallet.coin, page: .tokenPage)
+                stat(page: .tokenPage, event: .open(page: .swap))
+            case .chart:
+                if isSafeSrc20Token {
+                    Coordinator.shared.presentSrc20Info(token: viewModel.wallet.token, page: .tokenPage)
+                }else {
+                    Coordinator.shared.presentCoinPage(coin: viewModel.wallet.coin, page: .tokenPage)
+                }
+            case .liquidity:
+                Coordinator.shared.present { _ in
+//                    LiquidityMainView(tokenFrom: viewModel.wallet.token)
+                    LiquidityAddView(token: viewModel.wallet.token)
+                }
+                stat(page: .tokenPage, event: .open(page: .addLiquidity))
             default: ()
             }
         }
-        .disabled(button == .chart && viewModel.priceItem == nil)
+//        .disabled(button == .chart && viewModel.priceItem == nil)
     }
-
+    
+    var isSafeSrc20Token: Bool {
+        if case .eip20 = viewModel.wallet.token.type, viewModel.wallet.token.blockchainType == .safe4 {
+            return true
+        }
+        return false
+    }
+    
     private var primaryValue: CustomStringConvertible {
         if viewModel.balanceHidden {
             return BalanceHiddenManager.placeholder
@@ -121,19 +125,17 @@ struct WalletTokenTopView<Content: View>: View {
 
     private var secondaryValue: CustomStringConvertible {
         switch viewModel.state {
-        case .connecting:
-            return ComponentText(text: "balance.connecting".localized, dimmed: true)
-        case let .syncing(_, remaining, _):
+        case let .syncing(progress, lastBlockDate):
             var text = ""
-            if let remaining {
-                text = "balance.remaining".localized(remaining.description)
+            if let progress {
+                text = "balance.syncing_percent".localized("\(progress)%")
             } else {
                 text = "balance.syncing".localized
             }
 
-//            if let syncedUntil = lastBlockDate.map({ DateHelper.instance.formatSyncedThroughDate(from: $0) }) {
-//                text += " - " + "balance.synced_through".localized(syncedUntil)
-//            }
+            if let syncedUntil = lastBlockDate.map({ DateHelper.instance.formatSyncedThroughDate(from: $0) }) {
+                text += " - " + "balance.synced_through".localized(syncedUntil)
+            }
 
             return ComponentText(text: text, dimmed: true)
         case let .customSyncing(main, secondary, _):
@@ -143,10 +145,6 @@ struct WalletTokenTopView<Content: View>: View {
         default: ()
             if viewModel.balanceHidden {
                 return " "
-            }
-
-            if let caution = viewModel.caution {
-                return ComponentText(text: caution.text, colorStyle: caution.type.colorStyle)
             }
 
             guard let priceItem = viewModel.priceItem else {

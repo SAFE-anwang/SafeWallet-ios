@@ -122,6 +122,7 @@ struct MarketVaultsView: View {
                     }
 
                     ZStack {
+/*
                         ListSection {
                             ForEach(Array(vaults.dropFirst(7).prefix(6)), id: \.self) { vault in
                                 cell(vault: vault)
@@ -138,7 +139,7 @@ struct MarketVaultsView: View {
                                 .padding(.horizontal, .margin24)
 
                             Button(action: {
-                                Coordinator.shared.presentPurchase(premiumFeature: .tokenInsights, page: .vaults, trigger: .unlock)
+                                Coordinator.shared.presentPurchase(page: .vaults, trigger: .unlock)
                             }) {
                                 Text("market.vaults.premium.unlock".localized)
                             }
@@ -147,6 +148,7 @@ struct MarketVaultsView: View {
                         .padding(.horizontal, .margin24)
                         .frame(maxHeight: .infinity)
                         .background(Color.themeLawrence.opacity(0.8))
+                        */
                     }
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())

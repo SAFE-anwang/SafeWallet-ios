@@ -2,7 +2,6 @@ import EvmKit
 import Foundation
 import MarketKit
 
-<<<<<<<< HEAD:UnstoppableWallet/UnstoppableWallet/Modules/SendNew/BaseSendEvmData.swift
 class BaseSendEvmData {
     let gasPrice: GasPrice?
     let evmFeeData: EvmFeeData?
@@ -24,25 +23,11 @@ class BaseSendEvmData {
                 appValue: amountData?.appValue,
                 currencyValue: amountData?.currencyValue,
                 formatFull: true
-========
-class EvmSendHelper {
-    static func feeFields(evmFeeData: EvmFeeData?, gasPrice: GasPrice?, feeToken: Token, currency: Currency, feeTokenRate: Decimal?) -> [SendField] {
-        let amountData = evmFeeData.flatMap { $0.totalAmountData(gasPrice: gasPrice, feeToken: feeToken, currency: currency, feeTokenRate: feeTokenRate) }
-
-        return [
-            .fee(
-                title: ComponentInformedTitle("fee_settings.network_fee".localized, info: .fee),
-                amountData: amountData
->>>>>>>> efad40b37c2595971bbf5a796b00834a3f758cb8:UnstoppableWallet/UnstoppableWallet/Modules/SendNew/EvmSendHelper.swift
             ),
         ]
     }
 
-<<<<<<<< HEAD:UnstoppableWallet/UnstoppableWallet/Modules/SendNew/BaseSendEvmData.swift
     func caution(transactionError: Error, feeToken: Token) -> CautionNew {
-========
-    static func caution(transactionError: Error, feeToken: Token) -> CautionNew {
->>>>>>>> efad40b37c2595971bbf5a796b00834a3f758cb8:UnstoppableWallet/UnstoppableWallet/Modules/SendNew/EvmSendHelper.swift
         let title: String
         let text: String
 

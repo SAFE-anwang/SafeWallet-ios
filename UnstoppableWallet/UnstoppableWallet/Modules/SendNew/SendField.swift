@@ -4,65 +4,89 @@ import MarketKit
 import SwiftUI
 
 enum SendField {
-    case amount(token: Token, appValueType: AppValueType, currencyValue: CurrencyValue?)
-    case value(title: CustomStringConvertible, appValue: AppValue?, currencyValue: CurrencyValue?, formatFull: Bool)
+    case amount(title: String, token: Token, appValueType: AppValueType, currencyValue: CurrencyValue?, type: AmountType)
+    case value(title: String, description: InfoDescription?, appValue: AppValue?, currencyValue: CurrencyValue?, formatFull: Bool)
     case doubleValue(title: String, description: InfoDescription?, value1: String, value2: String?)
     case levelValue(title: String, value: String, level: ValueLevel)
     case note(iconName: String?, title: String)
-    case simpleValue(icon: String? = nil, title: CustomStringConvertible, value: CustomStringConvertible)
-    case address(value: String, blockchainType: BlockchainType)
-    case recipient(title: String, value: String, copyable: Bool, blockchainType: BlockchainType)
-    case selfAddress(value: String)
+    case simpleValue(icon: String? = nil, title: String, value: String, copying: Bool)
+    case address(title: String, value: String, blockchainType: BlockchainType)
     case price(title: String, tokenA: Token, tokenB: Token, amountA: Decimal, amountB: Decimal)
-    case fee(title: CustomStringConvertible, amountData: AmountData?)
     case hex(title: String, value: String)
     case mevProtection(isOn: Binding<Bool>)
 
     @ViewBuilder var listRow: some View {
         switch self {
-        case let .amount(token, appValueType, currencyValue):
-            Cell(
-                left: {
-                    CoinIconView(token: token)
-                },
-                middle: {
-                    MultiText(
-                        eyebrow: ComponentText(text: token.coin.code, colorStyle: .primary),
-                        subtitle: token.fullBadge,
-                    )
-                },
-                right: {
-                    RightMultiText(
-                        eyebrow: appValueType.formattedFull(showCode: false).map { ComponentText(text: $0, colorStyle: .primary) },
-                        subtitle: currencyValue?.formattedFull
-                    )
-                }
-            )
-        case let .value(title, appValue, currencyValue, formatFull):
-            Cell(
-                style: .secondary,
-                middle: {
-                    MiddleTextIcon(text: title).styled(title)
-                },
-                right: {
-                    let formatted = (formatFull ? appValue?.formattedFull() : appValue?.formattedShort())
+        case let .amount(title, token, appValueType, currencyValue, type):
+            ListRow {
+                CoinIconView(coin: token.coin)
 
-                    RightMultiText(
-                        eyebrow: ComponentText(text: formatted ?? "n/a".localized, colorStyle: formatted != nil ? .primary : .secondary),
-                        subtitle: formatFull ? currencyValue?.formattedFull : currencyValue?.formattedShort
-                    )
+                HStack(spacing: .margin4) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(title).textSubhead2(color: .themeLeah)
+                        Text(token.fullBadge).textCaption()
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 1) {
+                        if let formatted = appValueType.formattedFull {
+                            Text(formatted)
+                                .textSubhead1(color: type.color)
+                                .multilineTextAlignment(.trailing)
+                        } else {
+                            Text("n/a".localized)
+                                .textSubhead1(color: .themeGray50)
+                                .multilineTextAlignment(.trailing)
+                        }
+
+                        if let formatted = currencyValue?.formattedFull {
+                            Text(formatted)
+                                .textCaption()
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
                 }
-            )
+            }
+        case let .value(title, infoDescription, appValue, currencyValue, formatFull):
+            ListRow(padding: EdgeInsets(top: .margin12, leading: infoDescription == nil ? .margin16 : 0, bottom: .margin12, trailing: .margin16)) {
+                if let infoDescription {
+                    Text(title)
+                        .textSubhead2()
+                        .modifier(Informed(infoDescription: infoDescription))
+                } else {
+                    Text(title)
+                        .textSubhead2()
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 1) {
+                    if let formatted = (formatFull ? appValue?.formattedFull() : appValue?.formattedShort()) {
+                        Text(formatted)
+                            .textSubhead1(color: .themeLeah)
+                            .multilineTextAlignment(.trailing)
+                    } else {
+                        Text("n/a".localized)
+                            .textSubhead1()
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    if let formatted = (formatFull ? currencyValue?.formattedFull : currencyValue?.formattedShort) {
+                        Text(formatted)
+                            .textCaption()
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+            }
         case let .levelValue(title, value, level):
-            Cell(
-                style: .secondary,
-                middle: {
-                    MiddleTextIcon(text: title)
-                },
-                right: {
-                    RightMultiText(subtitle: ComponentText(text: value, colorStyle: level.colorStyle))
-                }
-            )
+            ListRow {
+                Text(title).textSubhead2()
+                Spacer()
+                Text(value)
+                    .textSubhead1(color: color(valueLevel: level))
+                    .multilineTextAlignment(.trailing)
+            }
         case let .note(iconName, title):
             ListRow {
                 if let iconName {
@@ -71,40 +95,37 @@ enum SendField {
                 Text(title).textSubhead2()
                 Spacer()
             }
-        case let .address(value, blockchainType):
-            AddressRowsView(value: value, blockchainType: blockchainType)
-        case let .recipient(title, value, copyable, blockchainType):
-            RecipientRowsView(title: title, value: value, copyable: copyable, blockchainType: blockchainType)
-        case let .selfAddress(value):
-            Cell(
-                left: {
-                    ThemeImage("wallet_filled", size: .iconSize24)
-                },
-                middle: {
-                    MultiText(subtitle: ComponentText(text: "send.confirmation.send_to_own".localized, colorStyle: .primary), description: value)
-                }
-            )
+        case let .address(title, value, blockchainType):
+            RecipientRowsView(title: title, value: value, blockchainType: blockchainType)
         case let .price(title, tokenA, tokenB, amountA, amountB):
-            let priceData = FlipRow.TokenPriceData(tokenA: tokenA, tokenB: tokenB, amountA: amountA, amountB: amountB)
-            FlipRow(title: title, flipData: priceData)
-        case let .fee(title, amountData):
-            let feeData = FlipRow.TokenFeeData(amountData: amountData)
-            FlipRow(title: title, flipData: feeData)
-        case let .simpleValue(icon, title, value):
-            Cell(
-                style: .secondary,
-                left: {
-                    if let icon {
-                        ThemeImage(icon, size: .iconSize20)
-                    }
-                },
-                middle: {
-                    MiddleTextIcon(text: title).styled(title)
-                },
-                right: {
-                    RightMultiText(subtitle: value.styled(.primary))
+            PriceRow(title: title, tokenA: tokenA, tokenB: tokenB, amountA: amountA, amountB: amountB)
+        case let .simpleValue(icon, title, value, copying):
+            ListRow {
+                if let icon {
+                    Image(icon).icon()
                 }
-            )
+
+                Text(title).textSubhead2()
+
+                Spacer()
+
+                if copying {
+                    Button(action: {
+                        CopyHelper.copyAndNotify(value: value)
+                    }) {
+                        Text(value)
+                            .textSubhead1(color: .themeLeah)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    .buttonStyle(SecondaryButtonStyle(style: .default))
+                } else {
+                    Text(value)
+                        .textSubhead1(color: .themeLeah)
+                        .lineLimit(3)
+                        .truncationMode(.middle)
+                }
+            }
         case let .hex(title, value):
             ListRow {
                 Text(title).textSubhead2()
@@ -173,21 +194,29 @@ enum SendField {
         }
     }
 
+    private func color(valueLevel: ValueLevel) -> Color {
+        switch valueLevel {
+        case .regular: return .themeLeah
+        case .warning: return .themeJacob
+        case .error: return .themeLucian
+        }
+    }
+
     enum AppValueType {
         case regular(appValue: AppValue)
         case infinity(code: String)
         case withoutAmount(code: String)
 
-        private func formatted(full: Bool, showCode: Bool = true) -> String? {
+        private func formatted(full: Bool) -> String? {
             switch self {
-            case let .regular(appValue): return full ? appValue.formattedFull(showCode: showCode) : appValue.formattedShort()
-            case let .infinity(code): return "swap.unlock.unlimited".localized + (showCode ? "\(code)" : "")
+            case let .regular(appValue): return full ? appValue.formattedFull() : appValue.formattedShort()
+            case let .infinity(code): return "∞ \(code)"
             case let .withoutAmount(code): return "\(code)"
             }
         }
 
-        func formattedFull(showCode: Bool = true) -> String? {
-            formatted(full: true, showCode: showCode)
+        var formattedFull: String? {
+            formatted(full: true)
         }
 
         var formattedShort: String? {
@@ -217,37 +246,27 @@ enum SendField {
 }
 
 extension SendField {
-    static func recipient(_ recipient: String, copyable: Bool = false, blockchainType: BlockchainType) -> Self {
-        .recipient(
+    static func recipient(_ recipient: String, blockchainType: BlockchainType) -> Self {
+        .address(
             title: "swap.recipient".localized,
             value: recipient,
-            copyable: copyable,
             blockchainType: blockchainType
         )
     }
 
-    static func slippage(_ slippage: Decimal) -> Self? {
-        guard slippage != MultiSwapSlippage.default else {
-            return nil
-        }
-
-        return .simpleValue(
-            title: "swap.slippage".localized,
-            value: ComponentText(text: "\(slippage.description)%", colorStyle: MultiSwapSlippage.validate(slippage: slippage).valueLevel.colorStyle)
+    static func priceImpact(_ priceImpact: Decimal) -> Self {
+        .levelValue(
+            title: "swap.price_impact".localized,
+            value: "\(priceImpact.rounded(decimal: 2))%",
+            level: BaseUniswapMultiSwapProvider.PriceImpactLevel(priceImpact: priceImpact).valueLevel
         )
     }
 
-    static func minRecieve(token: Token, value: Decimal) -> Self? {
-        guard let formatted = AppValue(token: token, value: value).formattedShort() else {
-            return nil
-        }
-
-        return .simpleValue(
-            title: ComponentInformedTitle("swap.confirmation.minimum_received".localized, info: InfoDescription(
-                title: "swap.confirmation.minimum_received".localized,
-                description: "swap.confirmation.minimum_received.info".localized
-            )),
-            value: formatted
+    static func slippage(_ slippage: Decimal) -> Self {
+        .levelValue(
+            title: "swap.slippage".localized,
+            value: "\(slippage.description)%",
+            level: MultiSwapSlippage.validate(slippage: slippage).valueLevel
         )
     }
 }

@@ -4,46 +4,64 @@ import MarketKit
 import MoneroKit
 
 class MoneroFeeSettingsViewModel: ObservableObject {
-    private let service: MoneroTransactionService
-    private let amount: MoneroSendAmount
-    private let address: String
+    let service: MoneroTransactionService
 
-    @Published var priorityCautionState: FieldCautionState = .none
-    @Published var resetEnabled = false
-    @Published var applyEnabled = false
+    init(service: MoneroTransactionService) {
+        self.service = service
+        priority = SendPriority.default.description
 
-    @Published var fee: Decimal?
-    @Published var priority: MoneroKit.SendPriority {
+        syncFromService()
+    }
+
+    @Published var priority: String = "" {
         didSet {
-            sync()
+            DispatchQueue.main.async { [weak self] in
+                self?.handle()
+            }
         }
     }
 
-    init(service: MoneroTransactionService, amount: MoneroSendAmount, address: String) {
-        self.service = service
-        self.amount = amount
-        self.address = address
+    @Published var priorityCautionState: FieldCautionState = .none
+    @Published var resetEnabled = false
 
-        priority = service.priority
+    private func syncFromService() {
+        if let priority = service.priority {
+            self.priority = priority.description
+        }
 
         sync()
     }
 
     private func sync() {
-        fee = try? service.resolveFee(amount: amount, address: address, priority: priority)
+        resetEnabled = service.modified
 
-        applyEnabled = service.priority != priority
-        resetEnabled = priority != .default
+        if let caution = service.cautions.first {
+            priorityCautionState = .caution(caution.type)
+        } else {
+            priorityCautionState = .none
+        }
+    }
+
+    private func handle() {
+        guard let priorityEnum = SendPriority.from(string: priority) else {
+            priorityCautionState = .caution(.error)
+            return
+        }
+
+        service.set(priority: priorityEnum)
+        sync()
     }
 }
 
 extension MoneroFeeSettingsViewModel {
-    func onReset() {
-        priority = .default
-        sync()
+    func set(priorityAtIndex: Int) {
+        if let newValue = SendPriority(rawValue: priorityAtIndex) {
+            priority = newValue.description
+        }
     }
 
-    func apply() {
-        service.set(priority: priority)
+    func onReset() {
+        service.useRecommended()
+        syncFromService()
     }
 }

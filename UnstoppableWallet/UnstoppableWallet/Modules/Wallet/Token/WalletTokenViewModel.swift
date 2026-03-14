@@ -10,7 +10,6 @@ class WalletTokenViewModel: ObservableObject {
     private let balanceHiddenManager = Core.shared.balanceHiddenManager
     private let appManager = Core.shared.appManager
     private let reachabilityManager = Core.shared.reachabilityManager
-    private let appStateManager = AppStateManager.instance
 
     private let disposeBag = DisposeBag()
     private var cancellables = Set<AnyCancellable>()
@@ -21,7 +20,6 @@ class WalletTokenViewModel: ObservableObject {
     @Published var isMainNet: Bool
     @Published var balanceData: BalanceData
     @Published var state: AdapterState
-    @Published var caution: CautionNew?
     @Published var priceItem: WalletCoinPriceService.Item?
     @Published private(set) var isReachable: Bool = true
 
@@ -33,8 +31,7 @@ class WalletTokenViewModel: ObservableObject {
         balanceHidden = balanceHiddenManager.balanceHidden
         isMainNet = walletService.isMainNet(wallet: wallet) ?? true
         balanceData = walletService.balanceData(wallet: wallet) ?? BalanceData(balance: 0)
-        state = walletService.state(wallet: wallet) ?? .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
-        caution = walletService.caution(wallet: wallet)
+        state = walletService.state(wallet: wallet) ?? .syncing(progress: nil, lastBlockDate: nil)
         priceItem = wallet.priceCoinUid.flatMap { coinPriceService.item(coinUid: $0) }
 
         walletService.delegate = self
@@ -103,16 +100,6 @@ extension WalletTokenViewModel: IWalletServiceDelegate {
             self.state = state
         }
     }
-
-    func didUpdate(caution: CautionNew?, wallet: Wallet) {
-        guard wallet == self.wallet else {
-            return
-        }
-
-        DispatchQueue.main.async {
-            self.caution = caution
-        }
-    }
 }
 
 extension WalletTokenViewModel: IWalletCoinPriceServiceDelegate {
@@ -140,19 +127,15 @@ extension WalletTokenViewModel {
         if wallet.account.watchAccount {
             return []
         } else {
-            return [.chart, .receive, .send, .swap]
+            return [.chart, .receive, .send] + (AppConfig.swapEnabled && wallet.token.swappable ? [.swap] : []) + [.liquidity]
         }
-    }
-
-    var swapEnabled: Bool {
-        appStateManager.swapEnabled
     }
 
     func onTapReceive() {
         if wallet.account.backedUp || cloudBackupManager.backedUp(uniqueId: wallet.account.type.uniqueId()) {
             Coordinator.shared.present { [wallet] _ in
-                EmptyThemeNavigationStack { path in
-                    ReceiveAddressModule.instance(wallet: wallet, path: path)
+                ThemeNavigationStack {
+                    ReceiveAddressView(wallet: wallet)
                 }
             }
 

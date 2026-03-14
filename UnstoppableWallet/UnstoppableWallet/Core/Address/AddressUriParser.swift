@@ -91,20 +91,6 @@ class AddressUriParser {
         return nil
     }
 
-    private func handleErc681(scheme: String, path: String) -> (address: String, blockchainType: BlockchainType?) {
-//         checking ERC-681. if scheme = "ethereum", address has @chainId. Parse blockchainType from chainId
-
-        let checkErc681 = scheme == BlockchainType.ethereum.uriScheme
-        let chunks = checkErc681 ? path.split(separator: "@") : []
-        if chunks.count == 2, let chainId = Int(chunks[1]) { // has address and chainId
-            let blockchain = Core.shared.evmBlockchainManager.blockchain(chainId: chainId)
-            let pureAddress = String(chunks[0])
-            return (address: pureAddress, blockchainType: blockchain?.type)
-        }
-
-        return (address: path, blockchainType: nil)
-    }
-
     private func handleAddressUri(uri: String, customSchemeHandling: Bool) throws -> AddressUri {
         var replacedUriScheme: String?
         var uriString = uri
@@ -128,25 +114,17 @@ class AddressUriParser {
         }
 
         var uri = AddressUri(scheme: scheme)
-        let (address, blockchainType) = Erc681.support(scheme: scheme) ?
-            Erc681.from(path: components.path) :
-            (components.path, nil)
-
         guard let items = components.queryItems else {
-            uri.address = fullAddress(scheme: scheme, address: address)
+            uri.address = fullAddress(scheme: scheme, address: components.path)
             return uri
         }
 
-        var (handled, unhandled) = parameters(from: items)
-        if let blockchainType { // set EVM blockchain type from ERC681 @chainId
-            handled[.blockchainUid] = blockchainType.uid
-        }
-        try validate(parameters: handled)
+        let params = parameters(from: items)
+        try validate(parameters: params.handled)
 
-        uri.parameters = handled
-        uri.unhandledParameters = unhandled
-
-        uri.address = fullAddress(scheme: scheme, address: address, uriBlockchainUid: uri.parameters[.blockchainUid])
+        uri.parameters = params.handled
+        uri.unhandledParameters = params.unhandled
+        uri.address = fullAddress(scheme: scheme, address: components.path, uriBlockchainUid: uri.parameters[.blockchainUid])
 
         return uri
     }
@@ -175,11 +153,7 @@ extension AddressUriParser {
     func uri(_ addressUri: AddressUri) -> String {
         var components = URLComponents()
         components.scheme = blockchainType?.uriScheme
-        let pureAddress = addressUri.address.stripping(prefix: blockchainType?.uriScheme).stripping(prefix: ":")
-
-        components.path = Erc681.support(scheme: blockchainType?.uriScheme) ?
-            Erc681.to(address: pureAddress, blockchainType: blockchainType) :
-            pureAddress
+        components.path = addressUri.address.stripping(prefix: blockchainType?.uriScheme).stripping(prefix: ":")
 
         components.queryItems = addressUri.parameters.map {
             URLQueryItem(name: $0.rawValue, value: $1)
@@ -205,7 +179,7 @@ extension AddressUriParser {
 
 extension BlockchainType {
     var uriScheme: String? {
-        if isEvm {
+        if EvmBlockchainManager.blockchainTypes.contains(self) {
             return "ethereum"
         }
 
@@ -218,10 +192,8 @@ extension BlockchainType {
         case .zcash: return "zcash"
         case .ethereum: return "ethereum"
         case .tron: return "tron"
-        case .ton: return "ton"
+        case .ton: return "toncoin"
         case .monero: return "monero"
-        case .zano: return "zano"
-        case .stellar: return "stellar"
         default: return nil
         }
     }
@@ -242,40 +214,7 @@ extension BlockchainType {
         case .tron: return true
         case .ton: return true
         case .monero: return true
-        case .zano: return true
-        case .stellar: return true
         default: return false
         }
-    }
-}
-
-enum Erc681 {
-    static func support(scheme: String?) -> Bool {
-        scheme != nil && scheme == BlockchainType.ethereum.uriScheme
-    }
-
-    static func from(path: String) -> (address: String, blockchainType: BlockchainType?) {
-//       checking ERC-681. address has @chainId. Parse blockchainType from chainId
-
-        let chunks = path.split(separator: "@")
-        if chunks.count == 2, let chainId = Int(chunks[1]) { // has address and chainId
-            let blockchain = Core.shared.evmBlockchainManager.blockchain(chainId: chainId)
-            let pureAddress = String(chunks[0])
-            return (address: pureAddress, blockchainType: blockchain?.type)
-        }
-
-        return (address: path, blockchainType: nil)
-    }
-
-    static func to(address: String, blockchainType: BlockchainType?) -> String {
-        guard let blockchainType else {
-            return address
-        }
-
-        guard let chain = try? Core.shared.evmBlockchainManager.chain(blockchainType: blockchainType) else {
-            return address
-        }
-
-        return [address, chain.id.description].joined(separator: "@")
     }
 }

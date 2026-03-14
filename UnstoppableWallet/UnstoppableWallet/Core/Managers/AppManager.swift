@@ -20,6 +20,7 @@ class AppManager {
     private let evmLabelManager: EvmLabelManager
     private let balanceHiddenManager: BalanceHiddenManager
     private let statManager: StatManager
+    private let walletConnectSocketConnectionService: WalletConnectSocketConnectionService
     private let nftMetadataSyncer: NftMetadataSyncer
     private let tonKitManager: TonKitManager
     private let stellarKitManager: StellarKitManager
@@ -38,7 +39,7 @@ class AppManager {
          appVersionManager: AppVersionManager, rateAppManager: RateAppManager,
          logRecordManager: LogRecordManager, deeplinkStorage: DeeplinkStorage,
          evmLabelManager: EvmLabelManager, balanceHiddenManager: BalanceHiddenManager, statManager: StatManager,
-         nftMetadataSyncer: NftMetadataSyncer, tonKitManager: TonKitManager,
+         walletConnectSocketConnectionService: WalletConnectSocketConnectionService, nftMetadataSyncer: NftMetadataSyncer, tonKitManager: TonKitManager,
          stellarKitManager: StellarKitManager)
     {
         self.accountManager = accountManager
@@ -56,6 +57,7 @@ class AppManager {
         self.evmLabelManager = evmLabelManager
         self.balanceHiddenManager = balanceHiddenManager
         self.statManager = statManager
+        self.walletConnectSocketConnectionService = walletConnectSocketConnectionService
         self.nftMetadataSyncer = nftMetadataSyncer
         self.tonKitManager = tonKitManager
         self.stellarKitManager = stellarKitManager
@@ -104,6 +106,7 @@ extension AppManager {
         didEnterBackgroundSubject.send()
 
         lockManager.didEnterBackground()
+        walletConnectSocketConnectionService.didEnterBackground()
         balanceHiddenManager.didEnterBackground()
 
         tonKitManager.tonKit?.stopListener()
@@ -111,6 +114,8 @@ extension AppManager {
     }
 
     func willEnterForeground() {
+        accountManager.handleForeground()
+
         willEnterForegroundSubject.send()
         willEnterForegroundSubjectOld.onNext(())
 
@@ -118,6 +123,7 @@ extension AppManager {
         passcodeLockManager.handleForeground()
         lockManager.willEnterForeground()
         adapterManager.refresh()
+        walletConnectSocketConnectionService.willEnterForeground()
 
         statManager.sendStats()
 
@@ -125,8 +131,6 @@ extension AppManager {
 
         tonKitManager.tonKit?.startListener()
         stellarKitManager.stellarKit?.startListener()
-
-        AppStateManager.instance.syncIfRequired()
 
         AppWidgetConstants.allKinds.forEach { WidgetCenter.shared.reloadTimelines(ofKind: $0) }
     }

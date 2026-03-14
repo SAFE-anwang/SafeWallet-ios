@@ -2,7 +2,7 @@ import Foundation
 import MarketKit
 import StellarKit
 
-class StellarTransactionRecord: TransactionRecord, TransferEventsProvider {
+class StellarTransactionRecord: TransactionRecord {
     let operation: TxOperation
     let fee: AppValue?
     let type: `Type`
@@ -39,11 +39,6 @@ class StellarTransactionRecord: TransactionRecord, TransferEventsProvider {
         case let .changeTrust(value, _, _, _): return value
         default: return nil
         }
-    }
-
-    var transferEvents: TransferEvents {
-        let incomingEvents = StellarTransactionRecord.doubtfulEvents(type: type)
-        return .init(incoming: incomingEvents)
     }
 }
 

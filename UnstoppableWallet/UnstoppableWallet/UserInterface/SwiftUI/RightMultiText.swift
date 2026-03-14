@@ -2,8 +2,7 @@ import SwiftUI
 
 struct RightMultiText: View {
     var eyebrow: CustomStringConvertible?
-    var title: CustomStringConvertible?
-    var subtitleSB: CustomStringConvertible?
+    let title: CustomStringConvertible?
     var subtitle: CustomStringConvertible?
     var description: CustomStringConvertible?
 
@@ -19,18 +18,9 @@ struct RightMultiText: View {
                     .multilineTextAlignment(.trailing)
             }
 
-            if subtitleSB != nil || subtitle != nil {
-                HStack(spacing: 4) {
-                    if let subtitleSB {
-                        ThemeText(subtitleSB, style: .subheadSB)
-                            .multilineTextAlignment(.trailing)
-                    }
-
-                    if let subtitle {
-                        ThemeText(subtitle, style: .subhead)
-                            .multilineTextAlignment(.trailing)
-                    }
-                }
+            if let subtitle {
+                ThemeText(subtitle, style: .subhead)
+                    .multilineTextAlignment(.trailing)
             }
 
             if let description {

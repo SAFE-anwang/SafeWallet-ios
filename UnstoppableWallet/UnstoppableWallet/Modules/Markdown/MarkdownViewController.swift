@@ -260,7 +260,7 @@ extension MarkdownViewController: SectionsDataSource {
             return []
         }
 
-        let footerText = "© \(AppConfig.companyName)"
+        let footerText = "© \(AppConfig.companyName) 2024"
 
         return [
             Section(

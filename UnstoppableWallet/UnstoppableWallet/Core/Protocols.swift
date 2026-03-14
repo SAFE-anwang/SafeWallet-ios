@@ -32,27 +32,12 @@ protocol IBalanceAdapter: IBaseAdapter {
     var balanceStateUpdatedObservable: Observable<AdapterState> { get }
     var balanceData: BalanceData { get }
     var balanceDataUpdatedObservable: Observable<BalanceData> { get }
-    var caution: CautionNew? { get }
-    var cautionUpdatedObservable: Observable<CautionNew?> { get }
-}
-
-extension IBalanceAdapter {
-    var caution: CautionNew? {
-        nil
-    }
-
-    var cautionUpdatedObservable: Observable<CautionNew?> {
-        .just(nil)
-    }
 }
 
 protocol IDepositAdapter: IBaseAdapter {
     var receiveAddress: DepositAddress { get }
     var receiveAddressStatus: DataStatus<DepositAddress> { get }
     var receiveAddressPublisher: AnyPublisher<DataStatus<DepositAddress>, Never> { get }
-}
-
-protocol IHDDepositAdapter: IDepositAdapter {
     func usedAddresses(change: Bool) -> [UsedAddress]
 }
 

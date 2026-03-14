@@ -5,8 +5,8 @@ struct LiquidityAddSendView: View {
     @StateObject var sendViewModel: SendViewModel
     @Binding private var swapPresentationMode: PresentationMode
 
-    init(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, swapPresentationMode: Binding<PresentationMode>) {
-        _sendViewModel = .init(wrappedValue: SendViewModel(sendData: .liquidityAdd(token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider)))
+    init(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType? = nil, swapPresentationMode: Binding<PresentationMode>) {
+        _sendViewModel = .init(wrappedValue: SendViewModel(sendData: .liquidityAdd(token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider, v3TickType: v3TickType)))
         _swapPresentationMode = swapPresentationMode
     }
 

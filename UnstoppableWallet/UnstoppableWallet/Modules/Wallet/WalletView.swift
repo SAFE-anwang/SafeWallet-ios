@@ -3,9 +3,11 @@ import SwiftUI
 struct WalletView: View {
     @ObservedObject var viewModel: WalletViewModel
     @StateObject var accountWarningViewModel = AccountWarningViewModel(ignoreType: .always)
-
+    @StateObject var transactionsViewModel = TransactionsViewModel()
+    @State private var transactionsPresented = false
+    
     @Binding var path: NavigationPath
-
+    
     var body: some View {
         Group {
             if let account = viewModel.account {
@@ -17,7 +19,7 @@ struct WalletView: View {
                                 .listRowInsets(EdgeInsets())
                                 .listRowSeparator(.hidden)
                                 .themeListTopView()
-
+                            
                             AccountWarningView(viewModel: accountWarningViewModel)
                                 .listRowBackground(Color.themeTyler)
                                 .listRowInsets(EdgeInsets())
@@ -25,7 +27,7 @@ struct WalletView: View {
                                 .padding(.horizontal, .margin16)
                                 .padding(.top, .margin8)
                                 .padding(.bottom, .margin12)
-
+                            
                             Section {
                                 itemsView()
                             } header: {
@@ -71,11 +73,15 @@ struct WalletView: View {
                 }
             }
         }
+        
         .onAppear {
             viewModel.onAppear()
         }
         .onDisappear {
             viewModel.onDisappear()
+        }
+        .navigationDestination(isPresented: $transactionsPresented) {
+            MainTransactionsView(transactionsViewModel: transactionsViewModel)//.ignoresSafeArea()
         }
     }
 
@@ -150,36 +156,34 @@ struct WalletView: View {
                 if !item.wallet.account.watchAccount {
                     Button {
                         Coordinator.shared.present { isPresented in
-                            SendAddressViewWrapper(wallet: item.wallet, isPresented: isPresented)
+                            ThemeNavigationStack {
+                                SendAddressView(wallet: item.wallet, isPresented: isPresented)
+                            }
                         }
                         stat(page: .tokenPage, event: .openSend(token: item.wallet.token))
                     } label: {
                         Label("balance.send".localized, image: "arrow_m_up")
                     }
                 }
-                if let addressAdapter = Core.shared.adapterManager.adapter(for: item.wallet),
-                   let depositAdapter = addressAdapter as? IDepositAdapter
-                {
+                let addressProvider = ReceiveAddressModule.addressProvider(wallet: item.wallet)
+                if let address = addressProvider.address {
                     Button {
-                        copyAddressIfBackedUp(address: depositAdapter.receiveAddress.address)
+                        copyAddressIfBackedUp(address: address)
                     } label: {
                         Text("balance.copy_address".localized)
-                        Text(depositAdapter.receiveAddress.address.shortened)
+                        Text(address.shortened)
                         Image("copy")
                     }
                 }
-                if !item.wallet.account.watchAccount {
+                if !item.wallet.account.watchAccount, item.wallet.token.swappable {
                     Button {
-                        if viewModel.swapEnabled {
-                            Coordinator.shared.present { _ in
-                                RegularMultiSwapView(token: item.wallet.token)
-                            }
-                            stat(page: .balance, event: .open(page: .swap))
-                        } else {
-                            Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                                SwapOptionsView(isPresented: isPresented)
-                            }
+                        Coordinator.shared.present { _ in
+//                            if let vc = SwapModule.viewController(tokenFrom: item.wallet.token) {
+//                                SwapView(viewController: vc)
+//                            }
+                            MultiSwapView(token: item.wallet.token)
                         }
+                        stat(page: .tokenPage, event: .open(page: .swap))
                     } label: {
                         Label("balance.swap".localized, image: "swap_e")
                     }
@@ -224,17 +228,27 @@ struct WalletView: View {
                 }
             }
 
+            Spacer()
+            
+            IconButton(icon: "arrow_swap_approval_2_24", style: .secondary, size: .small) {
+                Coordinator.shared.present { _ in
+                    LiquidityRecordTabView(viewModel: LiquidityRecordTabViewModel())
+                        .ignoresSafeArea()
+                }
+            }
+            
+            IconButton(icon: "transaction_filled", style: .secondary, size: .small) {
+                transactionsPresented = true
+            }
+            
             IconButton(icon: "manage", style: .secondary, size: .small) {
                 if let account = viewModel.account {
-                    Coordinator.shared.present { isPresented in
-                        ManageWalletsView(account: account, isPresented: isPresented).ignoresSafeArea()
+                    Coordinator.shared.present { _ in
+                        ManageWalletsView(account: account).ignoresSafeArea()
                     }
                     stat(page: .balance, event: .open(page: .coinManager))
                 }
             }
-
-            Spacer()
-
             if !viewModel.isReachable {
                 ThemeText("alert.no_internet".localized, style: .subheadSB, colorStyle: .red)
             }
@@ -251,19 +265,16 @@ struct WalletView: View {
                 stat(page: .balance, event: .open(page: .sendTokenList))
             case .receive: viewModel.onTapReceive()
             case .swap:
-                if viewModel.swapEnabled {
-                    Coordinator.shared.present { _ in
-                        RegularMultiSwapView()
-                    }
-                    stat(page: .balance, event: .open(page: .swap))
-                } else {
-                    Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                        SwapOptionsView(isPresented: isPresented)
-                    }
+                Coordinator.shared.present { _ in
+//                    if let vc = SwapModule.viewController() {
+//                        SwapView(viewController: vc)
+//                    }
+                    MultiSwapView()
                 }
+                stat(page: .balance, event: .open(page: .swap))
             case .scan:
-                Coordinator.shared.present { isPresented in
-                    ScanQrViewNew(reportAfterDismiss: true, isPresented: isPresented) { text in
+                Coordinator.shared.present { _ in
+                    ScanQrViewNew(reportAfterDismiss: true, pasteEnabled: true) { text in
                         viewModel.process(scanned: text)
                     }
                     .ignoresSafeArea()

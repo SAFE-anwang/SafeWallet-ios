@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-class RestoreFileConfigurationViewModel: ObservableObject {
+class RestoreFileConfigurationViewModel {
     private let cloudBackupManager: CloudBackupManager
     private let appBackupProvider: AppBackupProvider
     private let contactBookManager: ContactBookManager
@@ -20,7 +20,7 @@ class RestoreFileConfigurationViewModel: ObservableObject {
         self.rawBackup = rawBackup
     }
 
-    private func item(account: Account) -> BackupModule.AccountItem {
+    private func item(account: Account) -> BackupAppModule.AccountItem {
         var alertSubtitle: String?
         let hasAlertDescription = !(account.backedUp || cloudBackupManager.backedUp(uniqueId: account.type.uniqueId()))
         if account.nonStandard {
@@ -34,7 +34,7 @@ class RestoreFileConfigurationViewModel: ObservableObject {
         let cautionType: CautionType? = showAlert ? .error : .none
         let description = alertSubtitle ?? account.type.detailedDescription
 
-        return BackupModule.AccountItem(
+        return BackupAppModule.AccountItem(
             accountId: account.id,
             name: account.name,
             description: description,
@@ -44,7 +44,7 @@ class RestoreFileConfigurationViewModel: ObservableObject {
 }
 
 extension RestoreFileConfigurationViewModel {
-    var accountItems: [BackupModule.AccountItem] {
+    var accountItems: [BackupAppModule.AccountItem] {
         rawBackup
             .accounts
             .filter { !$0.account.watchAccount }
@@ -52,63 +52,19 @@ extension RestoreFileConfigurationViewModel {
             .map { item(account: $0.account) }
     }
 
-    var otherItems: [BackupModule.ContentItem] {
+    var otherItems: [BackupAppModule.Item] {
         let contactAddressCount = rawBackup.contacts.count
         let watchAccounts = rawBackup
             .accounts
             .filter(\.account.watchAccount)
 
-        return items(
+        return BackupAppModule.items(
             watchAccountCount: watchAccounts.count,
             watchlistCount: rawBackup.watchlistIds.count,
             contactAddressCount: contactAddressCount,
             customEvmSyncSources: rawBackup.customSyncSources.count,
             customMoneroNodes: rawBackup.customMoneroNodes.count
         )
-    }
-
-    private func items(watchAccountCount: Int, watchlistCount: Int, contactAddressCount: Int, customEvmSyncSources: Int, customMoneroNodes: Int) -> [BackupModule.ContentItem] {
-        var items = [BackupModule.ContentItem]()
-
-        if watchAccountCount != 0 {
-            items.append(.init(
-                title: "backup_app.backup_list.other.watch_account.title".localized,
-                value: watchAccountCount.description
-            ))
-        }
-
-        if watchlistCount != 0 {
-            items.append(.init(
-                title: "backup_app.backup_list.other.watchlist.title".localized,
-                value: watchlistCount.description
-            ))
-        }
-
-        if contactAddressCount != 0 {
-            items.append(.init(
-                title: "backup_app.backup_list.other.contacts.title".localized,
-                value: contactAddressCount.description
-            ))
-        }
-
-        if customEvmSyncSources != 0 {
-            items.append(.init(
-                title: "backup_app.backup_list.other.custom_evm_sync_sources.title".localized,
-                value: customEvmSyncSources.description
-            ))
-        }
-        if customMoneroNodes != 0 {
-            items.append(.init(
-                title: "backup_app.backup_list.other.custom_monero_nodes.title".localized,
-                value: customMoneroNodes.description
-            ))
-        }
-        items.append(.init(
-            title: "backup_app.backup_list.other.app_settings.title".localized,
-            description: "backup_app.backup_list.other.app_settings.description".localized
-        ))
-
-        return items
     }
 
     func onTapRestore() {

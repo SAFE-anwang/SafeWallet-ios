@@ -56,12 +56,11 @@ class TextInputCell: UITableViewCell {
         textView.layer.cornerCurve = .continuous
         textView.textColor = textViewTextColor
         textView.font = textViewFont
-        textView.tintColor = .themeInputFieldTintColor
+        textView.tintColor = .themeJacob
         textView.textContainerInset = textViewEdgeInsets
         textView.autocapitalizationType = .none
         textView.autocorrectionType = .no
         textView.spellCheckingType = .no
-        textView.textContentType = .none
 
         textView.delegate = self
 

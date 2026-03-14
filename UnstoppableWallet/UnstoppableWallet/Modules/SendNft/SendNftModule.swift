@@ -18,7 +18,7 @@ enum SendNftModule {
         }
 
         let addressUriParser = AddressParserFactory.parser(blockchainType: blockchainType, tokenType: nil)
-        return AddressService(mode: .parsers(addressUriParser, addressParserChain), marketKit: Core.shared.marketKit, contactBookManager: Core.shared.contactManager, blockchainType: blockchainType, filter: nil)
+        return AddressService(mode: .parsers(addressUriParser, addressParserChain), marketKit: Core.shared.marketKit, contactBookManager: Core.shared.contactManager, blockchainType: blockchainType)
     }
 
     private static func eip721ViewController(evmKitWrapper: EvmKitWrapper, nftUid: NftUid, adapter: INftAdapter) -> UIViewController {

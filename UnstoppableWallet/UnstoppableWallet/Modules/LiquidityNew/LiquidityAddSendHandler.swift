@@ -16,14 +16,16 @@ class LiquidityAddSendHandler {
     let amount0: Decimal
     let amount1: Decimal
     let provider: ILiquidityAddProvider
+    let v3TickType: LiquidityTickType?
 
-    init(baseToken: Token, token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider) {
+    init(baseToken: Token, token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType? = nil) {
         self.baseToken = baseToken
         self.token0 = token0
         self.token1 = token1
         self.amount0 = amount0
         self.amount1 = amount1
         self.provider = provider
+        self.v3TickType = v3TickType
     }
 }
 
@@ -37,6 +39,10 @@ extension LiquidityAddSendHandler: ISendHandler {
     }
 
     func sendData(transactionSettings: TransactionSettings?) async throws -> ISendData {
+        if let v3Provider = provider as? BaseUniswapV3LiquidityAddProvider, let v3TickType {
+            v3Provider.tickType = v3TickType
+        }
+
         let quote = try await provider.confirmationQuote(
             token0: token0,
             token1: token1,
@@ -181,7 +187,7 @@ extension LiquidityAddSendHandler {
 }
 
 extension LiquidityAddSendHandler {
-    static func instance(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider) -> LiquidityAddSendHandler? {
+    static func instance(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType? = nil) -> LiquidityAddSendHandler? {
         let baseToken: Token?
 
         switch token0.type {
@@ -197,6 +203,6 @@ extension LiquidityAddSendHandler {
             return nil
         }
 
-        return LiquidityAddSendHandler(baseToken: baseToken, token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider)
+        return LiquidityAddSendHandler(baseToken: baseToken, token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider, v3TickType: v3TickType)
     }
 }

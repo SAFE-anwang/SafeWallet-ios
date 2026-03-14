@@ -9,7 +9,6 @@ struct AppView: View {
             case .passcodeSet:
                 ZStack {
                     MainView()
-                        .modifier(CoordinatorViewModifier())
 
                     if viewModel.introVisible {
                         WelcomeScreenView {
@@ -30,3 +29,5 @@ struct AppView: View {
         .preferredColorScheme(viewModel.themeMode.colorScheme)
     }
 }
+
+

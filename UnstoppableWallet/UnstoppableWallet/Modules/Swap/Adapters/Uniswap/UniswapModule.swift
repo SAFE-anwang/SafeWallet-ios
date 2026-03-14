@@ -7,19 +7,20 @@ class UniswapModule {
     private let allowanceService: SwapAllowanceService
     private let pendingAllowanceService: SwapPendingAllowanceService
     private let service: UniswapService
-
-    init?(dex: SwapModule.Dex, dataSourceState: SwapModule.DataSourceState) {
+    private let isSafeSwap: Bool
+    
+    init?(dex: SwapModule.Dex, dataSourceState: SwapModule.DataSourceState, isSafeSwap: Bool) {
+        self.isSafeSwap = isSafeSwap
         guard let evmKit = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
             return nil
         }
-
-        guard let swapKit = try? UniswapKit.Kit.instance(),
+        guard let swapKit = try? UniswapKit.Kit.instance(isSafeSwap: isSafeSwap),
               let rpcSource = Core.shared.evmSyncSourceManager.httpSyncSource(blockchainType: dex.blockchainType)?.rpcSource
         else {
             return nil
         }
-
-        let uniswapRepository = UniswapProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource)
+        
+        let uniswapRepository = UniswapProvider(swapKit: swapKit, evmKit: evmKit, rpcSource: rpcSource, isSafeSwap: isSafeSwap)
         print("OneInchProvider router Address: \(uniswapRepository.routerAddress.hex)")
 
         tradeService = UniswapTradeService(
@@ -105,6 +106,9 @@ extension UniswapModule {
 
     enum TradeError: Error {
         case wrapUnwrapNotAllowed
+        case tickRangeError
+        case lessTickRangeError
+        case greaterTickRangeError
     }
 }
 
@@ -130,6 +134,9 @@ extension UniswapModule.TradeError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .wrapUnwrapNotAllowed: return "swap.trade_error.wrap_unwrap_not_allowed".localized
+        case .tickRangeError: return "liquidity.tick.range.error".localized
+        case .lessTickRangeError: return "liquidity.tick.range.less.error".localized
+        case .greaterTickRangeError: return "liquidity.tick.range.greater.error".localized
         }
     }
 }

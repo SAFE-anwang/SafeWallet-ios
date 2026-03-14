@@ -56,20 +56,22 @@ struct BaseCurrencySettingsView: View {
 
     @ViewBuilder private func confirmView(currency: Currency, isPresented: Binding<Bool>) -> some View {
         BottomSheetView(
+            icon: .warning,
+            title: "settings.base_currency.disclaimer".localized,
             items: [
-                .title(icon: ThemeImage.warning, title: "settings.base_currency.disclaimer".localized),
-                .warning(text: "settings.base_currency.disclaimer.description".localized(AppConfig.appName, viewModel.popularCurrencies.map(\.code).joined(separator: ", "))),
-                .buttonGroup(.init(buttons: [
-                    .init(style: .yellow, title: "settings.base_currency.disclaimer.set".localized) {
-                        viewModel.baseCurrency = currency
-                        isPresented.wrappedValue = false
-                        presentationMode.wrappedValue.dismiss()
-                    },
-                    .init(style: .transparent, title: "button.cancel".localized) {
-                        isPresented.wrappedValue = false
-                    },
-                ])),
+                .highlightedDescription(text: "settings.base_currency.disclaimer.description".localized(AppConfig.appName, viewModel.popularCurrencies.map(\.code).joined(separator: ", "))),
             ],
+            buttons: [
+                .init(style: .yellow, title: "settings.base_currency.disclaimer.set".localized) {
+                    viewModel.baseCurrency = currency
+                    isPresented.wrappedValue = false
+                    presentationMode.wrappedValue.dismiss()
+                },
+                .init(style: .transparent, title: "button.cancel".localized) {
+                    isPresented.wrappedValue = false
+                },
+            ],
+            isPresented: isPresented
         )
     }
 }

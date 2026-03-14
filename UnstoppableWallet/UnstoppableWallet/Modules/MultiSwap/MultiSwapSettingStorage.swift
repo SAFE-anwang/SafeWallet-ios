@@ -16,10 +16,6 @@ class MultiSwapSettingStorage {
         }
     }
 
-    var slippage: Decimal {
-        value(for: LegacySetting.slippage) ?? MultiSwapSlippage.default
-    }
-
     func recipient(blockchainType: BlockchainType) -> Address? {
         value(for: "recipient-\(recipientUid(blockchainType: blockchainType))")
     }

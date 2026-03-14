@@ -14,7 +14,7 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
     }
 
     override func confirmationQuote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal, transactionSettings: TransactionSettings?) async throws -> ILiquidityAddConfirmationQuote {
-        let quote = try await internalQuote(token0: token0, token1: token1, amount0: amount0)
+        var quote = try await internalQuote(token0: token0, token1: token1, amount0: amount0)
 
         let blockchainType = token0.blockchainType
         let gasPriceData = transactionSettings?.gasPriceData
@@ -29,7 +29,53 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
                 txData = transactionData
                 evmFeeData = try await evmFeeEstimator.estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData)
             } catch {
-                transactionError = error
+                guard isEvmRevertedError(error) else {
+                    transactionError = error
+                    return BaseUniswapLiquidityAddConfirmationQuote(
+                        quote: quote,
+                        transactionData: txData,
+                        transactionError: transactionError,
+                        gasPrice: gasPriceData.userDefined,
+                        evmFeeData: evmFeeData,
+                        nonce: transactionSettings?.nonce
+                    )
+                }
+
+                let originalSlippage = quote.tradeOptions.allowedSlippage
+                var retrySlippages = [Decimal]()
+
+                for candidate in [originalSlippage, max(originalSlippage, 2), max(originalSlippage, 3), max(originalSlippage, 5)] {
+                    if !retrySlippages.contains(candidate) {
+                        retrySlippages.append(candidate)
+                    }
+                }
+
+                var lastError: Error = error
+
+                for slippage in retrySlippages {
+                    do {
+                        quote = try await internalQuote(
+                            token0: token0,
+                            token1: token1,
+                            amount0: amount0,
+                            slippageOverride: slippage,
+                            forceV3FullRange: self is BaseUniswapV3LiquidityAddProvider
+                        )
+
+                        let evmKit = evmKitWrapper.evmKit
+                        let transactionData = try await transactionData(receiveAddress: evmKit.receiveAddress, chain: evmKit.chain, trade: quote.trade, tradeOptions: quote.tradeOptions)
+                        txData = transactionData
+                        evmFeeData = try await evmFeeEstimator.estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData)
+                        transactionError = nil
+                        break
+                    } catch {
+                        lastError = error
+                    }
+                }
+
+                if txData == nil || evmFeeData == nil {
+                    transactionError = lastError
+                }
             }
         }
 
@@ -101,7 +147,7 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
         fatalError("Must be implemented in subclass")
     }
 
-    private func internalQuote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal) async throws -> BaseUniswapLiquidityAddQuote {
+    private func internalQuote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal, slippageOverride: Decimal? = nil, forceV3FullRange: Bool = false) async throws -> BaseUniswapLiquidityAddQuote {
         let blockchainType = token0.blockchainType
         let chain = try evmBlockchainManager.chain(blockchainType: blockchainType)
 
@@ -113,7 +159,7 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
         }
 
         let recipient = storage.recipient(blockchainType: blockchainType)
-        let slippage: Decimal = storage.value(for: MultiSwapSettingStorage.LegacySetting.slippage) ?? MultiSwapSlippage.default
+        let slippage: Decimal = slippageOverride ?? storage.value(for: MultiSwapSettingStorage.LegacySetting.slippage) ?? MultiSwapSlippage.default
 
         let kitRecipient = try recipient.map { try EvmKit.Address(hex: $0.raw) }
 
@@ -124,8 +170,20 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
             feeOnTransfer: false
         )
 
+        var originalTickType: KitV3.LiquidityTickType?
+        if forceV3FullRange, let provider = self as? BaseUniswapV3LiquidityAddProvider {
+            originalTickType = provider.tickType
+            provider.tickType = .full
+        }
+
+        defer {
+            if let originalTickType, let provider = self as? BaseUniswapV3LiquidityAddProvider {
+                provider.tickType = originalTickType
+            }
+        }
+
         let trade = try await trade(rpcSource: rpcSource, chain: chain, token0: kittoken0, token1: kittoken1, amountIn: amount0, tradeOptions: tradeOptions)
-        let amount1 = trade.amountOut ?? 0
+        let amount1 = quotedAmountOut(trade: trade)
 
         async let allowanceState0 = allowanceState(token: token0, amount: amount0)
         async let allowanceState1 = allowanceState(token: token1, amount: amount1)
@@ -135,9 +193,30 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
             tradeOptions: tradeOptions,
             recipient: recipient,
             providerName: name,
+            amountOut: amount1,
             allowanceState0: allowanceState0,
             allowanceState1: allowanceState1
         )
+    }
+
+    private func quotedAmountOut(trade: BaseUniswapLiquidityAddQuote.Trade) -> Decimal {
+        switch trade {
+        case let .v2(tradeData):
+            if let amountIn = tradeData.amountIn, let midPrice = tradeData.midPrice {
+                return amountIn * midPrice
+            }
+        case .v3:
+            ()
+        }
+
+        return trade.amountOut ?? 0
+    }
+
+    private func isEvmRevertedError(_ error: Error) -> Bool {
+        let text = String(describing: error).lowercased()
+        return text.contains("execution reverted")
+            || text.contains("reverted")
+            || text.contains("price slippage check")
     }
 }
 

@@ -19,7 +19,6 @@ class AddressService {
     private var addressParserChain: AddressParserChain?
 
     private(set) var blockchainType: BlockchainType?
-    private let filter: AddressParserFactory.ParserFilter?
     private let contactBookManager: ContactBookManager?
 
     private let showUriErrorRelay = PublishRelay<Error>()
@@ -63,16 +62,15 @@ class AddressService {
         }
     }
 
-    init(mode: Mode, marketKit: MarketKit.Kit, contactBookManager: ContactBookManager?, blockchainType: BlockchainType?, filter: AddressParserFactory.ParserFilter? = nil, initialAddress: Address? = nil) {
+    init(mode: Mode, marketKit: MarketKit.Kit, contactBookManager: ContactBookManager?, blockchainType: BlockchainType?, initialAddress: Address? = nil) {
         self.marketKit = marketKit
         self.blockchainType = blockchainType
-        self.filter = filter
         self.contactBookManager = contactBookManager
 
         switch mode {
         case .blockchainType:
             addressUriParser = AddressParserFactory.parser(blockchainType: blockchainType, tokenType: nil) // TODO: Check if tokenType is nesessary
-            addressParserChain = blockchainType.flatMap { AddressParserFactory.parserChain(blockchainType: $0, filter: filter) }
+            addressParserChain = blockchainType.flatMap { AddressParserFactory.parserChain(blockchainType: $0) }
         case let .parsers(uriParser, parserChain):
             addressUriParser = uriParser
             addressParserChain = parserChain
@@ -172,7 +170,7 @@ extension AddressService {
         do {
             let result = try addressUriParser.parse(url: text.trimmingCharacters(in: .whitespaces))
             if let amount = result.amount {
-                publishAmountRelay.accept(amount.humanReadable(decimals: EvmAdapter.decimals))
+                publishAmountRelay.accept(amount)
             }
             set(text: result.address)
             return result.address
@@ -193,7 +191,7 @@ extension AddressService {
         self.blockchainType = blockchainType
 
         addressUriParser = AddressParserFactory.parser(blockchainType: blockchainType, tokenType: nil)
-        addressParserChain = AddressParserFactory.parserChain(blockchainType: blockchainType, filter: filter)
+        addressParserChain = AddressParserFactory.parserChain(blockchainType: blockchainType)
 
         set(text: text)
         showContactsRelay.accept(showContacts)

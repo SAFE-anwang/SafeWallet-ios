@@ -11,7 +11,6 @@ class AppearanceViewModel: ObservableObject {
     private let priceChangeModeManager = Core.shared.priceChangeModeManager
     private let currencyManager = Core.shared.currencyManager
     private let amountRoundingManager = Core.shared.amountRoundingManager
-    private let recentlySentManager = Core.shared.recentlySentManager
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -69,16 +68,6 @@ class AppearanceViewModel: ObservableObject {
         }
     }
 
-    @Published var showRecentlySent: Bool {
-        didSet {
-            guard recentlySentManager.recentlySent != showRecentlySent else {
-                return
-            }
-            stat(page: .appearance, event: .recentlySent(show: showRecentlySent))
-            recentlySentManager.recentlySent = showRecentlySent
-        }
-    }
-
     @Published var hideBalanceButtons: Bool {
         didSet {
             guard walletButtonHiddenManager.buttonHidden != hideBalanceButtons else {
@@ -115,7 +104,6 @@ class AppearanceViewModel: ObservableObject {
         priceChangeMode = priceChangeModeManager.priceChangeMode
         launchScreen = launchScreenManager.launchScreen
         useAmountRounding = amountRoundingManager.useAmountRounding
-        showRecentlySent = recentlySentManager.recentlySent
         hideBalanceButtons = walletButtonHiddenManager.buttonHidden
         balancePrimaryValue = appSettingManager.balancePrimaryValue
         appIcon = appIconManager.appIcon

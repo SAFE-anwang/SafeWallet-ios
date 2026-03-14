@@ -61,7 +61,8 @@ class StellarOperationConverter {
 extension StellarOperationConverter {
     func transactionRecord(operation: TxOperation) -> StellarTransactionRecord {
         let type = type(type: operation.type)
+        let spam = SpamManager.isSpam(events: StellarTransactionRecord.doubtfulEvents(type: type))
 
-        return StellarTransactionRecord(source: source, operation: operation, baseToken: baseToken, type: type, spam: false)
+        return StellarTransactionRecord(source: source, operation: operation, baseToken: baseToken, type: type, spam: spam)
     }
 }

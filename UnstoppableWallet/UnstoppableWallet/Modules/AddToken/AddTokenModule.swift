@@ -1,9 +1,10 @@
 import EvmKit
 import Foundation
 import MarketKit
+import UIKit
 
 enum AddTokenModule {
-    static func items() -> (Account, [Item])? {
+    static func viewController() -> UIViewController? {
         guard let account = Core.shared.accountManager.activeAccount else {
             return nil
         }
@@ -38,29 +39,17 @@ enum AddTokenModule {
             items.append(item)
         }
 
-        guard !items.isEmpty else { return nil }
-        return (account, items)
-    }
+        let service = AddTokenService(account: account, items: items, coinManager: Core.shared.coinManager, walletManager: Core.shared.walletManager)
+        let viewModel = AddTokenViewModel(service: service)
+        let viewController = AddTokenViewController(viewModel: viewModel)
 
-    // static func viewController() -> UIViewController? {
-    //     guard let (account, items) = items() else { return nil }
-    //     let viewModel = AddTokenViewModel(account: account, items: items, coinManager: Core.shared.coinManager, walletManager: Core.shared.walletManager)
-    //     let viewController = AddTokenViewController(viewModel: viewModel)
-    //     return ThemeNavigationController(rootViewController: viewController)
-    // }
+        return ThemeNavigationController(rootViewController: viewController)
+    }
 }
 
 extension AddTokenModule {
     struct Item {
         let blockchain: Blockchain
         let service: IAddTokenBlockchainService
-    }
-}
-
-extension Array where Array.Element == AddTokenModule.Item {
-    func by(_ blockchain: Blockchain) -> AddTokenModule.Item {
-        first { item in
-            item.blockchain == blockchain
-        } ?? self[0]
     }
 }

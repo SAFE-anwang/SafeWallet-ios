@@ -3,44 +3,47 @@ import MarketKit
 import MoneroKit
 import SwiftUI
 
-class MoneroTransactionService {
-    private let adapter: MoneroAdapter
+class MoneroTransactionService: ITransactionService {
+    private(set) var usingRecommended: Bool = true
+    private(set) var cautions: [CautionNew] = []
+    private(set) var priority: SendPriority?
 
-    private(set) var priority: MoneroKit.SendPriority = .default
     private let updateSubject = PassthroughSubject<Void, Never>()
 
-    init(adapter: MoneroAdapter) {
-        self.adapter = adapter
-    }
-}
-
-extension MoneroTransactionService {
-    func resolveFee(amount: MoneroSendAmount, address: String, priority: MoneroKit.SendPriority) throws -> Decimal {
-        try adapter.estimateFee(amount: amount, address: address, priority: priority)
-    }
-
-    func set(priority: MoneroKit.SendPriority) {
-        self.priority = priority
-        updateSubject.send()
-    }
-}
-
-extension MoneroTransactionService: ITransactionService {
     var transactionSettings: TransactionSettings? {
-        .monero(priority: priority)
+        guard let priority else {
+            return nil
+        }
+
+        return .monero(priority: priority)
     }
 
     var modified: Bool {
-        priority != .default
-    }
-
-    var cautions: [CautionNew] {
-        []
+        !usingRecommended
     }
 
     var updatePublisher: AnyPublisher<Void, Never> {
         updateSubject.eraseToAnyPublisher()
     }
 
-    func sync() async throws {}
+    init() {}
+
+    func sync() async throws {
+        if usingRecommended {
+            priority = .default
+        }
+    }
+
+    func set(priority: SendPriority) {
+        self.priority = priority
+        usingRecommended = (priority == .default)
+
+        updateSubject.send()
+    }
+
+    func useRecommended() {
+        priority = .default
+        usingRecommended = true
+        updateSubject.send()
+    }
 }

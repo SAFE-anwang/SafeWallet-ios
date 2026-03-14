@@ -155,7 +155,6 @@ class WalletListViewModel: ObservableObject {
                 wallet: wallet,
                 isMainNet: walletService.isMainNet(wallet: wallet) ?? fallbackIsMainNet,
                 balanceData: walletService.balanceData(wallet: wallet) ?? _cachedBalanceData(wallet: wallet, cacheContainer: cacheContainer) ?? fallbackBalanceData,
-                caution: walletService.caution(wallet: wallet),
                 state: walletService.state(wallet: wallet) ?? fallbackAdapterState
             )
 
@@ -191,7 +190,7 @@ class WalletListViewModel: ObservableObject {
     }
 
     private var fallbackAdapterState: AdapterState {
-        .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
+        .syncing(progress: nil, lastBlockDate: nil)
     }
 
     var conversionCoinUids: Set<String> {
@@ -285,19 +284,6 @@ extension WalletListViewModel: IWalletServiceDelegate {
             }
         }
     }
-
-    func didUpdate(caution: CautionNew?, wallet: Wallet) {
-        queue.async {
-            guard let index = self._itemIndex(wallet: wallet) else {
-                return
-            }
-
-            let oldState = self.__items[index].caution
-            self.__items[index].caution = caution
-
-            self._reportItems()
-        }
-    }
 }
 
 extension WalletListViewModel: IWalletCoinPriceServiceDelegate {
@@ -333,7 +319,6 @@ extension WalletListViewModel {
         let wallet: Wallet
         var isMainNet: Bool
         var balanceData: BalanceData
-        var caution: CautionNew?
         var state: AdapterState
         var priceItem: WalletCoinPriceService.Item?
 

@@ -3,6 +3,7 @@ import EvmKit
 import Foundation
 import HsToolKit
 import MarketKit
+import RxSwift
 
 class AddEvmTokenBlockchainService {
     private let blockchain: Blockchain
@@ -38,24 +39,26 @@ extension AddEvmTokenBlockchainService: IAddTokenBlockchainService {
         TokenQuery(blockchainType: blockchain.type, tokenType: .eip20(address: reference.lowercased()))
     }
 
-    func token(reference: String) async throws -> Token {
+    func tokenSingle(reference: String) -> Single<Token> {
         guard let address = try? EvmKit.Address(hex: reference) else {
-            throw TokenError.invalidAddress
+            return Single.error(TokenError.invalidAddress)
         }
 
         let tokenQuery = tokenQuery(reference: reference)
+        let blockchain = blockchain
 
-        do {
-            let tokenInfo = try await Eip20Kit.Kit.tokenInfo(networkManager: networkManager, rpcSource: rpcSource, contractAddress: address)
-            return Token(
-                coin: Coin(uid: tokenQuery.customCoinUid, name: tokenInfo.name, code: tokenInfo.symbol),
-                blockchain: blockchain,
-                type: tokenQuery.tokenType,
-                decimals: tokenInfo.decimals
-            )
-        } catch {
-            throw TokenError.notFound(blockchainName: blockchain.name)
-        }
+        return Eip20Kit.Kit.tokenInfoSingle(networkManager: networkManager, rpcSource: rpcSource, contractAddress: address)
+            .map { tokenInfo in
+                Token(
+                    coin: Coin(uid: tokenQuery.customCoinUid, name: tokenInfo.name, code: tokenInfo.symbol),
+                    blockchain: blockchain,
+                    type: tokenQuery.tokenType,
+                    decimals: tokenInfo.decimals
+                )
+            }
+            .catchError { _ in
+                Single.error(TokenError.notFound(blockchainName: blockchain.name))
+            }
     }
 }
 

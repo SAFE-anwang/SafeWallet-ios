@@ -1,6 +1,7 @@
 import Foundation
 import HsToolKit
 import MarketKit
+import RxSwift
 import TonKit
 import TonSwift
 
@@ -36,23 +37,32 @@ extension AddJettonBlockchainService: IAddTokenBlockchainService {
         return TokenQuery(blockchainType: blockchain.type, tokenType: .jetton(address: reference))
     }
 
-    func token(reference: String) async throws -> Token {
+    func tokenSingle(reference: String) -> Single<Token> {
         guard let address = try? TonSwift.Address.parse(reference) else {
-            throw TokenError.invalidAddress
+            return Single.error(TokenError.invalidAddress)
         }
 
         let tokenQuery = tokenQuery(reference: reference)
 
-        do {
-            let jetton = try await TonKit.Kit.jetton(address: address)
-            return Token(
-                coin: Coin(uid: tokenQuery.customCoinUid, name: jetton.name, code: jetton.symbol, image: jetton.image),
-                blockchain: blockchain,
-                type: tokenQuery.tokenType,
-                decimals: jetton.decimals
-            )
-        } catch {
-            throw TokenError.notFound(blockchainName: blockchain.name)
+        return Single.create { [blockchain] observer in
+            Task { [blockchain] in
+                do {
+                    let jetton = try await TonKit.Kit.jetton(address: address)
+
+                    let token = Token(
+                        coin: Coin(uid: tokenQuery.customCoinUid, name: jetton.name, code: jetton.symbol, image: jetton.image),
+                        blockchain: blockchain,
+                        type: tokenQuery.tokenType,
+                        decimals: jetton.decimals
+                    )
+
+                    observer(.success(token))
+                } catch {
+                    observer(.error(TokenError.notFound(blockchainName: blockchain.name)))
+                }
+            }
+
+            return Disposables.create()
         }
     }
 }

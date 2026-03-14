@@ -1,8 +1,7 @@
-
 import Combine
 import UIKit
 
-class RestoreTypeViewModel: ObservableObject {
+class RestoreTypeViewModel {
     private let cloudAccountBackupManager: CloudBackupManager
     let sourceType: BackupModule.Source.Abstract
 
@@ -36,19 +35,19 @@ extension RestoreTypeViewModel {
 
     func onTap(type: RestoreTypeModule.RestoreType) {
         switch type {
-        case .recoveryOrPrivateKey, .fileRestore: showModuleSubject.send(type)
-        case .cloudRestore:
-            if cloudAccountBackupManager.isAvailable {
-                showModuleSubject.send(type)
-            } else {
-                showCloudNotAvailableSubject.send(())
-            }
+        case .recoveryOrPrivateKey/*, .fileRestore*/: showModuleSubject.send(type)
+//        case .cloudRestore:
+//            if cloudAccountBackupManager.isAvailable {
+//                showModuleSubject.send(type)
+//            } else {
+//                showCloudNotAvailableSubject.send(())
+//            }
         }
     }
 
-    func didPick(url: URL, destination: BackupModule.Destination) {
+    func didPick(url: URL) {
         do {
-            let namedSource = try RestoreFileHelper.parse(url: url, destination: destination)
+            let namedSource = try RestoreFileHelper.parse(url: url)
             showRestoreBackupSubject.send(namedSource)
         } catch {
             showWrongFileSubject.send()
@@ -59,8 +58,8 @@ extension RestoreTypeViewModel {
 extension RestoreTypeViewModel {
     var items: [RestoreTypeModule.RestoreType] {
         switch sourceType {
-        case .wallet: return [.recoveryOrPrivateKey, .cloudRestore, .fileRestore]
-        case .full: return [.cloudRestore, .fileRestore]
+        case .wallet: return [.recoveryOrPrivateKey/*, .cloudRestore, .fileRestore*/]
+        case .full: return [/*.cloudRestore, .fileRestore*/]
         }
     }
 
@@ -74,24 +73,24 @@ extension RestoreTypeViewModel {
     func title(type: RestoreTypeModule.RestoreType) -> String {
         switch type {
         case .recoveryOrPrivateKey: return "restore_type.recovery.title".localized
-        case .cloudRestore: return "restore_type.cloud.title".localized
-        case .fileRestore: return "restore_type.file.title".localized
+//        case .cloudRestore: return "restore_type.cloud.title".localized
+//        case .fileRestore: return "restore_type.file.title".localized
         }
     }
 
     func description(type: RestoreTypeModule.RestoreType) -> String {
         switch type {
         case .recoveryOrPrivateKey: return "restore_type.recovery.description".localized
-        case .cloudRestore: return "restore_type.cloud.description".localized
-        case .fileRestore: return "restore_type.file.description".localized
+//        case .cloudRestore: return "restore_type.cloud.description".localized
+//        case .fileRestore: return "restore_type.file.description".localized
         }
     }
 
     func icon(type: RestoreTypeModule.RestoreType) -> String {
         switch type {
         case .recoveryOrPrivateKey: return "edit_24"
-        case .cloudRestore: return "icloud_24"
-        case .fileRestore: return "file_24"
+//        case .cloudRestore: return "icloud_24"
+//        case .fileRestore: return "file_24"
         }
     }
 }

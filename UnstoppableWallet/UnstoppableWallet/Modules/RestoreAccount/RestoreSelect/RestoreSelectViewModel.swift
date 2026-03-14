@@ -1,25 +1,21 @@
-import Combine
 import MarketKit
+import RxCocoa
+import RxSwift
 import UIKit
 
 class RestoreSelectViewModel {
     private let service: RestoreSelectService
-    private var cancellables = Set<AnyCancellable>()
+    private let disposeBag = DisposeBag()
 
-    private let viewItemsSubject = CurrentValueSubject<[CoinToggleViewModel.ViewItem], Never>([])
-    private let disableBlockchainSubject = PassthroughSubject<String, Never>()
-    private let successSubject = PassthroughSubject<Void, Never>()
+    private let viewItemsRelay = BehaviorRelay<[CoinToggleViewModel.ViewItem]>(value: [])
+    private let disableBlockchainRelay = PublishRelay<String>()
+    private let successRelay = PublishRelay<Void>()
 
     init(service: RestoreSelectService) {
         self.service = service
 
-        service.itemsPublisher
-            .sink { [weak self] in self?.sync(items: $0) }
-            .store(in: &cancellables)
-
-        service.cancelEnableBlockchainPublisher
-            .sink { [weak self] in self?.disableBlockchainSubject.send($0.uid) }
-            .store(in: &cancellables)
+        subscribe(disposeBag, service.itemsObservable) { [weak self] in self?.sync(items: $0) }
+        subscribe(disposeBag, service.cancelEnableBlockchainObservable) { [weak self] in self?.disableBlockchainRelay.accept($0.uid) }
 
         sync(items: service.items)
     }
@@ -45,13 +41,13 @@ class RestoreSelectViewModel {
     }
 
     private func sync(items: [RestoreSelectService.Item]) {
-        viewItemsSubject.send(items.map { viewItem(item: $0) })
+        viewItemsRelay.accept(items.map { viewItem(item: $0) })
     }
 }
 
 extension RestoreSelectViewModel: ICoinToggleViewModel {
-    var viewItemsPublisher: AnyPublisher<[CoinToggleViewModel.ViewItem], Never> {
-        viewItemsSubject.eraseToAnyPublisher()
+    var viewItemsDriver: Driver<[CoinToggleViewModel.ViewItem]> {
+        viewItemsRelay.asDriver()
     }
 
     func onEnable(uid: String) {
@@ -72,20 +68,20 @@ extension RestoreSelectViewModel: ICoinToggleViewModel {
 }
 
 extension RestoreSelectViewModel {
-    var disableBlockchainPublisher: AnyPublisher<String, Never> {
-        disableBlockchainSubject.eraseToAnyPublisher()
+    var disableBlockchainSignal: Signal<String> {
+        disableBlockchainRelay.asSignal()
     }
 
-    var restoreEnabledPublisher: AnyPublisher<Bool, Never> {
-        service.canRestorePublisher.eraseToAnyPublisher()
+    var restoreEnabledDriver: Driver<Bool> {
+        service.canRestoreObservable.asDriver(onErrorJustReturn: false)
     }
 
-    var successPublisher: AnyPublisher<Void, Never> {
-        successSubject.eraseToAnyPublisher()
+    var successSignal: Signal<Void> {
+        successRelay.asSignal()
     }
 
     func onRestore() {
         service.restore()
-        successSubject.send(())
+        successRelay.accept(())
     }
 }

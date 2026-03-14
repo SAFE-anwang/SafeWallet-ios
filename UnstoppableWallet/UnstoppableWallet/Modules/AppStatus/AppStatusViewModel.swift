@@ -1,32 +1,15 @@
 import Foundation
 import MarketKit
 
-class AppStatusViewModel: ObservableObject {
-    private let systemInfoManager = Core.shared.systemInfoManager
-    private let appVersionStorage = Core.shared.appVersionStorage
-    private let accountManager = Core.shared.accountManager
-    private let walletManager = Core.shared.walletManager
-    private let adapterManager = Core.shared.adapterManager
-    private let logRecordManager = Core.shared.logRecordManager
-    private let evmBlockchainManager = Core.shared.evmBlockchainManager
-    private let marketKit = Core.shared.marketKit
-
+class AppStatusViewModel {
     private let dateFormatter = DateFormatter()
-    @Published private(set) var sections: DataStatus<[Section]> = .loading
+    private(set) var sections = [Section]()
 
-    init() {
+    init(systemInfoManager: SystemInfoManager, appVersionStorage: AppVersionStorage, accountManager: AccountManager,
+         walletManager: WalletManager, adapterManager: AdapterManager, logRecordManager: LogRecordManager,
+         evmBlockchainManager: EvmBlockchainManager, marketKit: MarketKit.Kit)
+    {
         dateFormatter.dateFormat = "dd MMM yyyy, HH:mm"
-        Task {
-            let sections = make()
-
-            DispatchQueue.main.async {
-                self.sections = .completed(sections)
-            }
-        }
-    }
-
-    private func make() -> [Section] {
-        var sections: [Section] = []
 
         sections.append(
             Section(
@@ -86,7 +69,7 @@ class AppStatusViewModel: ObservableObject {
             let blockchain = wallet.token.blockchain
 
             switch blockchain.type {
-            case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dash, .zcash, .ton, .monero, .zano:
+            case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dash, .zcash, .ton, .monero:
                 if let adapter = adapterManager.adapter(for: wallet) {
                     blockchainBlocks.append(block(blockchain: blockchain.name, statusInfo: adapter.statusInfo))
                 }
@@ -125,23 +108,21 @@ class AppStatusViewModel: ObservableObject {
             )
         )
 
-        let chainLogs = logRecordManager.logsGroupedBy(context: "Keychain")
+        let sendLogs = logRecordManager.logsGroupedBy(context: "Send")
 
-        if !chainLogs.isEmpty {
+        if !sendLogs.isEmpty {
             sections.append(
                 Section(
                     title: "Logs",
                     blocks: [
                         [
-                            .title(value: "Keychain"),
-                            .raw(text: build(logs: chainLogs, showBullet: true).trimmingCharacters(in: .whitespacesAndNewlines)),
+                            .title(value: "Send"),
+                            .raw(text: build(logs: sendLogs, showBullet: true).trimmingCharacters(in: .whitespacesAndNewlines)),
                         ],
                     ]
                 )
             )
         }
-
-        return sections
     }
 
     private func block(blockchain: String, statusInfo: [(String, Any)]) -> [Field] {
@@ -181,13 +162,9 @@ class AppStatusViewModel: ObservableObject {
     }
 
     var rawStatus: String {
-        guard let data = sections.data else {
-            return "Loading..."
-        }
-
         var rawInfo = ""
 
-        for section in data {
+        for section in sections {
             rawInfo += section.title + "\n"
 
             for block in section.blocks {

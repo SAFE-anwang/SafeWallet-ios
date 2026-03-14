@@ -1,131 +1,141 @@
 import EvmKit
 import Foundation
 import MarketKit
-import SwiftUI
 
 class Eip1559FeeSettingsViewModel: ObservableObject {
-    private let service: EvmTransactionService
+    let service: EvmTransactionService
     private let feeViewItemFactory: FeeViewItemFactory
     private let decimalParser = AmountDecimalParser()
-
-    @Published var baseFee: String?
-    @Published var maxFeeCautionState: FieldCautionState = .none
-    @Published var maxTipsCautionState: FieldCautionState = .none
-    @Published var applyEnabled = false
-    @Published var resetEnabled = false
-    @Published var cautions = [CautionNew]()
-
-    @Published var gasPrice: GasPrice? {
-        didSet {
-            sync()
-        }
-    }
-
-    @Published private var _maxFee: String = ""
-    var maxFee: Binding<String> {
-        Binding(
-            get: { self._maxFee },
-            set: { newValue in
-                self._maxFee = newValue
-                self.handleChange()
-            }
-        )
-    }
-
-    @Published private var _maxTips: String = ""
-    var maxTips: Binding<String> {
-        Binding(
-            get: { self._maxTips },
-            set: { newValue in
-                self._maxTips = newValue
-                self.handleChange()
-            }
-        )
-    }
 
     init(service: EvmTransactionService, feeViewItemFactory: FeeViewItemFactory) {
         self.service = service
         self.feeViewItemFactory = feeViewItemFactory
-        gasPrice = service.currentGasPrice
 
-        if case let .eip1559(maxFee, maxTips) = service.recommendedGasPrice {
-            let baseFeePerGas = (maxFee - maxTips) * 100 / GasPrice.eip1559SurchargeBasis
-            baseFee = feeViewItemFactory.decimalValue(value: baseFeePerGas).description
+        if case let .eip1559(recommendedMaxFeePerGas, _) = service.recommendedGasPrice {
+            let baseStep = recommendedMaxFeePerGas.significant(depth: FeeViewItemFactory.stepDepth)
+            baseFee = feeViewItemFactory.description(value: recommendedMaxFeePerGas, step: baseStep)
         }
 
-        if case let .eip1559(maxFee, maxTips) = gasPrice {
-            _maxFee = feeViewItemFactory.decimalValue(value: maxFee).description
-            _maxTips = feeViewItemFactory.decimalValue(value: maxTips).description
+        syncFromService()
+    }
+
+    @Published var baseFee: String = ""
+    @Published var maxFeeCautionState: FieldCautionState = .none
+    @Published var maxFee: String = "" {
+        didSet {
+            DispatchQueue.main.async { [weak self] in
+                self?.handleGasPrice()
+            }
         }
     }
 
+    @Published var maxTipsCautionState: FieldCautionState = .none
+    @Published var maxTips: String = "" {
+        didSet {
+            DispatchQueue.main.async { [weak self] in
+                self?.handleGasPrice()
+            }
+        }
+    }
+
+    @Published var nonceCautionState: FieldCautionState = .none
+    @Published var nonce: String = "" {
+        didSet {
+            DispatchQueue.main.async { [weak self] in
+                self?.handleNonce()
+            }
+        }
+    }
+
+    @Published var resetEnabled = false
+
+    private func syncFromService() {
+        if case let .eip1559(maxFee, maxTips) = service.gasPrice {
+            self.maxFee = feeViewItemFactory.decimalValue(value: maxFee).description
+            self.maxTips = feeViewItemFactory.decimalValue(value: maxTips).description
+        }
+
+        nonce = "\(service.nonce ?? 0)"
+        sync()
+    }
+
     private func sync() {
-        applyEnabled = service.currentGasPrice != gasPrice
-        resetEnabled = service.recommendedGasPrice != gasPrice
+        resetEnabled = service.modified
 
-        let warnings = EvmTransactionService.validateGasPrice(recommended: service.recommendedGasPrice, current: gasPrice)
-        cautions = warnings.map(\.caution)
-
-        if !warnings.isEmpty {
+        if service.warnings.contains(where: { $0 is EvmFeeModule.GasDataWarning }) {
             maxFeeCautionState = .caution(.warning)
             maxTipsCautionState = .caution(.warning)
         } else {
             maxFeeCautionState = .none
             maxTipsCautionState = .none
         }
+
+        if service.errors.contains(where: { $0 is NonceService.NonceError }) {
+            nonceCautionState = .caution(.error)
+        } else {
+            nonceCautionState = .none
+        }
     }
 
-    private func handleChange() {
-        guard let maxFeeDecimal = decimalParser.parseAnyDecimal(from: _maxFee),
-              let maxTipsDecimal = decimalParser.parseAnyDecimal(from: _maxTips)
+    private func handleGasPrice() {
+        guard let maxFeeDecimal = decimalParser.parseAnyDecimal(from: maxFee),
+              let maxTipsDecimal = decimalParser.parseAnyDecimal(from: maxTips)
         else {
             maxFeeCautionState = .caution(.error)
             maxTipsCautionState = .caution(.error)
             return
         }
 
-        gasPrice = .eip1559(
+        service.set(gasPrice: .eip1559(
             maxFeePerGas: feeViewItemFactory.intValue(value: maxFeeDecimal),
             maxPriorityFeePerGas: feeViewItemFactory.intValue(value: maxTipsDecimal)
-        )
+        ))
+        sync()
+    }
+
+    private func handleNonce() {
+        guard let intNonce = Int(nonce) else {
+            nonceCautionState = .caution(.error)
+            return
+        }
+
+        service.set(nonce: intNonce)
+        sync()
     }
 
     private func updateByStep(value: String?, direction: StepChangeButtonsViewDirection) -> Decimal? {
         guard let decimal = value.flatMap({ decimalParser.parseAnyDecimal(from: $0) }) else {
             return nil
         }
-
-        return feeViewItemFactory.updated(value: decimal, percent: 10, direction: direction)
+        // TODO: we can recognize the smallest significand digit, and increase/decrease by smallest interval
+        switch direction {
+        case .down: return max(decimal - 1, 0)
+        case .up: return decimal + 1
+        }
     }
 }
 
 extension Eip1559FeeSettingsViewModel {
     func stepChangeMaxFee(_ direction: StepChangeButtonsViewDirection) {
-        if let newValue = updateByStep(value: _maxFee, direction: direction) {
-            maxFee.wrappedValue = newValue.description
+        if let newValue = updateByStep(value: maxFee, direction: direction) {
+            maxFee = newValue.description
         }
     }
 
     func stepChangeMaxTips(_ direction: StepChangeButtonsViewDirection) {
-        if let newValue = updateByStep(value: _maxTips, direction: direction) {
-            maxTips.wrappedValue = newValue.description
+        if let newValue = updateByStep(value: maxTips, direction: direction) {
+            maxTips = newValue.description
+        }
+    }
+
+    func stepChangeNonce(_ direction: StepChangeButtonsViewDirection) {
+        if let newValue = updateByStep(value: nonce, direction: direction) {
+            nonce = newValue.description
         }
     }
 
     func onReset() {
-        if case let .eip1559(maxFee, maxTips) = service.recommendedGasPrice {
-            _maxFee = feeViewItemFactory.decimalValue(value: maxFee).description
-            _maxTips = feeViewItemFactory.decimalValue(value: maxTips).description
-        }
-
-        handleChange()
-    }
-
-    func apply() {
-        guard let gasPrice, let recommendedGasPrice = service.recommendedGasPrice else {
-            return
-        }
-
-        service.set(gasPrice: gasPrice == recommendedGasPrice ? nil : gasPrice)
+        service.useRecommended()
+        syncFromService()
     }
 }

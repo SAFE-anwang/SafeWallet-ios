@@ -16,7 +16,6 @@ class WalletConnectMainService {
     private let purchaseManager = Core.shared.purchaseManager
     private let dappProvider = WhitelistDappProvider(networkManager: Core.shared.networkManager)
     private let accountManager: AccountManager
-    private let securityManager: SecurityManager
     private let proposalHandler: IProposalHandler
 
     private var proposal: WalletConnectSign.Session.Proposal?
@@ -57,16 +56,15 @@ class WalletConnectMainService {
         }
     }
 
-    init(session: WalletConnectSign.Session? = nil, proposal: WalletConnectSign.Session.Proposal? = nil, service: WalletConnectService, reachabilityManager: IReachabilityManager, accountManager: AccountManager, securityManager: SecurityManager, proposalHandler: IProposalHandler) {
+    init(session: WalletConnectSign.Session? = nil, proposal: WalletConnectSign.Session.Proposal? = nil, service: WalletConnectService, reachabilityManager: IReachabilityManager, accountManager: AccountManager, proposalHandler: IProposalHandler) {
         self.session = session
         self.proposal = proposal
         self.service = service
         self.reachabilityManager = reachabilityManager
         self.accountManager = accountManager
-        self.securityManager = securityManager
         self.proposalHandler = proposalHandler
 
-        premiumEnabled = purchaseManager.activated(.scamProtection)
+        premiumEnabled = purchaseManager.activated(.vipSupport)
         loadWhitelist()
 
         subscribe(disposeBag, service.receiveProposalObservable) { [weak self] in
@@ -88,7 +86,7 @@ class WalletConnectMainService {
 
         purchaseManager.$activeFeatures
             .sink { [weak self] features in
-                self?.premiumEnabled = features.contains(.scamProtection)
+                self?.premiumEnabled = features.contains(.vipSupport)
             }
             .store(in: &cancellables)
 
@@ -166,11 +164,6 @@ class WalletConnectMainService {
     }
 
     private func syncWhitelist(url: String?) {
-        guard securityManager.scamProtectionEnabled else {
-            whitelistState = .disabled
-            return
-        }
-
         guard let url else {
             whitelistState = .notAvailable
             return

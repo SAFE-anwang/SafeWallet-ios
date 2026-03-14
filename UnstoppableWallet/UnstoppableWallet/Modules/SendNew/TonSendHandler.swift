@@ -155,7 +155,7 @@ extension TonSendHandler {
             return CautionNew(title: title, text: text, type: .error)
         }
 
-        func cautions(baseToken: Token, currency _: Currency, rates _: [String: Decimal]) -> [CautionNew] {
+        func cautions(baseToken: Token) -> [CautionNew] {
             var cautions = [CautionNew]()
 
             if let transactionError {
@@ -165,30 +165,29 @@ extension TonSendHandler {
             return cautions
         }
 
-        func flowSection(baseToken _: Token, currency: Currency, rates: [String: Decimal]) -> SendDataSection {
-            .init([
+        func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
+            var fields: [SendField] = [
                 .amount(
+                    title: "send.confirmation.you_send".localized,
                     token: token,
                     appValueType: .regular(appValue: AppValue(token: token, value: amount)),
                     currencyValue: rates[token.coin.uid].map { CurrencyValue(currency: currency, value: $0 * amount) },
+                    type: .neutral
                 ),
                 .address(
+                    title: "send.confirmation.to".localized,
                     value: address.toString(),
                     blockchainType: .ton
                 ),
-            ], isFlow: true)
-        }
-
-        func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
-            var fields = [SendField]()
+            ]
 
             if let memo {
-                fields.append(.simpleValue(title: "send.confirmation.memo".localized, value: memo))
+                fields.append(.levelValue(title: "send.confirmation.memo".localized, value: memo, level: .regular))
             }
 
             return [
-                flowSection(baseToken: baseToken, currency: currency, rates: rates),
-                .init(fields + feeFields(currency: currency, feeToken: baseToken, feeTokenRate: rates[token.coin.uid]), isMain: false),
+                .init(fields),
+                .init(feeFields(currency: currency, feeToken: baseToken, feeTokenRate: rates[token.coin.uid])),
             ]
         }
 
@@ -200,9 +199,12 @@ extension TonSendHandler {
                 let currencyValue = feeTokenRate.map { CurrencyValue(currency: currency, value: fee * $0) }
 
                 viewItems.append(
-                    .fee(
-                        title: ComponentInformedTitle("fee_settings.network_fee".localized, info: .fee),
-                        amountData: .init(appValue: appValue, currencyValue: currencyValue)
+                    .value(
+                        title: "fee_settings.network_fee".localized,
+                        description: .init(title: "fee_settings.network_fee".localized, description: "fee_settings.network_fee.info".localized),
+                        appValue: appValue,
+                        currencyValue: currencyValue,
+                        formatFull: true
                     )
                 )
             }

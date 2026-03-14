@@ -19,16 +19,18 @@ enum SendHandlerFactory {
             return StellarSendHandler.instance(data: data, token: token, memo: memo)
         case let .monero(token, amount, address, memo):
             return MoneroSendHandler.instance(token: token, amount: amount, address: address, memo: memo)
-        case let .zano(token, amount, address, memo):
-            return ZanoSendHandler.instance(token: token, feeToken: token, amount: amount, address: address, memo: memo)
-        case let .zanoAsset(token, baseToken, amount, address, memo):
-            return ZanoSendHandler.instance(token: token, feeToken: baseToken, amount: amount, address: address, memo: memo)
         case let .swap(tokenIn, tokenOut, amountIn, provider):
             return MultiSwapSendHandler.instance(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, provider: provider)
+        case let .liquidityAdd(token0, token1, amount0, amount1, provider, v3TickType):
+            return LiquidityAddSendHandler.instance(token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider, v3TickType: v3TickType)
         case let .walletConnect(request):
             return WalletConnectSendHandler.instance(request: request)
         case let .tonConnect(request):
             return try? TonConnectSendHandler.instance(request: request)
+        case let .evmSafe4TimeLock(blockchainType, transactionData, timeLock):
+            return EvmSendHandler.instance(blockchainType: blockchainType, transactionData: transactionData, timeLock: timeLock)
+        case let .crossChain(baseWallet, transactionData):
+            return CrossChainSendHandler.instance(baseWallet: baseWallet, transactionData: transactionData)
         }
     }
 
@@ -61,10 +63,6 @@ enum SendHandlerFactory {
 
         if let adapter = adapter as? MoneroAdapter {
             return MoneroPreSendHandler(token: wallet.token, adapter: adapter)
-        }
-
-        if let adapter = adapter as? ZanoAdapter {
-            return ZanoPreSendHandler(token: wallet.token, baseToken: adapter.baseToken, adapter: adapter)
         }
 
         return nil

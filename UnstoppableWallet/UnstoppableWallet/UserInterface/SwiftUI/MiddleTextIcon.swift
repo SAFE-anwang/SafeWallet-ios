@@ -10,7 +10,7 @@ struct MiddleTextIcon: View {
                 .multilineTextAlignment(.leading)
 
             if let icon {
-                ThemeImage(icon, size: .iconSize20)
+                Image(icon).icon(size: .iconSize20)
             }
         }
     }

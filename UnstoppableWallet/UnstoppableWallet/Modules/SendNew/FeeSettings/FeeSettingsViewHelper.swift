@@ -4,8 +4,14 @@ import MarketKit
 import SwiftUI
 
 class FeeSettingsViewHelper {
-    func feeAmount(gasPrice: GasPrice?, evmFeeData: EvmFeeData, feeToken: Token, currency: Currency, feeTokenRate: Decimal?) -> (FeeSettings.FeeValue, FeeSettings.FeeValue?, FeeSettings.FeeValue) {
-        guard let l2AmountData = evmFeeData.l2AmountData(gasPrice: gasPrice, feeToken: feeToken, currency: currency, feeTokenRate: feeTokenRate) else {
+    func feeAmount(feeToken: Token, currency: Currency, feeTokenRate: Decimal?, loading: Bool, feeData: FeeData?, gasPrice: GasPrice?) -> (FeeSettings.FeeValue, FeeSettings.FeeValue?, FeeSettings.FeeValue) {
+        guard !loading else {
+            return (.spinner, feeToken.blockchainType.rollupFeeContractAddress.flatMap { _ in .spinner }, .spinner)
+        }
+
+        guard case let .evm(evmFeeData) = feeData,
+              let l2AmountData = evmFeeData.l2AmountData(gasPrice: gasPrice, feeToken: feeToken, currency: currency, feeTokenRate: feeTokenRate)
+        else {
             return (.none, nil, .none)
         }
 
@@ -26,52 +32,53 @@ class FeeSettingsViewHelper {
         return (l2Value, l1Value, .value(primary: evmFeeData.gasLimit.description, secondary: nil))
     }
 
-    func feeAmount(fee: Decimal?, feeToken: Token, currency: Currency, feeTokenRate: Decimal?) -> FeeSettings.FeeValue {
-        guard let fee else {
+    func feeAmount(feeToken: Token, currency: Currency, feeTokenRate: Decimal?, loading: Bool, feeData: FeeData?) -> FeeSettings.FeeValue {
+        guard !loading else {
+            return .spinner
+        }
+
+        guard case let .bitcoin(sendInfo) = feeData,
+              let amountData = sendInfo.amountData(feeToken: feeToken, currency: currency, feeTokenRate: feeTokenRate)
+        else {
             return FeeSettings.FeeValue.none
         }
 
-        let appValue = AppValue(token: feeToken, value: fee)
-        let currencyValue = feeTokenRate.map { CurrencyValue(currency: currency, value: fee * $0) }
-
         return .value(
-            primary: appValue.formattedShort() ?? "",
-            secondary: currencyValue.flatMap { ValueFormatter.instance.formatShort(currencyValue: $0) } ?? "n/a".localized
+            primary: amountData.appValue.formattedShort() ?? "",
+            secondary: amountData.currencyValue.flatMap { ValueFormatter.instance.formatShort(currencyValue: $0) } ?? "n/a".localized
         )
     }
 
     @ViewBuilder func row(title: String, feeValue: FeeSettings.FeeValue, infoDescription: InfoDescription) -> some View {
-        Cell(
-            middle: {
-                MiddleTextIcon(text: title)
-                    .modifier(Informed(infoDescription: infoDescription, horizontalPadding: 0))
-            },
-            right: {
-                switch feeValue {
-                case .spinner:
-                    ProgressView().progressViewStyle(.circular)
-                case .none:
-                    RightMultiText(
-                        subtitleSB: "n/a".localized
-                    )
-                case let .value(primary, secondary):
-                    RightMultiText(
-                        subtitleSB: primary,
-                        description: secondary
-                    )
-                }
-            }
-        )
-    }
-
-    @ViewBuilder func headerRow(title: String, infoDescription: InfoDescription) -> some View {
-        HStack(spacing: 0) {
-            ThemeText(title, style: .subheadSB, colorStyle: .secondary)
+        HStack(spacing: .margin8) {
+            Text(title)
+                .textSubhead2()
                 .modifier(Informed(infoDescription: infoDescription))
 
             Spacer()
+
+            VStack(alignment: .trailing, spacing: 1) {
+                switch feeValue {
+                case .spinner: ProgressView().progressViewStyle(.circular)
+                case .none: Text("n/a".localized).textSubhead1(color: .themeLeah)
+                case let .value(primary, secondary):
+                    Text(primary).textSubhead1(color: .themeLeah)
+
+                    if let secondary {
+                        Text(secondary).textSubhead2()
+                    }
+                }
+            }
         }
-        .padding(.bottom, 12)
+        .padding(EdgeInsets(top: .margin12, leading: 0, bottom: .margin12, trailing: .margin16))
+        .frame(height: .heightCell56)
+    }
+
+    @ViewBuilder func headerRow(title: String, infoDescription: InfoDescription) -> some View {
+        Text(title)
+            .textSubhead1()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(Informed(infoDescription: infoDescription))
     }
 
     @ViewBuilder func inputNumberWithSteps(placeholder: String = "", text: Binding<String>, cautionState: Binding<FieldCautionState>, onTap: @escaping (StepChangeButtonsViewDirection) -> Void) -> some View {

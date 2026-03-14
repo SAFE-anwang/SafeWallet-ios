@@ -1,13 +1,10 @@
-import Combine
 import SwiftUI
 
 struct CoordinatorViewModifier: ViewModifier {
-    private let coordinator = Coordinator.shared
+    @ObservedObject private var coordinator = Coordinator.shared
     private let level: Int
 
-    @State private var currentType: Coordinator.RouteType?
-    @State private var sheetHeight: CGFloat?
-    @State private var cancellable: AnyCancellable?
+    @State private var sheetHeight: CGFloat = .zero
 
     init(level: Int = 0) {
         self.level = level
@@ -15,55 +12,46 @@ struct CoordinatorViewModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onAppear {
-                currentType = coordinator.route(at: level)?.type
-                cancellable = coordinator.publisher(for: level)
-                    .sink { currentType = $0 }
-            }
-            .onDisappear {
-                cancellable?.cancel()
-                cancellable = nil
-            }
-            .sheet(isPresented: binding(for: .sheet)) {
-                sheetContent()
-            }
-            .sheet(isPresented: binding(for: .bottomSheet)) {
-                bottomSheetContent()
-            }
-            .transparentFullScreenCover(isPresented: binding(for: .alert)) {
-                alertContent()
-            }
-    }
-
-    private func binding(for type: Coordinator.RouteType) -> Binding<Bool> {
-        Binding<Bool>(
-            get: {
-                currentType == type
-            },
-            set: { newValue in
-                if !newValue {
-                    coordinator.onRouteDismissed(at: level)
+            .sheet(isPresented: Binding<Bool>(
+                get: { coordinator.hasSheet(at: level) },
+                set: { newValue in
+                    if !newValue {
+                        coordinator.onRouteDismissed(at: level)
+                    }
+                }
+            )) {
+                if let route = coordinator.route(at: level) {
+                    route.content(isPresented: Binding<Bool>(
+                        get: { coordinator.hasSheet(at: level) },
+                        set: { newValue in
+                            if !newValue {
+                                coordinator.onRouteDismissed(at: level)
+                            }
+                        }
+                    ))
+                    .modifier(CoordinatorViewModifier(level: level + 1))
                 }
             }
-        )
-    }
+            .sheet(isPresented: Binding<Bool>(
+                get: { coordinator.hasBottomSheet(at: level) },
+                set: { newValue in
+                    if !newValue {
+                        coordinator.onRouteDismissed(at: level)
+                    }
+                }
+            )) {
+                if let route = coordinator.route(at: level) {
+                    ZStack {
+                        Color.themeLawrence.ignoresSafeArea()
 
-    private func sheetContent() -> some View {
-        Group {
-            if let route = coordinator.route(at: level) {
-                route.content(isPresented: binding(for: .sheet))
-                    .modifier(CoordinatorViewModifier(level: level + 1))
-            }
-        }
-    }
-
-    private func bottomSheetContent() -> some View {
-        Group {
-            if let route = coordinator.route(at: level) {
-                ZStack {
-                    Color.themeLawrence.ignoresSafeArea()
-
-                    route.content(isPresented: binding(for: .bottomSheet))
+                        route.content(isPresented: Binding<Bool>(
+                            get: { coordinator.hasBottomSheet(at: level) },
+                            set: { newValue in
+                                if !newValue {
+                                    coordinator.onRouteDismissed(at: level)
+                                }
+                            }
+                        ))
                         .fixedSize(horizontal: false, vertical: true)
                         .overlay {
                             GeometryReader { geometry in
@@ -71,27 +59,32 @@ struct CoordinatorViewModifier: ViewModifier {
                             }
                         }
                         .onPreferenceChange(InnerHeightPreferenceKey.self) { newHeight in
-                            handleHeightChange(newHeight)
+                            sheetHeight = newHeight
                         }
-                }
-                .presentationDetents([sheetHeight.map { .height($0) } ?? .medium])
-                .modifier(CoordinatorViewModifier(level: level + 1))
-            }
-        }
-    }
-
-    private func alertContent() -> some View {
-        Group {
-            if let route = coordinator.route(at: level) {
-                route.content(isPresented: binding(for: .alert))
+                    }
+                    .presentationDetents([.height(sheetHeight)])
                     .modifier(CoordinatorViewModifier(level: level + 1))
+                }
             }
-        }
-    }
-
-    private func handleHeightChange(_ newHeight: CGFloat) {
-        if sheetHeight != newHeight {
-            sheetHeight = newHeight
-        }
+            .transparentFullScreenCover(isPresented: Binding<Bool>(
+                get: { coordinator.hasAlert(at: level) },
+                set: { newValue in
+                    if !newValue {
+                        coordinator.onRouteDismissed(at: level)
+                    }
+                }
+            )) {
+                if let route = coordinator.route(at: level) {
+                    route.content(isPresented: Binding<Bool>(
+                        get: { coordinator.hasAlert(at: level) },
+                        set: { newValue in
+                            if !newValue {
+                                coordinator.onRouteDismissed(at: level)
+                            }
+                        }
+                    ))
+                    .modifier(CoordinatorViewModifier(level: level + 1))
+                }
+            }
     }
 }

@@ -24,58 +24,31 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLName</key>
-            <string>io.horizontalsystems.bank-wallet</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>unstoppable.money</string>
-            </array>
-        </dict>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLName</key>
-            <string>toncoin.deeplink</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>ton</string>
-            </array>
-        </dict>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLName</key>
-            <string>crypto.deeplinks</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>ethereum</string>
-                <string>bitcoin</string>
-                <string>litecoin</string>
-                <string>bitcoincash</string>
-                <string>ecash</string>
-                <string>tron</string>
-                <string>cosmos</string>
-                <string>dogecoin</string>
-                <string>xrpl</string>
-                <string>solana</string>
-                <string>near</string>
-                <string>zcash</string>
-                <string>monero</string>
-                <string>thorchain</string>
-                <string>maya</string>
-                <string>stellar</string>
-            </array>
-        </dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>io.horizontalsystems.bank-wallet</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>unstoppable.money</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>toncoin.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>ton</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ChainalysisApiKey</key>
 	<string>${chainalysis_api_key}</string>
-	<key>MerkleApiPath</key>
-	<string>${merkle_api_path}</string>
 	<key>DefaultPassphrase</key>
 	<string>${default_passphrase}</string>
 	<key>DefaultWatchAddress</key>
@@ -84,6 +57,8 @@
 	<string>${default_words}</string>
 	<key>DefiYieldApiKey</key>
 	<string>$(defiyield_api_key)</string>
+	<key>DonateEnabled</key>
+	<string>${donate_enabled}</string>
 	<key>EraZkSyncApiKeys</key>
 	<string>${era_zksync_api_keys}</string>
 	<key>EtherscanApiKeys</key>
@@ -92,16 +67,14 @@
 	<string>${ftmscan_api_keys}</string>
 	<key>GnosisscanApiKeys</key>
 	<string>${gnosisscan_api_keys}</string>
+	<key>BlockchairApiKey</key>
+	<string>${blockchair_api_key}</string>
 	<key>HashDitApiKey</key>
 	<string>${hashdit_api_key}</string>
 	<key>HsProviderApiKey</key>
 	<string>$(hs_provider_api_key)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>MayaAffiliate</key>
-	<string>${maya_affiliate}</string>
-	<key>MayaAffiliateBps</key>
-	<string>${maya_affiliate_bps}</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>googlechrome</string>
@@ -113,8 +86,12 @@
 	<true/>
 	<key>MarketApiUrl</key>
 	<string>${market_api_url}</string>
-	<key>SwapApiUrl</key>
-	<string>${swap_api_url}</string>
+	<key>MayaAffiliate</key>
+	<string>${maya_affiliate}</string>
+	<key>MayaAffiliateBps</key>
+	<string>${maya_affiliate_bps}</string>
+	<key>MerkleApiPath</key>
+	<string>${merkle_api_path}</string>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to camera to scan QR codes.</string>
 	<key>NSFaceIDUsageDescription</key>
@@ -173,6 +150,8 @@
 	<string>${ShowTestNetSwitcher}</string>
 	<key>SnowtraceApiKeys</key>
 	<string>${snowtrace_api_keys}</string>
+	<key>SwapEnabled</key>
+	<string>${swap_enabled}</string>
 	<key>ThorchainAffiliate</key>
 	<string>${thorchain_affiliate}</string>
 	<key>ThorchainAffiliateBps</key>
@@ -196,6 +175,8 @@
 	</dict>
 	<key>UIBackgroundModes</key>
 	<array/>
+	<key>UIDesignRequiresCompatibility</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -214,7 +195,5 @@
 	<string>${unstoppable_domains_api_key}</string>
 	<key>WallectConnectV2ProjectKey</key>
 	<string>${wallet_connect_v2_project_key}</string>
-	<key>USwapApiKey</key>
-	<string>${uswap_api_key}</string>
 </dict>
 </plist>

@@ -83,23 +83,19 @@ struct ListForEach<Content: View, Item: Hashable>: View {
 
     var body: some View {
         ForEach(items, id: \.self) { item in
-            view(item)
-        }
-        .onMove(perform: onMove)
-    }
+            VStack(spacing: 0) {
+                if items.first == item {
+                    HorizontalDivider()
+                }
 
-    @ViewBuilder private func view(_ item: Item) -> some View {
-        VStack(spacing: 0) {
-            if items.first == item {
+                itemContent(item)
+
                 HorizontalDivider()
             }
-
-            itemContent(item)
-
-            HorizontalDivider()
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
         }
-        .listRowBackground(Color.clear)
-        .listRowInsets(EdgeInsets())
-        .listRowSeparator(.hidden)
+        .onMove(perform: onMove)
     }
 }

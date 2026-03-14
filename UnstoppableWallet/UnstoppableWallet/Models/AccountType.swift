@@ -16,7 +16,7 @@ enum AccountType: Identifiable {
     case stellarAccount(accountId: String)
     case hdExtendedKey(key: HDExtendedKey)
     case btcAddress(address: String, blockchainType: BlockchainType, tokenType: TokenType)
-    case moneroWatchAccount(address: String, viewKey: String)
+    case moneroWatchAccount(address: String, viewKey: String, restoreHeight: Int)
 
     var id: Self {
         self
@@ -62,8 +62,8 @@ enum AccountType: Identifiable {
             privateData = key.serialized
         case let .btcAddress(address, blockchainType, tokenType):
             privateData = "\(address)&\(blockchainType.uid)|\(tokenType.id)".data(using: .utf8) ?? Data()
-        case let .moneroWatchAccount(address, viewKey):
-            privateData = "\(address)|\(viewKey)".data(using: .utf8) ?? Data()
+        case let .moneroWatchAccount(address, viewKey, restoreHeight):
+            privateData = "\(address)|\(viewKey)|\(restoreHeight)".data(using: .utf8) ?? Data()
         }
 
         if hashed {
@@ -81,11 +81,10 @@ enum AccountType: Identifiable {
             case (.bitcoinCash, .addressType): return true
             case (.ecash, .native): return true
             case (.litecoin, .derived): return true
+            case (.dogecoin, .native): return true
             case (.dash, .native): return true
             case (.zcash, .native): return true
-            case (.monero, .native): return true
-            case (.zano, .native): return true
-            case (.zano, .zanoAsset): return true
+            case (.monero, .native), (.monero, .unsupported(type: "native", reference: nil)): return true
             case (.ethereum, .native), (.ethereum, .eip20): return true
             case (.binanceSmartChain, .native), (.binanceSmartChain, .eip20): return true
             case (.polygon, .native), (.polygon, .eip20): return true
@@ -97,8 +96,10 @@ enum AccountType: Identifiable {
             case (.base, .native), (.base, .eip20): return true
             case (.zkSync, .native), (.zkSync, .eip20): return true
             case (.tron, .native), (.tron, .eip20): return true
+            case (.safe, .native), (.safe, .eip20): return true
+            case (.safe4, .native), (.safe4, .eip20): return true
             case (.ton, .native), (.ton, .jetton): return true
-            case (.stellar, .native), (.stellar, .stellar): return true
+            case (.stellar, .native), (.stellar, .stellar), (.stellar, .unsupported(type: "native", reference: nil)): return true
             default: return false
             }
         case let .hdExtendedKey(key):
@@ -113,14 +114,14 @@ enum AccountType: Identifiable {
                 }
 
                 return key.coinTypes.contains(where: { $0 == .litecoin })
-            case .bitcoinCash, .ecash, .dash:
+            case .bitcoinCash, .ecash, .dash, .dogecoin:
                 return key.purposes.contains(where: { $0 == .bip44 })
             default:
                 return false
             }
         case .evmPrivateKey, .evmAddress:
             switch (token.blockchainType, token.type) {
-            case (.ethereum, .native), (.ethereum, .eip20): return true
+            case (.ethereum, .native), (.ethereum, .eip20), (.safe4, .native): return true
             case (.binanceSmartChain, .native), (.binanceSmartChain, .eip20): return true
             case (.polygon, .native), (.polygon, .eip20): return true
             case (.avalanche, .native), (.avalanche, .eip20): return true
@@ -272,7 +273,7 @@ enum AccountType: Identifiable {
             }
         case let .btcAddress(address, _, _):
             return address
-        case let .moneroWatchAccount(address, _):
+        case let .moneroWatchAccount(address, _, _):
             return address
         default: return nil
         }
@@ -353,7 +354,7 @@ extension AccountType {
             }
         case .btcAddress:
             let (address, details) = split(string, separator: "&")
-            let (blockchainTypeUid, tokenTypeValue) = split(details, separator: "|")
+            let (tokenTypeValue, blockchainTypeUid) = split(details, separator: "|")
             guard let tokenType = TokenType(id: tokenTypeValue) else {
                 return nil
             }
@@ -377,15 +378,13 @@ extension AccountType {
         case .stellarAccount:
             return AccountType.stellarAccount(accountId: string)
         case .moneroWatchAccount:
-            let components = string.components(separatedBy: "|")
-            guard components.count >= 2 else {
+            let (address, remainder) = split(string, separator: "|")
+            let (viewKey, restoreHeight) = split(remainder, separator: "|")
+            guard let restoreHeightInt = Int(restoreHeight) else {
                 return nil
             }
 
-            let address = components[0]
-            let viewKey = components[1]
-
-            return AccountType.moneroWatchAccount(address: address, viewKey: viewKey)
+            return AccountType.moneroWatchAccount(address: address, viewKey: viewKey, restoreHeight: restoreHeightInt)
         }
     }
 
@@ -439,8 +438,8 @@ extension AccountType: Hashable {
             return lhsKey == rhsKey
         case let (.btcAddress(lhsAddress, lhsBlockchainType, lhsTokenType), .btcAddress(rhsAddress, rhsBlockchainType, rhsTokenType)):
             return lhsAddress == rhsAddress && lhsBlockchainType == rhsBlockchainType && lhsTokenType == rhsTokenType
-        case let (.moneroWatchAccount(lhsAddress, lhsViewKey), .moneroWatchAccount(rhsAddress, rhsViewKey)):
-            return lhsAddress == rhsAddress && lhsViewKey == rhsViewKey
+        case let (.moneroWatchAccount(lhsAddress, lhsViewKey, lhsRestoreHeight), .moneroWatchAccount(rhsAddress, rhsViewKey, rhsRestoreHeight)):
+            return lhsAddress == rhsAddress && lhsViewKey == rhsViewKey && lhsRestoreHeight == rhsRestoreHeight
         default: return false
         }
     }
@@ -478,10 +477,11 @@ extension AccountType: Hashable {
             hasher.combine(address)
             hasher.combine(blockchainType)
             hasher.combine(tokenType)
-        case let .moneroWatchAccount(address, viewKey):
+        case let .moneroWatchAccount(address, viewKey, restoreHeight):
             hasher.combine("moneroWatchWallet")
             hasher.combine(address)
             hasher.combine(viewKey)
+            hasher.combine(restoreHeight)
         }
     }
 }
@@ -491,7 +491,7 @@ extension AccountType {
         let data = try crypto.decrypt(passphrase: passphrase)
 
         guard let accountType = AccountType.decode(uniqueId: data, type: type) else {
-            throw CloudRestoreBackupListModule.RestoreError.invalidBackup
+            throw RestoreCloudModule.RestoreError.invalidBackup
         }
 
         return accountType

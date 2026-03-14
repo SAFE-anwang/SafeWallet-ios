@@ -9,11 +9,13 @@ class LocalStorage {
     private let mainShownOnceKey = "main_shown_once_key"
     private let jailbreakShownOnceKey = "jailbreak_shown_once_key"
     private let debugLogKey = "debug_log_key"
+    private let keyLockTimeEnabled = "lock_time_enabled"
     private let keyAppLaunchCount = "app_launch_count"
     private let keyRateAppLastRequestDate = "rate_app_last_request_date"
     private let keyZCashRewind = "z_cash_always_pending_rewind"
     private let keyDefaultProvider = "swap_provider"
     private let keyRemoteContactSync = "icloud-sync-value"
+    private let keyDefaultLiquidityProvider = "swap_liquidity_provider"
     private let keyUserChartIndicatorsSync = "user-chart-indicators"
     private let keyIndicatorsShown = "indicators-shown"
     private let keyTelegramSupportRequested = "telegram-support-requested"
@@ -22,17 +24,7 @@ class LocalStorage {
     private let keyPurchaseCancelled = "emulate-purchase-cancelled"
     private let keyHasBep2Token = "has-bep2-token"
     private let keyAmountRounding = "amount-rounding"
-    private let keyRecentlySent = "recently-sent"
     private let keyUseMevProtection = "use-mev-protection"
-    private let keyScamProtection = "scam-protection"
-    private let keySwapTermsAccepted = "swap-terms-accepted"
-    private let keySwapProvidersLastSyncTimestamp = "swap-providers-last-sync-timestamp"
-    private let keyUSwapProviders = "uswap-providers"
-    private let keySwapEnabled = "swap_enabled"
-    private let keyAppStateLastSyncTimestamp = "app-state-last-sync-timestamp"
-    private let keyForceEnableSwap = "force-enable-swap"
-
-    private let keyRecipientAddressCheck = "recipient-address-check"
 
     private let userDefaultsStorage: UserDefaultsStorage
 
@@ -60,6 +52,11 @@ extension LocalStorage {
     var jailbreakShownOnce: Bool {
         get { userDefaultsStorage.value(for: jailbreakShownOnceKey) ?? false }
         set { userDefaultsStorage.set(value: newValue, for: jailbreakShownOnceKey) }
+    }
+    
+    var lockTimeEnabled: Bool {
+        get { userDefaultsStorage.value(for: keyLockTimeEnabled) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyLockTimeEnabled) }
     }
 
     var remoteContactsSync: Bool {
@@ -92,7 +89,18 @@ extension LocalStorage {
         let key = [keyDefaultProvider, blockchainType.uid].joined(separator: "|")
         userDefaultsStorage.set(value: provider.rawValue, for: key)
     }
+    
+    func defaultLiquidityProvider(blockchainType: BlockchainType) -> SwapModule.Dex.Provider {
+        let key = [keyDefaultLiquidityProvider, blockchainType.uid].joined(separator: "|")
+        let raw: String? = userDefaultsStorage.value(for: key)
+        return (raw.flatMap { SwapModule.Dex.Provider(rawValue: $0) }) ?? blockchainType.allowedLiquidityProviders[0]
+    }
 
+    func setDefaultLiquidityProvider(blockchainType: BlockchainType, provider: SwapModule.Dex.Provider) {
+        let key = [keyDefaultLiquidityProvider, blockchainType.uid].joined(separator: "|")
+        userDefaultsStorage.set(value: provider.rawValue, for: key)
+    }
+    
     var chartIndicators: Data? {
         get { userDefaultsStorage.value(for: keyUserChartIndicatorsSync) }
         set { userDefaultsStorage.set(value: newValue, for: keyUserChartIndicatorsSync) }
@@ -148,63 +156,11 @@ extension LocalStorage {
         set { userDefaultsStorage.set(value: newValue, for: keyAmountRounding) }
     }
 
-    var recentlySent: Bool {
-        get { userDefaultsStorage.value(for: keyRecentlySent) ?? false }
-        set { userDefaultsStorage.set(value: newValue, for: keyRecentlySent) }
-    }
-
     var useMevProtection: Bool {
         get { userDefaultsStorage.value(for: keyUseMevProtection) ?? false }
-        set { userDefaultsStorage.set(value: newValue, for: keyUseMevProtection) }
-    }
-
-    var scamProtection: Bool {
-        get { userDefaultsStorage.value(for: keyScamProtection) ?? true }
-        set { userDefaultsStorage.set(value: newValue, for: keyScamProtection) }
-    }
-
-    var swapTermsAccepted: Bool {
-        get { userDefaultsStorage.value(for: keySwapTermsAccepted) ?? false }
-        set { userDefaultsStorage.set(value: newValue, for: keySwapTermsAccepted) }
-    }
-
-    var swapProvidersLastSyncTimestamp: TimeInterval? {
-        get { userDefaultsStorage.value(for: keySwapProvidersLastSyncTimestamp) }
-        set { userDefaultsStorage.set(value: newValue, for: keySwapProvidersLastSyncTimestamp) }
-    }
-
-    var uSwapProviders: String? {
-        get { userDefaultsStorage.value(for: keyUSwapProviders) }
-        set { userDefaultsStorage.set(value: newValue, for: keyUSwapProviders) }
-    }
-
-    var swapEnabled: Bool {
-        get { userDefaultsStorage.value(for: keySwapEnabled) ?? false }
-        set { userDefaultsStorage.set(value: newValue, for: keySwapEnabled) }
-    }
-
-    var appStateLastSyncTimestamp: TimeInterval? {
-        get { userDefaultsStorage.value(for: keyAppStateLastSyncTimestamp) }
-        set { userDefaultsStorage.set(value: newValue, for: keyAppStateLastSyncTimestamp) }
-    }
-
-    var forceEnableSwap: Bool {
-        get { userDefaultsStorage.value(for: keyForceEnableSwap) ?? false }
-        set { userDefaultsStorage.set(value: newValue, for: keyForceEnableSwap) }
-    }
-
-    // Send Security
-    var recipientAddressCheckOld: Bool? {
-        get { userDefaultsStorage.value(for: keyRecipientAddressCheck) }
-        set { userDefaultsStorage.set(value: newValue, for: keyRecipientAddressCheck) }
-    }
-
-    func addressSecurityIssue(_ type: AddressSecurityIssueType) -> Bool? {
-        userDefaultsStorage.value(for: type.storageKey)
-    }
-
-    func setAddressSecurityIssue(_ value: Bool, type: AddressSecurityIssueType) {
-        userDefaultsStorage.set(value: value, for: type.storageKey)
+        set {
+            userDefaultsStorage.set(value: newValue, for: keyUseMevProtection)
+        }
     }
 }
 

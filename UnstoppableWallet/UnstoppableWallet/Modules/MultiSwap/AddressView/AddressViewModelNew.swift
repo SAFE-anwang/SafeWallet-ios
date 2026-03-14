@@ -32,9 +32,9 @@ class AddressViewModelNew: ObservableObject {
 
     @Published var checkingState: RightChecking.State = .idle
 
-    init(initial: AddressInput.Initial, parserFilter: AddressParserFactory.ParserFilter?) {
+    init(initial: AddressInput.Initial) {
         addressUriParser = AddressParserFactory.parser(blockchainType: initial.blockchainType, tokenType: nil)
-        parserChain = AddressParserFactory.parserChain(blockchainType: initial.blockchainType, filter: parserFilter)
+        parserChain = AddressParserFactory.parserChain(blockchainType: initial.blockchainType)
 
         blockchainType = initial.blockchainType
 
@@ -130,8 +130,8 @@ class AddressViewModelNew: ObservableObject {
 extension AddressViewModelNew {
     // Shortcut section
     var shortcuts: [ShortCutButtonType] {
-        let items: [ShortCutButtonType] = showContacts ? [.icon("user")] : []
-        return items + [.icon("scan"), .text("button.paste".localized)]
+        let items: [ShortCutButtonType] = showContacts ? [.icon("user_20")] : []
+        return items + [.icon("qr_scan_20"), .text("button.paste".localized)]
     }
 
     func onTap(index: Int) {
@@ -145,8 +145,8 @@ extension AddressViewModelNew {
                 }
             }
         case 0:
-            Coordinator.shared.present { isPresented in
-                ScanQrViewNew(isPresented: isPresented) { [weak self] in
+            Coordinator.shared.present { _ in
+                ScanQrViewNew(pasteEnabled: true) { [weak self] in
                     self?.didFetch(qrText: $0)
                 }
                 .ignoresSafeArea()

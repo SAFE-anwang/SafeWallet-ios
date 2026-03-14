@@ -1,21 +1,19 @@
-import Combine
+import RxCocoa
+import RxSwift
 import UIKit
 
 class BlockchainTokensView {
     private let viewModel: BlockchainTokensViewModel
-    private var cancellables: [AnyCancellable] = []
+    private let disposeBag = DisposeBag()
 
     var onOpenController: ((UIViewController) -> Void)?
 
     init(viewModel: BlockchainTokensViewModel) {
         self.viewModel = viewModel
 
-        viewModel.openBottomSelectorPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] config in
-                self?.showBottomSelector(config: config)
-            }
-            .store(in: &cancellables)
+        subscribe(disposeBag, viewModel.openBottomSelectorSignal) { [weak self] config in
+            self?.showBottomSelector(config: config)
+        }
     }
 
     private func showBottomSelector(config: SelectorModule.MultiConfig) {

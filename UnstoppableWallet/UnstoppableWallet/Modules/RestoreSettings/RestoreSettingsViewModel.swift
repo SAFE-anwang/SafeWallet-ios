@@ -1,20 +1,20 @@
-import Combine
 import MarketKit
+import RxCocoa
+import RxRelay
+import RxSwift
 
 class RestoreSettingsViewModel {
     private let service: RestoreSettingsService
-    private var cancellables = Set<AnyCancellable>()
+    private let disposeBag = DisposeBag()
 
-    private let openBirthdayAlertSubject = PassthroughSubject<Token, Never>()
+    private let openBirthdayAlertRelay = PublishRelay<Token>()
 
     private var currentRequest: RestoreSettingsService.Request?
 
     init(service: RestoreSettingsService) {
         self.service = service
 
-        service.requestPublisher
-            .sink { [weak self] in self?.handle(request: $0) }
-            .store(in: &cancellables)
+        subscribe(disposeBag, service.requestObservable) { [weak self] in self?.handle(request: $0) }
     }
 
     private func handle(request: RestoreSettingsService.Request) {
@@ -22,14 +22,14 @@ class RestoreSettingsViewModel {
 
         switch request.type {
         case .birthdayHeight:
-            openBirthdayAlertSubject.send(request.token)
+            openBirthdayAlertRelay.accept(request.token)
         }
     }
 }
 
 extension RestoreSettingsViewModel {
-    var openBirthdayAlertPublisher: AnyPublisher<Token, Never> {
-        openBirthdayAlertSubject.eraseToAnyPublisher()
+    var openBirthdayAlertSignal: Signal<Token> {
+        openBirthdayAlertRelay.asSignal()
     }
 
     func onEnter(birthdayHeight: Int?) {

@@ -56,7 +56,11 @@ class LiquidityAddAllowanceHelper {
                 revokeRequired: allowance > 0 && mustBeRevoked(token: token)
             )
         } catch {
-            return .unknown
+            return .notEnough(
+                appValue: AppValue(token: token, value: 0),
+                spenderAddress: spenderAddress,
+                revokeRequired: false
+            )
         }
     }
 

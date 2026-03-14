@@ -9,6 +9,8 @@ import OneInchKit
 import RxRelay
 import RxSwift
 import UniswapKit
+import HsExtensions
+import web3swift
 
 class EvmKitManager {
     let chain: Chain
@@ -106,21 +108,21 @@ class EvmKitManager {
         }
 
         var merkleTransactionAdapter: MerkleTransactionAdapter?
-        if signer != nil,
-           let merkleAdapter = MerkleTransactionAdapter(
-               transactionManager: evmKit.transactionManager,
-               address: address,
-               chain: chain,
-               walletId: account.id,
-               logger: nil
-           )
-        {
-            evmKit.add(nonceProvider: merkleAdapter.blockchain)
-            evmKit.add(transactionSyncer: merkleAdapter.syncer)
-            evmKit.add(extraDecorator: merkleAdapter.syncer)
-
-            merkleTransactionAdapter = merkleAdapter
-        }
+//        if signer != nil,
+//           let merkleAdapter = MerkleTransactionAdapter(
+//               transactionManager: evmKit.transactionManager,
+//               address: address,
+//               chain: chain,
+//               walletId: account.id,
+//               logger: nil
+//           )
+//        {
+//            evmKit.add(nonceProvider: merkleAdapter.blockchain)
+//            evmKit.add(transactionSyncer: merkleAdapter.syncer)
+//            evmKit.add(extraDecorator: merkleAdapter.syncer)
+//
+//            merkleTransactionAdapter = merkleAdapter
+//        }
 
         UniswapKit.Kit.addDecorators(to: evmKit)
         try? KitV3.addDecorators(to: evmKit)
@@ -190,20 +192,20 @@ class EvmKitWrapper {
         guard let signer else {
             return Single.error(SignerError.signerNotSupported)
         }
-
         return evmKit.rawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
             .flatMap { [weak self] rawTransaction in
+                
                 guard let strongSelf = self else {
                     return Single.error(AppError.weakReference)
                 }
 
                 do {
                     let signature = try signer.signature(rawTransaction: rawTransaction)
-                    return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature)
+                    return strongSelf.evmKit.sendSingle(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey)
                 } catch {
                     return Single.error(error)
                 }
-            }
+        }
     }
 
     func sendCancel(hash: Data) async throws -> Bool {
@@ -212,6 +214,15 @@ class EvmKitWrapper {
         }
 
         return try await merkleTransactionAdapter.cancel(hash: hash)
+    }
+    
+    func sendSafe4LineLockSingle(type: web3swift.AccountManager.ContractType, transactionData: TransactionData) -> Single<String> {
+
+        guard let signer else {
+            return Single.error(SignerError.signerNotSupported)
+        }
+        
+        return evmKit.sendSafe4LinLockSingle(type: type, privateKey: signer.privateKey, transactionData: transactionData)
     }
 
     func send(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, privateSend: Bool, nonce: Int? = nil) async throws -> FullTransaction {
@@ -222,11 +233,34 @@ class EvmKitWrapper {
         let rawTransaction = try await evmKit.fetchRawTransaction(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
         let signature = try signer.signature(rawTransaction: rawTransaction)
 
-        if privateSend, let merkleTransactionAdapter {
-            return try await merkleTransactionAdapter.send(rawTransaction: rawTransaction, signature: signature)
+//        guard privateSend, let merkleTransactionAdapter else {
+            return try await evmKit.send(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey)
+//        }
+//        return try await merkleTransactionAdapter.send(rawTransaction: rawTransaction, signature: signature)
+    }
+    
+    func sendSafe4TimeLock(transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, timeLock: TimeLock) async throws -> FullTransaction {
+        guard let signer else {
+            throw SignerError.signerNotSupported
         }
-
-        return try await evmKit.send(rawTransaction: rawTransaction, signature: signature)
+        if case .native = timeLock.token {
+            let rawTransaction = try await evmKit.fetchRawTransactionSafe4TimeLock(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, lockDay: timeLock.lockDays)
+            let signature = try signer.signature(rawTransaction: rawTransaction)
+            return try await evmKit.sendSafe4TimeLock(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, lockDay: timeLock.lockDays)
+        }else {
+            throw SignerError.signerNotSupported
+        }
+    }
+    
+    func sendSrc20TimeLock(to: EvmKit.Address, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, timeLock: TimeLock) async throws -> String {
+        guard let signer else {
+            throw SignerError.signerNotSupported
+        }
+        if case let .src20(token) = timeLock.token {
+            return try await evmKit.src20TimeLock(privateKey: signer.privateKey, token: token, to: to, amount: timeLock.value, lockDays: timeLock.lockDays)
+        }else {
+            throw SignerError.signerNotSupported
+        }
     }
 }
 

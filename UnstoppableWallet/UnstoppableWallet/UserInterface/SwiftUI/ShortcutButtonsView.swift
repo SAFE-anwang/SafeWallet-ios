@@ -13,20 +13,29 @@ struct ShortcutButtonsView<Content: View>: View {
             content
 
             if showDelete {
-                IconButton(icon: "trash", style: .secondary, size: .small) {
+                Button(action: {
                     onTapDelete()
-                }
+                }, label: {
+                    Image("trash_20").renderingMode(.template)
+                })
+                .buttonStyle(SecondaryCircleButtonStyle(style: .default))
             } else {
                 ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                     switch item {
                     case let .text(title):
-                        ThemeButton(text: title, style: .secondary, size: .small) {
+                        Button(action: {
                             onTap(index)
-                        }
+                        }, label: {
+                            Text(title)
+                        })
+                        .buttonStyle(SecondaryButtonStyle(style: .default))
                     case let .icon(name):
-                        IconButton(icon: name, style: .secondary, size: .small) {
+                        Button(action: {
                             onTap(index)
-                        }
+                        }, label: {
+                            Image(name).renderingMode(.template)
+                        })
+                        .buttonStyle(SecondaryCircleButtonStyle(style: .default))
                     }
                 }
             }

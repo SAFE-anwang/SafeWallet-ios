@@ -110,7 +110,7 @@ struct TransactionsView: View {
                     IconView(url: url, alternativeUrl: alternativeUrl, placeholderImage: placeholderImageName, type: type)
                 case let .localIcon(imageName):
                     if let imageName {
-                        Image(imageName).themeIcon(color: .themeLeah)
+                        Image(imageName)//.themeIcon(color: .themeLeah)
                     }
                 case let .doubleIcon(frontType, frontUrl, frontAlternativeUrl, frontPlaceholder, backType, backUrl, backAlternativeUrl, backPlaceholder):
                     ZStack {

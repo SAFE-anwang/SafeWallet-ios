@@ -32,7 +32,7 @@ extension ShieldSendHandler: ISendHandler {
 
         var transactionError: Error?
         let fee = proposal.totalFeeRequired().decimalValue.decimalValue
-        if ZcashAdapter.minimalThreshold >= adapter.zCashBalanceData.transparent {
+        if ZcashAdapter.minimalThreshold >= adapter.zcashBalanceData.transparent {
             transactionError = AppError.zcash(reason: .notEnough)
         }
 
@@ -92,7 +92,7 @@ extension ShieldSendHandler {
             [token.coin]
         }
 
-        func cautions(baseToken: Token, currency _: Currency, rates _: [String: Decimal]) -> [CautionNew] {
+        func cautions(baseToken: Token) -> [CautionNew] {
             var cautions = [CautionNew]()
 
             if let transactionError {
@@ -103,36 +103,43 @@ extension ShieldSendHandler {
         }
 
         func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
-            var flowFields = [SendField]()
-            flowFields.append(.amount(
-                token: token,
-                appValueType: .regular(appValue: AppValue(token: token, value: amount)),
-                currencyValue: rates[token.coin.uid].map { CurrencyValue(currency: currency, value: $0 * amount) },
-            ))
+            var fields: [SendField] = [
+                .amount(
+                    title: "send.confirmation.you_send".localized,
+                    token: token,
+                    appValueType: .regular(appValue: AppValue(token: token, value: amount)),
+                    currencyValue: rates[token.coin.uid].map { CurrencyValue(currency: currency, value: $0 * amount) },
+                    type: .neutral
+                ),
+                .note(iconName: "arrow_return_24", title: "send.confirmation.send_to_own".localized),
+            ]
             if let recipient {
-                flowFields.append(
-                    .selfAddress(value: recipient.stringEncoded)
+                fields.append(
+                    .address(
+                        title: "send.confirmation.from".localized,
+                        value: recipient.stringEncoded,
+                        blockchainType: .zcash
+                    )
                 )
             }
 
-            var fields = [SendField]()
-
             if let memo {
-                fields.append(.simpleValue(title: "send.confirmation.memo".localized, value: memo))
+                fields.append(.levelValue(title: "send.confirmation.memo".localized, value: memo, level: .regular))
             }
 
             let fee = proposal.totalFeeRequired().decimalValue.decimalValue
-            let appValue = AppValue(token: baseToken, value: fee)
-            let currencyValue = rates[baseToken.coin.uid].map { CurrencyValue(currency: currency, value: fee * $0) }
 
             return [
-                .init(flowFields, isFlow: true),
-                .init(fields + [
-                    .fee(
-                        title: ComponentInformedTitle("fee_settings.network_fee".localized, info: .fee),
-                        amountData: .init(appValue: appValue, currencyValue: currencyValue)
+                .init(fields),
+                .init([
+                    .value(
+                        title: "fee_settings.network_fee".localized,
+                        description: .init(title: "fee_settings.network_fee".localized, description: "fee_settings.network_fee.info".localized),
+                        appValue: AppValue(token: baseToken, value: fee),
+                        currencyValue: rates[baseToken.coin.uid].map { CurrencyValue(currency: currency, value: fee * $0) },
+                        formatFull: true
                     ),
-                ], isMain: false),
+                ]),
             ]
         }
 

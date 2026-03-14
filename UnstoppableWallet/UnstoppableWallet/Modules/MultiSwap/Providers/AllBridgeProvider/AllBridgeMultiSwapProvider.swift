@@ -1,6 +1,5 @@
 import Alamofire
 import BigInt
-import Combine
 import EvmKit
 import Foundation
 import HsToolKit
@@ -11,8 +10,6 @@ import SwiftUI
 import TronKit
 
 class AllBridgeMultiSwapProvider: IMultiSwapProvider {
-    private let assetMapExpiration: TimeInterval = 60 * 60
-
     //    private let baseUrl = "https://allbridge.io/"
     private let baseUrl = "https://allbridge.blocksdecoded.com"
     private let blockchainTypes: [String: BlockchainType] = [
@@ -58,44 +55,40 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
 
     private let allowanceHelper = MultiSwapAllowanceHelper()
     private let marketKit = Core.shared.marketKit
-    private let networkManager = Core.shared.networkManager
-//    private let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
+    private let networkManager: NetworkManager
     private let evmBlockchainManager = Core.shared.evmBlockchainManager
     private let tronKitManager = Core.shared.tronAccountManager.tronKitManager
     private let stellarKitManager = Core.shared.stellarKitManager
-    private let swapAssetStorage = Core.shared.swapAssetStorage
+    private let localStorage = Core.shared.localStorage
     private let evmFeeEstimator = EvmFeeEstimator()
-    private var logger: Logger?
+    private let logger: Logger?
 
-    private var assetMap = [String: Asset]()
-    private let syncSubject = PassthroughSubject<Void, Never>()
+    private let storage: MultiSwapSettingStorage
 
-    init() {
-        assetMap = (try? swapAssetStorage.swapAssetMap(provider: id, as: Asset.self)) ?? [:]
-        syncAssets()
+    private var tokenPairs: [Token: AbToken] = [:]
+    @Published private var useMevProtection: Bool = false
+
+    init(storage: MultiSwapSettingStorage, logger: Logger? = nil) {
+        self.storage = storage
+        self.logger = logger
+        networkManager = NetworkManager(logger: logger)
+
+        syncPools()
     }
 
-    var id: String { "allbridge" }
-    var name: String { "AllBridge" }
-    var type: SwapProviderType { .dex }
-    var aml: Bool { true }
-    var icon: String { "swap_provider_allbridge" }
-
-    var syncPublisher: AnyPublisher<Void, Never>? {
-        syncSubject.eraseToAnyPublisher()
+    var id: String {
+        "allbridge"
     }
 
-    func slippageSupported(tokenIn: Token, tokenOut: Token) -> Bool {
-        tokenIn.blockchainType == tokenOut.blockchainType
+    var name: String {
+        "AllBridge"
     }
 
-    private func syncAssets() {
-        let lastSyncTimetamp = try? swapAssetStorage.lastSyncTimetamp(provider: id)
+    var icon: String {
+        "allbridge_32"
+    }
 
-        if let lastSyncTimetamp, Date().timeIntervalSince1970 - lastSyncTimetamp < assetMapExpiration {
-            return
-        }
-
+    private func syncPools() {
         Task { [weak self, networkManager, baseUrl] in
             do {
                 let abTokens: [AbToken] = try await networkManager.fetch(url: "\(baseUrl)/tokens")
@@ -108,7 +101,7 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
     }
 
     private func sync(abTokens: [AbToken]) {
-        var assetMap = [String: Asset]()
+        var pairs = [Token: AbToken]()
 
         for abToken in abTokens {
             guard let blockchainType = blockchainTypes[abToken.chainSymbol] else {
@@ -128,33 +121,29 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
                 }
             }
 
-            if let tokenType {
-                let tokenQuery = TokenQuery(blockchainType: blockchainType, tokenType: tokenType)
-                assetMap[tokenQuery.id.lowercased()] = Asset(tokenAddress: abToken.tokenAddress, bridgeAddress: abToken.bridgeAddress)
+            if let tokenType, let token = try? marketKit.token(query: .init(blockchainType: blockchainType, tokenType: tokenType)) {
+                pairs[token] = abToken
             }
         }
 
-        logger?.log(level: .debug, message: "AllBridge: Create \(assetMap.count) pairs.")
-
-        try? swapAssetStorage.save(swapAssetMap: assetMap, provider: id)
-        try? swapAssetStorage.save(lastSyncTimestamp: Date().timeIntervalSince1970, provider: id)
-
-        DispatchQueue.main.async {
-            self.assetMap = assetMap
-            self.syncSubject.send()
-        }
+        logger?.log(level: .debug, message: "AllBridge: Create \(pairs.count) pairs.")
+        tokenPairs = pairs
     }
 
     func supports(tokenIn: Token, tokenOut: Token) -> Bool {
-        assetMap[tokenIn.tokenQuery.id.lowercased()] != nil && assetMap[tokenOut.tokenQuery.id.lowercased()] != nil
+        tokenPairs[tokenIn] != nil && tokenPairs[tokenOut] != nil
     }
 
-    private func resolveDestination(recipient: String?, token: Token) async throws -> String {
-        if let recipient {
-            return recipient
+    private var slippage: Decimal {
+        storage.value(for: MultiSwapSettingStorage.LegacySetting.slippage) ?? MultiSwapSlippage.default
+    }
+
+    private func resolveDestination(token: Token) throws -> String {
+        if let recipient = storage.recipient(blockchainType: token.blockchainType) {
+            return recipient.raw
         }
 
-        return try await DestinationHelper.resolveDestination(token: token).address
+        return try DestinationHelper.resolveDestination(token: token)
     }
 
     private func proxyFee(proxyAddress _: String, amountIn: Decimal) -> Decimal {
@@ -183,19 +172,19 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
     }
 
     private func estimateAmountOut(tokenIn: Token, tokenOut: Token, amountIn: Decimal) async throws -> Decimal {
-        guard let assetIn = assetMap[tokenIn.tokenQuery.id.lowercased()] else {
+        guard let abTokenIn = tokenPairs[tokenIn] else {
             throw SwapError.unsupportedTokenIn
         }
 
-        guard let assetOut = assetMap[tokenOut.tokenQuery.id.lowercased()] else {
+        guard let abTokenOut = tokenPairs[tokenOut] else {
             throw SwapError.unsupportedTokenOut
         }
 
-        let sourceToken = assetIn.tokenAddress
-        let destinationToken = assetOut.tokenAddress
+        let sourceToken = abTokenIn.tokenAddress
+        let destinationToken = abTokenOut.tokenAddress
 
         var resAmountIn = amountIn
-        let bridgeAddress = assetIn.bridgeAddress
+        let bridgeAddress = abTokenIn.bridgeAddress
 
         if let proxyAddress = proxies[bridgeAddress] {
             let proxyFee = proxyFee(proxyAddress: proxyAddress, amountIn: amountIn)
@@ -222,8 +211,8 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
         return info.estimatedAmount.min.float
     }
 
-    func quote(tokenIn: Token, tokenOut: Token, amountIn: Decimal) async throws -> MultiSwapQuote {
-        guard let assetIn = assetMap[tokenIn.tokenQuery.id.lowercased()] else {
+    func quote(tokenIn: Token, tokenOut: Token, amountIn: Decimal) async throws -> IMultiSwapQuote {
+        guard let abTokenIn = tokenPairs[tokenIn] else {
             throw SwapError.unsupportedTokenIn
         }
 
@@ -233,7 +222,7 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
         logger?.log(level: .debug, message: "AllBridge: TokenIn: \(tokenIn.coin.code) | TokenOut: \(tokenOut.coin.code)")
         logger?.log(level: .debug, message: "AllBridge: Quote Crosschain: \(crosschain) | amountOut = \(amountOut.description)")
 
-        let bridgeAddress = assetIn.bridgeAddress
+        let bridgeAddress = abTokenIn.bridgeAddress
 
         if tokenIn.blockchainType.isEvm {
             let router = proxies[bridgeAddress] ?? bridgeAddress
@@ -241,25 +230,42 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
             let state = await allowanceHelper.allowanceState(spenderAddress: .init(raw: router), token: tokenIn, amount: amountIn)
             logger?.log(level: .debug, message: "AllBridge: Allowance = \(state)")
 
-            return EvmMultiSwapQuote(expectedBuyAmount: amountOut, allowanceState: state)
+            return AllBridgeMultiSwapEvmQuote(
+                expectedAmountOut: amountOut,
+                crosschain: crosschain,
+                recipient: storage.recipient(blockchainType: tokenOut.blockchainType),
+                slippage: slippage,
+                allowanceState: state
+            )
         } else if tokenIn.blockchainType == .tron {
             let state = await allowanceHelper.allowanceState(spenderAddress: .init(raw: bridgeAddress), token: tokenIn, amount: amountIn)
             logger?.log(level: .debug, message: "AllBridge: Allowance = \(state)")
 
-            return EvmMultiSwapQuote(expectedBuyAmount: amountOut, allowanceState: state)
+            return AllBridgeMultiSwapEvmQuote(
+                expectedAmountOut: amountOut,
+                crosschain: crosschain,
+                recipient: storage.recipient(blockchainType: tokenOut.blockchainType),
+                slippage: slippage,
+                allowanceState: state
+            )
         } else if tokenIn.blockchainType == .stellar {
-            return MultiSwapQuote(expectedBuyAmount: amountOut)
+            return AllBridgeMultiSwapStellarQuote(
+                expectedAmountOut: amountOut,
+                crosschain: crosschain,
+                recipient: storage.recipient(blockchainType: tokenOut.blockchainType),
+                slippage: slippage
+            )
         }
 
         throw SwapError.unsupportedTokenIn
     }
 
-    private func transactionParameters(tokenIn: Token, tokenOut: Token, recipient: String?, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> Parameters {
-        guard let assetIn = assetMap[tokenIn.tokenQuery.id.lowercased()] else {
+    private func transactionParameters(tokenIn: Token, tokenOut: Token, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) throws -> Parameters {
+        guard let abTokenIn = tokenPairs[tokenIn] else {
             throw SwapError.unsupportedTokenIn
         }
 
-        guard let assetOut = assetMap[tokenOut.tokenQuery.id.lowercased()] else {
+        guard let abTokenOut = tokenPairs[tokenOut] else {
             throw SwapError.unsupportedTokenOut
         }
 
@@ -267,8 +273,8 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
             throw SwapError.invalidAmount
         }
 
-        let sender = try await resolveDestination(recipient: recipient, token: tokenIn)
-        let recipient = try await resolveDestination(recipient: recipient, token: tokenOut)
+        let sender = try resolveDestination(token: tokenIn)
+        let recipient = try resolveDestination(token: tokenOut)
 
         guard let amountOutMinInt = tokenOut.rawAmount(expectedAmountOutMin) else {
             throw SwapError.invalidAmount
@@ -278,8 +284,8 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
             "amount": amount.description,
             "sender": sender,
             "recipient": recipient,
-            "sourceToken": assetIn.tokenAddress,
-            "destinationToken": assetOut.tokenAddress,
+            "sourceToken": abTokenIn.tokenAddress,
+            "destinationToken": abTokenOut.tokenAddress,
         ]
 
         if crosschain {
@@ -292,23 +298,23 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
         return parameters
     }
 
-    func fetchTransactionData<T: ImmutableMappable>(tokenIn: Token, tokenOut: Token, recipient: String?, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> T {
-        let parameters = try await transactionParameters(tokenIn: tokenIn, tokenOut: tokenOut, recipient: recipient, crosschain: crosschain, amountIn: amountIn, expectedAmountOutMin: expectedAmountOutMin)
+    func fetchTransactionData<T: ImmutableMappable>(tokenIn: Token, tokenOut: Token, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> T {
+        let parameters = try transactionParameters(tokenIn: tokenIn, tokenOut: tokenOut, crosschain: crosschain, amountIn: amountIn, expectedAmountOutMin: expectedAmountOutMin)
 
         let path = crosschain ? "bridge" : "swap"
 
         return try await networkManager.fetch(url: "\(baseUrl)/raw/\(path)", parameters: parameters)
     }
 
-    func fetchStellarData(tokenIn: Token, tokenOut: Token, recipient: String?, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> Data {
-        let parameters = try await transactionParameters(tokenIn: tokenIn, tokenOut: tokenOut, recipient: recipient, crosschain: crosschain, amountIn: amountIn, expectedAmountOutMin: expectedAmountOutMin)
+    func fetchStellarData(tokenIn: Token, tokenOut: Token, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> Data {
+        let parameters = try transactionParameters(tokenIn: tokenIn, tokenOut: tokenOut, crosschain: crosschain, amountIn: amountIn, expectedAmountOutMin: expectedAmountOutMin)
 
         let path = crosschain ? "bridge" : "swap"
 
         return try await networkManager.fetchData(url: "\(baseUrl)/raw/\(path)", parameters: parameters)
     }
 
-    func confirmationQuote(tokenIn: Token, tokenOut: Token, amountIn: Decimal, slippage: Decimal, recipient: String?, transactionSettings: TransactionSettings?) async throws -> SwapFinalQuote {
+    func confirmationQuote(tokenIn: Token, tokenOut: Token, amountIn: Decimal, transactionSettings: TransactionSettings?) async throws -> IMultiSwapConfirmationQuote {
         let crosschain = tokenIn.blockchainType != tokenOut.blockchainType
 
         let amountOut = try await estimateAmountOut(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn)
@@ -317,7 +323,6 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
             let evmResponse: EvmSwapResponse = try await fetchTransactionData(
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
-                recipient: recipient,
                 crosschain: crosschain,
                 amountIn: amountIn,
                 expectedAmountOutMin: amountOut
@@ -338,27 +343,33 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
             let gasPriceData = transactionSettings?.gasPriceData
             var evmFeeData: EvmFeeData?
             var transactionError: Error?
+            var insufficientFeeBalance = false
 
             if let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper, let gasPriceData {
                 do {
-                    let _evmFeeData = try await evmFeeEstimator.estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData)
-                    evmFeeData = _evmFeeData
+                    evmFeeData = try await evmFeeEstimator.estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData)
+
+                    let evmBalance = evmKitWrapper.evmKit.accountState?.balance ?? 0
+                    let feeAmount = BigUInt((evmFeeData?.gasLimit ?? 0) * gasPriceData.userDefined.max)
+                    let txAmount = transactionData.value
+                    insufficientFeeBalance = txAmount + feeAmount > evmBalance
 
                     logger?.log(level: .debug, message: "AllBridge: EvmFeeData: \(evmFeeData?.gasLimit.description ?? "N/A") \(evmFeeData?.surchargedGasLimit.description ?? "N/A") \(evmFeeData?.l1Fee?.description ?? "N/A")")
-
-                    try BaseEvmMultiSwapProvider.validateBalance(evmKitWrapper: evmKitWrapper, transactionData: transactionData, evmFeeData: _evmFeeData, gasPriceData: gasPriceData)
+                    logger?.log(level: .debug, message: "AllBridge: EvmBalance = \(evmBalance.description) >= tx:\(txAmount.description) + fee:\(feeAmount.description)")
                 } catch {
                     transactionError = error
                 }
             }
 
-            return EvmSwapFinalQuote(
-                expectedBuyAmount: amountOut,
+            return AllBridgeMultiSwapEvmConfirmationQuote(
+                amountIn: amountIn,
+                expectedAmountOut: amountOut,
+                recipient: storage.recipient(blockchainType: blockchainType),
+                crosschain: crosschain,
+                slippage: slippage,
                 transactionData: transactionData,
+                insufficientFeeBalance: insufficientFeeBalance,
                 transactionError: transactionError,
-                slippage: crosschain ? nil : slippage,
-                recipient: recipient,
-                estimatedTime: crosschain ? nil : blockchainType.blockTime,
                 gasPrice: gasPriceData?.userDefined,
                 evmFeeData: evmFeeData,
                 nonce: transactionSettings?.nonce
@@ -367,7 +378,6 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
             let createdTransaction: TronKit.CreatedTransactionResponse = try await fetchTransactionData(
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
-                recipient: recipient,
                 crosschain: crosschain,
                 amountIn: amountIn,
                 expectedAmountOutMin: amountOut
@@ -379,31 +389,40 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
 
             if let tronKitWrapper = tronKitManager.tronKitWrapper {
                 do {
-                    let result = try await TronSendHelper.estimateFees(
-                        createdTransaction: createdTransaction,
-                        tronKit: tronKitWrapper.tronKit,
-                        tokenIn: tokenIn,
-                        amountIn: amountIn
-                    )
+                    let tronKit = tronKitWrapper.tronKit
+                    let trxBalance = tronKit.trxBalance
 
-                    fees = result.fees
-                    totalFees = result.totalFees
-                    transactionError = result.transactionError
+                    let _fees = try await tronKit.estimateFee(createdTransaction: createdTransaction)
+                    let _totalFees = _fees.calculateTotalFees()
 
-                    logger?.log(level: .debug, message: "AllBridge: TronFeeData: \(totalFees?.description ?? "N/A") | totalAmount: \(result.totalAmount.description)")
-                    logger?.log(level: .debug, message: "AllBridge: TronBalance = \(tronKitWrapper.tronKit.trxBalance.description) >= tx:\(result.totalAmount.description)")
+                    var totalAmount = 0
+                    if tokenIn.type.isNative, let sendAmount = tokenIn.rawAmount(amountIn), let sendAmountInt = Int(sendAmount.description) {
+                        totalAmount += sendAmountInt
+                        logger?.log(level: .debug, message: "Append to total amount TXR amountIn: \(sendAmountInt)")
+                    }
+
+                    totalAmount += _totalFees
+                    fees = _fees
+                    totalFees = _totalFees
+
+                    if trxBalance < totalAmount {
+                        throw TronSendHandler.TransactionError.insufficientBalance(balance: trxBalance)
+                    }
+
+                    logger?.log(level: .debug, message: "AllBridge: TronFeeData: \(totalFees?.description ?? "N/A") | totalAmount: \(totalAmount.description)")
+                    logger?.log(level: .debug, message: "AllBridge: TronBalance = \(trxBalance.description) >= tx:\(totalAmount.description)")
                 } catch {
                     logger?.log(level: .error, message: "AllBridge: error = \(error)")
                     transactionError = error
                 }
             }
 
-            return TronSwapFinalQuote(
+            return AllBridgeMultiSwapTronConfirmationQuote(
                 amountIn: amountIn,
                 expectedAmountOut: amountOut,
-                recipient: recipient,
-                slippage: crosschain ? nil : slippage,
-                estimatedTime: crosschain ? nil : BlockchainType.tron.blockTime,
+                recipient: storage.recipient(blockchainType: tokenIn.blockchainType),
+                crosschain: crosschain,
+                slippage: slippage,
                 createdTransaction: createdTransaction,
                 fees: fees,
                 transactionError: transactionError
@@ -412,7 +431,6 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
             let transactionEnvelopeData: Data = try await fetchStellarData(
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
-                recipient: recipient,
                 crosschain: crosschain,
                 amountIn: amountIn,
                 expectedAmountOutMin: amountOut
@@ -444,14 +462,13 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
                 transactionError = error
             }
 
-            return StellarSwapFinalQuote(
+            return AllBridgeMultiSwapStellarConfirmationQuote(
                 amountIn: amountIn,
                 expectedAmountOut: amountOut,
-                recipient: recipient,
-                slippage: crosschain ? nil : slippage,
-                estimatedTime: crosschain ? nil : BlockchainType.stellar.blockTime,
-                transactionData: .envelope(transactionEnvelope),
-                token: tokenIn,
+                recipient: storage.recipient(blockchainType: tokenIn.blockchainType),
+                crosschain: crosschain,
+                slippage: slippage,
+                transactionEnvelope: transactionEnvelope,
                 fee: fee,
                 transactionError: transactionError
             )
@@ -460,8 +477,121 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
         throw SwapError.convertionError
     }
 
+    func otherSections(tokenIn: Token, tokenOut _: Token, amountIn _: Decimal, transactionSettings _: TransactionSettings?) -> [SendDataSection] {
+        guard MerkleTransactionAdapter.allowProtection(blockchainType: tokenIn.blockchainType) else {
+            useMevProtection = false
+            return []
+        }
+
+        useMevProtection = localStorage.useMevProtection
+
+        let binding = Binding<Bool>(
+            get: { [weak self] in
+                if Core.shared.purchaseManager.activated(.vipSupport) {
+                    self?.useMevProtection ?? false
+                } else {
+                    false
+                }
+            },
+            set: { [weak self] newValue in
+                let successBlock = { [weak self] in
+                    self?.useMevProtection = newValue
+                    self?.localStorage.useMevProtection = newValue
+                }
+
+                Coordinator.shared.performAfterPurchase(premiumFeature: .vipSupport, page: .swap, trigger: .mevProtection) {
+                    successBlock()
+                }
+            }
+        )
+
+        return [.init([
+            .mevProtection(isOn: binding),
+        ], isList: false)]
+    }
+
+    private func settingsView(tokenOut: MarketKit.Token, onChangeSettings: @escaping () -> Void) -> AnyView {
+        let view = ThemeNavigationStack {
+            RecipientAndSlippageMultiSwapSettingsView(tokenOut: tokenOut, storage: storage, slippageMode: .adjustable, onChangeSettings: onChangeSettings)
+        }
+        return AnyView(view)
+    }
+
+    func settingsView(tokenIn: Token, tokenOut: Token, quote _: IMultiSwapQuote, onChangeSettings: @escaping () -> Void) -> AnyView {
+        let crosschain = tokenIn.blockchainType != tokenOut.blockchainType
+        if !crosschain {
+            return settingsView(tokenOut: tokenOut, onChangeSettings: onChangeSettings)
+        }
+
+        let view = ThemeNavigationStack {
+            RecipientMultiSwapSettingsView(tokenOut: tokenOut, storage: storage, onChangeSettings: onChangeSettings)
+        }
+        return AnyView(view)
+    }
+
+    func settingView(settingId: String, tokenOut: Token, onChangeSetting: @escaping () -> Void) -> AnyView {
+        if settingId == MultiSwapMainField.slippageSettingId {
+            return settingsView(tokenOut: tokenOut, onChangeSettings: onChangeSetting)
+        }
+
+        fatalError("settingView(settingId:) has not been implemented")
+    }
+
     func preSwapView(step: MultiSwapPreSwapStep, tokenIn: Token, tokenOut _: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
         allowanceHelper.preSwapView(step: step, tokenIn: tokenIn, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
+    }
+
+    func swap(tokenIn: Token, tokenOut _: Token, amountIn _: Decimal, quote: IMultiSwapConfirmationQuote) async throws {
+        if let quote = quote as? AllBridgeMultiSwapEvmConfirmationQuote {
+            guard let gasLimit = quote.evmFeeData?.surchargedGasLimit else {
+                throw SwapError.noGasLimit
+            }
+
+            guard let gasPrice = quote.gasPrice else {
+                throw SwapError.noGasPrice
+            }
+
+            guard let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: tokenIn.blockchainType).evmKitWrapper else {
+                throw SwapError.noEvmKitWrapper
+            }
+
+            do {
+                _ = try await evmKitWrapper.send(
+                    transactionData: quote.transactionData,
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    privateSend: useMevProtection,
+                    nonce: quote.nonce
+                )
+            } catch {
+                logger?.log(level: .error, message: "AllBridge SendEVM Error: \(error)")
+                throw error
+            }
+        } else if let quote = quote as? AllBridgeMultiSwapTronConfirmationQuote {
+            guard let tronKitWrapper = tronKitManager.tronKitWrapper else {
+                throw SwapError.noEvmKitWrapper
+            }
+
+            do {
+                _ = try await tronKitWrapper.send(createdTranaction: quote.createdTransaction)
+            } catch {
+                logger?.log(level: .error, message: "AllBridge SendTron Error: \(error)")
+
+                throw error
+            }
+        } else if let quote = quote as? AllBridgeMultiSwapStellarConfirmationQuote {
+            guard let account = Core.shared.accountManager.activeAccount, let keyPair = try? StellarKitManager.keyPair(accountType: account.type) else {
+                throw SwapError.noStellarKit
+            }
+
+            do {
+                _ = try await StellarKit.Kit.send(transactionEnvelope: quote.transactionEnvelope, keyPair: keyPair, testNet: false)
+            } catch {
+                logger?.log(level: .error, message: "AllBridge SendStellar Error: \(error)")
+
+                throw error
+            }
+        }
     }
 }
 
@@ -477,11 +607,10 @@ extension AllBridgeMultiSwapProvider {
         case lessThanRequireFee
         case convertionError
         case invalidAmount
-    }
-
-    struct Asset: Codable {
-        let tokenAddress: String
-        let bridgeAddress: String
+        case noGasPrice
+        case noGasLimit
+        case noEvmKitWrapper
+        case noStellarKit
     }
 
     struct AbToken: ImmutableMappable {

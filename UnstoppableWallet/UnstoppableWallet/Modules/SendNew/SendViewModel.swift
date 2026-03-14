@@ -4,16 +4,14 @@ import HsExtensions
 import MarketKit
 
 class SendViewModel: ObservableObject {
-    private let autoRefreshDuration: Double = 20
-
     private let currencyManager = Core.shared.currencyManager
     private let marketKit = Core.shared.marketKit
     private let recentAddressStorage = Core.shared.recentAddressStorage
 
     private var syncTask: AnyTask?
+    private var timer: AnyCancellable?
     private var ratesCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
-    private var timer: Timer?
 
     let handler: ISendHandler?
     let transactionService: ITransactionService?
@@ -23,71 +21,40 @@ class SendViewModel: ObservableObject {
 
     @Published var rates = [String: Decimal]()
 
-    @Published var sendData: ISendData?
     @Published var sending = false
     @Published var transactionSettingsModified = false
+    @Published var timeLeft: Int = 0
 
-    private var nextRefreshTime: Double?
-
-    private let errorSubject = PassthroughSubject<String, Never>()
+    let errorSubject = PassthroughSubject<String, Never>()
 
     @Published var state: State = .syncing {
         didSet {
-            timer?.invalidate()
-            nextRefreshTime = nil
+            timer?.cancel()
 
-            if case .success = state {
-                let duration = handler?.expirationDuration.map { Double($0) } ?? autoRefreshDuration
-                nextRefreshTime = Date().timeIntervalSince1970 + duration
+            if let handler, let expirationDuration = handler.expirationDuration, let data = state.data, data.canSend {
+                timeLeft = expirationDuration
 
-                timer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
-                    self?.sync(silent: true)
-                }
+                timer = Timer.publish(every: 1, on: .main, in: .common)
+                    .autoconnect()
+                    .sink { [weak self] _ in
+                        self?.handleTimerTick()
+                    }
             }
         }
-    }
-
-    init(sendData: SendData, address: String? = nil) {
-        handler = SendHandlerFactory.handler(sendData: sendData)
-        currency = currencyManager.baseCurrency
-        self.address = address
-
-        if let handler {
-            transactionService = TransactionServiceFactory.transactionService(baseToken: handler.baseToken, initialTransactionSettings: handler.initialTransactionSettings)
-        } else {
-            transactionService = nil
-        }
-
-        transactionService?.updatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.syncTransactionSettingsModified()
-                self?.sync()
-            }
-            .store(in: &cancellables)
-
-        handler?.refreshPublisher?
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.sync()
-            }
-            .store(in: &cancellables)
-
-        sync()
     }
 
     var cautions: [CautionNew] {
         var cautions = transactionService?.cautions ?? []
 
-        if let sendData, let baseToken = handler?.baseToken {
-            cautions.append(contentsOf: sendData.cautions(baseToken: baseToken, currency: currency, rates: rates))
+        if let data = state.data, let baseToken = handler?.baseToken {
+            cautions.append(contentsOf: data.cautions(baseToken: baseToken))
         }
 
         return cautions
     }
 
     var canSend: Bool {
-        guard let sendData, sendData.canSend else {
+        guard let data = state.data, data.canSend else {
             return false
         }
 
@@ -96,6 +63,35 @@ class SendViewModel: ObservableObject {
         }
 
         return true
+    }
+
+    init(sendData: SendData, address: String? = nil) {
+        handler = SendHandlerFactory.handler(sendData: sendData)
+        currency = currencyManager.baseCurrency
+        self.address = address
+
+        if let handler {
+            transactionService = TransactionServiceFactory.transactionService(blockchainType: handler.baseToken.blockchainType, initialTransactionSettings: handler.initialTransactionSettings)
+        } else {
+            transactionService = nil
+        }
+
+        transactionService?.updatePublisher
+            .sink { [weak self] in
+                self?.syncTransactionSettingsModified()
+                self?.sync()
+            }
+            .store(in: &cancellables)
+
+        sync()
+    }
+
+    private func handleTimerTick() {
+        timeLeft -= 1
+
+        if timeLeft == 0 {
+            timer?.cancel()
+        }
     }
 
     private func syncTransactionSettingsModified() {
@@ -114,69 +110,37 @@ class SendViewModel: ObservableObject {
     @MainActor private func set(sending: Bool) {
         self.sending = sending
     }
-
-    @MainActor private func report(error: Error) {
-        errorSubject.send(error.smartDescription)
-    }
 }
 
 extension SendViewModel {
-    var errorPublisher: AnyPublisher<String, Never> {
-        errorSubject.eraseToAnyPublisher()
-    }
-
-    func stopAutoQuoting() {
-        timer?.invalidate()
-    }
-
-    func autoQuoteIfRequired() {
-        guard !state.isSyncing, let nextRefreshTime else {
-            return
-        }
-
-        let now = Date().timeIntervalSince1970
-
-        if now > nextRefreshTime {
-            sync(silent: true)
-        } else {
-            timer?.invalidate()
-            timer = Timer.scheduledTimer(withTimeInterval: nextRefreshTime - now, repeats: false) { [weak self] _ in
-                self?.sync(silent: true)
-            }
-        }
-    }
-
-    func sync(silent: Bool = false) {
+    func sync() {
         guard let handler else {
             return
         }
 
         syncTask = nil
 
-        if !state.isSyncing, !silent {
+        if !state.isSyncing {
             state = .syncing
         }
 
         syncTask = Task { [weak self, handler, transactionService] in
-            var sendData: ISendData?
             var state: State
 
             do {
                 try await transactionService?.sync()
 
-                let _sendData = try await handler.sendData(transactionSettings: transactionService?.transactionSettings)
+                let data = try await handler.sendData(transactionSettings: transactionService?.transactionSettings)
 
-                await self?.syncRates(coins: [handler.baseToken.coin] + _sendData.rateCoins)
+                await self?.syncRates(coins: [handler.baseToken.coin] + data.rateCoins)
 
-                sendData = _sendData
-                state = .success
+                state = .success(data: data)
             } catch {
                 state = .failed(error: error)
             }
 
             if !Task.isCancelled {
-                await MainActor.run { [weak self, sendData, state] in
-                    self?.sendData = sendData
+                await MainActor.run { [weak self, state] in
                     self?.state = state
                 }
             }
@@ -190,20 +154,20 @@ extension SendViewModel {
                 throw SendError.noHandler
             }
 
-            guard let sendData else {
-                throw SendError.noSendData
+            guard let data = state.data else {
+                throw SendError.noData
             }
 
             await set(sending: true)
 
-            _ = try await handler.send(data: sendData)
+            _ = try await handler.send(data: data)
 
             if let address {
                 try? recentAddressStorage.save(address: address, blockchainUid: handler.baseToken.blockchain.uid)
             }
         } catch {
             await set(sending: false)
-            await report(error: error)
+            errorSubject.send(error.smartDescription)
             throw error
         }
     }
@@ -212,8 +176,15 @@ extension SendViewModel {
 extension SendViewModel {
     enum State {
         case syncing
-        case success
+        case success(data: ISendData)
         case failed(error: Error)
+
+        var data: ISendData? {
+            switch self {
+            case let .success(data): return data
+            default: return nil
+            }
+        }
 
         var isSyncing: Bool {
             switch self {
@@ -221,17 +192,10 @@ extension SendViewModel {
             default: return false
             }
         }
-
-        var isSuccess: Bool {
-            switch self {
-            case .success: return true
-            default: return false
-            }
-        }
     }
 
     enum SendError: Error {
         case noHandler
-        case noSendData
+        case noData
     }
 }

@@ -18,6 +18,11 @@ enum SelectorModule {
         let viewController = MultiSelectorViewController(title: title, viewItems: viewItems, onFinish: onFinish)
         return ThemeNavigationController(rootViewController: viewController)
     }
+
+    static func bottomMultiSelectorViewController(config: MultiConfig, delegate: IBottomMultiSelectorDelegate) -> UIViewController {
+        let viewController = BottomMultiSelectorViewController(config: config, delegate: delegate)
+        return viewController.toBottomSheet
+    }
 }
 
 extension SelectorModule {
@@ -98,7 +103,6 @@ extension SelectorModule {
         let description: String?
         let allowEmpty: Bool
         let viewItems: [ViewItem]
-        let footer: String?
     }
 
     struct ViewItem: Equatable, Identifiable, Hashable {

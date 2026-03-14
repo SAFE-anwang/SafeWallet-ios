@@ -113,17 +113,10 @@ extension TonAdapter: ISendTonAdapter {
 extension TonAdapter {
     private static func adapterState(kitSyncState: TonKit.SyncState) -> AdapterState {
         switch kitSyncState {
-        case .syncing: return .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
+        case .syncing: return .syncing(progress: nil, lastBlockDate: nil)
         case .synced: return .synced
         case let .notSynced(error): return .notSynced(error: error.localizedDescription)
         }
-    }
-
-    static func kitAmount(amount: Decimal) -> BigUInt {
-        let multiplier = pow(10, decimals)
-        let value = (amount * multiplier).rounded(decimal: 0)
-
-        return BigUInt(value.description) ?? 0
     }
 
     static func amount(kitAmount: BigUInt?) -> Decimal {

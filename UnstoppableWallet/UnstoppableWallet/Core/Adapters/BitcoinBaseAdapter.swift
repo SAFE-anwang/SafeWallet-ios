@@ -62,15 +62,25 @@ class BitcoinBaseAdapter {
             guard output.value > 0 else {
                 continue
             }
-
-            if let pluginId = output.pluginId, pluginId == HodlerPlugin.id,
+            
+            if let unlockedHeight = output.unlockedHeight, unlockedHeight > 0, let hodlerOutputData = output.pluginData as? HodlerOutputData {
+                let approxUnlockTime = (abstractKit.lastBlockInfo?.timestamp ?? 0) + ((unlockedHeight - (abstractKit.lastBlockInfo?.height ?? 0))  * 30 )
+                lockInfo = TransactionLockInfo(
+                        lockedUntil: Date(timeIntervalSince1970: Double(approxUnlockTime)),
+                        originalAddress: output.address ?? "__", 
+                        lockTimeInterval: hodlerOutputData.lockTimeInterval,
+                        unlockedHeight: unlockedHeight
+                        )
+                
+            }else if let pluginId = output.pluginId, pluginId == HodlerPlugin.id,
                let hodlerOutputData = output.pluginData as? HodlerOutputData,
-               let approximateUnlockTime = hodlerOutputData.approximateUnlockTime
-            {
+               let approximateUnlockTime = hodlerOutputData.approximateUnlockTime {
+
                 lockInfo = TransactionLockInfo(
                     lockedUntil: Date(timeIntervalSince1970: Double(approximateUnlockTime)),
                     originalAddress: hodlerOutputData.addressString,
-                    lockTimeInterval: hodlerOutputData.lockTimeInterval
+                    lockTimeInterval: hodlerOutputData.lockTimeInterval,
+                    unlockedHeight: nil
                 )
             }
 
@@ -183,7 +193,7 @@ extension BitcoinBaseAdapter: IAdapter {
     }
 
     func start() {
-        balanceState = .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
+        balanceState = .syncing(progress: 0, lastBlockDate: nil)
         abstractKit.start()
     }
 
@@ -240,27 +250,19 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
             }
 
             balanceState = .notSynced(error: converted.localizedDescription)
-        case .syncingStarted:
-            if case let .syncing(progress, remaining, date) = balanceState,
-               progress == nil, remaining == nil, date == nil
-            {
-                return
-            }
-            balanceState = .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
-        case let .syncing(all, downloaded):
-            let newProgress = min(Int(Double(downloaded) / Double(all) * 100), 99)
-            let newRemaining = max(1, all - downloaded)
+        case let .syncing(progress):
+            let newProgress = Int(progress * 100)
             let newDate = showSyncedUntil
                 ? abstractKit.lastBlockInfo?.timestamp.map { Date(timeIntervalSince1970: Double($0)) }
                 : nil
 
-            if case let .syncing(currentProgress, _, currentDate) = balanceState, newProgress == currentProgress {
+            if case let .syncing(currentProgress, currentDate) = balanceState, newProgress == currentProgress {
                 if let currentDate, let newDate, currentDate.isSameDay(as: newDate) {
                     return
                 }
             }
 
-            balanceState = .syncing(progress: newProgress, remaining: newRemaining, lastBlockDate: newDate)
+            balanceState = .syncing(progress: newProgress, lastBlockDate: newDate)
         case let .apiSyncing(newCount):
             let newCountDescription = "balance.searching.count".localized("\(newCount)")
             if case let .customSyncing(_, secondary, _) = balanceState, newCountDescription == secondary {
@@ -328,6 +330,10 @@ extension BitcoinBaseAdapter {
             changeValue: info.changeValue.map { Decimal($0) / coinRate },
             changeAddress: info.changeAddress?.stringValue
         )
+    }
+    
+    var bitcoinCore: BitcoinCore {
+        abstractKit.bitcoinCore
     }
 
     func unspentOutputs(filters: UtxoFilters) -> [UnspentOutputInfo] {
@@ -454,7 +460,7 @@ extension BitcoinBaseAdapter: ITransactionsAdapter {
     }
 }
 
-extension BitcoinBaseAdapter: IDepositAdapter, IHDDepositAdapter {
+extension BitcoinBaseAdapter: IDepositAdapter {
     var receiveAddress: DepositAddress {
         DepositAddress(abstractKit.receiveAddress())
     }

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MultiText: View {
     var eyebrow: CustomStringConvertible?
-    var title: CustomStringConvertible?
+    let title: CustomStringConvertible
     var badge: CustomStringConvertible?
     var subtitleBadge: CustomStringConvertible?
     var subtitle: CustomStringConvertible?
@@ -17,10 +17,8 @@ struct MultiText: View {
             }
 
             HStack(spacing: .margin8) {
-                if let title {
-                    ThemeText(title, style: .headline2)
-                        .multilineTextAlignment(.leading)
-                }
+                ThemeText(title, style: .headline2)
+                    .multilineTextAlignment(.leading)
 
                 if let badge {
                     BadgeViewNew(badge)

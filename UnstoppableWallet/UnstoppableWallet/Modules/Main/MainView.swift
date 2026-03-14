@@ -4,7 +4,6 @@ struct MainView: View {
     @StateObject var viewModel = MainViewModel()
     @StateObject var badgeViewModel = MainBadgeViewModel()
     @StateObject var walletViewModel = WalletViewModel()
-    @StateObject var transactionsViewModel = TransactionsViewModel()
 
     @State private var path = NavigationPath()
 
@@ -20,8 +19,7 @@ struct MainView: View {
                         }
 
                         WalletView(viewModel: walletViewModel, path: $path).tag(MainViewModel.Tab.wallet)
-                        // MultiSwapView().tag(MainViewModel.Tab.swap)
-                        MainTransactionsView(transactionsViewModel: transactionsViewModel).tag(MainViewModel.Tab.transactions)
+                        MainSafeZoneView().tag(MainViewModel.Tab.safe)
                         MainSettingsView().tag(MainViewModel.Tab.settings)
                     }
                     .toolbar(.hidden, for: .tabBar)
@@ -30,7 +28,9 @@ struct MainView: View {
                 HStack(spacing: 0) {
                     ForEach(viewModel.tabs, id: \.self) { tab in
                         ZStack {
-                            Image(tab.image).icon(colorStyle: viewModel.selectedTab == tab ? .yellow : .secondary)
+                            Image(tab.image)
+                                .renderingMode(.template)
+                                .icon(colorStyle: viewModel.selectedTab == tab ? .yellow : .secondary)
 
                             if tab == MainViewModel.Tab.settings, let badge = badgeViewModel.badge {
                                 BadgeView(badge: badge)
@@ -52,10 +52,12 @@ struct MainView: View {
             .navigationDestination(for: Wallet.self) { wallet in
                 WalletTokenModule.view(wallet: wallet)
             }
+            .tint(.themeJacob)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar() }
         }
+        .modifier(CoordinatorViewModifier())
     }
 
     @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
@@ -98,8 +100,8 @@ struct MainView: View {
                 if walletViewModel.buttonHidden {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: {
-                            Coordinator.shared.present { isPresented in
-                                ScanQrViewNew(reportAfterDismiss: true, isPresented: isPresented) { text in
+                            Coordinator.shared.present { _ in
+                                ScanQrViewNew(reportAfterDismiss: true, pasteEnabled: true) { text in
                                     walletViewModel.process(scanned: text)
                                 }
                                 .ignoresSafeArea()
@@ -111,27 +113,9 @@ struct MainView: View {
                     }
                 }
             }
-        case .swap:
+        case .safe:
             ToolbarItem(placement: .navigationBarTrailing) {}
-        case .transactions:
-            ToolbarItem(placement: .navigationBarLeading) {
-                if transactionsViewModel.syncing {
-                    ProgressView()
-                }
-            }
 
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    Coordinator.shared.present { isPresented in
-                        TransactionFilterView(transactionsViewModel: transactionsViewModel, isPresented: isPresented)
-                    }
-                    stat(page: .transactions, event: .open(page: .transactionFilter))
-                }) {
-                    Image("manage_2_24")
-                        .themeIcon(color: .themeGray)
-                        .modifier(ToolbarBadgeModifier(visible: transactionsViewModel.transactionFilter.hasChanges))
-                }
-            }
         case .settings:
             ToolbarItem(placement: .navigationBarTrailing) {}
         }
@@ -143,10 +127,8 @@ struct MainView: View {
             return "market.title".localized
         case .wallet:
             return walletViewModel.account?.name ?? "balance.title".localized
-        case .swap:
-            return "swap.title".localized
-        case .transactions:
-            return "transactions.title".localized
+        case .safe:
+            return "safe_zone.nav.title".localized
         case .settings:
             return "settings.title".localized
         }
@@ -187,41 +169,21 @@ extension MainView {
 }
 
 struct AccountsLostView: View {
-    let records: [AccountRecord]
     @Binding var isPresented: Bool
 
     var body: some View {
         BottomSheetView(
+            icon: .warning,
+            title: "lost_accounts.warning_title".localized,
             items: [
-                .title(icon: ThemeImage.warning, title: "lost_accounts.warning_title".localized),
-                .text(text: "lost_accounts.warning_message".localized(records.map { "- \($0.name)" }.joined(separator: "\n"))),
-                .buttonGroup(.init(buttons: [
-                    .init(style: .yellow, title: "button.i_understand".localized) {
-                        isPresented = false
-                    },
-                ])),
+                .text(text: "lost_accounts.warning_message".localized),
             ],
+            buttons: [
+                .init(style: .yellow, title: "button.ok".localized) {
+                    isPresented = false
+                },
+            ],
+            isPresented: $isPresented
         )
-    }
-}
-
-struct ToolbarBadgeModifier: ViewModifier {
-    let visible: Bool
-
-    func body(content: Content) -> some View {
-        ZStack {
-            content
-
-            if visible {
-                VStack {
-                    HStack {
-                        Spacer()
-                        Circle().fill(Color.red).frame(width: 8, height: 8)
-                    }
-                    Spacer()
-                }
-            }
-        }
-        .frame(width: 28, height: 28)
     }
 }

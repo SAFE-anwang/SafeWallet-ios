@@ -25,7 +25,7 @@ class MoneroKeyViewModel {
     var keyTypeViewItems: [AlertViewItem] {
         KeyType.allCases.map { _keyType in
             AlertViewItem(
-                text: _keyType.title,
+                text: "monero.key_types.\(_keyType.rawValue)".localized,
                 selected: keyType == _keyType
             )
         }
@@ -64,12 +64,5 @@ extension MoneroKeyViewModel {
 
     enum KeyType: String, CaseIterable {
         case spend, view
-
-        var title: String {
-            switch self {
-            case .spend: return "Spend"
-            case .view: return "View"
-            }
-        }
     }
 }

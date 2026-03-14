@@ -162,9 +162,10 @@ struct BitcoinSendSettingsView: View {
 
     @ViewBuilder private func sortModeView(isPresented: Binding<Bool>) -> some View {
         VStack(spacing: 0) {
-            BSTitleView(
-                icon: "arrow_medium_2_up_right_24",
-                title: "fee_settings.transaction_settings".localized
+            BottomSheetView.TitleView(
+                icon: .local(name: "arrow_medium_2_up_right_24", tint: .gray),
+                title: "fee_settings.transaction_settings".localized,
+                isPresented: isPresented
             )
 
             VStack(spacing: 0) {

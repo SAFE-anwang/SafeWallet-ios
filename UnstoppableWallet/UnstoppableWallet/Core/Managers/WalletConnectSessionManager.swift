@@ -1,8 +1,9 @@
 import Combine
 import MarketKit
-import ReownWalletKit
 import RxCocoa
 import RxSwift
+import WalletConnectSign
+import WalletConnectUtils
 
 class WalletConnectSessionManager {
     private let disposeBag = DisposeBag()
@@ -14,8 +15,8 @@ class WalletConnectSessionManager {
     private let currentDateProvider: CurrentDateProvider
     private let requestHandler: IWalletConnectRequestHandler
 
-    private let sessionsRelay = BehaviorRelay<[Session]>(value: [])
-    private let activePendingRequestsRelay = BehaviorRelay<[Request]>(value: [])
+    private let sessionsRelay = BehaviorRelay<[WalletConnectSign.Session]>(value: [])
+    private let activePendingRequestsRelay = BehaviorRelay<[WalletConnectSign.Request]>(value: [])
     private let sessionRequestReceivedRelay = PublishRelay<WalletConnectRequest>()
 
     init(service: WalletConnectService, storage: WalletConnectSessionStorage, accountManager: AccountManager, requestHandler: IWalletConnectRequestHandler, currentDateProvider: CurrentDateProvider) {
@@ -84,7 +85,7 @@ class WalletConnectSessionManager {
         activePendingRequestsRelay.accept(activePendingRequests)
     }
 
-    private func receiveSession(request: Request) {
+    private func receiveSession(request: WalletConnectSign.Request) {
         guard let account = accountManager.activeAccount else {
             return
         }
@@ -104,7 +105,7 @@ class WalletConnectSessionManager {
         }
     }
 
-    private func sessions(accountId: String, sessions: [Session]?) -> [Session] {
+    private func sessions(accountId: String, sessions: [WalletConnectSign.Session]?) -> [WalletConnectSign.Session] {
         let sessions = sessions ?? allSessions
         let dbSessions = storage.sessions(accountId: accountId)
 
@@ -121,7 +122,7 @@ class WalletConnectSessionManager {
         activePendingRequestsRelay.accept(activePendingRequests)
     }
 
-    private func requests(accountId: String? = nil) -> [Request] {
+    private func requests(accountId: String? = nil) -> [WalletConnectSign.Request] {
         let allRequests = service.pendingRequests
         let dbSessions = storage.sessions(accountId: accountId)
 
@@ -134,7 +135,7 @@ class WalletConnectSessionManager {
 }
 
 extension WalletConnectSessionManager {
-    public var sessions: [Session] {
+    public var sessions: [WalletConnectSign.Session] {
         guard let accountId = accountManager.activeAccount?.id else {
             return []
         }
@@ -142,11 +143,11 @@ extension WalletConnectSessionManager {
         return sessions(accountId: accountId, sessions: nil)
     }
 
-    public var allSessions: [Session] {
+    public var allSessions: [WalletConnectSign.Session] {
         service.activeSessions
     }
 
-    public var sessionsObservable: Observable<[Session]> {
+    public var sessionsObservable: Observable<[WalletConnectSign.Session]> {
         sessionsRelay.asObservable()
     }
 
@@ -154,7 +155,7 @@ extension WalletConnectSessionManager {
         service.disconnect(topic: topic, reason: WalletConnectMainService.RejectionReason(code: 1, message: "Session Killed by User"))
     }
 
-    public var activePendingRequests: [Request] {
+    public var activePendingRequests: [WalletConnectSign.Request] {
         guard let accountId = accountManager.activeAccount?.id else {
             return []
         }
@@ -162,11 +163,11 @@ extension WalletConnectSessionManager {
         return pendingRequests(accountId: accountId)
     }
 
-    public func pendingRequests(accountId: String? = nil) -> [Request] {
+    public func pendingRequests(accountId: String? = nil) -> [WalletConnectSign.Request] {
         requests(accountId: accountId)
     }
 
-    public var activePendingRequestsObservable: Observable<[Request]> {
+    public var activePendingRequestsObservable: Observable<[WalletConnectSign.Request]> {
         activePendingRequestsRelay.asObservable()
     }
 

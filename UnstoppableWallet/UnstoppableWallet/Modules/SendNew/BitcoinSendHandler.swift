@@ -28,7 +28,7 @@ extension BitcoinSendHandler: ISendHandler {
 
     func sendData(transactionSettings: TransactionSettings?) async throws -> ISendData {
         let satoshiPerByte = transactionSettings?.satoshiPerByte
-        var fee: Decimal?
+        var feeData: BitcoinFeeData?
         var transactionError: Error?
         let params = params.copy()
 
@@ -43,7 +43,7 @@ extension BitcoinSendHandler: ISendHandler {
 
             do {
                 let sendInfo = try adapter.sendInfo(params: params)
-                fee = sendInfo.fee
+                feeData = .init(fee: sendInfo.fee)
             } catch {
                 transactionError = error
             }
@@ -54,7 +54,8 @@ extension BitcoinSendHandler: ISendHandler {
             params: params,
             rbfAllowed: blockchainManager.transactionRbfAllowed(blockchainType: token.blockchainType),
             transactionError: transactionError,
-            fee: fee
+            satoshiPerByte: satoshiPerByte,
+            feeData: feeData
         )
     }
 
@@ -68,12 +69,11 @@ extension BitcoinSendHandler: ISendHandler {
 }
 
 extension BitcoinSendHandler {
-    class SendData: ISendData {
+    class SendData: BaseSendBtcData, ISendData {
         private let token: Token
         private let transactionError: Error?
         let params: SendParameters
         let rbfAllowed: Bool
-        private let fee: Decimal?
 
         private var timeLock: String? {
             if let data = params.pluginData[HodlerPlugin.id] as? HodlerData {
@@ -83,16 +83,17 @@ extension BitcoinSendHandler {
             return nil
         }
 
-        init(token: Token, params: SendParameters, rbfAllowed: Bool, transactionError: Error?, fee: Decimal?) {
+        init(token: Token, params: SendParameters, rbfAllowed: Bool, transactionError: Error?, satoshiPerByte: Int?, feeData: BitcoinFeeData?) {
             self.token = token
             self.params = params
             self.rbfAllowed = rbfAllowed
             self.transactionError = transactionError
-            self.fee = fee
+
+            super.init(satoshiPerByte: satoshiPerByte, fee: feeData?.fee)
         }
 
         var feeData: FeeData? {
-            .bitcoin(params: params)
+            fee.map { .bitcoin(bitcoinFeeData: BitcoinFeeData(fee: $0)) }
         }
 
         var canSend: Bool {
@@ -107,67 +108,65 @@ extension BitcoinSendHandler {
             [token.coin]
         }
 
-        func cautions(baseToken: Token, currency _: Currency, rates _: [String: Decimal]) -> [CautionNew] {
+        func cautions(baseToken: Token) -> [CautionNew] {
             var cautions = [CautionNew]()
 
             if let transactionError {
-                cautions.append(UtxoSendHelper.caution(transactionError: transactionError, feeToken: baseToken))
+                cautions.append(caution(transactionError: transactionError, feeToken: baseToken))
             }
 
             return cautions
         }
 
-        func flowSection(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> SendDataSection? {
+        func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
             guard let toAddress = params.address, let value = params.value else {
-                return nil
+                return []
             }
 
             let decimalValue = baseToken.decimalValue(value: value)
             let appValue = AppValue(token: baseToken, value: -decimalValue)
             let rate = rates[baseToken.coin.uid]
 
-            let from = SendField.amount(
-                token: baseToken,
-                appValueType: .regular(appValue: appValue),
-                currencyValue: rate.map { CurrencyValue(currency: currency, value: $0 * decimalValue) },
-            )
-
-            let to = SendField.address(
-                value: toAddress,
-                blockchainType: baseToken.blockchainType
-            )
-
-            return .init([from, to], isFlow: true)
-        }
-
-        func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
-            var sections = [SendDataSection]()
-            if let flow = flowSection(baseToken: baseToken, currency: currency, rates: rates) {
-                sections.append(flow)
-            }
-
-            var sendFields = [SendField]()
-            let rate = rates[baseToken.coin.uid]
+            var sendFields: [SendField] = [
+                .amount(
+                    title: "send.confirmation.you_send".localized,
+                    token: baseToken,
+                    appValueType: .regular(appValue: appValue),
+                    currencyValue: rate.map { CurrencyValue(currency: currency, value: $0 * decimalValue) },
+                    type: .neutral
+                ),
+                .address(
+                    title: "send.confirmation.to".localized,
+                    value: toAddress,
+                    blockchainType: baseToken.blockchainType
+                ),
+            ]
 
             if let memo = params.memo {
-                sendFields.append(.simpleValue(title: "send.confirmation.memo".localized, value: memo))
+                sendFields.append(.simpleValue(title: "send.confirmation.memo".localized, value: memo, copying: false))
             }
 
             if let timeLock {
-                sendFields.append(.simpleValue(title: "send.confirmation.time_lock".localized, value: timeLock))
+                sendFields.append(.simpleValue(icon: "lock", title: "send.confirmation.time_lock".localized, value: timeLock, copying: false))
             }
 
             if rbfAllowed, !params.rbfEnabled {
                 sendFields.append(.simpleValue(
                     title: "send.confirmation.replace_by_fee".localized,
-                    value: "send.confirmation.replace_by_fee.disabled".localized
-                ))
+                    value: "send.confirmation.replace_by_fee.disabled".localized,
+                    copying: false
+                )
+                )
             }
 
-            sendFields.append(contentsOf: UtxoSendHelper.feeFields(fee: fee, feeToken: baseToken, currency: currency, feeTokenRate: rate))
-            sections.append(.init(sendFields, isMain: false))
+            let feeSection: SendDataSection = .init(
+                feeFields(feeToken: baseToken, currency: currency, feeTokenRate: rate)
+            )
 
-            return sections
+            return [
+                .init(sendFields),
+                feeSection,
+            ]
         }
     }
 }

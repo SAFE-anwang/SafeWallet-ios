@@ -18,7 +18,22 @@ struct TonConnectListView: View {
                                     ListSection {
                                         ForEach(item.apps) { app in
                                             ClickableRow(action: {
-                                                onClick(app: app)
+                                                Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                                                    BottomSheetView(
+                                                        icon: .trash,
+                                                        title: "ton_connect.list.disconnect_app".localized,
+                                                        items: [
+                                                            .text(text: "ton_connect.list.disconnect_app.description".localized(app.manifest.name)),
+                                                        ],
+                                                        buttons: [
+                                                            .init(style: .red, title: "ton_connect.list.disconnect_app.disconnect".localized) {
+                                                                viewModel.disconnect(app: app)
+//                                                                tonConnectApp = nil
+                                                            },
+                                                        ],
+                                                        isPresented: isPresented
+                                                    )
+                                                }
                                             }) {
                                                 KFImage.url(app.manifest.iconUrl)
                                                     .resizable()
@@ -43,8 +58,8 @@ struct TonConnectListView: View {
                 }
             } bottomContent: {
                 Button(action: {
-                    Coordinator.shared.present { isPresented in
-                        ScanQrViewNew(reportAfterDismiss: true, isPresented: isPresented) { deeplink in
+                    Coordinator.shared.present { _ in
+                        ScanQrViewNew(reportAfterDismiss: true, pasteEnabled: true) { deeplink in
                             viewModel.handle(deeplink: deeplink)
                         }
                         .ignoresSafeArea()
@@ -62,22 +77,5 @@ struct TonConnectListView: View {
         }
         .navigationTitle("TON Connect")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func onClick(app: TonConnectApp) {
-        Coordinator.shared.present(type: .bottomSheet) { _ in
-            BottomSheetView(
-                items: [
-                    .title(icon: ThemeImage.trash, title: "ton_connect.list.disconnect_app".localized),
-                    .text(text: "ton_connect.list.disconnect_app.description".localized(app.manifest.name)),
-                    .buttonGroup(.init(buttons: [
-                        .init(style: .red, title: "ton_connect.list.disconnect_app.disconnect".localized) {
-                            viewModel.disconnect(app: app)
-//                                                                tonConnectApp = nil
-                        },
-                    ])),
-                ],
-            )
-        }
     }
 }

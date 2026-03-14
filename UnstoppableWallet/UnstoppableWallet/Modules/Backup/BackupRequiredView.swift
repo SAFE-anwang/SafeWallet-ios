@@ -11,25 +11,33 @@ struct BackupRequiredView: View {
 
     var body: some View {
         BottomSheetView(
+            icon: .warning,
+            title: title,
             items: [
-                .title(icon: ThemeImage.warning, title: title),
-                .text(text: description),
-                .buttonGroup(.init(buttons: [
-                    .init(style: .gray, title: "backup_prompt.backup_manual".localized, icon: "edit_24") {
-                        isPresented = false
-
-                        Coordinator.shared.present { _ in
-                            BackupManualView(account: account).ignoresSafeArea()
-                        }
-                        stat(page: statPage, event: .open(page: .manualBackup))
-                    },
-                    .init(style: .transparent, title: "backup_prompt.backup_cloud".localized, icon: "icloud_24") {
-                        isPresented = false
-
-                        Coordinator.shared.presentWalletBackup(account: account, statPage: statPage)
-                    },
-                ])),
+                .highlightedDescription(text: description),
             ],
+            buttons: [
+                .init(style: .yellow, title: "backup_prompt.backup_manual".localized, icon: "edit_24") {
+                    isPresented = false
+
+                    Coordinator.shared.present { _ in
+                        BackupView(account: account).ignoresSafeArea()
+                    }
+                    stat(page: statPage, event: .open(page: .manualBackup))
+                },
+                .init(style: .gray, title: "backup_prompt.backup_cloud".localized, icon: "icloud_24") {
+                    isPresented = false
+
+                    Coordinator.shared.present { _ in
+                        ICloudBackupTermsView(account: account).ignoresSafeArea()
+                    }
+                    stat(page: statPage, event: .open(page: .cloudBackup))
+                },
+                .init(style: .transparent, title: cancelText) {
+                    isPresented = false
+                },
+            ],
+            isPresented: $isPresented
         )
     }
 

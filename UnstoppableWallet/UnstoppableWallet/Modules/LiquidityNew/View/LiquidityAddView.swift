@@ -10,8 +10,12 @@ struct LiquidityAddView: View {
     @State private var sendPresented = false
 
     @FocusState var isInputActive: Bool
+    @FocusState private var isV3LowestPriceInputActive: Bool
+    @FocusState private var isV3HighestPriceInputActive: Bool
 
     @State private var shouldPresentTokenIn: Bool
+    @State private var v3LowestPriceInput: String = ""
+    @State private var v3HighestPriceInput: String = ""
 
     init(token: Token? = nil) {
         _viewModel = StateObject(wrappedValue: LiquidityAddViewModel.instance(token: token))
@@ -29,6 +33,9 @@ struct LiquidityAddView: View {
                                 availableBalanceView(valueIn: balanceValue(), valueOut: balanceValueOut())
                             }
 
+                            if viewModel.v3Enabled {
+                                v3RangeView()
+                            }
                             buttonView()
                         }
 
@@ -56,6 +63,7 @@ struct LiquidityAddView: View {
                         amount0: amountIn,
                         amount1: amountOut,
                         provider: provider,
+                        v3TickType: viewModel.currentV3TickType,
                         swapPresentationMode: presentationMode
                     )
                     }
@@ -85,6 +93,15 @@ struct LiquidityAddView: View {
                 presentTokenIn()
                 shouldPresentTokenIn = false
             }
+            
+            v3LowestPriceInput = viewModel.v3LowestPrice ?? ""
+            v3HighestPriceInput = viewModel.v3HighestPrice ?? ""
+        }
+        .onChange(of: viewModel.v3LowestPrice) { newValue in
+            v3LowestPriceInput = newValue ?? ""
+        }
+        .onChange(of: viewModel.v3HighestPrice) { newValue in
+            v3HighestPriceInput = newValue ?? ""
         }
     }
 
@@ -306,6 +323,126 @@ struct LiquidityAddView: View {
         case .warning: return .themeJacob
         case .error: return .themeLucian
         }
+    }
+
+    @ViewBuilder private func v3RangeView() -> some View {
+        VStack(spacing: .margin12) {
+            HStack(spacing: .margin12) {
+                v3PriceInputView(
+                    title: "最低价格",
+                    text: $v3LowestPriceInput,
+                    isInputActive: $isV3LowestPriceInputActive,
+                    onMinus: { viewModel.onTapV3LowestMinus() },
+                    onPlus: { viewModel.onTapV3LowestPlus() },
+                    onConfirm: {
+                        viewModel.onChangeV3LowestPrice(text: v3LowestPriceInput)
+                        isV3LowestPriceInputActive = false
+                    }
+                )
+
+                v3PriceInputView(
+                    title: "最高价格",
+                    text: $v3HighestPriceInput,
+                    isInputActive: $isV3HighestPriceInputActive,
+                    onMinus: { viewModel.onTapV3HighestMinus() },
+                    onPlus: { viewModel.onTapV3HighestPlus() },
+                    onConfirm: {
+                        viewModel.onChangeV3HighestPrice(text: v3HighestPriceInput)
+                        isV3HighestPriceInputActive = false
+                    }
+                )
+            }
+
+            if let error = viewModel.v3PriceError {
+                Text(error)
+                    .textCaption(color: .themeLucian)
+                    .padding(.horizontal, .margin16)
+            }
+
+            v3CurrentPriceView()
+            
+            HStack(spacing: 0) {
+                ForEach([10, 20, 50], id: \.self) { percent in
+                    Button(action: {
+                        viewModel.setV3TickRange(percent: percent)
+                        isV3LowestPriceInputActive = false
+                        isV3HighestPriceInputActive = false
+                    }) {
+                        Text("\(percent)%").textSubhead1(color: .themeLeah)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    RoundedRectangle(cornerRadius: 0.5, style: .continuous)
+                        .fill(Color.themeBlade)
+                        .frame(width: 1)
+                        .frame(maxHeight: .infinity)
+                }
+
+                Button(action: {
+                    viewModel.setV3TickRange(percent: nil)
+                    isV3LowestPriceInputActive = false
+                    isV3HighestPriceInputActive = false
+                }) {
+                    Text("liquidity.tick.full.range".localized).textSubhead1(color: .themeLeah)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal, -16)
+            .padding(.vertical, .margin16)
+            .frame(maxWidth: .infinity)
+            .modifier(ThemeListStyleModifier(cornerRadius: 18))
+        }
+    }
+
+    @ViewBuilder private func v3PriceInputView(title: String, text: Binding<String>, isInputActive: FocusState<Bool>.Binding, onMinus: @escaping () -> Void, onPlus: @escaping () -> Void, onConfirm: @escaping () -> Void) -> some View {
+        VStack(spacing: .margin8) {
+            Text(title).textSubhead2(color: .themeGray)
+
+            HStack(spacing: .margin12) {
+                Button(action: onMinus) {
+                    Image("circle_minus_24")
+                }
+
+                TextField("", text: text, prompt: Text("0").foregroundColor(.themeGray))
+                    .foregroundColor(.themeLeah)
+                    .font(.themeHeadline2)
+                    .multilineTextAlignment(.center)
+                    .keyboardType(.decimalPad)
+                    .focused(isInputActive)
+
+                Button(action: onPlus) {
+                    Image("circle_plus_24")
+                }
+            }
+        }
+        .padding(.vertical, .margin16)
+        .frame(maxWidth: .infinity)
+        .modifier(ThemeListStyleModifier(cornerRadius: 18))
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if isInputActive.wrappedValue {
+                    HStack {
+                        Spacer()
+                        Button("确定") {
+                            onConfirm()
+                        }
+                        .foregroundColor(.themeLeah)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func v3CurrentPriceView() -> some View {
+        VStack(spacing: .margin8) {
+            Text("当前价格").textSubhead2(color: .themeGray)
+            Text(viewModel.v3CurrentPrice ?? "---")
+                .themeHeadline2(color: .themeLeah, alignment: .center)
+                .lineLimit(1)
+        }
+        .padding(.vertical, .margin16)
+        .frame(maxWidth: .infinity)
+        .modifier(ThemeListStyleModifier(cornerRadius: 18))
     }
 
     @ViewBuilder private func buttonView() -> some View {

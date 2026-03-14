@@ -18,8 +18,12 @@ struct CoinAnalyticsView: View {
             case let .loaded(analytics):
                 content(viewItem: viewModel.viewItem(analytics))
             case .failed:
-                SyncErrorView {
-                    viewModel.load()
+                if viewModel.coin.isSafeCoin {
+                    PlaceholderViewNew(icon: "sync_error_48", subtitle: "此项目没有分析数据")
+                }else {
+                    SyncErrorView {
+                        viewModel.load()
+                    }
                 }
             }
         }
@@ -82,7 +86,7 @@ struct CoinAnalyticsView: View {
         content
             .onTapGesture {
                 if !viewModel.analyticsEnabled {
-                    Coordinator.shared.presentPurchase(premiumFeature: .tokenInsights, page: .coinAnalytics, trigger: statTrigger)
+                    Coordinator.shared.presentPurchase(page: .coinAnalytics, trigger: statTrigger)
                 }
             }
         // .allowsHitTesting(!viewModel.analyticsEnabled)

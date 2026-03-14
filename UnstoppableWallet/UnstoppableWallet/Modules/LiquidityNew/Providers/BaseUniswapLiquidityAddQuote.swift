@@ -7,13 +7,15 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
     let tradeOptions: TradeOptions
     let recipient: Address?
     let providerName: String
+    private let quotedAmountOut: Decimal
     let allowanceState1: LiquidityAddAllowanceHelper.AllowanceState
 
-    init(trade: Trade, tradeOptions: TradeOptions, recipient: Address?, providerName: String, allowanceState0: LiquidityAddAllowanceHelper.AllowanceState, allowanceState1: LiquidityAddAllowanceHelper.AllowanceState) {
+    init(trade: Trade, tradeOptions: TradeOptions, recipient: Address?, providerName: String, amountOut: Decimal, allowanceState0: LiquidityAddAllowanceHelper.AllowanceState, allowanceState1: LiquidityAddAllowanceHelper.AllowanceState) {
         self.trade = trade
         self.tradeOptions = tradeOptions
         self.recipient = recipient
         self.providerName = providerName
+        quotedAmountOut = amountOut
         self.allowanceState1 = allowanceState1
 
         super.init(allowanceState: allowanceState0)
@@ -41,7 +43,7 @@ class BaseUniswapLiquidityAddQuote: BaseEvmLiquidityAddQuote {
     }
 
     override var amountOut: Decimal {
-        trade.amountOut ?? 0
+        quotedAmountOut
     }
 
     override var customButtonState: MultiSwapButtonState? {

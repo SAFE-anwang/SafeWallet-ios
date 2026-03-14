@@ -22,7 +22,6 @@ enum WalletConnectMainModule {
             service: service,
             reachabilityManager: Core.shared.reachabilityManager,
             accountManager: Core.shared.accountManager,
-            securityManager: Core.shared.securityManager,
             proposalHandler: chain
         )
 
@@ -114,7 +113,6 @@ extension WalletConnectMainModule {
     }
 
     enum WhitelistState: String {
-        case disabled
         case deactivated
         case loading
         case secure
@@ -123,7 +121,7 @@ extension WalletConnectMainModule {
 
         var showAlert: Bool {
             switch self {
-            case .loading, .secure, .disabled: return false
+            case .loading, .secure: return false
             default: return true
             }
         }
@@ -133,7 +131,7 @@ extension WalletConnectMainModule {
             case .deactivated: return "alert_card.title.caution".localized
             case .risky: return "wallet_connect.main.premium_alert.title.risky".localized
             case .notAvailable: return "alert_card.title.critical".localized
-            case .loading, .secure, .disabled: return ""
+            case .loading, .secure: return ""
             }
         }
 
@@ -142,7 +140,7 @@ extension WalletConnectMainModule {
             case .deactivated: return "wallet_connect.main.premium_alert.subtitle.deactivated".localized
             case .risky: return "wallet_connect.main.premium_alert.subtitle.risky".localized
             case .notAvailable: return "wallet_connect.main.premium_alert.subtitle.not_available".localized
-            case .loading, .secure, .disabled: return ""
+            case .loading, .secure: return ""
             }
         }
 
@@ -150,14 +148,14 @@ extension WalletConnectMainModule {
             switch self {
             case .deactivated, .notAvailable: return .themeJacob
             case .risky: return .themeLucian
-            case .loading, .secure, .disabled: return .themeGray50
+            case .loading, .secure: return .themeGray50
             }
         }
 
         var alertIcon: String {
             switch self {
             case .deactivated, .notAvailable, .risky: return "warning_filled"
-            case .loading, .secure, .disabled: return ""
+            case .loading, .secure: return ""
             }
         }
 
@@ -167,7 +165,6 @@ extension WalletConnectMainModule {
             case .risky: return "wallet_connect.scam_protection.risky".localized
             case .notAvailable: return "wallet_connect.scam_protection.not_available".localized
             case .secure: return "wallet_connect.scam_protection.secure".localized
-            case .disabled: return "wallet_connect.scam_protection.disabled".localized
             case .loading: return nil
             }
         }
@@ -178,7 +175,7 @@ extension WalletConnectMainModule {
             case .risky: return "warning_filled"
             case .notAvailable: return nil
             case .secure: return "shield_check_filled"
-            case .loading, .disabled: return nil
+            case .loading: return nil
             }
         }
 
@@ -186,7 +183,7 @@ extension WalletConnectMainModule {
             switch self {
             case .deactivated: return .themeJacob
             case .risky: return .themeLucian
-            case .notAvailable, .disabled: return .themeLeah
+            case .notAvailable: return .themeLeah
             case .secure: return .themeRemus
             case .loading: return .themeGray
             }

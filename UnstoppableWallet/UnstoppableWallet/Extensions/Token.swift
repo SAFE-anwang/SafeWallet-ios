@@ -7,6 +7,8 @@ extension Token {
         switch type {
         case .native:
             switch blockchainType {
+            case .safe: return "SAFE3"
+            case .safe4: return nil
             case .optimism, .arbitrumOne, .base, .zkSync: return blockchain.name
             default: return nil
             }
@@ -15,6 +17,7 @@ extension Token {
             case .ethereum: return "ERC20"
             case .binanceSmartChain: return "BEP20"
             case .tron: return "TRC20"
+            case .safe4: return isSafeUSDT() ? "SAFE" : "SRC20"
             default: return blockchain.name
             }
         case .jetton:
@@ -24,12 +27,28 @@ extension Token {
         }
     }
 
+    func isSafeUSDT() -> Bool {
+        if case let .eip20(address) = type {
+            return address.isSafeUsdtContract
+        }else {
+            return false
+        }
+    }
+        
     var isCustom: Bool {
-        coin.uid == tokenQuery.customCoinUid
+        !coin.uid.contains("safe4-anwang") && coin.uid == tokenQuery.customCoinUid
     }
 
     var placeholderImageName: String {
-        "\(blockchainType.uid)_\(type.tokenProtocol)_32"
+        if [.safe, .safe4].contains(blockchainType) {
+            return "safe-anwang_trx_32"
+        }else {
+            return "\(blockchainType.uid)_\(type.tokenProtocol)_32"
+        }
+    }
+
+    var swappable: Bool {
+        BlockchainType.swappable.contains(blockchainType)
     }
 
     var badge: String? {
@@ -41,7 +60,7 @@ extension Token {
     }
 
     var fullBadge: String {
-        badge ?? "coin_platforms.native".localized
+        (badge ?? "coin_platforms.native".localized).uppercased()
     }
 
     var sendToSelfAllowed: Bool {
@@ -86,5 +105,30 @@ extension Token {
 
     func rawAmount(_ amount: Decimal) -> BigUInt? {
         BigUInt(rawAmountString(amount))
+    }
+}
+
+extension Token {
+    var isSafe4Native: Bool {
+        coin.uid.lowercased() == safe4CoinUid.lowercased() && blockchain.type == .safe4 && type == .native
+    }
+    var isSafe4ETH: Bool {
+        coin.uid.lowercased() == safe4CoinUid_eth.lowercased() && blockchain.type == .safe4
+    }
+    
+    var isSafe4BSC: Bool {
+        coin.uid.lowercased() == safe4CoinUid_bsc.lowercased() && blockchain.type == .safe4
+    }
+    
+    var isSafe4POL: Bool {
+        coin.uid.lowercased() == safe4CoinUid_pol.lowercased() && blockchain.type == .safe4
+    }
+    
+    var isSafe4SRC: Bool {
+        coin.uid.lowercased() == safe4CoinUid_src.lowercased() && blockchain.type == .safe4
+    }
+    
+    var isSafe4USDT: Bool {
+        coin.uid.lowercased() == safe4UsdtCoinUid.lowercased() && blockchain.type == .safe4
     }
 }

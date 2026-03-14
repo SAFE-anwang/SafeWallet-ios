@@ -1,6 +1,8 @@
 import MarketKit
 import UniswapKit
 
+typealias LiquidityTickType = KitV3.LiquidityTickType
+
 extension LiquidityAddViewModel {
     static func instance(token: MarketKit.Token? = nil) -> LiquidityAddViewModel {
         let storage = MultiSwapSettingStorage()

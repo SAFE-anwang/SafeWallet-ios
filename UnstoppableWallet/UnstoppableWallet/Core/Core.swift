@@ -7,10 +7,7 @@ class Core {
     static var instance: Core?
 
     static func initApp() throws {
-        let core = try Core()
-        instance = core
-
-        core.finishInitialize()
+        instance = try Core()
     }
 
     static var shared: Core {
@@ -24,6 +21,8 @@ class Core {
     let keychainStorage: KeychainStorage
 
     let coverManager: CoverManager
+    let redeemStorage: RedeemStorage
+    
     let pasteboardManager: PasteboardManager
     let reachabilityManager: ReachabilityManager
     let appIconManager: AppIconManager
@@ -39,7 +38,6 @@ class Core {
     let deeplinkStorage: DeeplinkStorage
     let launchScreenManager: LaunchScreenManager
     let appSettingManager: AppSettingManager
-    let securityManager: SecurityManager
     let balanceHiddenManager: BalanceHiddenManager
     let balanceConversionManager: BalanceConversionManager
     let walletButtonHiddenManager: WalletButtonHiddenManager
@@ -67,7 +65,6 @@ class Core {
     let coinManager: CoinManager
     let passcodeLockManager: PasscodeLockManager
     let amountRoundingManager: AmountRoundingManager
-    let recentlySentManager: RecentlySentManager
 
     let btcBlockchainManager: BtcBlockchainManager
     let evmSyncSourceManager: EvmSyncSourceManager
@@ -78,7 +75,6 @@ class Core {
     let tronAccountManager: TronAccountManager
     let tonKitManager: TonKitManager
     let stellarKitManager: StellarKitManager
-    let zanoKitManager: ZanoKitManager
 
     let restoreSettingsManager: RestoreSettingsManager
     let predefinedBlockchainService: PredefinedBlockchainService
@@ -92,6 +88,7 @@ class Core {
 
     let walletConnectRequestHandler: WalletConnectRequestChain
     let walletConnectManager: WalletConnectManager
+    let walletConnectSocketConnectionService: WalletConnectSocketConnectionService
     let walletConnectSessionManager: WalletConnectSessionManager
 
     let adapterManager: AdapterManager
@@ -104,7 +101,7 @@ class Core {
     let statManager: StatManager
 
     let tonConnectManager: TonConnectManager
-    let spamWrapper: SpamWrapper
+    let spamManager: SpamManager
 
     let purchaseManager: PurchaseManager
 
@@ -125,22 +122,20 @@ class Core {
 
     let valueFormatter: CurrencyValueFormatter
 
-    let swapAssetStorage: SwapAssetStorage
-    let swapProviderManager: MultiSwapProviderManager
-
+    let apiKeyManager: ApiKeyManager
+    let safe4CustomTokenStorage: Safe4CustomTokenStorage
+    let safe4StorageManager: Safe4StorageManager
+    let safeCrossChainManager: SafeCrossChainManager
+    
     init() throws {
         let databaseURL = try FileManager.default
             .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             .appendingPathComponent("bank.sqlite")
         let dbPool = try DatabasePool(path: databaseURL.path)
 
-        let logRecordStorage = LogRecordStorage(dbPool: dbPool)
-        logRecordManager = LogRecordManager(storage: logRecordStorage)
-        logger = Logger(minLogLevel: .error, storage: logRecordManager)
-
         userDefaultsStorage = UserDefaultsStorage()
         localStorage = LocalStorage(userDefaultsStorage: userDefaultsStorage)
-        keychainStorage = KeychainStorage(service: "io.horizontalsystems.bank.dev", logger: logger)
+        keychainStorage = KeychainStorage(service: "io.horizontalsystems.bank.dev")
         let sharedLocalStorage = SharedLocalStorage()
 
         try StorageMigrator.migrate(dbPool: dbPool, localStorage: localStorage)
@@ -148,7 +143,8 @@ class Core {
         marketKit = try MarketKit.Kit.instance(
             hsApiBaseUrl: AppConfig.marketApiUrl,
             hsProviderApiKey: AppConfig.hsProviderApiKey,
-            minLogLevel: .error
+            minLogLevel: .error,
+            isSafe4Test: AppConfig.isSafe4TestNet
         )
         marketKit.sync()
 
@@ -168,7 +164,6 @@ class Core {
         deeplinkStorage = DeeplinkStorage()
         launchScreenManager = LaunchScreenManager(userDefaultsStorage: userDefaultsStorage)
         appSettingManager = AppSettingManager(userDefaultsStorage: userDefaultsStorage)
-        securityManager = SecurityManager(localStorage: localStorage)
         balanceHiddenManager = BalanceHiddenManager(userDefaultsStorage: userDefaultsStorage)
         balanceConversionManager = BalanceConversionManager(marketKit: marketKit, userDefaultsStorage: userDefaultsStorage)
         walletButtonHiddenManager = WalletButtonHiddenManager(userDefaultsStorage: userDefaultsStorage)
@@ -177,6 +172,10 @@ class Core {
         let appVersionRecordStorage = AppVersionRecordStorage(dbPool: dbPool)
         appVersionStorage = AppVersionStorage(storage: appVersionRecordStorage)
         appVersionManager = AppVersionManager(systemInfoManager: systemInfoManager, storage: appVersionStorage)
+
+        let logRecordStorage = LogRecordStorage(dbPool: dbPool)
+        logRecordManager = LogRecordManager(storage: logRecordStorage)
+        logger = Logger(minLogLevel: .error, storage: logRecordManager)
 
         currencyManager = CurrencyManager(storage: sharedLocalStorage)
         networkManager = NetworkManager(logger: logger)
@@ -204,7 +203,6 @@ class Core {
         coinManager = CoinManager(marketKit: marketKit, walletManager: walletManager)
         passcodeLockManager = PasscodeLockManager(accountManager: accountManager, walletManager: walletManager)
         amountRoundingManager = AmountRoundingManager(storage: localStorage)
-        recentlySentManager = RecentlySentManager(storage: localStorage)
 
         let blockchainSettingRecordStorage = try BlockchainSettingRecordStorage(dbPool: dbPool)
         let blockchainSettingsStorage = BlockchainSettingsStorage(storage: blockchainSettingRecordStorage)
@@ -235,13 +233,19 @@ class Core {
 
         let restoreSettingsStorage = RestoreSettingsStorage(dbPool: dbPool)
         restoreSettingsManager = RestoreSettingsManager(storage: restoreSettingsStorage)
-
-        zanoKitManager = ZanoKitManager(restoreSettingsManager: restoreSettingsManager, walletManager: walletManager)
         predefinedBlockchainService = PredefinedBlockchainService(restoreSettingsManager: restoreSettingsManager)
 
         feeCoinProvider = FeeCoinProvider(marketKit: marketKit)
         feeRateProviderFactory = FeeRateProviderFactory()
-
+                
+        let safeProvider = SafeProvider(networkManager: networkManager)
+        safeCrossChainManager = SafeCrossChainManager(userDefaultsStorage: userDefaultsStorage, evmBlockchainManager: evmBlockchainManager, safeProvider: safeProvider)
+        
+        redeemStorage = try RedeemStorage(dbPool: dbPool)
+        
+        apiKeyManager = ApiKeyManager(networkManager: networkManager)
+        safe4CustomTokenStorage = try Safe4CustomTokenStorage(dbPool: dbPool)
+        safe4StorageManager = try Safe4StorageManager(dbPool: dbPool)
         let nftDatabaseStorage = try NftDatabaseStorage(dbPool: dbPool)
         let nftStorage = NftStorage(marketKit: marketKit, storage: nftDatabaseStorage)
         nftMetadataManager = NftMetadataManager(networkManager: networkManager, marketKit: marketKit, storage: nftStorage)
@@ -262,7 +266,9 @@ class Core {
             icons: ["https://raw.githubusercontent.com/horizontalsystems/HS-Design/master/PressKit/UW-AppIcon-on-light.png"]
         )
 
+        walletConnectSocketConnectionService = WalletConnectSocketConnectionService(reachabilityManager: reachabilityManager, logger: logger)
         let walletConnectService = WalletConnectService(
+            connectionService: walletConnectSocketConnectionService,
             info: walletClientInfo,
             logger: logger
         )
@@ -277,14 +283,6 @@ class Core {
 
         walletConnectManager = WalletConnectManager(walletConnectSessionManager: walletConnectSessionManager)
 
-        let scannedTransactionStorage = try ScannedTransactionStorage(dbPool: dbPool)
-        spamWrapper = SpamWrapper(
-            storage: scannedTransactionStorage,
-            contactBookManager: contactManager,
-            accountManager: accountManager,
-            logger: logger
-        )
-
         let adapterFactory = AdapterFactory(
             evmBlockchainManager: evmBlockchainManager,
             evmSyncSourceManager: evmSyncSourceManager,
@@ -293,10 +291,8 @@ class Core {
             tronKitManager: tronKitManager,
             tonKitManager: tonKitManager,
             stellarKitManager: stellarKitManager,
-            zanoKitManager: zanoKitManager,
             restoreSettingsManager: restoreSettingsManager,
             coinManager: coinManager,
-            spamWrapper: spamWrapper,
             evmLabelManager: evmLabelManager
         )
         adapterManager = AdapterManager(
@@ -306,7 +302,6 @@ class Core {
             tronKitManager: tronKitManager,
             tonKitManager: tonKitManager,
             stellarKitManager: stellarKitManager,
-            zanoKitManager: zanoKitManager,
             btcBlockchainManager: btcBlockchainManager,
             moneroNodeManager: moneroNodeManager
         )
@@ -315,6 +310,9 @@ class Core {
             evmBlockchainManager: evmBlockchainManager,
             adapterFactory: adapterFactory
         )
+
+        let spamAddressStorage = try SpamAddressStorage(dbPool: dbPool)
+        spamManager = SpamManager(storage: spamAddressStorage, accountManager: accountManager, transactionAdapterManager: transactionAdapterManager)
 
         rateAppManager = RateAppManager(walletManager: walletManager, adapterManager: adapterManager, localStorage: localStorage)
 
@@ -425,16 +423,18 @@ class Core {
             evmLabelManager: evmLabelManager,
             balanceHiddenManager: balanceHiddenManager,
             statManager: statManager,
+            walletConnectSocketConnectionService: walletConnectSocketConnectionService,
             nftMetadataSyncer: nftMetadataSyncer,
             tonKitManager: tonKitManager,
             stellarKitManager: stellarKitManager
         )
-
-        swapAssetStorage = SwapAssetStorage(dbPool: dbPool)
-        swapProviderManager = MultiSwapProviderManager(localStorage: localStorage, networkManager: networkManager, apiKey: AppConfig.uswapApiKey)
     }
 
-    func finishInitialize() {
-        swapProviderManager.onCoreInitialization()
+    func newSendEnabled(wallet _: Wallet) -> Bool {
+        true
+        // switch wallet.token.blockchainType {
+        // case .ton: return true
+        // default: return localStorage.newSendEnabled
+        // }
     }
 }

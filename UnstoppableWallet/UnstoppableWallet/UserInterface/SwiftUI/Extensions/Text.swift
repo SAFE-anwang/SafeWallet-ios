@@ -42,10 +42,6 @@ extension View {
         foregroundColor(color).font(.themeTitle2R)
     }
 
-    func textTitle3(color: Color = .themeLeah) -> some View {
-        foregroundColor(color).font(.themeTitle3)
-    }
-
     func themeBody(color: Color = .themeLeah, alignment: Alignment = .leading) -> some View {
         textBody(color: color).frame(maxWidth: .infinity, alignment: alignment)
     }
@@ -80,9 +76,5 @@ extension View {
 
     func themeTitle2R(color: Color = .themeLeah, alignment: Alignment = .leading) -> some View {
         textTitle2R(color: color).frame(maxWidth: .infinity, alignment: alignment)
-    }
-
-    func themeTitle3(color: Color = .themeLeah, alignment: Alignment = .leading) -> some View {
-        textTitle3(color: color).frame(maxWidth: .infinity, alignment: alignment)
     }
 }

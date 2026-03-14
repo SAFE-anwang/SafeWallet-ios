@@ -1,6 +1,7 @@
-import Combine
 import HdWalletKit
 import MarketKit
+import RxRelay
+import RxSwift
 
 class RestoreSelectService {
     private let accountName: String
@@ -14,20 +15,20 @@ class RestoreSelectService {
     private let marketKit: MarketKit.Kit
     private let blockchainTokensService: BlockchainTokensService
     private let restoreSettingsService: RestoreSettingsService
-    private var cancellables = Set<AnyCancellable>()
+    private let disposeBag = DisposeBag()
 
     private var tokens = [Token]()
     private(set) var enabledTokens = Set<Token>()
 
     private var restoreSettingsMap = [Token: RestoreSettings]()
 
-    private let cancelEnableBlockchainSubject = PassthroughSubject<BlockchainType, Never>()
-    private let canRestoreSubject = CurrentValueSubject<Bool, Never>(false)
+    private let cancelEnableBlockchainRelay = PublishRelay<BlockchainType>()
+    private let canRestoreRelay = BehaviorRelay<Bool>(value: false)
 
-    private let itemsSubject = PassthroughSubject<[Item], Never>()
+    private let itemsRelay = PublishRelay<[Item]>()
     var items: [Item] = [] {
         didSet {
-            itemsSubject.send(items)
+            itemsRelay.accept(items)
         }
     }
 
@@ -47,29 +48,18 @@ class RestoreSelectService {
         self.blockchainTokensService = blockchainTokensService
         self.restoreSettingsService = restoreSettingsService
 
-        blockchainTokensService.approveTokensPublisher
-            .sink { [weak self] blockchain, tokens in
-                self?.handleApproveTokens(blockchain: blockchain, tokens: tokens)
-            }
-            .store(in: &cancellables)
-
-        blockchainTokensService.rejectApproveTokensPublisher
-            .sink { [weak self] blockchain in
-                self?.handleCancelEnable(blockchain: blockchain)
-            }
-            .store(in: &cancellables)
-
-        restoreSettingsService.approveSettingsPublisher
-            .sink { [weak self] tokenWithSettings in
-                self?.handleApproveRestoreSettings(token: tokenWithSettings.token, settings: tokenWithSettings.settings)
-            }
-            .store(in: &cancellables)
-
-        restoreSettingsService.rejectApproveSettingsPublisher
-            .sink { [weak self] token in
-                self?.handleCancelEnable(blockchain: token.blockchain)
-            }
-            .store(in: &cancellables)
+        subscribe(disposeBag, blockchainTokensService.approveTokensObservable) { [weak self] blockchain, tokens in
+            self?.handleApproveTokens(blockchain: blockchain, tokens: tokens)
+        }
+        subscribe(disposeBag, blockchainTokensService.rejectApproveTokensObservable) { [weak self] blockchain in
+            self?.handleCancelEnable(blockchain: blockchain)
+        }
+        subscribe(disposeBag, restoreSettingsService.approveSettingsObservable) { [weak self] tokenWithSettings in
+            self?.handleApproveRestoreSettings(token: tokenWithSettings.token, settings: tokenWithSettings.settings)
+        }
+        subscribe(disposeBag, restoreSettingsService.rejectApproveSettingsObservable) { [weak self] token in
+            self?.handleCancelEnable(blockchain: token.blockchain)
+        }
 
         syncInternalItems()
         syncState()
@@ -110,7 +100,7 @@ class RestoreSelectService {
     }
 
     private func syncCanRestore() {
-        canRestoreSubject.send(!enabledTokens.isEmpty)
+        canRestoreRelay.accept(!enabledTokens.isEmpty)
     }
 
     private func handleApproveTokens(blockchain: Blockchain, tokens: [Token]) {
@@ -144,22 +134,22 @@ class RestoreSelectService {
 
     private func handleCancelEnable(blockchain: Blockchain) {
         if !isEnabled(blockchain: blockchain) {
-            cancelEnableBlockchainSubject.send(blockchain.type)
+            cancelEnableBlockchainRelay.accept(blockchain.type)
         }
     }
 }
 
 extension RestoreSelectService {
-    var itemsPublisher: AnyPublisher<[Item], Never> {
-        itemsSubject.eraseToAnyPublisher()
+    var itemsObservable: Observable<[Item]> {
+        itemsRelay.asObservable()
     }
 
-    var cancelEnableBlockchainPublisher: AnyPublisher<BlockchainType, Never> {
-        cancelEnableBlockchainSubject.eraseToAnyPublisher()
+    var cancelEnableBlockchainObservable: Observable<BlockchainType> {
+        cancelEnableBlockchainRelay.asObservable()
     }
 
-    var canRestorePublisher: AnyPublisher<Bool, Never> {
-        canRestoreSubject.eraseToAnyPublisher()
+    var canRestoreObservable: Observable<Bool> {
+        canRestoreRelay.asObservable()
     }
 
     func enable(blockchainUid: String) {

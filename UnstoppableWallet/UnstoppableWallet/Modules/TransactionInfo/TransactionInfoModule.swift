@@ -46,7 +46,6 @@ extension TransactionInfoModule {
         case sentToSelf
         case rawTransaction
         case memo(text: String)
-        case txSecretKey(text: String)
         case service(value: String)
         case explorer(title: String, url: String?)
         case warning(text: String)

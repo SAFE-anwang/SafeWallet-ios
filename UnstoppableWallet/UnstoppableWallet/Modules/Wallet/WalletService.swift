@@ -8,7 +8,6 @@ protocol IWalletServiceDelegate: AnyObject {
     func didUpdate(isMainNet: Bool, wallet: Wallet)
     func didUpdate(balanceData: BalanceData, wallet: Wallet)
     func didUpdate(state: AdapterState, wallet: Wallet)
-    func didUpdate(caution: CautionNew?, wallet: Wallet)
 }
 
 class WalletService {
@@ -69,10 +68,6 @@ extension WalletService {
         adapterService.balanceData(wallet: wallet)
     }
 
-    func caution(wallet: Wallet) -> CautionNew? {
-        adapterService.balanceCaution(wallet: wallet)
-    }
-
     func state(wallet: Wallet) -> AdapterState? {
         adapterService.state(wallet: wallet)
     }
@@ -101,9 +96,5 @@ extension WalletService: IWalletAdapterServiceDelegate {
 
     func didUpdate(state: AdapterState, wallet: Wallet) {
         delegate?.didUpdate(state: state, wallet: wallet)
-    }
-
-    func didUpdate(caution: CautionNew?, wallet: Wallet) {
-        delegate?.didUpdate(caution: caution, wallet: wallet)
     }
 }

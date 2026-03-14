@@ -13,13 +13,7 @@ class Trc20Adapter: BaseTronAdapter {
     init(tronKitWrapper: TronKitWrapper, contractAddress: String, wallet: Wallet, baseToken: Token, coinManager: CoinManager, evmLabelManager: EvmLabelManager) throws {
         self.contractAddress = try TronKit.Address(address: contractAddress)
 
-        transactionConverter = TronTransactionConverter(
-            source: wallet.transactionSource,
-            baseToken: baseToken,
-            coinManager: coinManager,
-            tronKitWrapper: tronKitWrapper,
-            evmLabelManager: evmLabelManager
-        )
+        transactionConverter = TronTransactionConverter(source: wallet.transactionSource, baseToken: baseToken, coinManager: coinManager, tronKitWrapper: tronKitWrapper, evmLabelManager: evmLabelManager)
 
         super.init(tronKitWrapper: tronKitWrapper, decimals: wallet.decimals)
     }
@@ -52,7 +46,7 @@ extension Trc20Adapter: IBalanceAdapter {
 
     var balanceStateUpdatedObservable: Observable<AdapterState> {
         tronKit.syncStatePublisher.asObservable().map { [weak self] in
-            self?.convertToAdapterState(tronSyncState: $0) ?? .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
+            self?.convertToAdapterState(tronSyncState: $0) ?? .syncing(progress: nil, lastBlockDate: nil)
         }
     }
 
@@ -63,16 +57,6 @@ extension Trc20Adapter: IBalanceAdapter {
     var balanceDataUpdatedObservable: Observable<BalanceData> {
         tronKit.trc20BalancePublisher(contractAddress: contractAddress).asObservable().map { [weak self] in
             self?.balanceData(balance: $0) ?? BalanceData(balance: 0)
-        }
-    }
-
-    var caution: CautionNew? {
-        balanceCaution(active: tronKit.accountActive)
-    }
-
-    var cautionUpdatedObservable: Observable<CautionNew?> {
-        tronKitWrapper.tronKit.accountActivePublisher.asObservable().map { [weak self] in
-            self?.balanceCaution(active: $0)
         }
     }
 }

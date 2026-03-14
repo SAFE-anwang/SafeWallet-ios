@@ -11,7 +11,8 @@ struct MarketTabView: View {
     @StateObject var platformsViewModel: MarketPlatformsViewModel
     @StateObject var pairsViewModel: MarketPairsViewModel
     @StateObject var sectorsViewModel: MarketSectorsViewModel
-
+    @StateObject var dappViewModel: MarketDappViewModel
+    
     @State private var loadedTabs = [MarketModule.Tab]()
 
     init(watchlistViewModel: WatchlistViewModel) {
@@ -25,6 +26,7 @@ struct MarketTabView: View {
         _platformsViewModel = StateObject(wrappedValue: MarketPlatformsViewModel())
         _pairsViewModel = StateObject(wrappedValue: MarketPairsViewModel())
         _sectorsViewModel = StateObject(wrappedValue: MarketSectorsViewModel())
+        _dappViewModel = StateObject(wrappedValue: MarketDappViewModel())
     }
 
     var body: some View {
@@ -55,6 +57,9 @@ struct MarketTabView: View {
                 case .platforms: MarketPlatformsView(viewModel: platformsViewModel)
                 case .pairs: MarketPairsView(viewModel: pairsViewModel)
                 case .sectors: MarketSectorsView(viewModel: sectorsViewModel)
+                case .dapp: MarketDappView(viewModel: dappViewModel)
+//                case .twiitter:
+//                    MarketSectorsView(viewModel: sectorsViewModel)
                 }
             }
             .frame(maxHeight: .infinity)
@@ -83,6 +88,10 @@ struct MarketTabView: View {
         case .platforms: platformsViewModel.load()
         case .pairs: pairsViewModel.load()
         case .sectors: sectorsViewModel.load()
+        case .dapp:
+            sectorsViewModel.load()
+//        case .twiitter:
+//            sectorsViewModel.load()
         }
     }
 }

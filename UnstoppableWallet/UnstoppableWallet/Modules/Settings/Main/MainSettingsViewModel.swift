@@ -4,7 +4,6 @@ import MarketKit
 import RxSwift
 
 class MainSettingsViewModel: ObservableObject {
-    static let supportLink = "https://t.me/m/-uTI4HwKZWNi"
     private let disposeBag = DisposeBag()
     private var cancellables = Set<AnyCancellable>()
 
@@ -21,7 +20,6 @@ class MainSettingsViewModel: ObservableObject {
     private let localStorage = Core.shared.localStorage
     private let testNetManager = Core.shared.testNetManager
     private let purchaseManager = Core.shared.purchaseManager
-    private let appStateManager = AppStateManager.instance
 
     @Published var manageWalletsAlert: Bool = false
     @Published var walletConnectSessionCount: Int = 0
@@ -33,13 +31,6 @@ class MainSettingsViewModel: ObservableObject {
     @Published var introductoryOffer: String?
 
     let showTestSwitchers: Bool
-
-    @Published var forceEnableSwap: Bool {
-        didSet {
-            localStorage.forceEnableSwap = forceEnableSwap
-            appStateManager.sync()
-        }
-    }
 
     @Published var emulatePurchase: Bool {
         didSet {
@@ -55,18 +46,10 @@ class MainSettingsViewModel: ObservableObject {
         }
     }
 
-    @Published var mayaStagenetEnabled: Bool {
-        didSet {
-            testNetManager.set(mayaStagenetEnabled: mayaStagenetEnabled)
-        }
-    }
-
     init() {
         showTestSwitchers = Bundle.main.object(forInfoDictionaryKey: "ShowTestNetSwitcher") as? String == "true"
-        forceEnableSwap = localStorage.forceEnableSwap
         emulatePurchase = localStorage.emulatePurchase
         testNetEnabled = testNetManager.testNetEnabled
-        mayaStagenetEnabled = testNetManager.mayaStagenetEnabled
 
         subscribe(MainScheduler.instance, disposeBag, backupManager.allBackedUpObservable) { [weak self] _ in self?.syncManageWalletsAlert() }
         subscribe(MainScheduler.instance, disposeBag, walletConnectSessionManager.sessionsObservable) { [weak self] _ in self?.syncWalletConnectSessionCount() }
@@ -81,7 +64,7 @@ class MainSettingsViewModel: ObservableObject {
 
         subscribe(&cancellables, accountRestoreWarningManager.hasNonStandardPublisher) { [weak self] _ in self?.syncManageWalletsAlert() }
         subscribe(&cancellables, passcodeManager.$isPasscodeSet) { [weak self] _ in self?.syncSecurityAlert() }
-        subscribe(&cancellables, termsManager.$state) { [weak self] _ in self?.syncAboutAlert() }
+        subscribe(&cancellables, termsManager.$termsAccepted) { [weak self] _ in self?.syncAboutAlert() }
 
         Publishers.Merge3(
             purchaseManager.$purchaseData.map { _ in () },
@@ -135,7 +118,7 @@ class MainSettingsViewModel: ObservableObject {
     }
 
     private func syncAboutAlert() {
-        aboutAlert = !termsManager.state.allAccepted
+        aboutAlert = !termsManager.termsAccepted
     }
 }
 

@@ -11,7 +11,7 @@ import UIKit
 
 class CoinToggleViewController: ThemeSearchViewController {
     private let viewModel: ICoinToggleViewModel
-    var cancellables = Set<AnyCancellable>()
+    private var cancellables = Set<AnyCancellable>()
     let disposeBag = DisposeBag()
 
     let tableView = SectionsTableView(style: .grouped)
@@ -43,11 +43,7 @@ class CoinToggleViewController: ThemeSearchViewController {
             maker.edges.equalToSuperview()
         }
 
-        viewModel.viewItemsPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.onUpdate(viewItems: $0) }
-            .store(in: &cancellables)
-
+        subscribe(disposeBag, viewModel.viewItemsDriver) { [weak self] in self?.onUpdate(viewItems: $0) }
         $filter
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.viewModel.onUpdate(filter: $0 ?? "") }
