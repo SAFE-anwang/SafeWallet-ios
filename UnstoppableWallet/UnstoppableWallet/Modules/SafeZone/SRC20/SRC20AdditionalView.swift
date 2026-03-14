@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SRC20AdditionalView: View {
     @Environment(\.presentationMode) private var presentationMode
+    @Environment(\.addressParserFilter) private var parserFilter
     @StateObject var viewModel: SRC20AdditionalViewModel
     @FocusState private var focusField: SRC20AdditionalViewModel.FocusField?
     @State private var isShowAlert: Bool = false
@@ -122,6 +123,7 @@ struct SRC20AdditionalView: View {
             ),
             text: $viewModel.address,
             result: $viewModel.addressResult,
+            parserFilter: parserFilter,
             borderColor: Binding(get: { borderColor }, set: { _ in })
         )
         .modifier(CautionBorder(cautionState: $viewModel.addressCautionState))

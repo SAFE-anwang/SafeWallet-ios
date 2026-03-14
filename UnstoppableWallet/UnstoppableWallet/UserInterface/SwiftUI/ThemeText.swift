@@ -10,7 +10,7 @@ struct ThemeText: View {
         if let componentText = text as? ComponentText {
             self.text = .plain(componentText.text)
             self.style = style
-            self.colorStyle = colorStyle ?? componentText.colorStyle ?? style.defaultColorStyle
+            self.colorStyle = componentText.colorStyle ?? colorStyle ?? style.defaultColorStyle
             self.dimmed = dimmed || componentText.dimmed
         } else {
             self.text = .plain(text.description)
@@ -22,6 +22,13 @@ struct ThemeText: View {
 
     init(_ attributedString: AttributedString, style: TextStyle, colorStyle: ColorStyle? = nil, dimmed: Bool = false) {
         text = .attributed(attributedString)
+        self.style = style
+        self.colorStyle = colorStyle ?? style.defaultColorStyle
+        self.dimmed = dimmed
+    }
+
+    init(_ text: TextType, style: TextStyle, colorStyle: ColorStyle? = nil, dimmed: Bool = false) {
+        self.text = text
         self.style = style
         self.colorStyle = colorStyle ?? style.defaultColorStyle
         self.dimmed = dimmed

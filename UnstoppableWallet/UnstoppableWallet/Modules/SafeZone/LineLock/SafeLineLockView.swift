@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SafeLineLockView: View {
     @Environment(\.presentationMode) private var presentationMode
+    @Environment(\.addressParserFilter) private var parserFilter
     @StateObject var viewModel: SafeLineLockViewModel
     @FocusState private var focusField: SafeLineLockViewModel.FocusField?
     @FocusState private var isInputActive: Bool
@@ -133,6 +134,7 @@ struct SafeLineLockView: View {
             ),
             text: $viewModel.address,
             result: $viewModel.addressResult,
+            parserFilter: parserFilter,
             borderColor: Binding(get: { borderColor }, set: { _ in })
         )
         .modifier(CautionBorder(cautionState: $viewModel.addressCautionState))

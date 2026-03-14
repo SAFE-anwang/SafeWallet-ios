@@ -17,19 +17,12 @@ struct AboutView: View {
                             Text(viewModel.appVersion).textSubhead1()
                             Image.disclosureIcon
                         }
-//                        NavigationRow(spacing: .margin8, destination: {
-////                            MarkdownModule.gitReleaseNotesMarkdownView(url: releaseNotesUrl, presented: false)
-////                                .onFirstAppear { stat(page: .aboutApp, event: .open(page: .whatsNews)) }
-////                                .ignoresSafeArea()
-//                        }) {
-//                            
-//                        }
                     }
                 }
 
                 ListSection {
                     NavigationRow(destination: {
-                        AppStatusModule.view()
+                        AppStatusView()
                             .onFirstAppear { stat(page: .aboutApp, event: .open(page: .appStatus)) }
                     }) {
                         Image("app_status_24").themeIcon()

@@ -209,7 +209,7 @@ class EvmTransactionConverter {
 }
 
 extension EvmTransactionConverter {
-    func transactionRecord(fromTransaction fullTransaction: FullTransaction) -> EvmTransactionRecord {
+    func transactionRecord(fromTransaction fullTransaction: FullTransaction) -> TransactionRecord {
         let transaction = fullTransaction.transaction
         let protected = MerkleTransactionAdapter.isProtected(transaction: fullTransaction)
 
@@ -224,7 +224,6 @@ extension EvmTransactionConverter {
 
         case let decoration as IncomingDecoration:
             let appValue = baseAppValue(value: decoration.value, sign: .plus)
-            let spam = SpamManager.isSpam(events: [.init(address: decoration.from.eip55, value: appValue)])
 
             return EvmIncomingTransactionRecord(
                 source: source,
@@ -232,7 +231,6 @@ extension EvmTransactionConverter {
                 baseToken: baseToken,
                 from: decoration.from.eip55,
                 value: appValue,
-                spam: spam
             )
 
         case let decoration as OutgoingDecoration:
@@ -500,7 +498,6 @@ extension EvmTransactionConverter {
                 let outgoingEvents = [TransferEvent(address: address.eip55, value: amountA.value),
                                       TransferEvent(address: address.eip55, value: amountB.value)
                                     ]
-            
                 return ContractCallTransactionRecord(
                     source: source,
                     transaction: transaction,
@@ -542,15 +539,12 @@ extension EvmTransactionConverter {
                     outgoingEvents: transferEvents(contractAddress: contractAddress, value: value) + outgoingEvents, protected: protected
                 )
             } else if transaction.from != userAddress, transaction.to != userAddress {
-                let spam = SpamManager.isSpam(events: incomingEvents + outgoingEvents)
-
                 return ExternalContractCallTransactionRecord(
                     source: source,
                     transaction: transaction,
                     baseToken: baseToken,
                     incomingEvents: incomingEvents,
                     outgoingEvents: outgoingEvents,
-                    spam: spam,
                     protected: protected
                 )
             }

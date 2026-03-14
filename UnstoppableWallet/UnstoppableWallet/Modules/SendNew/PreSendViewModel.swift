@@ -115,6 +115,7 @@ class PreSendViewModel: ObservableObject {
     @Published var sendData: ExtendedSendData?
     @Published var cautions = [CautionNew]()
     let allowanceHandler: PreSendAllowanceHandler
+
     init(wallet: Wallet, handler: IPreSendHandler?, resolvedAddress: ResolvedAddress, amount: Decimal?, memo: String?) {
         self.wallet = wallet
         self.handler = handler
@@ -162,7 +163,6 @@ class PreSendViewModel: ObservableObject {
                 .sink { [weak self] _ in self?.syncSendData() }
                 .store(in: &cancellables)
         }
-        
         syncFiatAmount()
     }
 
@@ -226,6 +226,7 @@ extension PreSendViewModel {
             sendData = nil
             return
         }
+//<<<<<<< HEAD
     
         let trimmedMemo = memo.trimmingCharacters(in: .whitespaces)
         let memo = hasMemo && !trimmedMemo.isEmpty ? trimmedMemo : nil
@@ -257,6 +258,18 @@ extension PreSendViewModel {
                 self.sendData = ExtendedSendData(sendData: sendData, address: self.resolvedAddress.address)
                 self.cautions = []
             }
+//=======
+//
+//        let trimmedMemo = memo.trimmingCharacters(in: .whitespaces)
+//        let memo = hasMemo && !trimmedMemo.isEmpty ? trimmedMemo : nil
+//
+//        let result = handler.sendData(amount: amount, address: resolvedAddress.address, memo: memo)
+//
+//        switch result {
+//        case let .valid(sendData):
+//            self.sendData = ExtendedSendData(sendData: sendData, address: resolvedAddress.address)
+//            cautions = []
+//>>>>>>> master
         case let .invalid(cautions):
             sendData = nil
             self.cautions = cautions

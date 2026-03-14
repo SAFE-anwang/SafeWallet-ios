@@ -5,9 +5,10 @@ import MarketKit
 import RxSwift
 
 class MultiSwapViewModel: ObservableObject {
-    let autoRefreshDuration: Double = 20
+    private let autoRefreshDuration: Double = 20
 
     private var cancellables = Set<AnyCancellable>()
+    private var providerCancellables = Set<AnyCancellable>()
     private var quotesTask: AnyTask?
     private var swapTask: AnyTask?
     private var rateInCancellable: AnyCancellable?
@@ -16,11 +17,13 @@ class MultiSwapViewModel: ObservableObject {
 
     private var balanceDisposeBag = DisposeBag()
 
-    private let providers: [IMultiSwapProvider]
+    private var providers: [IMultiSwapProvider]
+    private let swapProviderManager = Core.shared.swapProviderManager
     private let currencyManager = Core.shared.currencyManager
     private let marketKit = Core.shared.marketKit
     private let walletManager = Core.shared.walletManager
     private let adapterManager = Core.shared.adapterManager
+    private let localStorage = Core.shared.localStorage
     private let decimalParser = AmountDecimalParser()
 
     @Published var currency: Currency
@@ -223,7 +226,7 @@ class MultiSwapViewModel: ObservableObject {
 
     @Published var currentQuote: Quote? {
         didSet {
-            amountOutString = currentQuote?.quote.amountOut.description
+            amountOutString = currentQuote?.quote.expectedBuyAmount.description
             syncFiatAmountOut()
             syncPrice()
         }
@@ -256,11 +259,7 @@ class MultiSwapViewModel: ObservableObject {
 
     @Published var quotes: [Quote] = [] {
         didSet {
-            if let featuredQuote = quotes.first(where: { $0.provider is OneInchMultiSwapProvider }) {
-                bestQuote = featuredQuote
-            } else {
-                bestQuote = quotes.max { $0.quote.amountOut < $1.quote.amountOut }
-            }
+            bestQuote = quotes.max { $0.quote.expectedBuyAmount < $1.quote.expectedBuyAmount }
 
             syncCurrentQuote()
 
@@ -271,7 +270,7 @@ class MultiSwapViewModel: ObservableObject {
                 nextQuoteTime = Date().timeIntervalSince1970 + autoRefreshDuration
 
                 timer = Timer.scheduledTimer(withTimeInterval: autoRefreshDuration, repeats: false) { [weak self] _ in
-                    self?.syncQuotes()
+                    self?.syncQuotes(silent: true)
                 }
             }
         }
@@ -288,12 +287,12 @@ class MultiSwapViewModel: ObservableObject {
     private var priceFlipped = false
 
     @Published var quoting = false
-    @Published var nextQuoteTime: Double?
+    private var nextQuoteTime: Double?
 
     @Published var priceImpact: Decimal?
 
-    init(providers: [IMultiSwapProvider], token: Token? = nil) {
-        self.providers = providers
+    init(token: Token? = nil) {
+        providers = swapProviderManager.providers
         currency = currencyManager.baseCurrency
 
         defer {
@@ -301,10 +300,43 @@ class MultiSwapViewModel: ObservableObject {
             internalTokenOut = MultiSwapDefaultTokenResolver.default(for: token)
         }
 
-        currencyManager.$baseCurrency.sink { [weak self] in self?.currency = $0 }.store(in: &cancellables)
+        currencyManager.$baseCurrency
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.currency = $0 }
+            .store(in: &cancellables)
+
+        swapProviderManager.$providers
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.providers = $0
+                self?.syncValidProviders()
+                self?.syncQuotes(silent: true)
+                self?.subscribeToProviders()
+            }
+            .store(in: &cancellables)
+
+        subscribeToProviders()
 
         syncFiatAmountIn()
         syncFiatAmountOut()
+
+        swapProviderManager.sync()
+    }
+
+    func subscribeToProviders() {
+        providerCancellables = Set<AnyCancellable>()
+
+        for provider in providers {
+            if let syncPublisher = provider.syncPublisher {
+                syncPublisher
+                    .receive(on: DispatchQueue.main)
+                    .sink { [weak self] in
+                        self?.syncValidProviders()
+                        self?.syncQuotes(silent: true)
+                    }
+                    .store(in: &providerCancellables)
+            }
+        }
     }
 
     private func syncValidProviders() {
@@ -355,11 +387,11 @@ class MultiSwapViewModel: ObservableObject {
             return
         }
 
-        fiatAmountOut = (currentQuote.quote.amountOut * rateOut).rounded(decimal: 2)
+        fiatAmountOut = (currentQuote.quote.expectedBuyAmount * rateOut).rounded(decimal: 2)
     }
 
     func syncPriceImpact() {
-        guard let fiatAmountIn, let fiatAmountOut, fiatAmountIn != 0 else {
+        guard let fiatAmountIn, let fiatAmountOut, fiatAmountIn != 0, fiatAmountIn > fiatAmountOut else {
             priceImpact = nil
             return
         }
@@ -367,9 +399,12 @@ class MultiSwapViewModel: ObservableObject {
         priceImpact = (fiatAmountOut * 100 / fiatAmountIn) - 100
     }
 
-    func syncQuotes() {
+    func syncQuotes(silent: Bool = false) {
         quotesTask = nil
-        quotes = []
+
+        if !silent {
+            quotes = []
+        }
 
         guard let internalTokenIn, let internalTokenOut, let amountIn, amountIn != 0 else {
             if quoting {
@@ -387,7 +422,7 @@ class MultiSwapViewModel: ObservableObject {
             return
         }
 
-        if !quoting {
+        if !quoting, !silent {
             quoting = true
         }
 
@@ -430,7 +465,7 @@ class MultiSwapViewModel: ObservableObject {
                 return quotes
             }
 
-            let quotes = optionalQuotes.compactMap { $0 }.sorted { $0.quote.amountOut > $1.quote.amountOut }
+            let quotes = optionalQuotes.compactMap { $0 }.sorted { $0.quote.expectedBuyAmount > $1.quote.expectedBuyAmount }
 
             if !Task.isCancelled {
                 await MainActor.run { [weak self, quotes] in
@@ -443,7 +478,7 @@ class MultiSwapViewModel: ObservableObject {
     }
 
     private func syncPrice() {
-        if let tokenIn, let tokenOut, let amountIn, amountIn != 0, let amountOut = currentQuote?.quote.amountOut {
+        if let tokenIn, let tokenOut, let amountIn, amountIn != 0, let amountOut = currentQuote?.quote.expectedBuyAmount {
             var showAsIn = amountIn < amountOut
 
             if priceFlipped {
@@ -464,9 +499,21 @@ class MultiSwapViewModel: ObservableObject {
 }
 
 extension MultiSwapViewModel {
+    var shouldShowTerms: Bool {
+        guard let currentQuote else {
+            return false
+        }
+
+        return currentQuote.provider.requireTerms && !localStorage.swapTermsAccepted
+    }
+
+    func onAcceptTerms() {
+        localStorage.swapTermsAccepted = true
+    }
+
     func interchange() {
         let currentFiatAmountOut = fiatAmountOut
-        let currentAmountOut = currentQuote?.quote.amountOut
+        let currentAmountOut = currentQuote?.quote.expectedBuyAmount
 
         let internalTokenIn = internalTokenIn
         self.internalTokenIn = internalTokenOut
@@ -511,35 +558,44 @@ extension MultiSwapViewModel {
         let now = Date().timeIntervalSince1970
 
         if now > nextQuoteTime {
-            syncQuotes()
+            syncQuotes(silent: true)
         } else {
             timer?.invalidate()
             timer = Timer.scheduledTimer(withTimeInterval: nextQuoteTime - now, repeats: false) { [weak self] _ in
-                self?.syncQuotes()
+                self?.syncQuotes(silent: true)
             }
         }
+    }
+
+    func reset() {
+        amountIn = nil
+        internalTokenIn = nil
+        internalTokenOut = nil
     }
 }
 
 extension MultiSwapViewModel {
     struct Quote {
         let provider: IMultiSwapProvider
-        let quote: IMultiSwapQuote
+        let quote: MultiSwapQuote
     }
 
     enum PriceImpactLevel {
         case negligible
+        case low
         case normal
         case warning
         case forbidden
 
-        private static let normalPriceImpact: Decimal = 1
-        private static let warningPriceImpact: Decimal = 5
-        private static let forbiddenPriceImpact: Decimal = 20
+        private static let lowPriceImpact: Decimal = 1
+        private static let normalPriceImpact: Decimal = 5
+        private static let warningPriceImpact: Decimal = 10
+        private static let forbiddenPriceImpact: Decimal = 50
 
         init(priceImpact: Decimal) {
             switch priceImpact {
-            case 0 ..< Self.normalPriceImpact: self = .negligible
+            case 0 ..< Self.lowPriceImpact: self = .negligible
+            case Self.lowPriceImpact ..< Self.normalPriceImpact: self = .low
             case Self.normalPriceImpact ..< Self.warningPriceImpact: self = .normal
             case Self.warningPriceImpact ..< Self.forbiddenPriceImpact: self = .warning
             default: self = .forbidden
@@ -548,10 +604,16 @@ extension MultiSwapViewModel {
 
         var valueLevel: ValueLevel {
             switch self {
-            case .warning: return .warning
-            case .forbidden: return .error
-            default: return .regular
+            case .negligible, .low: return .regular
+            case .normal: return .warning
+            case .warning, .forbidden: return .error
             }
         }
+    }
+}
+
+enum PriceImpact {
+    static func display(value: Decimal) -> String {
+        "-\(abs(value).rounded(decimal: 2).description)%"
     }
 }

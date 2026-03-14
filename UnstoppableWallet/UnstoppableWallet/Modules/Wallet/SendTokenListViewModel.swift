@@ -23,6 +23,17 @@ class SendTokenListViewModel: WalletListViewModel {
             return true
         }
     }
+    
+    func humanReadableUri(amount: Decimal?, wallet: Wallet) -> Decimal? {
+        guard let amount else {
+            return nil
+        }
+
+        if wallet.token.blockchainType.isEvm { // convert amount from wei to human readable
+            return amount.toReadable(decimals: wallet.token.decimals)
+        }
+        return amount
+    }
 }
 
 extension SendTokenListViewModel {
@@ -30,10 +41,10 @@ extension SendTokenListViewModel {
         let blockchainTypes: [BlockchainType]?
         let tokenTypes: [TokenType]?
         let address: String?
-        let amount: Decimal?
+        let amount: AddressUri.Amount?
         let memo: String?
 
-        init(blockchainTypes: [BlockchainType]? = nil, tokenTypes: [TokenType]? = nil, address: String? = nil, amount: Decimal? = nil, memo: String? = nil) {
+        init(blockchainTypes: [BlockchainType]? = nil, tokenTypes: [TokenType]? = nil, address: String? = nil, amount: AddressUri.Amount? = nil, memo: String? = nil) {
             self.blockchainTypes = blockchainTypes
             self.tokenTypes = tokenTypes
             self.address = address

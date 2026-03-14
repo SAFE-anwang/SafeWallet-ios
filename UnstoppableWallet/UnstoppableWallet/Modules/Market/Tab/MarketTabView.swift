@@ -12,7 +12,6 @@ struct MarketTabView: View {
     @StateObject var pairsViewModel: MarketPairsViewModel
     @StateObject var sectorsViewModel: MarketSectorsViewModel
     @StateObject var dappViewModel: MarketDappViewModel
-    
     @State private var loadedTabs = [MarketModule.Tab]()
 
     init(watchlistViewModel: WatchlistViewModel) {
@@ -88,8 +87,7 @@ struct MarketTabView: View {
         case .platforms: platformsViewModel.load()
         case .pairs: pairsViewModel.load()
         case .sectors: sectorsViewModel.load()
-        case .dapp:
-            sectorsViewModel.load()
+        case .dapp: sectorsViewModel.load()
 //        case .twiitter:
 //            sectorsViewModel.load()
         }

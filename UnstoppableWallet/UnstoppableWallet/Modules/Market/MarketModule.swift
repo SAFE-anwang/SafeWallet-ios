@@ -81,7 +81,6 @@ enum MarketModule {
         case pairs
         case dapp
 //        case twiitter
-        
         var title: String {
             switch self {
             case .coins: return "market.tab.coins".localized

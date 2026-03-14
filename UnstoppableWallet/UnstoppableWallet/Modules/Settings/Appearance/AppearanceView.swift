@@ -135,6 +135,7 @@ struct AppearanceView: View {
                     ListSectionHeader(text: "appearance.balance_tab".localized)
 
                     ListSection {
+//<<<<<<< HEAD
 //                        Cell(
 //                            middle: {
 //                                MultiText(title: "appearance.hide_buttons".localized, subtitle: "appearance.hide_buttons.description".localized)
@@ -152,6 +153,32 @@ struct AppearanceView: View {
                             }
                         )
 
+//=======
+//                        Cell(
+//                            middle: {
+//                                MultiText(title: "appearance.hide_buttons".localized, subtitle: "appearance.hide_buttons.description".localized)
+//                            },
+//                            right: {
+//                                ThemeToggle(isOn: $viewModel.hideBalanceButtons.animation(), style: .yellow)
+//                            }
+//                        )
+//                        Cell(
+//                            middle: {
+//                                MultiText(title: "appearance.amount_rounding".localized, subtitle: "appearance.amount_rounding.description".localized)
+//                            },
+//                            right: {
+//                                ThemeToggle(isOn: $viewModel.useAmountRounding.animation(), style: .yellow)
+//                            }
+//                        )
+//                        Cell(
+//                            middle: {
+//                                MultiText(title: "appearance.recently_sent".localized, subtitle: "appearance.recently_sent.description".localized)
+//                            },
+//                            right: {
+//                                ThemeToggle(isOn: $viewModel.showRecentlySent.animation(), style: .yellow)
+//                            }
+//                        )
+//>>>>>>> master
                         Cell(
                             middle: {
                                 MultiText(title: "appearance.balance_value".localized, subtitle: "appearance.balance_value.description".localized)

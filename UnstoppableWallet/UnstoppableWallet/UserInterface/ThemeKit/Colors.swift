@@ -45,6 +45,7 @@ public extension Color {
     static var themeBackgroundFromGradient: Color { .themeTyler }
     static var themeBackgroundToGradient: Color { .themeHelsing }
     static var themeNavigationBarBackground: Color { .themeTyler96 }
+    static var themeInputFieldTintColor: Color { .themeLeah }
 
     var pressed: Color { opacity(0.5) }
 }
@@ -138,14 +139,9 @@ public extension UIColor {
 public extension UIColor {
     static var themeBackgroundFromGradient: UIColor { .themeTyler }
     static var themeBackgroundToGradient: UIColor { .themeHelsing }
-
-    static var themeInputFieldTintColor: UIColor { .themeJacob }
+    static var themeInputFieldTintColor: UIColor { .themeLeah }
     static var themeNavigationBarBackground: UIColor { UIColor.themeTyler96 }
     static var themeTabBarBackground: UIColor { UIColor.themeBlade }
-    
     static var themeBlackAndWhite: UIColor { color(dark: .themeWhite, light: .themeBlack) }
     static var themeBlue: UIColor { color(dark: .themeIssykBlue.withAlphaComponent(0.5), light: .themeIssykBlue) }
-    
-    static var themeDisabledGray: UIColor { color(dark: .themeGray, light: .themeLightGray) }
-    static var themeDisabledBgGray: UIColor { color(dark: .themeLightGray, light: .themeLight) }
 }

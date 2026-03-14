@@ -35,7 +35,7 @@ class BaseTronAdapter {
         switch tronSyncState {
         case .synced: return .synced
         case let .notSynced(error): return .notSynced(error: error.convertedError.localizedDescription)
-        case .syncing: return .syncing(progress: nil, lastBlockDate: nil)
+        case .syncing: return .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
         }
     }
 
@@ -49,6 +49,14 @@ class BaseTronAdapter {
 
     func accountActive(address: TronKit.Address) async -> Bool {
         await (try? tronKit.accountActive(address: address)) ?? true
+    }
+
+    func balanceCaution(active: Bool) -> CautionNew? {
+        if !active {
+            return .init(text: "not_activated".localized, type: .warning)
+        }
+
+        return nil
     }
 }
 

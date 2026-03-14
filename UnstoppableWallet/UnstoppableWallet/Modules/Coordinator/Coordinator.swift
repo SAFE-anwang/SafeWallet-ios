@@ -6,40 +6,55 @@ import SwiftUI
 class Coordinator: ObservableObject {
     static let shared = Coordinator()
 
-    @Published private var routeStack: [Route] = []
+    private var routeStack: [Route] = []
+
+    private var levelPublishers: [Int: PassthroughSubject<RouteType?, Never>] = [:]
+
+    func publisher(for level: Int) -> AnyPublisher<RouteType?, Never> {
+        if levelPublishers[level] == nil {
+            levelPublishers[level] = PassthroughSubject<RouteType?, Never>()
+        }
+        return levelPublishers[level]!.eraseToAnyPublisher()
+    }
 
     func present(type: RouteType = .sheet, @ViewBuilder content: @escaping (Binding<Bool>) -> some View, onDismiss: (() -> Void)? = nil) {
         DispatchQueue.main.async { [weak self] in
-            self?.routeStack.append(Route(type: type, content: content, onDismiss: onDismiss))
+            guard let self else {
+                return
+            }
+
+            let route = Route(type: type, content: content, onDismiss: onDismiss)
+            routeStack.append(route)
+            let newLevel = routeStack.count - 1
+            levelPublishers[newLevel]?.send(type)
         }
     }
 
     func route(at level: Int) -> Route? {
-        guard level >= 0, level < routeStack.count else { return nil }
+        guard level >= 0, level < routeStack.count else {
+            return nil
+        }
         return routeStack[level]
     }
 
-    func hasSheet(at level: Int) -> Bool {
-        level < routeStack.count && routeStack[level].type == .sheet
-    }
-
-    func hasBottomSheet(at level: Int) -> Bool {
-        level < routeStack.count && routeStack[level].type == .bottomSheet
-    }
-
-    func hasAlert(at level: Int) -> Bool {
-        level < routeStack.count && routeStack[level].type == .alert
-    }
-
     func onRouteDismissed(at level: Int) {
-        if level < routeStack.count {
-            for route in routeStack[level...].reversed() {
-                DispatchQueue.main.async {
-                    route.onDismiss?()
-                }
-            }
+        guard level >= 0, level < routeStack.count else {
+            return
+        }
 
-            routeStack.removeSubrange(level...)
+        let dismissedCount = routeStack.count - level
+
+        for route in routeStack[level...].reversed() {
+            DispatchQueue.main.async {
+                route.onDismiss?()
+            }
+        }
+
+        routeStack.removeSubrange(level...)
+
+        for lvl in level ..< (level + dismissedCount) {
+            let newType: RouteType? = lvl < routeStack.count ? routeStack[lvl].type : nil
+            levelPublishers[lvl]?.send(newType)
         }
     }
 }
@@ -61,7 +76,7 @@ extension Coordinator {
         }
     }
 
-    enum RouteType {
+    enum RouteType: Equatable {
         case sheet
         case bottomSheet
         case alert
@@ -69,9 +84,13 @@ extension Coordinator {
 }
 
 extension Coordinator {
-    func presentPurchase(page: StatPage, trigger: StatPremiumTrigger) {
-        present { isPresented in
-            PurchasesView(isPresented: isPresented)
+    func presentPurchase(premiumFeature: PremiumFeature? = nil, page: StatPage, trigger: StatPremiumTrigger) {
+        present(type: premiumFeature != nil ? .bottomSheet : .sheet) { isPresented in
+            if let premiumFeature {
+                PremiumFeaturesWrapper(isPresented: isPresented, feature: premiumFeature)
+            } else {
+                PurchasesView(isPresented: isPresented)
+            }
         }
 
         stat(page: page, event: .openPremium(from: trigger))
@@ -86,8 +105,8 @@ extension Coordinator {
 
     func performAfterPurchase(premiumFeature: PremiumFeature, page: StatPage, trigger: StatPremiumTrigger, onPurchase: @escaping () -> Void) {
         if !Core.shared.purchaseManager.activated(premiumFeature) {
-            present { isPresented in
-                PurchasesView(isPresented: isPresented)
+            present(type: .bottomSheet) { isPresented in
+                PremiumFeaturesWrapper(isPresented: isPresented, feature: premiumFeature)
             } onDismiss: {
                 if Core.shared.purchaseManager.activated(premiumFeature) {
                     onPurchase()
@@ -119,7 +138,7 @@ extension Coordinator {
             onPresent?()
         }
 
-        if Core.shared.termsManager.termsAccepted {
+        if Core.shared.termsManager.state.allAccepted {
             onAccept()
         } else {
             Coordinator.shared.present { isPresented in
@@ -182,17 +201,15 @@ extension Coordinator {
     func present(info: InfoDescription) {
         present(type: .bottomSheet) { isPresented in
             BottomSheetView(
-                icon: .info,
-                title: info.title,
                 items: [
+                    .title(icon: ThemeImage.book, title: info.title),
                     .text(text: info.description),
+                    .buttonGroup(.init(buttons: [
+                        .init(style: .gray, title: "button.understood".localized) {
+                            isPresented.wrappedValue = false
+                        },
+                    ])),
                 ],
-                buttons: [
-                    .init(style: .yellow, title: "button.close".localized) {
-                        isPresented.wrappedValue = false
-                    },
-                ],
-                isPresented: isPresented
             )
         }
     }

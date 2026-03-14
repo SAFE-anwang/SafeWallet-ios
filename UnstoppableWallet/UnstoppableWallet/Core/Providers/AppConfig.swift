@@ -74,7 +74,11 @@ enum AppConfig {
     static var marketApiUrl: String {
         (Bundle.main.object(forInfoDictionaryKey: "MarketApiUrl") as? String) ?? ""
     }
-
+    
+    static var swapApiUrl: String {
+        (Bundle.main.object(forInfoDictionaryKey: "SwapApiUrl") as? String) ?? ""
+    }
+    
     static var etherscanKeys: [String] {
         apiKeys(.etherscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
@@ -169,6 +173,10 @@ enum AppConfig {
         (Bundle.main.object(forInfoDictionaryKey: "MayaAffiliateBps") as? String).flatMap { $0.isEmpty ? nil : Int($0) }
     }
 
+    static var uswapApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "USwapApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
     static var referralAppServerUrl: String {
         (Bundle.main.object(forInfoDictionaryKey: "ReferralAppServerUrl") as? String) ?? ""
     }
@@ -207,14 +215,6 @@ enum AppConfig {
 
     static var hashDitApiKey: String {
         (Bundle.main.object(forInfoDictionaryKey: "HashDitApiKey") as? String) ?? ""
-    }
-
-    static var swapEnabled: Bool {
-        Bundle.main.object(forInfoDictionaryKey: "SwapEnabled") as? String == "true"
-    }
-
-    static var donateEnabled: Bool {
-        Bundle.main.object(forInfoDictionaryKey: "DonateEnabled") as? String == "true"
     }
     
     static var isSafe4TestNet: Bool {

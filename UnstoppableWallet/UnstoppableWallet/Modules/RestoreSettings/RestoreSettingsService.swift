@@ -80,6 +80,12 @@ extension RestoreSettingsService {
     func settings(accountId: String, blockchainType: BlockchainType) -> RestoreSettings {
         manager.settings(accountId: accountId, blockchainType: blockchainType)
     }
+
+    func set(birthdayHeight: String, account: Account, blokcchainType: BlockchainType) {
+        var settings = RestoreSettings()
+        settings[.birthdayHeight] = birthdayHeight
+        save(settings: settings, account: account, blockchainType: blokcchainType)
+    }
 }
 
 extension RestoreSettingsService {

@@ -138,7 +138,7 @@ class SuperNodeCell: UITableViewCell {
         joinButton.setTitleColor(.themeGray, for: .disabled)
         joinButton.addTarget(self, action: #selector(join), for: .touchUpInside)
         joinButton.setBackgroundColor(.themeYellowD, for: .normal)
-        joinButton.setBackgroundColor(.themeDisabledBgGray, for: .disabled)
+        joinButton.setBackgroundColor(.themeBlade, for: .disabled)
         joinButton.cornerRadius = .cornerRadius12
         joinButton.titleLabel?.font = .subhead1
         joinButton.contentEdgeInsets = UIEdgeInsets(top: 4, left: 5, bottom: 4, right: 5)
@@ -155,7 +155,7 @@ class SuperNodeCell: UITableViewCell {
         voteButton.setTitleColor(.themeGray, for: .disabled)
         voteButton.addTarget(self, action: #selector(vote), for: .touchUpInside)
         voteButton.setBackgroundColor(.themeYellowD, for: .normal)
-        voteButton.setBackgroundColor(.themeDisabledBgGray, for: .disabled)
+        voteButton.setBackgroundColor(.themeBlade, for: .disabled)
         voteButton.cornerRadius = .cornerRadius12
         voteButton.titleLabel?.font = .subhead1
         voteButton.contentEdgeInsets = UIEdgeInsets(top: 4, left: 5, bottom: 4, right: 5)
@@ -170,7 +170,7 @@ class SuperNodeCell: UITableViewCell {
         editButton.setTitleColor(.themeGray, for: .disabled)
         editButton.addTarget(self, action: #selector(edit), for: .touchUpInside)
         editButton.setBackgroundColor(.themeYellowD, for: .normal)
-        editButton.setBackgroundColor(.themeDisabledBgGray, for: .disabled)
+        editButton.setBackgroundColor(.themeBlade, for: .disabled)
         editButton.cornerRadius = .cornerRadius12
         editButton.titleLabel?.font = .subhead1
         editButton.contentEdgeInsets = UIEdgeInsets(top: 4, left: 5, bottom: 4, right: 5)
@@ -186,7 +186,7 @@ class SuperNodeCell: UITableViewCell {
         addLockButton.setTitleColor(.themeGray, for: .disabled)
         addLockButton.addTarget(self, action: #selector(addLock), for: .touchUpInside)
         addLockButton.setBackgroundColor(.themeYellowD, for: .normal)
-        addLockButton.setBackgroundColor(.themeDisabledBgGray, for: .disabled)
+        addLockButton.setBackgroundColor(.themeBlade, for: .disabled)
         addLockButton.cornerRadius = .cornerRadius12
         addLockButton.titleLabel?.font = .subhead1
         addLockButton.contentEdgeInsets = UIEdgeInsets(top: 4, left: 5, bottom: 4, right: 5)

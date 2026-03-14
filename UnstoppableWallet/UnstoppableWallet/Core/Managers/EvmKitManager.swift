@@ -215,7 +215,6 @@ class EvmKitWrapper {
 
         return try await merkleTransactionAdapter.cancel(hash: hash)
     }
-    
     func sendSafe4LineLockSingle(type: web3swift.AccountManager.ContractType, transactionData: TransactionData) -> Single<String> {
 
         guard let signer else {

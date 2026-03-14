@@ -25,11 +25,12 @@ class WalletConnectMainService {
         }
     }
 
-    private(set) var premiumEnabled: Bool {
-        didSet {
-            syncWhitelist(url: proposal?.proposer.url ?? session?.peer.url)
-        }
-    }
+    private(set) var premiumEnabled: Bool  = false
+//    {
+//        didSet {
+//            syncWhitelist(url: proposal?.proposer.url ?? session?.peer.url)
+//        }
+//    }
 
     private let connectionStateRelay = PublishRelay<WalletConnectMainModule.ConnectionState>()
     private let requestRelay = PublishRelay<WalletConnectSign.Request>()
@@ -64,7 +65,7 @@ class WalletConnectMainService {
         self.accountManager = accountManager
         self.proposalHandler = proposalHandler
 
-        premiumEnabled = purchaseManager.activated(.vipSupport)
+//        premiumEnabled = purchaseManager.activated(.vipSupport)
         loadWhitelist()
 
         subscribe(disposeBag, service.receiveProposalObservable) { [weak self] in
@@ -84,11 +85,11 @@ class WalletConnectMainService {
 
         connectionStateRelay.accept(service.socketConnectionStatus == .connected ? .connected : .disconnected)
 
-        purchaseManager.$activeFeatures
-            .sink { [weak self] features in
-                self?.premiumEnabled = features.contains(.vipSupport)
-            }
-            .store(in: &cancellables)
+//        purchaseManager.$activeFeatures
+//            .sink { [weak self] features in
+//                self?.premiumEnabled = features.contains(.vipSupport)
+//            }
+//            .store(in: &cancellables)
 
         if let session {
             didReceive(session: session)

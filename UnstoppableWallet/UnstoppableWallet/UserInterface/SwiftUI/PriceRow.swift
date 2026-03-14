@@ -13,23 +13,21 @@ struct PriceRow: View {
 
     var body: some View {
         if let text {
-            ListRow {
-                Text(title).textSubhead2()
-
-                Spacer()
-
-                Button(action: {
-                    flipped.toggle()
-                }) {
-                    HStack(spacing: .margin8) {
-                        Text(text)
-                            .textSubhead1(color: .themeLeah)
-                            .multilineTextAlignment(.trailing)
-
-                        Image("arrow_swap_3_20").themeIcon()
-                    }
+            Cell(
+                style: .secondary,
+                middle: {
+                    MiddleTextIcon(text: title)
+                },
+                right: {
+                    RightMultiText(subtitle: ComponentText(text: text, colorStyle: .primary))
+                        .id(text)
+                        .transition(.opacity)
+                        .onTapGesture {
+                            flipped.toggle()
+                        }
                 }
-            }
+            )
+            .animation(.easeInOut(duration: 0.15), value: text)
         }
     }
 

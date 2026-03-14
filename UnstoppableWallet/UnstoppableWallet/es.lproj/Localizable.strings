@@ -15,6 +15,7 @@
 "button.backup" = "Copia de seguridad";
 "button.restore" = "Restaurar";
 "button.copy" = "Copiar";
+"button.copy_error" = "Copiar error";
 "button.retry" = "Reintentar";
 "button.report" = "Reportar";
 "button.add" = "Añadir";
@@ -27,6 +28,7 @@
 "button.sign" = "Firma";
 "button.more" = "Mostrar más";
 "button.i_understand" = "Entiendo";
+"button.understood" = "Entendido";
 "button.learn_more" = "Aprender más";
 "button.unlock" = "Desbloquear";
 "button.select" = "Seleccionar";
@@ -73,6 +75,7 @@
 "alert.revoking" = "Revocando";
 "alert.revoked" = "Revocada";
 "alert.cant_recognize" = "No se puede reconocer";
+"alert.not_founded" = "No encontrado.";
 
 "alert.fee_too_low" = "Tarifa Demasiado Baja";
 "alert.rbf_not_Enabled" = "RBF (Reemplazar por tarifa) no habilitado";
@@ -124,6 +127,8 @@
 "powered_by" = "Con tecnología de %@";
 
 "filter.all" = "Todo";
+
+"not_activated" = "No activado";
 
 // Access Camera
 
@@ -188,7 +193,8 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "coin_settings.bitcoin_cash_coin_type.title.type145" = "Dirección de caja (recomendado)";
 "sync_mode.hybrid" = "Híbrido";
 "sync_mode.from_blockchain" = "Desde Blockchain";
-"blockchain_settings.description" = "Seleccione el formato de dirección para recibir pagos. Debe elegirse un formato correcto cuando se restaure una cartera existente.";
+"blockchain_settings.description" = "Selecciona el formato de dirección para la moneda.";
+"blockchain_settings.footer" = "Sigue la opción recomendada si no estás seguro. Debe elegirse el formato correcto al restaurar una wallet existente.";
 
 // Coin Platforms
 
@@ -329,14 +335,11 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "balance.searching" = "Buscando transacciones…";
 "balance.connecting" = "Conectando...";
 "balance.stopped" = "Detenido";
-"balance.downloading_sapling" = "Descargando Sapling... %d%%";
-"balance.downloading_blocks" = "Descargando bloques";
-"balance.scanning_blocks" = "Bloques de escaneo";
-"balance.enhancing_transactions" = "Mejorar las transacciones";
+"balance.downloading_sapling" = "Descargando...";
 "balance.watch_wallet" = "Wallet de solo visualización";
 
 "balance.searching.count" = "%@ tx";
-"balance.syncing_percent" = "Sincronizando... %@";
+"balance.remaining" = "Bloques restantes - %@";
 "balance.synced_through" = "hasta %@";
 "balance.empty.description" = "No has añadido ninguna moneda a esta cartera.";
 "balance.sort.header" = "Ordenar por";
@@ -346,8 +349,10 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 
 "balance_error.change_source" = "Cambiar Origen";
 "balance_error.sync_error" = "Error de sincronización";
+"balance_error.sync_error.description.with_source" = "No se pudo obtener datos de la fuente actual. Puedes volver a intentarlo o cambiar a otra fuente de sincronización.";
+"balance_error.sync_error.description.without_source" = "No se pudo obtener datos de la fuente actual. Por favor, inténtalo más tarde.";
 "lost_accounts.warning_title" = "Error de la cadena de Claves del iOs ";
-"lost_accounts.warning_message" = "Los datos encriptados que contienen tu cartera fueron invalidados recientemente debido a que se cambió la pantalla de bloqueo de tu iOS";
+"lost_accounts.warning_message" = "Debido a un error del llavero de iOS, no pudimos acceder a las siguientes wallets:\n\n%@\n\nReiniciar la aplicación normalmente soluciona el problema. Si el inconveniente persiste, puedes desvincular y restaurar estas wallets.";
 
 // Token Balance Page
 "balance.token.locked" = "Bloqueado";
@@ -360,12 +365,12 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "balance.token.not_relayed" = "Transmisión";
 "balance.token.not_relayed.info.title" = "Transmitir";
 "balance.token.not_relayed.info.description" = "La transacción que contiene esta cantidad ha sido transmitida pero aún no ha sido aceptada por la red";
-"balance.token.processing" = "Procesando";
-"balance.token.processing.info.title" = "Detenido";
-"balance.token.processing.info.description" = "Transacciones con esta cantidad todavía sincronizadas. Y cuando se confirmen, estos tokens estarán disponibles para gastos";
 "balance.token.transparent" = "Transparente";
 "balance.token.transparent.info.title" = "Monto transparente";
-"balance.token.transparent.info.description" = "Por ahora, el saldo transparente no se puede utilizar en nuestra billetera. Sin embargo, estos fondos pueden ser gastados desde otras billeteras que soportan direcciones t.";
+"balance.token.transparent.info.item" = "Monto transparente";
+"balance.token.transparent.info.description" = "Tienes un saldo de ZEC en una dirección transparente. Para usarlo en Unstoppable, debe ser protegido (shielded) para garantizar total privacidad.";
+"balance.token.transparent.detected.title" = "ZEC transparente detectado";
+"balance.token.transparent.detected.description" = "Tienes un saldo de ZEC en una dirección transparente. Para usarlo en Unstoppable, debe ser protegido (shielded) para garantizar total privacidad.";
 "balance.token.shield" = "Blindado";
 
 "balance.token.receive_address" = "Dirección de recepción";
@@ -375,8 +380,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "balance.token.frozen" = "Congelados";
 "balance.token.frozen.info.title" = "Título congelado";
 "balance.token.frozen.info.description" = "Texto de descripción congelada";
-"balance.token.account.inactive.title" = "Cuenta No Activa";
-"balance.token.account.inactive.description" = "Las nuevas billeteras TRON requieren un depósito de al menos 1 TRX para activarse. Las billeteras inactivas pueden recibir y almacenar tokens, pero los saldos no se actualizan hasta que se activen.";
+"balance.token.account.inactive.description" = "Las transacciones aparecerán después de la activación";
 
 // Account switcher
 
@@ -392,6 +396,15 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 // Deposit
 
 "deposit.receive_coin" = "Recibir %@";
+"deposit.zcash.title" = "Tipo de dirección";
+"deposit.zcash.header" = "Elige cómo deseas recibir Zcash.";
+"deposit.address_type.unified" = "Unified";
+"deposit.address_type.unified.description" = "Usa esta opción para transferencias personales y privadas entre wallets.";
+"deposit.address_type.transparent" = "Transparente";
+"deposit.address_type.transparent.description" = "Usa esta opción para recibir desde exchanges o servicios que no admiten direcciones unificadas.";
+"deposit.address_type.transparent.caution" = "Puedes recibir ZEC en esta dirección transparente. Para enviar, primero transfiérelo a una dirección protegida (shielded).";
+"deposit.address_type.legacy" = "Legacy";
+
 "deposit.address" = "Dirección";
 "deposit.your_address" = "Su dirección";
 "receive_alert.not_backed_up_description" = "Necesita una Copia de seguridad %@ antes de poder recibir %@.";
@@ -418,8 +431,10 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "deposit.memo_warning.description" = "Tanto un memo (etiqueta) como la dirección son necesarios para asegurar que los activos sean recibidos. De lo contrario sus fondos se perderán.";
 
 "deposit.not_active" = "inactivo";
-"deposit.not_active.title" = "Dirección no activa";
-"deposit.not_active.tron_description" = "Las cuentas recién creadas en la cadena de bloques TRON están inactivas y no se pueden consultar ni explorar. Necesitan ser activadas.\n\nPara activar una cuenta inactiva, transfiera tokens TRX o TRC-10 a su dirección. Para activar una nueva cuenta en la cadena Tron, se requiere una cuota de 1 TRX";
+"deposit.not_active.title" = "TRON no activado";
+"deposit.not_active.tron_description" = "TRON requiere al menos 1 TRX para la activación.
+Hasta que el wallet esté activado, se pueden recibir tokens, pero es posible que los saldos no se muestren.";
+"deposit.not_active.view_address" = "Ver mi dirección";
 "deposit.stellar.inactive_asset.title" = "Activar token";
 "deposit.stellar.inactive_asset.description" = "Para recibir %@, debes activar el token. La red Stellar requiere que se establezca una línea de confianza para cada token. Sin ella, tu billetera no podrá recibir %@ — la transacción será rechazada y los fondos no se entregarán.";
 
@@ -433,10 +448,6 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "deposit.subaddresses.title" = "Subdirecciones";
 "deposit.subaddresses.description" = "Usa subdirecciones para gestionar múltiples direcciones únicas dentro de una misma wallet: más fácil de organizar y más seguro para tu privacidad.";
 "deposit.subaddresses.transactions_count" = "Transacciones: %@";
-
-"deposit.zcash.restore.description" = "¿Ya has poseído alguna moneda ZEC?";
-"deposit.zcash.restore.already_own" = "Sí, ya tengo";
-"deposit.zcash.restore.dont_have" = "No, no tengo";
 
 "deposit.warning" = "Sólo tokens compatibles con la red. Otros se perderán.";
 "deposit.warning.watch_account" = "Esta dirección es la dirección de la cuenta observada";
@@ -497,7 +508,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "send.select_all" = "Seleccionar Todo";
 "send.unselect_all" = "Deseleccionar Todo";
 
-"send.confirmation.title" = "Confirmar";
+"send.confirmation.title" = "Confirmar envío";
 "send.confirmation.you_send" = "Usted envía";
 "send.confirmation.you_receive" = "Recibirás";
 "send.confirmation.transfer" = "Transferencia";
@@ -524,15 +535,21 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "send.confirmation.operation" = "Operación";
 "send.confirmation.transaction_xdr" = "Transacción XDR";
 
+"send.confirmation.edit_fee" = "Editar comisión";
+"send.confirmation.transaction_nonce" = "Transacción Nonce";
+
 "send.confirmation.sync_failed" = "Error de sincronización";
-"send.confirmation.invalid_data" = "Datos no válidos";
+"send.confirmation.failed_to_fetch_data" = "Error al obtener los datos";
 "send.confirmation.refresh" = "Actualizar";
+"send.confirmation.refreshing" = "Actualizando";
 "send.confirmation.please_wait" = "Por favor, espere";
 "send.confirmation.expires_in" = "Expira en %@";
 "send.confirmation.expired" = "Expirado";
 "send.confirmation.slide_to_send" = "Deslizar para enviar";
 "send.confirmation.sending" = "Enviar";
 "send.confirmation.sent" = "Enviado";
+"send.confirmation.unexpected_error" = "Error inesperado";
+"send.confirmation.unexpected_error.text" = "Algo salió mal al enviar tu transacción. Inténtalo de nuevo o copia el código de error y contacta con soporte.";
 
 "send.confirmation.slide_to_approve" = "Deslizar para aprobar";
 "send.confirmation.slide_to_revoke" = "Deslizar para revocar";
@@ -688,20 +705,39 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "swap.unlock.unlimited" = "Ilimitado";
 
 "swap.price_impact" = "Impacto en el precio";
-"swap.price_impact.description" = "La desviación esperada del precio mostrado, típicamente aumenta con la cantidad de intercambio.";
+"swap.price_impact.info" = "La desviación esperada del precio mostrado, típicamente aumenta con la cantidad de intercambio.";
 "swap.high_price_impact" = "Alto impacto en el precio";
 "swap.recipient" = "Destinatario";
 "swap.slippage" = "Deslizamiento";
+"swap.swapped_time" = "Hora del swap";
+"swap.swapped_time.info" = "Tiempo aproximado para recibir los fondos. El procesamiento del swap y las confirmaciones de la transacción pueden tardar algún tiempo según la red y el proveedor.";
 
 "swap.affiliate_fee" = "Tarifa de afiliado";
 "swap.liquidity_fee" = "Tarifa de liquidez";
 "swap.outbound_fee" = "Tarifa de salida";
 "swap.total_fee" = "Tarifa Total";
 
+"swap.aml" = "AML";
+
+// Swap options
+
+"swap_options.title" = "Opciones de swap";
+"swap_options.description" = "Las políticas de Apple App Store ya no nos permiten ofrecer acceso a servicios de swap dentro de la app wallet. Por lo tanto, para realizar un swap, puedes utilizar las siguientes opciones:";
+
+// Swap Terms
+
+"swap.terms.title" = "Términos de swap";
+"swap.terms.description" = "Unstoppable agrega múltiples proveedores de swap descentralizados (DEX) y centralizados para ofrecer tasas competitivas y un amplio soporte de activos.";
+"swap.terms.risk_of_restrictions" = "Riesgo de restricciones";
+"swap.terms.risk_of_restrictions.description" = "Entiendo que algunos proveedores de swap no DEX aplican un screening de transacciones %@. Dichos proveedores pueden rechazar (y reembolsar) swaps o, en casos raros (CSAM y terrorismo), congelar fondos y solicitar datos KYC.";
+"swap.terms.user_responsibility" = "Responsabilidad del usuario";
+"swap.terms.user_responsibility.description" = "Entiendo que el uso de proveedores no DEX introduce riesgos adicionales y que estos riesgos son mi responsabilidad. Unstoppable no puede garantizar el comportamiento de los proveedores.";
+"swap.terms.footer" = "Elige siempre un proveedor de swap que se ajuste a tus requisitos.";
+
 // Swap Advanced Settings
 
 "swap.advanced_settings.slippage" = "Tolerancia de deslizamiento";
-"swap.advanced_settings.slippage.footer" = "Tu transacción se revertirá si el precio cambia desfavorablemente en más de este porcentaje";
+"swap.advanced_settings.slippage.info" = "La desviación máxima de precio aceptable para tu swap. Más allá de este límite, la transacción se revierte.";
 "swap.advanced_settings.deadline" = "Fecha límite de transacción";
 "swap.advanced_settings.deadline.footer" = "Su transacción se revertirá si está pendiente por más de este tiempo.";
 "swap.advanced_settings.recipient.footer" = "Después de la operación de cambio, el monto se transferirá a la dirección especificada";
@@ -737,15 +773,19 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "swap.confirmation.please_wait" = "Por favor, espere";
 "swap.confirmation.quote_expires_in" = "La cotización expira en %@";
 "swap.confirmation.quote_expired" = "Cotización expirada";
-"swap.confirmation.quote_failed" = "Error al cotizar";
+
+"swap.confirmation.slippage_tolerance" = "Tolerancia de deslizamiento";
+"swap.confirmation.set_recipient" = "Establecer destinatario";
 
 "swap.confirmation.slide_to_swap" = "Deslizar para intercambiar";
 "swap.confirmation.swapping" = "Intercambio";
 "swap.confirmation.refresh" = "Actualizar";
+"swap.confirmation.impact_high" = "Perderás una gran parte (%@) de tus fondos en este swap.";
 "swap.confirmation.impact_too_high" = "%@ ha desactivado la acción de intercambio para esta operación porque está recibiendo un precio extremadamente desfavorable. Esto se debe a una liquidez extremadamente baja. \nSi aún desea intercambiar, utilice el sitio web %@ en su lugar.";
 "swap.confirmation.impact_warning" = "¡Importante! Has obtenido un precio extremadamente desfavorable debido a la baja liquidez del mercado.";
 
 "swap.confirmation.minimum_received" = "Mínimo Obtenido";
+"swap.confirmation.minimum_received.info" = "La cantidad mínima que recibirás una vez completado el swap. Esta cantidad está garantizada por el proveedor y no se ve afectada por cambios de precio durante el procesamiento.";
 "swap.confirmation.maximum_sent" = "Gasto máximo";
 
 "swap.dex_info.description" = "Este servicio de intercambio está impulsado por %@, un intercambio de token descentralizado construido en %@ blockchain.\n\n%@ está completamente automatizado y administrado por contratos inteligentes que facilitan los intercambios de token de una manera conflaible y sin ninguna intención para hacer estafas.";
@@ -769,6 +809,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 
 "swap.dex_info.link_button" = "%@ Sitio";
 
+"swap.maya.shielded_address.error" = "No se puede obtener la dirección protegida para Memo (Maya)";
 
 
 // Market
@@ -1427,6 +1468,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "tx_info.recipient_hash" = "Destinatario";
 "tx_info.raw_transaction" = "Transacción sin procesar";
 "tx_info.memo" = "Memo";
+"tx_info.tx_secret_key" = "Tx Secret Key";
 "tx_info.service" = "Servicio";
 "tx_info.view_on" = "Ver en %@";
 "tx_info.you_pay" = "Usted paga";
@@ -1456,10 +1498,10 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "settings.rate_us" = "Califícanos";
 "settings.tell_friends" = "Recomendar a un amigo";
 "settings.contact_us" = "Contáctenos";
-"settings.social_networks.label" = "Be SafeWallet";
+"settings.social_networks.label" = "Be Unstoppable";
 "settings.get_your_tokens" = "Get UWT Tokens";
 "settings.dapp_connection" = "Conexión DApp";
-"settings.app_settings" = "Ajustes de app";
+"settings.appearance" = "Apariencia";
 
 // Settings -> Base Currency
 
@@ -1497,12 +1539,19 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "terms.title" = "Términos";
 "terms.i_agree" = "Acepto";
 
-"terms.item.1" = "Realiza una copia de seguridad segura de las frases de recuperación para cada cartera. Es la única manera de recuperar el acceso a los fondos si la aplicación falla.";
-"terms.item.2" = "Deshabilitar el PIN (código) de desbloqueo en el smartphone elimina todas las carteras de la aplicación. Se necesitarán las frases de recuperación para restaurar el acceso a los fondos.";
+"terms.item.backup_recovery" = "Guarda de forma segura la recovery phrase de cada wallet. Es la única manera de recuperar el acceso a tus fondos si la app se elimina o presenta fallos. Nadie puede restaurarla por ti.";
+"terms.item.device_pin" = "Desactivar el PIN de desbloqueo (código) en el smartphone elimina todas las carteras de la aplicación. Se necesitarán frases de recuperación para restaurar el acceso a los fondos.";
+"terms.item.privacy_notice" = "La aplicación no espía ni recopila datos sobre tus balances o transacciones - ni siquiera sabemos cuántas personas lo utilizan. Solo registra patrones de uso anónimos (páginas abiertas, botones pulsados) para mejorar la usabilidad. Puede desactivarlo en Ajustes → Privacidad";
+"terms.item.decentralized" = "No retenemos tus activos, no accedemos a tus private keys ni ejecutamos transacciones en tu nombre. La app no proporciona servicios de corretaje, exchange, custodia, escrow ni transmisión de dinero. Todas las transacciones son iniciadas, firmadas y difundidas directamente por ti en redes blockchain públicas.";
+"terms.item.commission" = "Como parte de su modelo de monetización, la app obtiene pequeñas comisiones de los swaps DEX ejecutados dentro del wallet. Esto nos ayuda a mantenernos independientes, open source y libres de financiación de VC.";
+"terms.item.irreversibility" = "Las transacciones en blockchain son irreversibles. Revisa siempre los detalles de la transacción antes de confirmar.";
+"terms.item.software" = "La aplicación es de código abierto verificable, con todo el código fuente publicado en línea. Todo lo indicado anteriormente puede ser verificado públicamente por cualquiera.";
+"terms.item.compliance" = "Eres el único responsable de la seguridad de tus fondos, de tu conducta y del cumplimiento de las leyes aplicables tanto en tu jurisdicción como a nivel global.";
+"terms.item.user_responsibility" = "Al continuar, reconoces que la seguridad de tus fondos y el cumplimiento legal son, en última instancia, tu responsabilidad.";
 
 // Settings -> Tell Friends
 
-"settings_tell_friends.text" = "Be SafeWallet";
+"settings_tell_friends.text" = "Be Unstoppable";
 
 // Settings -> Blockchain Settings
 
@@ -1639,7 +1688,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "security_settings.delete_alert_button" = "Eliminar del teléfono";
 
 "btc_blockchain_settings.restore_source" = "Restaurar Fuente";
-"btc_blockchain_settings.restore_source.description" = "Elige la fuente que la aplicación SafeWallet debería usar para sincronizar la(s) cartera(s).";
+"btc_blockchain_settings.restore_source.description" = "Elige la fuente que la aplicación Unstoppable debería usar para sincronizar la(s) cartera(s).";
 "btc_blockchain_settings.restore_source.alert" = "Después de cambiar la Fuente de Restauración, la cartera tendrá que resincronizarse con la cadena de bloques %@.";
 
 "btc_restore_mode.blockchair" = "Rápido, sin privado";
@@ -1692,7 +1741,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "settings.privacy.allow" = "Compartir datos de UI";
 "settings.privacy.allow.description" = "Esta configuración te permite desactivar el análisis de UI/UX y garantizar total confidencialidad.";
 "settings.privacy.nym" = "Consigue Nym VPN";
-"settings.privacy.nym.description" = "Aprovecha la mejor oferta de Nym VPN con SafeWallet: mayor privacidad a un mejor precio.";
+"settings.privacy.nym.description" = "Aprovecha la mejor oferta de Nym VPN con Unstoppable: mayor privacidad a un mejor precio.";
 
 // Settings -> Appearance
 
@@ -1707,12 +1756,12 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "appearance.hide_markets" = "Ocultar Mercados";
 "appearance.hide_markets.description" = "Ocultar por completo la pestaña Mercados.";
 "appearance.price_change" = "Cambio de Precio";
-"appearance.price_change.description" = "Selecciona el período de tiempo para mostrar los cambios en el precio de los tokens.";
+"appearance.price_change.description" = "Selecciona el período de tiempo para mostrar el cambio de precio del token.";
 "appearance.price_change.24h" = "24H";
 "appearance.price_change.1d" = "Medianoche UTC";
 
 "appearance.launch_screen" = "Pantalla de lanzamiento";
-"appearance.launch_screen.description" = "Elige la pantalla predeterminada con la que se abre la aplicación.";
+"appearance.launch_screen.description" = "Elige qué pantalla se abre por defecto al iniciar la app.";
 "appearance.launch_screen.auto" = "Auto";
 "appearance.launch_screen.balance" = "Saldo";
 "appearance.launch_screen.market_overview" = "Visión General del Mercado";
@@ -1720,11 +1769,13 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 
 "appearance.balance_tab" = "Pestaña de saldo";
 "appearance.amount_rounding" = "Redondeo de montos";
-"appearance.amount_rounding.description" = "Mostrar los saldos y montos de transacciones con valores redondeados.";
+"appearance.amount_rounding.description" = "Mostrar saldos y montos de transacciones redondeados.";
+"appearance.recently_sent" = "Enviados recientemente";
+"appearance.recently_sent.description" = "Mostrar la dirección usada recientemente para enviar este token.";
 "appearance.hide_buttons" = "Ocultar Botones";
-"appearance.hide_buttons.description" = "Ocultar los botones de Enviar, Recibir e Intercambiar en la pestaña de Saldo.";
-"appearance.balance_value" = "Valor de Saldo";
-"appearance.balance_value.description" = "Mostrar los saldos resaltados ya sea en cripto o en fiat.";
+"appearance.hide_buttons.description" = "Ocultar los botones Send, Receive y Swap de la pestaña Balance.";
+"appearance.balance_value" = "Saldos de monedas";
+"appearance.balance_value.description" = "Mostrar los saldos destacados en crypto o en fiat.";
 "appearance.balance_value.coin_fiat" = "Moneda / Fiat";
 "appearance.balance_value.fiat_coin" = "Fiat / Moneda";
 
@@ -1746,7 +1797,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 
 // Settings -> Support
 
-"settings.vip_support.description" = "Obtén acceso exclusivo a nuestro Grupo VIP, donde usuarios premium y el equipo de SafeWallet Wallet colaboran. Recibe asistencia directa, discute futuras actualizaciones y ayuda a dar forma a la evolución de la cartera.";
+"settings.vip_support.description" = "Obtén acceso exclusivo a nuestro Grupo VIP, donde usuarios premium y el equipo de Unstoppable Wallet colaboran. Recibe asistencia directa, discute futuras actualizaciones y ayuda a dar forma a la evolución de la cartera.";
 "settings.vip_support.start_chat" = "Únete al Grupo VIP";
 
 // Settings -> Contacts
@@ -2076,23 +2127,20 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 
 // Birthday Input
 
-"birthday_input.title" = "Altura de Cumpleaños";
 "birthday_input.description" = "Introduzca la altura del cumpleaños del monedero para una sincronización más rápida.";
-"birthday_input.new_wallet" = "Cartera nueva";
-"birthday_input.new_wallet.description" = "No tiene ninguna transacción";
-"birthday_input.old_wallet" = "Cartera existente";
-"birthday_input.old_wallet.description" = "Tiene transacciones";
-"birthday_input.input_placeholder" = "%@ (opcional)";
-
-"restore_setting.birthday_height" = "%@ Altura de Cumpleaños";
-"restore_setting.download.disclaimer" = "La sincronización inicial con el blockchain puede consumir mucho tráfico de Internet.";
+"birthday_input.description.rescan" = "Puedes cambiar la altura del bloque o seleccionar una fecha aproximada para volver a escanear tu historial de transacciones.";
+"birthday_input.block_date" = "Fecha de bloque";
+"birthday_input.invalid_block" = "Bloque no válido";
+"birthday_input.rescan" = "Reescanear";
+"birthday_input.picker.select_date" = "Seleccionar fecha";
+"birthday_input.picker.description" = "Elige una fecha aproximada de creación del wallet. La altura del bloque se calculará automáticamente.";
 
 // EVM Network
 
 "evm_network.rpc_source" = "Fuente RPC";
 "evm_network.added" = "Añadido";
 "evm_network.add_new" = "Añadir Nuevo";
-"evm_network.description" = "Elige la fuente que la aplicación SafeWallet debería usar para sincronizar la(s) cartera(s).";
+"evm_network.description" = "Elige la fuente que la aplicación Unstoppable debería usar para sincronizar la(s) cartera(s).";
 
 // Add RPC Source
 
@@ -2108,7 +2156,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "monero_network.node" = "Nodo";
 "monero_network.added" = "Añadido";
 "monero_network.add_new" = "Añadir Nuevo";
-"monero_network.description" = "Elige el nodo que la aplicación SafeWallet debe usar para sincronizar la(s) wallet(s).";
+"monero_network.description" = "Elige el nodo que la aplicación Unstoppable debe usar para sincronizar la(s) wallet(s).";
 "monero_network.settings.title" = "Preferencias de nodo";
 "monero_network.settings.description" = "Nodo de confianza: cuando está activado, la wallet confía en el nodo seleccionado y acepta sus datos sin verificación adicional.\n\nActivado → Las transacciones aparecen como Pendientes inmediatamente después de su envío (sincronización más rápida, pero con menor privacidad y mayor dependencia del nodo).\n\nDesactivado → Las transacciones aparecen solo después de las confirmaciones de la red (más lento, pero más seguro y con mayor privacidad).";
 "monero_network.settings.trust" = "Confiar";
@@ -2314,7 +2362,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 
 "no_passcode.info_text" = "Esta aplicación requiere que el teléfono tenga habilitado el código de acceso (bloqueo de pantalla).\n\nPuedes activarlo en los ajustes de iOS.\n\nTen en cuenta que cuando desactivas el PIN a nivel del sistema operativo, las medidas de seguridad en el almacenamiento seguro de tu teléfono invalidan los datos almacenados previamente. Necesitarás Restaurar las claves de tu cartera para volver a acceder a tu cartera.";
 "cannot_check_passcode.info_text" = "No se puede verificar el estado del código de acceso (bloqueo de pantalla). Por favor, reinicia la aplicación.";
-"jailbreak.info_text" = "El equipo de SafeWallet recomienda ejecutar la aplicación solo en teléfonos no rooteados (no jailbreak).\n\nTenga en cuenta que cuando usa un dispositivo rooteado, la aplicación ya no puede garantizar la seguridad de su criptomoneda contra software malicioso.";
+"jailbreak.info_text" = "El equipo de Unstoppable recomienda ejecutar la aplicación solo en teléfonos no rooteados (no jailbreak).\n\nTenga en cuenta que cuando usa un dispositivo rooteado, la aplicación ya no puede garantizar la seguridad de su criptomoneda contra software malicioso.";
 
 // Transaction Filter
 
@@ -2328,7 +2376,15 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "transaction_filter.contact" = "Contacto";
 "transaction_filter.all_contacts" = "Todos los contactos";
 "transaction_filter.hide_suspicious_txs" = "Ocultar Transacciones Sospechosas";
-"transaction_filter.hide_suspicious_txs.description" = "Ocultando transacciones entrantes con montos mínimos en stablecoins, esto resuelve parcialmente los problemas de ataques de envenenamiento de direcciones.";
+"transaction_filter.hide_suspicious_txs.description" = "Oculta transferencias entrantes de bajo valor (por ejemplo, USDT por debajo de $1.5). Estas transacciones se utilizan con frecuencia para ataques de phishing y address-poisoning.";
+
+// Black Friday
+
+"premium.cell.black_friday.description" = "Actualiza a %@ con nuestro mayor descuento del año";
+"premium.black_friday.discount.save" = "ahorrar";
+"purchase.black_friday.period.lifetime" = "acceso de por vida";
+"purchase.black_friday.period.per_month" = "por mes";
+"purchase.black_friday.period.per_year" = "por año";
 
 // Purchases
 
@@ -2345,41 +2401,43 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 "purchases.type.pro" = "Pro";
 "purchases.type.vip" = "VIP";
 
+// Defense System
+"purchases.defense_system" = "Sistema de defensa";
+"purchases.secure_send" = "Envío seguro";
+"purchases.secure_send.description" = "Evita el envío de fondos a direcciones de riesgo o de phishing.";
+"purchases.secure_send.info" = "Verifica las wallets del destinatario en busca de phishing o fraude. Te alerta antes de enviar a direcciones de alto riesgo.";
+"purchases.scam_protection" = "Protección contra estafas";
+"purchases.scam_protection.description" = "Te advierte cuando te conectas a dApps falsas o maliciosas.";
+"purchases.scam_protection.info" = "Detecta dApps falsas o maliciosas antes de la conexión. Previene el phishing y mantiene tus activos seguros.";
+"purchases.swap_protection" = "Protección de swap";
+"purchases.swap_protection.description" = "Previene bots y ataques MEV durante los swaps.";
+"purchases.swap_protection.info" = "Detiene bots y ataques de front-running durante los swaps. Mantiene tus transacciones justas y seguras.";
+"purchases.robbery_protection" = "Protección contra robo";
+"purchases.robbery_protection.description" = "Protege tus fondos si te ves obligado a desbloquear la app.";
+"purchases.robbery_protection.info" = "Te permite crear una wallet señuelo con un PIN diferente. Mantiene tus activos reales ocultos en situaciones de alto riesgo.";
+
+// Advanced Controls
+"purchases.advanced_controls" = "Controles avanzados";
+"purchases.swap_control" = "Control de swap";
+"purchases.swap_control.description" = "Configuraciones avanzadas para controlar cómo y dónde se ejecutan los swaps.";
+"purchases.swap_control.info" = "Por defecto, seleccionamos la mejor oferta disponible. Con Premium, puedes elegir un proveedor diferente.";
+"purchases.priority_support" = "Soporte prioritario";
+"purchases.priority_support.description" = "Acceso directo a nuestro equipo de soporte.";
+"purchases.priority_support.info" = "Te da acceso directo a soporte prioritario. Obtén ayuda rápida y personalizada del equipo de Unstoppable.";
+
+// Market Insights
+"purchases.market_insights" = "Análisis del mercado";
 "purchases.token_insights" = "Estadísticas";
-"purchases.token_insights.description" = "Acceso a listas top-100 según criterios clave";
-"purchases.token_insights.info" = "Tu herramienta todo en uno para análisis profundo. Navega por listas curadas de los 250 mejores tokens basadas en volumen de trading, liquidez en exchanges, comportamiento de holders y tendencias on-chain—todo de un vistazo. Filtra, analiza y mantente a la vanguardia.";
-
+"purchases.token_insights.description" = "Analíticas detalladas y datos de tokens.";
+"purchases.token_insights.info" = "Muestra datos detallados del token - volumen, liquidez y tendencias. Te ayuda a tomar decisiones de inversión más inteligentes.";
 "purchases.advanced_search" = "Búsqueda Avanzada";
-"purchases.advanced_search.description" = "Filtrado multinivel con múltiples parámetros";
-"purchases.advanced_search.info" = "Elimina el ruido y concéntrate en tokens de alto potencial con precisión. Usa la Búsqueda Avanzada para filtrar miles de tokens por volumen de trading, blockchain, capitalización de mercado, tendencias de precios, sector y rendimiento—y más. Potente, preciso y diseñado para el descubrimiento.";
-
+"purchases.advanced_search.description" = "Filtros potentes para un descubrimiento de tokens más inteligente.";
+"purchases.advanced_search.info" = "Encuentra tokens usando filtros por volumen, cadena o sector. Incluye métricas de actividad en CEX/DEX y listados.";
 "purchases.trade_signals" = "Señales y Tendencias";
-"purchases.trade_signals.description" = "Monitoreo automático de tendencias del mercado para tus tokens";
-"purchases.trade_signals.info" = "Nunca más pierdas una oportunidad de trading. Observador de Tendencias ofrece alertas en tiempo real impulsadas por análisis técnico avanzado, ayudándote a identificar tendencias, detectar breakouts y evitar obstáculos antes de que ocurran. Actúa rápido, opera con inteligencia y maximiza las ganancias.";
+"purchases.trade_signals.description" = "Señales accionables para operar con mayor confianza.";
+"purchases.trade_signals.info" = "Envía alertas en tiempo real sobre oportunidades de trading. Destaca al instante posibles ganancias o riesgos del mercado.";
 
-"purchases.tx_speed_up" = "Acelerar / Cancelar transacción";
-"purchases.tx_speed_up.description" = "Acelera o cancela transacciones.";
-"purchases.tx_speed_up.info" = "La función Acelerar / Cancelar brinda control total sobre las transacciones en blockchain. Con ella, los usuarios pueden acelerar operaciones pendientes aumentando la comisión de gas, o cancelar aquellas que aún no se han confirmado. Esto añade flexibilidad y comodidad en la gestión de transacciones, asegurando que el usuario mantenga siempre el control de su actividad.";
-
-"purchases.duress_mode" = "Modo Duración";
-"purchases.duress_mode.description" = "Seguridad inteligente de fondos durante amenazas físicas";
-"purchases.duress_mode.info" = "Tu cripto. Tu seguridad. El Modo Coacción te permite crear múltiples configuraciones alternativas de wallet, cada una con un PIN distinto, proporcionando una vía de escape oculta en situaciones de alto riesgo. Si te obligan a desbloquear tu wallet, simplemente usa el PIN de coacción para acceder a una wallet secundaria sin exponer activos críticos. Tus fondos reales permanecen ocultos. Tu seguridad permanece intacta.";
-
-"purchases.address_phishing" = "Protección contra estafas";
-"purchases.address_phishing.description" = "Protección automática eficaz contra fraudes y ataques de phishing";
-"purchases.address_phishing.info" = "Una dirección incorrecta, y tu cripto se pierde para siempre. SafeWallet escanea automáticamente las direcciones de destinatarios en busca de patrones sospechosos y te defiende contra las últimas amenazas de phishing, evitando que envíes fondos a un hacker. Bloquea transferencias fraudulentas antes de que ocurran.";
-
-"purchases.address_checker" = "Verificador de Lista Negra";
-"purchases.address_checker.description" = "Garantía de legalidad para tus operaciones con criptomonedas";
-"purchases.address_checker.info" = "Protégete de entidades riesgosas y sancionadas. El Verificador de Lista Negra examina automáticamente las direcciones de destinatarios contra bases de datos de alto riesgo, marcando estafas, fraudes y entidades sancionadas antes de que envíes. Si una dirección está en la lista negra, lo sabrás antes de cometer un error costoso. Asegura tus transacciones. Mantén tu cripto limpio. Permanece conforme.";
-
-"purchases.vip_support" = "Grupo VIP";
-"purchases.vip_support.description" = "Accès à l'équipe du portefeuille pour un support technique rapide.";
-"purchases.vip_support.info" = "Faites partie de l'évolution. Rejoignez le Groupe VIP pour communiquer directement avec notre équipe de support technique. Votez pour les fonctionnalités à venir et obtenez un aperçu exclusif des futures mises à jour. Votre voix compte — aidez-nous à façonner le portefeuille crypto de nouvelle génération.";
-
-"purchases.vip_club" = "Club VIP";
-"purchases.vip_club.description" = "Chat privado con información exclusiva.";
-"purchases.vip_club.info" = "El Club VIP ofrece acceso exclusivo a una comunidad premium de usuarios con intereses afines. Los miembros pueden participar en discusiones privadas, recibir información de expertos de la industria y establecer contactos con otros usuarios de alto nivel. Esta función es ideal para quienes desean mantenerse a la vanguardia con conocimientos e información privilegiada.";
+"purchase.bottom_sheet.description" = "Una sola compra desbloquea todas las funciones Premium.";
 
 "purchases.wallet_description.title" = "Seguridad altamente valorada, privacidad excepcional y una cartera verdaderamente no custodial.";
 "purchases.wallet_description.approved" = "Aprobado y Auditado Por:";
@@ -2430,7 +2488,7 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 // Check Address
 
 "check_address.sanctions_check" = "Verificación de sanciones";
-"check_address.coin_blacklist_check" = "%@ Blacklist Check";
+"check_address.coin_blacklist_check" = "Comprobación de lista negra %@";
 "check_address.on_blockchain" = "en %@";
 "check_address.chainalysis.description" = "Chainalysis es una plataforma de análisis blockchain que proporciona herramientas para rastrear, investigar y evaluar el riesgo de direcciones de criptomonedas. Ayuda a identificar direcciones asociadas a sanciones, fraudes y otras actividades ilícitas.";
 "check_address.hashdit.description" = "HashDit es una plataforma de seguridad que permite a los usuarios verificar direcciones de billeteras para detectar riesgos como sanciones o inclusión en listas negras. Ayuda a los usuarios a evitar interactuar con direcciones potencialmente maliciosas o bloqueadas.";
@@ -2439,11 +2497,10 @@ Ir a Ajustes - > %@ y permitir el acceso a la cámara.";
 // Monero
 
 "monero.priority" = "Prioridad de envío";
-"monero.priority.default" = "Predefinido";
+"monero.priority.default" = "Auto";
 "monero.priority.low" = "Lento";
 "monero.priority.medium" = "Medio";
 "monero.priority.high" = "Rápido";
-"monero.priority.last" = "Última";
 
 // MEV Protection
 

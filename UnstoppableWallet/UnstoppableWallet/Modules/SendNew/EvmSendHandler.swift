@@ -73,6 +73,7 @@ extension EvmSendHandler: ISendHandler {
             nonce: transactionSettings?.nonce,
             timeLock: timeLock,
             feeToken: baseToken
+
         )
     }
 
@@ -92,7 +93,6 @@ extension EvmSendHandler: ISendHandler {
         guard let gasLimit = data.evmFeeData?.surchargedGasLimit else {
             throw SendError.noGasLimit
         }
-        
         if let timeLock = data.timeLock {
             switch timeLock.token {
             case .native:

@@ -50,6 +50,7 @@ struct WalletTokenView: View {
                 .disposed(by: disposeBag)
         }
     }
+    
     @ViewBuilder private func locekdView() -> some View {
         if let lockedAmount, lockedAmount > 0 {
             WalletInfoView.infoView(

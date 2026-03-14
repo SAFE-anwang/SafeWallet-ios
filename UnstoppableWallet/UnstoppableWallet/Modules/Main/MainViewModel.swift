@@ -18,7 +18,6 @@ class MainViewModel: ObservableObject {
 
             if oldValue == .wallet, selectedTab == .wallet {
                 let currentTimestamp = Date().timeIntervalSince1970
-
                 if currentTimestamp - lastTimeStamp < 0.3 {
                     if accountManager.accounts.count > 1 {
                         Coordinator.shared.present(type: .bottomSheet) { _ in

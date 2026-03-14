@@ -19,7 +19,6 @@ struct WalletView: View {
                                 .listRowInsets(EdgeInsets())
                                 .listRowSeparator(.hidden)
                                 .themeListTopView()
-                            
                             AccountWarningView(viewModel: accountWarningViewModel)
                                 .listRowBackground(Color.themeTyler)
                                 .listRowInsets(EdgeInsets())
@@ -27,7 +26,6 @@ struct WalletView: View {
                                 .padding(.horizontal, .margin16)
                                 .padding(.top, .margin8)
                                 .padding(.bottom, .margin12)
-                            
                             Section {
                                 itemsView()
                             } header: {
@@ -156,34 +154,36 @@ struct WalletView: View {
                 if !item.wallet.account.watchAccount {
                     Button {
                         Coordinator.shared.present { isPresented in
-                            ThemeNavigationStack {
-                                SendAddressView(wallet: item.wallet, isPresented: isPresented)
-                            }
+                            SendAddressViewWrapper(wallet: item.wallet, isPresented: isPresented)
                         }
                         stat(page: .tokenPage, event: .openSend(token: item.wallet.token))
                     } label: {
                         Label("balance.send".localized, image: "arrow_m_up")
                     }
                 }
-                let addressProvider = ReceiveAddressModule.addressProvider(wallet: item.wallet)
-                if let address = addressProvider.address {
+                if let addressAdapter = Core.shared.adapterManager.adapter(for: item.wallet),
+                   let depositAdapter = addressAdapter as? IDepositAdapter
+                {
                     Button {
-                        copyAddressIfBackedUp(address: address)
+                        copyAddressIfBackedUp(address: depositAdapter.receiveAddress.address)
                     } label: {
                         Text("balance.copy_address".localized)
-                        Text(address.shortened)
+                        Text(depositAdapter.receiveAddress.address.shortened)
                         Image("copy")
                     }
                 }
-                if !item.wallet.account.watchAccount, item.wallet.token.swappable {
+                if !item.wallet.account.watchAccount {
                     Button {
-                        Coordinator.shared.present { _ in
-                            if let vc = SwapModule.viewController(tokenFrom: item.wallet.token) {
-                                SwapView(viewController: vc)
+                        if viewModel.swapEnabled {
+                            Coordinator.shared.present { _ in
+                                RegularMultiSwapView(token: item.wallet.token)
                             }
-//                            MultiSwapView(token: item.wallet.token)
+                            stat(page: .balance, event: .open(page: .swap))
+                        } else {
+                            Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                                SwapOptionsView(isPresented: isPresented)
+                            }
                         }
-                        stat(page: .tokenPage, event: .open(page: .swap))
                     } label: {
                         Label("balance.swap".localized, image: "swap_e")
                     }
@@ -241,6 +241,7 @@ struct WalletView: View {
                 transactionsPresented = true
             }
             
+
             IconButton(icon: "manage", style: .secondary, size: .small) {
                 if let account = viewModel.account {
                     Coordinator.shared.present { _ in
@@ -265,13 +266,16 @@ struct WalletView: View {
                 stat(page: .balance, event: .open(page: .sendTokenList))
             case .receive: viewModel.onTapReceive()
             case .swap:
-                Coordinator.shared.present { _ in
-//                    if let vc = SwapModule.viewController() {
-//                        SwapView(viewController: vc)
-//                    }
-                    MultiSwapView()
+                if viewModel.swapEnabled {
+                    Coordinator.shared.present { _ in
+                        RegularMultiSwapView()
+                    }
+                    stat(page: .balance, event: .open(page: .swap))
+                } else {
+                    Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                        SwapOptionsView(isPresented: isPresented)
+                    }
                 }
-                stat(page: .balance, event: .open(page: .swap))
             case .scan:
                 Coordinator.shared.present { _ in
                     ScanQrViewNew(reportAfterDismiss: true, pasteEnabled: true) { text in

@@ -16,6 +16,14 @@ struct AlertCardView: View {
         style = item.style
     }
 
+    init(caution: CautionNew) {
+        iconName = Self.defaultIcon
+        title = caution.title
+        text = .plain(caution.text)
+        type = .init(cautionType: caution.type)
+        style = .structured
+    }
+
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
             if let title {
@@ -53,7 +61,7 @@ struct AlertCardView: View {
                 }
             }
             .multilineTextAlignment(style.textAlignment)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: style.alignment)
         }
     }
 }
@@ -62,6 +70,13 @@ extension AlertCardView {
     enum CardType: Equatable {
         case critical
         case caution
+
+        init(cautionType: CautionType) {
+            switch cautionType {
+            case .warning: self = .caution
+            case .error: self = .critical
+            }
+        }
 
         var colorStyle: ColorStyle {
             switch self {
@@ -82,14 +97,14 @@ extension AlertCardView {
         case inline
         case structured
 
-        var alignment: HorizontalAlignment {
+        var textAlignment: TextAlignment {
             switch self {
             case .inline: return .leading
             case .structured: return .center
             }
         }
 
-        var textAlignment: TextAlignment {
+        var alignment: Alignment {
             switch self {
             case .inline: return .leading
             case .structured: return .center

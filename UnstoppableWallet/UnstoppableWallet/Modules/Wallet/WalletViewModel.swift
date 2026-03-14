@@ -10,8 +10,9 @@ class WalletViewModel: WalletListViewModel {
     private let appManager = Core.shared.appManager
     private let eventHandler = Core.shared.appEventHandler
     private let rateAppManager = Core.shared.rateAppManager
+    private let appStateManager = AppStateManager.instance
     private let adapterManager = Core.shared.adapterManager
-    
+
     @Published private(set) var buttonHidden: Bool
     @Published private(set) var totalItem: TotalItem
 
@@ -104,7 +105,11 @@ class WalletViewModel: WalletListViewModel {
 
 extension WalletViewModel {
     var buttons: [WalletButton] {
-        [.scan, .receive, .send] + (AppConfig.swapEnabled ? [.swap] : [])
+        [.scan, .receive, .send, .swap]
+    }
+
+    var swapEnabled: Bool {
+        appStateManager.swapEnabled
     }
 
     func verifyBackedUp() -> Bool {
@@ -122,6 +127,7 @@ extension WalletViewModel {
 
     func onAppear() {
         adapterManager.src20SyncManager?.updateSRC20Tokens()
+
         rateAppManager.onBalancePageAppear()
     }
 
@@ -163,7 +169,7 @@ extension WalletViewModel {
         }
 
         Coordinator.shared.present { _ in
-            ReceiveView(account: account).ignoresSafeArea()
+            ReceiveCoinListView(account: account)
         }
         stat(page: .balance, event: .open(page: .receiveTokenList))
     }

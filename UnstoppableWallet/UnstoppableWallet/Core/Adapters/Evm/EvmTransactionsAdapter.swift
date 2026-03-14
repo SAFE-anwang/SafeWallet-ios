@@ -12,12 +12,20 @@ class EvmTransactionsAdapter: BaseEvmAdapter {
 
     private let evmTransactionSource: EvmKit.TransactionSource
     private let transactionConverter: EvmTransactionConverter
+    private let spamManager: SpamManager?
 
-    init(evmKitWrapper: EvmKitWrapper, source: TransactionSource, baseToken: MarketKit.Token, evmTransactionSource: EvmKit.TransactionSource, coinManager: CoinManager, evmLabelManager: EvmLabelManager) {
+    init(evmKitWrapper: EvmKitWrapper, source: TransactionSource, baseToken: MarketKit.Token, evmTransactionSource: EvmKit.TransactionSource, coinManager: CoinManager, spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager) {
         self.evmTransactionSource = evmTransactionSource
+        spamManager = spamWrapper.spamManager(source: source)
         transactionConverter = EvmTransactionConverter(source: source, baseToken: baseToken, coinManager: coinManager, evmKitWrapper: evmKitWrapper, blockchainType: evmKitWrapper.blockchainType, userAddress: evmKitWrapper.evmKit.address, evmLabelManager: evmLabelManager)
 
         super.init(evmKitWrapper: evmKitWrapper, decimals: EvmAdapter.decimals)
+
+        initializeSpamManager()
+    }
+
+    private func initializeSpamManager() {
+        spamManager?.initialize(adapter: self)
     }
 
     private func tagQuery(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> TransactionTagQuery {
@@ -115,9 +123,22 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
         
     }
 
+    private func handleTransactions(_ transactions: [FullTransaction]) -> [TransactionRecord] {
+        // Preserve evmKit order (descending — newest first)
+        let records = transactions.map { transactionConverter.transactionRecord(fromTransaction: $0) }
+
+        // Mutates .spam in-place via reference type.
+        // Internally sorts ascending for correct detection,
+        // but records array keeps its original order.
+        spamManager?.update(records: records)
+
+        return records
+    }
+
     func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {
         evmKit.transactionsObservable(tagQueries: [tagQuery(token: token, filter: filter, address: address?.lowercased())]).map { [weak self] in
-            $0.compactMap { self?.transactionConverter.transactionRecord(fromTransaction: $0) }
+
+            self?.handleTransactions($0) ?? []
         }
     }
 
@@ -125,7 +146,12 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
         let hash = paginationData?.hs.hexData
         return evmKit.transactionsSingle(tagQueries: [tagQuery(token: token, filter: filter, address: address?.lowercased())], fromHash: hash, limit: limit)
             .map { [weak self] transactions -> [TransactionRecord] in
-                transactions.compactMap { self?.transactionConverter.transactionRecord(fromTransaction: $0) }
+
+                guard !transactions.isEmpty else {
+                    return []
+                }
+
+                return self?.handleTransactions(transactions) ?? []
             }
     }
 

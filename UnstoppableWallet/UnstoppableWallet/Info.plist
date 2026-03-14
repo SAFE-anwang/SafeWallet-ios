@@ -6,6 +6,8 @@
 	<string>${arbiscan_api_keys}</string>
 	<key>BasescanApiKeys</key>
 	<string>${basescan_api_keys}</string>
+	<key>BlockchairApiKey</key>
+	<string>${blockchair_api_key}</string>
 	<key>BscscanApiKeys</key>
 	<string>${bscscan_api_keys}</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -44,6 +46,31 @@
 				<string>ton</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>crypto.deeplinks</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>ethereum</string>
+				<string>bitcoin</string>
+				<string>litecoin</string>
+				<string>bitcoincash</string>
+				<string>ecash</string>
+				<string>tron</string>
+				<string>cosmos</string>
+				<string>dogecoin</string>
+				<string>xrpl</string>
+				<string>solana</string>
+				<string>near</string>
+				<string>zcash</string>
+				<string>monero</string>
+				<string>thorchain</string>
+				<string>maya</string>
+				<string>stellar</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
@@ -67,8 +94,6 @@
 	<string>${ftmscan_api_keys}</string>
 	<key>GnosisscanApiKeys</key>
 	<string>${gnosisscan_api_keys}</string>
-	<key>BlockchairApiKey</key>
-	<string>${blockchair_api_key}</string>
 	<key>HashDitApiKey</key>
 	<string>${hashdit_api_key}</string>
 	<key>HsProviderApiKey</key>
@@ -150,8 +175,8 @@
 	<string>${ShowTestNetSwitcher}</string>
 	<key>SnowtraceApiKeys</key>
 	<string>${snowtrace_api_keys}</string>
-	<key>SwapEnabled</key>
-	<string>${swap_enabled}</string>
+	<key>SwapApiUrl</key>
+	<string>${swap_api_url}</string>
 	<key>ThorchainAffiliate</key>
 	<string>${thorchain_affiliate}</string>
 	<key>ThorchainAffiliateBps</key>

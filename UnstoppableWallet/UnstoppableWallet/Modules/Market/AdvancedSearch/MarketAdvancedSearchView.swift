@@ -19,6 +19,7 @@ struct MarketAdvancedSearchView: View {
                                 blockchainsRow()
                             }
 /*
+
                             VStack(spacing: 0) {
                                 PremiumListSectionHeader()
                                 ListSection {
@@ -58,6 +59,7 @@ struct MarketAdvancedSearchView: View {
                                 .modifier(ColoredBorder())
                             }
 */
+
                         }
                         .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
                     }
@@ -188,7 +190,7 @@ struct MarketAdvancedSearchView: View {
             }
         } else {
             ClickableRow {
-                Coordinator.shared.presentPurchase(page: .advancedSearch, trigger: statPremiumKey)
+                Coordinator.shared.presentPurchase(premiumFeature: .advancedSearch, page: .advancedSearch, trigger: statPremiumKey)
             } content: {
                 view
             }

@@ -28,9 +28,7 @@ struct MainView: View {
                 HStack(spacing: 0) {
                     ForEach(viewModel.tabs, id: \.self) { tab in
                         ZStack {
-                            Image(tab.image)
-                                .renderingMode(.template)
-                                .icon(colorStyle: viewModel.selectedTab == tab ? .yellow : .secondary)
+                            Image(tab.image).icon(colorStyle: viewModel.selectedTab == tab ? .yellow : .secondary)
 
                             if tab == MainViewModel.Tab.settings, let badge = badgeViewModel.badge {
                                 BadgeView(badge: badge)
@@ -52,12 +50,10 @@ struct MainView: View {
             .navigationDestination(for: Wallet.self) { wallet in
                 WalletTokenModule.view(wallet: wallet)
             }
-            .tint(.themeJacob)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar() }
         }
-        .modifier(CoordinatorViewModifier())
     }
 
     @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
@@ -115,7 +111,6 @@ struct MainView: View {
             }
         case .safe:
             ToolbarItem(placement: .navigationBarTrailing) {}
-
         case .settings:
             ToolbarItem(placement: .navigationBarTrailing) {}
         }
@@ -169,21 +164,41 @@ extension MainView {
 }
 
 struct AccountsLostView: View {
+    let records: [AccountRecord]
     @Binding var isPresented: Bool
 
     var body: some View {
         BottomSheetView(
-            icon: .warning,
-            title: "lost_accounts.warning_title".localized,
             items: [
-                .text(text: "lost_accounts.warning_message".localized),
+                .title(icon: ThemeImage.warning, title: "lost_accounts.warning_title".localized),
+                .text(text: "lost_accounts.warning_message".localized(records.map { "- \($0.name)" }.joined(separator: "\n"))),
+                .buttonGroup(.init(buttons: [
+                    .init(style: .yellow, title: "button.i_understand".localized) {
+                        isPresented = false
+                    },
+                ])),
             ],
-            buttons: [
-                .init(style: .yellow, title: "button.ok".localized) {
-                    isPresented = false
-                },
-            ],
-            isPresented: $isPresented
         )
+    }
+}
+
+struct ToolbarBadgeModifier: ViewModifier {
+    let visible: Bool
+
+    func body(content: Content) -> some View {
+        ZStack {
+            content
+
+            if visible {
+                VStack {
+                    HStack {
+                        Spacer()
+                        Circle().fill(Color.red).frame(width: 8, height: 8)
+                    }
+                    Spacer()
+                }
+            }
+        }
+        .frame(width: 28, height: 28)
     }
 }

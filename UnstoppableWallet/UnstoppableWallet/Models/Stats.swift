@@ -187,6 +187,7 @@ enum StatEvent {
     case addToWallet
     case addToWatchlist(coinUid: String)
     case amountRounding(use: Bool)
+    case recentlySent(show: Bool)
     case approveRequest(chainUid: String)
     case cancel
     case clear(entity: StatEntity)
@@ -208,6 +209,7 @@ enum StatEvent {
     case openArticle(relativeUrl: String)
     case openBlockchainSettingsBtc(chainUid: String)
     case openBlockchainSettingsEvm(chainUid: String)
+    case openBlockchainSettingsMonero
     case openBlockchainSettingsEvmAdd(chainUid: String)
     case openBlockchainSettingsMoneroAdd(chainUid: String)
     case openCategory(categoryUid: String)
@@ -275,6 +277,7 @@ enum StatEvent {
         case .addToWallet: return "add_to_wallet"
         case .addToWatchlist: return "add_to_watchlist"
         case .amountRounding: return "use_amount_rounding"
+        case .recentlySent: return "show_recently_sent"
         case .approveRequest: return "approve_request"
         case .cancel: return "cancel"
         case .clear: return "clear"
@@ -293,8 +296,7 @@ enum StatEvent {
         case .importFull: return "import_full"
         case .importWallet: return "import_wallet"
         case .open, .openCategory, .openCoin, .openPlatform, .openReceive, .openResend, .openSector, .openSend, .openSendTokenList, .openTokenPage,
-             .openBlockchainSettingsBtc,
-             .openBlockchainSettingsEvm, .openBlockchainSettingsEvmAdd,
+             .openBlockchainSettingsBtc, .openBlockchainSettingsEvm, .openBlockchainSettingsMonero, .openBlockchainSettingsEvmAdd,
              .openBlockchainSettingsMoneroAdd: return "open_page"
         case .openPremium: return "open_premium_from"
         case .openTokenInfo: return "open_token_info"
@@ -356,6 +358,7 @@ enum StatEvent {
         case let .addToken(token): return params(token: token).merging([.entity: StatEntity.token.rawValue]) { $1 }
         case let .addToWatchlist(coinUid): return [.coinUid: coinUid]
         case let .amountRounding(use): return [.use: use]
+        case let .recentlySent(shown): return [.shown: shown]
         case let .approveRequest(chainUid): return [.chainUid: chainUid]
         case let .clear(entity): return [.entity: entity.rawValue]
         case let .copy(entity): return [.entity: entity.rawValue]
@@ -371,6 +374,7 @@ enum StatEvent {
         case let .open(page): return [.page: page.rawValue]
         case let .openBlockchainSettingsBtc(chainUid: chainUid): return [.page: StatPage.blockchainSettingsBtc.rawValue, .chainUid: chainUid]
         case let .openBlockchainSettingsEvm(chainUid: chainUid): return [.page: StatPage.blockchainSettingsEvm.rawValue, .chainUid: chainUid]
+        case .openBlockchainSettingsMonero: return [.page: StatPage.blockchainSettingsMonero.rawValue]
         case let .openBlockchainSettingsEvmAdd(chainUid: chainUid): return [.page: StatPage.blockchainSettingsEvmAdd.rawValue, .chainUid: chainUid]
         case let .openCategory(categoryUid): return [.page: StatPage.coinCategory.rawValue, .categoryUid: categoryUid]
         case let .openCoin(coinUid): return [.page: StatPage.coinPage.rawValue, .coinUid: coinUid]
@@ -483,7 +487,7 @@ enum StatPremiumTrigger: String {
     case dexLiquidity = "dex_liquidity"
     case dexVolume = "dex_volume"
     case disableAddressChecker = "disable_address_checker"
-    case duressMode = "duress_mode"
+    case robberyProtection = "robbery_protection"
     case filter
     case getPremium = "get_premium"
     case goodCexVolume = "good_cex_volume"
@@ -507,6 +511,7 @@ enum StatPremiumTrigger: String {
     case projectRevenue = "project_revenue"
     case sectors
     case sortBy = "sort_by"
+    case swapQuoteSelect = "swap_quote_select"
     case timePeriod = "time_period"
     case tokenChange = "token_change"
     case tradingAssistant = "trading_assistant"

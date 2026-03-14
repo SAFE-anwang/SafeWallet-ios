@@ -16,7 +16,7 @@ struct MarketAdvancedSearchBlockchainsView: View {
             .padding(.horizontal, .margin32)
             .padding(.vertical, .margin24)
 
-            BottomGradientWrapper(backgroundColor: .themeLawrence) {
+            BottomGradientWrapper {
                 ScrollView {
                     VStack(spacing: .margin24) {
                         ListSection {

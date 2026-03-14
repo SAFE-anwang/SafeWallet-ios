@@ -5,6 +5,7 @@ struct CrossPreSendView: View {
     @StateObject var viewModel: CrossPreSendViewModel
 
     @Environment(\.presentationMode) private var presentationMode
+    @Environment(\.addressParserFilter) private var parserFilter
     @FocusState private var focusField: FocusField?
     @State private var confirmPresented = false
 
@@ -89,6 +90,7 @@ struct CrossPreSendView: View {
             ),
             text: $viewModel.address,
             result: $viewModel.addressResult,
+            parserFilter: parserFilter,
             borderColor: Binding(get: { viewModel.borderColor }, set: { _ in })
         )
         .modifier(CautionBorder(cautionState: $viewModel.addressCautionState))
@@ -202,19 +204,18 @@ struct CrossPreSendView: View {
             } else {
                 Coordinator.shared.present(type: .bottomSheet) { isPresented in
                     BottomSheetView(
-                        icon: .local(name: "warning_2_24", tint: .themeLucian),
-                        title: "send.address.risky.title".localized,
                         items: [
-                            .highlightedDescription(text: "send.address.risky.description".localized, style: .alert),
+                            .title(icon: nil, title: "send.address.risky.title".localized),
+                            .text(text: "send.address.risky.description".localized),
+                            .buttonGroup(.init(buttons: [
+                                .init(style: .red, title: "send.continue_anyway".localized) {
+                                    isPresented.wrappedValue = false
+                                    confirmPresented = true
+                                },
+                                .init(style: .transparent, title: "button.cancel".localized) { isPresented.wrappedValue = false },
+                                ],
+                                alignment: .horizontal)),
                         ],
-                        buttons: [
-                            .init(style: .red, title: "send.continue_anyway".localized) {
-                                isPresented.wrappedValue = false
-                                confirmPresented = true
-                            },
-                            .init(style: .transparent, title: "button.cancel".localized) { isPresented.wrappedValue = false },
-                        ],
-                        isPresented: isPresented
                     )
                 }
             }

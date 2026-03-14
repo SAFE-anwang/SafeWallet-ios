@@ -5,9 +5,13 @@ import SwiftUI
 struct AddressView: View {
     @StateObject var viewModel: AddressViewModel
     private let buttonTitle: String
-    private let onFinish: (ResolvedAddress) -> Void
+    private let mustChangeAddress: Bool
+    private let onFinish: (ResolvedAddress?) -> Void
 
     @Environment(\.presentationMode) private var presentationMode
+    @Environment(\.addressParserFilter) private var parserFilter
+
+    @FocusState var isInputActive: Bool
 
     var borderColor: Color {
         switch viewModel.addressResult {
@@ -16,9 +20,10 @@ struct AddressView: View {
         }
     }
 
-    init(token: Token, buttonTitle: String, destination: AddressViewModel.Destination, address: String? = nil, onFinish: @escaping (ResolvedAddress) -> Void) {
+    init(token: Token, buttonTitle: String, destination: AddressViewModel.Destination, address: String? = nil, mustChangeAddress: Bool = false, onFinish: @escaping (ResolvedAddress?) -> Void) {
         _viewModel = StateObject(wrappedValue: AddressViewModel(token: token, destination: destination, address: address))
         self.buttonTitle = buttonTitle
+        self.mustChangeAddress = mustChangeAddress
         self.onFinish = onFinish
     }
 
@@ -33,8 +38,10 @@ struct AddressView: View {
                         ),
                         text: $viewModel.address,
                         result: $viewModel.addressResult,
+                        parserFilter: parserFilter,
                         borderColor: Binding(get: { borderColor }, set: { _ in })
                     )
+                    .focused($isInputActive)
                     .padding(.bottom, .margin12)
 
                     if case let .invalid(caution) = viewModel.state, let caution {
@@ -56,9 +63,7 @@ struct AddressView: View {
                             if !viewModel.contacts.isEmpty {
                                 ListSectionHeader2(text: "send.address.contacts".localized)
                                 ListSection {
-                                    ForEach(viewModel.contacts) {
-                                        row(contact: $0)
-                                    }
+                                    ForEach(viewModel.contacts) { row(contact: $0) }
                                 }
                                 .themeListStyle(.bordered)
                             }
@@ -88,15 +93,22 @@ struct AddressView: View {
                 }
                 .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
             }
+            .onTapGesture {
+                isInputActive = false
+            }
         } bottomContent: {
             let (title, disabled, showProgress) = buttonState()
 
             Button(action: {
-                guard case let .valid(resolvedAddress) = viewModel.state else {
-                    return
+                switch viewModel.state {
+                case .empty:
+                    if !viewModel.initialAddress.isEmpty {
+                        onFinish(nil)
+                    }
+                case let .valid(resolvedAddress):
+                    onFinish(resolvedAddress)
+                default: ()
                 }
-
-                onFinish(resolvedAddress)
             }) {
                 HStack(spacing: .margin8) {
                     if showProgress {
@@ -158,7 +170,7 @@ struct AddressView: View {
         .onTapGesture {
             switch state {
             case .locked:
-                Coordinator.shared.presentPurchase(page: viewModel.destination.sourceStatPage, trigger: .addressChecker)
+                Coordinator.shared.presentPurchase(premiumFeature: .secureSend, page: viewModel.destination.sourceStatPage, trigger: .addressChecker)
             default:
                 Coordinator.shared.present(info: checkDescription)
             }
@@ -172,17 +184,33 @@ struct AddressView: View {
 
         switch viewModel.state {
         case .empty:
-            title = "send.address.enter_address".localized
+            if !viewModel.initialAddress.isEmpty {
+                title = buttonTitle
+                disabled = false
+            } else {
+                title = "send.address.enter_address".localized
+            }
         case .invalid:
             title = "send.address.invalid_address".localized
         case .checking:
             title = "send.address.checking".localized
             showProgress = true
-        case .valid:
+        case let .valid(resolvedAddress):
             title = buttonTitle
-            disabled = false
+            disabled = mustChangeAddress && resolvedAddress.address.lowercased() == viewModel.initialAddress.lowercased()
         }
 
         return (title, disabled, showProgress)
+    }
+}
+
+private struct AddressParserFilterKey: EnvironmentKey {
+    static let defaultValue: AddressParserFactory.ParserFilter? = nil
+}
+
+extension EnvironmentValues {
+    var addressParserFilter: AddressParserFactory.ParserFilter? {
+        get { self[AddressParserFilterKey.self] }
+        set { self[AddressParserFilterKey.self] = newValue }
     }
 }

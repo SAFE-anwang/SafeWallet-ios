@@ -46,7 +46,7 @@ class AccountStorage {
 
             type = .evmPrivateKey(data: data)
         case .stellarSecretKey:
-            guard let secretSeed = record.dataKey else {
+            guard let secretSeed: String = recover(id: id, typeName: typeName, keyName: .data) else {
                 return nil
             }
 
@@ -100,13 +100,11 @@ class AccountStorage {
             type = .btcAddress(address: address, blockchainType: BlockchainType(uid: blockchainTypeUid), tokenType: tokenType)
         case .moneroWatchAccount:
             let viewKey: String? = recover(id: id, typeName: typeName, keyName: .data)
-            guard let address = record.wordsKey, let viewKey,
-                  let restoreHeightString = record.saltKey, let restoreHeight = Int(restoreHeightString)
-            else {
+            guard let address = record.wordsKey, let viewKey else {
                 return nil
             }
 
-            type = .moneroWatchAccount(address: address, viewKey: viewKey, restoreHeight: restoreHeight)
+            type = .moneroWatchAccount(address: address, viewKey: viewKey)
         }
 
         return Account(
@@ -140,7 +138,7 @@ class AccountStorage {
             dataKey = try store(data: data, id: id, typeName: typeName, keyName: .data)
         case let .stellarSecretKey(secretSeed):
             typeName = .stellarSecretKey
-            dataKey = secretSeed
+            dataKey = try store(secretSeed, id: id, typeName: typeName, keyName: .data)
         case let .evmAddress(address):
             typeName = .evmAddress
             dataKey = try store(data: address.raw, id: id, typeName: typeName, keyName: .data)
@@ -161,10 +159,9 @@ class AccountStorage {
             wordsKey = address
             saltKey = blockchainType.uid
             dataKey = tokenType.id
-        case let .moneroWatchAccount(address, viewKey, restoreHeight):
+        case let .moneroWatchAccount(address, viewKey):
             typeName = .moneroWatchAccount
             wordsKey = address
-            saltKey = String(restoreHeight)
             dataKey = try store(viewKey, id: id, typeName: typeName, keyName: .data)
         }
 
@@ -246,23 +243,24 @@ class AccountStorage {
 }
 
 extension AccountStorage {
-    var allAccounts: [Account] {
-        storage.all.compactMap { createAccount(record: $0) }
+    var allAccounts: ([Account], [AccountRecord]) {
+        var accounts = [Account]()
+        var lostAccountRecords = [AccountRecord]()
+
+        for record in storage.all {
+            if let account = createAccount(record: record) {
+                accounts.append(account)
+            } else {
+                lostAccountRecords.append(record)
+            }
+        }
+
+        return (accounts, lostAccountRecords)
     }
 
     func save(account: Account) {
         if let record = try? createRecord(account: account) {
             storage.save(record: record)
-        }
-    }
-
-    var lostAccountIds: [String] {
-        storage.all.compactMap { accountRecord in
-            if createAccount(record: accountRecord) == nil {
-                return accountRecord.id
-            }
-
-            return nil
         }
     }
 

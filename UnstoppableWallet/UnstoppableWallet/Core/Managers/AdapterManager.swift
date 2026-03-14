@@ -45,7 +45,7 @@ class AdapterManager {
             }
         }
         subscribe(disposeBag, btcBlockchainManager.restoreModeUpdatedObservable) { [weak self] in self?.handleUpdatedRestoreMode(blockchainType: $0) }
-        subscribe(disposeBag, moneroNodeManager.nodeObservable) { [weak self] in self?.handleUpdatedMoneroNode(blockchainType: $0) }
+        subscribe(disposeBag, moneroNodeManager.nodeObservable) { [weak self] in self?.recreateAdapter(blockchainType: $0) }
     }
 
     private func initAdapters(wallets: [Wallet], account: Account?) {
@@ -162,8 +162,18 @@ extension AdapterManager {
         queue.sync { _adapterData.adapterMap[wallet] as? IDepositAdapter }
     }
 
+    func recreateAdapter(blockchainType: BlockchainType) {
+        Task {
+            let wallets = queue.sync { _adapterData.adapterMap.keys }
+
+            refreshAdapters(wallets: wallets.filter {
+                $0.token.blockchain.type == blockchainType
+            })
+        }
+    }
+
     func refresh() {
-        queue.async {
+        DispatchQueue.global(qos: .background).async {
             for blockchain in self.evmBlockchainManager.allBlockchains {
                 try? self.evmBlockchainManager.evmKitManager(blockchainType: blockchain.type).evmKitWrapper?.evmKit.refresh()
             }
@@ -179,7 +189,7 @@ extension AdapterManager {
     }
 
     func refresh(wallet: Wallet) {
-        queue.async {
+        DispatchQueue.global(qos: .background).async {
             if let blockchainType = self.evmBlockchainManager.blockchain(token: wallet.token)?.type {
                 try? self.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper?.evmKit.refresh()
             } else if wallet.token.blockchainType == .tron {

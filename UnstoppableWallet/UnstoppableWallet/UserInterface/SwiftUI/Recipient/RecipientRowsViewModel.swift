@@ -8,22 +8,20 @@ class RecipientRowsViewModel: ObservableObject {
     let manager = Core.shared.contactManager
 
     let address: String
-    let label: String?
     let blockchainType: BlockchainType
 
-    @Published var name: String?
+    @Published var item: Item
 
     init(address: String, blockchainType: BlockchainType) {
         self.address = address
         self.blockchainType = blockchainType
-        label = evmLabelManager.addressLabel(address: address)
+        item = RecipientRowsViewModel.item(address: address, blockchainType: blockchainType)
 
         subscribe(disposeBag, Core.shared.contactManager.stateObservable) { [weak self] _ in self?.sync() }
-        sync()
     }
 
     private func sync() {
-        name = manager.all?.by(address: address, blockchainUid: blockchainType.uid)?.name
+        item = Self.item(address: address, blockchainType: blockchainType)
     }
 
     var emptyContacts: Bool {
@@ -32,10 +30,52 @@ class RecipientRowsViewModel: ObservableObject {
 }
 
 extension RecipientRowsViewModel {
+    private static func item(address: String, blockchainType: BlockchainType) -> Item {
+        if let contact = Core.shared.contactManager.all?.by(address: address, blockchainUid: blockchainType.uid) {
+            return .contact(contact.name, address: address)
+        } else if let label = Core.shared.evmLabelManager.addressLabel(address: address) {
+            return .label(label, address: address)
+        } else {
+            return .raw(address: address)
+        }
+    }
+}
+
+extension RecipientRowsViewModel {
     enum AddAddressType: String, Identifiable {
         case create, add
 
         var id: String { rawValue }
+    }
+
+    enum Item {
+        case raw(address: String)
+        case label(String, address: String)
+        case contact(String, address: String)
+
+        var icon: String {
+            switch self {
+            case .raw: return "wallet_filled"
+            case .label: return "list_filled" // TODO: change to some label-icon
+            case .contact: return "user_filled"
+            }
+        }
+
+        var title: String {
+            switch self {
+            case let .raw(address): return address
+            case let .label(name, _): return name
+            case let .contact(name, _): return name
+            }
+        }
+
+        var subtitle: String? {
+            switch self {
+            case .raw: return nil
+            case let .label(_, address): return address
+            case let .contact(_, address): return address
+            }
+        }
     }
 }
 

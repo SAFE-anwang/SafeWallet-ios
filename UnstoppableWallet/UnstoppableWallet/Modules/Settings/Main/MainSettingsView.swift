@@ -8,7 +8,6 @@ struct MainSettingsView: View {
     @State private var manageWalletsPresented = false
     @State private var addressCheckerPresented = false
     @State private var walletConnectPresented = false
-    @State private var showSelectorPresented = false
     @StateObject var walletConnectVerificationModel = WalletConnectVerificationModel(
         accountManager: Core.shared.accountManager,
         cloudBackupManager: Core.shared.cloudBackupManager
@@ -143,14 +142,22 @@ struct MainSettingsView: View {
                 return
             }
 
-            currentSlideIndex = (currentSlideIndex + 1) % viewModel.slides.count
+//<<<<<<< HEAD
+//            currentSlideIndex = (currentSlideIndex + 1) % viewModel.slides.count
+//=======
+            currentSlideIndex = PremiumFactory.forceShowingPremium ? 0 : (currentSlideIndex + 1) % viewModel.slides.count
+//>>>>>>> master
         }
     }
 
     @ViewBuilder private func slide(slide: MainSettingsViewModel.Slide) -> some View {
         switch slide {
         case .premium:
-            premiumSlide()
+//<<<<<<< HEAD
+//            premiumSlide()
+//=======
+            PremiumFactory.slide(offer: viewModel.introductoryOffer)
+//>>>>>>> master
                 .onTapGesture {
                     Coordinator.shared.presentPurchase(page: .settings, trigger: .banner)
                 }
@@ -160,32 +167,6 @@ struct MainSettingsView: View {
                     UrlManager.open(url: "https://t.me/\(AppConfig.appTokenTelegramAccount)/app")
                 }
         }
-    }
-
-    @ViewBuilder private func premiumSlide() -> some View {
-        ZStack(alignment: .trailing) {
-            GeometryReader { geometry in
-                Image("banner_premium")
-                    .clipped()
-                    .frame(width: geometry.size.width, alignment: .trailing)
-            }
-
-            VStack(alignment: .leading, spacing: .margin2) {
-                Text("premium.cell.title".localized).textHeadline1(color: .themeYellow)
-                Spacer(minLength: 0)
-
-                VStack(alignment: .leading, spacing: .margin4) {
-                    Text("premium.cell.description".localized("premium.cell.description.key".localized)).textSubhead1(color: .themeLight)
-
-                    if let introductoryOffer = viewModel.introductoryOffer {
-                        Text(introductoryOffer).textCaptionSB(color: .themeGreen)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(EdgeInsets(top: .margin16, leading: .margin16, bottom: .margin16, trailing: 138))
-        }
-        .background(Color.themeDarker)
     }
 
     @ViewBuilder private func miniAppSlide() -> some View {
@@ -356,7 +337,7 @@ struct MainSettingsView: View {
                 }
         }) {
             Image("uw_24").themeIcon()
-            Text("settings.app_settings".localized).themeBody()
+            Text("settings.appearance".localized).themeBody()
             Image.disclosureIcon
         }
     }
@@ -423,18 +404,13 @@ struct MainSettingsView: View {
 
     @ViewBuilder private func vipSupport() -> some View {
         ClickableRow(action: {
-            Coordinator.shared.performAfterPurchase(premiumFeature: .vipSupport, page: .settings, trigger: .vipSupport) {
-                Coordinator.shared.present(type: .bottomSheet) { _ in
-                    SupportView { telegramUrl in
-                        UrlManager.open(url: telegramUrl)
-                    }
-                }
-
+            Coordinator.shared.performAfterPurchase(premiumFeature: .prioritySupport, page: .settings, trigger: .vipSupport) {
+                UrlManager.open(url: MainSettingsViewModel.supportLink)
                 stat(page: .settings, event: .open(page: .vipSupport))
             }
         }) {
             Image("support_2_24").themeIcon(color: .themeJacob)
-            Text("purchases.vip_support".localized).themeBody()
+            Text("purchases.priority_support".localized).themeBody()
             Image.disclosureIcon
         }
     }
@@ -602,41 +578,13 @@ struct MainSettingsView: View {
                 }
                 .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
             }
+
+            ListRow {
+                Toggle(isOn: $viewModel.mayaStagenetEnabled) {
+                    Text("Maya Stagenet Enabled").themeBody()
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
+            }
         }
     }
-    
-//    @ViewBuilder private func confirmFallbackBlockView(isPresented: Binding<Bool>) -> some View {
-//        BottomSheetView(
-//            icon: .info,
-//            title: "safe_setting.fallback.title".localized,
-//            items: [
-//                fallbackBlockViewModel
-//            ],
-//            buttons: [
-//                .init(style: .red, title: "safe_setting.fallback.sheet.button".localized) {
-//                    fallbackBlockViewModel.fallbackBlock(item: <#T##FallbackBlockViewItem#>)
-//                },
-//            ],
-//            isPresented: isPresented
-//        )
-//    }
 }
-//extension MainSettingsViewController {
-//    
-//
-//    
-//    private func showSelector(onSelect: @escaping (Int) -> ()) {
-//        let viewController = FallbackBlockModule.viewController(
-//                image: nil,
-//                title: "safe_setting.fallback.title".localized,
-//                viewItems: fallbackBlockViewModel.fallbackBlockViewItems.map{$0.item},
-//                onSelect: onSelect
-//        )
-//
-//        DispatchQueue.main.async {
-//            self.present(viewController, animated: true)
-//        }
-//    }
-//    
-//
-//}

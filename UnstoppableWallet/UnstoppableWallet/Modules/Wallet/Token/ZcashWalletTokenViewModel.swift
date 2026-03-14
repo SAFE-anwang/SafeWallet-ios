@@ -4,22 +4,30 @@ import RxSwift
 
 class ZcashWalletTokenViewModel: ObservableObject {
     private let balanceHiddenManager = Core.shared.balanceHiddenManager
+    private let adapterManager = Core.shared.adapterManager
+    private let restoreSettingsService = RestoreSettingsService(manager: Core.shared.restoreSettingsManager)
     private let adapter: ZcashAdapter
 
     private var cancellables = Set<AnyCancellable>()
     private let disposeBag = DisposeBag()
 
-    @Published var zcashBalanceData: ZcashAdapter.ZcashBalanceData
-    @Published var balanceHidden: Bool
+    let wallet: Wallet
 
-    init(adapter: ZcashAdapter) {
+    @Published var zCashBalanceData: ZcashBalanceData
+    @Published var balanceHidden: Bool
+    @Published var birthdayHeight: Int?
+
+    init(adapter: ZcashAdapter, wallet: Wallet) {
         self.adapter = adapter
-        zcashBalanceData = adapter.zcashBalanceData
+        self.wallet = wallet
+        zCashBalanceData = adapter.zCashBalanceData
         balanceHidden = balanceHiddenManager.balanceHidden
 
-        adapter.$zcashBalanceData
+        birthdayHeight = restoreSettingsService.settings(accountId: wallet.account.id, blockchainType: wallet.token.blockchainType).birthdayHeight
+
+        adapter.$zCashBalanceData
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.zcashBalanceData = $0 }
+            .sink { [weak self] in self?.zCashBalanceData = $0 }
             .store(in: &cancellables)
 
         balanceHiddenManager.balanceHiddenObservable
@@ -28,5 +36,35 @@ class ZcashWalletTokenViewModel: ObservableObject {
                 self?.balanceHidden = $0
             })
             .disposed(by: disposeBag)
+    }
+
+    private func recreateAdapter(birthdayHeight: Int) {
+        let blockchainType = wallet.token.blockchainType
+        restoreSettingsService.set(birthdayHeight: birthdayHeight.description, account: wallet.account, blokcchainType: blockchainType)
+
+        self.birthdayHeight = birthdayHeight
+
+        adapterManager.recreateAdapter(blockchainType: blockchainType)
+    }
+}
+
+extension ZcashWalletTokenViewModel {
+    var ownAddress: String? {
+        adapter.uAddress?.stringEncoded
+    }
+
+    func onChange(birthdayHeight: Int) {
+        adapter
+            .wipe()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { [weak self] result in
+                switch result {
+                case .finished:
+                    self?.recreateAdapter(birthdayHeight: birthdayHeight)
+                case let .failure(error):
+                    print("ZCash wipe has error!: \(error)")
+                }
+            }, receiveValue: { _ in })
+            .store(in: &cancellables)
     }
 }

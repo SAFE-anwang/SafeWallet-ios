@@ -3,10 +3,13 @@ import Foundation
 import MarketKit
 import SwiftUI
 
-class EvmSendData: BaseSendEvmData, ISendData {
+class EvmSendData: ISendData {
     let decoration: EvmDecoration
     let transactionData: TransactionData?
     let transactionError: Error?
+    let gasPrice: GasPrice?
+    let evmFeeData: EvmFeeData?
+    let nonce: Int?
     let timeLock: TimeLock?
     let feeToken: Token?
     
@@ -16,8 +19,9 @@ class EvmSendData: BaseSendEvmData, ISendData {
         self.transactionError = transactionError
         self.timeLock = timeLock
         self.feeToken = feeToken
-        
-        super.init(gasPrice: gasPrice, evmFeeData: evmFeeData, nonce: nonce)
+        self.gasPrice = gasPrice
+        self.evmFeeData = evmFeeData
+        self.nonce = nonce
     }
 
     var feeData: FeeData? {
@@ -36,29 +40,30 @@ class EvmSendData: BaseSendEvmData, ISendData {
         decoration.customSendButtonTitle
     }
 
-    func cautions(baseToken: Token) -> [CautionNew] {
+
+    func cautions(baseToken: Token, currency _: Currency, rates _: [String: Decimal]) -> [CautionNew] {
         var cautions = [CautionNew]()
 
         if let transactionError {
-            cautions.append(caution(transactionError: transactionError, feeToken: baseToken))
+            cautions.append(EvmSendHelper.caution(transactionError: transactionError, feeToken: baseToken))
         }
 
         return cautions
     }
 
     func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
-        var sections = decoration.sections(baseToken: baseToken, currency: currency, rates: rates)
+
+        let flow = decoration.flowSection(baseToken: baseToken, currency: currency, rates: rates)
+        var fields = decoration.fields(baseToken: baseToken, currency: currency, rates: rates)
 
         if let nonce {
-            sections.append(
-                .init([
-                    .levelValue(title: "send.confirmation.nonce".localized, value: String(nonce), level: .regular),
-                ])
+            fields.append(
+                .simpleValue(title: "send.confirmation.nonce".localized, value: String(nonce)),
             )
         }
 
-        sections.append(.init(feeFields(feeToken: feeToken ?? baseToken, currency: currency, feeTokenRate: rates[baseToken.coin.uid])))
+        fields.append(contentsOf: EvmSendHelper.feeFields(evmFeeData: evmFeeData, gasPrice: gasPrice, feeToken: baseToken, currency: currency, feeTokenRate: rates[baseToken.coin.uid]))
 
-        return sections
+        return [flow, .init(fields, isMain: false)].compactMap { $0 }
     }
 }

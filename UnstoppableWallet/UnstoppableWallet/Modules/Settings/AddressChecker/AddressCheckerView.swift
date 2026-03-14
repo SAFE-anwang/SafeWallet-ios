@@ -16,7 +16,13 @@ struct AddressCheckerView: View {
                             }
                         } else {
                             ClickableRow(action: {
-                                Coordinator.shared.presentPurchase(page: .addressChecker, trigger: .disableAddressChecker)
+//<<<<<<< HEAD
+//                                Coordinator.shared.presentPurchase(page: .addressChecker, trigger: .disableAddressChecker)
+//=======
+//                                Coordinator.shared.performAfterPurchase(premiumFeature: .secureSend, page: .addressChecker, trigger: .disableAddressChecker) {
+//                                    viewModel.recipientAddressCheck.toggle()
+//                                }
+//>>>>>>> master
                             }) {
                                 switchContent()
                                     .allowsHitTesting(false)
@@ -33,7 +39,13 @@ struct AddressCheckerView: View {
                             if viewModel.activated {
                                 checkAddressPresented = true
                             } else {
-                                Coordinator.shared.presentPurchase(page: .addressChecker, trigger: .addressChecker)
+//<<<<<<< HEAD
+//                                Coordinator.shared.presentPurchase(page: .addressChecker, trigger: .addressChecker)
+//=======
+//                                Coordinator.shared.performAfterPurchase(premiumFeature: .secureSend, page: .addressChecker, trigger: .addressChecker, onPurchase: {
+//                                    checkAddressPresented = true
+//                                })
+//>>>>>>> master
                             }
                         }) {
                             addressContent()

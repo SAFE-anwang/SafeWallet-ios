@@ -1,14 +1,14 @@
-
 import MarketKit
 import SwiftUI
 
 struct MultiSwapSendView: View {
     @StateObject var sendViewModel: SendViewModel
-    @Binding private var swapPresentationMode: PresentationMode
 
-    init(tokenIn: Token, tokenOut: Token, amountIn: Decimal, provider: IMultiSwapProvider, swapPresentationMode: Binding<PresentationMode>) {
+    private let onFinish: () -> Void
+
+    init(tokenIn: Token, tokenOut: Token, amountIn: Decimal, provider: IMultiSwapProvider, onFinish: @escaping () -> Void) {
         _sendViewModel = .init(wrappedValue: SendViewModel(sendData: .swap(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, provider: provider)))
-        _swapPresentationMode = swapPresentationMode
+        self.onFinish = onFinish
     }
 
     var body: some View {
@@ -18,57 +18,35 @@ struct MultiSwapSendView: View {
             } bottomContent: {
                 switch sendViewModel.state {
                 case .syncing:
-                    EmptyView()
+                    if sendViewModel.sendData != nil {
+                        ThemeButton(text: "swap.quoting".localized, spinner: true, style: .secondary) {}
+                            .disabled(true)
+                    }
                 case .success:
-                    VStack(spacing: .margin24) {
-                        if sendViewModel.timeLeft > 0 || sendViewModel.sending {
-                            SlideButton(
-                                styling: .text(start: "swap.confirmation.slide_to_swap".localized, end: "", success: ""),
-                                action: {
-                                    try await sendViewModel.send()
-                                }, completion: {
-                                    HudHelper.instance.show(banner: .swapped)
-                                    swapPresentationMode.dismiss()
-                                }
-                            )
-                        } else {
-                            Button(action: {
-                                sendViewModel.sync()
-                            }) {
-                                Text("send.confirmation.refresh".localized)
+                    if sendViewModel.canSend {
+                        SlideButton(
+                            styling: .text(start: "swap.confirmation.slide_to_swap".localized, end: "", success: ""),
+                            action: {
+                                try await sendViewModel.send()
+                            }, completion: {
+                                HudHelper.instance.show(banner: .swapped)
+                                onFinish()
                             }
-                            .buttonStyle(PrimaryButtonStyle(style: .gray))
+                        )
+                    } else {
+                        ThemeButton(text: "send.confirmation.refresh".localized, style: .secondary) {
+                            sendViewModel.sync()
                         }
-
-                        let (bottomText, bottomTextColor) = bottomText()
-
-                        Text(bottomText).textSubhead1(color: bottomTextColor)
                     }
                 case .failed:
-                    Button(action: {
+                    ThemeButton(text: "send.confirmation.refresh".localized, style: .secondary) {
                         sendViewModel.sync()
-                    }) {
-                        Text("send.confirmation.refresh".localized)
                     }
-                    .buttonStyle(PrimaryButtonStyle(style: .gray))
-
-                    Text("swap.confirmation.quote_failed".localized).textSubhead1()
                 }
             }
         }
-        .navigationTitle("send.confirmation.title".localized)
+        .navigationTitle("swap.confirmation.title".localized)
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func bottomText() -> (String, Color) {
-        if let data = sendViewModel.state.data, !data.canSend {
-            return ("swap.confirmation.invalid_quote".localized, .themeGray)
-        } else if sendViewModel.sending {
-            return ("swap.confirmation.please_wait".localized, .themeGray)
-        } else if sendViewModel.timeLeft > 0 {
-            return ("swap.confirmation.quote_expires_in".localized("\(sendViewModel.timeLeft)"), .themeJacob)
-        } else {
-            return ("swap.confirmation.quote_expired".localized, .themeGray)
-        }
+        .toolbarRole(.editor)
     }
 }

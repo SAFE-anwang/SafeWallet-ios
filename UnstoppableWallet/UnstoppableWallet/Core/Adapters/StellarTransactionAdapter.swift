@@ -8,6 +8,8 @@ import StellarKit
 class StellarTransactionAdapter {
     private let stellarKit: StellarKit.Kit
     private let converter: StellarOperationConverter
+    private let spamWrapper: SpamWrapper
+    private let spamManager: SpamManager?
     private var cancellables = Set<AnyCancellable>()
 
     private let adapterStateSubject = PublishSubject<AdapterState>()
@@ -17,15 +19,28 @@ class StellarTransactionAdapter {
         }
     }
 
-    init(stellarKit: StellarKit.Kit, source: TransactionSource, baseToken: Token, coinManager: CoinManager) {
+    init(stellarKit: StellarKit.Kit, source: TransactionSource, baseToken: Token, coinManager: CoinManager, spamWrapper: SpamWrapper) {
         self.stellarKit = stellarKit
-        converter = StellarOperationConverter(accountId: stellarKit.receiveAddress, source: source, baseToken: baseToken, coinManager: coinManager)
+        self.spamWrapper = spamWrapper
+        spamManager = spamWrapper.spamManager(source: source)
+
+        converter = StellarOperationConverter(
+            accountId: stellarKit.receiveAddress,
+            source: source,
+            baseToken: baseToken,
+            coinManager: coinManager
+        )
 
         adapterState = Self.adapterState(kitSyncState: stellarKit.operationSyncState)
+        initializeSpamManager()
 
         stellarKit.operationSyncStatePublisher
             .sink { [weak self] in self?.adapterState = Self.adapterState(kitSyncState: $0) }
             .store(in: &cancellables)
+    }
+
+    private func initializeSpamManager() {
+        spamManager?.initialize(adapter: self)
     }
 
     private func tagQuery(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> TagQuery {
@@ -63,7 +78,7 @@ class StellarTransactionAdapter {
 
     private static func adapterState(kitSyncState: StellarKit.SyncState) -> AdapterState {
         switch kitSyncState {
-        case .syncing: return .syncing(progress: nil, lastBlockDate: nil)
+        case .syncing: return .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
         case .synced: return .synced
         case let .notSynced(error): return .notSynced(error: error.localizedDescription)
         }
@@ -110,11 +125,23 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
         "https://stellar.expert/explorer/public/tx/\(transactionHash)"
     }
 
+    private func handleTransactions(_ operations: [TxOperation]) -> [TransactionRecord] {
+        // Preserve stellarKit order
+        let records = operations.map { converter.transactionRecord(operation: $0) }
+
+        // Mutates .spam in-place via reference type.
+        // Internally sorts ascending for correct detection,
+        // but records array keeps its original order.
+        spamManager?.update(records: records)
+
+        return records
+    }
+
     func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {
         stellarKit.operationPublisher(tagQuery: tagQuery(token: token, filter: filter, address: address))
             .asObservable()
-            .map { [converter] in
-                $0.operations.map { converter.transactionRecord(operation: $0) }
+            .map { [weak self] in
+                self?.handleTransactions($0.operations) ?? []
             }
     }
 
@@ -122,11 +149,11 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
         let tagQuery = tagQuery(token: token, filter: filter, address: address)
         let pagingToken = paginationData
 
-        return Single.create { [stellarKit, converter] observer in
-            Task { [stellarKit, converter] in
+        return Single.create { [weak self, stellarKit] observer in
+            Task { [weak self, stellarKit] in
 
                 let operations = stellarKit.operations(tagQuery: tagQuery, pagingToken: pagingToken, descending: true, limit: limit)
-                let records = operations.map { converter.transactionRecord(operation: $0) }
+                let records = self?.handleTransactions(operations) ?? []
 
                 observer(.success(records))
             }
@@ -138,11 +165,11 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
     func allTransactionsAfter(paginationData: String?) -> Single<[TransactionRecord]> {
         let pagingToken = paginationData
 
-        return Single.create { [stellarKit, converter] observer in
-            Task { [stellarKit, converter] in
+        return Single.create { [weak self, stellarKit] observer in
+            Task { [weak self, stellarKit] in
 
                 let operations = stellarKit.operations(tagQuery: .init(), pagingToken: pagingToken, descending: false, limit: nil)
-                let records = operations.map { converter.transactionRecord(operation: $0) }
+                let records = operations.compactMap { self?.converter.transactionRecord(operation: $0) }
 
                 observer(.success(records))
             }

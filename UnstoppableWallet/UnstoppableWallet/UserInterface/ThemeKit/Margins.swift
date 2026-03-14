@@ -45,7 +45,7 @@ public extension CGFloat {
     static let heightCell48: CGFloat = 48
     static let heightCell56: CGFloat = 56
     static let heightDoubleLineCell: CGFloat = 62
-    static let heightButton: CGFloat = 50
+    static let heightButton: CGFloat = 56
     static let heightBottomWrapperBar: CGFloat = 98
 
     static let iconSize16: CGFloat = 16
@@ -57,4 +57,14 @@ public extension CGFloat {
 
     static let buttonSize56: CGFloat = 56
     static let buttonSize32: CGFloat = 32
+}
+
+extension CGSize {
+    static let size16: CGSize = .init(width: .iconSize16, height: .iconSize16)
+    static let size20: CGSize = .init(width: .iconSize20, height: .iconSize20)
+    static let size24: CGSize = .init(width: .iconSize24, height: .iconSize24)
+    static let size32: CGSize = .init(width: .iconSize32, height: .iconSize32)
+    static let size48: CGSize = .init(width: .iconSize48, height: .iconSize48)
+    static let size72: CGSize = .init(width: .iconSize72, height: .iconSize72)
+    static let null: CGSize? = nil
 }

@@ -32,27 +32,22 @@ extension TonConnectSendHandler: ISendHandler {
         var fee: Decimal?
         var transactionError: Error?
         var record: TonTransactionRecord?
-        let account = try await TonKit.Kit.account(address: transferData.sender)
 
         do {
-            var totalValue: BigUInt = 0
+            let emulationResult = try await TonSendHelper.emulate(
+                transferData: transferData,
+                contract: contract,
+                converter: converter
+            )
 
-            for message in transferData.internalMessages {
-                switch message.info {
-                case let .internalInfo(info):
-                    totalValue += info.value.coins.rawValue
-                default: ()
-                }
-            }
+            fee = emulationResult.fee
+            record = emulationResult.record
 
-            let result = try await TonKit.Kit.emulate(transferData: transferData, contract: contract, network: TonKitManager.network)
-
-            record = converter.transactionRecord(event: result.event)
-            fee = TonAdapter.amount(kitAmount: result.totalFee)
-
-            guard account.balance >= totalValue + result.totalFee else {
-                throw TransactionError.insufficientTonBalance(balance: TonAdapter.amount(kitAmount: account.balance))
-            }
+            try await TonSendHelper.validateBalance(
+                address: contract.address(),
+                totalValue: emulationResult.totalValue,
+                fee: TonAdapter.kitAmount(amount: emulationResult.fee)
+            )
         } catch {
             transactionError = error
         }
@@ -61,9 +56,12 @@ extension TonConnectSendHandler: ISendHandler {
     }
 
     func send(data _: ISendData) async throws {
-        let boc = try await TonKit.Kit.boc(transferData: transferData, contract: contract, secretKey: secretKey, network: TonKitManager.network)
+        let boc = try await TonSendHelper.send(
+            transferData: transferData,
+            contract: contract,
+            secretKey: secretKey
+        )
 
-        try await TonKit.Kit.send(boc: boc, contract: contract, network: TonKitManager.network)
         try await tonConnectManager.approve(request: request, boc: boc)
     }
 }
@@ -115,32 +113,11 @@ extension TonConnectSendHandler {
             return coins.compactMap { $0 }
         }
 
-        private func caution(transactionError: Error, feeToken: Token) -> CautionNew {
-            let title: String
-            let text: String
-
-            if let tonError = transactionError as? TonConnectSendHandler.TransactionError {
-                switch tonError {
-                case let .insufficientTonBalance(balance):
-                    let appValue = AppValue(token: feeToken, value: balance)
-                    let balanceString = appValue.formattedShort()
-
-                    title = "fee_settings.errors.insufficient_balance".localized
-                    text = "fee_settings.errors.insufficient_balance.info".localized(balanceString ?? "")
-                }
-            } else {
-                title = "ethereum_transaction.error.title".localized
-                text = transactionError.convertedError.smartDescription
-            }
-
-            return CautionNew(title: title, text: text, type: .error)
-        }
-
-        func cautions(baseToken: Token) -> [CautionNew] {
+        func cautions(baseToken: Token, currency _: Currency, rates _: [String: Decimal]) -> [CautionNew] {
             var cautions = [CautionNew]()
 
             if let transactionError {
-                cautions.append(caution(transactionError: transactionError, feeToken: baseToken))
+                cautions.append(TonSendHelper.caution(transactionError: transactionError, feeToken: baseToken))
             }
 
             return cautions
@@ -151,80 +128,73 @@ extension TonConnectSendHandler {
 
             if let record {
                 for action in record.actions {
-                    var fields: [SendField]
+                    var fields = [SendField]()
 
                     switch action.type {
                     case let .send(value, to, _, comment):
                         if let token = value.token {
-                            fields = [
+                            sections.append(SendDataSection([
                                 .amount(
-                                    title: "send.confirmation.you_send".localized,
                                     token: token,
                                     appValueType: .regular(appValue: AppValue(token: token, value: value.value)),
                                     currencyValue: rates[token.coin.uid].map { CurrencyValue(currency: currency, value: $0 * value.value) },
-                                    type: .outgoing
                                 ),
                                 .address(
-                                    title: "send.confirmation.to".localized,
                                     value: to,
                                     blockchainType: .ton
                                 ),
-                            ]
+                            ], isFlow: true))
 
                             if let comment {
-                                fields.append(.levelValue(title: "send.confirmation.comment".localized, value: comment, level: .regular))
+                                fields.append(.simpleValue(title: "send.confirmation.comment".localized, value: comment))
                             }
                         } else {
-                            fields = [.levelValue(title: "send.confirmation.action".localized, value: "Send", level: .regular)]
+                            fields = [.simpleValue(title: "send.confirmation.action".localized, value: "Send")]
                         }
 
                     case let .receive(value, from, comment):
                         if let token = value.token {
-                            fields = [
+                            sections.append(SendDataSection([ // TODO: YOU RECEIVE not SEND
                                 .amount(
-                                    title: "send.confirmation.you_receive".localized,
                                     token: token,
                                     appValueType: .regular(appValue: AppValue(token: token, value: value.value)),
                                     currencyValue: rates[token.coin.uid].map { CurrencyValue(currency: currency, value: $0 * value.value) },
-                                    type: .incoming
                                 ),
                                 .address(
-                                    title: "send.confirmation.from".localized,
                                     value: from,
                                     blockchainType: .ton
                                 ),
-                            ]
+                            ], isFlow: true))
 
                             if let comment {
-                                fields.append(.levelValue(title: "send.confirmation.comment".localized, value: comment, level: .regular))
+                                fields.append(.simpleValue(title: "send.confirmation.comment".localized, value: comment))
                             }
                         } else {
-                            fields = [.levelValue(title: "send.confirmation.action".localized, value: "Receive", level: .regular)]
+                            fields = [.simpleValue(title: "send.confirmation.action".localized, value: "Receive")]
                         }
 
                     case .burn:
-                        fields = [.levelValue(title: "send.confirmation.action".localized, value: "Burn", level: .regular)]
+                        fields = [.simpleValue(title: "send.confirmation.action".localized, value: "Burn")]
 
                     case .mint:
-                        fields = [.levelValue(title: "send.confirmation.action".localized, value: "Mint", level: .regular)]
+                        fields = [.simpleValue(title: "send.confirmation.action".localized, value: "Mint")]
 
                     case let .swap(_, _, valueIn, valueOut):
                         if let tokenIn = valueIn.token, let tokenOut = valueOut.token {
-                            fields = [
+                            sections.append(SendDataSection([
                                 .amount(
-                                    title: "swap.you_pay".localized,
                                     token: tokenIn,
                                     appValueType: .regular(appValue: AppValue(token: tokenIn, value: valueIn.value)),
                                     currencyValue: rates[tokenIn.coin.uid].map { CurrencyValue(currency: currency, value: valueIn.value * $0) },
-                                    type: .neutral
                                 ),
                                 .amount(
-                                    title: "swap.you_get".localized,
                                     token: tokenOut,
                                     appValueType: .regular(appValue: AppValue(token: tokenOut, value: valueOut.value)),
                                     currencyValue: rates[tokenOut.coin.uid].map { CurrencyValue(currency: currency, value: valueOut.value * $0) },
-                                    type: .incoming
                                 ),
+                            ], isFlow: true))
+
+                            fields = [
                                 .price(
                                     title: "swap.price".localized,
                                     tokenA: tokenIn,
@@ -234,17 +204,17 @@ extension TonConnectSendHandler {
                                 ),
                             ]
                         } else {
-                            fields = [.levelValue(title: "send.confirmation.action".localized, value: "Swap", level: .regular)]
+                            fields = [.simpleValue(title: "send.confirmation.action".localized, value: "Swap")]
                         }
 
                     case .contractDeploy:
-                        fields = [.levelValue(title: "send.confirmation.action".localized, value: "Contract- Deploy", level: .regular)]
+                        fields = [.simpleValue(title: "send.confirmation.action".localized, value: "Contract- Deploy")]
 
                     case .contractCall:
-                        fields = [.levelValue(title: "send.confirmation.action".localized, value: "Contract Call", level: .regular)]
+                        fields = [.simpleValue(title: "send.confirmation.action".localized, value: "Contract Call")]
 
                     case let .unsupported(type):
-                        fields = [.levelValue(title: "send.confirmation.action".localized, value: type, level: .regular)]
+                        fields = [.simpleValue(title: "send.confirmation.action".localized, value: type)]
                     }
 
                     switch action.status {
@@ -252,35 +222,13 @@ extension TonConnectSendHandler {
                         fields.append(.levelValue(title: "send.confirmation.status".localized, value: "send.confirmation.status.failed".localized, level: .error))
                     default: ()
                     }
-
-                    sections.append(.init(fields))
+                    sections.append(.init(fields, isMain: false))
                 }
             }
 
-            sections.append(.init(feeFields(currency: currency, feeToken: baseToken, feeTokenRate: rates[baseToken.coin.uid])))
+            sections.append(.init(TonSendHelper.feeFields(fee: fee, feeToken: baseToken, currency: currency, feeTokenRate: rates[baseToken.coin.uid])))
 
             return sections
-        }
-
-        private func feeFields(currency: Currency, feeToken: Token, feeTokenRate: Decimal?) -> [SendField] {
-            var viewItems = [SendField]()
-
-            if let fee {
-                let appValue = AppValue(token: feeToken, value: fee)
-                let currencyValue = feeTokenRate.map { CurrencyValue(currency: currency, value: fee * $0) }
-
-                viewItems.append(
-                    .value(
-                        title: "fee_settings.network_fee".localized,
-                        description: .init(title: "fee_settings.network_fee".localized, description: "fee_settings.network_fee.info".localized),
-                        appValue: appValue,
-                        currencyValue: currencyValue,
-                        formatFull: true
-                    )
-                )
-            }
-
-            return viewItems
         }
     }
 }
@@ -289,10 +237,6 @@ extension TonConnectSendHandler {
     enum SendError: Error {
         case invalidAmount
         case invalidData
-    }
-
-    enum TransactionError: Error {
-        case insufficientTonBalance(balance: Decimal)
     }
 
     enum FactoryError: Error {
@@ -315,6 +259,7 @@ extension TonConnectSendHandler {
             TonKit.Kit.Payload(
                 value: BigInt(integerLiteral: message.amount),
                 recipientAddress: message.address,
+                bounceable: message.bounceable ?? true,
                 stateInit: message.stateInit,
                 payload: message.payload
             )

@@ -109,7 +109,6 @@ extension UdnAddressParserItem {
         case .safe: return "SAFE3"
         case .safe4: return "SAFE"
         case .unsupported(let uid): return uid
-
         }
     }
 

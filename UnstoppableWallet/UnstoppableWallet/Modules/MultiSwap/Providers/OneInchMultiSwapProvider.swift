@@ -9,27 +9,21 @@ import SwiftUI
 class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
     private let kit: OneInchKit.Kit
     private let networkManager = Core.shared.networkManager
+//    private let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
     private let evmFeeEstimator = EvmFeeEstimator()
     private let commission: Decimal? = AppConfig.oneInchCommission
     private let commissionAddress: String? = AppConfig.oneInchCommissionAddress
 
-    init(kit: OneInchKit.Kit, storage: MultiSwapSettingStorage) {
+    init(kit: OneInchKit.Kit) {
         self.kit = kit
 
-        super.init(storage: storage)
+        super.init()
     }
 
-    override var id: String {
-        "1inch"
-    }
-
-    override var name: String {
-        "1Inch"
-    }
-
-    override var icon: String {
-        "1inch_32"
-    }
+    override var id: String { "1inch" }
+    override var name: String { "1Inch" }
+    override var type: SwapProviderType { .dex }
+    override var icon: String { "swap_provider_1inch" }
 
     override func supports(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token) -> Bool {
         guard tokenIn.blockchainType == tokenOut.blockchainType else {
@@ -42,7 +36,7 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
         }
     }
 
-    override func quote(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal) async throws -> IMultiSwapQuote {
+    override func quote(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal) async throws -> MultiSwapQuote {
         let blockchainType = tokenIn.blockchainType
         let chain = try evmBlockchainManager.chain(blockchainType: blockchainType)
 
@@ -62,15 +56,13 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
             fee: commission
         )
 
-        return await OneInchMultiSwapQuote(
-            quote: quote,
-            recipient: storage.recipient(blockchainType: blockchainType),
-            slippage: slippage,
+        return await EvmMultiSwapQuote(
+            expectedBuyAmount: quote.amountOut ?? 0,
             allowanceState: allowanceState(token: tokenIn, amount: amountIn)
         )
     }
 
-    override func confirmationQuote(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal, transactionSettings: TransactionSettings?) async throws -> IMultiSwapConfirmationQuote {
+    override func confirmationQuote(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal, slippage: Decimal, recipient: String?, transactionSettings: TransactionSettings?) async throws -> SwapFinalQuote {
         let blockchainType = tokenIn.blockchainType
 
         guard let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
@@ -86,8 +78,6 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
         }
 
         let evmKit = evmKitWrapper.evmKit
-        let recipient = storage.recipient(blockchainType: blockchainType)
-        let slippage = slippage
 
         let swap = try await kit.swap(
             networkManager: networkManager,
@@ -99,7 +89,7 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
             slippage: slippage,
             referrer: commissionAddress,
             fee: commission,
-            recipient: recipient.flatMap { try? EvmKit.Address(hex: $0.raw) },
+            recipient: recipient.flatMap { try? EvmKit.Address(hex: $0) },
             gasPrice: gasPriceData.userDefined
         )
 
@@ -107,8 +97,7 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
         let txAmount = swap.transaction.value
         let feeAmount = BigUInt(swap.transaction.gasLimit * gasPriceData.userDefined.max)
         let totalAmount = txAmount + feeAmount
-
-        let insufficientFeeBalance = totalAmount > evmBalance
+        let transactionError: Error? = totalAmount > evmBalance ? AppError.ethereum(reason: .insufficientBalanceWithFee) : nil
 
         let evmFeeData = try await evmFeeEstimator.estimateFee(
             evmKitWrapper: evmKitWrapper,
@@ -117,55 +106,16 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
             predefinedGasLimit: swap.transaction.gasLimit
         )
 
-        return OneInchMultiSwapConfirmationQuote(
-            swap: swap,
-            recipient: recipient,
+        return EvmSwapFinalQuote(
+            expectedBuyAmount: swap.amountOut ?? 0,
+            transactionData: swap.transactionData,
+            transactionError: transactionError,
             slippage: slippage,
-            insufficientFeeBalance: insufficientFeeBalance,
+            recipient: recipient,
+            estimatedTime: blockchainType.blockTime,
+            gasPrice: swap.transaction.gasPrice,
             evmFeeData: evmFeeData,
             nonce: transactionSettings?.nonce
-        )
-    }
-
-    private func settingsView(tokenOut: MarketKit.Token, onChangeSettings: @escaping () -> Void) -> AnyView {
-        let view = ThemeNavigationStack {
-            RecipientAndSlippageMultiSwapSettingsView(tokenOut: tokenOut, storage: storage, slippageMode: .adjustable, onChangeSettings: onChangeSettings)
-        }
-
-        return AnyView(view)
-    }
-
-    override func settingsView(tokenIn _: MarketKit.Token, tokenOut: MarketKit.Token, quote _: IMultiSwapQuote, onChangeSettings: @escaping () -> Void) -> AnyView {
-        let view = ThemeNavigationStack {
-            RecipientAndSlippageMultiSwapSettingsView(tokenOut: tokenOut, storage: storage, slippageMode: .adjustable, onChangeSettings: onChangeSettings)
-        }
-
-        return AnyView(view)
-    }
-
-    override func settingView(settingId: String, tokenOut: MarketKit.Token, onChangeSetting: @escaping () -> Void) -> AnyView {
-        if settingId == MultiSwapMainField.slippageSettingId {
-            return settingsView(tokenOut: tokenOut, onChangeSettings: onChangeSetting)
-        }
-
-        return super.settingView(settingId: settingId, tokenOut: tokenOut, onChangeSetting: onChangeSetting)
-    }
-
-    override func swap(tokenIn: MarketKit.Token, tokenOut _: MarketKit.Token, amountIn _: Decimal, quote: IMultiSwapConfirmationQuote) async throws {
-        guard let quote = quote as? OneInchMultiSwapConfirmationQuote else {
-            throw SwapError.invalidQuote
-        }
-
-        guard let gasLimit = quote.evmFeeData?.surchargedGasLimit else {
-            throw SwapError.noGasLimit
-        }
-
-        try await super.send(
-            blockchainType: tokenIn.blockchainType,
-            transactionData: quote.swap.transactionData,
-            gasPrice: quote.swap.transaction.gasPrice,
-            gasLimit: gasLimit,
-            nonce: quote.nonce
         )
     }
 
@@ -180,10 +130,6 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
         default: throw SwapError.invalidAddress
         }
     }
-
-    private var slippage: Decimal {
-        storage.value(for: MultiSwapSettingStorage.LegacySetting.slippage) ?? MultiSwapSlippage.default
-    }
 }
 
 extension OneInchMultiSwapProvider {
@@ -192,7 +138,6 @@ extension OneInchMultiSwapProvider {
         case invalidAmountIn
         case invalidQuote
         case noEvmKitWrapper
-        case noGasLimit
         case noGasPriceData
     }
 }

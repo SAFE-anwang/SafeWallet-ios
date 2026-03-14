@@ -25,6 +25,13 @@ class LocalStorage {
     private let keyHasBep2Token = "has-bep2-token"
     private let keyAmountRounding = "amount-rounding"
     private let keyUseMevProtection = "use-mev-protection"
+    private let keyRecentlySent = "recently-sent"
+    private let keySwapTermsAccepted = "swap-terms-accepted"
+    private let keySwapProvidersLastSyncTimestamp = "swap-providers-last-sync-timestamp"
+    private let keyUSwapProviders = "uswap-providers"
+    private let keySwapEnabled = "swap_enabled"
+    private let keyAppStateLastSyncTimestamp = "app-state-last-sync-timestamp"
+    private let keyForceEnableSwap = "force-enable-swap"
 
     private let userDefaultsStorage: UserDefaultsStorage
 
@@ -156,11 +163,48 @@ extension LocalStorage {
         set { userDefaultsStorage.set(value: newValue, for: keyAmountRounding) }
     }
 
+    var recentlySent: Bool {
+        get { userDefaultsStorage.value(for: keyRecentlySent) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyRecentlySent) }
+    }
+
     var useMevProtection: Bool {
         get { userDefaultsStorage.value(for: keyUseMevProtection) ?? false }
         set {
             userDefaultsStorage.set(value: newValue, for: keyUseMevProtection)
         }
+    }
+
+    var swapTermsAccepted: Bool {
+        get { userDefaultsStorage.value(for: keySwapTermsAccepted) ?? false }
+        set {
+            userDefaultsStorage.set(value: newValue, for: keySwapTermsAccepted)
+        }
+    }
+
+    var swapProvidersLastSyncTimestamp: TimeInterval? {
+        get { userDefaultsStorage.value(for: keySwapProvidersLastSyncTimestamp) }
+        set { userDefaultsStorage.set(value: newValue, for: keySwapProvidersLastSyncTimestamp) }
+    }
+
+    var uSwapProviders: String? {
+        get { userDefaultsStorage.value(for: keyUSwapProviders) }
+        set { userDefaultsStorage.set(value: newValue, for: keyUSwapProviders) }
+    }
+
+    var swapEnabled: Bool {
+        get { userDefaultsStorage.value(for: keySwapEnabled) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keySwapEnabled) }
+    }
+
+    var appStateLastSyncTimestamp: TimeInterval? {
+        get { userDefaultsStorage.value(for: keyAppStateLastSyncTimestamp) }
+        set { userDefaultsStorage.set(value: newValue, for: keyAppStateLastSyncTimestamp) }
+    }
+
+    var forceEnableSwap: Bool {
+        get { userDefaultsStorage.value(for: keyForceEnableSwap) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyForceEnableSwap) }
     }
 }
 

@@ -50,7 +50,6 @@ extension EvmPreSendHandler: IPreSendHandler {
     var balancePublisher: AnyPublisher<Decimal, Never> {
         balanceSubject.eraseToAnyPublisher()
     }
-    
     func sendData(amount: Decimal, address: String, memo _: String?) -> SendDataResult {
         guard let evmAmount = BigUInt(amount.hs.roundedString(decimal: token.decimals)) else {
             return .invalid(cautions: [])

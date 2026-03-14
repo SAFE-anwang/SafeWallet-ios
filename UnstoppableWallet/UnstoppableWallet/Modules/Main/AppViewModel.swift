@@ -46,7 +46,6 @@ extension AppViewModel {
     }
 }
 
-
 extension AppViewModel {
     func checkProposalUpdate() {
         let viewModel = ProposalModule.viewModel(type: .All)
@@ -64,28 +63,26 @@ extension AppViewModel {
         guard Core.shared.accountManager.activeAccount != nil else { return }
         Coordinator.shared.present(type: .bottomSheet) { isPresented in
             BottomSheetView(
-                icon: .info,
-                title: "提案",
                 items: [
-                    .highlightedDescription(text: "有新的提案,是否查看?", style: .alert),
+                    .title(icon: nil, title: "提案"),
+                    .highlightedDescription(text: "有新的提案,是否查看?", type: .caution, style: .structured),
+                    .buttonGroup(.init(buttons: [
+                            .init(style: .yellow, title: "查看") {
+                                guard let viewModel = ProposalModule.tabViewModel() else { return }
+                                Coordinator.shared.present { _ in
+                                    ProposalTabView(viewModel: viewModel)
+                                        .ignoresSafeArea()
+                                }
+                                isPresented.wrappedValue = false
+                            },
+                            .init(style: .transparent, title: "不再提醒") {
+                                ProposalStorageManager.saveNeedShowTips(false)
+                                isPresented.wrappedValue = false
+                            }
+                        ],
+                        alignment: .horizontal)),
                 ],
-                buttons: [
-                    .init(style: .yellow, title: "查看") {
-                        guard let viewModel = ProposalModule.tabViewModel() else { return }
-                        Coordinator.shared.present { _ in
-                            ProposalTabView(viewModel: viewModel)
-                                .ignoresSafeArea()
-                        }
-                        isPresented.wrappedValue = false
-                    },
-                    .init(style: .transparent, title: "不再提醒") {
-                        ProposalStorageManager.saveNeedShowTips(false)
-                        isPresented.wrappedValue = false
-                    }
-                ],
-                isPresented: isPresented
             )
         }
     }
 }
-

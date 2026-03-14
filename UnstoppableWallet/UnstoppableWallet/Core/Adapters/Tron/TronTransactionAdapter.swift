@@ -9,11 +9,28 @@ class TronTransactionsAdapter: BaseTronAdapter {
     static let decimal = 6
 
     private let transactionConverter: TronTransactionConverter
+    private let spamWrapper: SpamWrapper
+    private let spamManager: SpamManager?
 
-    init(tronKitWrapper: TronKitWrapper, source: TransactionSource, baseToken: MarketKit.Token, coinManager: CoinManager, evmLabelManager: EvmLabelManager) {
-        transactionConverter = TronTransactionConverter(source: source, baseToken: baseToken, coinManager: coinManager, tronKitWrapper: tronKitWrapper, evmLabelManager: evmLabelManager)
+    init(tronKitWrapper: TronKitWrapper, source: TransactionSource, baseToken: MarketKit.Token, coinManager: CoinManager, spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager) {
+        self.spamWrapper = spamWrapper
+        spamManager = spamWrapper.spamManager(source: source)
+
+        transactionConverter = TronTransactionConverter(
+            source: source,
+            baseToken: baseToken,
+            coinManager: coinManager,
+            tronKitWrapper: tronKitWrapper,
+            evmLabelManager: evmLabelManager
+        )
 
         super.init(tronKitWrapper: tronKitWrapper, decimals: TronAdapter.decimals)
+
+        initializeSpamManager()
+    }
+
+    private func initializeSpamManager() {
+        spamManager?.initialize(adapter: self)
     }
 
     private func tagQuery(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> TransactionTagQuery {
@@ -90,11 +107,25 @@ extension TronTransactionsAdapter: ITransactionsAdapter {
         }
     }
 
+    private func handleTransactions(_ transactions: [FullTransaction]) -> [TransactionRecord] {
+        // Preserve tronKit order
+        let records = transactions.map { transactionConverter.transactionRecord(fromTransaction: $0) }
+
+        // Mutates .spam in-place via reference type.
+        // Internally sorts ascending for correct detection,
+        // but records array keeps its original order.
+        spamManager?.update(records: records)
+
+        return records
+    }
+
     func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {
         let address = address.flatMap { try? TronKit.Address(address: $0) }?.hex
+
         return tronKit.transactionsPublisher(tagQueries: [tagQuery(token: token, filter: filter, address: address)]).asObservable()
             .map { [weak self] in
-                $0.compactMap { self?.transactionConverter.transactionRecord(fromTransaction: $0) }
+
+                self?.handleTransactions($0) ?? []
             }
     }
 
@@ -102,7 +133,11 @@ extension TronTransactionsAdapter: ITransactionsAdapter {
         let address = address.flatMap { try? TronKit.Address(address: $0) }?.hex
         let transactions = tronKit.transactions(tagQueries: [tagQuery(token: token, filter: filter, address: address)], hash: paginationData?.hs.hexData, descending: true, limit: limit)
 
-        return Single.just(transactions.compactMap { transactionConverter.transactionRecord(fromTransaction: $0) })
+        guard !transactions.isEmpty else {
+            return .just([])
+        }
+
+        return .just(handleTransactions(transactions))
     }
 
     func allTransactionsAfter(paginationData: String?) -> Single<[TransactionRecord]> {

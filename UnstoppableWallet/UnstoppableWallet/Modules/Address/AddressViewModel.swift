@@ -5,8 +5,10 @@ import MarketKit
 class AddressViewModel: ObservableObject {
     private let purchaseManager = Core.shared.purchaseManager
     private let appSettingManager = Core.shared.appSettingManager
+    private let recentlySentManager = Core.shared.recentlySentManager
     let token: Token
     let destination: Destination
+    let initialAddress: String
     let issueTypes: [AddressSecurityIssueType]
     let contacts: [Contact]
     let recentContact: Contact?
@@ -36,6 +38,7 @@ class AddressViewModel: ObservableObject {
     init(token: Token, destination: AddressViewModel.Destination, address: String?) {
         self.token = token
         self.destination = destination
+        initialAddress = address ?? ""
         issueTypes = AddressSecurityIssueType.issueTypes(token: token)
 
 //        let contacts = Core.shared.contactManager.contacts(blockchainUid: token.blockchainType.uid)
@@ -53,16 +56,14 @@ class AddressViewModel: ObservableObject {
                 Contact(uid: contact.uid, name: contact.name, address: $0.address)
             }.sorted { $0.name ?? "" < $1.name ?? "" }
         }
-            
-        let recentAddress = try? Core.shared.recentAddressStorage.address(blockchainUid: token.blockchainType.uid)
-
+        
+        let recentAddress = recentlySentManager.recentlySent ? try? Core.shared.recentAddressStorage.address(blockchainUid: token.blockchainType.uid) : nil
         recentContact = recentAddress.map { address in
             Contact(uid: "recent", name: contacts.first(where: { $0.address.lowercased() == address.lowercased() })?.name, address: address)
         }
 
         self.contacts = contacts
-
-        premiumEnabled = purchaseManager.activated(.addressChecker)
+        premiumEnabled = purchaseManager.activated(.secureSend)
 
         defer {
             if let address {
@@ -72,7 +73,7 @@ class AddressViewModel: ObservableObject {
 
         purchaseManager.$activeFeatures
             .sink { [weak self] features in
-                self?.premiumEnabled = features.contains(.addressChecker)
+                self?.premiumEnabled = features.contains(.secureSend)
             }
             .store(in: &cancellables)
     }
@@ -94,14 +95,16 @@ class AddressViewModel: ObservableObject {
                 )
                 )
             } else {
-                if !appSettingManager.recipientAddressCheck {
-                    for type in issueTypes {
-                        checkStates[type] = .disabled
-                    }
+                if premiumEnabled {
+                    if appSettingManager.recipientAddressCheck {
+                        check(address: success.address)
+                    } else {
+                        for type in issueTypes {
+                            checkStates[type] = .disabled
+                        }
 
-                    state = .valid(resolvedAddress: ResolvedAddress(address: address, issueTypes: []))
-                } else if premiumEnabled {
-                    check(address: success.address)
+                        state = .valid(resolvedAddress: ResolvedAddress(address: address, issueTypes: []))
+                    }
                 } else {
                     for type in issueTypes {
                         checkStates[type] = .locked
@@ -198,7 +201,7 @@ extension AddressViewModel {
         let address: String
 
         var id: String {
-            address
+            uid
         }
     }
 }

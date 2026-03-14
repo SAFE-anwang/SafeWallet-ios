@@ -1,0 +1,139 @@
+import Kingfisher
+import SwiftUI
+
+enum BSModule {
+    @ViewBuilder static func view(for item: Item) -> some View {
+        switch item {
+        case let .title(showGrabber, icon, title, isPresented):
+            BSTitleView(showGrabber: showGrabber, icon: icon, title: title, isPresented: isPresented)
+        case let .imagedTitle(image, title, isPresented):
+            BSTitleView(showGrabber: false, topImage: image, title: title, isPresented: isPresented)
+        case let .title2(text):
+            ThemeText(text, style: .body)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, .margin32)
+                .padding(.top, .margin16)
+        case let .subtitle(text):
+            ThemeText(text, style: .subhead)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, .margin32)
+                .padding(.bottom, .margin16)
+        case let .text(text):
+            ThemeText(text, style: .body, colorStyle: .secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, .margin32)
+                .padding(.vertical, .margin16)
+        case let .footer(text):
+            ThemeText(text, style: .subhead)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, .margin32)
+                .padding(.top, .margin12)
+                .padding(.bottom, .margin24)
+        case let .highlightedDescription(text, type, style):
+            AlertCardView(.init(text: text, type: type, style: style))
+                .padding(.vertical, .margin16)
+                .padding(.horizontal, .margin16)
+        case let .list(items):
+            VStack(spacing: 0) {
+                ForEach(items.indices, id: \.self) { index in
+                    listView(item: items[index])
+                }
+            }
+            .padding(.vertical, .margin8)
+            .clipShape(RoundedRectangle(cornerRadius: .cornerRadius16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: .cornerRadius16, style: .continuous)
+                    .stroke(Color.themeBlade, lineWidth: .heightOneDp)
+            )
+            .padding(.horizontal, .margin16)
+            .padding(.vertical, .margin8)
+        case let .buttonGroup(group):
+            ButtonGroupView(group: group)
+        }
+    }
+
+    private static func listView(item: ListItem) -> some View {
+        Cell(
+            style: .secondary,
+            middle: {
+                MiddleTextIcon(text: item.title)
+            },
+            right: {
+                RightTextIcon(text: item.value)
+            }
+        )
+    }
+}
+
+extension BSModule {
+    enum Item {
+        case title(showGrabber: Bool, icon: CustomStringConvertible?, title: CustomStringConvertible, isPresented: Binding<Bool>?)
+        case imagedTitle(image: CustomStringConvertible?, title: CustomStringConvertible?, isPresented: Binding<Bool>?)
+        case title2(text: CustomStringConvertible)
+        case subtitle(text: CustomStringConvertible)
+        case text(text: CustomStringConvertible)
+        case footer(text: CustomStringConvertible)
+        case highlightedDescription(text: String, type: AlertCardView.CardType, style: AlertCardView.Style)
+        case list(items: [ListItem])
+        case buttonGroup(ButtonGroupViewModel.ButtonGroup)
+
+        static func title(icon: CustomStringConvertible? = nil, title: CustomStringConvertible) -> Self {
+            .title(showGrabber: true, icon: icon, title: title, isPresented: nil)
+        }
+
+        static func error(text: String) -> Self {
+            .highlightedDescription(text: text, type: .critical, style: .inline)
+        }
+
+        static func warning(text: String) -> Self {
+            .highlightedDescription(text: text, type: .caution, style: .inline)
+        }
+    }
+
+    struct ListItem {
+        let title: CustomStringConvertible
+        let value: CustomStringConvertible
+    }
+}
+
+struct BottomSheetView: View {
+    private let items: [BSModule.Item]
+
+    init(items: [BSModule.Item]) {
+        self.items = items
+    }
+
+    var body: some View {
+        ThemeView(style: .list) {
+            VStack(spacing: 0) {
+                ForEach(items.indices, id: \.self) { index in
+                    BSModule.view(for: items[index])
+                }
+            }
+        }
+    }
+}
+
+struct InfoDescription: Identifiable {
+    static var fee = InfoDescription(title: "fee_settings.network_fee".localized, description: "fee_settings.network_fee.info".localized)
+
+    let title: String
+    let description: String
+
+    var id: String {
+        title + description
+    }
+}
+
+class BottomSheetWrapperView: UIHostingController<BottomSheetView> {
+    init(items: [BSModule.Item]) {
+        let view = BottomSheetView(items: items)
+        super.init(rootView: view)
+    }
+
+    @available(*, unavailable)
+    @MainActor dynamic required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}

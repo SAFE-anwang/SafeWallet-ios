@@ -109,28 +109,25 @@ struct LockedRecordView: View {
     }
     
     @ViewBuilder private func confirmWithdrawView(ids: [BigUInt], isAll: Bool = false, isPresented: Binding<Bool>) -> some View {
-        
         BottomSheetView(
-            icon: .warning,
-            title: "safe_zone.safe4.withdraw".localized,
             items: [
-                .highlightedDescription(text: "提现后将不再产生收益，确定提取吗？", style: .warning),
-            ],
-            buttons: [
-                .init(style: .yellow, title: "button.ok".localized) {
-                    if isAll {
-                        viewModel.allWithdraw()
-                    }else {
-                        viewModel.withdraw(ids: ids)
+                .title(icon: nil, title: "safe_zone.safe4.withdraw".localized),
+                .highlightedDescription(text: "提现后将不再产生收益，确定提取吗？", type: .caution, style: .structured),
+                .buttonGroup(.init(buttons: [
+                    .init(style: .yellow, title: "button.ok".localized) {
+                        if isAll {
+                            viewModel.allWithdraw()
+                        }else {
+                            viewModel.withdraw(ids: ids)
+                        }
+                        isPresented.wrappedValue = false
+                    },
+                    .init(style: .transparent, title: "button.cancel".localized) {
+                        isPresented.wrappedValue = false
                     }
-                    
-                    isPresented.wrappedValue = false
-                },
-                .init(style: .transparent, title: "button.cancel".localized) {
-                    isPresented.wrappedValue = false
-                }
+                ],
+                alignment: .horizontal)),
             ],
-            isPresented: isPresented
         )
     }
     
