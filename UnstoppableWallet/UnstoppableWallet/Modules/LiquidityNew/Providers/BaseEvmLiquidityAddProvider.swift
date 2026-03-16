@@ -1,6 +1,6 @@
-import Foundation
 import Combine
 import EvmKit
+import Foundation
 import MarketKit
 import SwiftUI
 
@@ -17,49 +17,52 @@ class BaseEvmLiquidityAddProvider: ILiquidityAddProvider {
         self.storage = storage
     }
 
-    var id: String {
+    var id: String { fatalError("Must be implemented in subclass") }
+    var name: String { fatalError("Must be implemented in subclass") }
+    var icon: String { fatalError("Must be implemented in subclass") }
+
+    func supports(token0: Token, token1: Token) -> Bool {
         fatalError("Must be implemented in subclass")
     }
 
-    var name: String {
+    func quote(token0: Token, token1: Token, amount0: Decimal) async throws -> LiquidityAddQuote {
         fatalError("Must be implemented in subclass")
     }
 
-    var icon: String {
+    func confirmationQuote(token0: Token, token1: Token, amount0: Decimal, transactionSettings: TransactionSettings?) async throws -> LiquidityAddFinalQuote {
         fatalError("Must be implemented in subclass")
     }
 
-    func supports(token0 _: Token, token1 _: Token) -> Bool {
-        fatalError("Must be implemented in subclass")
-    }
-
-    func quote(token0 _: Token, token1 _: Token, amount0 _: Decimal) async throws -> ILiquidityAddQuote {
-        fatalError("Must be implemented in subclass")
-    }
-
-    func confirmationQuote(token0 _: Token, token1 _: Token, amount0 _: Decimal, transactionSettings _: TransactionSettings?) async throws -> ILiquidityAddConfirmationQuote {
-        fatalError("Must be implemented in subclass")
-    }
-
-    func otherSections(token0: Token, token1 _: Token, amount0 _: Decimal, transactionSettings _: TransactionSettings?) -> [SendDataSection] {
+    func otherSections(token0: Token, token1: Token, amount0: Decimal, transactionSettings: TransactionSettings?) -> [SendDataSection] {
         useMevProtection = false
         return []
     }
 
-    func settingsView(token0 _: Token, token1 _: Token, quote _: ILiquidityAddQuote, onChangeSettings _: @escaping () -> Void) -> AnyView {
-        fatalError("settingsView(tokenIn:tokenOut:onChangeSettings:) has not been implemented")
+    func preSwapView(step: MultiSwapPreSwapStep, token0: Token, token1: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
+        allowanceHelper.preSwapView(step: step, token: token0, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
+    }
+    
+    func preSwapView(step: MultiSwapPreSwapStep, tokenToApprove: Token, otherToken: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
+        allowanceHelper.preSwapView(step: step, token: tokenToApprove, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
     }
 
-    func settingView(settingId _: String, tokenOut _: Token, onChangeSetting _: @escaping () -> Void) -> AnyView {
-        fatalError("settingView(settingId:) has not been implemented")
-    }
-
-    func preSwapView(step: MultiSwapPreSwapStep, token0: Token, token1 _: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
-        allowanceHelper.preSwapView(step: step, tokenIn: token0, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
-    }
-
-    func swap(token0 _: Token, token1 _: Token, amount0 _: Decimal, quote _: ILiquidityAddConfirmationQuote) async throws {
+    func swap(token0: Token, token1: Token, amount0: Decimal, quote: LiquidityAddFinalQuote) async throws {
         fatalError("Must be implemented in subclass")
+    }
+
+    func spenderAddress(chain: Chain) throws -> EvmKit.Address {
+        fatalError("Must be implemented in subclass")
+    }
+
+    func allowanceState(token: Token, amount: Decimal) async -> LiquidityAddAllowanceHelper.AllowanceState {
+        do {
+            let chain = try evmBlockchainManager.chain(blockchainType: token.blockchainType)
+            let spenderAddress = try spenderAddress(chain: chain)
+
+            return await allowanceHelper.allowanceState(spenderAddress: .init(raw: spenderAddress.eip55), token: token, amount: amount)
+        } catch {
+            return .unknown
+        }
     }
 
     func send(blockchainType: BlockchainType, transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) async throws {
@@ -75,25 +78,24 @@ class BaseEvmLiquidityAddProvider: ILiquidityAddProvider {
             nonce: nonce
         )
     }
-
-    func spenderAddress(chain _: Chain) throws -> EvmKit.Address {
-        fatalError("Must be implemented in subclass")
-    }
-
-    func allowanceState(token: Token, amount: Decimal) async -> LiquidityAddAllowanceHelper.AllowanceState {
-        do {
-            let chain = try evmBlockchainManager.chain(blockchainType: token.blockchainType)
-            let spenderAddress = try spenderAddress(chain: chain)
-
-            return await allowanceHelper.allowanceState(spenderAddress: .init(raw: spenderAddress.eip55), token: token, amount: amount)
-        } catch {
-            return .unknown
-        }
-    }
 }
 
 extension BaseEvmLiquidityAddProvider {
     enum SwapError: Error {
         case noEvmKitWrapper
+        case invalidQuote
+        case noTransactionData
+        case noGasPrice
+        case noGasLimit
+    }
+
+    static func validateBalance(evmKitWrapper: EvmKitWrapper, transactionData: TransactionData, evmFeeData: EvmFeeData, gasPriceData: GasPriceData) throws {
+        let evmBalance = evmKitWrapper.evmKit.accountState?.balance ?? 0
+        let txAmount = transactionData.value
+        let feeAmount = evmFeeData.totalFee(gasPrice: gasPriceData.userDefined)
+
+        if txAmount + feeAmount > evmBalance {
+            throw AppError.ethereum(reason: .insufficientBalanceWithFee)
+        }
     }
 }

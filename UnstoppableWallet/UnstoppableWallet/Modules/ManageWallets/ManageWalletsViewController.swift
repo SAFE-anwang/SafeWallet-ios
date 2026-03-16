@@ -45,8 +45,8 @@ class ManageWalletsViewController: ThemeSearchViewController {
         if viewModel.addTokenEnabled {
             navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(onTapAddTokenButton))
         }
-        setupFilterButton()
         
+        setupFilterButton()
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
             maker.top.equalTo(filterButton.snp.bottom).offset(CGFloat.margin8)

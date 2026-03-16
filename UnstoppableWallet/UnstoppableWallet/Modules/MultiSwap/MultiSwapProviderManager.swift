@@ -20,7 +20,6 @@ class MultiSwapProviderManager {
     init(localStorage: LocalStorage, networkManager: NetworkManager, apiKey: String?) {
         self.localStorage = localStorage
         self.networkManager = networkManager
-        // networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
 
         if let apiKey {
             headers = HTTPHeaders([HTTPHeader(name: "x-api-key", value: apiKey)])
@@ -64,6 +63,10 @@ extension MultiSwapProviderManager {
         ]
 
         providers.append(contentsOf: uSwapProviders.map { USwapMultiSwapProvider(provider: $0, apiKey: AppConfig.uswapApiKey) })
+        
+        if let kit = try? UniswapKit.Kit.instance(isSafeSwap: true) {
+            providers.append(SafeSwapMultiSwapProvider(kit: kit))
+        }
 
          if let kit = try? UniswapKit.Kit.instance() {
              providers.append(UniswapV2MultiSwapProvider(kit: kit))

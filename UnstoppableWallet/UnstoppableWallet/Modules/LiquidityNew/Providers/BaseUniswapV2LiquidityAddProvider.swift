@@ -24,17 +24,16 @@ class BaseUniswapV2LiquidityAddProvider: BaseUniswapLiquidityAddProvider {
         }
     }
 
-    override func trade(rpcSource: RpcSource, chain: Chain, token0 tokenIn: UniswapKit.Token, token1 tokenOut: UniswapKit.Token, amountIn: Decimal, tradeOptions: TradeOptions) async throws -> BaseUniswapLiquidityAddQuote.Trade {
+    override func trade(rpcSource: RpcSource, chain: Chain, token0 tokenIn: UniswapKit.Token, token1 tokenOut: UniswapKit.Token, amountIn: Decimal, tradeOptions: TradeOptions) async throws -> UniswapLiquidityAddQuote.Trade {
         let swapData = try await kit.swapData(rpcSource: rpcSource, chain: chain, tokenIn: tokenIn, tokenOut: tokenOut)
         let tradeData = try kit.bestTradeExactIn(swapData: swapData, amountIn: amountIn, options: tradeOptions)
         return .v2(tradeData: tradeData)
     }
 
-    override func transactionData(receiveAddress: EvmKit.Address, chain: Chain, trade: BaseUniswapLiquidityAddQuote.Trade, tradeOptions _: TradeOptions) async throws -> TransactionData {
+    override func transactionData(receiveAddress: EvmKit.Address, chain: Chain, trade: UniswapLiquidityAddQuote.Trade, tradeOptions _: TradeOptions) async throws -> TransactionData {
         guard case let .v2(tradeData) = trade else {
             throw SwapError.invalidTrade
         }
         return try kit.transactionLiquidityData(tradeData: tradeData, type: .add, chain: chain, recipient: receiveAddress)
     }
 }
-

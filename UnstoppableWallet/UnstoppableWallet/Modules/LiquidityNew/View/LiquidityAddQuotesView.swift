@@ -67,7 +67,7 @@ struct LiquidityAddQuotesView: View {
             return nil
         }
 
-        return AppValue(token: tokenOut, value: quote.quote.amountOut).formattedFull()
+        return AppValue(token: tokenOut, value: quote.quote.expectedBuyAmount).formattedFull()
     }
 
     private func quoteCurrencyValue(quote: LiquidityAddViewModel.Quote) -> String? {
@@ -75,7 +75,7 @@ struct LiquidityAddQuotesView: View {
             return nil
         }
 
-        return ValueFormatter.instance.formatShort(currency: viewModel.currency, value: quote.quote.amountOut * rateOut)
+        return ValueFormatter.instance.formatShort(currency: viewModel.currency, value: quote.quote.expectedBuyAmount * rateOut)
     }
 }
 

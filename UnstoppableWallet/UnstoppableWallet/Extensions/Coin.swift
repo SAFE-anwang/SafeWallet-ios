@@ -6,7 +6,7 @@ extension Coin {
         let scale = Int(UIScreen.main.scale)
         if uid.contains("custom-safe4-anwang") || uid.contains("custom-safe-anwang") || uid.isSafeCoin {
             if let logoUrl = SRC20SyncManager.logo(coinUid: uid.lowercased()) {
-                return logoUrl
+                return logoUrl.count > 0 ? logoUrl : "https://anwang.com/img/logos/safe.png"
             }
             return "https://anwang.com/img/logos/safe.png"
         }else {
@@ -18,7 +18,7 @@ extension Coin {
         let scale = Int(UIScreen.main.scale)
         if uid.contains("custom-safe4-anwang") || uid.contains("custom-safe-anwang") || uid.isSafeCoin {
             if let logoUrl = SRC20SyncManager.logo(coinUid: uid.lowercased()) {
-                return logoUrl
+                return logoUrl.count > 0 ? logoUrl : "https://anwang.com/img/logos/safe.png"
             }
             return "https://anwang.com/img/logos/safe.png"
         }else {

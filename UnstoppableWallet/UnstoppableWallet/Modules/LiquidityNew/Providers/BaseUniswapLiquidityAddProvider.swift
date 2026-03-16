@@ -9,12 +9,12 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
     let evmSyncSourceManager = Core.shared.evmSyncSourceManager
     let evmFeeEstimator = EvmFeeEstimator()
 
-    override func quote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal) async throws -> ILiquidityAddQuote {
-        try await internalQuote(token0: token0, token1: token1, amount0: amount0)
+    override func quote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal) async throws -> LiquidityAddQuote {
+        try await internalQuote(token0: token0, token1: token1, amount0: amount0, slippage: MultiSwapSlippage.default)
     }
 
-    override func confirmationQuote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal, transactionSettings: TransactionSettings?) async throws -> ILiquidityAddConfirmationQuote {
-        let quote = try await internalQuote(token0: token0, token1: token1, amount0: amount0)
+    override func confirmationQuote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal, transactionSettings: TransactionSettings?) async throws -> LiquidityAddFinalQuote {
+        let quote = try await internalQuote(token0: token0, token1: token1, amount0: amount0, slippage: storage.value(for: MultiSwapSettingStorage.LegacySetting.slippage) ?? MultiSwapSlippage.default)
 
         let blockchainType = token0.blockchainType
         let gasPriceData = transactionSettings?.gasPriceData
@@ -33,38 +33,20 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
             }
         }
 
-        return BaseUniswapLiquidityAddConfirmationQuote(
-            quote: quote,
+        return EvmLiquidityAddFinalQuote(
+            expectedBuyAmount: quote.expectedBuyAmount,
             transactionData: txData,
             transactionError: transactionError,
+            slippage: quote.tradeOptions.allowedSlippage,
+            recipient: nil,//quote.recipient?.raw,
             gasPrice: gasPriceData?.userDefined,
             evmFeeData: evmFeeData,
             nonce: transactionSettings?.nonce
         )
     }
 
-    private func settingsView(token1: MarketKit.Token, onChangeSettings: @escaping () -> Void) -> AnyView {
-        let view = ThemeNavigationStack {
-            RecipientAndSlippageMultiSwapSettingsView(tokenOut: token1, storage: storage, slippageMode: .adjustable, onChangeSettings: onChangeSettings)
-        }
-
-        return AnyView(view)
-    }
-
-    override func settingsView(token0 _: MarketKit.Token, token1: MarketKit.Token, quote _: ILiquidityAddQuote, onChangeSettings: @escaping () -> Void) -> AnyView {
-        settingsView(token1: token1, onChangeSettings: onChangeSettings)
-    }
-
-    override func settingView(settingId: String, tokenOut: MarketKit.Token, onChangeSetting: @escaping () -> Void) -> AnyView {
-        if settingId == MultiSwapMainField.slippageSettingId {
-            return settingsView(token1: tokenOut, onChangeSettings: onChangeSetting)
-        }
-
-        return super.settingView(settingId: settingId, tokenOut: tokenOut, onChangeSetting: onChangeSetting)
-    }
-
-    override func swap(token0: MarketKit.Token, token1 _: MarketKit.Token, amount0 _: Decimal, quote: ILiquidityAddConfirmationQuote) async throws {
-        guard let quote = quote as? BaseUniswapLiquidityAddConfirmationQuote else {
+    override func swap(token0: MarketKit.Token, token1 _: MarketKit.Token, amount0 _: Decimal, quote: LiquidityAddFinalQuote) async throws {
+        guard let quote = quote as? EvmLiquidityAddFinalQuote else {
             throw SwapError.invalidQuote
         }
 
@@ -93,28 +75,26 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
         fatalError("Must be implemented in subclass")
     }
 
-    func trade(rpcSource _: RpcSource, chain _: Chain, token0 _: UniswapKit.Token, token1 _: UniswapKit.Token, amountIn _: Decimal, tradeOptions _: TradeOptions) async throws -> BaseUniswapLiquidityAddQuote.Trade {
+    func trade(rpcSource _: RpcSource, chain _: Chain, token0 _: UniswapKit.Token, token1 _: UniswapKit.Token, amountIn _: Decimal, tradeOptions _: TradeOptions) async throws -> UniswapLiquidityAddQuote.Trade {
         fatalError("Must be implemented in subclass")
     }
 
-    func transactionData(receiveAddress _: EvmKit.Address, chain _: Chain, trade _: BaseUniswapLiquidityAddQuote.Trade, tradeOptions _: TradeOptions) async throws -> TransactionData {
+    func transactionData(receiveAddress _: EvmKit.Address, chain _: Chain, trade _: UniswapLiquidityAddQuote.Trade, tradeOptions _: TradeOptions) async throws -> TransactionData {
         fatalError("Must be implemented in subclass")
     }
 
-    private func internalQuote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal) async throws -> BaseUniswapLiquidityAddQuote {
+    private func internalQuote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal, slippage: Decimal) async throws -> UniswapLiquidityAddQuote {
         let blockchainType = token0.blockchainType
         let chain = try evmBlockchainManager.chain(blockchainType: blockchainType)
 
-        let kittoken0 = try kitToken(chain: chain, token: token0)
-        let kittoken1 = try kitToken(chain: chain, token: token1)
+        let kitToken0 = try kitToken(chain: chain, token: token0)
+        let kitToken1 = try kitToken(chain: chain, token: token1)
 
         guard let rpcSource = evmSyncSourceManager.httpSyncSource(blockchainType: blockchainType)?.rpcSource else {
             throw SwapError.noHttpRpcSource
         }
 
         let recipient = storage.recipient(blockchainType: blockchainType)
-        let slippage: Decimal = storage.value(for: MultiSwapSettingStorage.LegacySetting.slippage) ?? MultiSwapSlippage.default
-
         let kitRecipient = try recipient.map { try EvmKit.Address(hex: $0.raw) }
 
         let tradeOptions = TradeOptions(
@@ -124,15 +104,32 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
             feeOnTransfer: false
         )
 
-        let trade = try await trade(rpcSource: rpcSource, chain: chain, token0: kittoken0, token1: kittoken1, amountIn: amount0, tradeOptions: tradeOptions)
+        let trade = try await trade(rpcSource: rpcSource, chain: chain, token0: kitToken0, token1: kitToken1, amountIn: amount0, tradeOptions: tradeOptions)
+        let amount1 = trade.amountOut ?? 0//quotedAmountOut(trade: trade)
 
-        return await BaseUniswapLiquidityAddQuote(
+        async let allowanceState0 = allowanceState(token: token0, amount: amount0)
+        async let allowanceState1 = allowanceState(token: token1, amount: amount1)
+
+        return await UniswapLiquidityAddQuote(
             trade: trade,
             tradeOptions: tradeOptions,
-            recipient: recipient,
             providerName: name,
-            allowanceState: allowanceState(token: token0, amount: amount0),
+            allowanceState0: allowanceState0,
+            allowanceState1: allowanceState1
         )
+    }
+
+    private func quotedAmountOut(trade: UniswapLiquidityAddQuote.Trade) -> Decimal {
+        switch trade {
+        case let .v2(tradeData):
+            if let amountIn = tradeData.amountIn, let midPrice = tradeData.midPrice {
+                return amountIn * midPrice
+            }
+        case .v3:
+            ()
+        }
+
+        return trade.amountOut ?? 0
     }
 }
 
@@ -176,4 +173,3 @@ extension BaseUniswapLiquidityAddProvider {
         }
     }
 }
-

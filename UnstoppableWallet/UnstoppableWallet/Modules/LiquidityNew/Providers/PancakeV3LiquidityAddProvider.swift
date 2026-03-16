@@ -10,16 +10,16 @@ class PancakeV3LiquidityAddProvider: BaseUniswapV3LiquidityAddProvider {
     }
 
     override var icon: String {
-        "pancake_32"
+        "swap_provider_pancake"
     }
 
     override func supports(token0: MarketKit.Token, token1: MarketKit.Token) -> Bool {
         guard token0.blockchainType == token1.blockchainType else {
             return false
         }
-
-        switch token0.blockchainType {
-        case .binanceSmartChain: return true
+        
+        switch (token0.blockchainType, token1.blockchainType) {
+        case (.binanceSmartChain, .binanceSmartChain): return token0.type != .native && token1.type != .native
         default: return false
         }
     }

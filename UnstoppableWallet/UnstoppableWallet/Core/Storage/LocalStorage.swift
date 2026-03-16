@@ -27,6 +27,7 @@ class LocalStorage {
     private let keyUseMevProtection = "use-mev-protection"
     private let keyRecentlySent = "recently-sent"
     private let keySwapTermsAccepted = "swap-terms-accepted"
+    private let keyLiquidityTermsAccepted = "liquidity-terms-accepted"
     private let keySwapProvidersLastSyncTimestamp = "swap-providers-last-sync-timestamp"
     private let keyUSwapProviders = "uswap-providers"
     private let keySwapEnabled = "swap_enabled"
@@ -179,6 +180,13 @@ extension LocalStorage {
         get { userDefaultsStorage.value(for: keySwapTermsAccepted) ?? false }
         set {
             userDefaultsStorage.set(value: newValue, for: keySwapTermsAccepted)
+        }
+    }
+
+    var liquidityTermsAccepted: Bool {
+        get { userDefaultsStorage.value(for: keyLiquidityTermsAccepted) ?? false }
+        set {
+            userDefaultsStorage.set(value: newValue, for: keyLiquidityTermsAccepted)
         }
     }
 

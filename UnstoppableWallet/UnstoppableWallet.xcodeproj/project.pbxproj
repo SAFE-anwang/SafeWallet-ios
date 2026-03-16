@@ -3975,6 +3975,54 @@
 		C8C558B52EA339C50062F13E /* OneInchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B42EA339C50062F13E /* OneInchKit */; };
 		C8C558B72EA339DB0062F13E /* SafeSwapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B62EA339DB0062F13E /* SafeSwapKit */; };
 		C8C558BB2EA33E230062F13E /* UniswapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558BA2EA33E230062F13E /* UniswapKit */; };
+		C8D072E02F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D32F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift */; };
+		C8D072E12F654CE700AE3077 /* LiquidityAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D72F654CE700AE3077 /* LiquidityAddView.swift */; };
+		C8D072E42F654CE700AE3077 /* ILiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072DB2F654CE700AE3077 /* ILiquidityAddProvider.swift */; };
+		C8D072E62F654CE700AE3077 /* LiquidityAddQuotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D52F654CE700AE3077 /* LiquidityAddQuotesView.swift */; };
+		C8D072E72F654CE700AE3077 /* LiquidityAddSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072DE2F654CE700AE3077 /* LiquidityAddSendHandler.swift */; };
+		C8D072E92F654CE700AE3077 /* LiquidityAddAllowanceHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072CE2F654CE700AE3077 /* LiquidityAddAllowanceHelper.swift */; };
+		C8D072EA2F654CE700AE3077 /* PancakeV3LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D12F654CE700AE3077 /* PancakeV3LiquidityAddProvider.swift */; };
+		C8D072EB2F654CE700AE3077 /* LiquidityAddViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D82F654CE700AE3077 /* LiquidityAddViewModel.swift */; };
+		C8D072EC2F654CE700AE3077 /* LiquidityAddSendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D62F654CE700AE3077 /* LiquidityAddSendView.swift */; };
+		C8D072ED2F654CE700AE3077 /* PancakeV2LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D02F654CE700AE3077 /* PancakeV2LiquidityAddProvider.swift */; };
+		C8D072EE2F654CE700AE3077 /* BaseUniswapV3LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072CD2F654CE700AE3077 /* BaseUniswapV3LiquidityAddProvider.swift */; };
+		C8D072F02F654CE700AE3077 /* BaseUniswapLiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072CA2F654CE700AE3077 /* BaseUniswapLiquidityAddProvider.swift */; };
+		C8D072F22F654CE700AE3077 /* SafeLiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D22F654CE700AE3077 /* SafeLiquidityAddProvider.swift */; };
+		C8D072F32F654CE700AE3077 /* LiquidityAddModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072DD2F654CE700AE3077 /* LiquidityAddModule.swift */; };
+		C8D072F42F654CE700AE3077 /* BaseEvmLiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072C72F654CE700AE3077 /* BaseEvmLiquidityAddProvider.swift */; };
+		C8D072F62F654CE700AE3077 /* BaseUniswapV2LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072CC2F654CE700AE3077 /* BaseUniswapV2LiquidityAddProvider.swift */; };
+		C8D072F72F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D32F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift */; };
+		C8D072F82F654CE700AE3077 /* LiquidityAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D72F654CE700AE3077 /* LiquidityAddView.swift */; };
+		C8D072FB2F654CE700AE3077 /* ILiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072DB2F654CE700AE3077 /* ILiquidityAddProvider.swift */; };
+		C8D072FD2F654CE700AE3077 /* LiquidityAddQuotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D52F654CE700AE3077 /* LiquidityAddQuotesView.swift */; };
+		C8D072FE2F654CE700AE3077 /* LiquidityAddSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072DE2F654CE700AE3077 /* LiquidityAddSendHandler.swift */; };
+		C8D073002F654CE700AE3077 /* LiquidityAddAllowanceHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072CE2F654CE700AE3077 /* LiquidityAddAllowanceHelper.swift */; };
+		C8D073012F654CE700AE3077 /* PancakeV3LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D12F654CE700AE3077 /* PancakeV3LiquidityAddProvider.swift */; };
+		C8D073022F654CE700AE3077 /* LiquidityAddViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D82F654CE700AE3077 /* LiquidityAddViewModel.swift */; };
+		C8D073032F654CE700AE3077 /* LiquidityAddSendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D62F654CE700AE3077 /* LiquidityAddSendView.swift */; };
+		C8D073042F654CE700AE3077 /* PancakeV2LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D02F654CE700AE3077 /* PancakeV2LiquidityAddProvider.swift */; };
+		C8D073052F654CE700AE3077 /* BaseUniswapV3LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072CD2F654CE700AE3077 /* BaseUniswapV3LiquidityAddProvider.swift */; };
+		C8D073072F654CE700AE3077 /* BaseUniswapLiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072CA2F654CE700AE3077 /* BaseUniswapLiquidityAddProvider.swift */; };
+		C8D073092F654CE700AE3077 /* SafeLiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D22F654CE700AE3077 /* SafeLiquidityAddProvider.swift */; };
+		C8D0730A2F654CE700AE3077 /* LiquidityAddModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072DD2F654CE700AE3077 /* LiquidityAddModule.swift */; };
+		C8D0730B2F654CE700AE3077 /* BaseEvmLiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072C72F654CE700AE3077 /* BaseEvmLiquidityAddProvider.swift */; };
+		C8D0730D2F654CE700AE3077 /* BaseUniswapV2LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072CC2F654CE700AE3077 /* BaseUniswapV2LiquidityAddProvider.swift */; };
+		C8D073152F6557C100AE3077 /* LiquidityAddTermsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D073142F6557C100AE3077 /* LiquidityAddTermsView.swift */; };
+		C8D073162F6557C100AE3077 /* LiquidityAddTermsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D073142F6557C100AE3077 /* LiquidityAddTermsView.swift */; };
+		C8D0731B2F65613B00AE3077 /* SafeSwapMultiSwapProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D0731A2F65613B00AE3077 /* SafeSwapMultiSwapProvider.swift */; };
+		C8D0731C2F65613B00AE3077 /* SafeSwapMultiSwapProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D0731A2F65613B00AE3077 /* SafeSwapMultiSwapProvider.swift */; };
+		C8D0731F2F65975700AE3077 /* LiquidityAddQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D0731E2F65975700AE3077 /* LiquidityAddQuote.swift */; };
+		C8D073202F65975700AE3077 /* LiquidityAddQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D0731E2F65975700AE3077 /* LiquidityAddQuote.swift */; };
+		C8D073222F6597DD00AE3077 /* EvmLiquidityAddQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D073212F6597DD00AE3077 /* EvmLiquidityAddQuote.swift */; };
+		C8D073232F6597DD00AE3077 /* EvmLiquidityAddQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D073212F6597DD00AE3077 /* EvmLiquidityAddQuote.swift */; };
+		C8D073252F6598C300AE3077 /* UniswapLiquidityAddQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D073242F6598C300AE3077 /* UniswapLiquidityAddQuote.swift */; };
+		C8D073262F6598C300AE3077 /* UniswapLiquidityAddQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D073242F6598C300AE3077 /* UniswapLiquidityAddQuote.swift */; };
+		C8D073282F6599C800AE3077 /* LiquidityAddFinalQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D073272F6599C800AE3077 /* LiquidityAddFinalQuote.swift */; };
+		C8D073292F6599C800AE3077 /* LiquidityAddFinalQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D073272F6599C800AE3077 /* LiquidityAddFinalQuote.swift */; };
+		C8D0732B2F659A7400AE3077 /* EvmLiquidityAddFinalQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D0732A2F659A7400AE3077 /* EvmLiquidityAddFinalQuote.swift */; };
+		C8D0732C2F659A7400AE3077 /* EvmLiquidityAddFinalQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D0732A2F659A7400AE3077 /* EvmLiquidityAddFinalQuote.swift */; };
+		C8D0732E2F66FEDD00AE3077 /* RegularLiquidityAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D0732D2F66FEDD00AE3077 /* RegularLiquidityAddView.swift */; };
+		C8D0732F2F66FEDD00AE3077 /* RegularLiquidityAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D0732D2F66FEDD00AE3077 /* RegularLiquidityAddView.swift */; };
 		D023D2632A249E59004F65B0 /* TronKit in Frameworks */ = {isa = PBXBuildFile; productRef = D023D2622A249E59004F65B0 /* TronKit */; };
 		D023D2652A24B9DC004F65B0 /* TronKit in Frameworks */ = {isa = PBXBuildFile; productRef = D023D2642A24B9DC004F65B0 /* TronKit */; };
 		D092D63D2E3116780039BDB4 /* MoneroKit in Frameworks */ = {isa = PBXBuildFile; productRef = D092D63C2E3116780039BDB4 /* MoneroKit */; };
@@ -6068,6 +6116,30 @@
 		6B5A13D42DF0414B006E609C /* Manrope-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Medium.ttf"; sourceTree = "<group>"; };
 		6B5A13D52DF0414B006E609C /* Manrope-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Regular.ttf"; sourceTree = "<group>"; };
 		6B5A13D62DF0414B006E609C /* Manrope-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-SemiBold.ttf"; sourceTree = "<group>"; };
+		C8D072C72F654CE700AE3077 /* BaseEvmLiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseEvmLiquidityAddProvider.swift; sourceTree = "<group>"; };
+		C8D072CA2F654CE700AE3077 /* BaseUniswapLiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseUniswapLiquidityAddProvider.swift; sourceTree = "<group>"; };
+		C8D072CC2F654CE700AE3077 /* BaseUniswapV2LiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseUniswapV2LiquidityAddProvider.swift; sourceTree = "<group>"; };
+		C8D072CD2F654CE700AE3077 /* BaseUniswapV3LiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseUniswapV3LiquidityAddProvider.swift; sourceTree = "<group>"; };
+		C8D072CE2F654CE700AE3077 /* LiquidityAddAllowanceHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddAllowanceHelper.swift; sourceTree = "<group>"; };
+		C8D072D02F654CE700AE3077 /* PancakeV2LiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PancakeV2LiquidityAddProvider.swift; sourceTree = "<group>"; };
+		C8D072D12F654CE700AE3077 /* PancakeV3LiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PancakeV3LiquidityAddProvider.swift; sourceTree = "<group>"; };
+		C8D072D22F654CE700AE3077 /* SafeLiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeLiquidityAddProvider.swift; sourceTree = "<group>"; };
+		C8D072D32F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniswapV2LiquidityAddProvider.swift; sourceTree = "<group>"; };
+		C8D072D52F654CE700AE3077 /* LiquidityAddQuotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddQuotesView.swift; sourceTree = "<group>"; };
+		C8D072D62F654CE700AE3077 /* LiquidityAddSendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddSendView.swift; sourceTree = "<group>"; };
+		C8D072D72F654CE700AE3077 /* LiquidityAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddView.swift; sourceTree = "<group>"; };
+		C8D072D82F654CE700AE3077 /* LiquidityAddViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddViewModel.swift; sourceTree = "<group>"; };
+		C8D072DB2F654CE700AE3077 /* ILiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ILiquidityAddProvider.swift; sourceTree = "<group>"; };
+		C8D072DD2F654CE700AE3077 /* LiquidityAddModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddModule.swift; sourceTree = "<group>"; };
+		C8D072DE2F654CE700AE3077 /* LiquidityAddSendHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddSendHandler.swift; sourceTree = "<group>"; };
+		C8D073142F6557C100AE3077 /* LiquidityAddTermsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddTermsView.swift; sourceTree = "<group>"; };
+		C8D0731A2F65613B00AE3077 /* SafeSwapMultiSwapProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeSwapMultiSwapProvider.swift; sourceTree = "<group>"; };
+		C8D0731E2F65975700AE3077 /* LiquidityAddQuote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddQuote.swift; sourceTree = "<group>"; };
+		C8D073212F6597DD00AE3077 /* EvmLiquidityAddQuote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EvmLiquidityAddQuote.swift; sourceTree = "<group>"; };
+		C8D073242F6598C300AE3077 /* UniswapLiquidityAddQuote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniswapLiquidityAddQuote.swift; sourceTree = "<group>"; };
+		C8D073272F6599C800AE3077 /* LiquidityAddFinalQuote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAddFinalQuote.swift; sourceTree = "<group>"; };
+		C8D0732A2F659A7400AE3077 /* EvmLiquidityAddFinalQuote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EvmLiquidityAddFinalQuote.swift; sourceTree = "<group>"; };
+		C8D0732D2F66FEDD00AE3077 /* RegularLiquidityAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegularLiquidityAddView.swift; sourceTree = "<group>"; };
 		D0EE557D2934B0D60027AAD3 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		D0EE557E2934B0D60027AAD3 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		D3285F4520BD158E00644076 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -10629,6 +10701,7 @@
 				67DC3EF32F63B29700CFAE73 /* KLine */,
 				67DC3EF52F63B29700CFAE73 /* Launch */,
 				67DC3F422F63B29700CFAE73 /* Liquidity */,
+				C8D072DF2F654CE700AE3077 /* LiquidityNew */,
 				67DC3F762F63B29700CFAE73 /* Main */,
 				67DC3F8C2F63B29700CFAE73 /* ManageAccount */,
 				67DC3F8F2F63B29700CFAE73 /* ManageAccounts */,
@@ -11389,10 +11462,8 @@
 			isa = PBXGroup;
 			children = (
 				67DC55972F63BC8300CFAE73 /* AllBridgeProvider */,
-				67DC559C2F63BC8300CFAE73 /* BaseMultiSwap */,
-				67DC55A02F63BC8300CFAE73 /* ThorChain */,
-				67DC55A22F63BC8300CFAE73 /* USwap */,
 				67DC55A32F63BC8300CFAE73 /* BaseEvmMultiSwapProvider.swift */,
+				67DC559C2F63BC8300CFAE73 /* BaseMultiSwap */,
 				67DC55A42F63BC8300CFAE73 /* BaseUniswapMultiSwapProvider.swift */,
 				67DC55A52F63BC8300CFAE73 /* BaseUniswapMultiSwapQuote.swift */,
 				67DC55A62F63BC8300CFAE73 /* BaseUniswapV2MultiSwapProvider.swift */,
@@ -11408,11 +11479,14 @@
 				67DC55B02F63BC8300CFAE73 /* PancakeV2MultiSwapProvider.swift */,
 				67DC55B12F63BC8300CFAE73 /* PancakeV3MultiSwapProvider.swift */,
 				67DC55B22F63BC8300CFAE73 /* QuickSwapMultiSwapProvider.swift */,
+				C8D0731A2F65613B00AE3077 /* SafeSwapMultiSwapProvider.swift */,
 				67DC55B32F63BC8300CFAE73 /* StellarSwapFinalQuote.swift */,
+				67DC55A02F63BC8300CFAE73 /* ThorChain */,
 				67DC55B42F63BC8300CFAE73 /* TonSwapFinalQuote.swift */,
 				67DC55B52F63BC8300CFAE73 /* TronSwapFinalQuote.swift */,
 				67DC55B62F63BC8300CFAE73 /* UniswapV2MultiSwapProvider.swift */,
 				67DC55B72F63BC8300CFAE73 /* UniswapV3MultiSwapProvider.swift */,
+				67DC55A22F63BC8300CFAE73 /* USwap */,
 				67DC55B82F63BC8300CFAE73 /* UtxoSwapFinalQuote.swift */,
 				67DC55B92F63BC8300CFAE73 /* ZcashSwapFinalQuote.swift */,
 			);
@@ -11474,6 +11548,60 @@
 				D3948F092ADA887300FAE566 /* Intents.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		C8D072D42F654CE700AE3077 /* Providers */ = {
+			isa = PBXGroup;
+			children = (
+				C8D0731D2F65952700AE3077 /* Quote */,
+				C8D072C72F654CE700AE3077 /* BaseEvmLiquidityAddProvider.swift */,
+				C8D072CA2F654CE700AE3077 /* BaseUniswapLiquidityAddProvider.swift */,
+				C8D072CC2F654CE700AE3077 /* BaseUniswapV2LiquidityAddProvider.swift */,
+				C8D072CD2F654CE700AE3077 /* BaseUniswapV3LiquidityAddProvider.swift */,
+				C8D072CE2F654CE700AE3077 /* LiquidityAddAllowanceHelper.swift */,
+				C8D072D02F654CE700AE3077 /* PancakeV2LiquidityAddProvider.swift */,
+				C8D072D12F654CE700AE3077 /* PancakeV3LiquidityAddProvider.swift */,
+				C8D072D22F654CE700AE3077 /* SafeLiquidityAddProvider.swift */,
+				C8D072D32F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift */,
+			);
+			path = Providers;
+			sourceTree = "<group>";
+		};
+		C8D072D92F654CE700AE3077 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				C8D073142F6557C100AE3077 /* LiquidityAddTermsView.swift */,
+				C8D072D52F654CE700AE3077 /* LiquidityAddQuotesView.swift */,
+				C8D072D62F654CE700AE3077 /* LiquidityAddSendView.swift */,
+				C8D072D72F654CE700AE3077 /* LiquidityAddView.swift */,
+				C8D072D82F654CE700AE3077 /* LiquidityAddViewModel.swift */,
+				C8D0732D2F66FEDD00AE3077 /* RegularLiquidityAddView.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		C8D072DF2F654CE700AE3077 /* LiquidityNew */ = {
+			isa = PBXGroup;
+			children = (
+				C8D072D42F654CE700AE3077 /* Providers */,
+				C8D072D92F654CE700AE3077 /* View */,
+				C8D072DB2F654CE700AE3077 /* ILiquidityAddProvider.swift */,
+				C8D072DD2F654CE700AE3077 /* LiquidityAddModule.swift */,
+				C8D072DE2F654CE700AE3077 /* LiquidityAddSendHandler.swift */,
+			);
+			path = LiquidityNew;
+			sourceTree = "<group>";
+		};
+		C8D0731D2F65952700AE3077 /* Quote */ = {
+			isa = PBXGroup;
+			children = (
+				C8D0731E2F65975700AE3077 /* LiquidityAddQuote.swift */,
+				C8D073212F6597DD00AE3077 /* EvmLiquidityAddQuote.swift */,
+				C8D073242F6598C300AE3077 /* UniswapLiquidityAddQuote.swift */,
+				C8D073272F6599C800AE3077 /* LiquidityAddFinalQuote.swift */,
+				C8D0732A2F659A7400AE3077 /* EvmLiquidityAddFinalQuote.swift */,
+			);
+			path = Quote;
 			sourceTree = "<group>";
 		};
 		D3285F3920BD158E00644076 = {
@@ -12054,6 +12182,7 @@
 				67DC4E762F63B29700CFAE73 /* LocalStorage.swift in Sources */,
 				67DC4E772F63B29700CFAE73 /* CoordinatorViewModifier.swift in Sources */,
 				67DC4E782F63B29700CFAE73 /* ShimmerEffect.swift in Sources */,
+				C8D0732F2F66FEDD00AE3077 /* RegularLiquidityAddView.swift in Sources */,
 				67DC4E792F63B29700CFAE73 /* TransactionNonceViewModel.swift in Sources */,
 				67DC4E7A2F63B29700CFAE73 /* MainView.swift in Sources */,
 				67DC4E7B2F63B29700CFAE73 /* AddressEventHandler.swift in Sources */,
@@ -12582,6 +12711,7 @@
 				67DC50AA2F63B29700CFAE73 /* Safe4CustomTokenStorage.swift in Sources */,
 				67DC50AB2F63B29700CFAE73 /* ExtendedKeyService.swift in Sources */,
 				67DC50AC2F63B29700CFAE73 /* WalletViewModel.swift in Sources */,
+				C8D073282F6599C800AE3077 /* LiquidityAddFinalQuote.swift in Sources */,
 				67DC50AD2F63B29700CFAE73 /* EvmSyncSource.swift in Sources */,
 				67DC50AE2F63B29700CFAE73 /* Safe4WarningCell.swift in Sources */,
 				67DC50AF2F63B29700CFAE73 /* RightTextIcon.swift in Sources */,
@@ -12686,6 +12816,7 @@
 				67DC51192F63B29700CFAE73 /* NftMetadataManager.swift in Sources */,
 				67DC511A2F63B29700CFAE73 /* AlertTitleCell.swift in Sources */,
 				67DC511B2F63B29700CFAE73 /* NftAssetTitleCell.swift in Sources */,
+				C8D0732B2F659A7400AE3077 /* EvmLiquidityAddFinalQuote.swift in Sources */,
 				67DC511C2F63B29700CFAE73 /* LiquidityRecordTabViewModel.swift in Sources */,
 				67DC511D2F63B29700CFAE73 /* MasterNodeDetailSendViewController.swift in Sources */,
 				67DC511E2F63B29700CFAE73 /* CoinService.swift in Sources */,
@@ -12733,9 +12864,26 @@
 				67DC51492F63B29700CFAE73 /* AddressSecurityIssueType.swift in Sources */,
 				67DC514A2F63B29700CFAE73 /* ManageAccountView.swift in Sources */,
 				67DC514B2F63B29700CFAE73 /* IntegerAmountInputView.swift in Sources */,
+				C8D0731B2F65613B00AE3077 /* SafeSwapMultiSwapProvider.swift in Sources */,
 				67DC514C2F63B29700CFAE73 /* ComponentKit.swift in Sources */,
 				67DC514D2F63B29700CFAE73 /* UtxoFeeSettingsViewModel.swift in Sources */,
 				67DC514E2F63B29700CFAE73 /* TransactionFilterViewModel.swift in Sources */,
+				C8D072E02F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift in Sources */,
+				C8D072E12F654CE700AE3077 /* LiquidityAddView.swift in Sources */,
+				C8D072E42F654CE700AE3077 /* ILiquidityAddProvider.swift in Sources */,
+				C8D072E62F654CE700AE3077 /* LiquidityAddQuotesView.swift in Sources */,
+				C8D072E72F654CE700AE3077 /* LiquidityAddSendHandler.swift in Sources */,
+				C8D072E92F654CE700AE3077 /* LiquidityAddAllowanceHelper.swift in Sources */,
+				C8D072EA2F654CE700AE3077 /* PancakeV3LiquidityAddProvider.swift in Sources */,
+				C8D072EB2F654CE700AE3077 /* LiquidityAddViewModel.swift in Sources */,
+				C8D072EC2F654CE700AE3077 /* LiquidityAddSendView.swift in Sources */,
+				C8D072ED2F654CE700AE3077 /* PancakeV2LiquidityAddProvider.swift in Sources */,
+				C8D072EE2F654CE700AE3077 /* BaseUniswapV3LiquidityAddProvider.swift in Sources */,
+				C8D072F02F654CE700AE3077 /* BaseUniswapLiquidityAddProvider.swift in Sources */,
+				C8D072F22F654CE700AE3077 /* SafeLiquidityAddProvider.swift in Sources */,
+				C8D072F32F654CE700AE3077 /* LiquidityAddModule.swift in Sources */,
+				C8D072F42F654CE700AE3077 /* BaseEvmLiquidityAddProvider.swift in Sources */,
+				C8D072F62F654CE700AE3077 /* BaseUniswapV2LiquidityAddProvider.swift in Sources */,
 				67DC514F2F63B29700CFAE73 /* WatchlistTimePeriod.swift in Sources */,
 				67DC51502F63B29700CFAE73 /* ThemeList.swift in Sources */,
 				67DC51512F63B29700CFAE73 /* TonConnectManifest.swift in Sources */,
@@ -13120,6 +13268,7 @@
 				67DC52A82F63B29700CFAE73 /* CoinCategory.swift in Sources */,
 				67DC52A92F63B29700CFAE73 /* TonAddressParserItem.swift in Sources */,
 				67DC52AA2F63B29700CFAE73 /* Src20TokenInfoView.swift in Sources */,
+				C8D073232F6597DD00AE3077 /* EvmLiquidityAddQuote.swift in Sources */,
 				67DC52AB2F63B29700CFAE73 /* MarkdownTextCell.swift in Sources */,
 				67DC52AC2F63B29700CFAE73 /* ActivateSubscriptionModule.swift in Sources */,
 				67DC52AD2F63B29700CFAE73 /* ChartModule.swift in Sources */,
@@ -13148,6 +13297,7 @@
 				67DC52C52F63B29700CFAE73 /* KLinePeriodPicker.swift in Sources */,
 				67DC52C62F63B29700CFAE73 /* EvmAdapter.swift in Sources */,
 				67DC52C72F63B29700CFAE73 /* WalletConnectMainModule.swift in Sources */,
+				C8D073262F6598C300AE3077 /* UniswapLiquidityAddQuote.swift in Sources */,
 				67DC52C82F63B29700CFAE73 /* ButtonState.swift in Sources */,
 				67DC52C92F63B29700CFAE73 /* SRC20EditViewModel.swift in Sources */,
 				67DC52CA2F63B29700CFAE73 /* Safe4PageControl.swift in Sources */,
@@ -13240,6 +13390,7 @@
 				67DC53292F63B29700CFAE73 /* SuperNodeChangeModule.swift in Sources */,
 				67DC532A2F63B29700CFAE73 /* FiatService.swift in Sources */,
 				67DC532B2F63B29700CFAE73 /* InputIntegerSection.swift in Sources */,
+				C8D073152F6557C100AE3077 /* LiquidityAddTermsView.swift in Sources */,
 				67DC532C2F63B29700CFAE73 /* EvmPrivateKeyViewModel.swift in Sources */,
 				67DC532D2F63B29700CFAE73 /* WCSignEthereumTransactionRequestViewModel.swift in Sources */,
 				67DC532E2F63B29700CFAE73 /* Safe4SwapView.swift in Sources */,
@@ -13528,6 +13679,7 @@
 				67DC54602F63B29700CFAE73 /* DiffText.swift in Sources */,
 				67DC54612F63B29700CFAE73 /* Safe4ConfirmBaseViewController.swift in Sources */,
 				67DC54622F63B29700CFAE73 /* NodeDetailVoteRecordHeaderView.swift in Sources */,
+				C8D0731F2F65975700AE3077 /* LiquidityAddQuote.swift in Sources */,
 				67DC54632F63B29700CFAE73 /* PseudoAccessoryView.swift in Sources */,
 				67DC54642F63B29700CFAE73 /* ISendData.swift in Sources */,
 				67DC54652F63B29700CFAE73 /* CoinToggleViewModel.swift in Sources */,
@@ -14015,6 +14167,7 @@
 				67DC469A2F63B29700CFAE73 /* LocalStorage.swift in Sources */,
 				67DC469B2F63B29700CFAE73 /* CoordinatorViewModifier.swift in Sources */,
 				67DC469C2F63B29700CFAE73 /* ShimmerEffect.swift in Sources */,
+				C8D0732E2F66FEDD00AE3077 /* RegularLiquidityAddView.swift in Sources */,
 				67DC469D2F63B29700CFAE73 /* TransactionNonceViewModel.swift in Sources */,
 				67DC469E2F63B29700CFAE73 /* MainView.swift in Sources */,
 				67DC469F2F63B29700CFAE73 /* AddressEventHandler.swift in Sources */,
@@ -14543,6 +14696,7 @@
 				67DC48CE2F63B29700CFAE73 /* Safe4CustomTokenStorage.swift in Sources */,
 				67DC48CF2F63B29700CFAE73 /* ExtendedKeyService.swift in Sources */,
 				67DC48D02F63B29700CFAE73 /* WalletViewModel.swift in Sources */,
+				C8D073292F6599C800AE3077 /* LiquidityAddFinalQuote.swift in Sources */,
 				67DC48D12F63B29700CFAE73 /* EvmSyncSource.swift in Sources */,
 				67DC48D22F63B29700CFAE73 /* Safe4WarningCell.swift in Sources */,
 				67DC48D32F63B29700CFAE73 /* RightTextIcon.swift in Sources */,
@@ -14647,6 +14801,7 @@
 				67DC493D2F63B29700CFAE73 /* NftMetadataManager.swift in Sources */,
 				67DC493E2F63B29700CFAE73 /* AlertTitleCell.swift in Sources */,
 				67DC493F2F63B29700CFAE73 /* NftAssetTitleCell.swift in Sources */,
+				C8D0732C2F659A7400AE3077 /* EvmLiquidityAddFinalQuote.swift in Sources */,
 				67DC49402F63B29700CFAE73 /* LiquidityRecordTabViewModel.swift in Sources */,
 				67DC49412F63B29700CFAE73 /* MasterNodeDetailSendViewController.swift in Sources */,
 				67DC49422F63B29700CFAE73 /* CoinService.swift in Sources */,
@@ -14694,9 +14849,26 @@
 				67DC496D2F63B29700CFAE73 /* AddressSecurityIssueType.swift in Sources */,
 				67DC496E2F63B29700CFAE73 /* ManageAccountView.swift in Sources */,
 				67DC496F2F63B29700CFAE73 /* IntegerAmountInputView.swift in Sources */,
+				C8D0731C2F65613B00AE3077 /* SafeSwapMultiSwapProvider.swift in Sources */,
 				67DC49702F63B29700CFAE73 /* ComponentKit.swift in Sources */,
 				67DC49712F63B29700CFAE73 /* UtxoFeeSettingsViewModel.swift in Sources */,
 				67DC49722F63B29700CFAE73 /* TransactionFilterViewModel.swift in Sources */,
+				C8D072F72F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift in Sources */,
+				C8D072F82F654CE700AE3077 /* LiquidityAddView.swift in Sources */,
+				C8D072FB2F654CE700AE3077 /* ILiquidityAddProvider.swift in Sources */,
+				C8D072FD2F654CE700AE3077 /* LiquidityAddQuotesView.swift in Sources */,
+				C8D072FE2F654CE700AE3077 /* LiquidityAddSendHandler.swift in Sources */,
+				C8D073002F654CE700AE3077 /* LiquidityAddAllowanceHelper.swift in Sources */,
+				C8D073012F654CE700AE3077 /* PancakeV3LiquidityAddProvider.swift in Sources */,
+				C8D073022F654CE700AE3077 /* LiquidityAddViewModel.swift in Sources */,
+				C8D073032F654CE700AE3077 /* LiquidityAddSendView.swift in Sources */,
+				C8D073042F654CE700AE3077 /* PancakeV2LiquidityAddProvider.swift in Sources */,
+				C8D073052F654CE700AE3077 /* BaseUniswapV3LiquidityAddProvider.swift in Sources */,
+				C8D073072F654CE700AE3077 /* BaseUniswapLiquidityAddProvider.swift in Sources */,
+				C8D073092F654CE700AE3077 /* SafeLiquidityAddProvider.swift in Sources */,
+				C8D0730A2F654CE700AE3077 /* LiquidityAddModule.swift in Sources */,
+				C8D0730B2F654CE700AE3077 /* BaseEvmLiquidityAddProvider.swift in Sources */,
+				C8D0730D2F654CE700AE3077 /* BaseUniswapV2LiquidityAddProvider.swift in Sources */,
 				67DC49732F63B29700CFAE73 /* WatchlistTimePeriod.swift in Sources */,
 				67DC49742F63B29700CFAE73 /* ThemeList.swift in Sources */,
 				67DC49752F63B29700CFAE73 /* TonConnectManifest.swift in Sources */,
@@ -15081,6 +15253,7 @@
 				67DC4ACC2F63B29700CFAE73 /* CoinCategory.swift in Sources */,
 				67DC4ACD2F63B29700CFAE73 /* TonAddressParserItem.swift in Sources */,
 				67DC4ACE2F63B29700CFAE73 /* Src20TokenInfoView.swift in Sources */,
+				C8D073222F6597DD00AE3077 /* EvmLiquidityAddQuote.swift in Sources */,
 				67DC4ACF2F63B29700CFAE73 /* MarkdownTextCell.swift in Sources */,
 				67DC4AD02F63B29700CFAE73 /* ActivateSubscriptionModule.swift in Sources */,
 				67DC4AD12F63B29700CFAE73 /* ChartModule.swift in Sources */,
@@ -15109,6 +15282,7 @@
 				67DC4AE92F63B29700CFAE73 /* KLinePeriodPicker.swift in Sources */,
 				67DC4AEA2F63B29700CFAE73 /* EvmAdapter.swift in Sources */,
 				67DC4AEB2F63B29700CFAE73 /* WalletConnectMainModule.swift in Sources */,
+				C8D073252F6598C300AE3077 /* UniswapLiquidityAddQuote.swift in Sources */,
 				67DC4AEC2F63B29700CFAE73 /* ButtonState.swift in Sources */,
 				67DC4AED2F63B29700CFAE73 /* SRC20EditViewModel.swift in Sources */,
 				67DC4AEE2F63B29700CFAE73 /* Safe4PageControl.swift in Sources */,
@@ -15201,6 +15375,7 @@
 				67DC4B4D2F63B29700CFAE73 /* SuperNodeChangeModule.swift in Sources */,
 				67DC4B4E2F63B29700CFAE73 /* FiatService.swift in Sources */,
 				67DC4B4F2F63B29700CFAE73 /* InputIntegerSection.swift in Sources */,
+				C8D073162F6557C100AE3077 /* LiquidityAddTermsView.swift in Sources */,
 				67DC4B502F63B29700CFAE73 /* EvmPrivateKeyViewModel.swift in Sources */,
 				67DC4B512F63B29700CFAE73 /* WCSignEthereumTransactionRequestViewModel.swift in Sources */,
 				67DC4B522F63B29700CFAE73 /* Safe4SwapView.swift in Sources */,
@@ -15489,6 +15664,7 @@
 				67DC4C842F63B29700CFAE73 /* DiffText.swift in Sources */,
 				67DC4C852F63B29700CFAE73 /* Safe4ConfirmBaseViewController.swift in Sources */,
 				67DC4C862F63B29700CFAE73 /* NodeDetailVoteRecordHeaderView.swift in Sources */,
+				C8D073202F65975700AE3077 /* LiquidityAddQuote.swift in Sources */,
 				67DC4C872F63B29700CFAE73 /* PseudoAccessoryView.swift in Sources */,
 				67DC4C882F63B29700CFAE73 /* ISendData.swift in Sources */,
 				67DC4C892F63B29700CFAE73 /* CoinToggleViewModel.swift in Sources */,
@@ -16258,7 +16434,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/UniswapKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.0.15;
+				version = 3.0.22;
 			};
 		};
 		C86A1BEB2E98FC5900C0769E /* XCRemoteSwiftPackageReference "ECashKit.Swift" */ = {

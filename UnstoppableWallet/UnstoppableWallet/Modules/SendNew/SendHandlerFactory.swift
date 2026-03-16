@@ -21,6 +21,8 @@ enum SendHandlerFactory {
             return MoneroSendHandler.instance(token: token, amount: amount, address: address, memo: memo)
         case let .swap(tokenIn, tokenOut, amountIn, provider):
             return MultiSwapSendHandler.instance(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, provider: provider)
+        case let .liquidityAdd(token0, token1, amount0, amount1, provider, v3TickType):
+            return LiquidityAddSendHandler.instance(token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider, v3TickType: v3TickType)
         case let .walletConnect(request):
             return WalletConnectSendHandler.instance(request: request)
         case let .tonConnect(request):

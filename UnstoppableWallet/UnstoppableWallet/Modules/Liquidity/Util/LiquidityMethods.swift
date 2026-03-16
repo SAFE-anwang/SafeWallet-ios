@@ -55,6 +55,64 @@ class PermitTypeHashMethod: ContractMethod {
     override var arguments: [Any] { [] }
 }
 
+class AddLiquidityMethod: ContractMethod {
+    static let methodSignature = "addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)"
+
+    let tokenA: EvmKit.Address
+    let tokenB: EvmKit.Address
+    let amountADesired: BigUInt
+    let amountBDesired: BigUInt
+    let amountAMin: BigUInt
+    let amountBMin: BigUInt
+    let to: EvmKit.Address
+    let deadline: BigUInt
+
+    init(tokenA: EvmKit.Address, tokenB: EvmKit.Address, amountADesired: BigUInt, amountBDesired: BigUInt, amountAMin: BigUInt, amountBMin: BigUInt, to: EvmKit.Address, deadline: BigUInt) {
+        self.tokenA = tokenA
+        self.tokenB = tokenB
+        self.amountADesired = amountADesired
+        self.amountBDesired = amountBDesired
+        self.amountAMin = amountAMin
+        self.amountBMin = amountBMin
+        self.to = to
+        self.deadline = deadline
+        super.init()
+    }
+
+    override var methodSignature: String { AddLiquidityMethod.methodSignature }
+
+    override var arguments: [Any] {
+        [tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline]
+    }
+}
+
+class AddLiquidityEthMethod: ContractMethod {
+    static let methodSignature = "addLiquidityETH(address,uint256,uint256,uint256,address,uint256)"
+
+    let token: EvmKit.Address
+    let amountTokenDesired: BigUInt
+    let amountTokenMin: BigUInt
+    let amountEthMin: BigUInt
+    let to: EvmKit.Address
+    let deadline: BigUInt
+
+    init(token: EvmKit.Address, amountTokenDesired: BigUInt, amountTokenMin: BigUInt, amountEthMin: BigUInt, to: EvmKit.Address, deadline: BigUInt) {
+        self.token = token
+        self.amountTokenDesired = amountTokenDesired
+        self.amountTokenMin = amountTokenMin
+        self.amountEthMin = amountEthMin
+        self.to = to
+        self.deadline = deadline
+        super.init()
+    }
+
+    override var methodSignature: String { AddLiquidityEthMethod.methodSignature }
+
+    override var arguments: [Any] {
+        [token, amountTokenDesired, amountTokenMin, amountEthMin, to, deadline]
+    }
+}
+
 class RemoveLiquidityMethod: ContractMethod {
     static let methodSignature = "removeLiquidity(address,address,uint256,uint256,uint256,address,uint256)"
 

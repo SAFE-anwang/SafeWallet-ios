@@ -10,7 +10,7 @@ class PancakeV2LiquidityAddProvider: BaseUniswapV2LiquidityAddProvider {
     }
 
     override var icon: String {
-        "pancake_32"
+        "swap_provider_pancake"
     }
 
     override func supports(token0: MarketKit.Token, token1: MarketKit.Token) -> Bool {

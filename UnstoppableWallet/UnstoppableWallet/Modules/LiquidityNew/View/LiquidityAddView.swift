@@ -5,81 +5,98 @@ import SwiftUI
 
 struct LiquidityAddView: View {
     @StateObject var viewModel: LiquidityAddViewModel
-
+    private let onFinish: (() -> Void)?
     @Environment(\.presentationMode) private var presentationMode
     @State private var sendPresented = false
-
     @FocusState var isInputActive: Bool
+    @FocusState private var isV3LowestPriceInputActive: Bool
+    @FocusState private var isV3HighestPriceInputActive: Bool
 
     @State private var shouldPresentTokenIn: Bool
+    @State private var v3LowestPriceInput: String = ""
+    @State private var v3HighestPriceInput: String = ""
 
-    init(token: Token? = nil) {
+    init(token: Token? = nil, onFinish: (() -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: LiquidityAddViewModel.instance(token: token))
         shouldPresentTokenIn = token == nil
+        self.onFinish = onFinish
     }
 
     var body: some View {
-        ThemeNavigationStack {
-            ThemeView {
+        ThemeView {
+            BottomGradientWrapper {
                 ScrollView {
-                    VStack(spacing: .margin12) {
-                        VStack(spacing: .margin16) {
-                            VStack(spacing: .margin8) {
-                                amountsView()
-                                availableBalanceView(value: balanceValue())
+                    VStack(spacing: 12) {
+                        VStack(spacing: 8) {
+                            amountsView()
+
+                            if viewModel.currentQuote == nil {
+                                availableBalanceView(valueIn: balanceValue(), valueOut: balanceValueOut())
                             }
-
-                            buttonView()
+                            if viewModel.v3Enabled {
+                                v3RangeView()
+                            }
                         }
 
-                        if let currentQuote = viewModel.currentQuote, let tokenIn = viewModel.tokenIn, let tokenOut = viewModel.tokenOut {
-                            quoteView(currentQuote: currentQuote, tokenIn: tokenIn, tokenOut: tokenOut)
-                            quoteCautionsView(currentQuote: currentQuote)
+                        if let currentQuote = viewModel.currentQuote {
+                            quoteView(quote: currentQuote)
+                            quoteCautionsView(quote: currentQuote)
                         }
                     }
-                    .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
+                    .padding(EdgeInsets(top: 8, leading: 16, bottom: 32, trailing: 16))
                 }
-            }
-            .navigationTitle("liquidity.title.add".localized)
-            .navigationDestination(isPresented: $sendPresented) {
-                if let tokenIn = viewModel.tokenIn,
-                   let tokenOut = viewModel.tokenOut,
-                   let amountIn = viewModel.amountIn,
-                   let currentQuote = viewModel.currentQuote
-                {
-                    LiquidityAddSendView(
-                        token0: tokenIn,
-                        token1: tokenOut,
-                        amount0: amountIn,
-                        amount1: currentQuote.quote.amountOut,
-                        provider: currentQuote.provider,
-                        swapPresentationMode: presentationMode
-                    )
+                .onTapGesture {
+                    isInputActive = false
                 }
-            }
-            .onChange(of: sendPresented) { presented in
-                if !presented {
-                    viewModel.autoQuoteIfRequired()
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if let nextQuoteTime = viewModel.nextQuoteTime {
-                        MultiSwapCircularProgressView(nextQuoteTime: nextQuoteTime, autoRefreshDuration: viewModel.autoRefreshDuration)
+            } bottomContent: {
+                buttonView()
+            } keyboardContent: {
+                AmountAccessoryView(
+                    visible: isInputActive,
+                    hasPercents: viewModel.availableBalance != nil,
+                    onPercent: { percent in
+                        viewModel.setAmountIn(percent: percent)
+                        isInputActive = false
+                    },
+                    onTrash: {
+                        viewModel.clearAmountIn()
                     }
-                }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("button.cancel".localized) {
-                        presentationMode.wrappedValue.dismiss()
-                    }
-                }
+                )
             }
+            .animation(.easeOut(duration: 0.25), value: isInputActive)
         }
         .onAppear {
-            if shouldPresentTokenIn {
-                presentTokenIn()
-                shouldPresentTokenIn = false
+            viewModel.autoQuoteIfRequired()
+            v3LowestPriceInput = viewModel.v3LowestPrice ?? ""
+            v3HighestPriceInput = viewModel.v3HighestPrice ?? ""
+        }
+        .onChange(of: viewModel.v3LowestPrice) { newValue in
+            v3LowestPriceInput = newValue ?? ""
+        }
+        .onChange(of: viewModel.v3HighestPrice) { newValue in
+            v3HighestPriceInput = newValue ?? ""
+        }
+        .onDisappear {
+            viewModel.stopAutoQuoting()
+        }
+        .navigationDestination(isPresented: $sendPresented) {
+            if let tokenIn = viewModel.tokenIn,
+               let tokenOut = viewModel.tokenOut,
+               let amountIn = viewModel.amountIn,
+               let currentQuote = viewModel.currentQuote
+            {
+                let amountOut = viewModel.currentQuote?.quote.expectedBuyAmount
+                LiquidityAddSendView(
+                    token0: tokenIn,
+                    token1: tokenOut,
+                    amount0: amountIn,
+                    amount1: amountOut ?? 0,
+                    provider: currentQuote.provider,
+                    v3TickType: viewModel.currentV3TickType,
+                    onFinish: onFinish ?? {
+                        viewModel.reset()
+                        sendPresented = false
+                    })
             }
         }
     }
@@ -213,12 +230,21 @@ struct LiquidityAddView: View {
     @ViewBuilder private func boxOutView() -> some View {
         HStack(spacing: .margin8) {
             VStack(spacing: 3) {
-                if let amountOutString = viewModel.amountOutString {
-                    Text(amountOutString)
-                        .themeHeadline1(color: .themeLeah, alignment: .leading)
-                        .lineLimit(1)
-                } else {
+                if viewModel.currentQuote == nil {
                     Text("0").themeHeadline1(color: .themeGray, alignment: .leading)
+//                    TextField("", text: $viewModel.amountOutString, prompt: Text("0").foregroundColor(.themeGray))
+//                        .foregroundColor(.themeLeah)
+//                        .font(.themeHeadline1)
+//                        .keyboardType(.decimalPad)
+//                        .focused($isInputActive)
+                } else {
+                    if let amountOutString = viewModel.amountOutString {
+                        Text(amountOutString)
+                            .themeHeadline1(color: .themeLeah, alignment: .leading)
+                            .lineLimit(1)
+                    } else {
+                        Text("0").themeHeadline1(color: .themeGray, alignment: .leading)
+                    }
                 }
 
                 if viewModel.tokenOut != nil {
@@ -296,208 +322,283 @@ struct LiquidityAddView: View {
         }
     }
 
-    @ViewBuilder private func buttonView() -> some View {
-        let (title, style, disabled, showProgress, preSwapStep) = buttonState()
-
-        Button(action: {
-            viewModel.stopAutoQuoting()
-
-            if let preSwapStep {
-                if let currentQuote = viewModel.currentQuote,
-                   let tokenIn = viewModel.tokenIn,
-                   let tokenOut = viewModel.tokenOut,
-                   let amount = viewModel.amountIn
-                {
-                    Coordinator.shared.present { isPresented in
-                        currentQuote.provider.preSwapView(
-                            step: preSwapStep,
-                            token0: tokenIn,
-                            token1: tokenOut,
-                            amount: amount,
-                            isPresented: isPresented
-                        ) {
-                            viewModel.syncQuotes()
-                        }
-
-                    } onDismiss: {
-                        viewModel.autoQuoteIfRequired()
+    @ViewBuilder private func v3RangeView() -> some View {
+        VStack(spacing: .margin12) {
+            HStack(spacing: .margin12) {
+                v3PriceInputView(
+                    title: "最低价格",
+                    text: $v3LowestPriceInput,
+                    isInputActive: $isV3LowestPriceInputActive,
+                    onMinus: { viewModel.onTapV3LowestMinus() },
+                    onPlus: { viewModel.onTapV3LowestPlus() },
+                    onConfirm: {
+                        viewModel.onChangeV3LowestPrice(text: v3LowestPriceInput)
+                        isV3LowestPriceInputActive = false
                     }
-                }
-            } else {
-                sendPresented = true
+                )
+
+                v3PriceInputView(
+                    title: "最高价格",
+                    text: $v3HighestPriceInput,
+                    isInputActive: $isV3HighestPriceInputActive,
+                    onMinus: { viewModel.onTapV3HighestMinus() },
+                    onPlus: { viewModel.onTapV3HighestPlus() },
+                    onConfirm: {
+                        viewModel.onChangeV3HighestPrice(text: v3HighestPriceInput)
+                        isV3HighestPriceInputActive = false
+                    }
+                )
             }
-        }) {
-            HStack(spacing: .margin8) {
-                if showProgress {
-                    ProgressView()
+
+            if let error = viewModel.v3PriceError {
+                Text(error)
+                    .textCaption(color: .themeLucian)
+                    .padding(.horizontal, .margin16)
+            }
+
+            v3CurrentPriceView()
+            
+            HStack(spacing: 0) {
+                ForEach([10, 20, 50], id: \.self) { percent in
+                    Button(action: {
+                        viewModel.setV3TickRange(percent: percent)
+                        isV3LowestPriceInputActive = false
+                        isV3HighestPriceInputActive = false
+                    }) {
+                        Text("\(percent)%").textSubhead1(color: .themeLeah)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    RoundedRectangle(cornerRadius: 0.5, style: .continuous)
+                        .fill(Color.themeBlade)
+                        .frame(width: 1)
+                        .frame(maxHeight: .infinity)
                 }
 
-                Text(title)
+                Button(action: {
+                    viewModel.setV3TickRange(percent: nil)
+                    isV3LowestPriceInputActive = false
+                    isV3HighestPriceInputActive = false
+                }) {
+                    Text("liquidity.tick.full.range".localized).textSubhead1(color: .themeLeah)
+                }
+                .frame(maxWidth: .infinity)
             }
+            .padding(.horizontal, -16)
+            .padding(.vertical, .margin16)
+            .frame(maxWidth: .infinity)
+            .modifier(ThemeListStyleModifier(cornerRadius: 18))
         }
-        .disabled(disabled)
-        .buttonStyle(PrimaryButtonStyle(style: style))
     }
 
-    @ViewBuilder private func availableBalanceView(value: String?) -> some View {
+    @ViewBuilder private func v3PriceInputView(title: String, text: Binding<String>, isInputActive: FocusState<Bool>.Binding, onMinus: @escaping () -> Void, onPlus: @escaping () -> Void, onConfirm: @escaping () -> Void) -> some View {
+        VStack(spacing: .margin8) {
+            Text(title).textSubhead2(color: .themeGray)
+
+            HStack(spacing: .margin12) {
+                Button(action: onMinus) {
+                    Image("circle_minus_24")
+                }
+
+                TextField("", text: text, prompt: Text("0").foregroundColor(.themeGray))
+                    .foregroundColor(.themeLeah)
+                    .font(.themeHeadline2)
+                    .multilineTextAlignment(.center)
+                    .keyboardType(.decimalPad)
+                    .focused(isInputActive)
+
+                Button(action: onPlus) {
+                    Image("circle_plus_24")
+                }
+            }
+        }
+        .padding(.vertical, .margin16)
+        .frame(maxWidth: .infinity)
+        .modifier(ThemeListStyleModifier(cornerRadius: 18))
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if isInputActive.wrappedValue {
+                    HStack {
+                        Spacer()
+                        Button("确定") {
+                            onConfirm()
+                        }
+                        .foregroundColor(.themeLeah)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func v3CurrentPriceView() -> some View {
+        VStack(spacing: .margin8) {
+            Text("当前价格").textSubhead2(color: .themeGray)
+            Text(viewModel.v3CurrentPrice ?? "---")
+                .themeHeadline2(color: .themeLeah, alignment: .center)
+                .lineLimit(1)
+        }
+        .padding(.vertical, .margin16)
+        .frame(maxWidth: .infinity)
+        .modifier(ThemeListStyleModifier(cornerRadius: 18))
+    }
+
+    @ViewBuilder private func buttonView() -> some View {
+        let approvalButtons = viewModel.approvalButtons
+
+        if !approvalButtons.isEmpty {
+            if approvalButtons.count == 1 {
+                approvalButton(approvalButtons[0])
+            } else {
+                HStack(spacing: .margin12) {
+                    approvalButton(approvalButtons[0])
+                    approvalButton(approvalButtons[1])
+                }
+            }
+        } else {
+            let (title, style, disabled, showProgress, preSwapStep) = buttonState()
+
+            ThemeButton(text: title, spinner: showProgress, style: style) {
+                viewModel.stopAutoQuoting()
+
+                if let preSwapStep {
+                    if let currentQuote = viewModel.currentQuote,
+                       let tokenIn = viewModel.tokenIn,
+                       let tokenOut = viewModel.tokenOut,
+                       let amount = viewModel.amountIn
+                    {
+                        Coordinator.shared.present { isPresented in
+                            currentQuote.provider.preSwapView(
+                                step: preSwapStep.0,
+                                token0: tokenIn,
+                                token1: tokenOut,
+                                amount: amount,
+                                isPresented: isPresented
+                            ) {
+                                viewModel.syncQuotes()
+                            }
+
+                        } onDismiss: {
+                            viewModel.autoQuoteIfRequired()
+                        }
+                    }
+                } else if viewModel.shouldShowTerms {
+                    Coordinator.shared.present { isPresented in
+                        SwapTermsView(isPresented: isPresented) {
+                            viewModel.onAcceptTerms()
+
+                            DispatchQueue.main.async {
+                                isInputActive = false
+                                sendPresented = true
+                            }
+                        }
+                    }
+                } else {
+                    isInputActive = false
+                    sendPresented = true
+                }
+            }
+            .disabled(disabled)
+        }
+    }
+
+    @ViewBuilder private func approvalButton(_ item: LiquidityAddViewModel.ApprovalButton) -> some View {
+        ThemeButton(text: item.title, spinner: item.state.showProgress, style: item.state.style) {
+            viewModel.stopAutoQuoting()
+
+            if let step = item.state.preSwapStep {
+                Coordinator.shared.present { isPresented in
+                    item.provider.preSwapView(
+                        step: step,
+                        tokenToApprove: item.token,
+                        otherToken: item.otherToken,
+                        amount: item.amount,
+                        isPresented: isPresented
+                    ) {
+                        viewModel.refreshAfterPreSwap()
+                    }
+                } onDismiss: {
+                    viewModel.refreshAfterPreSwap()
+                    viewModel.autoQuoteIfRequired()
+                }
+            }
+        }
+        .disabled(item.state.disabled)
+    }
+
+    @ViewBuilder private func availableBalanceView(valueIn: String?, valueOut: String?) -> some View {
         HStack(spacing: .margin8) {
             Text("send.available_balance".localized).textCaption()
             Spacer()
-            Text(value ?? "---")
-                .textCaption()
-                .multilineTextAlignment(.trailing)
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(valueIn ?? "---")
+                    .textCaption()
+                    .multilineTextAlignment(.trailing)
+                Text(valueOut ?? "---")
+                    .textCaption()
+                    .multilineTextAlignment(.trailing)
+            }
         }
         .padding(.horizontal, .margin16)
     }
 
-    @ViewBuilder private func quoteView(currentQuote: LiquidityAddViewModel.Quote, tokenIn: Token, tokenOut: Token) -> some View {
+    @ViewBuilder private func quoteView(quote: LiquidityAddViewModel.Quote) -> some View {
         ListSection {
-            providerView(currentQuote: currentQuote, tokenIn: tokenIn, tokenOut: tokenOut)
+            HStack(spacing: 4) {
+                Button(action: {
+                    viewModel.stopAutoQuoting()
 
-            VStack(spacing: 0) {
-                if let price = viewModel.price {
-                    priceView(value: price)
-                }
+                    Coordinator.shared.present { isPresented in
+                        LiquidityAddQuotesView(viewModel: viewModel, isPresented: isPresented)
+                    } onDismiss: {
+                        viewModel.autoQuoteIfRequired()
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        HStack(spacing: 8) {
+                            Image(quote.provider.icon)
+                                .resizable()
+                                .scaledToFit()
+                                .cornerRadius(4)
+                                .frame(width: .iconSize24, height: .iconSize24)
 
-                let fields = currentQuote.quote.fields(
-                    token0: tokenIn,
-                    token1: tokenOut,
-                    currency: viewModel.currency,
-                    token0Rate: viewModel.coinPriceIn?.value,
-                    token1Rate: viewModel.rateOut
-                )
+                            Text(quote.provider.name).textSubhead2()
+                        }
 
-                if !fields.isEmpty {
-                    ForEach(fields) { field in
-                        providerFieldView(field: field)
+                        ThemeImage("arrow_s_down", size: 20)
                     }
                 }
+                .layoutPriority(1)
+
+                Spacer()
+
+                if let price = viewModel.price {
+                    HStack {
+                        ThemeText(price, style: .captionSB, colorStyle: .primary)
+                            .multilineTextAlignment(.trailing)
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(1)
+                            .id(price)
+                            .transition(.opacity)
+                            .onTapGesture {
+                                viewModel.flipPrice()
+                            }
+                    }
+                    .animation(.easeInOut(duration: 0.15), value: price)
+                }
             }
+            .padding(EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
         }
         .themeListStyle(.bordered)
     }
 
-    @ViewBuilder private func quoteCautionsView(currentQuote: LiquidityAddViewModel.Quote) -> some View {
-        let cautions = currentQuote.quote.cautions()
+    @ViewBuilder private func quoteCautionsView(quote: LiquidityAddViewModel.Quote) -> some View {
+        let cautions = quote.quote.cautions()
 
         if !cautions.isEmpty {
             ForEach(cautions.indices, id: \.self) { index in
-                HighlightedTextView(caution: cautions[index])
+                AlertCardView(caution: cautions[index])
             }
         }
-    }
-
-    @ViewBuilder private func providerView(currentQuote: LiquidityAddViewModel.Quote, tokenIn: Token, tokenOut: Token) -> some View {
-        HStack(spacing: .margin8) {
-            Button(action: {
-                viewModel.stopAutoQuoting()
-
-                Coordinator.shared.present { isPresented in
-                    
-                    LiquidityAddQuotesView(viewModel: viewModel, isPresented: isPresented)
-                } onDismiss: {
-                    viewModel.autoQuoteIfRequired()
-                }
-            }) {
-                HStack(spacing: .margin8) {
-                    Image(currentQuote.provider.icon)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: .iconSize24, height: .iconSize24)
-
-                    Text(currentQuote.provider.name).textSubhead1(color: .themeLeah)
-                    Image("arrow_small_down_20").themeIcon(color: .themeGray)
-                }
-            }
-
-            Spacer()
-
-            Button(action: {
-                viewModel.stopAutoQuoting()
-
-                Coordinator.shared.present { _ in
-                    currentQuote.provider.settingsView(token0: tokenIn, token1: tokenOut, quote: currentQuote.quote) {
-                        viewModel.syncQuotes()
-                    }
-                } onDismiss: {
-                    viewModel.autoQuoteIfRequired()
-                }
-            }) {
-                if currentQuote.quote.settingsModified {
-                    Image("manage_2_20").themeIcon(color: .themeJacob)
-                } else {
-                    Image("manage_2_20").renderingMode(.template)
-                }
-            }
-            .buttonStyle(SecondaryCircleButtonStyle(style: .transparent))
-        }
-        .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin12, trailing: .margin12))
-        .frame(minHeight: 40)
-    }
-
-    @ViewBuilder private func priceView(value: String) -> some View {
-        HStack(spacing: .margin8) {
-            Text("swap.price".localized).textSubhead2()
-
-            Spacer()
-
-            Button(action: {
-                viewModel.flipPrice()
-            }) {
-                HStack(spacing: .margin8) {
-                    Text(value)
-                        .textSubhead2(color: .themeLeah)
-                        .multilineTextAlignment(.trailing)
-
-                    Image("arrow_swap_3_20").themeIcon()
-                }
-            }
-        }
-        .padding(.vertical, .margin12)
-        .padding(.horizontal, .margin16)
-        .frame(minHeight: 40)
-    }
-
-    @ViewBuilder private func providerFieldView(field: MultiSwapMainField) -> some View {
-        HStack(spacing: .margin8) {
-            if let infoDescription = field.infoDescription {
-                Text(field.title)
-                    .textSubhead2()
-                    .modifier(Informed(infoDescription: infoDescription))
-            } else {
-                Text(field.title)
-                    .textSubhead2()
-            }
-
-            Spacer()
-
-            Text(field.value)
-                .textSubhead2(color: color(valueLevel: field.valueLevel))
-                .multilineTextAlignment(.trailing)
-
-            if let settingId = field.settingId {
-                Button(action: {
-                    if let tokenOut = viewModel.tokenOut, let currentQuote = viewModel.currentQuote {
-                        Coordinator.shared.present { _ in
-                            currentQuote.provider.settingView(settingId: settingId, tokenOut: tokenOut) {
-                                viewModel.syncQuotes()
-                            }
-                        }
-                    }
-                }) {
-                    if field.modified {
-                        Image("pen_filled").themeIcon(color: .themeJacob)
-                    } else {
-                        Image("pen_filled").renderingMode(.template)
-                    }
-                }
-                .buttonStyle(SecondaryCircleButtonStyle(style: .transparent))
-            }
-        }
-        .padding(.vertical, .margin12)
-        .padding(.leading, field.infoDescription == nil ? .margin16 : 0)
-        .padding(.trailing, field.settingId == nil ? .margin16 : .margin12)
-        .frame(minHeight: 40)
     }
 
     private func balanceValue() -> String? {
@@ -508,12 +609,20 @@ struct LiquidityAddView: View {
         return AppValue(token: tokenIn, value: availableBalance).formattedFull()
     }
 
-    private func buttonState() -> (String, PrimaryButtonStyle.Style, Bool, Bool, MultiSwapPreSwapStep?) {
+    private func balanceValueOut() -> String? {
+        guard let availableBalance = viewModel.availableBalanceOut, let tokenOut = viewModel.tokenOut else {
+            return nil
+        }
+
+        return AppValue(token: tokenOut, value: availableBalance).formattedFull()
+    }
+
+    private func buttonState() -> (String, ThemeButton.Style, Bool, Bool, (step: MultiSwapPreSwapStep, token: Token, amount: Decimal, provider: ILiquidityAddProvider)?) {
         let title: String
-        var style: PrimaryButtonStyle.Style = .yellow
+        var style: ThemeButton.Style = .primary
         var disabled = true
         var showProgress = false
-        var preSwapStep: MultiSwapPreSwapStep?
+        var preSwap: (step: MultiSwapPreSwapStep, token: Token, amount: Decimal, provider: ILiquidityAddProvider)?
 
         if viewModel.quoting {
             title = "swap.quoting".localized
@@ -526,29 +635,60 @@ struct LiquidityAddView: View {
             title = "swap.no_providers".localized
         } else if viewModel.amountIn == nil {
             title = "swap.enter_amount".localized
-        } else if viewModel.currentQuote == nil {
-            title = "swap.no_quotes".localized
-        } else if viewModel.adapterState == nil {
+        } else if viewModel.amountOutString == nil {
+            title = "swap.no_providers".localized
+        } else if viewModel.adapterState == nil || viewModel.adapterStateOut == nil {
             title = "swap.token_not_enabled".localized
         } else if let adapterState = viewModel.adapterState, adapterState.syncing {
             title = "swap.token_syncing".localized
             showProgress = true
+        } else if let adapterStateOut = viewModel.adapterStateOut, adapterStateOut.syncing {
+            title = "swap.token_syncing".localized
+            showProgress = true
         } else if let adapterState = viewModel.adapterState, !adapterState.isSynced {
+            title = "swap.token_not_synced".localized
+        } else if let adapterStateOut = viewModel.adapterStateOut, !adapterStateOut.isSynced {
             title = "swap.token_not_synced".localized
         } else if let availableBalance = viewModel.availableBalance, let amountIn = viewModel.amountIn, amountIn > availableBalance {
             title = "swap.insufficient_balance".localized
-        } else if let currentQuote = viewModel.currentQuote, let state = currentQuote.quote.customButtonState {
+        } else if let amountOut = viewModel.currentQuote?.quote.expectedBuyAmount,
+                  let availableBalanceOut = viewModel.availableBalanceOut,
+                  amountOut > availableBalanceOut
+        {
+            title = "swap.insufficient_balance".localized
+        }else if let currentQuote = viewModel.currentQuote {
+            let token: Token
+            let amount: Decimal
+            let state: MultiSwapButtonState
+            
+            if let state0 = currentQuote.quote.customButtonState0, let tokenIn = viewModel.tokenIn, let amountIn = viewModel.amountIn {
+                state = state0
+                token = tokenIn
+                amount = amountIn
+            } else if let state1 = currentQuote.quote.customButtonState1, let tokenOut = viewModel.tokenOut, let amountOut = viewModel.currentQuote?.quote.expectedBuyAmount {
+                state = state1
+                token = tokenOut
+                amount = amountOut
+            } else {
+                title = "swap.proceed_button".localized
+                disabled = false
+                return (title, style, disabled, showProgress, preSwap)
+            }
+            
             title = state.title
             style = state.style
             disabled = state.disabled
             showProgress = state.showProgress
-            preSwapStep = state.preSwapStep
+
+            if let step = state.preSwapStep {
+                preSwap = (step, token, amount, currentQuote.provider)
+            }
         } else {
             title = "swap.proceed_button".localized
             disabled = false
         }
 
-        return (title, style, disabled, showProgress, preSwapStep)
+        return (title, style, disabled, showProgress, preSwap)
     }
 
     func presentTokenIn() {
@@ -562,4 +702,3 @@ struct LiquidityAddView: View {
         }
     }
 }
-

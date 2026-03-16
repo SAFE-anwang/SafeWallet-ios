@@ -10,14 +10,14 @@ class LiquidityAddAllowanceHelper {
         .tron: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
     ]
 
-    func preSwapView(step: MultiSwapPreSwapStep, tokenIn: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
+    func preSwapView(step: MultiSwapPreSwapStep, token: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
         switch step {
         case let unlockStep as UnlockStep:
             if unlockStep.isRevoke {
-                let view = MultiSwapRevokeView(tokenIn: tokenIn, spenderAddress: unlockStep.spenderAddress, isPresented: isPresented, onSuccess: onSuccess)
+                let view = MultiSwapRevokeView(tokenIn: token, spenderAddress: unlockStep.spenderAddress, isPresented: isPresented, onSuccess: onSuccess)
                 return AnyView(ThemeNavigationStack { view })
             } else {
-                let view = MultiSwapApproveView(tokenIn: tokenIn, amount: amount, spenderAddress: unlockStep.spenderAddress, isPresented: isPresented, onSuccess: onSuccess)
+                let view = MultiSwapApproveView(tokenIn: token, amount: amount, spenderAddress: unlockStep.spenderAddress, isPresented: isPresented, onSuccess: onSuccess)
                 return AnyView(ThemeNavigationStack { view })
             }
         default:
@@ -35,26 +35,49 @@ class LiquidityAddAllowanceHelper {
         }
 
         do {
-            if let pendingAllowance = pendingAllowance(pendingTransactions: adapter.pendingTransactions, spenderAddress: spenderAddress) {
+            // 首先获取链上最新的授权额度
+            let allowance = try await adapter.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
+            
+            // 如果授权额度已满足要求，直接返回.allowed
+            if amount <= allowance {
+                return .allowed
+            }
+            
+            // 检查是否有待处理的授权交易
+            let pendingAllowance = pendingAllowance(pendingTransactions: adapter.pendingTransactions, spenderAddress: spenderAddress)
+            
+            if let pendingAllowance {
+                // 如果有pending授权交易，且pending的授权额度满足要求
                 if pendingAllowance == 0 {
-                    return .pendingRevoke
+                    // pending的是撤销授权
+                    return allowance == 0 ? .notEnough(appValue: AppValue(token: token, value: allowance), spenderAddress: spenderAddress, revokeRequired: false) : .pendingRevoke
                 } else {
-                    return .pendingAllowance(appValue: AppValue(token: token, value: pendingAllowance))
+                    // pending的是授权交易
+                    // 检查pending的授权额度是否满足要求
+                    if amount <= pendingAllowance {
+                        return .pendingAllowance(appValue: AppValue(token: token, value: pendingAllowance))
+                    } else {
+                        // pending的授权额度仍不满足要求，显示为notEnough
+                        return .notEnough(
+                            appValue: AppValue(token: token, value: allowance),
+                            spenderAddress: spenderAddress,
+                            revokeRequired: allowance > 0 && mustBeRevoked(token: token)
+                        )
+                    }
                 }
             }
 
-            let allowance = try await adapter.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
-            if amount <= allowance {
-                return .allowed
-            } else {
-                return .notEnough(
-                    appValue: AppValue(token: token, value: allowance),
-                    spenderAddress: spenderAddress,
-                    revokeRequired: allowance > 0 && mustBeRevoked(token: token)
-                )
-            }
+            return .notEnough(
+                appValue: AppValue(token: token, value: allowance),
+                spenderAddress: spenderAddress,
+                revokeRequired: allowance > 0 && mustBeRevoked(token: token)
+            )
         } catch {
-            return .unknown
+            return .notEnough(
+                appValue: AppValue(token: token, value: 0),
+                spenderAddress: spenderAddress,
+                revokeRequired: false
+            )
         }
     }
 
@@ -110,37 +133,6 @@ extension LiquidityAddAllowanceHelper {
             }
 
             return cautions
-        }
-
-        func fields() -> [MultiSwapMainField] {
-            var fields = [MultiSwapMainField]()
-
-            switch self {
-            case let .notEnough(appValue, _, _):
-                if let formatted = appValue.formattedShort() {
-                    fields.append(
-                        MultiSwapMainField(
-                            title: "swap.allowance".localized,
-                            infoDescription: .init(title: "swap.allowance".localized, description: "swap.allowance.description".localized),
-                            value: "\(formatted)",
-                            valueLevel: .error
-                        )
-                    )
-                }
-            case let .pendingAllowance(appValue):
-                if let formatted = appValue.formattedShort() {
-                    fields.append(
-                        MultiSwapMainField(
-                            title: "swap.pending_allowance".localized,
-                            value: "\(formatted)",
-                            valueLevel: .warning
-                        )
-                    )
-                }
-            default: ()
-            }
-
-            return fields
         }
     }
 

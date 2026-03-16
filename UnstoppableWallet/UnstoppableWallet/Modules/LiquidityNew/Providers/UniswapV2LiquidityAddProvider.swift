@@ -10,7 +10,7 @@ class UniswapV2LiquidityAddProvider: BaseUniswapV2LiquidityAddProvider {
     }
 
     override var icon: String {
-        "uniswap_32"
+        "swap_provider_uniswap"
     }
 
     override func supports(token0 tokenIn: MarketKit.Token, token1 tokenOut: MarketKit.Token) -> Bool {

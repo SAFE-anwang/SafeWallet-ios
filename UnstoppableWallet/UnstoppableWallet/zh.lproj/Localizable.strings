@@ -12,10 +12,11 @@
 "button.delete" = "删除";
 "button.share" = "分享";
 "button.paste" = "粘帖";
+"button.gallery" = "相册";
 "button.resend" = "重新发送";
-"button.backup" = "备份";
 "button.restore" = "恢复";
 "button.copy" = "复制";
+"button.copy_error" = "复制错误";
 "button.retry" = "重试";
 "button.report" = "报告";
 "button.add" = "添加";
@@ -26,10 +27,8 @@
 "button.save" = "保存";
 "button.send" = "发送​​";
 "button.sign" = "签名";
-"button.more" = "显示更多";
 "button.i_understand" = "我理解";
-"button.learn_more" = "了解更多";
-"button.unlock" = "解锁​​​​";
+"button.understood" = "明白";
 "button.select" = "选择";
 "button.later" = "稍后";
 
@@ -74,17 +73,18 @@
 "alert.revoking" = "正在取消";
 "alert.revoked" = "已注销";
 "alert.cant_recognize" = "无法识别";
+"alert.not_founded" = "未找到。";
 
 "alert.fee_too_low" = "费用过低";
 "alert.rbf_not_Enabled" = "RBF(替换交易) 未启用";
 "alert.unable_to_replace" = "无法替换";
 "alert.already_replaced" = "已经替换";
 
+"alert.fetched_from_keychain" = "从钥匙串获取密码";
+
 "alert_card.title.critical" = "警告!";
 "alert_card.title.caution" = "注意!";
 
-"no_results_found" = "未发现结果";
-"action.loading" = "正在加载...";
 "placeholder.search" = "搜索​​​​";
 
 "status" = "状态";
@@ -117,12 +117,11 @@
 "face_id" = "Face ID";
 "touch_id" = "Touch ID";
 
-"auto_lock.immediate" = "即时的";
-"auto_lock.minute1" = "1 分钟";
-"auto_lock.minute5" = "5 分钟";
-"auto_lock.minute15" = "15 分钟";
-"auto_lock.minute30" = "30 分钟";
-"auto_lock.hour1" = "1 小时";
+"powered_by" = "由 %@ 提供支持";
+
+"filter.all" = "所有";
+
+"not_activated" = "未激活";
 
 "powered_by" = "由 %@ 提供支持";
 
@@ -130,9 +129,7 @@
 
 // Access Camera
 
-"access_camera.message" = "%@ 需要访问您的相机以扫描二维码。
-
-前往设置 - > %@ 并允许访问相机。";
+"access_camera.message" = "%@ 需要访问您的相机以扫描二维码。\n\n前往设置 - > %@ 并允许访问相机。";
 "access_camera.not_supported" = "您的设备不支持扫描物品上的代码。请使用带有摄像头的设备。";
 "access_camera.settings" = "设置";
 
@@ -151,7 +148,6 @@
 "restore.passphrase" = "密码";
 "restore.input.passphrase" = "密码";
 "restore.wallet.passphrase_description" = "请输入您在创建恢复短语时使用的密码。使用新密码恢复现有钱包将生成全新的钱包。";
-"restore.passphrase_description" = "此密码用于加密您的钱包备份文件。与您的 Apple iCloud 密码无关。如果丢失或遗忘，将无法恢复或重置。";
 "restore.error.empty_passphrase" = "密码不能为空白";
 "restore.non_standard_import" = "非标准还原";
 "restore.non_standard_import.description" = "此页面为拥有非标准钱包的 %@ 用户提供一个特殊的钱包导入机制。 此钱包可能已在 %@ 版本 0中创建。 7 - 0.28 使用非英文恢复短语和/或钱包密码中的特殊字符(例如拨号符号)。\n\n如果您是受影响的用户，那么您的钱包余额将会在导入此钱包版本0.29或以上后显示0。 此页面将使您能够恢复对非标准钱包的访问。 一旦导入，您建议创建一个新的钱包(它将符合标准)，并将资金转移到那里。";
@@ -166,12 +162,10 @@
 "restore_type.recovery.title" = "恢复短语";
 "restore_type.cloud.title" = "来自 iCloud";
 "restore_type.file.title" = "从文件";
-"restore_type.cex.title" = "来自Exchange 钱包";
 
 "restore_type.recovery.description" = "使用恢复短语或私钥导入。";
 "restore_type.cloud.description" = "从您的密钥链备份文件中导入。";
 "restore_type.file.description" = "从本地文件夹导入备份文件。";
-"restore_type.cex.description" = "在集中交易所上连接到钱包。";
 
 // Restore Cloud
 
@@ -186,30 +180,13 @@
 "restore.cloud.password.placeholder" = "备份密码";
 "restore.cloud.password.description" = "输入密码以导入您的备份";
 
-// Restore Cex
-
-"restore.cex.title" = "选择CEX";
-"restore.cex.description" = "选择您想要连接的中心化交易所。";
-
-// Restore Binance
-
-"restore.binance.description" = "请提供 API 密钥和 API 密钥链接您的交换。";
-"restore.binance.api_key" = "API 密钥";
-"restore.binance.secret_key" = "密钥";
-"restore.binance.connect" = "连接";
-"restore.binance.connecting" = "正在连接...";
-"restore.binance.get_api_keys" = "获取 API 密钥";
-"restore.binance.failed_to_connect" = "连接您的 API 密钥失败";
-"restore.binance.invalid_qr_code" = "无效二维码";
 
 // Coin Settings
 
-"coin_settings.title" = "区块链设置";
-"coin_settings.bitcoin_cash_coin_type.title.type0" = "遗留问题";
-"coin_settings.bitcoin_cash_coin_type.title.type145" = "资金地址（推荐）";
 "sync_mode.hybrid" = "混合型";
 "sync_mode.from_blockchain" = "来自区块链";
-"blockchain_settings.description" = "选择接收付款的地址格式。恢复现有钱包时应选择正确的格式。";
+"blockchain_settings.description" = "请选择该币种的地址格式。";
+"blockchain_settings.footer" = "如果不确定，请使用推荐选项。恢复现有钱包时需选择正确的地址格式。";
 
 // Coin Platforms
 
@@ -228,8 +205,6 @@
 "recovery_phrase.warning" = "切勿与任何人共享此密钥。 %@ 钱包支持团队永远不会要求它。";
 "recovery_phrase.tap_to_show" = "点击显示恢复密语";
 "recovery_phrase.passphrase" = "密码";
-"recovery_phrase.copy_warning.title" = "恢复短语复制的风险";
-"recovery_phrase.copy_warning.description" = "作为一项安全措施，我们建议不要复制私钥。";
 
 // EVM Private Key
 
@@ -247,8 +222,6 @@
 "monero_private_key.title" = "Monero 私钥";
 "monero_private_key.tap_to_show" = "点击显示私钥";
 "monero.key_types" = "类型";
-"monero.key_types.spend" = "支出";
-"monero.key_types.view" = "查看";
 
 // Extended Key
 
@@ -258,7 +231,7 @@
 "extended_key.purpose" = "目的";
 "extended_key.blockchain" = "Blockchain";
 "extended_key.account" = "账户";
-"extended_key.account.description" = "这是高级用户的设置。 如果您试图导入钱包(通过扩展私钥)或交易列表(通过扩展公钥)，您需要账户 0。";
+"extended_key.account.description" = "此设置适用于高级用户。如果您尝试导入钱包（通过扩展私钥）或交易列表（通过扩展公钥），则需要账户 0。";
 "extended_key.tap_to_show" = "点击點擊顯示 extended private key 显示扩展私钥";
 
 // Backup
@@ -276,12 +249,6 @@
 "backup_verify_words.description" = "从你的钱包恢复短语中选择两个请求的单词";
 "backup_verify_words.incorrect_word" = "不准确的字";
 
-// Backup Verify Passphrase
-
-"backup_verify_passphrase.title" = "验证";
-"backup_verify_passphrase.description" = "输入密码";
-"backup_verify_passphrase.incorrect_passphrase" = "密码不正确";
-
 // Backup Prompt
 
 "backup_prompt.backup_recovery_phrase" = "备份钱包";
@@ -294,32 +261,19 @@
 
 // Backup to iCloud
 
-"backup.cloud.title" = "备份到iCloud";
-"backup.cloud.description" = "iCloud 存储是 Apple 提供的第三方云存储服务。请注意，您的数据将存储在 Apple 的服务器上，而不是您的个人设备上。这意味着您正在委托您的数据并将信息的安全性移交给第三方服务。";
-"backup.cloud.terms.item.1" = "我了解无法访问我的 iCloud 将导致无法访问相应钱包的备份。";
-
-"backup.cloud.name.title" = "备份名称";
-"backup.cloud.name.description" = "请输入备份文件的名称。";
-"backup.cloud.name.empty" = "备份名称不能为空！";
 "backup.cloud.name.error.empty" = "备份名称不能为空";
 "backup.cloud.name.error.already_exist" = "备份名称已经存在！";
+"backup.cloud.name.error.invalid_characters" = "名称包含无效字符";
 "backup.cloud.name.placeholder" = "名称";
 
-"backup.cloud.password.title" = "设置密码";
-"backup.cloud.password.description" = "为您的备份设置解锁密码。密码长度必须至少为8个字符，并且包含至少一个小写字母、大写字母、数字和特殊字符。";
-"backup.cloud.password.highlighted_description" = "请不要忘记这个密码！它与您的 Apple iCloud 密码不同，无法恢复或重置。";
 "backup.cloud.password.placeholder" = "密码";
 "backup.cloud.password.confirm.placeholder" = "确认";
-"backup.cloud.password.save" = "保存并备份";
 
 "backup.cloud.password.error.empty_passphrase" = "密码不能为空";
-"backup.cloud.password.error.forbidden_symbols" = "请只使用支持的符号：A-Z a-z 0-9 ' \" & / ? , ~ * $ = + - [ ] ( ) { } < > \\ _ # @ | %";
 "backup.cloud.password.error.minimum_requirement" = "密码需要至少8个字符，包括一个大写字母、一个小写字母、一个数字和一个符号。";
 "backup.cloud.password.error.invalid_password" = "密码错误";
 "backup.cloud.password.error.invalid_backup" = "备份已损坏";
 "backup.cloud.password.confirm.error.doesnt_match" = "密码不匹配";
-"backup.cloud.not_available" = "iCloud 服务不可用";
-"backup.cloud.cant_create_file" = "无法将文件保存到iCloud。";
 "backup.cloud.cant_delete_file" = "无法从 iCloud 删除";
 "backup.cloud.no_access.title" = "访问 iCloud";
 "backup.cloud.no_access.description" = "要创建备份，您需要提供访问 iCloud 存储。";
@@ -329,7 +283,6 @@
 "error.send.self_transfer" = "不支持发送给自己";
 "error.send_binance.memo_required" = "收款人要求在转账交易中包含非空的备注";
 "error.send_binance.only_digits_allowed" = "要求备注仅包含数字";
-"error.send_z_cash.transparent_address" = "%@ 不支持付款到一个透明地址";
 
 // Balance
 
@@ -351,16 +304,12 @@
 "balance.searching" = "正在搜索交易…...";
 "balance.connecting" = "正在连接...";
 "balance.stopped" = "已停止";
-"balance.downloading_sapling" = "正在下载保存... %d%%";
-"balance.downloading_blocks" = "正在下载块";
-"balance.scanning_blocks" = "扫描块";
-"balance.enhancing_transactions" = "加强交易";
+"balance.downloading_sapling" = "正在下载...";
 "balance.watch_wallet" = "观察地址";
 
 "balance.searching.count" = "%@ tx";
-"balance.syncing_percent" = "正在同步... %@";
+"balance.remaining" = "剩余区块数 - %@";
 "balance.synced_through" = "直到 %@";
-"balance.empty.description" = "您还没有添加任何代币到此钱包中。";
 "balance.sort.header" = "排序方式";
 "balance.sort.valueHighToLow" = "余额";
 "balance.sort.az" = "名称";
@@ -368,8 +317,10 @@
 
 "balance_error.change_source" = "更改源";
 "balance_error.sync_error" = "同步出错";
+"balance_error.sync_error.description.with_source" = "无法从当前来源获取数据。您可以重试或切换到其他同步来源。";
+"balance_error.sync_error.description.without_source" = "无法从当前来源获取数据。请稍后重试。";
 "lost_accounts.warning_title" = "iOS Keychain 错误";
-"lost_accounts.warning_message" = "因为您的 iOS 锁定屏幕已被更改，所以保存您钱包的加密数据目前已失效";
+"lost_accounts.warning_message" = "由于 iOS 钥匙串错误，无法访问以下钱包：\n\n%@\n\n重新启动应用通常可以解决此问题。如果问题仍然存在，您可以取消关联并恢复这些钱包。";
 
 // Token Balance Page
 "balance.token.locked" = "锁住";
@@ -382,23 +333,15 @@
 "balance.token.not_relayed" = "广播";
 "balance.token.not_relayed.info.title" = "广播";
 "balance.token.not_relayed.info.description" = "此金额的交易已广播，但尚未被网络接受。";
-"balance.token.processing" = "正在处理";
-"balance.token.processing.info.title" = "处理金额";
-"balance.token.processing.info.description" = "此金额的交易仍然在同步。当它们被确认时，这些代币将用于支出";
 "balance.token.transparent" = "透明";
-"balance.token.transparent.info.title" = "透明金額";
-"balance.token.transparent.info.description" = "透明餘額目前無法在我們的錢包中使用。但其他支援 t-address 的錢包可以花費這些資金。";
+"balance.token.transparent.info.title" = "透明余额";
+"balance.token.transparent.info.description" = "您在透明地址中持有 ZEC 余额。要在 Unstoppable 中使用，必须将其屏蔽（shield）以实现完全隐私。";
+"balance.token.transparent.detected.title" = "检测到透明 ZEC 地址";
+"balance.token.transparent.detected.description" = "您在透明地址中持有 ZEC 余额。要在 Unstoppable 中使用，必须将其屏蔽（shield）以实现完全隐私。";
 "balance.token.shield" = "屏蔽";
 
 "balance.token.receive_address" = "收款地址";
-"balance.token.staked" = "已关注";
-"balance.token.staked.info.title" = "关注的标题";
-"balance.token.staked.info.description" = "相关的描述文本";
-"balance.token.frozen" = "冻结";
-"balance.token.frozen.info.title" = "冻结标题";
-"balance.token.frozen.info.description" = "冻结描述文本";
-"balance.token.account.inactive.title" = "帐户未激活";
-"balance.token.account.inactive.description" = "新创建的 TRON 钱包需要至少存入 1 TRX 才能激活。未激活的钱包可以接收和持有代币，但余额不会更新，直到被激活为止。";
+"balance.token.account.inactive.description" = "激活后将显示交易记录";
 
 // Account switcher
 
@@ -414,17 +357,20 @@
 // Deposit
 
 "deposit.receive_coin" = "收到%@";
+"deposit.zcash.title" = "地址类型";
+"deposit.zcash.header" = "请选择您希望接收 Zcash 的方式。";
+"deposit.address_type.unified" = "Unified";
+"deposit.address_type.unified.description" = "适用于钱包之间的个人和隐私转账。";
+"deposit.address_type.transparent" = "透明";
+"deposit.address_type.transparent.description" = "适用于从不支持统一地址的交易所或服务接收资金。";
+
 "deposit.address" = "地址";
-"deposit.your_address" = "您的地址";
 "receive_alert.not_backed_up_description" = "您必须在接收%@之前先备份%@。";
 "receive_alert.any_coins.not_backed_up_description" = "您需要在收到任何硬币之前备份 %@。";
 "deposit.no_adapter.error" = "无法提供地址";
 
 "deposit.address_format" = "格式";
-"deposit.address_network" = "网络";
-"deposit.qr_code_description" = "您存放 %@ 的地址";
-"deposit.qr_code_description.watch" = "观看 %@ 的地址";
-"deposit.account" = "账户";
+"deposit.address_network" = "網絡";
 "deposit.trustline" = "信任線";
 "deposit.trustline.not_activated" = "尚未啟用";
 "deposit.activate" = "激活";
@@ -433,18 +379,15 @@
 "deposit.set_amount" = "设定金额";
 "deposit.enter_amount" = "输入金额";
 
-"deposit.memo" = "Memo (Tag)";
 "deposit.copy_address" = "复制";
 "deposit.share_address" = "分享";
-"deposit.memo_warning.title" = "重要信息";
-"deposit.memo_warning.description" = "需要填写备注(标签)和地址以确保收到资产。否则您的资金将丢失。";
 
 "deposit.not_active" = "不活动";
-"deposit.not_active.title" = "未激活的地址";
-"deposit.not_active.tron_description" = "新创建的 TRON 区块链上的帐户是不活动的，无法查询或探索。它们需要激活。\n\n正在将TRX或 TRC-10令牌传输到一个不活动的帐户地址将激活该帐户。 激活Tron链上的一个新帐户需要1TRX";
+"deposit.not_active.title" = "TRON 未激活";
+"deposit.not_active.tron_description" = "TRON 需要至少 1 TRX 才能完成激活。\n\n在钱包激活之前，仍可接收 token，但余额可能不会显示。";
+"deposit.not_active.view_address" = "查看我的地址";
 "deposit.stellar.inactive_asset.title" = "啟用代幣";
 "deposit.stellar.inactive_asset.description" = "若要接收 %@，需先激活该代币。Stellar 网络要求为每个代币建立信任线；若未建立，您的钱包将无法接收 %@，交易会被拒绝且资金无法到账。";
-
 
 "deposit.used_addresses.title" = "已使用地址";
 "deposit.used_addresses.description" = "%@ 地址用于隐私和安全。以下是此钱包中已使用的地址列表。";
@@ -455,10 +398,6 @@
 "deposit.subaddresses.title" = "子地址";
 "deposit.subaddresses.description" = "使用子地址来管理一个钱包中的多个独特地址——更容易组织起来，对您的隐私更安全。";
 "deposit.subaddresses.transactions_count" = "交易：%@";
-
-"deposit.zcash.restore.description" = "您以前是否拥有过任何ZEC硬币？";
-"deposit.zcash.restore.already_own" = "是的，我已经拥有了";
-"deposit.zcash.restore.dont_have" = "不，我没有";
 
 "deposit.warning" = "仅支持与网络兼容的代币，其他将会丧失。";
 "deposit.warning.watch_account" = "该地址是被监视账户的地址";
@@ -487,7 +426,7 @@
 "send.address_placeholder" = "地址";
 "send.address_or_domain_placeholder" = "地址或域名";
 "send.fee" = "费用";
-"send.network_fee" = "网络费";
+"send.network_fee" = "费用";
 "send.estimated_fee" = "预估费用";
 "send.max_fee" = "最大手续费";
 "send.max_fee.info" = "用户在网络上发送交易时可能支付的最高手续费。";
@@ -524,29 +463,15 @@
 "send.select_all" = "选择所有";
 "send.unselect_all" = "取消选择所有";
 
-"send.confirmation.title" = "确认";
-"send.fee_info.title" = "交易速度";
-"send.fee_info.description" = "比特币和Etherum区块链都要求用户在发送交易时支付网络费用。当区块链上发生大量交易时费用较高；而区块链空闲时费用较低。";
-"send.fee_info.header_slow" = "慢";
-"send.fee_info.content_slow" = "选择此范围中的值可能导致交易需等待数小时或被完全拒绝。值越低，确认交易的所需时间越长。";
-"send.fee_info.header_average" = "平均";
-"send.fee_info.content_average" = "通常，此费用范围应足以使比特币（Bitcoin）交易在数分钟/小时、以太币（Ethereum）在数分钟内得到处理。";
-"send.fee_info.header_fast" = "快";
-"send.fee_info.content_fast" = "对于优先级重要的交易，我们建议使用高收费值。 预计这将足以在10分钟内完成比特币交易，1-2分钟以内完成Etherefis。";
-"send.fee_info.content_conclusion" = "SafeWallet钱包以网络活动为基础作出有根据的猜测，但不能保证所建议费用值总能实现预期行为。";
+
+"send.confirmation.title" = "确认发送";
 "send.confirmation.you_send" = "您发送";
-"send.confirmation.you_receive" = "您收到";
 "send.confirmation.transfer" = "转帐";
 "send.confirmation.to" = "接收人";
-"send.confirmation.from" = "来自";
 "send.confirmation.own" = "自有";
 "send.confirmation.contact_name" = "联系人姓名";
-"send.confirmation.domain" = "域名";
-"send.confirmation.address" = "地址";
-"send.confirmation.account" = "账户";
 "send.confirmation.memo" = "备忘录";
 "send.confirmation.memo_placeholder" = "备忘录";
-"send.confirmation.total" = "总额";
 "send.confirmation.fee" = "费用";
 "send.confirmation.time_lock" = "TimeLock";
 "send.confirmation.replace_by_fee" = "替换交易";
@@ -560,15 +485,16 @@
 "send.confirmation.operation" = "操作";
 "send.confirmation.transaction_xdr" = "交易 XDR";
 
-"send.confirmation.sync_failed" = "同步失败";
-"send.confirmation.invalid_data" = "无效数据";
+"send.confirmation.edit_fee" = "编辑手续费";
+"send.confirmation.transaction_nonce" = "交易nonce";
+
+"send.confirmation.failed_to_fetch_data" = "获取数据失败";
 "send.confirmation.refresh" = "刷新";
-"send.confirmation.please_wait" = "请稍候";
-"send.confirmation.expires_in" = "将在%@后过期";
-"send.confirmation.expired" = "过期";
+"send.confirmation.refreshing" = "正在刷新";
 "send.confirmation.slide_to_send" = "滑动发送";
 "send.confirmation.sending" = "发送中";
-"send.confirmation.sent" = "已发送";
+"send.confirmation.unexpected_error" = "异常错误";
+"send.confirmation.unexpected_error.text" = "发送交易时发生错误。请重试，或复制错误代码并联系支持团队。";
 
 "send.confirmation.slide_to_approve" = "滑动以批准";
 "send.confirmation.slide_to_revoke" = "滑动以撤销";
@@ -576,7 +502,6 @@
 "send.confirmation.slide_to_resend" = "重新发送";
 "send.confirmation.slide_to_cancel" = "取消交易";
 "send.confirmation.resend" = "重新发送";
-"send.confirmation.btc_cancel_description" = "此操作将尝试通过将其作为新交易重新发送并将一些金额发送到自身来使原始交易无效。如果原始交易在发送新交易时仍然挂起，有很高的几率（但不保证）它将被作废并替换。只有这两个交易中的一个将被包含在区块链中。";
 "send.confirmation.speed_up" = "加速";
 "send.confirmation.cancel" = "取消交易";
 "send.confirmation.nonce" = "Nonce";
@@ -588,9 +513,7 @@
 "send.amount_error.minimum_amount" = "最小金额 %@";
 "send.amount_error.minimum_amount.title" = "最小金额";
 "send.amount_error.minimum_amount.description" = "最低金额必须为 %@";
-"send.amount_error.min_required_balance" = "最小要求剩余 %@";
 "send.amount_warning.coin_needed_for_fee" = "考虑留下%@作为余额以便能够支付未来的交易。";
-"send.token.insufficient_fee_alert" = "%@（%@）的交易费用以%@支付。您需要%@。";
 "send.stellar.no_trustline.title" = "缺少资产信任线";
 "send.stellar.no_trustline.description" = "收款帳戶尚未與所發送資產建立信任線。";
 
@@ -603,9 +526,10 @@
 "send.fee_settings.too_low" = "费用率太低。";
 "send.fee_settings.fee_rate_unavailable" = "费用率不可用。请手动检查费率。";
 
-"send.stuck_warning" = "警告！有被骗的风险";
-
-"send.lock_time" = "TimeLock";
+"send.unspent_outputs" = "UTxOs";
+"send.unspent_outputs.description" = "手动选择 UTxO 将资金花在余额中";
+"send.unspent_outputs.send_to" = "发送至";
+"send.unspent_outputs.change" = "更改";
 
 "send.unspent_outputs" = "UTxOs";
 "send.unspent_outputs.description" = "手动选择 UTxO 将资金花在余额中";
@@ -634,14 +558,17 @@
 "send.address.risky.title" = "风险地址";
 "send.address.risky.description" = "您即将向高风险地址发送资金。继续操作可能导致资金损失或其他安全风险。继续即表示您接受这些潜在风险。确定要继续吗？";
 "send.address.phishing_check" = "钓鱼检测";
+"send.address.phishing_check.subtitle" = "在确认转账前检测可疑地址。";
 "send.address.phishing.description" = "分析所提供的收款地址是否存在潜在的钓鱼风险。\n\n安全：未发现可疑活动。\n\n已检测到：该地址可能有人试图诱骗您将资金发送到错误地址。除非完全确认地址无误，否则请勿继续。建议您先尝试发送一笔小额测试交易。";
 "send.address.phishing.caution.title" = "已检测到钓鱼地址！";
 "send.address.phishing.caution.description" = "您输入的地址可能存在欺诈风险。骗子常常篡改地址的首尾字符。请在继续之前仔细核对完整地址，以避免资金损失。";
 "send.address.sanction_check" = "制裁检查";
+"send.address.sanction_check.subtitle" = "验证该地址是否受到制裁限制。";
 "send.address.sanction.description" = "核实收款地址是否受到国际制裁，数据来源：Chainalysis.com。\n\n安全：未检测到制裁。\n\n已检测到：存在潜在法律风险。在某些司法管辖区，与该地址的交易可能受限或违法。";
 "send.address.sanction.caution.title" = "受制裁地址！";
 "send.address.sanction.caution.description" = "您输入的地址已被标记为受制裁。向该地址转账可能导致资金损失或其他风险。请在继续之前核实收款人信息。";
 "send.address.blacklist_check" = "黑名单检查";
+"send.address.blacklist_check.subtitle" = "在欺诈和高风险数据库中检查该地址。";
 "send.address.blacklist.description" = "检查目标地址是否被列入官方或非官方黑名单。\n\n安全：未发现黑名单标记。\n\n已检测到：该地址已被列入黑名单，可能涉及法律或安全风险。请谨慎操作。许多交易所会限制与黑名单地址有过往来记录的钱包用户的充值和提现，请注意。";
 "send.address.blacklist.caution.title" = "黑名单地址！";
 "send.address.blacklist.caution.description" = "您输入的地址已被标记为黑名单地址。向该地址转账可能导致资金损失或其他风险。请在继续之前仔细核实收款人信息。";
@@ -652,7 +579,6 @@
 "donate.list.get_address" = "获取捐赠地址";
 "donate.list.get_address.title" = "地址";
 "donate.title" = "捐赠%@";
-"donate.no_assets" = "您没有资产可以捐赠。";
 "donate.support.description" = "在你的支持下，我们可以使这个应用更好！";
 "donate.support.bottom_description" = "或选择一种币进行捐赠";
 
@@ -667,7 +593,6 @@
 "swap.you_pay" = "您支付";
 "swap.estimated" = "估计";
 "swap.balance" = "余额";
-"swap.allowance" = "补贴";
 "swap.you_get" = "您获得";
 "swap.token" = "选择";
 "swap.advanced_settings" = "掉期设置";
@@ -677,7 +602,6 @@
 "swap.approve.amount_error.already_approved" = "您已经有了此金额的限额";
 "swap.approve.not_found" = "无法批准这些代币";
 "swap.approving_button" = "审批中...";
-"swap.revoke_warning" = "您可以交换 %@，或者您需要撤销并批准新的金额";
 "swap.revoking_button" = "正在取消...";
 "swap.not_available_button" = "余额 N/A";
 "swap.trade_error.not_found" = "无法交换代币";
@@ -687,18 +611,71 @@
 "swap.amount_type.coin" = "硬币";
 
 "swap.price" = "价格";
-"swap.buy_price" = "买入价";
-"swap.sell_price" = "卖出价";
-"swap.price_impact" = "价格影响";
-"swap.maximum_paid" = "最大支付金额";
-"swap.minimum_got" = "最小获取金额";
 "swap.estimate_short" = "（美国东部时间）";
-"swap.minimum_short" = "(分钟)";
-"swap.maximum_short" = "(最大金额)";
 
 "swap.rate_not_available" = "汇率不可用";
 "swap.select" = "选择";
-"swap.quoting" = "引述";
+"swap.quoting" = "报价";
+"swap.select_token_in" = "选择代币输入";
+"swap.select_token_out" = "选择代币输出";
+"swap.no_providers" = "没有提供者";
+"swap.enter_amount" = "输入金额";
+"swap.no_quotes" = "没有报价";
+"swap.token_not_enabled" = "代币未启用";
+"swap.token_syncing" = "代币同步";
+"swap.token_not_synced" = "代币未同步";
+"swap.insufficient_balance" = "可用额度不足";
+
+"swap.quotes.providers" = "服务提供商";
+"swap.quotes.best_price" = "最优价格";
+
+"swap.allowance" = "补贴";
+"swap.allowance.description" = "当执行令牌交换时，交易所可以代表用户花费的金额。 在进行实际互换交易之前，需要先确定足够的备抵。";
+"swap.pending_allowance" = "待批准的额度";
+"swap.approve" = "批准";
+"swap.approving" = "审批中";
+"swap.allowance_error" = "授权错误";
+"swap.revoke" = "撤回";
+"swap.revoking" = "正在取消";
+"swap.revoke_warning" = "您可以交换 %@，或者您需要撤销并批准新的金额";
+
+"swap.unlock.title" = "批准";
+"swap.unlock.description" = "授权智能合约代表您进行代币交易，并指定允许的金额。这不会影响您的余额，但需要支付少量费用以进行批准。\n\n预先批准较高金额用于未来交易比按需批准更具成本效益。";
+"swap.unlock.unlimited" = "无限";
+
+"swap.price_impact" = "价格影响";
+"swap.price_impact.info" = "相对于所显示价格的预期价格偏差，通常会随着兑换金额的增加而增大。";
+"swap.high_price_impact" = "高价格影响";
+"swap.recipient" = "收款人";
+"swap.slippage" = "滑点";
+"swap.swapped_time" = "兑换时间";
+"swap.swapped_time.info" = "预计到账时间。兑换处理和交易确认所需时间可能会因网络和服务提供方而有所不同。";
+
+"swap.affiliate_fee" = "联盟费";
+"swap.liquidity_fee" = "流动性费用";
+"swap.outbound_fee" = "出站费";
+"swap.total_fee" = "总费用";
+
+"swap.aml" = "反洗钱（AML）";
+
+// Swap options
+
+"swap_options.title" = "兑换选项";
+"swap_options.description" = "根据 Apple App Store 政策，我们已无法在钱包应用内提供兑换服务。因此，如需进行兑换，您可以使用以下选项：";
+
+// Swap Terms
+
+"swap.terms.title" = "兑换条款";
+"swap.terms.description" = "Unstoppable 聚合多个去中心化（DEX）和中心化的兑换服务提供方，以提供更具竞争力的汇率和更广泛的资产支持。";
+"swap.terms.risk_of_restrictions" = "限制风险";
+"swap.terms.risk_of_restrictions.description" = "我理解，部分非 DEX 的兑换服务提供方会进行交易筛查 %@。此类提供方可能会拒绝（并退款）兑换交易，或在极少数情况下（如 CSAM 和恐怖主义相关情形）冻结资金并要求提供 KYC 数据。";
+"swap.terms.user_responsibility" = "用户责任";
+"swap.terms.user_responsibility.description" = "我理解，使用非 DEX 提供方会引入额外风险，且这些风险由我自行承担。Unstoppable 无法保证任何提供方的行为。";
+"swap.terms.footer" = "请始终选择符合您自身需求的兑换服务提供方。";
+
+"swap.rate_not_available" = "汇率不可用";
+"swap.select" = "选择";
+"swap.quoting" = "报价";
 "swap.select_token_in" = "选择代币输入";
 "swap.select_token_out" = "选择代币输出";
 "swap.no_providers" = "没有提供者";
@@ -740,7 +717,7 @@
 // Swap Advanced Settings
 
 "swap.advanced_settings.slippage" = "下跌容忍度";
-"swap.advanced_settings.slippage.footer" = "如果价格的不利变化超过这个百分比，您的交易将被退回。";
+"swap.advanced_settings.slippage.info" = "您的 swap 可接受的最大价格偏差。超过此限制，交易将被 reverted（回滚）。";
 "swap.advanced_settings.deadline" = "交易截止日期";
 "swap.advanced_settings.deadline.footer" = "如果您交易的待定时间多于此时间，您的交易将恢复原有的状态。";
 "swap.advanced_settings.recipient.footer" = "在兑换操作之后，金额将转移至指定地址";
@@ -778,56 +755,87 @@
 "swap.confirmation.quoting" = "报价...";
 "swap.confirmation.invalid_quote" = "无效的报价";
 "swap.confirmation.please_wait" = "请稍候";
-"swap.confirmation.quote_expires_in" = "报价在 %@ 秒后失效";
+"swap.confirmation.quote_expires_in" = "报价在 %@ 后失效";
 "swap.confirmation.quote_expired" = "报价已过期";
-"swap.confirmation.quote_failed" = "无法提供报价";
 
-"swap.confirmation.swap_button" = "互兑交易";
-"swap.confirmation.swap_button_liquidity" = "添加流动性";
-"swap.confirmation.impact_too_high" = "由于流动性极低，禁止SafeWallet进行该交换操作，因为您将获得非常不利的价格。\n如果您仍然想要交换，请使用%@网站。";
+"swap.confirmation.slippage_tolerance" = "下跌容忍度";
+"swap.confirmation.set_recipient" = "设置接收方";
+
 "swap.confirmation.slide_to_swap" = "滑动切换";
 "swap.confirmation.swapping" = "交易";
 "swap.confirmation.refresh" = "刷新";
-"swap.confirmation.swapped" = "交易完成";
+"swap.confirmation.impact_high" = "在此次兑换交易中，您将损失您资金中的很大一部分（%@）。";
 "swap.confirmation.impact_too_high" = "%@ 已禁用此交易的掉期操作，因为您得到的价格极其不利。 这是由于流动性极低造成的。\n如果您仍想兑换，请使用 %@ 网站。";
 "swap.confirmation.impact_warning" = "重要提示！您正在以极其不利的价格进行交易。这是因为流动性非常低。";
-"swap.confirmation.minimum_received" = "收到的最小金额";
+
+"swap.confirmation.minimum_received" = "最小获取金额";
+"swap.confirmation.minimum_received.info" = "兑换完成后您将收到的最小金额。该金额由服务提供方保证，不受处理过程中价格波动的影响。";
 "swap.confirmation.maximum_sent" = "最大支出";
 
-"swap.dex_info.description" = "此兑换服务由基于%@区块链的分散式代币兑换协议%@提供。\n\n%@由不存在任何欺诈手段、以可靠方式推动代币兑换的智能合约来实现完全自动化并管理。";
-"swap.dex_info.header_dex_related" = "%@关联";
 "swap.dex_info.header_allowance" = "补贴";
 "swap.dex_info.content_allowance" = "当执行令牌交换时，交易所可以代表用户花费的金额。 在进行实际互换交易之前，需要先确定足够的备抵。";
 "swap.dex_info.header_price_impact" = "价格影响";
 "swap.dex_info.content_price_impact" = "预期价格和显示价格的偏差通常会增加互兑金额。";
-"swap.dex_info.header_swap_fee" = "合约调用费用";
-"swap.dex_info.content_swap_fee" = "以用户出售货币显示的去中心化代币兑换平台上互兑操作的服务费。对于大部分订单，这应为0.3%或0.6%。";
-"swap.dex_info.header_guaranteed_amount" = "最小获取金额";
-"swap.dex_info.content_guaranteed_amount" = "一名用户因为互兑操作将收到的最小金额。";
-"swap.dex_info.header_maximum_spend" = "最大支出";
-"swap.dex_info.content_maximum_spend" = "一名用户因为互兑操作将收到的最大金额。";
-
-"swap.dex_info.header_other" = "其他";
-"swap.dex_info.header_transaction_fee" = "交易费用";
-"swap.dex_info.content_transaction_fee" = "%@区块链上给定交易的预计处理成本。%@相关交易的成本通常会高于通用代币转账交易。";
-"swap.dex_info.header_transaction_speed" = "交易速度";
-"swap.dex_info.content_transaction_speed" = "交易费用较高的交易会实现更快的处理速度。反之亦然。";
-
-"swap.dex_info.link_button" = "%@ 站点";
+"swap.maya.shielded_address.error" = "无法获取用于备注（Memo）的屏蔽地址（Maya）。";
 
 // Market
 
-"market.tab_bar_item" = "市场";
 "market.title" = "市场";
 "market.category.overview" = "行情";
 "market.category.posts" = "发现";
 "market.category.watchlist" = "关注";
 "market.category.twiitter" = "推文";
 "market.category.dapp" = "Dapp";
-"market.total_market_cap" = "总市值";
-"market.24h_volume" = "24h成交量";
-"market.defi_cap" = "DeFi市场价值";
-"market.defi_tvl" = "DeFi中的TVL";
+
+
+"market.global.market_cap" = "总市值";
+"market.global.volume" = "24小时交易量";
+"market.global.tvl" = "TVL";
+"market.global.etf" = "ETF";
+
+"market.tab.news" = "发现";
+"market.tab.coins" = "币";
+"market.tab.watchlist" = "关注";
+"market.tab.vaults" = "赚取";
+"market.tab.platforms" = "平台";
+"market.tab.pairs" = "配对标点";
+"market.tab.sectors" = "行业";
+
+"market.sort_by.title" = "排序方式为";
+"market.sort_by.manual" = "手册";
+"market.sort_by.highest_cap" = "市值由高到低";
+"market.sort_by.lowest_cap" = "市值由低到高";
+"market.sort_by.gainers" = "涨幅最大者";
+"market.sort_by.losers" = "跌幅最大者";
+"market.sort_by.highest_volume" = "成交量由高到低";
+"market.sort_by.lowest_volume" = "成交量由低到高";
+
+"market.top_coins.title" = "币";
+"market.top_coins" = "前 %@";
+
+"market.time_period.title" = "句号";
+"market.time_period.1d" = "1天";
+"market.time_period.1w" = "1 周";
+"market.time_period.2w" = "2 周";
+"market.time_period.1m" = "1 个月";
+"market.time_period.3m" = "3 个月";
+"market.time_period.6m" = "6 个月";
+"market.time_period.1y" = "1 年";
+"market.time_period.2y" = "2 年";
+"market.time_period.3y" = "3 年";
+"market.time_period.4y" = "4 年";
+"market.time_period.5y" = "5 年";
+"market.time_period.1d.short" = "1天";
+"market.time_period.1w.short" = "1周";
+"market.time_period.2w.short" = "2周";
+"market.time_period.1m.short" = "1月";
+"market.time_period.3m.short" = "3月";
+"market.time_period.6m.short" = "6月";
+"market.time_period.1y.short" = "1年";
+"market.time_period.2y.short" = "2年";
+"market.time_period.3y.short" = "3年";
+"market.time_period.4y.short" = "4年";
+"market.time_period.5y.short" = "5年";
 
 "market.global.market_cap" = "总市值";
 "market.global.volume" = "24小时交易量";
@@ -924,7 +932,6 @@
 "top_platform.title" = "%@ 星系";
 "top_platform.total_cap" = "总市值";
 
-
 "market.search.recent" = "最近使用";
 "market.search.popular" = "流行";
 
@@ -946,9 +953,6 @@
 "market.watchlist.signals.risky.description" = "风险水平升高，需要谨慎";
 "market.watchlist.signals.warning" = "请记住始终要进行风险管理，并注意这不是财务建议";
 "market.watchlist.signals.turn_on" = "打开";
-
-"market.search.title" = "搜索​​​​";
-"market.search.empty_text" = "未发现结果";
 
 "market.advanced_search.title" = "过滤器";
 "market.advanced_search.show_results" = "显示结果";
@@ -1024,12 +1028,26 @@
 "market.advanced_search.top.more_5_m" = "> $5M";
 "market.advanced_search.top.more_1_m" = "> $1M";
 
+"market.advanced_search.top.m_cap" = "市值";
+"market.advanced_search.top.more_1_b" = "> 1B";
+"market.advanced_search.top.more_500_m" = "> $500M";
+"market.advanced_search.top.more_250_m" = "> $250M";
+"market.advanced_search.top.more_100_m" = "> $100M";
+"market.advanced_search.top.more_25_m" = "> $25M";
+"market.advanced_search.top.more_10_m" = "> $10M";
+"market.advanced_search.top.more_5_m" = "> $5M";
+"market.advanced_search.top.more_1_m" = "> $1M";
+
 "market.advanced_search.day" = "1天";
 "market.advanced_search.week" = "1周";
 "market.advanced_search.week2" = "2周";
 "market.advanced_search.month" = "1月";
-"market.advanced_search.month6" = "6 个月";
-"market.advanced_search.year" = "1 年";
+"market.advanced_search.month6" = "6月";
+"market.advanced_search.year" = "1年";
+
+"market.advanced_search.day.short" = "24时";
+"market.advanced_search.week.short" = "7天";
+"market.advanced_search.month.short" = "1个月";
 
 "market.advanced_search.day.short" = "24小时";
 "market.advanced_search.week.short" = "7天";
@@ -1108,10 +1126,6 @@
 "market.vault.underlying_token" = "底层代币";
 "market.vault.hoders" = "持有者";
 "market.vault.open_dapp" = "打开 DApp";
-"market.global.tvl_in_defi.title" = "DeFi中的TVL";
-"market.global.tvl_in_defi.description" = "去中心金融（DeFi）中的锁定总价值（TVL）";
-"market.global.tvl_in_defi.multi_chain" = "多链";
-"market.global.tvl_in_defi.filter_by_chain" = "通过区块链过滤";
 
 // Coin Page
 
@@ -1122,7 +1136,7 @@
 
 // Coin Page -> Overview
 
-"coin_overview.indicators" = "指标";
+"coin_overview.indicators" = "指示器";
 "coin_overview.indicators.show" = "查看";
 "coin_overview.indicators.hide" = "隐藏";
 "coin_overview.market_cap" = "市场价值";
@@ -1139,7 +1153,7 @@
 "coin_overview.roi.day14" = "2周";
 "coin_overview.roi.day30" = "1月";
 "coin_overview.roi.day200" = "6月";
-"coin_overview.roi.year1" = "1 年";
+"coin_overview.roi.year1" = "1年";
 
 "coin_overview.overview" = "行情";
 "coin_overview.description_warning" = "这是一个基于给定的加密货币所提供的参考材料生成的 AI 描述。它可能包含错误。";
@@ -1204,7 +1218,6 @@
 "coin_analytics.indicators.hide_details" = "隐藏细节";
 "coin_analytics.indicators.show_details" = "显示详细信息";
 "coin_analytics.indicators.summary" = "总结";
-"coin_analytics.indicators.title" = "技术指标";
 "coin_analytics.indicators.no_data" = "无数据";
 "coin_analytics.indicators.oversold" = "有风险";
 "coin_analytics.indicators.strong_buy" = "强烈建议买入";
@@ -1382,20 +1395,10 @@
 
 // Coin Page -> Indicators
 
-"pro_features.authorize.wallet_passes.title" = "SafeWallet NFT";
-"pro_features.authorize.wallet_passes.subtitle" = "通过持有SafeWallet的 NFT 获取高级钱包功能。";
-"chart_indicators.title" = "指标";
+"chart_indicators.title" = "指示器";
 "chart_indicators.moving_averages" = "移动平均线";
 "chart_indicators.oscillators" = "震荡指标";
 
-
-"pro_features.lock_info.title" = "SafeWallet Pass";
-"pro_features.lock_info.coin_details.description" = "要启用此数据，您必须在您的余额上拥有SafeWallet Pass NFT\n\n同时您将能获得对以下数据的访问权：";
-"pro_features.lock_info.coin_details.volume" = "DEX交易量";
-"pro_features.lock_info.coin_details.liquidity" = "DEX流动性";
-"pro_features.lock_info.coin_details.active_addresses" = "活跃地址";
-"pro_features.lock_info.coin_details.transaction_count" = "交易数";
-"pro_features.lock_info.coin_details.transaction_volume" = "交易量";
 "chart_indicators.settings.period.error" = "周期不能超过 %d";
 
 "chart_indicators.settings.ma.description" = "在技术分析中，EMA、SMA和WMA正在移动平均值：\n\nEMA强调最近的价格以便更快的反应。\n一般趋势视图的SMA平均价格数据。\nWMA 通过线性加权最近数据平衡敏感度和噪声减少";
@@ -1424,7 +1427,7 @@
 "transactions.all_coins" = "所有硬币";
 "transactions.choose_coin" = "选择代币";
 "transactions.filter_all" = "所有";
-"transactions.syncing_placeholder" = "请等待同步完成";
+"transactions.syncing_placeholder" = "请等待同步完成。";
 "transactions.empty_text" = "您还没有任何待定或成功的交易";
 "transactions.pending" = "待处理";
 "transactions.processing" = "正在处理";
@@ -1476,16 +1479,11 @@
 
 "tx_info.title" = "交易信息";
 "tx_info.date" = "日期";
-"tx_info.title_approval" = "互兑批准";
-"tx_info.status.pending" = "待处理";
-"tx_info.status.completed" = "已完成";
-"tx_info.status.failed" = "失败";
 "tx_info.from_hash" = "来自";
 "tx_info.transaction_id" = "交易ID";
 "tx_info.to_hash" = "接收人";
 "tx_info.spender" = "消费人";
 "tx_info.contact_name" = "联系人姓名";
-"tx_info.button_explorer" = "查看于%@";
 "tx_info.rate" = "历史价格";
 "tx_info.options.speed_up" = "加速";
 "tx_info.options.cancel" = "取消交易";
@@ -1499,6 +1497,7 @@
 "tx_info.recipient_hash" = "收款人";
 "tx_info.raw_transaction" = "原始交易";
 "tx_info.memo" = "备忘录";
+"tx_info.tx_secret_key" = "交易密钥";
 "tx_info.service" = "服务";
 "tx_info.view_on" = "查看于%@";
 "tx_info.you_pay" = "您支付";
@@ -1512,28 +1511,22 @@
 // Settings
 
 "settings.title" = "设置";
-"settings.tab_bar_item" = "设置";
 "settings.manage_accounts" = "管理钱包";
 "settings.blockchain_settings" = "区块链设置";
 "settings.backup_manager" = "备份管理器";
 "settings.security" = "安全中心";
-"settings.experimental_features" = "实验性功能";
-"settings.personal_support" = "个人支持";
 "settings.base_currency" = "基本货币";
 "settings.language" = "语言";
 "settings.faq" = "常见问题";
 "settings.theme" = "主题";
 "settings.info_title" = "SafeWallet";
-"settings.info_subtitle" = "分布式应用程序";
-"settings.donate.description" = "在你的支持下，我们可以使这个应用更好！";
+"settings.info_subtitle" = "SafeWallet";
 "settings.donate.title" = "捐助";
 "settings.rate_us" = "评价我们";
 "settings.tell_friends" = "分享给好友";
-"settings.contact_us" = "联系我们";
 "settings.social_networks.label" = "Be SafeWallet";
-"settings.get_your_tokens" = "Get UWT Tokens";
 "settings.dapp_connection" = "dApp 连接";
-"settings.app_settings" = "应用设置";
+"settings.appearance" = "外观";
 
 // Settings -> Base Currency
 
@@ -1551,49 +1544,21 @@
 "manage_wallets.contract_address" = "智能合约地址";
 "manage_wallets.derivation_description" = "有四种常见的地址格式 %@ 钱包可以用来接收收到的付款:\n\n- BIP44 (旧版)\n- BIP49\n- BIP84 (推荐)\n- BIP86 (新版)\n\n而 %@ 钱包支持所有4 它建议使用一个 %@ 钱包以BIP84 格式操作。";
 "manage_wallets.bitcoin_cash_coin_type_description" = "有2种地址格式的比特币现金钱包可以用来接收收到的付款：\n\n- TYPE 0 (旧)\n- TYPE 145 (更新)\n\n虽然 %@ 钱包支持它们，它建议使用TYPE 145 格式的比特币现金钱包。";
-"manage_wallets.filter_all_blockchains" = "全部区块链";
-"manage_wallets.filter_bitcoin_series" = "比特币系列";
-"manage_wallets.filter_by_blockchain" = "按区块链筛选";
-
-// Settings -> Personal Support
-
-"settings.personal_support.telegram_username.title" = "账户";
-"settings.personal_support.telegram_username.placeholder" = "@用户名";
-"settings.personal_support.description" = "请输入您的 Telegram 帳號名稱以開啟一個個人支援聊天。我们將發送消息給您。";
-"settings.personal_support.request" = "请求";
-"settings.personal_support.requested" = "已申请";
-"settings.personal_support.failed" = "请求失败";
-"settings.personal_support.need_subscription" = "此功能仅适用于 %@ 钱包高级用户。我们官方网站中的更多信息。";
-"settings.personal_support.requested.description" = "您已经请求了一个私聊，在Telegram 上找到它";
-"settings.personal_support.requested.open_telegram" = "打开 Telegram";
-"settings.personal_support.requested.new_request" = "新建请求";
-
-// Settings -> Experimental Features
-
-"settings.experimental_features.title" = "实验性功能";
-"settings.experimental_features.description" = "以下功能为实验性，应谨慎使用。虽然我们已使用自己的加密货币资金对这些功能进行了彻底测试，但是我们不保证它们在所有情况下都能如常工作。";
-"settings.experimental_features.bitcoin_hodling" = "TimeLock";
-
-// Settings -> Experimental Features -> Bitcoin HODLing
-
-"settings.bitcoin_hodling.title" = "TimeLock";
-"settings.bitcoin_hodling.lock_time" = "激活";
-"settings.bitcoin_hodling.description" = "让您汇出在指定日期前无法消费的比特币。\n\n此交易的收款人应使用SafeWallet。\n\n只有SafeWallet能够正确识别此类在比特币网络上的交易并让收款人在锁定期限结束后消费那些比特币。\n\n如果您是持有人，您可以使用此功能通过向自己发送此类交易的方式来强制自己持有比特币。\n\n作为实验性功能，每次交易的最大金额限制为0.5 BTC。";
-"settings.evm_testnet.title" = "Testnet";
-"settings.evm_testnet.enable" = "激活";
-"settings.evm_testnet.description" = "此选项仅对 GoerliETH 令牌激活Etherum的 Goerli 测试网，并将其添加到硬币管理器。\n\n它只影响GoerliETH 令牌，而所有其他 EVM 和 Etherum 令牌都在主网上运行。 换言之，只有GoerliETH中的交易通过Goerli testnet，而所有其他EVM令牌转账，包括ETH，都通过主网。";
-"settings.bitcoin_hodling.description" = "这使您能够发送比特币，直到指定日期才能使用。 \n\n这种交易的接收者应该使用 %@ 钱包应用程序版本 0。 0或更新，比特币的BIP44地址格式。 \n\n只有 %@ 钱包能够在比特币网络上正确识别此类交易。 并且允许接收者在锁定期满后使用这些比特币。 \n\n如果您是一个HODLER, 您可以使用此功能来通过向您自己发送这种交易来强制自己套装比特币。";
 
 // Settings -> Terms
 
 "terms.title" = "条款";
 "terms.i_agree" = "我同意";
 
-"terms.item.1" = "安全地备份每个钱包的恢复短语。这是在应用程序发生故障时重新获得资金的唯一途径。";
-"terms.item.2" = "在智能手机上禁用解锁 PIN (代码)会删除应用程序中的所有钱包。恢复资金访问将需要恢复短语。";
-"terms.item.3" = "在智能手机上禁用解锁 PIN (代码)会删除应用程序中的所有钱包。恢复资金访问将需要恢复短语。";
-"terms.item.4" = "使用过时的 OS，安装来自未知来源的应用可能危及资金安全。";
-"terms.item.5" = "这个应用程序的代码可能会出现未发现的软件问题，可能导致应用程序故障。";
+"terms.item.backup_recovery" = "请安全备份每个钱包的助记词。这是当应用被删除或发生故障时恢复资金访问的唯一方式。任何人都无法为您恢复助记词。";
+"terms.item.device_pin" = "在智能手机上禁用解锁 PIN (代码)会删除应用程序中的所有钱包。恢复资金访问将需要恢复短语。";
+"terms.item.privacy_notice" = "应用没有间接或收集关于您的余额或交易的数据 — — 我们甚至不知道有多少人使用它。 它只跟踪匿名使用模式(打开的页面、点击的按钮)以提高可用性。您可以在设置 -&gt; 隐私中关闭此功能。";
+"terms.item.decentralized" = "我们不持有您的资产，不会访问您的私钥，也不会代表您执行交易。该应用不提供经纪、交易所、托管、第三方托管或资金转移服务。所有交易均由您本人直接发起、签名并广播至公共区块链网络。";
+"terms.item.commission" = "作为其变现模式的一部分，该应用会从在钱包内执行的 DEX 兑换中获得少量佣金。这有助于我们保持独立、开源，并避免依赖风险投资资金。";
+"terms.item.irreversibility" = "区块链交易是不可逆的。请在确认前务必仔细核对交易详情。";
+"terms.item.software" = "本应用完全开源，所有源代码均已公开发布。上述内容任何人都可公开验证。";
+"terms.item.compliance" = "您需对您的资金安全、个人行为以及遵守您所在司法辖区及全球适用法律承担全部责任。";
+"terms.item.user_responsibility" = "继续使用即表示您确认，您的资金安全以及遵守相关法律法规最终由您自行负责。";
 
 // Settings -> Tell Friends
 
@@ -1616,6 +1581,7 @@
 "backup_app.backup_type.file.description" = "保存备份文件到您的本地文件夹。";
 
 "backup_app.backup_list.title" = "备份文件";
+"backup_app.backup_list.description" = "选择要包含在备份中的钱包。应用数据将自动备份。";
 "backup_app.backup_list.description.restore" = "备份文件中的内容列表。";
 "backup_app.backup_list.header.wallets" = "钱包";
 "backup_app.backup_list.header.other" = "其他";
@@ -1643,6 +1609,8 @@
 "backup_app.backup.name.title" = "备份名称";
 "backup_app.backup.name.description" = "请输入备份文件的名称。";
 
+"backup_app.backup.form.title" = "保护备份";
+"backup_app.backup.form.description" = "创建密码以保护您的备份文件。";
 "backup_app.backup.password.title" = "备份密码";
 "backup_app.backup.password.description" = "为您的备份设置解锁密码。密码长度必须至少为8个字符，并且包含至少一个小写字母、大写字母、数字和特殊字符。";
 "backup_app.backup.password.highlighted_description" = "此密码用于加密您的钱包备份文件。一旦丢失或遗忘，将无法恢复或重置。";
@@ -1655,6 +1623,14 @@
 "backup.password.title" = "备份密码";
 "backup.password.description" = "为您的备份设置解锁密码。密码长度必须至少为8个字符，并且包含至少一个小写字母、大写字母、数字和特殊字符。";
 "backup.password.highlighted_description" = "此密码用于加密您的钱包备份文件。一旦丢失或遗忘，将无法恢复或重置。";
+
+"backup.password.generate.title.cloud" = "使用强密码？";
+"backup.password.generate.description.cloud" = "使用唯一密码保护您的加密备份。密码将保存在\"密码\"应用中。";
+"backup.password.generate.action.cloud" = "保存并填充";
+"backup.password.generator.error.invalid_length" = "密码长度无效（必须大于8位）";
+"backup.password.generator.error.random_failed" = "无法生成安全的随机密码";
+"backup.password.keychain.error.encoding" = "钥匙串编码错误";
+"backup.password.keychain.error.save_failed" = "钥匙串错误！%@";
 
 // Settings -> Security
 
@@ -1781,9 +1757,6 @@
 
 "settings.about_app.title" = "关于应用";
 "settings.about_app.app_version" = "应用程序版本";
-"settings.about_app.app_name" = "%@钱包";
-"settings.about_app.description" = "%@ 钱包是为那些寻求投资和以私人和独立方式存储加密货币的人建造的。\n\n它是一个非保管的、对等的钱包，在那里只有用户能够控制资金。 它不收集任何数据，并且通过不将用户的资金锁定到特定的钱包应用程序来保持用户独立。\n\n %@ 钱包完全开源，任何人都可以确认应用程序的工作完全如其所声称的那样正常。";
-"settings.about_app.whats_new" = "新增内容";
 "settings.about_app.website" = "网站";
 
 // Settings -> About App -> Contact
@@ -1814,12 +1787,12 @@
 "appearance.hide_markets" = "隐藏市场";
 "appearance.hide_markets.description" = "完全隐藏“市场”标签页。";
 "appearance.price_change" = "价格变动";
-"appearance.price_change.description" = "选择代币价格变动的显示周期。";
+"appearance.price_change.description" = "选择用于显示 token 价格变动的时间周期。";
 "appearance.price_change.24h" = "24时";
 "appearance.price_change.1d" = "午夜UTC";
 
 "appearance.launch_screen" = "启动屏幕";
-"appearance.launch_screen.description" = "选择应用启动时默认打开的界面。";
+"appearance.launch_screen.description" = "选择应用默认打开的界面。";
 "appearance.launch_screen.auto" = "自动";
 "appearance.launch_screen.balance" = "余额";
 "appearance.launch_screen.market_overview" = "行情";
@@ -1827,11 +1800,14 @@
 
 "appearance.balance_tab" = "余额标签";
 "appearance.amount_rounding" = "金额取整";
-"appearance.amount_rounding.description" = "将余额和交易金额显示为取整后的数值。";
+"appearance.amount_rounding.description" = "显示经过取整处理的余额和交易金额。";
+"appearance.send_screen" = "发送界面";
+"appearance.recently_sent" = "最近发送";
+"appearance.recently_sent.description" = "显示该代币最近发送的地址。";
 "appearance.hide_buttons" = "隐藏按钮";
-"appearance.hide_buttons.description" = "在“余额”标签页隐藏发送、接收和兑换按钮。";
-"appearance.balance_value" = "余额值";
-"appearance.balance_value.description" = "余额可高亮显示为加密货币或法币。";
+"appearance.hide_buttons.description" = "在余额页面中隐藏“发送”、“接收”和“兑换”按钮。";
+"appearance.balance_value" = "币种余额";
+"appearance.balance_value.description" = "以 crypto 或法币方式高亮显示余额。";
 "appearance.balance_value.coin_fiat" = "加密货币 / 法定货币";
 "appearance.balance_value.fiat_coin" = "法定货币 / 加密货币";
 
@@ -1853,7 +1829,7 @@
 
 // Settings -> Support
 
-"settings.vip_support.description" = "獲得專屬訪問我們的貴賓群組的權限，高級用戶和SafeWallet錢包團隊在此協作。接收直接協助、討論未來更新，並幫助塑造錢包的發展。";
+"settings.vip_support.description" = "獲得專屬訪問我們的貴賓群組的權限，高級用戶和Unstoppable錢包團隊在此協作。接收直接協助、討論未來更新，並幫助塑造錢包的發展。";
 "settings.vip_support.start_chat" = "加入貴賓群組";
 
 // Settings -> Contacts
@@ -1910,14 +1886,9 @@
 "contacts.settings.lost_synchronization.description" = "iCloud 同步丢失。请检查您的设备上是否启用iCloud存储。";
 "contacts.settings.merge_disclaimer" = "您的本地付款联系人将与存储在iCloud上的联系人合并。";
 
-"contacts.settings.alert.title" = "iCloud同步";
-"contacts.settings.alert.description" = "请检查您的设备上是否已启用iCloud存储。";
-
-"contacts.settings.alert_error.title" = "iCloud错误";
-
 // Key Types
 
-"chart.time_duration.day" = "24小时";
+"chart.time_duration.day" = "24时";
 "chart.time_duration.week" = "7天";
 "chart.time_duration.week2" = "2周";
 "chart.time_duration.month" = "1个月";
@@ -1996,12 +1967,10 @@
 "intro.stay_private.title" = "保持私密";
 "intro.stay_private.description" = "不要向外界泄漏您的私密和财务数据";
 
-// Guides
+// Education
 
 "education.title" = "Education";
 "quiz.title" = "加密问答";
-"guides.tab_bar_item" = "学院";
-"guides.title" = "学院";
 
 // Add Token
 
@@ -2010,13 +1979,11 @@
 "add_token.already_added" = "该代币已在代币管理列表中";
 "add_token.invalid_contract_address" = "请输入正确的合约地址";
 "add_token.invalid_ton_address" = "无效Ton 地址";
-"add_token.invalid_bep2_symbol" = "无效的 BEP2 符号";
+
 "add_token.contract_address_not_found" = "在 %@ 区块链中找不到合同地址";
-"add_token.jetton_master_not_found" = "在 %@ 区块链中找不到杰顿大师";
-"add_token.bep2_symbol_not_found" = "找不到 BEP2 符号";
+"add_token.jetton_master_not_found" = "在 %@ 区块链中找不到Jetton master";
 "add_token.input_placeholder.contract_address" = "智能合约地址";
 "add_token.input_placeholder.jetton_master_address" = "Jetton Master 地址";
-"add_token.input_placeholder.bep2_symbol" = "BEP2 符号";
 "add_token.coin_name" = "代币图片";
 "add_token.symbol" = "标志";
 "add_token.decimals" = "小数";
@@ -2025,7 +1992,6 @@
 
 "wallet_connect.title" = "WalletConnect";
 "wallet_connect.error.invalid_url" = "无效的URL地址";
-"wallet_connect.url" = "URL";
 "wallet_connect.active_account" = "激活钱包";
 "wallet_connect.address" = "地址";
 "wallet_connect.network" = "网络";
@@ -2041,12 +2007,12 @@
 "wallet_connect.scam_protection.risky" = "有风险";
 "wallet_connect.scam_protection.secure" = "安全";
 "wallet_connect.scam_protection.not_available" = "不可用";
+"wallet_connect.scam_protection.disabled" = "已禁用";
 "wallet_connect.networks" = "网络";
 
 "wallet_connect.main.no_any_supported_chains" = "没有任何支持的链！";
 "wallet_connect.main.unsupported_chains" = "一些链是不支持的！";
 "wallet_connect.connect_description" = "点击批准，表示您允许此应用查看您的公开地址。这是保护您的数据免受潜在钓鱼风险威胁的重要安全步骤。";
-"wallet_connect.usage_description" = "您可以前往浏览器。在浏览器中进行交互时不要关闭此页面。";
 "wallet_connect.no_connection" = "无法建立连接。请重新连接。";
 "wallet_connect.button_reconnect" = "重新连接";
 "wallet_connect.button_disconnect" = "断开连接";
@@ -2071,11 +2037,7 @@
 "wallet_connect_list.title" = "WalletConnect";
 "wallet_connect.list.empty_view_text" = "没有活跃会话";
 
-"wallet_connect.list.pairings" = "货币对";
-"wallet_connect.list.version_text" = "版本%@";
-"wallet_connect.list.v1_bottom_text" = "在WalletConnect的第一个版本中，您必须进入会话以查看和确认请求";
 "wallet_connect_list.new_connection" = "新连接";
-"wallet_connect_list.disconnecting" = "正在断开连接";
 
 "wallet_connect.no_account.description" = "您需要先创建或导入钱包才能使用 WaletConnect。";
 "wallet_connect.unbackuped_account.description" = "您需要先备份 %@ 才能使用钱包连接";
@@ -2083,11 +2045,20 @@
 "wallet_connect.non_supported_account.description" = "您当前的钱包类型 %@ 不支持 WalletConnect";
 "wallet_connect.non_supported_account.switch" = "切换";
 
-"wallet_connect.pending_requests_title" = "待处理请求";
-"wallet_connect.paired_dapps.title" = "已配对dApp";
-"wallet_connect.paired_dapps.cant_disconnect" = "无法断开连接";
-"wallet_connect.paired_dapps.disconnect_all" = "全部刪除";
-"wallet_connect.pending_requests.nonactive_footer" = "若要打开请求，您必须激活所需钱包";
+// Ton Connect
+
+"ton_connect.list.new_connection" = "新连接";
+"ton_connect.list.no_connected_apps" = "没有已连接的应用";
+"ton_connect.list.disconnect_app" = "断开应用连接";
+"ton_connect.list.disconnect_app.description" = "您确定要断开与\"%@\"的连接吗？";
+"ton_connect.list.disconnect_app.disconnect" = "断开连接";
+"ton_connect.connect.url" = "URL";
+"ton_connect.connect.wallet" = "钱包";
+"ton_connect.connect.no_eligible_wallets" = "没有符合条件的钱包";
+"ton_connect.connect.warning" = "点击批准，表示您允许此应用查看您的公开地址。这是保护您的数据免受潜在钓鱼风险威胁的重要安全步骤。";
+"ton_connect.connect.connect" = "连接";
+"ton_connect.connect.reject" = "拒绝";
+"ton_connect.invalid_transaction" = "无效交易";
 
 // Ton Connect
 
@@ -2190,16 +2161,13 @@
 
 // Birthday Input
 
-"birthday_input.title" = "生日高度";
 "birthday_input.description" = "输入钱包的生日高度以便实现更快同步。";
-"birthday_input.new_wallet" = "新钱包";
-"birthday_input.new_wallet.description" = "没有任何交易";
-"birthday_input.old_wallet" = "现有钱包";
-"birthday_input.old_wallet.description" = "有交易";
-"birthday_input.input_placeholder" = "%@ （可选）";
-
-"restore_setting.birthday_height" = "%@ 生日高度";
-"restore_setting.download.disclaimer" = "初始化与区块链的同步可以消耗大量的网络流量。";
+"birthday_input.description.rescan" = "您可以更改区块高度，或选择一个大致的日期来重新扫描您的交易历史记录。";
+"birthday_input.block_date" = "区块日期";
+"birthday_input.invalid_block" = "无效区块";
+"birthday_input.rescan" = "重新扫描";
+"birthday_input.picker.select_date" = "选择日期";
+"birthday_input.picker.description" = "选择大致的钱包创建日期。区块高度将自动计算。";
 
 // EVM Network
 
@@ -2222,9 +2190,9 @@
 "monero_network.node" = "节点";
 "monero_network.added" = "已添加";
 "monero_network.add_new" = "添加新的";
-"monero_network.description" = "选择 SafeWallet 应用用于同步钱包的节点。";
+"monero_network.description" = "选择 Unstoppable 应用用于同步钱包的节点。";
 "monero_network.settings.title" = "节点偏好设置";
-"monero_network.settings.description" = "可信节点——启用后，钱包会信任所选节点并接受其数据，而无需额外验证。\n\nOn → 交易在广播后立即显示为“待处理”（同步更快，但隐私性较低，更依赖节点）。\n\nOff → 交易仅在网络确认后才显示（同步较慢，但更安全且更具隐私性）。";
+"monero_network.settings.description" = "受信节点 – 启用后，钱包将信任所选节点并接受其数据，无需额外验证。\n\n开启 → 交易在广播后立即显示为待处理（同步更快，但隐私性较低且更依赖节点）。\n\n关闭 → 交易仅在网络确认后才会显示（速度较慢，但更安全、更私密）。";
 "monero_network.settings.trust" = "信任";
 
 // Add RPC Source
@@ -2236,7 +2204,6 @@
 "add_monero_node.password" = "密码";
 "add_monero_node.warning.url_exists" = "已存在相同 URL 的节点";
 "add_monero_node.error.invalid_url" = "输入的 URL 无效。有效的 URL 必须使用 https 协议";
-
 
 // Send Settings
 
@@ -2321,9 +2288,6 @@
 "nft_collections.on_sale" = "在售";
 "nft_collections.empty" = "您的钱包中没有任何NFT";
 
-"top_nft_collections.title" = "前列 NFT 收藏";
-"top_nft_collections.description" = "按交易量排列的主要NFT收藏。";
-
 // Nft Asset
 
 "nft_asset.tab.overview" = "行情";
@@ -2348,9 +2312,6 @@
 "nft_asset.details.blockchain" = "Blockchain";
 "nft_asset.links" = "链接";
 "nft_asset.links.website" = "网站";
-"nft_asset.options.save_to_photos" = "保存到照片";
-"nft_asset.options.set_as_watch_face" = "设为表盘";
-"nft_asset.save_to_photos.failed" = "无法保存保存NFT图像";
 
 // Nft Collection
 
@@ -2363,13 +2324,11 @@
 "nft_collection.overview.links" = "链接";
 "nft_collection.overview.links.website" = "网站";
 
-
 "nft_collection.overview.owners" = "所有者";
 "nft_collection.overview.items" = "条目";
 "nft_collection.overview.24h_volume" = "24h成交量";
 "nft_collection.overview.today_sellers" = "今天的卖家";
 "nft_collection.overview.floor_price" = "底价";
-"nft_collection.overview.all_time_average" = "全部时间平均值";
 "nft_collection.overview.royalty" = "荣耀";
 "nft_collection.overview.inception_date" = "起始日期";
 
@@ -2377,13 +2336,6 @@
 "nft.activity.empty_list" = "还没有项目活动";
 "nft.activity.event_types" = "事件类型";
 "nft.activity.event_type.all" = "全部事件";
-"nft.activity.event_type.sale" = "出售";
-"nft.activity.event_type.transfer" = "转帐";
-"nft.activity.event_type.mint" = "发行";
-"nft.activity.event_type.list" = "列表";
-"nft.activity.event_type.listCancel" = "取消列表";
-"nft.activity.event_type.offer" = "报价";
-"nft.activity.event_type.offerCancel" = "取消报价";
 
 // Safe zone
 "safe_zone.nav.title" = "SAFE专区";
@@ -2795,9 +2747,16 @@
 // Transaction Filter
 
 "transaction_filter.title" = "筛选器";
-"transaction_filter.description" = "按合约在区块链%@中筛选,以下为有效的合约.";
+"transaction_filter.description" = "在 %@ 区块链上，通过联系人进行筛选是有效的。下面显示了适用的联系人。";
+
 "transaction_filter.blockchain" = "Blockchain";
 "transaction_filter.all_blockchains" = "所有区块链";
+"transaction_filter.coin" = "硬币";
+"transaction_filter.all_coins" = "所有硬币";
+"transaction_filter.contact" = "联系";
+"transaction_filter.all_contacts" = "所有联系人";
+"transaction_filter.hide_suspicious_txs" = "隐藏可疑Txs";
+"transaction_filter.hide_suspicious_txs.description" = "隐藏小额入账转账（例如低于 $1.5 的 USDT）。此类交易常被用于钓鱼攻击和地址投毒攻击。";
 // Purchases
 
 "premium.cell.title" = "高級版";
@@ -2813,41 +2772,43 @@
 "purchases.type.pro" = "专业版";
 "purchases.type.vip" = "尊享版 / VIP";
 
+// Defense System
+"purchases.defense_system" = "防御系统";
+"purchases.secure_send" = "安全发送";
+"purchases.secure_send.description" = "防止将资金发送至高风险或钓鱼地址。";
+"purchases.secure_send.info" = "检查收款钱包是否存在钓鱼或欺诈风险，并在您向高风险地址转账前发出提醒。";
+"purchases.scam_protection" = "防骗保护";
+"purchases.scam_protection.description" = "在连接到虚假或恶意 dApps 时向您发出警告。";
+"purchases.scam_protection.info" = "在连接前检测伪造或恶意的 dApp，防止钓鱼攻击，保障您的资产安全。";
+"purchases.swap_protection" = "兑换保护";
+"purchases.swap_protection.description" = "在兑换过程中防止 bots 和 MEV 攻击。";
+"purchases.swap_protection.info" = "在兑换过程中阻止 bots 和抢跑（front-running）攻击，确保您的交易公平且安全。";
+"purchases.robbery_protection" = "抢劫保护";
+"purchases.robbery_protection.description" = "在您被迫解锁应用的情况下保护您的资金安全。";
+"purchases.robbery_protection.info" = "允许您创建一个带独立 PIN 的诱饵钱包，在高风险情况下隐藏真实资产。";
+
+// Advanced Controls
+"purchases.advanced_controls" = "高级控制";
+"purchases.swap_control" = "兑换控制";
+"purchases.swap_control.description" = "用于控制兑换如何以及通过何处执行的高级设置。";
+"purchases.swap_control.info" = "默认情况下，我们会选择当前可用的最佳报价。使用 Premium 后，您可以选择其他提供方。";
+"purchases.priority_support" = "优先支持";
+"purchases.priority_support.description" = "直接联系支持团队。";
+"purchases.priority_support.info" = "为您提供优先级支持的直接通道，获得来自 Unstoppable 团队快速且个性化的帮助。";
+
+// Market Insights
+"purchases.market_insights" = "市场洞察";
 "purchases.token_insights" = "分析";
-"purchases.token_insights.description" = "按關鍵標準獲取前100名列表";
-"purchases.token_insights.info" = "您的一站式深度分析工具。瀏覽根據交易量、交易所流動性、持有者行為和鏈上趨勢策劃的前250名代幣列表—一目了然。篩選、分析並保持領先。";
-
+"purchases.token_insights.description" = "深入的分析和代币数据。";
+"purchases.token_insights.info" = "显示代币的详细数据—包括交易量、流动性和趋势，帮助您做出更明智的投资决策。";
 "purchases.advanced_search" = "進階搜尋";
-"purchases.advanced_search.description" = "多參數多層級篩選";
-"purchases.advanced_search.info" = "摒棄雜訊，精準鎖定高潛力代幣。使用進階搜尋功能，通過交易量、區塊鏈、市值、價格趨勢、行業和表現等條件篩選數千種代幣。強大、精準且專為發現而設計。";
-
+"purchases.advanced_search.description" = "强大的筛选功能，助您更智能地发现代币。";
+"purchases.advanced_search.info" = "通过交易量、链或板块筛选器查找代币。包含 CEX/DEX 活动和上市指标。";
 "purchases.trade_signals" = "信號與趨勢";
-"purchases.trade_signals.description" = "自動監控您代幣的市場趨勢";
-"purchases.trade_signals.info" = "不再錯過任何交易機會。觀察趨勢提供由先進技術分析驅動的實時警報，幫助您在趨勢發生前識別、發現突破點並避免陷阱。快速行動，智能交易，最大化收益。";
+"purchases.trade_signals.description" = "可执行的信号，帮助您更自信地进行交易。";
+"purchases.trade_signals.info" = "实时推送交易机会提醒，及时提示潜在盈利机会或市场风险。";
 
-"purchases.tx_speed_up" = "加速交易 / 取消交易";
-"purchases.tx_speed_up.description" = "加速和取消交易";
-"purchases.tx_speed_up.info" = "“加速/取消交易” 功能让您全面掌控区块链交易。通过提高 Gas 费用，用户可以加快待处理交易的确认；如有需要，还可直接取消尚未确认的交易。该功能为交易管理增加了一层灵活性和便利性，确保用户始终掌控自己的操作。";
-
-"purchases.duress_mode" = "服用模式";
-"purchases.duress_mode.description" = "面對實體威脅時的智能資金安全保障";
-"purchases.duress_mode.info" = "您的加密貨幣。您的安全。脅迫模式讓您創建多個備用錢包設置，每個都有單獨的PIN碼，在高風險情況下提供隱藏的逃生路線。如果被迫解鎖您的錢包，只需使用脅迫PIN碼訪問次要錢包，不會暴露關鍵資產。您的真實資金保持隱藏。您的安全完好無損。";
-
-"purchases.address_phishing" = "防骗保护";
-"purchases.address_phishing.description" = "有效自動防護詐騙和釣魚攻擊";
-"purchases.address_phishing.info" = "只要输错 - 个地址，您的加密资产就可能永远丢失。SafeWallet 会自动扫描收款地址中的可疑特征，并防御最新的钓鱼攻击，防止您将资金发送给黑客。提前阻止欺诈性转账，保障您的资产安全。";
-
-"purchases.address_checker" = "黑名單檢查";
-"purchases.address_checker.description" = "確保您的加密貨幣操作合法性";
-"purchases.address_checker.info" = "保護自己免受風險和受制裁實體的侵害。黑名單檢查自動對照高風險數據庫篩選接收地址，在您發送前標記詐騙、欺詐和受制裁實體。如果一個地址被列入黑名單，您將在犯下代價高昂的錯誤前知道。保護您的交易。保持您的加密貨幣清潔。保持合規。";
-
-"purchases.vip_support" = "貴賓群組";
-"purchases.vip_support.description" = "直接聯繫錢包團隊獲取快速技術支援。";
-"purchases.vip_support.info" = "成為進化的一部分。加入 VIP 群組，直接與我們的團隊連接獲取技術支援。對即將推出的功能進行投票，搶先獨家了解未來更新。您的聲音很重要——幫助塑造下一代加密貨幣錢包。";
-
-"purchases.vip_club" = "VIP俱乐部";
-"purchases.vip_club.description" = "专属私密聊天";
-"purchases.vip_club.info" = "VIP 俱乐部为您提供进入高端社区的专属通道。会员可参与私密讨论，获取行业专家的见解，并与顶级用户建立人脉。对于希望凭借内部资讯与人脉保持领先的人来说，这是理想选择。";
+"purchase.bottom_sheet.description" = "购买即可解锁所有高级功能。";
 
 "purchases.wallet_description.title" = "高評價的安全性、卓越的隱私性和真正的非託管錢包。";
 "purchases.wallet_description.approved" = "經以下機構批准和審核：";
@@ -2907,11 +2868,10 @@
 // Monero
 
 "monero.priority" = "发送优先级";
-"monero.priority.default" = "默认";
+"monero.priority.default" = "自动";
 "monero.priority.low" = "低";
 "monero.priority.medium" = "中";
 "monero.priority.high" = "高";
-"monero.priority.last" = "最低";
 
 // MEV Protection
 
@@ -2974,3 +2934,9 @@
 "Super_Node_Modify_IncentivePlan" = "修改分红比例";
 "Revoke_Manager" = "合约授权管理（BrowserWallet连接）";
 "loadData.nomore" = "没有更多了";
+"manage_wallets.filter_all_blockchains" = "全部区块链";
+"manage_wallets.filter_bitcoin_series" = "比特币系列";
+
+// Secure Send Bottom Sheet
+"secure_send.bottom_sheet.title" = "安全发送";
+"secure_send.bottom_sheet.description" = "选择安全检查项。";
