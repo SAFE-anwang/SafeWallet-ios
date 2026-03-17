@@ -4,7 +4,6 @@ import RxSwift
 
 class SwapSelectProviderService {
     private var dexManager: ISwapDexManager?
-    private var liquidityDexManager: ILiquidityDexManager?
     private let evmBlockchainManager: EvmBlockchainManager
 
     private let itemsRelay = PublishRelay<[Item]>()
@@ -19,13 +18,6 @@ class SwapSelectProviderService {
         self.evmBlockchainManager = evmBlockchainManager
 
         syncItems()
-    }
-    
-    init(dexManager: ILiquidityDexManager, evmBlockchainManager: EvmBlockchainManager) {
-        self.liquidityDexManager = dexManager
-        self.evmBlockchainManager = evmBlockchainManager
-
-        syncLiquidityItems()
     }
     
     private func syncItems() {
@@ -44,23 +36,6 @@ class SwapSelectProviderService {
 }
 
 extension SwapSelectProviderService {
-    
-    private func syncLiquidityItems() {
-        guard let dex = liquidityDexManager?.dex else {
-            items = []
-            return
-        }
-        var items = [Item]()
-
-        for provider in dex.blockchainType.allowedLiquidityProviders {
-            items.append(Item(provider: provider, selected: provider == dex.provider))
-        }
-
-        self.items = items
-    }
-}
-
-extension SwapSelectProviderService {
     var itemsObservable: Observable<[Item]> {
         itemsRelay.asObservable()
     }
@@ -68,8 +43,6 @@ extension SwapSelectProviderService {
     var blockchain: Blockchain? {
         if let dexManager {
             return dexManager.dex.flatMap { evmBlockchainManager.blockchain(type: $0.blockchainType) }
-        }else if let liquidityDexManager {
-            return liquidityDexManager.dex.flatMap { evmBlockchainManager.blockchain(type: $0.blockchainType) }
         }else {
             return nil
         }
@@ -81,11 +54,7 @@ extension SwapSelectProviderService {
         if let dexManager {
             dexManager.set(provider: provider)
             syncItems()
-        }else if let liquidityDexManager {
-            liquidityDexManager.set(provider: provider)
-            syncLiquidityItems()
         }
-
     }
 }
 

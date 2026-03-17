@@ -9,12 +9,4 @@ enum SwapSelectProviderModule {
 
         return SwapSelectProviderViewController(viewModel: viewModel)
     }
-    
-    static func viewController(dexManager: ILiquidityDexManager) -> UIViewController {
-        let service = SwapSelectProviderService(dexManager: dexManager, evmBlockchainManager: Core.shared.evmBlockchainManager)
-
-        let viewModel = SwapSelectProviderViewModel(service: service)
-
-        return SwapSelectProviderViewController(viewModel: viewModel)
-    }
 }

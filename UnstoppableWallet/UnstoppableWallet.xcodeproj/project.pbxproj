@@ -139,7 +139,6 @@
 		67DC46312F63B29700CFAE73 /* RestoreMnemonicService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40FB2F63B29700CFAE73 /* RestoreMnemonicService.swift */; };
 		67DC46322F63B29700CFAE73 /* BackupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E0F2F63B29700CFAE73 /* BackupService.swift */; };
 		67DC46332F63B29700CFAE73 /* SendTronConfirmationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42AF2F63B29700CFAE73 /* SendTronConfirmationService.swift */; };
-		67DC46342F63B29700CFAE73 /* LiquidityMainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F3F2F63B29700CFAE73 /* LiquidityMainViewController.swift */; };
 		67DC46352F63B29700CFAE73 /* TransferEventFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CC22F63B29700CFAE73 /* TransferEventFactory.swift */; };
 		67DC46362F63B29700CFAE73 /* RoundedCorner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC457D2F63B29700CFAE73 /* RoundedCorner.swift */; };
 		67DC46382F63B29700CFAE73 /* AccountRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D8F2F63B29700CFAE73 /* AccountRecord.swift */; };
@@ -210,11 +209,9 @@
 		67DC467D2F63B29700CFAE73 /* BackupAppModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42D32F63B29700CFAE73 /* BackupAppModule.swift */; };
 		67DC467E2F63B29700CFAE73 /* ScrollHeaderModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45802F63B29700CFAE73 /* ScrollHeaderModifier.swift */; };
 		67DC467F2F63B29700CFAE73 /* LineLockRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC419E2F63B29700CFAE73 /* LineLockRecoardModule.swift */; };
-		67DC46802F63B29700CFAE73 /* LiquidityV3DataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EF62F63B29700CFAE73 /* LiquidityV3DataSource.swift */; };
 		67DC46812F63B29700CFAE73 /* ThemeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45942F63B29700CFAE73 /* ThemeView.swift */; };
 		67DC46822F63B29700CFAE73 /* CoinInvestorsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E6C2F63B29700CFAE73 /* CoinInvestorsViewModel.swift */; };
 		67DC46832F63B29700CFAE73 /* UrlManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CFE2F63B29700CFAE73 /* UrlManager.swift */; };
-		67DC46842F63B29700CFAE73 /* LiquidityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F002F63B29700CFAE73 /* LiquidityProvider.swift */; };
 		67DC46852F63B29700CFAE73 /* OutputSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42102F63B29700CFAE73 /* OutputSelectorView.swift */; };
 		67DC46862F63B29700CFAE73 /* MultiTextMetricsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44C62F63B29700CFAE73 /* MultiTextMetricsView.swift */; };
 		67DC46872F63B29700CFAE73 /* EvmFeeEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42712F63B29700CFAE73 /* EvmFeeEstimator.swift */; };
@@ -243,11 +240,8 @@
 		67DC469F2F63B29700CFAE73 /* AddressEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F5E2F63B29700CFAE73 /* AddressEventHandler.swift */; };
 		67DC46A02F63B29700CFAE73 /* ReceiveAddressModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43AF2F63B29700CFAE73 /* ReceiveAddressModule.swift */; };
 		67DC46A12F63B29700CFAE73 /* ReceiveModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43CA2F63B29700CFAE73 /* ReceiveModule.swift */; };
-		67DC46A22F63B29700CFAE73 /* LiquidityInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F1C2F63B29700CFAE73 /* LiquidityInputCell.swift */; };
-		67DC46A32F63B29700CFAE73 /* LiquidityTickInputCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F162F63B29700CFAE73 /* LiquidityTickInputCardViewModel.swift */; };
 		67DC46A42F63B29700CFAE73 /* UIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44FC2F63B29700CFAE73 /* UIView.swift */; };
 		67DC46A62F63B29700CFAE73 /* Safe4Reward.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC419C2F63B29700CFAE73 /* Safe4Reward.swift */; };
-		67DC46A72F63B29700CFAE73 /* LiquidityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFF2F63B29700CFAE73 /* LiquidityModule.swift */; };
 		67DC46A82F63B29700CFAE73 /* CoinInvestment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D3D2F63B29700CFAE73 /* CoinInvestment.swift */; };
 		67DC46A92F63B29700CFAE73 /* RowButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC457E2F63B29700CFAE73 /* RowButtonStyle.swift */; };
 		67DC46AA2F63B29700CFAE73 /* PremiumFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CAF2F63B29700CFAE73 /* PremiumFeature.swift */; };
@@ -297,7 +291,6 @@
 		67DC46D82F63B29700CFAE73 /* TransactionInfoViewItemFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43732F63B29700CFAE73 /* TransactionInfoViewItemFactory.swift */; };
 		67DC46D92F63B29700CFAE73 /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D302F63B29700CFAE73 /* Core.swift */; };
 		67DC46DA2F63B29700CFAE73 /* UIImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44F72F63B29700CFAE73 /* UIImageView.swift */; };
-		67DC46DB2F63B29700CFAE73 /* LiquidityCoinSelectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F0C2F63B29700CFAE73 /* LiquidityCoinSelectViewController.swift */; };
 		67DC46DC2F63B29700CFAE73 /* SendModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42232F63B29700CFAE73 /* SendModule.swift */; };
 		67DC46DE2F63B29700CFAE73 /* CloudRestoreBackupListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40E82F63B29700CFAE73 /* CloudRestoreBackupListViewModel.swift */; };
 		67DC46DF2F63B29700CFAE73 /* ApproveTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D702F63B29700CFAE73 /* ApproveTransactionRecord.swift */; };
@@ -311,10 +304,8 @@
 		67DC46E82F63B29700CFAE73 /* ProposalDetailRecordHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41772F63B29700CFAE73 /* ProposalDetailRecordHeaderView.swift */; };
 		67DC46E92F63B29700CFAE73 /* MarketDappListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FB62F63B29700CFAE73 /* MarketDappListViewModel.swift */; };
 		67DC46EA2F63B29700CFAE73 /* MainSafeZoneViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41F62F63B29700CFAE73 /* MainSafeZoneViewModel.swift */; };
-		67DC46EC2F63B29700CFAE73 /* LiquidityConfirmationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F0F2F63B29700CFAE73 /* LiquidityConfirmationModule.swift */; };
 		67DC46ED2F63B29700CFAE73 /* ActivityIndicators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44AA2F63B29700CFAE73 /* ActivityIndicators.swift */; };
 		67DC46EE2F63B29700CFAE73 /* SwapSlippageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43532F63B29700CFAE73 /* SwapSlippageViewModel.swift */; };
-		67DC46EF2F63B29700CFAE73 /* LiquidityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F042F63B29700CFAE73 /* LiquidityViewModel.swift */; };
 		67DC46F02F63B29700CFAE73 /* MarkdownModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FA22F63B29700CFAE73 /* MarkdownModule.swift */; };
 		67DC46F12F63B29700CFAE73 /* NftMetadataSyncRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DC42F63B29700CFAE73 /* NftMetadataSyncRecord.swift */; };
 		67DC46F22F63B29700CFAE73 /* UniswapSettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC434D2F63B29700CFAE73 /* UniswapSettingsService.swift */; };
@@ -398,7 +389,6 @@
 		67DC47452F63B29700CFAE73 /* LiquidityRecordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F332F63B29700CFAE73 /* LiquidityRecordViewController.swift */; };
 		67DC47462F63B29700CFAE73 /* AddEvmTokenBlockchainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DEC2F63B29700CFAE73 /* AddEvmTokenBlockchainService.swift */; };
 		67DC47472F63B29700CFAE73 /* SendEvmTransactionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC424E2F63B29700CFAE73 /* SendEvmTransactionService.swift */; };
-		67DC47482F63B29700CFAE73 /* LiquidityTickInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F172F63B29700CFAE73 /* LiquidityTickInputCell.swift */; };
 		67DC47492F63B29700CFAE73 /* SRC20PromotionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41BB2F63B29700CFAE73 /* SRC20PromotionView.swift */; };
 		67DC474A2F63B29700CFAE73 /* ProposalInfoStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41C22F63B29700CFAE73 /* ProposalInfoStorage.swift */; };
 		67DC474B2F63B29700CFAE73 /* NftDatabaseStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D1E2F63B29700CFAE73 /* NftDatabaseStorage.swift */; };
@@ -406,7 +396,6 @@
 		67DC474D2F63B29700CFAE73 /* TronWalletTokenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43D72F63B29700CFAE73 /* TronWalletTokenViewModel.swift */; };
 		67DC474E2F63B29700CFAE73 /* ProposalDatePickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41722F63B29700CFAE73 /* ProposalDatePickerCell.swift */; };
 		67DC474F2F63B29700CFAE73 /* TransactionNonceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42902F63B29700CFAE73 /* TransactionNonceView.swift */; };
-		67DC47502F63B29700CFAE73 /* LiquidityV3ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFC2F63B29700CFAE73 /* LiquidityV3ViewModel.swift */; };
 		67DC47512F63B29700CFAE73 /* ActionSheetPresentationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44482F63B29700CFAE73 /* ActionSheetPresentationController.swift */; };
 		67DC47522F63B29700CFAE73 /* TonKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CFA2F63B29700CFAE73 /* TonKitManager.swift */; };
 		67DC47542F63B29700CFAE73 /* RecoveryPhraseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40D82F63B29700CFAE73 /* RecoveryPhraseService.swift */; };
@@ -449,7 +438,6 @@
 		67DC477A2F63B29700CFAE73 /* InputSecondaryButtonWrapperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44C12F63B29700CFAE73 /* InputSecondaryButtonWrapperView.swift */; };
 		67DC477C2F63B29700CFAE73 /* EvmAddressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F7A2F63B29700CFAE73 /* EvmAddressViewModel.swift */; };
 		67DC477D2F63B29700CFAE73 /* GradientLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45AF2F63B29700CFAE73 /* GradientLayer.swift */; };
-		67DC477E2F63B29700CFAE73 /* LiquidityCoinSelectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F0D2F63B29700CFAE73 /* LiquidityCoinSelectViewModel.swift */; };
 		67DC477F2F63B29700CFAE73 /* MarketMarketCapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FCE2F63B29700CFAE73 /* MarketMarketCapView.swift */; };
 		67DC47802F63B29700CFAE73 /* LockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CE32F63B29700CFAE73 /* LockManager.swift */; };
 		67DC47812F63B29700CFAE73 /* MarketPlatformViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FDA2F63B29700CFAE73 /* MarketPlatformViewModel.swift */; };
@@ -644,13 +632,11 @@
 		67DC48482F63B29700CFAE73 /* AuthData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D9C2F63B29700CFAE73 /* AuthData.swift */; };
 		67DC48492F63B29700CFAE73 /* BalanceErrorBottomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E1D2F63B29700CFAE73 /* BalanceErrorBottomView.swift */; };
 		67DC484A2F63B29700CFAE73 /* MoneroNetworkViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40112F63B29700CFAE73 /* MoneroNetworkViewController.swift */; };
-		67DC484B2F63B29700CFAE73 /* LiquidityPendingAllowanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F092F63B29700CFAE73 /* LiquidityPendingAllowanceService.swift */; };
 		67DC484C2F63B29700CFAE73 /* ConvertedError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DA62F63B29700CFAE73 /* ConvertedError.swift */; };
 		67DC484D2F63B29700CFAE73 /* SendEvmConfirmationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42432F63B29700CFAE73 /* SendEvmConfirmationModule.swift */; };
 		67DC484E2F63B29700CFAE73 /* RecoveryPhraseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40D92F63B29700CFAE73 /* RecoveryPhraseViewController.swift */; };
 		67DC484F2F63B29700CFAE73 /* BitcoinIncomingTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D652F63B29700CFAE73 /* BitcoinIncomingTransactionRecord.swift */; };
 		67DC48502F63B29700CFAE73 /* WCSignMessageHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44172F63B29700CFAE73 /* WCSignMessageHandler.swift */; };
-		67DC48512F63B29700CFAE73 /* LiquidityInputCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F1B2F63B29700CFAE73 /* LiquidityInputCardView.swift */; };
 		67DC48522F63B29700CFAE73 /* OutputSelectView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42822F63B29700CFAE73 /* OutputSelectView2.swift */; };
 		67DC48532F63B29700CFAE73 /* EditDuressPasscodeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40A02F63B29700CFAE73 /* EditDuressPasscodeViewModel.swift */; };
 		67DC48542F63B29700CFAE73 /* RestoreSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41152F63B29700CFAE73 /* RestoreSettingsView.swift */; };
@@ -786,7 +772,6 @@
 		67DC48E22F63B29700CFAE73 /* ReadMoreTextCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44752F63B29700CFAE73 /* ReadMoreTextCell.swift */; };
 		67DC48E32F63B29700CFAE73 /* MoneroNetworkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40122F63B29700CFAE73 /* MoneroNetworkViewModel.swift */; };
 		67DC48E42F63B29700CFAE73 /* BarPageControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44D92F63B29700CFAE73 /* BarPageControl.swift */; };
-		67DC48E52F63B29700CFAE73 /* AddLiquidityTransactionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F382F63B29700CFAE73 /* AddLiquidityTransactionViewModel.swift */; };
 		67DC48E62F63B29700CFAE73 /* BalanceErrorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E222F63B29700CFAE73 /* BalanceErrorViewModel.swift */; };
 		67DC48E72F63B29700CFAE73 /* LineLockRecoardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41A02F63B29700CFAE73 /* LineLockRecoardViewModel.swift */; };
 		67DC48E82F63B29700CFAE73 /* OutputTransactionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CB92F63B29700CFAE73 /* OutputTransactionFactory.swift */; };
@@ -830,7 +815,6 @@
 		67DC49132F63B29700CFAE73 /* SingleLineFormTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44CE2F63B29700CFAE73 /* SingleLineFormTextView.swift */; };
 		67DC49142F63B29700CFAE73 /* AmountRoundingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CC72F63B29700CFAE73 /* AmountRoundingManager.swift */; };
 		67DC49152F63B29700CFAE73 /* ProposalDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC417A2F63B29700CFAE73 /* ProposalDetailViewModel.swift */; };
-		67DC49162F63B29700CFAE73 /* LiquidityMainModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F3E2F63B29700CFAE73 /* LiquidityMainModule.swift */; };
 		67DC49172F63B29700CFAE73 /* ReceiveCoinListService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43BA2F63B29700CFAE73 /* ReceiveCoinListService.swift */; };
 		67DC49182F63B29700CFAE73 /* OneInchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43002F63B29700CFAE73 /* OneInchViewModel.swift */; };
 		67DC49192F63B29700CFAE73 /* LiquidityRecordDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F302F63B29700CFAE73 /* LiquidityRecordDataSource.swift */; };
@@ -923,7 +907,6 @@
 		67DC49732F63B29700CFAE73 /* WatchlistTimePeriod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DDC2F63B29700CFAE73 /* WatchlistTimePeriod.swift */; };
 		67DC49742F63B29700CFAE73 /* ThemeList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45902F63B29700CFAE73 /* ThemeList.swift */; };
 		67DC49752F63B29700CFAE73 /* TonConnectManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43662F63B29700CFAE73 /* TonConnectManifest.swift */; };
-		67DC49762F63B29700CFAE73 /* LiquidityAllowanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F072F63B29700CFAE73 /* LiquidityAllowanceService.swift */; };
 		67DC49772F63B29700CFAE73 /* TabHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45B52F63B29700CFAE73 /* TabHeaderView.swift */; };
 		67DC49782F63B29700CFAE73 /* CoinMarketsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E722F63B29700CFAE73 /* CoinMarketsViewModel.swift */; };
 		67DC49792F63B29700CFAE73 /* AddMoneroNodeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC400B2F63B29700CFAE73 /* AddMoneroNodeViewModel.swift */; };
@@ -959,7 +942,6 @@
 		67DC49992F63B29700CFAE73 /* BackupCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C972F63B29700CFAE73 /* BackupCrypto.swift */; };
 		67DC499A2F63B29700CFAE73 /* DeepLinkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CD72F63B29700CFAE73 /* DeepLinkManager.swift */; };
 		67DC499B2F63B29700CFAE73 /* Safe4NodeSearchCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41242F63B29700CFAE73 /* Safe4NodeSearchCell.swift */; };
-		67DC499C2F63B29700CFAE73 /* LiquidityAllowanceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F082F63B29700CFAE73 /* LiquidityAllowanceViewModel.swift */; };
 		67DC499D2F63B29700CFAE73 /* LogoHeaderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44692F63B29700CFAE73 /* LogoHeaderCell.swift */; };
 		67DC499E2F63B29700CFAE73 /* ManageWalletsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F922F63B29700CFAE73 /* ManageWalletsService.swift */; };
 		67DC499F2F63B29700CFAE73 /* ReceiveBlockchainListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43B62F63B29700CFAE73 /* ReceiveBlockchainListViewModel.swift */; };
@@ -1033,7 +1015,6 @@
 		67DC49E92F63B29700CFAE73 /* NativeProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC451B2F63B29700CFAE73 /* NativeProgressView.swift */; };
 		67DC49EA2F63B29700CFAE73 /* EvmSendSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3ED72F63B29700CFAE73 /* EvmSendSettingsViewModel.swift */; };
 		67DC49EB2F63B29700CFAE73 /* LowAmountCondition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CB22F63B29700CFAE73 /* LowAmountCondition.swift */; };
-		67DC49EC2F63B29700CFAE73 /* LiquidityCoinCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F1A2F63B29700CFAE73 /* LiquidityCoinCardViewModel.swift */; };
 		67DC49ED2F63B29700CFAE73 /* CoinProChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E4F2F63B29700CFAE73 /* CoinProChartView.swift */; };
 		67DC49EE2F63B29700CFAE73 /* RawFullBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C9C2F63B29700CFAE73 /* RawFullBackup.swift */; };
 		67DC49EF2F63B29700CFAE73 /* SuperNodeRegisterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41E12F63B29700CFAE73 /* SuperNodeRegisterViewController.swift */; };
@@ -1090,7 +1071,6 @@
 		67DC4A252F63B29700CFAE73 /* SystemTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC459A2F63B29700CFAE73 /* SystemTheme.swift */; };
 		67DC4A262F63B29700CFAE73 /* NftCollectionAssetsModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40862F63B29700CFAE73 /* NftCollectionAssetsModule.swift */; };
 		67DC4A272F63B29700CFAE73 /* BalanceErrorBottomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E1E2F63B29700CFAE73 /* BalanceErrorBottomViewModel.swift */; };
-		67DC4A282F63B29700CFAE73 /* LiquidityCoinCardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F192F63B29700CFAE73 /* LiquidityCoinCardModule.swift */; };
 		67DC4A292F63B29700CFAE73 /* SuperNodeRegisterSliderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41E02F63B29700CFAE73 /* SuperNodeRegisterSliderCell.swift */; };
 		67DC4A2A2F63B29700CFAE73 /* WCEthereumTransactionPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44152F63B29700CFAE73 /* WCEthereumTransactionPayload.swift */; };
 		67DC4A2B2F63B29700CFAE73 /* AlphaDismissAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44412F63B29700CFAE73 /* AlphaDismissAnimation.swift */; };
@@ -1121,9 +1101,7 @@
 		67DC4A442F63B29700CFAE73 /* BackupCloudPassphraseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E022F63B29700CFAE73 /* BackupCloudPassphraseService.swift */; };
 		67DC4A452F63B29700CFAE73 /* NftUid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DC62F63B29700CFAE73 /* NftUid.swift */; };
 		67DC4A462F63B29700CFAE73 /* TronSendData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42952F63B29700CFAE73 /* TronSendData.swift */; };
-		67DC4A472F63B29700CFAE73 /* LiquidityCoinSelectService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F0B2F63B29700CFAE73 /* LiquidityCoinSelectService.swift */; };
 		67DC4A482F63B29700CFAE73 /* BottomGradientHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45A62F63B29700CFAE73 /* BottomGradientHolder.swift */; };
-		67DC4A492F63B29700CFAE73 /* LiquidityProviderMannager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F412F63B29700CFAE73 /* LiquidityProviderMannager.swift */; };
 		67DC4A4A2F63B29700CFAE73 /* WalletButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43E72F63B29700CFAE73 /* WalletButton.swift */; };
 		67DC4A4B2F63B29700CFAE73 /* Address.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D942F63B29700CFAE73 /* Address.swift */; };
 		67DC4A4C2F63B29700CFAE73 /* NonceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3ED22F63B29700CFAE73 /* NonceViewModel.swift */; };
@@ -1157,7 +1135,6 @@
 		67DC4A692F63B29700CFAE73 /* MarketGlobalFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FC52F63B29700CFAE73 /* MarketGlobalFetcher.swift */; };
 		67DC4A6A2F63B29700CFAE73 /* Global.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D322F63B29700CFAE73 /* Global.swift */; };
 		67DC4A6B2F63B29700CFAE73 /* ContactBookHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EA32F63B29700CFAE73 /* ContactBookHelper.swift */; };
-		67DC4A6C2F63B29700CFAE73 /* LiquidityTickInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F142F63B29700CFAE73 /* LiquidityTickInputAccessoryView.swift */; };
 		67DC4A6D2F63B29700CFAE73 /* BadgeComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC449A2F63B29700CFAE73 /* BadgeComponent.swift */; };
 		67DC4A6E2F63B29700CFAE73 /* MasterNodeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41642F63B29700CFAE73 /* MasterNodeViewModel.swift */; };
 		67DC4A6F2F63B29700CFAE73 /* MultiSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E302F63B29700CFAE73 /* MultiSelectorView.swift */; };
@@ -1179,7 +1156,6 @@
 		67DC4A802F63B29700CFAE73 /* OutgoingPoisoningFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CBC2F63B29700CFAE73 /* OutgoingPoisoningFilter.swift */; };
 		67DC4A812F63B29700CFAE73 /* NftAssetModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40792F63B29700CFAE73 /* NftAssetModule.swift */; };
 		67DC4A822F63B29700CFAE73 /* BubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45482F63B29700CFAE73 /* BubbleView.swift */; };
-		67DC4A832F63B29700CFAE73 /* LiquidityConfirmationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F102F63B29700CFAE73 /* LiquidityConfirmationViewController.swift */; };
 		67DC4A842F63B29700CFAE73 /* FileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D422F63B29700CFAE73 /* FileManager.swift */; };
 		67DC4A852F63B29700CFAE73 /* RedeemSafe3ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC418E2F63B29700CFAE73 /* RedeemSafe3ViewController.swift */; };
 		67DC4A862F63B29700CFAE73 /* WCSendEthereumTransactionRequestModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44042F63B29700CFAE73 /* WCSendEthereumTransactionRequestModule.swift */; };
@@ -1230,7 +1206,6 @@
 		67DC4AB82F63B29700CFAE73 /* BirthdayInputViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E262F63B29700CFAE73 /* BirthdayInputViewModel.swift */; };
 		67DC4AB92F63B29700CFAE73 /* ImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44672F63B29700CFAE73 /* ImageCell.swift */; };
 		67DC4ABA2F63B29700CFAE73 /* NSAttributedString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44EF2F63B29700CFAE73 /* NSAttributedString.swift */; };
-		67DC4ABB2F63B29700CFAE73 /* LiquidityViewItemHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F032F63B29700CFAE73 /* LiquidityViewItemHelper.swift */; };
 		67DC4ABC2F63B29700CFAE73 /* SendEip721Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC429E2F63B29700CFAE73 /* SendEip721Service.swift */; };
 		67DC4ABD2F63B29700CFAE73 /* EvmTransactionsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C542F63B29700CFAE73 /* EvmTransactionsAdapter.swift */; };
 		67DC4ABE2F63B29700CFAE73 /* AppVersionRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D112F63B29700CFAE73 /* AppVersionRecordStorage.swift */; };
@@ -1240,7 +1215,6 @@
 		67DC4AC22F63B29700CFAE73 /* SwapInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43382F63B29700CFAE73 /* SwapInputCell.swift */; };
 		67DC4AC32F63B29700CFAE73 /* PurchasesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40D52F63B29700CFAE73 /* PurchasesViewModel.swift */; };
 		67DC4AC42F63B29700CFAE73 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CDF2F63B29700CFAE73 /* KeychainManager.swift */; };
-		67DC4AC52F63B29700CFAE73 /* LiquidityV3Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EF92F63B29700CFAE73 /* LiquidityV3Service.swift */; };
 		67DC4AC62F63B29700CFAE73 /* TopHUDContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45122F63B29700CFAE73 /* TopHUDContentView.swift */; };
 		67DC4AC72F63B29700CFAE73 /* ICloudBackupTermsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E062F63B29700CFAE73 /* ICloudBackupTermsService.swift */; };
 		67DC4AC82F63B29700CFAE73 /* BlockchainSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42DB2F63B29700CFAE73 /* BlockchainSettingsViewModel.swift */; };
@@ -1399,7 +1373,6 @@
 		67DC4B6B2F63B29700CFAE73 /* DrawSafe4ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41372F63B29700CFAE73 /* DrawSafe4ViewController.swift */; };
 		67DC4B6C2F63B29700CFAE73 /* ProposalInfoRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41672F63B29700CFAE73 /* ProposalInfoRecord.swift */; };
 		67DC4B6D2F63B29700CFAE73 /* SRC20Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41BD2F63B29700CFAE73 /* SRC20Service.swift */; };
-		67DC4B6E2F63B29700CFAE73 /* LiquidityV3Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EF72F63B29700CFAE73 /* LiquidityV3Module.swift */; };
 		67DC4B6F2F63B29700CFAE73 /* NftCollectionOverviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC408D2F63B29700CFAE73 /* NftCollectionOverviewViewController.swift */; };
 		67DC4B702F63B29700CFAE73 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44EB2F63B29700CFAE73 /* Date.swift */; };
 		67DC4B712F63B29700CFAE73 /* Src20TokenInfoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EEB2F63B29700CFAE73 /* Src20TokenInfoViewModel.swift */; };
@@ -1410,7 +1383,6 @@
 		67DC4B772F63B29700CFAE73 /* LiquidityRecordTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F262F63B29700CFAE73 /* LiquidityRecordTabViewController.swift */; };
 		67DC4B782F63B29700CFAE73 /* AppUnlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40A62F63B29700CFAE73 /* AppUnlockViewModel.swift */; };
 		67DC4B7A2F63B29700CFAE73 /* HighlightedTiltledTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC455B2F63B29700CFAE73 /* HighlightedTiltledTextView.swift */; };
-		67DC4B7B2F63B29700CFAE73 /* LiquidityMainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F402F63B29700CFAE73 /* LiquidityMainViewModel.swift */; };
 		67DC4B7C2F63B29700CFAE73 /* SwapApproveViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC432C2F63B29700CFAE73 /* SwapApproveViewController.swift */; };
 		67DC4B7D2F63B29700CFAE73 /* BlockchainListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43FE2F63B29700CFAE73 /* BlockchainListView.swift */; };
 		67DC4B7E2F63B29700CFAE73 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44F12F63B29700CFAE73 /* String.swift */; };
@@ -1428,7 +1400,6 @@
 		67DC4B8C2F63B29700CFAE73 /* RbfDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC422E2F63B29700CFAE73 /* RbfDataSource.swift */; };
 		67DC4B8D2F63B29700CFAE73 /* RestoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40E22F63B29700CFAE73 /* RestoreService.swift */; };
 		67DC4B8E2F63B29700CFAE73 /* Safe4DepositEvmIncomingTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D6A2F63B29700CFAE73 /* Safe4DepositEvmIncomingTransactionRecord.swift */; };
-		67DC4B8F2F63B29700CFAE73 /* LiquidityAllowanceCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F062F63B29700CFAE73 /* LiquidityAllowanceCell.swift */; };
 		67DC4B902F63B29700CFAE73 /* WalletStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D2E2F63B29700CFAE73 /* WalletStorage.swift */; };
 		67DC4B912F63B29700CFAE73 /* HUDViewInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC450D2F63B29700CFAE73 /* HUDViewInteractor.swift */; };
 		67DC4B922F63B29700CFAE73 /* WCSignMessageRequestModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44092F63B29700CFAE73 /* WCSignMessageRequestModule.swift */; };
@@ -1484,7 +1455,6 @@
 		67DC4BCA2F63B29700CFAE73 /* DimViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45022F63B29700CFAE73 /* DimViewController.swift */; };
 		67DC4BCB2F63B29700CFAE73 /* MoneroFeeSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC425C2F63B29700CFAE73 /* MoneroFeeSettingsViewModel.swift */; };
 		67DC4BCC2F63B29700CFAE73 /* Eip20AddressValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C7C2F63B29700CFAE73 /* Eip20AddressValidator.swift */; };
-		67DC4BCD2F63B29700CFAE73 /* AddLiquidityTransactionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F362F63B29700CFAE73 /* AddLiquidityTransactionService.swift */; };
 		67DC4BCE2F63B29700CFAE73 /* SendBitcoinViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42162F63B29700CFAE73 /* SendBitcoinViewController.swift */; };
 		67DC4BCF2F63B29700CFAE73 /* CheckboxStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC454B2F63B29700CFAE73 /* CheckboxStyle.swift */; };
 		67DC4BD02F63B29700CFAE73 /* CoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F6C2F63B29700CFAE73 /* CoverView.swift */; };
@@ -1560,7 +1530,6 @@
 		67DC4C192F63B29700CFAE73 /* DashAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C682F63B29700CFAE73 /* DashAdapter.swift */; };
 		67DC4C1A2F63B29700CFAE73 /* CellElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44E82F63B29700CFAE73 /* CellElement.swift */; };
 		67DC4C1B2F63B29700CFAE73 /* CreatePasscodeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC409F2F63B29700CFAE73 /* CreatePasscodeViewModel.swift */; };
-		67DC4C1C2F63B29700CFAE73 /* LiquidityV3Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EF82F63B29700CFAE73 /* LiquidityV3Provider.swift */; };
 		67DC4C1D2F63B29700CFAE73 /* LiquidityMethods.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F3B2F63B29700CFAE73 /* LiquidityMethods.swift */; };
 		67DC4C1E2F63B29700CFAE73 /* HUDTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC451E2F63B29700CFAE73 /* HUDTheme.swift */; };
 		67DC4C1F2F63B29700CFAE73 /* PasscodeLockState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DC82F63B29700CFAE73 /* PasscodeLockState.swift */; };
@@ -1586,7 +1555,6 @@
 		67DC4C352F63B29700CFAE73 /* WelcomeTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC443B2F63B29700CFAE73 /* WelcomeTextView.swift */; };
 		67DC4C362F63B29700CFAE73 /* HUDActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45152F63B29700CFAE73 /* HUDActivityView.swift */; };
 		67DC4C372F63B29700CFAE73 /* SwapAllowanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43132F63B29700CFAE73 /* SwapAllowanceService.swift */; };
-		67DC4C392F63B29700CFAE73 /* LiquidityTickInputCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F152F63B29700CFAE73 /* LiquidityTickInputCardView.swift */; };
 		67DC4C3A2F63B29700CFAE73 /* ProposalStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41832F63B29700CFAE73 /* ProposalStorageManager.swift */; };
 		67DC4C3B2F63B29700CFAE73 /* CoinManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CD32F63B29700CFAE73 /* CoinManager.swift */; };
 		67DC4C3C2F63B29700CFAE73 /* TonConnectSendViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC436C2F63B29700CFAE73 /* TonConnectSendViewModel.swift */; };
@@ -1594,7 +1562,6 @@
 		67DC4C3E2F63B29700CFAE73 /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CD82F63B29700CFAE73 /* DownloadService.swift */; };
 		67DC4C3F2F63B29700CFAE73 /* SRC20ManagerModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41B82F63B29700CFAE73 /* SRC20ManagerModule.swift */; };
 		67DC4C402F63B29700CFAE73 /* ValueLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42992F63B29700CFAE73 /* ValueLevel.swift */; };
-		67DC4C412F63B29700CFAE73 /* LiquidityV3TickService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFA2F63B29700CFAE73 /* LiquidityV3TickService.swift */; };
 		67DC4C422F63B29700CFAE73 /* AddLockDaysViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC411B2F63B29700CFAE73 /* AddLockDaysViewModel.swift */; };
 		67DC4C432F63B29700CFAE73 /* MarketCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E422F63B29700CFAE73 /* MarketCardView.swift */; };
 		67DC4C442F63B29700CFAE73 /* WalletConnectSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D002F63B29700CFAE73 /* WalletConnectSessionManager.swift */; };
@@ -1721,7 +1688,6 @@
 		67DC4CC62F63B29700CFAE73 /* CancelTransactionJsonRpc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C462F63B29700CFAE73 /* CancelTransactionJsonRpc.swift */; };
 		67DC4CC72F63B29700CFAE73 /* Styles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45A12F63B29700CFAE73 /* Styles.swift */; };
 		67DC4CC82F63B29700CFAE73 /* InfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EE72F63B29700CFAE73 /* InfoView.swift */; };
-		67DC4CCA2F63B29700CFAE73 /* LiquidityDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFE2F63B29700CFAE73 /* LiquidityDataSource.swift */; };
 		67DC4CCB2F63B29700CFAE73 /* FaqCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EDE2F63B29700CFAE73 /* FaqCell.swift */; };
 		67DC4CCC2F63B29700CFAE73 /* EnabledWalletCache_v_0_36.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DAC2F63B29700CFAE73 /* EnabledWalletCache_v_0_36.swift */; };
 		67DC4CCD2F63B29700CFAE73 /* RestoreState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DCD2F63B29700CFAE73 /* RestoreState.swift */; };
@@ -1748,7 +1714,6 @@
 		67DC4CE42F63B29700CFAE73 /* UniswapV3ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC430F2F63B29700CFAE73 /* UniswapV3ViewModel.swift */; };
 		67DC4CE52F63B29700CFAE73 /* WatchSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44362F63B29700CFAE73 /* WatchSelectView.swift */; };
 		67DC4CE62F63B29700CFAE73 /* LargeTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45652F63B29700CFAE73 /* LargeTextField.swift */; };
-		67DC4CE72F63B29700CFAE73 /* LiquidityTradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F022F63B29700CFAE73 /* LiquidityTradeService.swift */; };
 		67DC4CE82F63B29700CFAE73 /* Safe4SwapModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41A22F63B29700CFAE73 /* Safe4SwapModule.swift */; };
 		67DC4CE92F63B29700CFAE73 /* FormValidatedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44BD2F63B29700CFAE73 /* FormValidatedView.swift */; };
 		67DC4CEA2F63B29700CFAE73 /* CoinAuditsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E512F63B29700CFAE73 /* CoinAuditsView.swift */; };
@@ -1814,7 +1779,6 @@
 		67DC4D2A2F63B29700CFAE73 /* BottomSheetModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45462F63B29700CFAE73 /* BottomSheetModifier.swift */; };
 		67DC4D2B2F63B29700CFAE73 /* SRC20SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41BE2F63B29700CFAE73 /* SRC20SyncManager.swift */; };
 		67DC4D2C2F63B29700CFAE73 /* BackupCloudPassphraseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E032F63B29700CFAE73 /* BackupCloudPassphraseViewController.swift */; };
-		67DC4D2D2F63B29700CFAE73 /* LiquidityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F012F63B29700CFAE73 /* LiquidityService.swift */; };
 		67DC4D2E2F63B29700CFAE73 /* CoinAnalyticsRatingInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E4B2F63B29700CFAE73 /* CoinAnalyticsRatingInfoView.swift */; };
 		67DC4D2F2F63B29700CFAE73 /* HUDModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45092F63B29700CFAE73 /* HUDModel.swift */; };
 		67DC4D302F63B29700CFAE73 /* SetPasscodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40A32F63B29700CFAE73 /* SetPasscodeView.swift */; };
@@ -1824,7 +1788,6 @@
 		67DC4D342F63B29700CFAE73 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F6B2F63B29700CFAE73 /* AppViewModel.swift */; };
 		67DC4D352F63B29700CFAE73 /* TransactionInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43722F63B29700CFAE73 /* TransactionInfoViewController.swift */; };
 		67DC4D362F63B29700CFAE73 /* RestoreSettingRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DCC2F63B29700CFAE73 /* RestoreSettingRecord.swift */; };
-		67DC4D372F63B29700CFAE73 /* AddLiquidityTransactionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F372F63B29700CFAE73 /* AddLiquidityTransactionViewController.swift */; };
 		67DC4D382F63B29700CFAE73 /* RankViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E7C2F63B29700CFAE73 /* RankViewModel.swift */; };
 		67DC4D392F63B29700CFAE73 /* AlertItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC445C2F63B29700CFAE73 /* AlertItemCell.swift */; };
 		67DC4D3A2F63B29700CFAE73 /* AddMoneroNodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC400A2F63B29700CFAE73 /* AddMoneroNodeViewController.swift */; };
@@ -1838,7 +1801,6 @@
 		67DC4D432F63B29700CFAE73 /* ThemeSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44D72F63B29700CFAE73 /* ThemeSearchViewController.swift */; };
 		67DC4D452F63B29700CFAE73 /* ZcashPreSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC429A2F63B29700CFAE73 /* ZcashPreSendHandler.swift */; };
 		67DC4D462F63B29700CFAE73 /* TelegramUserHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F682F63B29700CFAE73 /* TelegramUserHandler.swift */; };
-		67DC4D472F63B29700CFAE73 /* LiquidityInputModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F1D2F63B29700CFAE73 /* LiquidityInputModule.swift */; };
 		67DC4D482F63B29700CFAE73 /* SuperNodeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41E52F63B29700CFAE73 /* SuperNodeTabView.swift */; };
 		67DC4D492F63B29700CFAE73 /* PrimaryCircleButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45762F63B29700CFAE73 /* PrimaryCircleButtonStyle.swift */; };
 		67DC4D4A2F63B29700CFAE73 /* TextStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC458D2F63B29700CFAE73 /* TextStyle.swift */; };
@@ -1888,7 +1850,6 @@
 		67DC4D782F63B29700CFAE73 /* SafeLineLockModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC413F2F63B29700CFAE73 /* SafeLineLockModule.swift */; };
 		67DC4D792F63B29700CFAE73 /* MarketDappView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FBB2F63B29700CFAE73 /* MarketDappView.swift */; };
 		67DC4D7A2F63B29700CFAE73 /* SRC20EditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41B62F63B29700CFAE73 /* SRC20EditView.swift */; };
-		67DC4D7B2F63B29700CFAE73 /* LiquidityV3TradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFB2F63B29700CFAE73 /* LiquidityV3TradeService.swift */; };
 		67DC4D7D2F63B29700CFAE73 /* MarketGlobalViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FCC2F63B29700CFAE73 /* MarketGlobalViewModel.swift */; };
 		67DC4D7E2F63B29700CFAE73 /* HUDContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45162F63B29700CFAE73 /* HUDContainerView.swift */; };
 		67DC4D7F2F63B29700CFAE73 /* MarkdownImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F992F63B29700CFAE73 /* MarkdownImageCell.swift */; };
@@ -2027,7 +1988,6 @@
 		67DC4E0D2F63B29700CFAE73 /* RestoreMnemonicService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40FB2F63B29700CFAE73 /* RestoreMnemonicService.swift */; };
 		67DC4E0E2F63B29700CFAE73 /* BackupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E0F2F63B29700CFAE73 /* BackupService.swift */; };
 		67DC4E0F2F63B29700CFAE73 /* SendTronConfirmationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42AF2F63B29700CFAE73 /* SendTronConfirmationService.swift */; };
-		67DC4E102F63B29700CFAE73 /* LiquidityMainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F3F2F63B29700CFAE73 /* LiquidityMainViewController.swift */; };
 		67DC4E112F63B29700CFAE73 /* TransferEventFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CC22F63B29700CFAE73 /* TransferEventFactory.swift */; };
 		67DC4E122F63B29700CFAE73 /* RoundedCorner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC457D2F63B29700CFAE73 /* RoundedCorner.swift */; };
 		67DC4E142F63B29700CFAE73 /* AccountRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D8F2F63B29700CFAE73 /* AccountRecord.swift */; };
@@ -2098,11 +2058,9 @@
 		67DC4E592F63B29700CFAE73 /* BackupAppModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42D32F63B29700CFAE73 /* BackupAppModule.swift */; };
 		67DC4E5A2F63B29700CFAE73 /* ScrollHeaderModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45802F63B29700CFAE73 /* ScrollHeaderModifier.swift */; };
 		67DC4E5B2F63B29700CFAE73 /* LineLockRecoardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC419E2F63B29700CFAE73 /* LineLockRecoardModule.swift */; };
-		67DC4E5C2F63B29700CFAE73 /* LiquidityV3DataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EF62F63B29700CFAE73 /* LiquidityV3DataSource.swift */; };
 		67DC4E5D2F63B29700CFAE73 /* ThemeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45942F63B29700CFAE73 /* ThemeView.swift */; };
 		67DC4E5E2F63B29700CFAE73 /* CoinInvestorsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E6C2F63B29700CFAE73 /* CoinInvestorsViewModel.swift */; };
 		67DC4E5F2F63B29700CFAE73 /* UrlManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CFE2F63B29700CFAE73 /* UrlManager.swift */; };
-		67DC4E602F63B29700CFAE73 /* LiquidityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F002F63B29700CFAE73 /* LiquidityProvider.swift */; };
 		67DC4E612F63B29700CFAE73 /* OutputSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42102F63B29700CFAE73 /* OutputSelectorView.swift */; };
 		67DC4E622F63B29700CFAE73 /* MultiTextMetricsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44C62F63B29700CFAE73 /* MultiTextMetricsView.swift */; };
 		67DC4E632F63B29700CFAE73 /* EvmFeeEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42712F63B29700CFAE73 /* EvmFeeEstimator.swift */; };
@@ -2131,11 +2089,8 @@
 		67DC4E7B2F63B29700CFAE73 /* AddressEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F5E2F63B29700CFAE73 /* AddressEventHandler.swift */; };
 		67DC4E7C2F63B29700CFAE73 /* ReceiveAddressModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43AF2F63B29700CFAE73 /* ReceiveAddressModule.swift */; };
 		67DC4E7D2F63B29700CFAE73 /* ReceiveModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43CA2F63B29700CFAE73 /* ReceiveModule.swift */; };
-		67DC4E7E2F63B29700CFAE73 /* LiquidityInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F1C2F63B29700CFAE73 /* LiquidityInputCell.swift */; };
-		67DC4E7F2F63B29700CFAE73 /* LiquidityTickInputCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F162F63B29700CFAE73 /* LiquidityTickInputCardViewModel.swift */; };
 		67DC4E802F63B29700CFAE73 /* UIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44FC2F63B29700CFAE73 /* UIView.swift */; };
 		67DC4E822F63B29700CFAE73 /* Safe4Reward.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC419C2F63B29700CFAE73 /* Safe4Reward.swift */; };
-		67DC4E832F63B29700CFAE73 /* LiquidityModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFF2F63B29700CFAE73 /* LiquidityModule.swift */; };
 		67DC4E842F63B29700CFAE73 /* CoinInvestment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D3D2F63B29700CFAE73 /* CoinInvestment.swift */; };
 		67DC4E852F63B29700CFAE73 /* RowButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC457E2F63B29700CFAE73 /* RowButtonStyle.swift */; };
 		67DC4E862F63B29700CFAE73 /* PremiumFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CAF2F63B29700CFAE73 /* PremiumFeature.swift */; };
@@ -2185,7 +2140,6 @@
 		67DC4EB42F63B29700CFAE73 /* TransactionInfoViewItemFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43732F63B29700CFAE73 /* TransactionInfoViewItemFactory.swift */; };
 		67DC4EB52F63B29700CFAE73 /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D302F63B29700CFAE73 /* Core.swift */; };
 		67DC4EB62F63B29700CFAE73 /* UIImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44F72F63B29700CFAE73 /* UIImageView.swift */; };
-		67DC4EB72F63B29700CFAE73 /* LiquidityCoinSelectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F0C2F63B29700CFAE73 /* LiquidityCoinSelectViewController.swift */; };
 		67DC4EB82F63B29700CFAE73 /* SendModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42232F63B29700CFAE73 /* SendModule.swift */; };
 		67DC4EBA2F63B29700CFAE73 /* CloudRestoreBackupListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40E82F63B29700CFAE73 /* CloudRestoreBackupListViewModel.swift */; };
 		67DC4EBB2F63B29700CFAE73 /* ApproveTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D702F63B29700CFAE73 /* ApproveTransactionRecord.swift */; };
@@ -2199,10 +2153,8 @@
 		67DC4EC42F63B29700CFAE73 /* ProposalDetailRecordHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41772F63B29700CFAE73 /* ProposalDetailRecordHeaderView.swift */; };
 		67DC4EC52F63B29700CFAE73 /* MarketDappListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FB62F63B29700CFAE73 /* MarketDappListViewModel.swift */; };
 		67DC4EC62F63B29700CFAE73 /* MainSafeZoneViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41F62F63B29700CFAE73 /* MainSafeZoneViewModel.swift */; };
-		67DC4EC82F63B29700CFAE73 /* LiquidityConfirmationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F0F2F63B29700CFAE73 /* LiquidityConfirmationModule.swift */; };
 		67DC4EC92F63B29700CFAE73 /* ActivityIndicators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44AA2F63B29700CFAE73 /* ActivityIndicators.swift */; };
 		67DC4ECA2F63B29700CFAE73 /* SwapSlippageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43532F63B29700CFAE73 /* SwapSlippageViewModel.swift */; };
-		67DC4ECB2F63B29700CFAE73 /* LiquidityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F042F63B29700CFAE73 /* LiquidityViewModel.swift */; };
 		67DC4ECC2F63B29700CFAE73 /* MarkdownModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FA22F63B29700CFAE73 /* MarkdownModule.swift */; };
 		67DC4ECD2F63B29700CFAE73 /* NftMetadataSyncRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DC42F63B29700CFAE73 /* NftMetadataSyncRecord.swift */; };
 		67DC4ECE2F63B29700CFAE73 /* UniswapSettingsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC434D2F63B29700CFAE73 /* UniswapSettingsService.swift */; };
@@ -2286,7 +2238,6 @@
 		67DC4F212F63B29700CFAE73 /* LiquidityRecordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F332F63B29700CFAE73 /* LiquidityRecordViewController.swift */; };
 		67DC4F222F63B29700CFAE73 /* AddEvmTokenBlockchainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DEC2F63B29700CFAE73 /* AddEvmTokenBlockchainService.swift */; };
 		67DC4F232F63B29700CFAE73 /* SendEvmTransactionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC424E2F63B29700CFAE73 /* SendEvmTransactionService.swift */; };
-		67DC4F242F63B29700CFAE73 /* LiquidityTickInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F172F63B29700CFAE73 /* LiquidityTickInputCell.swift */; };
 		67DC4F252F63B29700CFAE73 /* SRC20PromotionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41BB2F63B29700CFAE73 /* SRC20PromotionView.swift */; };
 		67DC4F262F63B29700CFAE73 /* ProposalInfoStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41C22F63B29700CFAE73 /* ProposalInfoStorage.swift */; };
 		67DC4F272F63B29700CFAE73 /* NftDatabaseStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D1E2F63B29700CFAE73 /* NftDatabaseStorage.swift */; };
@@ -2294,7 +2245,6 @@
 		67DC4F292F63B29700CFAE73 /* TronWalletTokenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43D72F63B29700CFAE73 /* TronWalletTokenViewModel.swift */; };
 		67DC4F2A2F63B29700CFAE73 /* ProposalDatePickerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41722F63B29700CFAE73 /* ProposalDatePickerCell.swift */; };
 		67DC4F2B2F63B29700CFAE73 /* TransactionNonceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42902F63B29700CFAE73 /* TransactionNonceView.swift */; };
-		67DC4F2C2F63B29700CFAE73 /* LiquidityV3ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFC2F63B29700CFAE73 /* LiquidityV3ViewModel.swift */; };
 		67DC4F2D2F63B29700CFAE73 /* ActionSheetPresentationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44482F63B29700CFAE73 /* ActionSheetPresentationController.swift */; };
 		67DC4F2E2F63B29700CFAE73 /* TonKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CFA2F63B29700CFAE73 /* TonKitManager.swift */; };
 		67DC4F302F63B29700CFAE73 /* RecoveryPhraseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40D82F63B29700CFAE73 /* RecoveryPhraseService.swift */; };
@@ -2337,7 +2287,6 @@
 		67DC4F562F63B29700CFAE73 /* InputSecondaryButtonWrapperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44C12F63B29700CFAE73 /* InputSecondaryButtonWrapperView.swift */; };
 		67DC4F582F63B29700CFAE73 /* EvmAddressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F7A2F63B29700CFAE73 /* EvmAddressViewModel.swift */; };
 		67DC4F592F63B29700CFAE73 /* GradientLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45AF2F63B29700CFAE73 /* GradientLayer.swift */; };
-		67DC4F5A2F63B29700CFAE73 /* LiquidityCoinSelectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F0D2F63B29700CFAE73 /* LiquidityCoinSelectViewModel.swift */; };
 		67DC4F5B2F63B29700CFAE73 /* MarketMarketCapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FCE2F63B29700CFAE73 /* MarketMarketCapView.swift */; };
 		67DC4F5C2F63B29700CFAE73 /* LockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CE32F63B29700CFAE73 /* LockManager.swift */; };
 		67DC4F5D2F63B29700CFAE73 /* MarketPlatformViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FDA2F63B29700CFAE73 /* MarketPlatformViewModel.swift */; };
@@ -2532,13 +2481,11 @@
 		67DC50242F63B29700CFAE73 /* AuthData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D9C2F63B29700CFAE73 /* AuthData.swift */; };
 		67DC50252F63B29700CFAE73 /* BalanceErrorBottomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E1D2F63B29700CFAE73 /* BalanceErrorBottomView.swift */; };
 		67DC50262F63B29700CFAE73 /* MoneroNetworkViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40112F63B29700CFAE73 /* MoneroNetworkViewController.swift */; };
-		67DC50272F63B29700CFAE73 /* LiquidityPendingAllowanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F092F63B29700CFAE73 /* LiquidityPendingAllowanceService.swift */; };
 		67DC50282F63B29700CFAE73 /* ConvertedError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DA62F63B29700CFAE73 /* ConvertedError.swift */; };
 		67DC50292F63B29700CFAE73 /* SendEvmConfirmationModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42432F63B29700CFAE73 /* SendEvmConfirmationModule.swift */; };
 		67DC502A2F63B29700CFAE73 /* RecoveryPhraseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40D92F63B29700CFAE73 /* RecoveryPhraseViewController.swift */; };
 		67DC502B2F63B29700CFAE73 /* BitcoinIncomingTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D652F63B29700CFAE73 /* BitcoinIncomingTransactionRecord.swift */; };
 		67DC502C2F63B29700CFAE73 /* WCSignMessageHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44172F63B29700CFAE73 /* WCSignMessageHandler.swift */; };
-		67DC502D2F63B29700CFAE73 /* LiquidityInputCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F1B2F63B29700CFAE73 /* LiquidityInputCardView.swift */; };
 		67DC502E2F63B29700CFAE73 /* OutputSelectView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42822F63B29700CFAE73 /* OutputSelectView2.swift */; };
 		67DC502F2F63B29700CFAE73 /* EditDuressPasscodeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40A02F63B29700CFAE73 /* EditDuressPasscodeViewModel.swift */; };
 		67DC50302F63B29700CFAE73 /* RestoreSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41152F63B29700CFAE73 /* RestoreSettingsView.swift */; };
@@ -2674,7 +2621,6 @@
 		67DC50BE2F63B29700CFAE73 /* ReadMoreTextCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44752F63B29700CFAE73 /* ReadMoreTextCell.swift */; };
 		67DC50BF2F63B29700CFAE73 /* MoneroNetworkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40122F63B29700CFAE73 /* MoneroNetworkViewModel.swift */; };
 		67DC50C02F63B29700CFAE73 /* BarPageControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44D92F63B29700CFAE73 /* BarPageControl.swift */; };
-		67DC50C12F63B29700CFAE73 /* AddLiquidityTransactionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F382F63B29700CFAE73 /* AddLiquidityTransactionViewModel.swift */; };
 		67DC50C22F63B29700CFAE73 /* BalanceErrorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E222F63B29700CFAE73 /* BalanceErrorViewModel.swift */; };
 		67DC50C32F63B29700CFAE73 /* LineLockRecoardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41A02F63B29700CFAE73 /* LineLockRecoardViewModel.swift */; };
 		67DC50C42F63B29700CFAE73 /* OutputTransactionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CB92F63B29700CFAE73 /* OutputTransactionFactory.swift */; };
@@ -2718,7 +2664,6 @@
 		67DC50EF2F63B29700CFAE73 /* SingleLineFormTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44CE2F63B29700CFAE73 /* SingleLineFormTextView.swift */; };
 		67DC50F02F63B29700CFAE73 /* AmountRoundingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CC72F63B29700CFAE73 /* AmountRoundingManager.swift */; };
 		67DC50F12F63B29700CFAE73 /* ProposalDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC417A2F63B29700CFAE73 /* ProposalDetailViewModel.swift */; };
-		67DC50F22F63B29700CFAE73 /* LiquidityMainModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F3E2F63B29700CFAE73 /* LiquidityMainModule.swift */; };
 		67DC50F32F63B29700CFAE73 /* ReceiveCoinListService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43BA2F63B29700CFAE73 /* ReceiveCoinListService.swift */; };
 		67DC50F42F63B29700CFAE73 /* OneInchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43002F63B29700CFAE73 /* OneInchViewModel.swift */; };
 		67DC50F52F63B29700CFAE73 /* LiquidityRecordDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F302F63B29700CFAE73 /* LiquidityRecordDataSource.swift */; };
@@ -2811,7 +2756,6 @@
 		67DC514F2F63B29700CFAE73 /* WatchlistTimePeriod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DDC2F63B29700CFAE73 /* WatchlistTimePeriod.swift */; };
 		67DC51502F63B29700CFAE73 /* ThemeList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45902F63B29700CFAE73 /* ThemeList.swift */; };
 		67DC51512F63B29700CFAE73 /* TonConnectManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43662F63B29700CFAE73 /* TonConnectManifest.swift */; };
-		67DC51522F63B29700CFAE73 /* LiquidityAllowanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F072F63B29700CFAE73 /* LiquidityAllowanceService.swift */; };
 		67DC51532F63B29700CFAE73 /* TabHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45B52F63B29700CFAE73 /* TabHeaderView.swift */; };
 		67DC51542F63B29700CFAE73 /* CoinMarketsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E722F63B29700CFAE73 /* CoinMarketsViewModel.swift */; };
 		67DC51552F63B29700CFAE73 /* AddMoneroNodeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC400B2F63B29700CFAE73 /* AddMoneroNodeViewModel.swift */; };
@@ -2847,7 +2791,6 @@
 		67DC51752F63B29700CFAE73 /* BackupCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C972F63B29700CFAE73 /* BackupCrypto.swift */; };
 		67DC51762F63B29700CFAE73 /* DeepLinkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CD72F63B29700CFAE73 /* DeepLinkManager.swift */; };
 		67DC51772F63B29700CFAE73 /* Safe4NodeSearchCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41242F63B29700CFAE73 /* Safe4NodeSearchCell.swift */; };
-		67DC51782F63B29700CFAE73 /* LiquidityAllowanceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F082F63B29700CFAE73 /* LiquidityAllowanceViewModel.swift */; };
 		67DC51792F63B29700CFAE73 /* LogoHeaderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44692F63B29700CFAE73 /* LogoHeaderCell.swift */; };
 		67DC517A2F63B29700CFAE73 /* ManageWalletsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F922F63B29700CFAE73 /* ManageWalletsService.swift */; };
 		67DC517B2F63B29700CFAE73 /* ReceiveBlockchainListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43B62F63B29700CFAE73 /* ReceiveBlockchainListViewModel.swift */; };
@@ -2921,7 +2864,6 @@
 		67DC51C52F63B29700CFAE73 /* NativeProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC451B2F63B29700CFAE73 /* NativeProgressView.swift */; };
 		67DC51C62F63B29700CFAE73 /* EvmSendSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3ED72F63B29700CFAE73 /* EvmSendSettingsViewModel.swift */; };
 		67DC51C72F63B29700CFAE73 /* LowAmountCondition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CB22F63B29700CFAE73 /* LowAmountCondition.swift */; };
-		67DC51C82F63B29700CFAE73 /* LiquidityCoinCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F1A2F63B29700CFAE73 /* LiquidityCoinCardViewModel.swift */; };
 		67DC51C92F63B29700CFAE73 /* CoinProChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E4F2F63B29700CFAE73 /* CoinProChartView.swift */; };
 		67DC51CA2F63B29700CFAE73 /* RawFullBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C9C2F63B29700CFAE73 /* RawFullBackup.swift */; };
 		67DC51CB2F63B29700CFAE73 /* SuperNodeRegisterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41E12F63B29700CFAE73 /* SuperNodeRegisterViewController.swift */; };
@@ -2978,7 +2920,6 @@
 		67DC52012F63B29700CFAE73 /* SystemTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC459A2F63B29700CFAE73 /* SystemTheme.swift */; };
 		67DC52022F63B29700CFAE73 /* NftCollectionAssetsModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40862F63B29700CFAE73 /* NftCollectionAssetsModule.swift */; };
 		67DC52032F63B29700CFAE73 /* BalanceErrorBottomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E1E2F63B29700CFAE73 /* BalanceErrorBottomViewModel.swift */; };
-		67DC52042F63B29700CFAE73 /* LiquidityCoinCardModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F192F63B29700CFAE73 /* LiquidityCoinCardModule.swift */; };
 		67DC52052F63B29700CFAE73 /* SuperNodeRegisterSliderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41E02F63B29700CFAE73 /* SuperNodeRegisterSliderCell.swift */; };
 		67DC52062F63B29700CFAE73 /* WCEthereumTransactionPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44152F63B29700CFAE73 /* WCEthereumTransactionPayload.swift */; };
 		67DC52072F63B29700CFAE73 /* AlphaDismissAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44412F63B29700CFAE73 /* AlphaDismissAnimation.swift */; };
@@ -3009,9 +2950,7 @@
 		67DC52202F63B29700CFAE73 /* BackupCloudPassphraseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E022F63B29700CFAE73 /* BackupCloudPassphraseService.swift */; };
 		67DC52212F63B29700CFAE73 /* NftUid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DC62F63B29700CFAE73 /* NftUid.swift */; };
 		67DC52222F63B29700CFAE73 /* TronSendData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42952F63B29700CFAE73 /* TronSendData.swift */; };
-		67DC52232F63B29700CFAE73 /* LiquidityCoinSelectService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F0B2F63B29700CFAE73 /* LiquidityCoinSelectService.swift */; };
 		67DC52242F63B29700CFAE73 /* BottomGradientHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45A62F63B29700CFAE73 /* BottomGradientHolder.swift */; };
-		67DC52252F63B29700CFAE73 /* LiquidityProviderMannager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F412F63B29700CFAE73 /* LiquidityProviderMannager.swift */; };
 		67DC52262F63B29700CFAE73 /* WalletButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43E72F63B29700CFAE73 /* WalletButton.swift */; };
 		67DC52272F63B29700CFAE73 /* Address.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D942F63B29700CFAE73 /* Address.swift */; };
 		67DC52282F63B29700CFAE73 /* NonceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3ED22F63B29700CFAE73 /* NonceViewModel.swift */; };
@@ -3045,7 +2984,6 @@
 		67DC52452F63B29700CFAE73 /* MarketGlobalFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FC52F63B29700CFAE73 /* MarketGlobalFetcher.swift */; };
 		67DC52462F63B29700CFAE73 /* Global.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D322F63B29700CFAE73 /* Global.swift */; };
 		67DC52472F63B29700CFAE73 /* ContactBookHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EA32F63B29700CFAE73 /* ContactBookHelper.swift */; };
-		67DC52482F63B29700CFAE73 /* LiquidityTickInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F142F63B29700CFAE73 /* LiquidityTickInputAccessoryView.swift */; };
 		67DC52492F63B29700CFAE73 /* BadgeComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC449A2F63B29700CFAE73 /* BadgeComponent.swift */; };
 		67DC524A2F63B29700CFAE73 /* MasterNodeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41642F63B29700CFAE73 /* MasterNodeViewModel.swift */; };
 		67DC524B2F63B29700CFAE73 /* MultiSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E302F63B29700CFAE73 /* MultiSelectorView.swift */; };
@@ -3067,7 +3005,6 @@
 		67DC525C2F63B29700CFAE73 /* OutgoingPoisoningFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CBC2F63B29700CFAE73 /* OutgoingPoisoningFilter.swift */; };
 		67DC525D2F63B29700CFAE73 /* NftAssetModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40792F63B29700CFAE73 /* NftAssetModule.swift */; };
 		67DC525E2F63B29700CFAE73 /* BubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45482F63B29700CFAE73 /* BubbleView.swift */; };
-		67DC525F2F63B29700CFAE73 /* LiquidityConfirmationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F102F63B29700CFAE73 /* LiquidityConfirmationViewController.swift */; };
 		67DC52602F63B29700CFAE73 /* FileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D422F63B29700CFAE73 /* FileManager.swift */; };
 		67DC52612F63B29700CFAE73 /* RedeemSafe3ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC418E2F63B29700CFAE73 /* RedeemSafe3ViewController.swift */; };
 		67DC52622F63B29700CFAE73 /* WCSendEthereumTransactionRequestModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44042F63B29700CFAE73 /* WCSendEthereumTransactionRequestModule.swift */; };
@@ -3118,7 +3055,6 @@
 		67DC52942F63B29700CFAE73 /* BirthdayInputViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E262F63B29700CFAE73 /* BirthdayInputViewModel.swift */; };
 		67DC52952F63B29700CFAE73 /* ImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44672F63B29700CFAE73 /* ImageCell.swift */; };
 		67DC52962F63B29700CFAE73 /* NSAttributedString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44EF2F63B29700CFAE73 /* NSAttributedString.swift */; };
-		67DC52972F63B29700CFAE73 /* LiquidityViewItemHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F032F63B29700CFAE73 /* LiquidityViewItemHelper.swift */; };
 		67DC52982F63B29700CFAE73 /* SendEip721Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC429E2F63B29700CFAE73 /* SendEip721Service.swift */; };
 		67DC52992F63B29700CFAE73 /* EvmTransactionsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C542F63B29700CFAE73 /* EvmTransactionsAdapter.swift */; };
 		67DC529A2F63B29700CFAE73 /* AppVersionRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D112F63B29700CFAE73 /* AppVersionRecordStorage.swift */; };
@@ -3128,7 +3064,6 @@
 		67DC529E2F63B29700CFAE73 /* SwapInputCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43382F63B29700CFAE73 /* SwapInputCell.swift */; };
 		67DC529F2F63B29700CFAE73 /* PurchasesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40D52F63B29700CFAE73 /* PurchasesViewModel.swift */; };
 		67DC52A02F63B29700CFAE73 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CDF2F63B29700CFAE73 /* KeychainManager.swift */; };
-		67DC52A12F63B29700CFAE73 /* LiquidityV3Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EF92F63B29700CFAE73 /* LiquidityV3Service.swift */; };
 		67DC52A22F63B29700CFAE73 /* TopHUDContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45122F63B29700CFAE73 /* TopHUDContentView.swift */; };
 		67DC52A32F63B29700CFAE73 /* ICloudBackupTermsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E062F63B29700CFAE73 /* ICloudBackupTermsService.swift */; };
 		67DC52A42F63B29700CFAE73 /* BlockchainSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42DB2F63B29700CFAE73 /* BlockchainSettingsViewModel.swift */; };
@@ -3287,7 +3222,6 @@
 		67DC53472F63B29700CFAE73 /* DrawSafe4ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41372F63B29700CFAE73 /* DrawSafe4ViewController.swift */; };
 		67DC53482F63B29700CFAE73 /* ProposalInfoRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41672F63B29700CFAE73 /* ProposalInfoRecord.swift */; };
 		67DC53492F63B29700CFAE73 /* SRC20Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41BD2F63B29700CFAE73 /* SRC20Service.swift */; };
-		67DC534A2F63B29700CFAE73 /* LiquidityV3Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EF72F63B29700CFAE73 /* LiquidityV3Module.swift */; };
 		67DC534B2F63B29700CFAE73 /* NftCollectionOverviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC408D2F63B29700CFAE73 /* NftCollectionOverviewViewController.swift */; };
 		67DC534C2F63B29700CFAE73 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44EB2F63B29700CFAE73 /* Date.swift */; };
 		67DC534D2F63B29700CFAE73 /* Src20TokenInfoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EEB2F63B29700CFAE73 /* Src20TokenInfoViewModel.swift */; };
@@ -3298,7 +3232,6 @@
 		67DC53532F63B29700CFAE73 /* LiquidityRecordTabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F262F63B29700CFAE73 /* LiquidityRecordTabViewController.swift */; };
 		67DC53542F63B29700CFAE73 /* AppUnlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40A62F63B29700CFAE73 /* AppUnlockViewModel.swift */; };
 		67DC53562F63B29700CFAE73 /* HighlightedTiltledTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC455B2F63B29700CFAE73 /* HighlightedTiltledTextView.swift */; };
-		67DC53572F63B29700CFAE73 /* LiquidityMainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F402F63B29700CFAE73 /* LiquidityMainViewModel.swift */; };
 		67DC53582F63B29700CFAE73 /* SwapApproveViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC432C2F63B29700CFAE73 /* SwapApproveViewController.swift */; };
 		67DC53592F63B29700CFAE73 /* BlockchainListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43FE2F63B29700CFAE73 /* BlockchainListView.swift */; };
 		67DC535A2F63B29700CFAE73 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44F12F63B29700CFAE73 /* String.swift */; };
@@ -3316,7 +3249,6 @@
 		67DC53682F63B29700CFAE73 /* RbfDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC422E2F63B29700CFAE73 /* RbfDataSource.swift */; };
 		67DC53692F63B29700CFAE73 /* RestoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40E22F63B29700CFAE73 /* RestoreService.swift */; };
 		67DC536A2F63B29700CFAE73 /* Safe4DepositEvmIncomingTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D6A2F63B29700CFAE73 /* Safe4DepositEvmIncomingTransactionRecord.swift */; };
-		67DC536B2F63B29700CFAE73 /* LiquidityAllowanceCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F062F63B29700CFAE73 /* LiquidityAllowanceCell.swift */; };
 		67DC536C2F63B29700CFAE73 /* WalletStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D2E2F63B29700CFAE73 /* WalletStorage.swift */; };
 		67DC536D2F63B29700CFAE73 /* HUDViewInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC450D2F63B29700CFAE73 /* HUDViewInteractor.swift */; };
 		67DC536E2F63B29700CFAE73 /* WCSignMessageRequestModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44092F63B29700CFAE73 /* WCSignMessageRequestModule.swift */; };
@@ -3372,7 +3304,6 @@
 		67DC53A62F63B29700CFAE73 /* DimViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45022F63B29700CFAE73 /* DimViewController.swift */; };
 		67DC53A72F63B29700CFAE73 /* MoneroFeeSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC425C2F63B29700CFAE73 /* MoneroFeeSettingsViewModel.swift */; };
 		67DC53A82F63B29700CFAE73 /* Eip20AddressValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C7C2F63B29700CFAE73 /* Eip20AddressValidator.swift */; };
-		67DC53A92F63B29700CFAE73 /* AddLiquidityTransactionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F362F63B29700CFAE73 /* AddLiquidityTransactionService.swift */; };
 		67DC53AA2F63B29700CFAE73 /* SendBitcoinViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42162F63B29700CFAE73 /* SendBitcoinViewController.swift */; };
 		67DC53AB2F63B29700CFAE73 /* CheckboxStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC454B2F63B29700CFAE73 /* CheckboxStyle.swift */; };
 		67DC53AC2F63B29700CFAE73 /* CoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F6C2F63B29700CFAE73 /* CoverView.swift */; };
@@ -3448,7 +3379,6 @@
 		67DC53F52F63B29700CFAE73 /* DashAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C682F63B29700CFAE73 /* DashAdapter.swift */; };
 		67DC53F62F63B29700CFAE73 /* CellElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44E82F63B29700CFAE73 /* CellElement.swift */; };
 		67DC53F72F63B29700CFAE73 /* CreatePasscodeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC409F2F63B29700CFAE73 /* CreatePasscodeViewModel.swift */; };
-		67DC53F82F63B29700CFAE73 /* LiquidityV3Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EF82F63B29700CFAE73 /* LiquidityV3Provider.swift */; };
 		67DC53F92F63B29700CFAE73 /* LiquidityMethods.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F3B2F63B29700CFAE73 /* LiquidityMethods.swift */; };
 		67DC53FA2F63B29700CFAE73 /* HUDTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC451E2F63B29700CFAE73 /* HUDTheme.swift */; };
 		67DC53FB2F63B29700CFAE73 /* PasscodeLockState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DC82F63B29700CFAE73 /* PasscodeLockState.swift */; };
@@ -3474,7 +3404,6 @@
 		67DC54112F63B29700CFAE73 /* WelcomeTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC443B2F63B29700CFAE73 /* WelcomeTextView.swift */; };
 		67DC54122F63B29700CFAE73 /* HUDActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45152F63B29700CFAE73 /* HUDActivityView.swift */; };
 		67DC54132F63B29700CFAE73 /* SwapAllowanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43132F63B29700CFAE73 /* SwapAllowanceService.swift */; };
-		67DC54152F63B29700CFAE73 /* LiquidityTickInputCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F152F63B29700CFAE73 /* LiquidityTickInputCardView.swift */; };
 		67DC54162F63B29700CFAE73 /* ProposalStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41832F63B29700CFAE73 /* ProposalStorageManager.swift */; };
 		67DC54172F63B29700CFAE73 /* CoinManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CD32F63B29700CFAE73 /* CoinManager.swift */; };
 		67DC54182F63B29700CFAE73 /* TonConnectSendViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC436C2F63B29700CFAE73 /* TonConnectSendViewModel.swift */; };
@@ -3482,7 +3411,6 @@
 		67DC541A2F63B29700CFAE73 /* DownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CD82F63B29700CFAE73 /* DownloadService.swift */; };
 		67DC541B2F63B29700CFAE73 /* SRC20ManagerModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41B82F63B29700CFAE73 /* SRC20ManagerModule.swift */; };
 		67DC541C2F63B29700CFAE73 /* ValueLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC42992F63B29700CFAE73 /* ValueLevel.swift */; };
-		67DC541D2F63B29700CFAE73 /* LiquidityV3TickService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFA2F63B29700CFAE73 /* LiquidityV3TickService.swift */; };
 		67DC541E2F63B29700CFAE73 /* AddLockDaysViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC411B2F63B29700CFAE73 /* AddLockDaysViewModel.swift */; };
 		67DC541F2F63B29700CFAE73 /* MarketCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E422F63B29700CFAE73 /* MarketCardView.swift */; };
 		67DC54202F63B29700CFAE73 /* WalletConnectSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3D002F63B29700CFAE73 /* WalletConnectSessionManager.swift */; };
@@ -3609,7 +3537,6 @@
 		67DC54A22F63B29700CFAE73 /* CancelTransactionJsonRpc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3C462F63B29700CFAE73 /* CancelTransactionJsonRpc.swift */; };
 		67DC54A32F63B29700CFAE73 /* Styles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45A12F63B29700CFAE73 /* Styles.swift */; };
 		67DC54A42F63B29700CFAE73 /* InfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EE72F63B29700CFAE73 /* InfoView.swift */; };
-		67DC54A62F63B29700CFAE73 /* LiquidityDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFE2F63B29700CFAE73 /* LiquidityDataSource.swift */; };
 		67DC54A72F63B29700CFAE73 /* FaqCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EDE2F63B29700CFAE73 /* FaqCell.swift */; };
 		67DC54A82F63B29700CFAE73 /* EnabledWalletCache_v_0_36.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DAC2F63B29700CFAE73 /* EnabledWalletCache_v_0_36.swift */; };
 		67DC54A92F63B29700CFAE73 /* RestoreState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DCD2F63B29700CFAE73 /* RestoreState.swift */; };
@@ -3636,7 +3563,6 @@
 		67DC54C02F63B29700CFAE73 /* UniswapV3ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC430F2F63B29700CFAE73 /* UniswapV3ViewModel.swift */; };
 		67DC54C12F63B29700CFAE73 /* WatchSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44362F63B29700CFAE73 /* WatchSelectView.swift */; };
 		67DC54C22F63B29700CFAE73 /* LargeTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45652F63B29700CFAE73 /* LargeTextField.swift */; };
-		67DC54C32F63B29700CFAE73 /* LiquidityTradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F022F63B29700CFAE73 /* LiquidityTradeService.swift */; };
 		67DC54C42F63B29700CFAE73 /* Safe4SwapModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41A22F63B29700CFAE73 /* Safe4SwapModule.swift */; };
 		67DC54C52F63B29700CFAE73 /* FormValidatedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44BD2F63B29700CFAE73 /* FormValidatedView.swift */; };
 		67DC54C62F63B29700CFAE73 /* CoinAuditsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E512F63B29700CFAE73 /* CoinAuditsView.swift */; };
@@ -3702,7 +3628,6 @@
 		67DC55062F63B29700CFAE73 /* BottomSheetModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45462F63B29700CFAE73 /* BottomSheetModifier.swift */; };
 		67DC55072F63B29700CFAE73 /* SRC20SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41BE2F63B29700CFAE73 /* SRC20SyncManager.swift */; };
 		67DC55082F63B29700CFAE73 /* BackupCloudPassphraseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E032F63B29700CFAE73 /* BackupCloudPassphraseViewController.swift */; };
-		67DC55092F63B29700CFAE73 /* LiquidityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F012F63B29700CFAE73 /* LiquidityService.swift */; };
 		67DC550A2F63B29700CFAE73 /* CoinAnalyticsRatingInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E4B2F63B29700CFAE73 /* CoinAnalyticsRatingInfoView.swift */; };
 		67DC550B2F63B29700CFAE73 /* HUDModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45092F63B29700CFAE73 /* HUDModel.swift */; };
 		67DC550C2F63B29700CFAE73 /* SetPasscodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC40A32F63B29700CFAE73 /* SetPasscodeView.swift */; };
@@ -3712,7 +3637,6 @@
 		67DC55102F63B29700CFAE73 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F6B2F63B29700CFAE73 /* AppViewModel.swift */; };
 		67DC55112F63B29700CFAE73 /* TransactionInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC43722F63B29700CFAE73 /* TransactionInfoViewController.swift */; };
 		67DC55122F63B29700CFAE73 /* RestoreSettingRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DCC2F63B29700CFAE73 /* RestoreSettingRecord.swift */; };
-		67DC55132F63B29700CFAE73 /* AddLiquidityTransactionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F372F63B29700CFAE73 /* AddLiquidityTransactionViewController.swift */; };
 		67DC55142F63B29700CFAE73 /* RankViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3E7C2F63B29700CFAE73 /* RankViewModel.swift */; };
 		67DC55152F63B29700CFAE73 /* AlertItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC445C2F63B29700CFAE73 /* AlertItemCell.swift */; };
 		67DC55162F63B29700CFAE73 /* AddMoneroNodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC400A2F63B29700CFAE73 /* AddMoneroNodeViewController.swift */; };
@@ -3726,7 +3650,6 @@
 		67DC551F2F63B29700CFAE73 /* ThemeSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC44D72F63B29700CFAE73 /* ThemeSearchViewController.swift */; };
 		67DC55212F63B29700CFAE73 /* ZcashPreSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC429A2F63B29700CFAE73 /* ZcashPreSendHandler.swift */; };
 		67DC55222F63B29700CFAE73 /* TelegramUserHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F682F63B29700CFAE73 /* TelegramUserHandler.swift */; };
-		67DC55232F63B29700CFAE73 /* LiquidityInputModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F1D2F63B29700CFAE73 /* LiquidityInputModule.swift */; };
 		67DC55242F63B29700CFAE73 /* SuperNodeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41E52F63B29700CFAE73 /* SuperNodeTabView.swift */; };
 		67DC55252F63B29700CFAE73 /* PrimaryCircleButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45762F63B29700CFAE73 /* PrimaryCircleButtonStyle.swift */; };
 		67DC55262F63B29700CFAE73 /* TextStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC458D2F63B29700CFAE73 /* TextStyle.swift */; };
@@ -3776,7 +3699,6 @@
 		67DC55542F63B29700CFAE73 /* SafeLineLockModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC413F2F63B29700CFAE73 /* SafeLineLockModule.swift */; };
 		67DC55552F63B29700CFAE73 /* MarketDappView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FBB2F63B29700CFAE73 /* MarketDappView.swift */; };
 		67DC55562F63B29700CFAE73 /* SRC20EditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC41B62F63B29700CFAE73 /* SRC20EditView.swift */; };
-		67DC55572F63B29700CFAE73 /* LiquidityV3TradeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3EFB2F63B29700CFAE73 /* LiquidityV3TradeService.swift */; };
 		67DC55592F63B29700CFAE73 /* MarketGlobalViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3FCC2F63B29700CFAE73 /* MarketGlobalViewModel.swift */; };
 		67DC555A2F63B29700CFAE73 /* HUDContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC45162F63B29700CFAE73 /* HUDContainerView.swift */; };
 		67DC555B2F63B29700CFAE73 /* MarkdownImageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3F992F63B29700CFAE73 /* MarkdownImageCell.swift */; };
@@ -3954,7 +3876,6 @@
 		C86A1C012E993F2F00C0769E /* OneInchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C86A1C002E993F2F00C0769E /* OneInchKit */; };
 		C86A1C032E993F3A00C0769E /* UniswapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C86A1C022E993F3A00C0769E /* UniswapKit */; };
 		C86A1C052E993F6400C0769E /* MarketKit in Frameworks */ = {isa = PBXBuildFile; productRef = C86A1C042E993F6400C0769E /* MarketKit */; };
-		C89BE95E2E9A449200039AD8 /* SafeSwapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE95D2E9A449200039AD8 /* SafeSwapKit */; };
 		C89BE9612E9A47CD00039AD8 /* BitcoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE9602E9A47CD00039AD8 /* BitcoinKit */; };
 		C89BE9642E9A5DAC00039AD8 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE9632E9A5DAC00039AD8 /* SafeCoinKit */; };
 		C8B86DCC2E9F4A9C008BB1A5 /* NftKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8B86DCB2E9F4A9C008BB1A5 /* NftKit */; };
@@ -3973,7 +3894,6 @@
 		C8C558B12EA339A70062F13E /* MarketKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B02EA339A70062F13E /* MarketKit */; };
 		C8C558B32EA339BA0062F13E /* NftKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B22EA339BA0062F13E /* NftKit */; };
 		C8C558B52EA339C50062F13E /* OneInchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B42EA339C50062F13E /* OneInchKit */; };
-		C8C558B72EA339DB0062F13E /* SafeSwapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558B62EA339DB0062F13E /* SafeSwapKit */; };
 		C8C558BB2EA33E230062F13E /* UniswapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558BA2EA33E230062F13E /* UniswapKit */; };
 		C8D072E02F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D32F654CE700AE3077 /* UniswapV2LiquidityAddProvider.swift */; };
 		C8D072E12F654CE700AE3077 /* LiquidityAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D072D72F654CE700AE3077 /* LiquidityAddView.swift */; };
@@ -4754,39 +4674,7 @@
 		67DC3EF12F63B29700CFAE73 /* KLineSwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KLineSwiftUIView.swift; sourceTree = "<group>"; };
 		67DC3EF22F63B29700CFAE73 /* SafeKLineDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeKLineDataProvider.swift; sourceTree = "<group>"; };
 		67DC3EF42F63B29700CFAE73 /* LaunchErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchErrorView.swift; sourceTree = "<group>"; };
-		67DC3EF62F63B29700CFAE73 /* LiquidityV3DataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3DataSource.swift; sourceTree = "<group>"; };
-		67DC3EF72F63B29700CFAE73 /* LiquidityV3Module.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3Module.swift; sourceTree = "<group>"; };
-		67DC3EF82F63B29700CFAE73 /* LiquidityV3Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3Provider.swift; sourceTree = "<group>"; };
-		67DC3EF92F63B29700CFAE73 /* LiquidityV3Service.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3Service.swift; sourceTree = "<group>"; };
-		67DC3EFA2F63B29700CFAE73 /* LiquidityV3TickService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3TickService.swift; sourceTree = "<group>"; };
-		67DC3EFB2F63B29700CFAE73 /* LiquidityV3TradeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3TradeService.swift; sourceTree = "<group>"; };
-		67DC3EFC2F63B29700CFAE73 /* LiquidityV3ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3ViewModel.swift; sourceTree = "<group>"; };
-		67DC3EFE2F63B29700CFAE73 /* LiquidityDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityDataSource.swift; sourceTree = "<group>"; };
-		67DC3EFF2F63B29700CFAE73 /* LiquidityModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityModule.swift; sourceTree = "<group>"; };
-		67DC3F002F63B29700CFAE73 /* LiquidityProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityProvider.swift; sourceTree = "<group>"; };
-		67DC3F012F63B29700CFAE73 /* LiquidityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityService.swift; sourceTree = "<group>"; };
-		67DC3F022F63B29700CFAE73 /* LiquidityTradeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTradeService.swift; sourceTree = "<group>"; };
-		67DC3F032F63B29700CFAE73 /* LiquidityViewItemHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityViewItemHelper.swift; sourceTree = "<group>"; };
-		67DC3F042F63B29700CFAE73 /* LiquidityViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityViewModel.swift; sourceTree = "<group>"; };
-		67DC3F062F63B29700CFAE73 /* LiquidityAllowanceCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAllowanceCell.swift; sourceTree = "<group>"; };
-		67DC3F072F63B29700CFAE73 /* LiquidityAllowanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAllowanceService.swift; sourceTree = "<group>"; };
-		67DC3F082F63B29700CFAE73 /* LiquidityAllowanceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityAllowanceViewModel.swift; sourceTree = "<group>"; };
-		67DC3F092F63B29700CFAE73 /* LiquidityPendingAllowanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityPendingAllowanceService.swift; sourceTree = "<group>"; };
-		67DC3F0B2F63B29700CFAE73 /* LiquidityCoinSelectService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityCoinSelectService.swift; sourceTree = "<group>"; };
-		67DC3F0C2F63B29700CFAE73 /* LiquidityCoinSelectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityCoinSelectViewController.swift; sourceTree = "<group>"; };
-		67DC3F0D2F63B29700CFAE73 /* LiquidityCoinSelectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityCoinSelectViewModel.swift; sourceTree = "<group>"; };
-		67DC3F0F2F63B29700CFAE73 /* LiquidityConfirmationModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityConfirmationModule.swift; sourceTree = "<group>"; };
-		67DC3F102F63B29700CFAE73 /* LiquidityConfirmationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityConfirmationViewController.swift; sourceTree = "<group>"; };
 		67DC3F122F63B29700CFAE73 /* LiquidityFeeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityFeeService.swift; sourceTree = "<group>"; };
-		67DC3F142F63B29700CFAE73 /* LiquidityTickInputAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTickInputAccessoryView.swift; sourceTree = "<group>"; };
-		67DC3F152F63B29700CFAE73 /* LiquidityTickInputCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTickInputCardView.swift; sourceTree = "<group>"; };
-		67DC3F162F63B29700CFAE73 /* LiquidityTickInputCardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTickInputCardViewModel.swift; sourceTree = "<group>"; };
-		67DC3F172F63B29700CFAE73 /* LiquidityTickInputCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityTickInputCell.swift; sourceTree = "<group>"; };
-		67DC3F192F63B29700CFAE73 /* LiquidityCoinCardModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityCoinCardModule.swift; sourceTree = "<group>"; };
-		67DC3F1A2F63B29700CFAE73 /* LiquidityCoinCardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityCoinCardViewModel.swift; sourceTree = "<group>"; };
-		67DC3F1B2F63B29700CFAE73 /* LiquidityInputCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityInputCardView.swift; sourceTree = "<group>"; };
-		67DC3F1C2F63B29700CFAE73 /* LiquidityInputCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityInputCell.swift; sourceTree = "<group>"; };
-		67DC3F1D2F63B29700CFAE73 /* LiquidityInputModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityInputModule.swift; sourceTree = "<group>"; };
 		67DC3F1F2F63B29700CFAE73 /* LiquidityV3RecordDetailHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3RecordDetailHeaderView.swift; sourceTree = "<group>"; };
 		67DC3F202F63B29700CFAE73 /* LiquidityV3RecordDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityV3RecordDetailViewController.swift; sourceTree = "<group>"; };
 		67DC3F222F63B29700CFAE73 /* LiquidityRemoveConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityRemoveConfirmView.swift; sourceTree = "<group>"; };
@@ -4805,16 +4693,9 @@
 		67DC3F322F63B29700CFAE73 /* LiquidityRecordService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityRecordService.swift; sourceTree = "<group>"; };
 		67DC3F332F63B29700CFAE73 /* LiquidityRecordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityRecordViewController.swift; sourceTree = "<group>"; };
 		67DC3F342F63B29700CFAE73 /* LiquidityRecordViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityRecordViewModel.swift; sourceTree = "<group>"; };
-		67DC3F362F63B29700CFAE73 /* AddLiquidityTransactionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLiquidityTransactionService.swift; sourceTree = "<group>"; };
-		67DC3F372F63B29700CFAE73 /* AddLiquidityTransactionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLiquidityTransactionViewController.swift; sourceTree = "<group>"; };
-		67DC3F382F63B29700CFAE73 /* AddLiquidityTransactionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLiquidityTransactionViewModel.swift; sourceTree = "<group>"; };
 		67DC3F3A2F63B29700CFAE73 /* LiquidityContstans.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityContstans.swift; sourceTree = "<group>"; };
 		67DC3F3B2F63B29700CFAE73 /* LiquidityMethods.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityMethods.swift; sourceTree = "<group>"; };
 		67DC3F3C2F63B29700CFAE73 /* PairAddress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairAddress.swift; sourceTree = "<group>"; };
-		67DC3F3E2F63B29700CFAE73 /* LiquidityMainModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityMainModule.swift; sourceTree = "<group>"; };
-		67DC3F3F2F63B29700CFAE73 /* LiquidityMainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityMainViewController.swift; sourceTree = "<group>"; };
-		67DC3F402F63B29700CFAE73 /* LiquidityMainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityMainViewModel.swift; sourceTree = "<group>"; };
-		67DC3F412F63B29700CFAE73 /* LiquidityProviderMannager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityProviderMannager.swift; sourceTree = "<group>"; };
 		67DC3F5C2F63B29700CFAE73 /* DeepLinkViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkViewManager.swift; sourceTree = "<group>"; };
 		67DC3F5E2F63B29700CFAE73 /* AddressEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressEventHandler.swift; sourceTree = "<group>"; };
 		67DC3F602F63B29700CFAE73 /* WalletConnectEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletConnectEventHandler.swift; sourceTree = "<group>"; };
@@ -6239,7 +6120,6 @@
 				D3C187E4290FD00E00FE1900 /* (null) in Frameworks */,
 				C8C558B52EA339C50062F13E /* OneInchKit in Frameworks */,
 				D3604E9C28F03DC00066C366 /* FeeRateKit in Frameworks */,
-				C8C558B72EA339DB0062F13E /* SafeSwapKit in Frameworks */,
 				67DC55772F63B67300CFAE73 /* ReownRouter in Frameworks */,
 				67DC557F2F63B67300CFAE73 /* WalletConnectNetworking in Frameworks */,
 				C8C558AF2EA3398A0062F13E /* Hodler in Frameworks */,
@@ -6287,7 +6167,6 @@
 				D36E0C2A28D084AB00B622B9 /* CollectionViewCenteredFlowLayout in Frameworks */,
 				D3604E7F28F03C1D0066C366 /* Chart in Frameworks */,
 				D3AF5A8D29FFD85800C1399E /* RxSwift in Frameworks */,
-				C89BE95E2E9A449200039AD8 /* SafeSwapKit in Frameworks */,
 				D38406A821831B3D007D50AD /* AVFoundation.framework in Frameworks */,
 				D3C187B32907A60800FE1900 /* HdWalletKit in Frameworks */,
 				D3BF1E63274CBBCE00229A00 /* DeepDiff in Frameworks */,
@@ -7242,13 +7121,6 @@
 			path = BtcBlockchainSettings;
 			sourceTree = "<group>";
 		};
-		67DC3E3D2F63B29700CFAE73 /* Cex */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Cex;
-			sourceTree = "<group>";
-		};
 		67DC3E402F63B29700CFAE73 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -7730,95 +7602,12 @@
 			path = Launch;
 			sourceTree = "<group>";
 		};
-		67DC3EFD2F63B29700CFAE73 /* V3 */ = {
-			isa = PBXGroup;
-			children = (
-				67DC3EF62F63B29700CFAE73 /* LiquidityV3DataSource.swift */,
-				67DC3EF72F63B29700CFAE73 /* LiquidityV3Module.swift */,
-				67DC3EF82F63B29700CFAE73 /* LiquidityV3Provider.swift */,
-				67DC3EF92F63B29700CFAE73 /* LiquidityV3Service.swift */,
-				67DC3EFA2F63B29700CFAE73 /* LiquidityV3TickService.swift */,
-				67DC3EFB2F63B29700CFAE73 /* LiquidityV3TradeService.swift */,
-				67DC3EFC2F63B29700CFAE73 /* LiquidityV3ViewModel.swift */,
-			);
-			path = V3;
-			sourceTree = "<group>";
-		};
-		67DC3F052F63B29700CFAE73 /* Adapters */ = {
-			isa = PBXGroup;
-			children = (
-				67DC3EFD2F63B29700CFAE73 /* V3 */,
-				67DC3EFE2F63B29700CFAE73 /* LiquidityDataSource.swift */,
-				67DC3EFF2F63B29700CFAE73 /* LiquidityModule.swift */,
-				67DC3F002F63B29700CFAE73 /* LiquidityProvider.swift */,
-				67DC3F012F63B29700CFAE73 /* LiquidityService.swift */,
-				67DC3F022F63B29700CFAE73 /* LiquidityTradeService.swift */,
-				67DC3F032F63B29700CFAE73 /* LiquidityViewItemHelper.swift */,
-				67DC3F042F63B29700CFAE73 /* LiquidityViewModel.swift */,
-			);
-			path = Adapters;
-			sourceTree = "<group>";
-		};
-		67DC3F0A2F63B29700CFAE73 /* Allowance */ = {
-			isa = PBXGroup;
-			children = (
-				67DC3F062F63B29700CFAE73 /* LiquidityAllowanceCell.swift */,
-				67DC3F072F63B29700CFAE73 /* LiquidityAllowanceService.swift */,
-				67DC3F082F63B29700CFAE73 /* LiquidityAllowanceViewModel.swift */,
-				67DC3F092F63B29700CFAE73 /* LiquidityPendingAllowanceService.swift */,
-			);
-			path = Allowance;
-			sourceTree = "<group>";
-		};
-		67DC3F0E2F63B29700CFAE73 /* CoinSelect */ = {
-			isa = PBXGroup;
-			children = (
-				67DC3F0B2F63B29700CFAE73 /* LiquidityCoinSelectService.swift */,
-				67DC3F0C2F63B29700CFAE73 /* LiquidityCoinSelectViewController.swift */,
-				67DC3F0D2F63B29700CFAE73 /* LiquidityCoinSelectViewModel.swift */,
-			);
-			path = CoinSelect;
-			sourceTree = "<group>";
-		};
-		67DC3F112F63B29700CFAE73 /* Confirmation */ = {
-			isa = PBXGroup;
-			children = (
-				67DC3F0F2F63B29700CFAE73 /* LiquidityConfirmationModule.swift */,
-				67DC3F102F63B29700CFAE73 /* LiquidityConfirmationViewController.swift */,
-			);
-			path = Confirmation;
-			sourceTree = "<group>";
-		};
 		67DC3F132F63B29700CFAE73 /* Fee */ = {
 			isa = PBXGroup;
 			children = (
 				67DC3F122F63B29700CFAE73 /* LiquidityFeeService.swift */,
 			);
 			path = Fee;
-			sourceTree = "<group>";
-		};
-		67DC3F182F63B29700CFAE73 /* V3 */ = {
-			isa = PBXGroup;
-			children = (
-				67DC3F142F63B29700CFAE73 /* LiquidityTickInputAccessoryView.swift */,
-				67DC3F152F63B29700CFAE73 /* LiquidityTickInputCardView.swift */,
-				67DC3F162F63B29700CFAE73 /* LiquidityTickInputCardViewModel.swift */,
-				67DC3F172F63B29700CFAE73 /* LiquidityTickInputCell.swift */,
-			);
-			path = V3;
-			sourceTree = "<group>";
-		};
-		67DC3F1E2F63B29700CFAE73 /* InputCard */ = {
-			isa = PBXGroup;
-			children = (
-				67DC3F182F63B29700CFAE73 /* V3 */,
-				67DC3F192F63B29700CFAE73 /* LiquidityCoinCardModule.swift */,
-				67DC3F1A2F63B29700CFAE73 /* LiquidityCoinCardViewModel.swift */,
-				67DC3F1B2F63B29700CFAE73 /* LiquidityInputCardView.swift */,
-				67DC3F1C2F63B29700CFAE73 /* LiquidityInputCell.swift */,
-				67DC3F1D2F63B29700CFAE73 /* LiquidityInputModule.swift */,
-			);
-			path = InputCard;
 			sourceTree = "<group>";
 		};
 		67DC3F212F63B29700CFAE73 /* V3 */ = {
@@ -7874,18 +7663,10 @@
 				67DC3F322F63B29700CFAE73 /* LiquidityRecordService.swift */,
 				67DC3F332F63B29700CFAE73 /* LiquidityRecordViewController.swift */,
 				67DC3F342F63B29700CFAE73 /* LiquidityRecordViewModel.swift */,
+				67DC3F3D2F63B29700CFAE73 /* Util */,
+				67DC3F132F63B29700CFAE73 /* Fee */,
 			);
 			path = Record;
-			sourceTree = "<group>";
-		};
-		67DC3F392F63B29700CFAE73 /* Send */ = {
-			isa = PBXGroup;
-			children = (
-				67DC3F362F63B29700CFAE73 /* AddLiquidityTransactionService.swift */,
-				67DC3F372F63B29700CFAE73 /* AddLiquidityTransactionViewController.swift */,
-				67DC3F382F63B29700CFAE73 /* AddLiquidityTransactionViewModel.swift */,
-			);
-			path = Send;
 			sourceTree = "<group>";
 		};
 		67DC3F3D2F63B29700CFAE73 /* Util */ = {
@@ -7896,26 +7677,6 @@
 				67DC3F3C2F63B29700CFAE73 /* PairAddress.swift */,
 			);
 			path = Util;
-			sourceTree = "<group>";
-		};
-		67DC3F422F63B29700CFAE73 /* Liquidity */ = {
-			isa = PBXGroup;
-			children = (
-				67DC3F052F63B29700CFAE73 /* Adapters */,
-				67DC3F0A2F63B29700CFAE73 /* Allowance */,
-				67DC3F0E2F63B29700CFAE73 /* CoinSelect */,
-				67DC3F112F63B29700CFAE73 /* Confirmation */,
-				67DC3F132F63B29700CFAE73 /* Fee */,
-				67DC3F1E2F63B29700CFAE73 /* InputCard */,
-				67DC3F352F63B29700CFAE73 /* Record */,
-				67DC3F392F63B29700CFAE73 /* Send */,
-				67DC3F3D2F63B29700CFAE73 /* Util */,
-				67DC3F3E2F63B29700CFAE73 /* LiquidityMainModule.swift */,
-				67DC3F3F2F63B29700CFAE73 /* LiquidityMainViewController.swift */,
-				67DC3F402F63B29700CFAE73 /* LiquidityMainViewModel.swift */,
-				67DC3F412F63B29700CFAE73 /* LiquidityProviderMannager.swift */,
-			);
-			path = Liquidity;
 			sourceTree = "<group>";
 		};
 		67DC3F5D2F63B29700CFAE73 /* Deeplink */ = {
@@ -10682,7 +10443,6 @@
 				67DC3E342F63B29700CFAE73 /* BottomSelector */,
 				67DC3E372F63B29700CFAE73 /* BottomSheet */,
 				67DC3E3C2F63B29700CFAE73 /* BtcBlockchainSettings */,
-				67DC3E3D2F63B29700CFAE73 /* Cex */,
 				67DC3E482F63B29700CFAE73 /* Chart */,
 				67DC3E882F63B29700CFAE73 /* Coin */,
 				67DC3E8D2F63B29700CFAE73 /* CoinSelect */,
@@ -10700,7 +10460,6 @@
 				67DC3EE92F63B29700CFAE73 /* Info */,
 				67DC3EF32F63B29700CFAE73 /* KLine */,
 				67DC3EF52F63B29700CFAE73 /* Launch */,
-				67DC3F422F63B29700CFAE73 /* Liquidity */,
 				C8D072DF2F654CE700AE3077 /* LiquidityNew */,
 				67DC3F762F63B29700CFAE73 /* Main */,
 				67DC3F8C2F63B29700CFAE73 /* ManageAccount */,
@@ -11583,6 +11342,7 @@
 		C8D072DF2F654CE700AE3077 /* LiquidityNew */ = {
 			isa = PBXGroup;
 			children = (
+				67DC3F352F63B29700CFAE73 /* Record */,
 				C8D072D42F654CE700AE3077 /* Providers */,
 				C8D072D92F654CE700AE3077 /* View */,
 				C8D072DB2F654CE700AE3077 /* ILiquidityAddProvider.swift */,
@@ -11748,7 +11508,6 @@
 				C8C558B02EA339A70062F13E /* MarketKit */,
 				C8C558B22EA339BA0062F13E /* NftKit */,
 				C8C558B42EA339C50062F13E /* OneInchKit */,
-				C8C558B62EA339DB0062F13E /* SafeSwapKit */,
 				C8C558BA2EA33E230062F13E /* UniswapKit */,
 				C80FEB282F27BFBA002DA812 /* SwiftKLine */,
 				67DC55722F63B67300CFAE73 /* ReownAppKit */,
@@ -11821,7 +11580,6 @@
 				C86A1C002E993F2F00C0769E /* OneInchKit */,
 				C86A1C022E993F3A00C0769E /* UniswapKit */,
 				C86A1C042E993F6400C0769E /* MarketKit */,
-				C89BE95D2E9A449200039AD8 /* SafeSwapKit */,
 				C89BE9602E9A47CD00039AD8 /* BitcoinKit */,
 				C89BE9632E9A5DAC00039AD8 /* SafeCoinKit */,
 				C8B86DCB2E9F4A9C008BB1A5 /* NftKit */,
@@ -11907,7 +11665,6 @@
 				C86A1BEB2E98FC5900C0769E /* XCRemoteSwiftPackageReference "ECashKit.Swift" */,
 				C86A1BEC2E991C6A00C0769E /* XCRemoteSwiftPackageReference "DogecoinKit.Swift" */,
 				C89BE95B2E99F15000039AD8 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */,
-				C89BE95C2E9A449100039AD8 /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */,
 				C89BE95F2E9A47CC00039AD8 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */,
 				C8B86DCA2E9F4A9B008BB1A5 /* XCRemoteSwiftPackageReference "NftKit.Swift" */,
 				C80FEB272F27BFBA002DA812 /* XCRemoteSwiftPackageReference "SwiftKLine" */,
@@ -12083,7 +11840,6 @@
 				67DC4E0D2F63B29700CFAE73 /* RestoreMnemonicService.swift in Sources */,
 				67DC4E0E2F63B29700CFAE73 /* BackupService.swift in Sources */,
 				67DC4E0F2F63B29700CFAE73 /* SendTronConfirmationService.swift in Sources */,
-				67DC4E102F63B29700CFAE73 /* LiquidityMainViewController.swift in Sources */,
 				67DC4E112F63B29700CFAE73 /* TransferEventFactory.swift in Sources */,
 				67DC4E122F63B29700CFAE73 /* RoundedCorner.swift in Sources */,
 				67DC4E142F63B29700CFAE73 /* AccountRecord.swift in Sources */,
@@ -12154,11 +11910,9 @@
 				67DC4E592F63B29700CFAE73 /* BackupAppModule.swift in Sources */,
 				67DC4E5A2F63B29700CFAE73 /* ScrollHeaderModifier.swift in Sources */,
 				67DC4E5B2F63B29700CFAE73 /* LineLockRecoardModule.swift in Sources */,
-				67DC4E5C2F63B29700CFAE73 /* LiquidityV3DataSource.swift in Sources */,
 				67DC4E5D2F63B29700CFAE73 /* ThemeView.swift in Sources */,
 				67DC4E5E2F63B29700CFAE73 /* CoinInvestorsViewModel.swift in Sources */,
 				67DC4E5F2F63B29700CFAE73 /* UrlManager.swift in Sources */,
-				67DC4E602F63B29700CFAE73 /* LiquidityProvider.swift in Sources */,
 				67DC4E612F63B29700CFAE73 /* OutputSelectorView.swift in Sources */,
 				67DC4E622F63B29700CFAE73 /* MultiTextMetricsView.swift in Sources */,
 				67DC4E632F63B29700CFAE73 /* EvmFeeEstimator.swift in Sources */,
@@ -12188,11 +11942,8 @@
 				67DC4E7B2F63B29700CFAE73 /* AddressEventHandler.swift in Sources */,
 				67DC4E7C2F63B29700CFAE73 /* ReceiveAddressModule.swift in Sources */,
 				67DC4E7D2F63B29700CFAE73 /* ReceiveModule.swift in Sources */,
-				67DC4E7E2F63B29700CFAE73 /* LiquidityInputCell.swift in Sources */,
-				67DC4E7F2F63B29700CFAE73 /* LiquidityTickInputCardViewModel.swift in Sources */,
 				67DC4E802F63B29700CFAE73 /* UIView.swift in Sources */,
 				67DC4E822F63B29700CFAE73 /* Safe4Reward.swift in Sources */,
-				67DC4E832F63B29700CFAE73 /* LiquidityModule.swift in Sources */,
 				67DC4E842F63B29700CFAE73 /* CoinInvestment.swift in Sources */,
 				67DC4E852F63B29700CFAE73 /* RowButtonStyle.swift in Sources */,
 				67DC4E862F63B29700CFAE73 /* PremiumFeature.swift in Sources */,
@@ -12242,7 +11993,6 @@
 				67DC4EB42F63B29700CFAE73 /* TransactionInfoViewItemFactory.swift in Sources */,
 				67DC4EB52F63B29700CFAE73 /* Core.swift in Sources */,
 				67DC4EB62F63B29700CFAE73 /* UIImageView.swift in Sources */,
-				67DC4EB72F63B29700CFAE73 /* LiquidityCoinSelectViewController.swift in Sources */,
 				67DC4EB82F63B29700CFAE73 /* SendModule.swift in Sources */,
 				67DC4EBA2F63B29700CFAE73 /* CloudRestoreBackupListViewModel.swift in Sources */,
 				67DC4EBB2F63B29700CFAE73 /* ApproveTransactionRecord.swift in Sources */,
@@ -12256,10 +12006,8 @@
 				67DC4EC42F63B29700CFAE73 /* ProposalDetailRecordHeaderView.swift in Sources */,
 				67DC4EC52F63B29700CFAE73 /* MarketDappListViewModel.swift in Sources */,
 				67DC4EC62F63B29700CFAE73 /* MainSafeZoneViewModel.swift in Sources */,
-				67DC4EC82F63B29700CFAE73 /* LiquidityConfirmationModule.swift in Sources */,
 				67DC4EC92F63B29700CFAE73 /* ActivityIndicators.swift in Sources */,
 				67DC4ECA2F63B29700CFAE73 /* SwapSlippageViewModel.swift in Sources */,
-				67DC4ECB2F63B29700CFAE73 /* LiquidityViewModel.swift in Sources */,
 				67DC4ECC2F63B29700CFAE73 /* MarkdownModule.swift in Sources */,
 				67DC4ECD2F63B29700CFAE73 /* NftMetadataSyncRecord.swift in Sources */,
 				67DC4ECE2F63B29700CFAE73 /* UniswapSettingsService.swift in Sources */,
@@ -12343,7 +12091,6 @@
 				67DC4F212F63B29700CFAE73 /* LiquidityRecordViewController.swift in Sources */,
 				67DC4F222F63B29700CFAE73 /* AddEvmTokenBlockchainService.swift in Sources */,
 				67DC4F232F63B29700CFAE73 /* SendEvmTransactionService.swift in Sources */,
-				67DC4F242F63B29700CFAE73 /* LiquidityTickInputCell.swift in Sources */,
 				67DC4F252F63B29700CFAE73 /* SRC20PromotionView.swift in Sources */,
 				67DC4F262F63B29700CFAE73 /* ProposalInfoStorage.swift in Sources */,
 				67DC4F272F63B29700CFAE73 /* NftDatabaseStorage.swift in Sources */,
@@ -12351,7 +12098,6 @@
 				67DC4F292F63B29700CFAE73 /* TronWalletTokenViewModel.swift in Sources */,
 				67DC4F2A2F63B29700CFAE73 /* ProposalDatePickerCell.swift in Sources */,
 				67DC4F2B2F63B29700CFAE73 /* TransactionNonceView.swift in Sources */,
-				67DC4F2C2F63B29700CFAE73 /* LiquidityV3ViewModel.swift in Sources */,
 				67DC4F2D2F63B29700CFAE73 /* ActionSheetPresentationController.swift in Sources */,
 				67DC4F2E2F63B29700CFAE73 /* TonKitManager.swift in Sources */,
 				67DC4F302F63B29700CFAE73 /* RecoveryPhraseService.swift in Sources */,
@@ -12394,7 +12140,6 @@
 				67DC4F562F63B29700CFAE73 /* InputSecondaryButtonWrapperView.swift in Sources */,
 				67DC4F582F63B29700CFAE73 /* EvmAddressViewModel.swift in Sources */,
 				67DC4F592F63B29700CFAE73 /* GradientLayer.swift in Sources */,
-				67DC4F5A2F63B29700CFAE73 /* LiquidityCoinSelectViewModel.swift in Sources */,
 				67DC4F5B2F63B29700CFAE73 /* MarketMarketCapView.swift in Sources */,
 				67DC4F5C2F63B29700CFAE73 /* LockManager.swift in Sources */,
 				67DC4F5D2F63B29700CFAE73 /* MarketPlatformViewModel.swift in Sources */,
@@ -12589,13 +12334,11 @@
 				67DC50242F63B29700CFAE73 /* AuthData.swift in Sources */,
 				67DC50252F63B29700CFAE73 /* BalanceErrorBottomView.swift in Sources */,
 				67DC50262F63B29700CFAE73 /* MoneroNetworkViewController.swift in Sources */,
-				67DC50272F63B29700CFAE73 /* LiquidityPendingAllowanceService.swift in Sources */,
 				67DC50282F63B29700CFAE73 /* ConvertedError.swift in Sources */,
 				67DC50292F63B29700CFAE73 /* SendEvmConfirmationModule.swift in Sources */,
 				67DC502A2F63B29700CFAE73 /* RecoveryPhraseViewController.swift in Sources */,
 				67DC502B2F63B29700CFAE73 /* BitcoinIncomingTransactionRecord.swift in Sources */,
 				67DC502C2F63B29700CFAE73 /* WCSignMessageHandler.swift in Sources */,
-				67DC502D2F63B29700CFAE73 /* LiquidityInputCardView.swift in Sources */,
 				67DC502E2F63B29700CFAE73 /* OutputSelectView2.swift in Sources */,
 				67DC502F2F63B29700CFAE73 /* EditDuressPasscodeViewModel.swift in Sources */,
 				67DC50302F63B29700CFAE73 /* RestoreSettingsView.swift in Sources */,
@@ -12732,7 +12475,6 @@
 				67DC50BE2F63B29700CFAE73 /* ReadMoreTextCell.swift in Sources */,
 				67DC50BF2F63B29700CFAE73 /* MoneroNetworkViewModel.swift in Sources */,
 				67DC50C02F63B29700CFAE73 /* BarPageControl.swift in Sources */,
-				67DC50C12F63B29700CFAE73 /* AddLiquidityTransactionViewModel.swift in Sources */,
 				67DC50C22F63B29700CFAE73 /* BalanceErrorViewModel.swift in Sources */,
 				67DC50C32F63B29700CFAE73 /* LineLockRecoardViewModel.swift in Sources */,
 				67DC50C42F63B29700CFAE73 /* OutputTransactionFactory.swift in Sources */,
@@ -12776,7 +12518,6 @@
 				67DC50EF2F63B29700CFAE73 /* SingleLineFormTextView.swift in Sources */,
 				67DC50F02F63B29700CFAE73 /* AmountRoundingManager.swift in Sources */,
 				67DC50F12F63B29700CFAE73 /* ProposalDetailViewModel.swift in Sources */,
-				67DC50F22F63B29700CFAE73 /* LiquidityMainModule.swift in Sources */,
 				67DC50F32F63B29700CFAE73 /* ReceiveCoinListService.swift in Sources */,
 				67DC50F42F63B29700CFAE73 /* OneInchViewModel.swift in Sources */,
 				67DC50F52F63B29700CFAE73 /* LiquidityRecordDataSource.swift in Sources */,
@@ -12887,7 +12628,6 @@
 				67DC514F2F63B29700CFAE73 /* WatchlistTimePeriod.swift in Sources */,
 				67DC51502F63B29700CFAE73 /* ThemeList.swift in Sources */,
 				67DC51512F63B29700CFAE73 /* TonConnectManifest.swift in Sources */,
-				67DC51522F63B29700CFAE73 /* LiquidityAllowanceService.swift in Sources */,
 				67DC51532F63B29700CFAE73 /* TabHeaderView.swift in Sources */,
 				67DC51542F63B29700CFAE73 /* CoinMarketsViewModel.swift in Sources */,
 				67DC51552F63B29700CFAE73 /* AddMoneroNodeViewModel.swift in Sources */,
@@ -12923,7 +12663,6 @@
 				67DC51752F63B29700CFAE73 /* BackupCrypto.swift in Sources */,
 				67DC51762F63B29700CFAE73 /* DeepLinkManager.swift in Sources */,
 				67DC51772F63B29700CFAE73 /* Safe4NodeSearchCell.swift in Sources */,
-				67DC51782F63B29700CFAE73 /* LiquidityAllowanceViewModel.swift in Sources */,
 				67DC51792F63B29700CFAE73 /* LogoHeaderCell.swift in Sources */,
 				67DC517A2F63B29700CFAE73 /* ManageWalletsService.swift in Sources */,
 				67DC517B2F63B29700CFAE73 /* ReceiveBlockchainListViewModel.swift in Sources */,
@@ -13051,7 +12790,6 @@
 				67DC51C52F63B29700CFAE73 /* NativeProgressView.swift in Sources */,
 				67DC51C62F63B29700CFAE73 /* EvmSendSettingsViewModel.swift in Sources */,
 				67DC51C72F63B29700CFAE73 /* LowAmountCondition.swift in Sources */,
-				67DC51C82F63B29700CFAE73 /* LiquidityCoinCardViewModel.swift in Sources */,
 				67DC51C92F63B29700CFAE73 /* CoinProChartView.swift in Sources */,
 				67DC51CA2F63B29700CFAE73 /* RawFullBackup.swift in Sources */,
 				67DC51CB2F63B29700CFAE73 /* SuperNodeRegisterViewController.swift in Sources */,
@@ -13108,7 +12846,6 @@
 				67DC52012F63B29700CFAE73 /* SystemTheme.swift in Sources */,
 				67DC52022F63B29700CFAE73 /* NftCollectionAssetsModule.swift in Sources */,
 				67DC52032F63B29700CFAE73 /* BalanceErrorBottomViewModel.swift in Sources */,
-				67DC52042F63B29700CFAE73 /* LiquidityCoinCardModule.swift in Sources */,
 				67DC52052F63B29700CFAE73 /* SuperNodeRegisterSliderCell.swift in Sources */,
 				67DC52062F63B29700CFAE73 /* WCEthereumTransactionPayload.swift in Sources */,
 				67DC52072F63B29700CFAE73 /* AlphaDismissAnimation.swift in Sources */,
@@ -13139,9 +12876,7 @@
 				67DC52202F63B29700CFAE73 /* BackupCloudPassphraseService.swift in Sources */,
 				67DC52212F63B29700CFAE73 /* NftUid.swift in Sources */,
 				67DC52222F63B29700CFAE73 /* TronSendData.swift in Sources */,
-				67DC52232F63B29700CFAE73 /* LiquidityCoinSelectService.swift in Sources */,
 				67DC52242F63B29700CFAE73 /* BottomGradientHolder.swift in Sources */,
-				67DC52252F63B29700CFAE73 /* LiquidityProviderMannager.swift in Sources */,
 				67DC52262F63B29700CFAE73 /* WalletButton.swift in Sources */,
 				67DC52272F63B29700CFAE73 /* Address.swift in Sources */,
 				67DC52282F63B29700CFAE73 /* NonceViewModel.swift in Sources */,
@@ -13175,7 +12910,6 @@
 				67DC52452F63B29700CFAE73 /* MarketGlobalFetcher.swift in Sources */,
 				67DC52462F63B29700CFAE73 /* Global.swift in Sources */,
 				67DC52472F63B29700CFAE73 /* ContactBookHelper.swift in Sources */,
-				67DC52482F63B29700CFAE73 /* LiquidityTickInputAccessoryView.swift in Sources */,
 				67DC52492F63B29700CFAE73 /* BadgeComponent.swift in Sources */,
 				67DC524A2F63B29700CFAE73 /* MasterNodeViewModel.swift in Sources */,
 				67DC524B2F63B29700CFAE73 /* MultiSelectorView.swift in Sources */,
@@ -13197,7 +12931,6 @@
 				67DC525C2F63B29700CFAE73 /* OutgoingPoisoningFilter.swift in Sources */,
 				67DC525D2F63B29700CFAE73 /* NftAssetModule.swift in Sources */,
 				67DC525E2F63B29700CFAE73 /* BubbleView.swift in Sources */,
-				67DC525F2F63B29700CFAE73 /* LiquidityConfirmationViewController.swift in Sources */,
 				67DC52602F63B29700CFAE73 /* FileManager.swift in Sources */,
 				67DC52612F63B29700CFAE73 /* RedeemSafe3ViewController.swift in Sources */,
 				67DC52622F63B29700CFAE73 /* WCSendEthereumTransactionRequestModule.swift in Sources */,
@@ -13248,7 +12981,6 @@
 				67DC52942F63B29700CFAE73 /* BirthdayInputViewModel.swift in Sources */,
 				67DC52952F63B29700CFAE73 /* ImageCell.swift in Sources */,
 				67DC52962F63B29700CFAE73 /* NSAttributedString.swift in Sources */,
-				67DC52972F63B29700CFAE73 /* LiquidityViewItemHelper.swift in Sources */,
 				67DC52982F63B29700CFAE73 /* SendEip721Service.swift in Sources */,
 				67DC52992F63B29700CFAE73 /* EvmTransactionsAdapter.swift in Sources */,
 				67DC529A2F63B29700CFAE73 /* AppVersionRecordStorage.swift in Sources */,
@@ -13258,7 +12990,6 @@
 				67DC529E2F63B29700CFAE73 /* SwapInputCell.swift in Sources */,
 				67DC529F2F63B29700CFAE73 /* PurchasesViewModel.swift in Sources */,
 				67DC52A02F63B29700CFAE73 /* KeychainManager.swift in Sources */,
-				67DC52A12F63B29700CFAE73 /* LiquidityV3Service.swift in Sources */,
 				67DC52A22F63B29700CFAE73 /* TopHUDContentView.swift in Sources */,
 				67DC52A32F63B29700CFAE73 /* ICloudBackupTermsService.swift in Sources */,
 				67DC52A42F63B29700CFAE73 /* BlockchainSettingsViewModel.swift in Sources */,
@@ -13420,7 +13151,6 @@
 				67DC53472F63B29700CFAE73 /* DrawSafe4ViewController.swift in Sources */,
 				67DC53482F63B29700CFAE73 /* ProposalInfoRecord.swift in Sources */,
 				67DC53492F63B29700CFAE73 /* SRC20Service.swift in Sources */,
-				67DC534A2F63B29700CFAE73 /* LiquidityV3Module.swift in Sources */,
 				67DC534B2F63B29700CFAE73 /* NftCollectionOverviewViewController.swift in Sources */,
 				67DC534C2F63B29700CFAE73 /* Date.swift in Sources */,
 				67DC534D2F63B29700CFAE73 /* Src20TokenInfoViewModel.swift in Sources */,
@@ -13431,7 +13161,6 @@
 				67DC53532F63B29700CFAE73 /* LiquidityRecordTabViewController.swift in Sources */,
 				67DC53542F63B29700CFAE73 /* AppUnlockViewModel.swift in Sources */,
 				67DC53562F63B29700CFAE73 /* HighlightedTiltledTextView.swift in Sources */,
-				67DC53572F63B29700CFAE73 /* LiquidityMainViewModel.swift in Sources */,
 				67DC53582F63B29700CFAE73 /* SwapApproveViewController.swift in Sources */,
 				67DC53592F63B29700CFAE73 /* BlockchainListView.swift in Sources */,
 				67DC535A2F63B29700CFAE73 /* String.swift in Sources */,
@@ -13449,7 +13178,6 @@
 				67DC53682F63B29700CFAE73 /* RbfDataSource.swift in Sources */,
 				67DC53692F63B29700CFAE73 /* RestoreService.swift in Sources */,
 				67DC536A2F63B29700CFAE73 /* Safe4DepositEvmIncomingTransactionRecord.swift in Sources */,
-				67DC536B2F63B29700CFAE73 /* LiquidityAllowanceCell.swift in Sources */,
 				67DC536C2F63B29700CFAE73 /* WalletStorage.swift in Sources */,
 				67DC536D2F63B29700CFAE73 /* HUDViewInteractor.swift in Sources */,
 				67DC536E2F63B29700CFAE73 /* WCSignMessageRequestModule.swift in Sources */,
@@ -13505,7 +13233,6 @@
 				67DC53A62F63B29700CFAE73 /* DimViewController.swift in Sources */,
 				67DC53A72F63B29700CFAE73 /* MoneroFeeSettingsViewModel.swift in Sources */,
 				67DC53A82F63B29700CFAE73 /* Eip20AddressValidator.swift in Sources */,
-				67DC53A92F63B29700CFAE73 /* AddLiquidityTransactionService.swift in Sources */,
 				67DC53AA2F63B29700CFAE73 /* SendBitcoinViewController.swift in Sources */,
 				67DC53AB2F63B29700CFAE73 /* CheckboxStyle.swift in Sources */,
 				67DC53AC2F63B29700CFAE73 /* CoverView.swift in Sources */,
@@ -13581,7 +13308,6 @@
 				67DC53F52F63B29700CFAE73 /* DashAdapter.swift in Sources */,
 				67DC53F62F63B29700CFAE73 /* CellElement.swift in Sources */,
 				67DC53F72F63B29700CFAE73 /* CreatePasscodeViewModel.swift in Sources */,
-				67DC53F82F63B29700CFAE73 /* LiquidityV3Provider.swift in Sources */,
 				67DC53F92F63B29700CFAE73 /* LiquidityMethods.swift in Sources */,
 				67DC53FA2F63B29700CFAE73 /* HUDTheme.swift in Sources */,
 				67DC53FB2F63B29700CFAE73 /* PasscodeLockState.swift in Sources */,
@@ -13607,7 +13333,6 @@
 				67DC54112F63B29700CFAE73 /* WelcomeTextView.swift in Sources */,
 				67DC54122F63B29700CFAE73 /* HUDActivityView.swift in Sources */,
 				67DC54132F63B29700CFAE73 /* SwapAllowanceService.swift in Sources */,
-				67DC54152F63B29700CFAE73 /* LiquidityTickInputCardView.swift in Sources */,
 				67DC54162F63B29700CFAE73 /* ProposalStorageManager.swift in Sources */,
 				67DC54172F63B29700CFAE73 /* CoinManager.swift in Sources */,
 				67DC54182F63B29700CFAE73 /* TonConnectSendViewModel.swift in Sources */,
@@ -13615,7 +13340,6 @@
 				67DC541A2F63B29700CFAE73 /* DownloadService.swift in Sources */,
 				67DC541B2F63B29700CFAE73 /* SRC20ManagerModule.swift in Sources */,
 				67DC541C2F63B29700CFAE73 /* ValueLevel.swift in Sources */,
-				67DC541D2F63B29700CFAE73 /* LiquidityV3TickService.swift in Sources */,
 				67DC541E2F63B29700CFAE73 /* AddLockDaysViewModel.swift in Sources */,
 				67DC541F2F63B29700CFAE73 /* MarketCardView.swift in Sources */,
 				67DC54202F63B29700CFAE73 /* WalletConnectSessionManager.swift in Sources */,
@@ -13743,7 +13467,6 @@
 				67DC54A22F63B29700CFAE73 /* CancelTransactionJsonRpc.swift in Sources */,
 				67DC54A32F63B29700CFAE73 /* Styles.swift in Sources */,
 				67DC54A42F63B29700CFAE73 /* InfoView.swift in Sources */,
-				67DC54A62F63B29700CFAE73 /* LiquidityDataSource.swift in Sources */,
 				67DC54A72F63B29700CFAE73 /* FaqCell.swift in Sources */,
 				67DC54A82F63B29700CFAE73 /* EnabledWalletCache_v_0_36.swift in Sources */,
 				67DC54A92F63B29700CFAE73 /* RestoreState.swift in Sources */,
@@ -13770,7 +13493,6 @@
 				67DC54C02F63B29700CFAE73 /* UniswapV3ViewModel.swift in Sources */,
 				67DC54C12F63B29700CFAE73 /* WatchSelectView.swift in Sources */,
 				67DC54C22F63B29700CFAE73 /* LargeTextField.swift in Sources */,
-				67DC54C32F63B29700CFAE73 /* LiquidityTradeService.swift in Sources */,
 				67DC54C42F63B29700CFAE73 /* Safe4SwapModule.swift in Sources */,
 				67DC54C52F63B29700CFAE73 /* FormValidatedView.swift in Sources */,
 				67DC54C62F63B29700CFAE73 /* CoinAuditsView.swift in Sources */,
@@ -13836,7 +13558,6 @@
 				67DC55062F63B29700CFAE73 /* BottomSheetModifier.swift in Sources */,
 				67DC55072F63B29700CFAE73 /* SRC20SyncManager.swift in Sources */,
 				67DC55082F63B29700CFAE73 /* BackupCloudPassphraseViewController.swift in Sources */,
-				67DC55092F63B29700CFAE73 /* LiquidityService.swift in Sources */,
 				67DC550A2F63B29700CFAE73 /* CoinAnalyticsRatingInfoView.swift in Sources */,
 				67DC550B2F63B29700CFAE73 /* HUDModel.swift in Sources */,
 				67DC550C2F63B29700CFAE73 /* SetPasscodeView.swift in Sources */,
@@ -13846,7 +13567,6 @@
 				67DC55102F63B29700CFAE73 /* AppViewModel.swift in Sources */,
 				67DC55112F63B29700CFAE73 /* TransactionInfoViewController.swift in Sources */,
 				67DC55122F63B29700CFAE73 /* RestoreSettingRecord.swift in Sources */,
-				67DC55132F63B29700CFAE73 /* AddLiquidityTransactionViewController.swift in Sources */,
 				67DC55142F63B29700CFAE73 /* RankViewModel.swift in Sources */,
 				67DC55152F63B29700CFAE73 /* AlertItemCell.swift in Sources */,
 				67DC55162F63B29700CFAE73 /* AddMoneroNodeViewController.swift in Sources */,
@@ -13860,7 +13580,6 @@
 				67DC551F2F63B29700CFAE73 /* ThemeSearchViewController.swift in Sources */,
 				67DC55212F63B29700CFAE73 /* ZcashPreSendHandler.swift in Sources */,
 				67DC55222F63B29700CFAE73 /* TelegramUserHandler.swift in Sources */,
-				67DC55232F63B29700CFAE73 /* LiquidityInputModule.swift in Sources */,
 				67DC55242F63B29700CFAE73 /* SuperNodeTabView.swift in Sources */,
 				67DC55252F63B29700CFAE73 /* PrimaryCircleButtonStyle.swift in Sources */,
 				67DC55262F63B29700CFAE73 /* TextStyle.swift in Sources */,
@@ -13910,7 +13629,6 @@
 				67DC55542F63B29700CFAE73 /* SafeLineLockModule.swift in Sources */,
 				67DC55552F63B29700CFAE73 /* MarketDappView.swift in Sources */,
 				67DC55562F63B29700CFAE73 /* SRC20EditView.swift in Sources */,
-				67DC55572F63B29700CFAE73 /* LiquidityV3TradeService.swift in Sources */,
 				67DC55592F63B29700CFAE73 /* MarketGlobalViewModel.swift in Sources */,
 				67DC555A2F63B29700CFAE73 /* HUDContainerView.swift in Sources */,
 				67DC555B2F63B29700CFAE73 /* MarkdownImageCell.swift in Sources */,
@@ -14068,7 +13786,6 @@
 				67DC46312F63B29700CFAE73 /* RestoreMnemonicService.swift in Sources */,
 				67DC46322F63B29700CFAE73 /* BackupService.swift in Sources */,
 				67DC46332F63B29700CFAE73 /* SendTronConfirmationService.swift in Sources */,
-				67DC46342F63B29700CFAE73 /* LiquidityMainViewController.swift in Sources */,
 				67DC46352F63B29700CFAE73 /* TransferEventFactory.swift in Sources */,
 				67DC46362F63B29700CFAE73 /* RoundedCorner.swift in Sources */,
 				67DC46382F63B29700CFAE73 /* AccountRecord.swift in Sources */,
@@ -14139,11 +13856,9 @@
 				67DC467D2F63B29700CFAE73 /* BackupAppModule.swift in Sources */,
 				67DC467E2F63B29700CFAE73 /* ScrollHeaderModifier.swift in Sources */,
 				67DC467F2F63B29700CFAE73 /* LineLockRecoardModule.swift in Sources */,
-				67DC46802F63B29700CFAE73 /* LiquidityV3DataSource.swift in Sources */,
 				67DC46812F63B29700CFAE73 /* ThemeView.swift in Sources */,
 				67DC46822F63B29700CFAE73 /* CoinInvestorsViewModel.swift in Sources */,
 				67DC46832F63B29700CFAE73 /* UrlManager.swift in Sources */,
-				67DC46842F63B29700CFAE73 /* LiquidityProvider.swift in Sources */,
 				67DC46852F63B29700CFAE73 /* OutputSelectorView.swift in Sources */,
 				67DC46862F63B29700CFAE73 /* MultiTextMetricsView.swift in Sources */,
 				67DC46872F63B29700CFAE73 /* EvmFeeEstimator.swift in Sources */,
@@ -14173,11 +13888,8 @@
 				67DC469F2F63B29700CFAE73 /* AddressEventHandler.swift in Sources */,
 				67DC46A02F63B29700CFAE73 /* ReceiveAddressModule.swift in Sources */,
 				67DC46A12F63B29700CFAE73 /* ReceiveModule.swift in Sources */,
-				67DC46A22F63B29700CFAE73 /* LiquidityInputCell.swift in Sources */,
-				67DC46A32F63B29700CFAE73 /* LiquidityTickInputCardViewModel.swift in Sources */,
 				67DC46A42F63B29700CFAE73 /* UIView.swift in Sources */,
 				67DC46A62F63B29700CFAE73 /* Safe4Reward.swift in Sources */,
-				67DC46A72F63B29700CFAE73 /* LiquidityModule.swift in Sources */,
 				67DC46A82F63B29700CFAE73 /* CoinInvestment.swift in Sources */,
 				67DC46A92F63B29700CFAE73 /* RowButtonStyle.swift in Sources */,
 				67DC46AA2F63B29700CFAE73 /* PremiumFeature.swift in Sources */,
@@ -14227,7 +13939,6 @@
 				67DC46D82F63B29700CFAE73 /* TransactionInfoViewItemFactory.swift in Sources */,
 				67DC46D92F63B29700CFAE73 /* Core.swift in Sources */,
 				67DC46DA2F63B29700CFAE73 /* UIImageView.swift in Sources */,
-				67DC46DB2F63B29700CFAE73 /* LiquidityCoinSelectViewController.swift in Sources */,
 				67DC46DC2F63B29700CFAE73 /* SendModule.swift in Sources */,
 				67DC46DE2F63B29700CFAE73 /* CloudRestoreBackupListViewModel.swift in Sources */,
 				67DC46DF2F63B29700CFAE73 /* ApproveTransactionRecord.swift in Sources */,
@@ -14241,10 +13952,8 @@
 				67DC46E82F63B29700CFAE73 /* ProposalDetailRecordHeaderView.swift in Sources */,
 				67DC46E92F63B29700CFAE73 /* MarketDappListViewModel.swift in Sources */,
 				67DC46EA2F63B29700CFAE73 /* MainSafeZoneViewModel.swift in Sources */,
-				67DC46EC2F63B29700CFAE73 /* LiquidityConfirmationModule.swift in Sources */,
 				67DC46ED2F63B29700CFAE73 /* ActivityIndicators.swift in Sources */,
 				67DC46EE2F63B29700CFAE73 /* SwapSlippageViewModel.swift in Sources */,
-				67DC46EF2F63B29700CFAE73 /* LiquidityViewModel.swift in Sources */,
 				67DC46F02F63B29700CFAE73 /* MarkdownModule.swift in Sources */,
 				67DC46F12F63B29700CFAE73 /* NftMetadataSyncRecord.swift in Sources */,
 				67DC46F22F63B29700CFAE73 /* UniswapSettingsService.swift in Sources */,
@@ -14328,7 +14037,6 @@
 				67DC47452F63B29700CFAE73 /* LiquidityRecordViewController.swift in Sources */,
 				67DC47462F63B29700CFAE73 /* AddEvmTokenBlockchainService.swift in Sources */,
 				67DC47472F63B29700CFAE73 /* SendEvmTransactionService.swift in Sources */,
-				67DC47482F63B29700CFAE73 /* LiquidityTickInputCell.swift in Sources */,
 				67DC47492F63B29700CFAE73 /* SRC20PromotionView.swift in Sources */,
 				67DC474A2F63B29700CFAE73 /* ProposalInfoStorage.swift in Sources */,
 				67DC474B2F63B29700CFAE73 /* NftDatabaseStorage.swift in Sources */,
@@ -14336,7 +14044,6 @@
 				67DC474D2F63B29700CFAE73 /* TronWalletTokenViewModel.swift in Sources */,
 				67DC474E2F63B29700CFAE73 /* ProposalDatePickerCell.swift in Sources */,
 				67DC474F2F63B29700CFAE73 /* TransactionNonceView.swift in Sources */,
-				67DC47502F63B29700CFAE73 /* LiquidityV3ViewModel.swift in Sources */,
 				67DC47512F63B29700CFAE73 /* ActionSheetPresentationController.swift in Sources */,
 				67DC47522F63B29700CFAE73 /* TonKitManager.swift in Sources */,
 				67DC47542F63B29700CFAE73 /* RecoveryPhraseService.swift in Sources */,
@@ -14379,7 +14086,6 @@
 				67DC477A2F63B29700CFAE73 /* InputSecondaryButtonWrapperView.swift in Sources */,
 				67DC477C2F63B29700CFAE73 /* EvmAddressViewModel.swift in Sources */,
 				67DC477D2F63B29700CFAE73 /* GradientLayer.swift in Sources */,
-				67DC477E2F63B29700CFAE73 /* LiquidityCoinSelectViewModel.swift in Sources */,
 				67DC477F2F63B29700CFAE73 /* MarketMarketCapView.swift in Sources */,
 				67DC47802F63B29700CFAE73 /* LockManager.swift in Sources */,
 				67DC47812F63B29700CFAE73 /* MarketPlatformViewModel.swift in Sources */,
@@ -14574,13 +14280,11 @@
 				67DC48482F63B29700CFAE73 /* AuthData.swift in Sources */,
 				67DC48492F63B29700CFAE73 /* BalanceErrorBottomView.swift in Sources */,
 				67DC484A2F63B29700CFAE73 /* MoneroNetworkViewController.swift in Sources */,
-				67DC484B2F63B29700CFAE73 /* LiquidityPendingAllowanceService.swift in Sources */,
 				67DC484C2F63B29700CFAE73 /* ConvertedError.swift in Sources */,
 				67DC484D2F63B29700CFAE73 /* SendEvmConfirmationModule.swift in Sources */,
 				67DC484E2F63B29700CFAE73 /* RecoveryPhraseViewController.swift in Sources */,
 				67DC484F2F63B29700CFAE73 /* BitcoinIncomingTransactionRecord.swift in Sources */,
 				67DC48502F63B29700CFAE73 /* WCSignMessageHandler.swift in Sources */,
-				67DC48512F63B29700CFAE73 /* LiquidityInputCardView.swift in Sources */,
 				67DC48522F63B29700CFAE73 /* OutputSelectView2.swift in Sources */,
 				67DC48532F63B29700CFAE73 /* EditDuressPasscodeViewModel.swift in Sources */,
 				67DC48542F63B29700CFAE73 /* RestoreSettingsView.swift in Sources */,
@@ -14717,7 +14421,6 @@
 				67DC48E22F63B29700CFAE73 /* ReadMoreTextCell.swift in Sources */,
 				67DC48E32F63B29700CFAE73 /* MoneroNetworkViewModel.swift in Sources */,
 				67DC48E42F63B29700CFAE73 /* BarPageControl.swift in Sources */,
-				67DC48E52F63B29700CFAE73 /* AddLiquidityTransactionViewModel.swift in Sources */,
 				67DC48E62F63B29700CFAE73 /* BalanceErrorViewModel.swift in Sources */,
 				67DC48E72F63B29700CFAE73 /* LineLockRecoardViewModel.swift in Sources */,
 				67DC48E82F63B29700CFAE73 /* OutputTransactionFactory.swift in Sources */,
@@ -14761,7 +14464,6 @@
 				67DC49132F63B29700CFAE73 /* SingleLineFormTextView.swift in Sources */,
 				67DC49142F63B29700CFAE73 /* AmountRoundingManager.swift in Sources */,
 				67DC49152F63B29700CFAE73 /* ProposalDetailViewModel.swift in Sources */,
-				67DC49162F63B29700CFAE73 /* LiquidityMainModule.swift in Sources */,
 				67DC49172F63B29700CFAE73 /* ReceiveCoinListService.swift in Sources */,
 				67DC49182F63B29700CFAE73 /* OneInchViewModel.swift in Sources */,
 				67DC49192F63B29700CFAE73 /* LiquidityRecordDataSource.swift in Sources */,
@@ -14872,7 +14574,6 @@
 				67DC49732F63B29700CFAE73 /* WatchlistTimePeriod.swift in Sources */,
 				67DC49742F63B29700CFAE73 /* ThemeList.swift in Sources */,
 				67DC49752F63B29700CFAE73 /* TonConnectManifest.swift in Sources */,
-				67DC49762F63B29700CFAE73 /* LiquidityAllowanceService.swift in Sources */,
 				67DC49772F63B29700CFAE73 /* TabHeaderView.swift in Sources */,
 				67DC49782F63B29700CFAE73 /* CoinMarketsViewModel.swift in Sources */,
 				67DC49792F63B29700CFAE73 /* AddMoneroNodeViewModel.swift in Sources */,
@@ -14908,7 +14609,6 @@
 				67DC49992F63B29700CFAE73 /* BackupCrypto.swift in Sources */,
 				67DC499A2F63B29700CFAE73 /* DeepLinkManager.swift in Sources */,
 				67DC499B2F63B29700CFAE73 /* Safe4NodeSearchCell.swift in Sources */,
-				67DC499C2F63B29700CFAE73 /* LiquidityAllowanceViewModel.swift in Sources */,
 				67DC499D2F63B29700CFAE73 /* LogoHeaderCell.swift in Sources */,
 				67DC499E2F63B29700CFAE73 /* ManageWalletsService.swift in Sources */,
 				67DC499F2F63B29700CFAE73 /* ReceiveBlockchainListViewModel.swift in Sources */,
@@ -15036,7 +14736,6 @@
 				67DC49E92F63B29700CFAE73 /* NativeProgressView.swift in Sources */,
 				67DC49EA2F63B29700CFAE73 /* EvmSendSettingsViewModel.swift in Sources */,
 				67DC49EB2F63B29700CFAE73 /* LowAmountCondition.swift in Sources */,
-				67DC49EC2F63B29700CFAE73 /* LiquidityCoinCardViewModel.swift in Sources */,
 				67DC49ED2F63B29700CFAE73 /* CoinProChartView.swift in Sources */,
 				67DC49EE2F63B29700CFAE73 /* RawFullBackup.swift in Sources */,
 				67DC49EF2F63B29700CFAE73 /* SuperNodeRegisterViewController.swift in Sources */,
@@ -15093,7 +14792,6 @@
 				67DC4A252F63B29700CFAE73 /* SystemTheme.swift in Sources */,
 				67DC4A262F63B29700CFAE73 /* NftCollectionAssetsModule.swift in Sources */,
 				67DC4A272F63B29700CFAE73 /* BalanceErrorBottomViewModel.swift in Sources */,
-				67DC4A282F63B29700CFAE73 /* LiquidityCoinCardModule.swift in Sources */,
 				67DC4A292F63B29700CFAE73 /* SuperNodeRegisterSliderCell.swift in Sources */,
 				67DC4A2A2F63B29700CFAE73 /* WCEthereumTransactionPayload.swift in Sources */,
 				67DC4A2B2F63B29700CFAE73 /* AlphaDismissAnimation.swift in Sources */,
@@ -15124,9 +14822,7 @@
 				67DC4A442F63B29700CFAE73 /* BackupCloudPassphraseService.swift in Sources */,
 				67DC4A452F63B29700CFAE73 /* NftUid.swift in Sources */,
 				67DC4A462F63B29700CFAE73 /* TronSendData.swift in Sources */,
-				67DC4A472F63B29700CFAE73 /* LiquidityCoinSelectService.swift in Sources */,
 				67DC4A482F63B29700CFAE73 /* BottomGradientHolder.swift in Sources */,
-				67DC4A492F63B29700CFAE73 /* LiquidityProviderMannager.swift in Sources */,
 				67DC4A4A2F63B29700CFAE73 /* WalletButton.swift in Sources */,
 				67DC4A4B2F63B29700CFAE73 /* Address.swift in Sources */,
 				67DC4A4C2F63B29700CFAE73 /* NonceViewModel.swift in Sources */,
@@ -15160,7 +14856,6 @@
 				67DC4A692F63B29700CFAE73 /* MarketGlobalFetcher.swift in Sources */,
 				67DC4A6A2F63B29700CFAE73 /* Global.swift in Sources */,
 				67DC4A6B2F63B29700CFAE73 /* ContactBookHelper.swift in Sources */,
-				67DC4A6C2F63B29700CFAE73 /* LiquidityTickInputAccessoryView.swift in Sources */,
 				67DC4A6D2F63B29700CFAE73 /* BadgeComponent.swift in Sources */,
 				67DC4A6E2F63B29700CFAE73 /* MasterNodeViewModel.swift in Sources */,
 				67DC4A6F2F63B29700CFAE73 /* MultiSelectorView.swift in Sources */,
@@ -15182,7 +14877,6 @@
 				67DC4A802F63B29700CFAE73 /* OutgoingPoisoningFilter.swift in Sources */,
 				67DC4A812F63B29700CFAE73 /* NftAssetModule.swift in Sources */,
 				67DC4A822F63B29700CFAE73 /* BubbleView.swift in Sources */,
-				67DC4A832F63B29700CFAE73 /* LiquidityConfirmationViewController.swift in Sources */,
 				67DC4A842F63B29700CFAE73 /* FileManager.swift in Sources */,
 				67DC4A852F63B29700CFAE73 /* RedeemSafe3ViewController.swift in Sources */,
 				67DC4A862F63B29700CFAE73 /* WCSendEthereumTransactionRequestModule.swift in Sources */,
@@ -15233,7 +14927,6 @@
 				67DC4AB82F63B29700CFAE73 /* BirthdayInputViewModel.swift in Sources */,
 				67DC4AB92F63B29700CFAE73 /* ImageCell.swift in Sources */,
 				67DC4ABA2F63B29700CFAE73 /* NSAttributedString.swift in Sources */,
-				67DC4ABB2F63B29700CFAE73 /* LiquidityViewItemHelper.swift in Sources */,
 				67DC4ABC2F63B29700CFAE73 /* SendEip721Service.swift in Sources */,
 				67DC4ABD2F63B29700CFAE73 /* EvmTransactionsAdapter.swift in Sources */,
 				67DC4ABE2F63B29700CFAE73 /* AppVersionRecordStorage.swift in Sources */,
@@ -15243,7 +14936,6 @@
 				67DC4AC22F63B29700CFAE73 /* SwapInputCell.swift in Sources */,
 				67DC4AC32F63B29700CFAE73 /* PurchasesViewModel.swift in Sources */,
 				67DC4AC42F63B29700CFAE73 /* KeychainManager.swift in Sources */,
-				67DC4AC52F63B29700CFAE73 /* LiquidityV3Service.swift in Sources */,
 				67DC4AC62F63B29700CFAE73 /* TopHUDContentView.swift in Sources */,
 				67DC4AC72F63B29700CFAE73 /* ICloudBackupTermsService.swift in Sources */,
 				67DC4AC82F63B29700CFAE73 /* BlockchainSettingsViewModel.swift in Sources */,
@@ -15405,7 +15097,6 @@
 				67DC4B6B2F63B29700CFAE73 /* DrawSafe4ViewController.swift in Sources */,
 				67DC4B6C2F63B29700CFAE73 /* ProposalInfoRecord.swift in Sources */,
 				67DC4B6D2F63B29700CFAE73 /* SRC20Service.swift in Sources */,
-				67DC4B6E2F63B29700CFAE73 /* LiquidityV3Module.swift in Sources */,
 				67DC4B6F2F63B29700CFAE73 /* NftCollectionOverviewViewController.swift in Sources */,
 				67DC4B702F63B29700CFAE73 /* Date.swift in Sources */,
 				67DC4B712F63B29700CFAE73 /* Src20TokenInfoViewModel.swift in Sources */,
@@ -15416,7 +15107,6 @@
 				67DC4B772F63B29700CFAE73 /* LiquidityRecordTabViewController.swift in Sources */,
 				67DC4B782F63B29700CFAE73 /* AppUnlockViewModel.swift in Sources */,
 				67DC4B7A2F63B29700CFAE73 /* HighlightedTiltledTextView.swift in Sources */,
-				67DC4B7B2F63B29700CFAE73 /* LiquidityMainViewModel.swift in Sources */,
 				67DC4B7C2F63B29700CFAE73 /* SwapApproveViewController.swift in Sources */,
 				67DC4B7D2F63B29700CFAE73 /* BlockchainListView.swift in Sources */,
 				67DC4B7E2F63B29700CFAE73 /* String.swift in Sources */,
@@ -15434,7 +15124,6 @@
 				67DC4B8C2F63B29700CFAE73 /* RbfDataSource.swift in Sources */,
 				67DC4B8D2F63B29700CFAE73 /* RestoreService.swift in Sources */,
 				67DC4B8E2F63B29700CFAE73 /* Safe4DepositEvmIncomingTransactionRecord.swift in Sources */,
-				67DC4B8F2F63B29700CFAE73 /* LiquidityAllowanceCell.swift in Sources */,
 				67DC4B902F63B29700CFAE73 /* WalletStorage.swift in Sources */,
 				67DC4B912F63B29700CFAE73 /* HUDViewInteractor.swift in Sources */,
 				67DC4B922F63B29700CFAE73 /* WCSignMessageRequestModule.swift in Sources */,
@@ -15490,7 +15179,6 @@
 				67DC4BCA2F63B29700CFAE73 /* DimViewController.swift in Sources */,
 				67DC4BCB2F63B29700CFAE73 /* MoneroFeeSettingsViewModel.swift in Sources */,
 				67DC4BCC2F63B29700CFAE73 /* Eip20AddressValidator.swift in Sources */,
-				67DC4BCD2F63B29700CFAE73 /* AddLiquidityTransactionService.swift in Sources */,
 				67DC4BCE2F63B29700CFAE73 /* SendBitcoinViewController.swift in Sources */,
 				67DC4BCF2F63B29700CFAE73 /* CheckboxStyle.swift in Sources */,
 				67DC4BD02F63B29700CFAE73 /* CoverView.swift in Sources */,
@@ -15566,7 +15254,6 @@
 				67DC4C192F63B29700CFAE73 /* DashAdapter.swift in Sources */,
 				67DC4C1A2F63B29700CFAE73 /* CellElement.swift in Sources */,
 				67DC4C1B2F63B29700CFAE73 /* CreatePasscodeViewModel.swift in Sources */,
-				67DC4C1C2F63B29700CFAE73 /* LiquidityV3Provider.swift in Sources */,
 				67DC4C1D2F63B29700CFAE73 /* LiquidityMethods.swift in Sources */,
 				67DC4C1E2F63B29700CFAE73 /* HUDTheme.swift in Sources */,
 				67DC4C1F2F63B29700CFAE73 /* PasscodeLockState.swift in Sources */,
@@ -15592,7 +15279,6 @@
 				67DC4C352F63B29700CFAE73 /* WelcomeTextView.swift in Sources */,
 				67DC4C362F63B29700CFAE73 /* HUDActivityView.swift in Sources */,
 				67DC4C372F63B29700CFAE73 /* SwapAllowanceService.swift in Sources */,
-				67DC4C392F63B29700CFAE73 /* LiquidityTickInputCardView.swift in Sources */,
 				67DC4C3A2F63B29700CFAE73 /* ProposalStorageManager.swift in Sources */,
 				67DC4C3B2F63B29700CFAE73 /* CoinManager.swift in Sources */,
 				67DC4C3C2F63B29700CFAE73 /* TonConnectSendViewModel.swift in Sources */,
@@ -15600,7 +15286,6 @@
 				67DC4C3E2F63B29700CFAE73 /* DownloadService.swift in Sources */,
 				67DC4C3F2F63B29700CFAE73 /* SRC20ManagerModule.swift in Sources */,
 				67DC4C402F63B29700CFAE73 /* ValueLevel.swift in Sources */,
-				67DC4C412F63B29700CFAE73 /* LiquidityV3TickService.swift in Sources */,
 				67DC4C422F63B29700CFAE73 /* AddLockDaysViewModel.swift in Sources */,
 				67DC4C432F63B29700CFAE73 /* MarketCardView.swift in Sources */,
 				67DC4C442F63B29700CFAE73 /* WalletConnectSessionManager.swift in Sources */,
@@ -15728,7 +15413,6 @@
 				67DC4CC62F63B29700CFAE73 /* CancelTransactionJsonRpc.swift in Sources */,
 				67DC4CC72F63B29700CFAE73 /* Styles.swift in Sources */,
 				67DC4CC82F63B29700CFAE73 /* InfoView.swift in Sources */,
-				67DC4CCA2F63B29700CFAE73 /* LiquidityDataSource.swift in Sources */,
 				67DC4CCB2F63B29700CFAE73 /* FaqCell.swift in Sources */,
 				67DC4CCC2F63B29700CFAE73 /* EnabledWalletCache_v_0_36.swift in Sources */,
 				67DC4CCD2F63B29700CFAE73 /* RestoreState.swift in Sources */,
@@ -15755,7 +15439,6 @@
 				67DC4CE42F63B29700CFAE73 /* UniswapV3ViewModel.swift in Sources */,
 				67DC4CE52F63B29700CFAE73 /* WatchSelectView.swift in Sources */,
 				67DC4CE62F63B29700CFAE73 /* LargeTextField.swift in Sources */,
-				67DC4CE72F63B29700CFAE73 /* LiquidityTradeService.swift in Sources */,
 				67DC4CE82F63B29700CFAE73 /* Safe4SwapModule.swift in Sources */,
 				67DC4CE92F63B29700CFAE73 /* FormValidatedView.swift in Sources */,
 				67DC4CEA2F63B29700CFAE73 /* CoinAuditsView.swift in Sources */,
@@ -15821,7 +15504,6 @@
 				67DC4D2A2F63B29700CFAE73 /* BottomSheetModifier.swift in Sources */,
 				67DC4D2B2F63B29700CFAE73 /* SRC20SyncManager.swift in Sources */,
 				67DC4D2C2F63B29700CFAE73 /* BackupCloudPassphraseViewController.swift in Sources */,
-				67DC4D2D2F63B29700CFAE73 /* LiquidityService.swift in Sources */,
 				67DC4D2E2F63B29700CFAE73 /* CoinAnalyticsRatingInfoView.swift in Sources */,
 				67DC4D2F2F63B29700CFAE73 /* HUDModel.swift in Sources */,
 				67DC4D302F63B29700CFAE73 /* SetPasscodeView.swift in Sources */,
@@ -15831,7 +15513,6 @@
 				67DC4D342F63B29700CFAE73 /* AppViewModel.swift in Sources */,
 				67DC4D352F63B29700CFAE73 /* TransactionInfoViewController.swift in Sources */,
 				67DC4D362F63B29700CFAE73 /* RestoreSettingRecord.swift in Sources */,
-				67DC4D372F63B29700CFAE73 /* AddLiquidityTransactionViewController.swift in Sources */,
 				67DC4D382F63B29700CFAE73 /* RankViewModel.swift in Sources */,
 				67DC4D392F63B29700CFAE73 /* AlertItemCell.swift in Sources */,
 				67DC4D3A2F63B29700CFAE73 /* AddMoneroNodeViewController.swift in Sources */,
@@ -15845,7 +15526,6 @@
 				67DC4D432F63B29700CFAE73 /* ThemeSearchViewController.swift in Sources */,
 				67DC4D452F63B29700CFAE73 /* ZcashPreSendHandler.swift in Sources */,
 				67DC4D462F63B29700CFAE73 /* TelegramUserHandler.swift in Sources */,
-				67DC4D472F63B29700CFAE73 /* LiquidityInputModule.swift in Sources */,
 				67DC4D482F63B29700CFAE73 /* SuperNodeTabView.swift in Sources */,
 				67DC4D492F63B29700CFAE73 /* PrimaryCircleButtonStyle.swift in Sources */,
 				67DC4D4A2F63B29700CFAE73 /* TextStyle.swift in Sources */,
@@ -15895,7 +15575,6 @@
 				67DC4D782F63B29700CFAE73 /* SafeLineLockModule.swift in Sources */,
 				67DC4D792F63B29700CFAE73 /* MarketDappView.swift in Sources */,
 				67DC4D7A2F63B29700CFAE73 /* SRC20EditView.swift in Sources */,
-				67DC4D7B2F63B29700CFAE73 /* LiquidityV3TradeService.swift in Sources */,
 				67DC4D7D2F63B29700CFAE73 /* MarketGlobalViewModel.swift in Sources */,
 				67DC4D7E2F63B29700CFAE73 /* HUDContainerView.swift in Sources */,
 				67DC4D7F2F63B29700CFAE73 /* MarkdownImageCell.swift in Sources */,
@@ -16461,14 +16140,6 @@
 				minimumVersion = 3.1.6;
 			};
 		};
-		C89BE95C2E9A449100039AD8 /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SAFE-anwang/SafeSwapKit.Swift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.0.4;
-			};
-		};
 		C89BE95F2E9A47CC00039AD8 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SAFE-anwang/BitcoinKit.Swift.git";
@@ -16812,11 +16483,6 @@
 			package = C86A1BD42E98C26200C0769E /* XCRemoteSwiftPackageReference "MarketKit.Swift" */;
 			productName = MarketKit;
 		};
-		C89BE95D2E9A449200039AD8 /* SafeSwapKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C89BE95C2E9A449100039AD8 /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */;
-			productName = SafeSwapKit;
-		};
 		C89BE9602E9A47CD00039AD8 /* BitcoinKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C89BE95F2E9A47CC00039AD8 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */;
@@ -16906,11 +16572,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C86A1BD62E98C36900C0769E /* XCRemoteSwiftPackageReference "OneInchKit.Swift" */;
 			productName = OneInchKit;
-		};
-		C8C558B62EA339DB0062F13E /* SafeSwapKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C89BE95C2E9A449100039AD8 /* XCRemoteSwiftPackageReference "SafeSwapKit.Swift" */;
-			productName = SafeSwapKit;
 		};
 		C8C558BA2EA33E230062F13E /* UniswapKit */ = {
 			isa = XCSwiftPackageProductDependency;

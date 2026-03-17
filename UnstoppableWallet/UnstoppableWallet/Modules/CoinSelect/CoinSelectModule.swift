@@ -19,17 +19,4 @@ enum CoinSelectModule {
 
         return CoinSelectViewController(viewModel: viewModel, delegate: delegate)
     }
-    
-    static func viewController(dex: LiquidityMainModule.Dex, delegate: ICoinSelectDelegate) -> UIViewController {
-        let service = LiquidityCoinSelectService(
-                dex: dex,
-                marketKit: Core.shared.marketKit,
-                walletManager: Core.shared.walletManager,
-                adapterManager: Core.shared.adapterManager,
-                currencyManager: Core.shared.currencyManager
-        )
-        let viewModel = LiquidityCoinSelectViewModel(service: service)
-
-        return LiquidityCoinSelectViewController(viewModel: viewModel, delegate: delegate)
-    }
 }
