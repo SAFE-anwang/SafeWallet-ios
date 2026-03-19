@@ -138,8 +138,22 @@
 "restore.restore_type.mnemonic" = "Recovery Phrase";
 "restore.restore_type.private_key" = "Private Key";
 "restore.mnemonic.placeholder" = "Enter Recovery Phrase";
-"restore.private_key.placeholder" = "Enter EVM Private Key, Stellar Secret Key, BIP32 Root Key or Account Extended Private Key";
+"restore.private_key.placeholder" = "Enter EVM Private Key, Stellar Secret Key, BIP32 Root Key, Bitcoin WIF, Mini Key, BIP38 key, or Brain Wallet";
 "restore.private_key.invalid_key" = "Invalid Key";
+"restore.private_key.empty_text" = "Please enter a private key";
+"restore.private_key.no_valid_key" = "No valid key found. Please check your input.";
+"restore.private_key.not_supported_derived_type" = "This derived key type is not supported";
+"restore.private_key.non_private_key" = "This is not a valid private key";
+"restore.private_key.unsupported_type" = "Unsupported key type";
+"restore.private_key.bip38_password_required" = "Password is required for BIP38 encrypted keys";
+"restore.private_key.invalid_wif_checksum" = "Invalid WIF checksum";
+"restore.private_key.invalid_bip38_key" = "Invalid BIP38 key";
+"restore.private_key.decryption_failed" = "Decryption failed. Please check your password.";
+"restore.private_key.format" = "Key Format";
+"restore.private_key.bip38.title" = "Enter BIP38 Password";
+"restore.private_key.bip38.enter_password" = "Enter password for BIP38 encrypted key";
+"restore.private_key.bip38.password_placeholder" = "Password";
+"restore.private_key.bip38.warning" = "BIP38 keys are encrypted with a password. Enter the password used when the key was created.";
 "restore_error.mnemonic_word_count" = "Wrong words count. It must be between 12 and 24 words. You entered: %@";
 "restore.checksum_error" = "Invalid checksum";
 "restore.passphrase" = "Passphrase";
@@ -157,6 +171,7 @@
 
 "restore_type.title" = "Import Wallet";
 "restore_type.recovery.title" = "from Recovery Phrase";
+"restore_type.recovery.private.title" = "from Private Key";
 "restore_type.cloud.title" = "from iCloud";
 "restore_type.file.title" = "from Files";
 

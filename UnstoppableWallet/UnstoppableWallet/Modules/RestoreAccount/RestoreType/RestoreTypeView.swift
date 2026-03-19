@@ -19,6 +19,7 @@ struct RestoreTypeView: View {
         case passphrase
         case selectCoins
         case fileConfiguration
+        case privateKey
     }
 
     init(type: BackupModule.Source.Abstract, onRestore: (() -> Void)? = nil, isPresented: Binding<Bool>) {
@@ -56,9 +57,14 @@ struct RestoreTypeView: View {
                 case .recoveryOrPrivateKey:
 
                     // import passphrase or private key form
-                    RestoreViewWrapper(onRestore: handleRestore)
+                    RestoreViewWrapper(advanced: false, onRestore: handleRestore)
                         .ignoresSafeArea()
                         .navigationTitle("restore.title".localized)
+                    
+                case .privateKey:
+                    RestorePrivateKeyView(isPresented: $isPresented, path: $path, onRestore: handleRestore)
+                        .navigationTitle("restore.title".localized)
+                    
                 case .cloudRestore:
 
                     // show cloud list view
@@ -101,7 +107,11 @@ struct RestoreTypeView: View {
             case .recoveryOrPrivateKey:
                 stat(page: .importWallet, event: .open(page: .importWalletFromKey))
                 path.append(Route.recoveryOrPrivateKey)
-
+                
+            case .privateKey:
+//                stat(page: .importWallet, event: .open(page: .importWalletFromKey))
+                path.append(Route.privateKey)
+                
             // tap on iCloud: open list of iCloud backups
 //            case .cloudRestore:
 //                stat(page: isWallet ? .importWallet : .importFull, event: .open(page: isWallet ? .importWalletFromCloud : .importFullFromCloud))
@@ -189,10 +199,11 @@ struct RestoreTypeView: View {
 }
 
 private struct RestoreViewWrapper: UIViewControllerRepresentable {
+    let advanced: Bool
     let onRestore: () -> Void
 
     func makeUIViewController(context _: Context) -> UIViewController {
-        RestoreModule.viewController(onRestore: onRestore)
+        RestoreModule.viewController(advanced: advanced, onRestore: onRestore)
     }
 
     func updateUIViewController(_: UIViewController, context _: Context) {}

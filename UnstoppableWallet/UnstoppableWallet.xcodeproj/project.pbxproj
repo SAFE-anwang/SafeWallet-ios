@@ -24,6 +24,12 @@
 		11B35FD593B38EEEE5F18010 /* AppWidgetConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B35E298D53B8A2C2684119 /* AppWidgetConstants.swift */; };
 		500F1D1127AA87BC002AA419 /* AlignedCollectionViewFlowLayout in Frameworks */ = {isa = PBXBuildFile; productRef = 500F1D1027AA87BC002AA419 /* AlignedCollectionViewFlowLayout */; };
 		500F1D1327AA87D1002AA419 /* AlignedCollectionViewFlowLayout in Frameworks */ = {isa = PBXBuildFile; productRef = 500F1D1227AA87D1002AA419 /* AlignedCollectionViewFlowLayout */; };
+		670C733F2F6930C500F4ACEE /* RestorePrivateKeyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670C733E2F6930C500F4ACEE /* RestorePrivateKeyView.swift */; };
+		670C73402F6930C500F4ACEE /* RestorePrivateKeyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670C733E2F6930C500F4ACEE /* RestorePrivateKeyView.swift */; };
+		670C73422F6941EA00F4ACEE /* RestorePrivateKeyViewModelNew.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670C73412F6941EA00F4ACEE /* RestorePrivateKeyViewModelNew.swift */; };
+		670C73432F6941EA00F4ACEE /* RestorePrivateKeyViewModelNew.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670C73412F6941EA00F4ACEE /* RestorePrivateKeyViewModelNew.swift */; };
+		6759598C2F6B9EC00033AE64 /* BitcoinPrivateKeyParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6759598A2F6B9EC00033AE64 /* BitcoinPrivateKeyParser.swift */; };
+		6759598E2F6B9EC00033AE64 /* BitcoinPrivateKeyParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6759598A2F6B9EC00033AE64 /* BitcoinPrivateKeyParser.swift */; };
 		67DC45BA2F63B29700CFAE73 /* BaseFiatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3CAC2F63B29700CFAE73 /* BaseFiatService.swift */; };
 		67DC45BB2F63B29700CFAE73 /* RestoreTypeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC410F2F63B29700CFAE73 /* RestoreTypeViewController.swift */; };
 		67DC45BC2F63B29700CFAE73 /* DataStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DC3DA92F63B29700CFAE73 /* DataStatus.swift */; };
@@ -4089,6 +4095,9 @@
 		50EED190218822E200E200AD /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		50EED191218822FA00E200AD /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		50EED192218822FA00E200AD /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		670C733E2F6930C500F4ACEE /* RestorePrivateKeyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorePrivateKeyView.swift; sourceTree = "<group>"; };
+		670C73412F6941EA00F4ACEE /* RestorePrivateKeyViewModelNew.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorePrivateKeyViewModelNew.swift; sourceTree = "<group>"; };
+		6759598A2F6B9EC00033AE64 /* BitcoinPrivateKeyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitcoinPrivateKeyParser.swift; sourceTree = "<group>"; };
 		67DC3C442F63B29700CFAE73 /* BitcoinCore+Hodler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BitcoinCore+Hodler.swift"; sourceTree = "<group>"; };
 		67DC3C462F63B29700CFAE73 /* CancelTransactionJsonRpc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelTransactionJsonRpc.swift; sourceTree = "<group>"; };
 		67DC3C472F63B29700CFAE73 /* MerkleGetTransactionByHashJsonRpc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerkleGetTransactionByHashJsonRpc.swift; sourceTree = "<group>"; };
@@ -8526,6 +8535,7 @@
 		67DC41072F63B29700CFAE73 /* RestorePrivateKey */ = {
 			isa = PBXGroup;
 			children = (
+				6759598A2F6B9EC00033AE64 /* BitcoinPrivateKeyParser.swift */,
 				67DC41052F63B29700CFAE73 /* RestorePrivateKeyService.swift */,
 				67DC41062F63B29700CFAE73 /* RestorePrivateKeyViewModel.swift */,
 			);
@@ -8550,6 +8560,8 @@
 				67DC410E2F63B29700CFAE73 /* RestoreTypeView.swift */,
 				67DC410F2F63B29700CFAE73 /* RestoreTypeViewController.swift */,
 				67DC41102F63B29700CFAE73 /* RestoreTypeViewModel.swift */,
+				670C733E2F6930C500F4ACEE /* RestorePrivateKeyView.swift */,
+				670C73412F6941EA00F4ACEE /* RestorePrivateKeyViewModelNew.swift */,
 			);
 			path = RestoreType;
 			sourceTree = "<group>";
@@ -12026,6 +12038,7 @@
 				67DC4EDC2F63B29700CFAE73 /* WhitelistDapp.swift in Sources */,
 				67DC4EDD2F63B29700CFAE73 /* PublicKeysService.swift in Sources */,
 				67DC4EDE2F63B29700CFAE73 /* ReceiveAddressBodyView.swift in Sources */,
+				6759598E2F6B9EC00033AE64 /* BitcoinPrivateKeyParser.swift in Sources */,
 				67DC4EE22F63B29700CFAE73 /* MarketVaultView.swift in Sources */,
 				67DC4EE32F63B29700CFAE73 /* OneInchSendEvmTransactionService.swift in Sources */,
 				67DC4EE42F63B29700CFAE73 /* SyncErrorView.swift in Sources */,
@@ -12266,6 +12279,7 @@
 				67DC4FDE2F63B29700CFAE73 /* SwapInputAccessoryView.swift in Sources */,
 				67DC4FDF2F63B29700CFAE73 /* LockedRecordService.swift in Sources */,
 				67DC4FE02F63B29700CFAE73 /* FeeRateState.swift in Sources */,
+				670C73432F6941EA00F4ACEE /* RestorePrivateKeyViewModelNew.swift in Sources */,
 				67DC4FE12F63B29700CFAE73 /* BackupCloudPassphraseViewModel.swift in Sources */,
 				67DC4FE22F63B29700CFAE73 /* BadgeViewNew.swift in Sources */,
 				67DC4FE32F63B29700CFAE73 /* ApiKeyProvider.swift in Sources */,
@@ -13102,6 +13116,7 @@
 				67DC53132F63B29700CFAE73 /* WalletConnectVerificationModel.swift in Sources */,
 				67DC53142F63B29700CFAE73 /* OneInchProvider.swift in Sources */,
 				67DC53152F63B29700CFAE73 /* LegacyFeeSettingsViewModel.swift in Sources */,
+				670C73402F6930C500F4ACEE /* RestorePrivateKeyView.swift in Sources */,
 				67DC53172F63B29700CFAE73 /* CellBuilder.swift in Sources */,
 				67DC53182F63B29700CFAE73 /* Auditor.swift in Sources */,
 				67DC531A2F63B29700CFAE73 /* WalletConnectTransaction.swift in Sources */,
@@ -13972,6 +13987,7 @@
 				67DC47002F63B29700CFAE73 /* WhitelistDapp.swift in Sources */,
 				67DC47012F63B29700CFAE73 /* PublicKeysService.swift in Sources */,
 				67DC47022F63B29700CFAE73 /* ReceiveAddressBodyView.swift in Sources */,
+				6759598C2F6B9EC00033AE64 /* BitcoinPrivateKeyParser.swift in Sources */,
 				67DC47062F63B29700CFAE73 /* MarketVaultView.swift in Sources */,
 				67DC47072F63B29700CFAE73 /* OneInchSendEvmTransactionService.swift in Sources */,
 				67DC47082F63B29700CFAE73 /* SyncErrorView.swift in Sources */,
@@ -14212,6 +14228,7 @@
 				67DC48022F63B29700CFAE73 /* SwapInputAccessoryView.swift in Sources */,
 				67DC48032F63B29700CFAE73 /* LockedRecordService.swift in Sources */,
 				67DC48042F63B29700CFAE73 /* FeeRateState.swift in Sources */,
+				670C73422F6941EA00F4ACEE /* RestorePrivateKeyViewModelNew.swift in Sources */,
 				67DC48052F63B29700CFAE73 /* BackupCloudPassphraseViewModel.swift in Sources */,
 				67DC48062F63B29700CFAE73 /* BadgeViewNew.swift in Sources */,
 				67DC48072F63B29700CFAE73 /* ApiKeyProvider.swift in Sources */,
@@ -15048,6 +15065,7 @@
 				67DC4B372F63B29700CFAE73 /* WalletConnectVerificationModel.swift in Sources */,
 				67DC4B382F63B29700CFAE73 /* OneInchProvider.swift in Sources */,
 				67DC4B392F63B29700CFAE73 /* LegacyFeeSettingsViewModel.swift in Sources */,
+				670C733F2F6930C500F4ACEE /* RestorePrivateKeyView.swift in Sources */,
 				67DC4B3B2F63B29700CFAE73 /* CellBuilder.swift in Sources */,
 				67DC4B3C2F63B29700CFAE73 /* Auditor.swift in Sources */,
 				67DC4B3E2F63B29700CFAE73 /* WalletConnectTransaction.swift in Sources */,
