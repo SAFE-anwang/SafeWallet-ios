@@ -135,6 +135,7 @@
 "restore.title" = "Import Wallet";
 "restore.advanced" = "Advanced";
 "restore.import_by" = "Import By";
+"restore.bip32_path" = "BIP32 Path";
 "restore.restore_type.mnemonic" = "Recovery Phrase";
 "restore.restore_type.private_key" = "Private Key";
 "restore.mnemonic.placeholder" = "Enter Recovery Phrase";
@@ -2894,3 +2895,17 @@
 // Secure Send Bottom Sheet
 "secure_send.bottom_sheet.title" = "Secure Send";
 "secure_send.bottom_sheet.description" = "Choose security checks.";
+
+// Wallet Select
+"wallet_select.title" = "Select Wallet";
+"wallet_select.search" = "Search";
+"wallet_select.no_data" = "No data";
+"wallet_select.no_match" = "No matching wallet found";
+"wallet_select.tab.hardware" = "Hardware Wallet";
+"wallet_select.tab.software" = "Software Wallet";
+"wallet_select.tab.both" = "Hardware/Software Wallet";
+"wallet_select.identity_wallet" = "Identity Wallet (HD)";
+"wallet_select.safe_wallet" = "SafeWallet";
+"wallet_select.imtoken" = "ImToken";
+"wallet_select.token_pocket" = "Token Pocket";
+"wallet_select.import_private_key" = "Import with Private Key";

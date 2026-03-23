@@ -4,13 +4,12 @@ import RxCocoa
 import RxSwift
 import SectionsTableView
 import SnapKit
-
 import UIExtensions
 import UIKit
 
 class RestoreViewController: KeyboardAwareViewController {
     private let advanced: Bool
-    private let viewModel: RestoreViewModel
+    private let viewModel: RestoreViewModelOld
     private let mnemonicViewModel: RestoreMnemonicViewModel
     private let privateKeyViewModel: RestorePrivateKeyViewModel
     private let disposeBag = DisposeBag()
@@ -33,13 +32,13 @@ class RestoreViewController: KeyboardAwareViewController {
     private let privateKeyInputCell: TextInputCell
     private let privateKeyCautionCell = FormCautionCell()
 
-    private var restoreType: RestoreViewModel.RestoreType = .mnemonic
+    private var restoreType: RestoreViewModelOld.RestoreType = .mnemonic
     private var inputsVisible = false
     private var isLoaded = false
 
     private let onRestore: () -> Void
 
-    init(advanced: Bool, viewModel: RestoreViewModel, mnemonicViewModel: RestoreMnemonicViewModel, privateKeyViewModel: RestorePrivateKeyViewModel, onRestore: @escaping () -> Void) {
+    init(advanced: Bool, viewModel: RestoreViewModelOld, mnemonicViewModel: RestoreMnemonicViewModel, privateKeyViewModel: RestorePrivateKeyViewModel, onRestore: @escaping () -> Void) {
         self.advanced = advanced
         self.viewModel = viewModel
         self.mnemonicViewModel = mnemonicViewModel
@@ -261,14 +260,14 @@ class RestoreViewController: KeyboardAwareViewController {
     private func onTapRestoreType() {
         let alertController = AlertRouter.module(
             title: "restore.import_by".localized,
-            viewItems: RestoreViewModel.RestoreType.allCases.enumerated().map { _, restoreType in
+            viewItems: RestoreViewModelOld.RestoreType.allCases.enumerated().map { _, restoreType in
                 AlertViewItem(
                     text: restoreType.title,
                     selected: self.restoreType == restoreType
                 )
             }
         ) { [weak self] index in
-            self?.viewModel.onSelect(restoreType: RestoreViewModel.RestoreType.allCases[index])
+            self?.viewModel.onSelect(restoreType: RestoreViewModelOld.RestoreType.allCases[index])
         }
 
         present(alertController, animated: true)

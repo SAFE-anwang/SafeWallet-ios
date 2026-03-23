@@ -15,6 +15,7 @@ class RestoreSelectService {
     private let marketKit: MarketKit.Kit
     private let blockchainTokensService: BlockchainTokensService
     private let restoreSettingsService: RestoreSettingsService
+    private let allowedBitcoinDerivations: Set<MnemonicDerivation>?
     private let disposeBag = DisposeBag()
 
     private var tokens = [Token]()
@@ -34,7 +35,21 @@ class RestoreSelectService {
 
     private let statPage: StatPage
 
-    init(accountName: String, accountType: AccountType, statPage: StatPage, isManualBackedUp: Bool, isFileBackedUp: Bool, accountFactory: AccountFactory, accountManager: AccountManager, walletManager: WalletManager, restoreStateManager: RestoreStateManager, marketKit: MarketKit.Kit, blockchainTokensService: BlockchainTokensService, restoreSettingsService: RestoreSettingsService) {
+    init(
+        accountName: String,
+        accountType: AccountType,
+        statPage: StatPage,
+        isManualBackedUp: Bool,
+        isFileBackedUp: Bool,
+        accountFactory: AccountFactory,
+        accountManager: AccountManager,
+        walletManager: WalletManager,
+        restoreStateManager: RestoreStateManager,
+        marketKit: MarketKit.Kit,
+        blockchainTokensService: BlockchainTokensService,
+        restoreSettingsService: RestoreSettingsService,
+        allowedBitcoinDerivations: Set<MnemonicDerivation>? = nil
+    ) {
         self.accountName = accountName
         self.accountType = accountType
         self.statPage = statPage
@@ -47,6 +62,7 @@ class RestoreSelectService {
         self.marketKit = marketKit
         self.blockchainTokensService = blockchainTokensService
         self.restoreSettingsService = restoreSettingsService
+        self.allowedBitcoinDerivations = allowedBitcoinDerivations
 
         subscribe(disposeBag, blockchainTokensService.approveTokensObservable) { [weak self] blockchain, tokens in
             self?.handleApproveTokens(blockchain: blockchain, tokens: tokens)
@@ -70,10 +86,28 @@ class RestoreSelectService {
             let tokenQueries = BlockchainType.supported.map(\.nativeTokenQueries).flatMap { $0 }
             let allTokens = try marketKit.tokens(queries: tokenQueries)
 
-            tokens = allTokens.filter { accountType.supports(token: $0) }
+            tokens = allTokens.filter { token in
+                accountType.supports(token: token) && supportsDerivationLimit(token: token)
+            }
         } catch {
             // todo
         }
+    }
+
+    private func supportsDerivationLimit(token: Token) -> Bool {
+        guard let allowedBitcoinDerivations else {
+            return true
+        }
+
+        guard token.blockchainType == .bitcoin || token.blockchainType == .litecoin else {
+            return true
+        }
+
+        guard let derivation = token.type.derivation else {
+            return true
+        }
+
+        return allowedBitcoinDerivations.contains(derivation)
     }
 
     private func isEnabled(blockchain: Blockchain) -> Bool {

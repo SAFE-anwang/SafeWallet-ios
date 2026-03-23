@@ -85,7 +85,7 @@ extension RestoreTypeViewModel {
         case .recoveryOrPrivateKey: return "restore_type.recovery.description".localized
 //        case .cloudRestore: return "restore_type.cloud.description".localized
 //        case .fileRestore: return "restore_type.file.description".localized
-        case .privateKey: return "使用私钥导入".localized
+        case .privateKey: return "wallet_select.import_private_key".localized
         }
     }
 

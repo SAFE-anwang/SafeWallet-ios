@@ -59,6 +59,7 @@ struct RestorePrivateKeyView: View {
                     accountName: accountName,
                     accountType: accountType,
                     statPage: .importWalletFromKey,
+                    allowedBitcoinDerivations: nil,
                     onRestore: handleRestore
                 )
                 .ignoresSafeArea()
@@ -241,6 +242,7 @@ struct RestoreSelectWrapperNew: UIViewControllerRepresentable {
     let accountName: String
     let accountType: AccountType
     let statPage: StatPage
+    let allowedBitcoinDerivations: Set<MnemonicDerivation>?
     let onRestore: () -> Void
 
     func makeUIViewController(context _: Context) -> UINavigationController {
@@ -249,6 +251,7 @@ struct RestoreSelectWrapperNew: UIViewControllerRepresentable {
             accountType: accountType,
             statPage: statPage,
             isManualBackedUp: true,
+            allowedBitcoinDerivations: allowedBitcoinDerivations,
             onRestore: onRestore
         )
 

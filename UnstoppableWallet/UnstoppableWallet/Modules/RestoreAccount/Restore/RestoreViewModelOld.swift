@@ -8,7 +8,7 @@ protocol IRestoreSubViewModel: AnyObject {
     func clear()
 }
 
-class RestoreViewModel {
+class RestoreViewModelOld {
     private let service: RestoreService
     private let mnemonicViewModel: IRestoreSubViewModel
     private let privateKeyViewModel: IRestoreSubViewModel
@@ -30,7 +30,7 @@ class RestoreViewModel {
     }
 }
 
-extension RestoreViewModel {
+extension RestoreViewModelOld {
     var restoreTypeDriver: Driver<RestoreType> {
         restoreTypeRelay.asDriver()
     }
@@ -63,7 +63,7 @@ extension RestoreViewModel {
     }
 }
 
-extension RestoreViewModel {
+extension RestoreViewModelOld {
     enum RestoreType: CaseIterable {
         case mnemonic
         case privateKey

@@ -4,7 +4,15 @@ import RxSwift
 import UIKit
 
 enum RestoreSelectModule {
-    static func viewController(accountName: String, accountType: AccountType, statPage: StatPage, isManualBackedUp: Bool = true, isFileBackedUp: Bool = false, onRestore: @escaping () -> Void) -> UIViewController {
+    static func viewController(
+        accountName: String,
+        accountType: AccountType,
+        statPage: StatPage,
+        isManualBackedUp: Bool = true,
+        isFileBackedUp: Bool = false,
+        allowedBitcoinDerivations: Set<MnemonicDerivation>? = nil,
+        onRestore: @escaping () -> Void
+    ) -> UIViewController {
         let (blockchainTokensService, blockchainTokensView) = BlockchainTokensModule.module()
         let (restoreSettingsService, restoreSettingsView) = RestoreSettingsModule.module(statPage: .restoreSelect)
 
@@ -20,7 +28,8 @@ enum RestoreSelectModule {
             restoreStateManager: Core.shared.restoreStateManager,
             marketKit: Core.shared.marketKit,
             blockchainTokensService: blockchainTokensService,
-            restoreSettingsService: restoreSettingsService
+            restoreSettingsService: restoreSettingsService,
+            allowedBitcoinDerivations: allowedBitcoinDerivations
         )
 
         let viewModel = RestoreSelectViewModel(service: service)

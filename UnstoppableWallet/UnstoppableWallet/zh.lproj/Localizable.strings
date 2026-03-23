@@ -138,6 +138,7 @@
 "restore.title" = "恢复自";
 "restore.advanced" = "高级";
 "restore.import_by" = "由";
+"restore.bip32_path" = "BIP32 路径";
 "restore.restore_type.mnemonic" = "恢复码";
 "restore.restore_type.private_key" = "私钥";
 "restore.mnemonic.placeholder" = "输入12、15、18、21或24个单词";
@@ -2955,3 +2956,17 @@
 // Secure Send Bottom Sheet
 "secure_send.bottom_sheet.title" = "安全发送";
 "secure_send.bottom_sheet.description" = "选择安全检查项。";
+
+// Wallet Select
+"wallet_select.title" = "选择钱包";
+"wallet_select.search" = "搜索";
+"wallet_select.no_data" = "暂无数据";
+"wallet_select.no_match" = "未找到匹配的钱包";
+"wallet_select.tab.hardware" = "硬件钱包";
+"wallet_select.tab.software" = "软件钱包";
+"wallet_select.tab.both" = "硬件/软件钱包";
+"wallet_select.identity_wallet" = "身份钱包(HD)";
+"wallet_select.safe_wallet" = "SafeWallet";
+"wallet_select.imtoken" = "ImToken";
+"wallet_select.token_pocket" = "Token Pocket";
+"wallet_select.import_private_key" = "使用私钥导入";

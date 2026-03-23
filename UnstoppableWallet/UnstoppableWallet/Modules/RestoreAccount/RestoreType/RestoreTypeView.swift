@@ -12,14 +12,13 @@ struct RestoreTypeView: View {
     @State private var namedSource: BackupModule.NamedSource?
     @State private var selectCoinsAccount: Account?
     @State private var fileConfigRawBackup: RawFullBackup?
-
     private enum Route: Hashable {
+        case walletTypeList
         case recoveryOrPrivateKey
-        case cloudRestore
         case passphrase
         case selectCoins
-        case fileConfiguration
         case privateKey
+        case recoveryNew(walletType: MnemonicRestoreWalletType)
     }
 
     init(type: BackupModule.Source.Abstract, onRestore: (() -> Void)? = nil, isPresented: Binding<Bool>) {
@@ -54,8 +53,20 @@ struct RestoreTypeView: View {
             }
             .navigationDestination(for: Route.self) { route in
                 switch route {
+                case .walletTypeList:
+                    WalletTypeListView(isPresented: $isPresented, path: $path, onRestore: onRestore, onSelectWallet: { walletType in
+                        switch walletType {
+                        case .identityWallet, .imToken, .tokenPocket:
+                            path.append(Route.recoveryNew(walletType: walletType))
+                        case .safeWallet:
+                            path.append(Route.recoveryOrPrivateKey)
+                        }
+                    })
+                    
                 case .recoveryOrPrivateKey:
-
+//                    WalletSelectView(isPresented: $isPresented, path: $path, onRestore: onRestore, onSelectWallet: { walletItem in
+//                        path.append(Route.recoveryOrPrivateKey)
+//                    })
                     // import passphrase or private key form
                     RestoreViewWrapper(advanced: false, onRestore: handleRestore)
                         .ignoresSafeArea()
@@ -65,13 +76,13 @@ struct RestoreTypeView: View {
                     RestorePrivateKeyView(isPresented: $isPresented, path: $path, onRestore: handleRestore)
                         .navigationTitle("restore.title".localized)
                     
-                case .cloudRestore:
-
-                    // show cloud list view
-                    CloudRestoreBackupListView(isPresented: $isPresented, path: $path, onSelectBackup: { source in
-                        namedSource = source
-                        path.append(Route.passphrase)
-                    })
+//                case .cloudRestore:
+//
+//                    // show cloud list view
+//                    CloudRestoreBackupListView(isPresented: $isPresented, path: $path, onSelectBackup: { source in
+//                        namedSource = source
+//                        path.append(Route.passphrase)
+//                    })
                 case .passphrase:
 
                     // after picked url from files or select in cloud show passphrase
@@ -86,12 +97,16 @@ struct RestoreTypeView: View {
                             .ignoresSafeArea()
                             .navigationTitle("restore.title".localized)
                     }
-                case .fileConfiguration:
+                    
+                case let .recoveryNew(walletType):
+                    RestoreView(isPresented: $isPresented, path: $path, walletType: walletType, onRestore: onRestore)
 
-                    // show all wallets & configurations after import fullBackup from files or cloud)
-                    if let rawBackup = fileConfigRawBackup {
-                        RestoreFileConfigurationView(rawBackup: rawBackup, statPage: passphraseStatPage, isPresented: $isPresented, onRestore: handleRestore)
-                    }
+//                case .fileConfiguration:
+//
+//                    // show all wallets & configurations after import fullBackup from files or cloud)
+//                    if let rawBackup = fileConfigRawBackup {
+//                        RestoreFileConfigurationView(rawBackup: rawBackup, statPage: passphraseStatPage, isPresented: $isPresented, onRestore: handleRestore)
+//                    }
                 }
             }
         }
@@ -106,7 +121,7 @@ struct RestoreTypeView: View {
             // tap on 'import passphrase' just open import-wallet
             case .recoveryOrPrivateKey:
                 stat(page: .importWallet, event: .open(page: .importWalletFromKey))
-                path.append(Route.recoveryOrPrivateKey)
+                path.append(Route.walletTypeList)
                 
             case .privateKey:
 //                stat(page: .importWallet, event: .open(page: .importWalletFromKey))
@@ -130,10 +145,10 @@ struct RestoreTypeView: View {
             HudHelper.instance.show(banner: .error(string: "alert.cant_recognize".localized))
         }
         // after pick file we need open input-passphrase for json file
-        .onReceive(viewModel.showRestoreBackupPublisher) { source in
-            namedSource = source
-            path.append(Route.passphrase)
-        }
+//        .onReceive(viewModel.showRestoreBackupPublisher) { source in
+//            namedSource = source
+//            path.append(Route.passphrase)
+//        }
     }
 
     @ViewBuilder private func row(item: RestoreTypeModule.RestoreType) -> some View {
@@ -163,8 +178,8 @@ struct RestoreTypeView: View {
                 path.append(Route.selectCoins)
             },
             onConfiguration: { rawBackup in
-                fileConfigRawBackup = rawBackup
-                path.append(Route.fileConfiguration)
+//                fileConfigRawBackup = rawBackup
+//                path.append(Route.fileConfiguration)
             },
             onRestore: handleRestore
         )
