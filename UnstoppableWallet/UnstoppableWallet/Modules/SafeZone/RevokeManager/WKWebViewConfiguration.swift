@@ -57,8 +57,25 @@ extension Web3Method: Equatable {
 
 extension WKWebViewConfiguration {
     
-    static func make(forChainId chainId: Int, address: String, messageHandler: WKScriptMessageHandler) -> WKWebViewConfiguration {
+    /// 禁用自动钱包注入的域名列表
+    private static let disabledInjectionHosts: [String] = [
+        "safecoreswap.com",
+        "www.safecoreswap.com"
+    ]
+    
+    static func make(forChainId chainId: Int, address: String, messageHandler: WKScriptMessageHandler, host: String? = nil) -> WKWebViewConfiguration {
         let webViewConfig = WKWebViewConfiguration()
+        
+        // 检查是否需要禁用注入
+        let shouldDisableInjection: Bool = {
+            guard let host = host?.lowercased() else { return false }
+            return disabledInjectionHosts.contains { host.hasSuffix($0) || host == $0 }
+        }()
+        
+        if shouldDisableInjection {
+            print("[Web3Injection] Disabled for host: \(host ?? "unknown")")
+            return webViewConfig
+        }
 
         let js = """
         class CustomEthereumProvider {

@@ -14,6 +14,7 @@ struct RestoreView: View {
     @State private var proceedEnabled = false
     @State private var bip38SecureLock = true
     @State private var showWalletSelect = false
+    @State private var showBip32PathSelector = false
     @FocusState private var focusedField: Field?
 
     init(
@@ -36,9 +37,7 @@ struct RestoreView: View {
                     VStack(spacing: .margin24) {
                         nameSection
                         mnemonicSection
-                        if viewModel.supportsPassphrase {
-                            passwordToggleSection
-                        }
+                        passwordToggleSection
                         if viewModel.requirePassword {
                             passwordInputSection
                         }
@@ -114,6 +113,8 @@ struct RestoreView: View {
                 Image("arrow_big_forward_20")
             }
         }
+        .modifier(CautionBorder(cautionState: $viewModel.walletNameCaution))
+        .modifier(CautionPrompt(cautionState: $viewModel.walletNameCaution))
     }
 
     private var nameSection: some View {
@@ -157,6 +158,7 @@ struct RestoreView: View {
                 ThemeToggle(isOn: $viewModel.requirePassword, style: .yellow)
             }
         }
+        .disabled(!viewModel.supportsPassphrase)
     }
     
     private var passwordInputSection: some View {
@@ -183,37 +185,61 @@ struct RestoreView: View {
             ListSectionHeader(text: "restore.bip32_path".localized)
             ListSection {
                 ClickableRow {
-                    // to do ... show 
+                    showBip32PathSelector = true
                 } content: {
                     HStack {
                         Text(viewModel.selectedWalletBip32Paths[viewModel.currentBip32PathIndex])
                             .themeBody()
                         Spacer()
-                        if viewModel.supportsCustomPath {
-                            HStack(spacing: .margin16) {
-                                Button(action: {
-                                    if viewModel.currentBip32PathIndex > 0 {
-                                        viewModel.currentBip32PathIndex -= 1
+                        Image("arrow_big_up_20").themeIcon()
+                    }
+                }
+            }
+            .modifier(CautionBorder(cautionState: $viewModel.bip32PathCaution))
+            .modifier(CautionPrompt(cautionState: $viewModel.bip32PathCaution))
+        }
+        .sheet(isPresented: $showBip32PathSelector) {
+            bip32PathSelectorSheet
+        }
+    }
+    
+    private var bip32PathSelectorSheet: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ListSection {
+                        ForEach(viewModel.selectedWalletBip32Paths.indices, id: \.self) { index in
+                            ClickableRow {
+                                viewModel.currentBip32PathIndex = index
+                                showBip32PathSelector = false
+                            } content: {
+                                HStack {
+                                    Text(viewModel.selectedWalletBip32Paths[index])
+                                        .themeBody()
+                                    Spacer()
+                                    if index == viewModel.currentBip32PathIndex {
+                                        Image("check_1_20")
+                                            .themeIcon(color: .themeJacob)
                                     }
-                                }) {
-                                    Image("arrow_up_20").themeIcon()
                                 }
-                                .disabled(viewModel.currentBip32PathIndex == 0)
-
-                                Button(action: {
-                                    if viewModel.currentBip32PathIndex < viewModel.selectedWalletBip32Paths.count - 1 {
-                                        viewModel.currentBip32PathIndex += 1
-                                    }
-                                }) {
-                                    Image("arrow_down_20").themeIcon()
-                                }
-                                .disabled(viewModel.currentBip32PathIndex == viewModel.selectedWalletBip32Paths.count - 1)
                             }
                         }
                     }
                 }
+                .padding(.vertical, .margin12)
+            }
+            .background(Color.themeLawrence)
+            .navigationTitle("restore.bip32_path".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("button.done".localized) {
+                        showBip32PathSelector = false
+                    }
+                }
             }
         }
+        .presentationDetents([.medium])
     }
     
     private var handleRestore: () -> Void {
@@ -230,11 +256,33 @@ struct RestoreView: View {
                 .progressViewStyle(CircularProgressViewStyle(tint: .themeJacob))
         } else {
             ThemeButton(text: "button.next".localized, style: .primary) {
-                viewModel.onProceed()
+                handleNextButtonTap()
             }
             .disabled(!proceedEnabled)
             .opacity(proceedEnabled ? 1 : 0.5)
         }
+    }
+
+    private func handleNextButtonTap() {
+        viewModel.walletNameCaution = .none
+        viewModel.bip32PathCaution = .none
+
+        let hasWalletName = !viewModel.selectedWalletName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasBip32Path = !viewModel.selectedWalletBip32Paths.isEmpty
+
+        if !hasWalletName {
+            viewModel.walletNameCaution = .caution(Caution(text: "请先选择钱包名称", type: .error))
+            showError(message: "请先选择钱包名称")
+            return
+        }
+
+        if !hasBip32Path {
+            viewModel.bip32PathCaution = .caution(Caution(text: "请先选择BIP32路径", type: .error))
+            showError(message: "请先选择BIP32路径")
+            return
+        }
+
+        viewModel.onProceed()
     }
 
     private func setupBindings() {

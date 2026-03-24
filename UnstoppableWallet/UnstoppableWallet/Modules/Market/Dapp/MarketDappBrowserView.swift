@@ -1,6 +1,9 @@
+import Combine
 import Foundation
 import SwiftUI
 import UIKit
+import RxSwift
+import WalletConnectSign
 @preconcurrency import WebKit
 
 struct MarketDappBrowserConnectInfo: Equatable {
@@ -8,11 +11,83 @@ struct MarketDappBrowserConnectInfo: Equatable {
     let address: String
 }
 
+enum MarketDappConnectionState {
+    case connected
+    case connecting
+    case disconnected
+    case noAccount
+}
+
+class MarketDappConnectionObserver: ObservableObject {
+    @Published private(set) var connectionState: MarketDappConnectionState = .disconnected
+
+    private var disposeBag = DisposeBag()
+    private let service: WalletConnectService?
+    private let connectInfo: MarketDappBrowserConnectInfo?
+    private let urlHost: String
+
+    init(connectInfo: MarketDappBrowserConnectInfo?, urlHost: String) {
+        self.connectInfo = connectInfo
+        self.urlHost = urlHost
+
+        if connectInfo == nil {
+            connectionState = .noAccount
+            self.service = nil
+            return
+        }
+
+        let service = Core.shared.walletConnectSessionManager.service
+
+        self.service = service
+
+        service.sessionsUpdatedObservable
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] in
+                self?.syncConnectionState()
+            })
+            .disposed(by: disposeBag)
+
+        syncConnectionState()
+    }
+
+    private func syncConnectionState() {
+        guard let connectInfo else { return }
+        let urlHost = self.urlHost
+        let sessions = service?.activeSessions ?? []
+
+        let matchingSession = sessions.first { session in
+            let peerUrlString = session.peer.url
+            guard let peerUrl = URL(string: peerUrlString),
+                  let peerHost = peerUrl.host
+            else {
+                return false
+            }
+
+            let urlMatches = peerHost.lowercased() == urlHost.lowercased() ||
+                             urlHost.lowercased().contains(peerHost.lowercased()) ||
+                             peerHost.lowercased().contains(urlHost.lowercased())
+
+            let chainMatches = session.chainIds.contains(connectInfo.chainId)
+
+            return urlMatches && chainMatches
+        }
+
+        if matchingSession != nil {
+            connectionState = .connected
+        } else if !sessions.isEmpty {
+            connectionState = .disconnected
+        } else {
+            connectionState = .disconnected
+        }
+    }
+}
+
 struct MarketDappBrowserView: View {
     let url: URL
     let connectInfo: MarketDappBrowserConnectInfo?
     let onClose: () -> Void
     @StateObject private var web3Handler: MarketDappWeb3Handler
+    @StateObject private var connectionObserver: MarketDappConnectionObserver
     @State private var progress: Double = 0
     @State private var isLoading = false
 
@@ -24,6 +99,31 @@ struct MarketDappBrowserView: View {
         let chainId = connectInfo?.chainId ?? 1
         let address = connectInfo?.address ?? ""
         _web3Handler = StateObject(wrappedValue: MarketDappWeb3Handler(chainId: chainId, address: address, dAppName: url.host ?? ""))
+        _connectionObserver = StateObject(wrappedValue: MarketDappConnectionObserver(connectInfo: connectInfo, urlHost: url.host ?? ""))
+    }
+
+    @ViewBuilder
+    private var connectionStatusView: some View {
+        switch connectionObserver.connectionState {
+        case .connected:
+            EmptyView()
+        case .connecting:
+            HStack(spacing: .margin8) {
+                ProgressView()
+                    .tint(.themeYellow)
+            }
+            .padding(.vertical, .margin8)
+            .padding(.horizontal, .margin16)
+        case .disconnected:
+            HighlightedTextView(text: "wallet_connect.no_connection".localized, style: .warning)
+                .padding(.horizontal, .margin16)
+                .padding(.vertical, .margin8)
+            
+        case .noAccount:
+            HighlightedTextView(text: "wallet_connect.no_connection".localized, style: .warning)
+                .padding(.horizontal, .margin16)
+                .padding(.vertical, .margin8)
+        }
     }
 
     var body: some View {
@@ -47,8 +147,11 @@ struct MarketDappBrowserView: View {
                         progress: $progress,
                         isLoading: $isLoading
                     )
+                    
+                    connectionStatusView
                 }
             }
+            .edgesIgnoringSafeArea(.bottom)
             .navigationTitle(url.host ?? "")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -87,7 +190,12 @@ struct MarketDappWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let webView: WKWebView
         if let connectInfo, let web3Handler {
-            let config = WKWebViewConfiguration.make(forChainId: connectInfo.chainId, address: connectInfo.address, messageHandler: web3Handler)
+            let config = WKWebViewConfiguration.make(
+                forChainId: connectInfo.chainId,
+                address: connectInfo.address,
+                messageHandler: web3Handler,
+                host: url.host
+            )
             config.websiteDataStore = WKWebsiteDataStore.default()
             webView = WKWebView(frame: .zero, configuration: config)
         } else {
@@ -159,16 +267,26 @@ struct MarketDappWebView: UIViewRepresentable {
                 decisionHandler(.allow)
                 return
             }
+            
+            print("[WalletConnect] Navigation action: \(url.absoluteString)")
+            print("[WalletConnect] Navigation type: \(navigationAction.navigationType)")
 
             if let uri = walletConnectUri(url: url) {
+                print("[WalletConnect] Detected WalletConnect URI, handling...")
                 Task { @MainActor in
-                    try? await Core.shared.appEventHandler.handle(source: .main, event: uri, eventType: .walletConnectUri)
+                    do {
+                        try await Core.shared.appEventHandler.handle(source: .main, event: uri, eventType: .walletConnectUri)
+                        print("[WalletConnect] URI handled successfully")
+                    } catch {
+                        print("[WalletConnect] Error handling URI: \(error)")
+                    }
                 }
                 decisionHandler(.cancel)
                 return
             }
 
             if shouldOpenExternally(url: url) {
+                print("[WalletConnect] Opening externally: \(url.absoluteString)")
                 UIApplication.shared.open(url, options: [:], completionHandler: nil)
                 decisionHandler(.cancel)
                 return
@@ -199,12 +317,29 @@ struct MarketDappWebView: UIViewRepresentable {
         }
 
         private func shouldOpenExternally(url: URL) -> Bool {
-            if let scheme = url.scheme?.lowercased(), scheme != "http", scheme != "https" {
-                return scheme != "about"
+            let scheme = url.scheme?.lowercased() ?? ""
+            let host = url.host?.lowercased() ?? ""
+            
+            print("[WalletConnect] Checking shouldOpenExternally - scheme: \(scheme), host: \(host)")
+            
+            // 不拦截 WalletConnect 链接
+            if scheme == "wc" {
+                print("[WalletConnect] wc: scheme should not open externally, will be handled separately")
+                return false
+            }
+            
+            // 非 http/https 协议（除了 about）
+            if scheme != "http", scheme != "https" {
+                if scheme == "about" {
+                    return false
+                }
+                print("[WalletConnect] Non-http/https scheme, opening externally: \(scheme)")
+                return true
             }
 
-            let host = url.host?.lowercased()
+            // 特定的外部链接
             if host == "metamask.app.link" || host == "link.walletconnect.com" {
+                print("[WalletConnect] Known external host, opening externally: \(host)")
                 return true
             }
 
@@ -212,23 +347,65 @@ struct MarketDappWebView: UIViewRepresentable {
         }
 
         private func walletConnectUri(url: URL) -> String? {
+            let urlString = url.absoluteString
+            print("[WalletConnect] Checking URL: \(urlString)")
+            
+            // 1. 直接 wc: 协议链接
             if url.scheme?.lowercased() == "wc" {
-                return url.absoluteString
+                print("[WalletConnect] Found direct wc: scheme: \(urlString)")
+                return urlString
             }
-
-            guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                  let items = components.queryItems,
-                  let uri = items.first(where: { $0.name == "uri" })?.value
-            else {
-                return nil
+            
+            // 2. 从 URL query 参数中提取 uri
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let items = components.queryItems {
+                
+                // 检查各种可能的参数名
+                let possibleParamNames = ["uri", "wc_uri", "walletconnect", "connection", "session"]
+                for paramName in possibleParamNames {
+                    if let uri = items.first(where: { $0.name.lowercased() == paramName })?.value {
+                        let trimmed = uri.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if trimmed.lowercased().hasPrefix("wc:") {
+                            print("[WalletConnect] Found uri in query param '\(paramName)': \(trimmed)")
+                            return trimmed
+                        }
+                    }
+                }
             }
-
-            let trimmed = uri.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.lowercased().hasPrefix("wc:") {
-                return trimmed
-            } else {
-                return nil
+            
+            // 3. 从 URL fragment 中提取 (hash 部分)
+            if let fragment = url.fragment {
+                let trimmed = fragment.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.lowercased().hasPrefix("wc:") {
+                    print("[WalletConnect] Found uri in fragment: \(trimmed)")
+                    return trimmed
+                }
             }
+            
+            // 4. 从 URL path 中提取 (某些 DApp 可能使用 /wc:xxx 格式)
+            let path = url.path
+            if path.lowercased().contains("wc:") {
+                if let range = path.lowercased().range(of: "wc:") {
+                    let uri = String(path[range.lowerBound...])
+                    print("[WalletConnect] Found uri in path: \(uri)")
+                    return uri
+                }
+            }
+            
+            // 5. 检查整个 URL 字符串是否包含 wc: 链接
+            if urlString.contains("wc:") {
+                // 尝试提取 wc: 开头的部分
+                if let range = urlString.range(of: "wc:", options: .caseInsensitive) {
+                    let uri = String(urlString[range.lowerBound...])
+                        .components(separatedBy: .whitespacesAndNewlines)
+                        .first ?? String(urlString[range.lowerBound...])
+                    print("[WalletConnect] Found uri in full URL: \(uri)")
+                    return uri
+                }
+            }
+            
+            print("[WalletConnect] No wc: uri found in URL")
+            return nil
         }
     }
 }

@@ -391,7 +391,7 @@
 
 "deposit.not_active" = "Not active";
 "deposit.not_active.title" = "TRON Not Activated";
-"deposit.not_active.tron_description" = "TRON requires at least 1 TRX for activation. Until the wallet is activated, tokens can be received, but balances may not be shown.";
+"deposit.not_active.tron_description" = "TRON requires at least 1 TRX for activation.Until the wallet is activated, tokens can be received, but balances may not be shown.";
 "deposit.not_active.view_address" = "View my address";
 "deposit.stellar.inactive_asset.title" = "Activate Token";
 "deposit.stellar.inactive_asset.description" = "To receive %@, you need to activate the token. The Stellar network requires a trustline to be established for each token. Without it, your wallet cannot receive %@ — the transaction will be rejected and the funds will not be delivered.";
@@ -2890,6 +2890,7 @@
 "Super_Node_Modify_IncentivePlan" = "Update incentive plan";
 "Revoke_Manager" = "Revoke Manager";
 "loadData.nomore" = "No more data";
+"manage_wallets.filter_by_blockchain" = "Filter By Blockchain";
 "manage_wallets.filter_all_blockchains" = "All Blockchains";
 "manage_wallets.filter_bitcoin_series" = "Bitcoin Series";
 // Secure Send Bottom Sheet
