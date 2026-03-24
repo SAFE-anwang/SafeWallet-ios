@@ -21,7 +21,7 @@ enum SendData {
     case monero(token: Token, amount: MoneroSendAmount, address: String, memo: String?)
     case evmSafe4TimeLock(blockchainType: BlockchainType, transactionData: TransactionData, timeLock: TimeLock)
     case crossChain(baseWallet: Wallet, transactionData: TransactionData)
-    case liquidityAdd(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType?)
+    case liquidityAdd(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType?, manualAmountOutMode: Bool)
 }
 
 enum StellarSendData {

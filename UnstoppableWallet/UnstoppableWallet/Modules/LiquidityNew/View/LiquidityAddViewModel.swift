@@ -14,6 +14,7 @@ class LiquidityAddViewModel: ObservableObject {
     private var providerCancellables = Set<AnyCancellable>()
     private var quotesTask: AnyTask?
     private var swapTask: AnyTask?
+    private var manualAllowanceTask: AnyTask?
     private var rateInCancellable: AnyCancellable?
     private var rateOutCancellable: AnyCancellable?
     private var timer: Timer?
@@ -110,8 +111,10 @@ class LiquidityAddViewModel: ObservableObject {
             priceFlipped = false
             internalUserSelectedProviderId = nil
             resetV3TickType()
+            manualAmountOutString = ""
 
             syncQuotes()
+            syncManualAllowanceStates()
         }
     }
 
@@ -184,8 +187,10 @@ class LiquidityAddViewModel: ObservableObject {
             priceFlipped = false
             internalUserSelectedProviderId = nil
             resetV3TickType()
+            manualAmountOutString = ""
 
             syncQuotes()
+            syncManualAllowanceStates()
         }
     }
 
@@ -212,6 +217,7 @@ class LiquidityAddViewModel: ObservableObject {
 
             syncQuotes()
             syncFiatAmountIn()
+            syncManualAllowanceStates()
 
             let amount = decimalParser.parseAnyDecimal(from: amountString)
 
@@ -341,6 +347,19 @@ class LiquidityAddViewModel: ObservableObject {
     }
 
     @Published var amountOutString: String?
+    @Published var manualAmountOutString: String = "" {
+        didSet {
+            let amount = decimalParser.parseAnyDecimal(from: manualAmountOutString)
+            guard amount != manualAmountOut else {
+                return
+            }
+            manualAmountOut = amount
+            syncManualAllowanceStates()
+        }
+    }
+    private var manualAmountOut: Decimal?
+    @Published private var manualAllowanceState0: LiquidityAddAllowanceHelper.AllowanceState = .unknown
+    @Published private var manualAllowanceState1: LiquidityAddAllowanceHelper.AllowanceState = .unknown
     @Published var fiatAmountOut: Decimal? {
         didSet {
             syncPriceImpact()
@@ -532,6 +551,7 @@ class LiquidityAddViewModel: ObservableObject {
 
                     // 无论是否为空，都更新quotes以反映最新的授权状态
                     self.quotes = quotes
+                    self.syncManualAllowanceStates()
                     
                     // 如果quotes为空且不是静默刷新，设置定时器重试
                     if quotes.isEmpty && !silent {
@@ -909,11 +929,55 @@ extension LiquidityAddViewModel {
 
             return buttons
         }
+
+        if isSafeSwapManualAmountOutMode,
+           let amountOut = proceedAmountOut,
+           amountOut > 0
+        {
+            guard let availableBalanceOut, amountOut <= availableBalanceOut else {
+                return []
+            }
+
+            guard let provider = proceedProvider else {
+                return []
+            }
+
+            var buttons = [ApprovalButton]()
+            if let state0 = manualAllowanceState0.customButtonState {
+                buttons.append(
+                    ApprovalButton(
+                        title: "\(state0.title) 1",
+                        state: state0,
+                        token: tokenIn,
+                        otherToken: tokenOut,
+                        amount: amountIn,
+                        provider: provider
+                    )
+                )
+            }
+
+            if let state1 = manualAllowanceState1.customButtonState {
+                buttons.append(
+                    ApprovalButton(
+                        title: "\(state1.title) 2",
+                        state: state1,
+                        token: tokenOut,
+                        otherToken: tokenIn,
+                        amount: amountOut,
+                        provider: provider
+                    )
+                )
+            }
+
+            return buttons
+        }
+
         return []
     }
 
     func refreshAfterPreSwap() {
         syncQuotes()
+        syncManualAllowanceStates()
     }
 }
 
@@ -980,13 +1044,70 @@ extension LiquidityAddViewModel {
         amountIn = nil
         internalTokenIn = nil
         internalTokenOut = nil
+        manualAmountOutString = ""
+        manualAllowanceTask?.cancel()
+        manualAllowanceTask = nil
+        manualAllowanceState0 = .unknown
+        manualAllowanceState1 = .unknown
     }
 }
 
 extension LiquidityAddViewModel {
+    private func syncManualAllowanceStates() {
+        manualAllowanceTask?.cancel()
+        manualAllowanceTask = nil
+        manualAllowanceState0 = .unknown
+        manualAllowanceState1 = .unknown
+
+        guard isSafeSwapManualAmountOutMode,
+              let tokenIn,
+              let tokenOut,
+              let amountIn,
+              amountIn > 0,
+              let amountOut = proceedAmountOut,
+              amountOut > 0,
+              let provider = proceedProvider as? BaseEvmLiquidityAddProvider
+        else {
+            return
+        }
+
+        manualAllowanceTask = Task { [weak self] in
+            async let allowance0 = provider.allowanceState(token: tokenIn, amount: amountIn)
+            async let allowance1 = provider.allowanceState(token: tokenOut, amount: amountOut)
+            let (state0, state1) = await (allowance0, allowance1)
+
+            if !Task.isCancelled {
+                await MainActor.run { [weak self] in
+                    self?.manualAllowanceState0 = state0
+                    self?.manualAllowanceState1 = state1
+                }
+            }
+        }
+        .erased()
+    }
+
+    private var safeSwapProvider: ILiquidityAddProvider? {
+        validProviders.first { $0.id == "safeswap" }
+    }
+
+    var isSafeSwapManualAmountOutMode: Bool {
+        guard let amountIn, amountIn > 0 else {
+            return false
+        }
+        return safeSwapProvider != nil && currentQuote == nil && !quoting
+    }
+
+    var proceedProvider: ILiquidityAddProvider? {
+        currentQuote?.provider ?? (isSafeSwapManualAmountOutMode ? safeSwapProvider : nil)
+    }
+
+    var proceedAmountOut: Decimal? {
+        currentQuote?.quote.expectedBuyAmount ?? (isSafeSwapManualAmountOutMode ? manualAmountOut : nil)
+    }
+
     var shouldShowTerms: Bool {
         guard let currentQuote else {
-            return false
+            return proceedProvider?.requireTerms == true && !localStorage.liquidityTermsAccepted
         }
 
         return currentQuote.provider.requireTerms && !localStorage.liquidityTermsAccepted

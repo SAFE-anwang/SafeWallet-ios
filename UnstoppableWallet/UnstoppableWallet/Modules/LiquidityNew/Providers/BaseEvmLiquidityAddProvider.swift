@@ -33,6 +33,10 @@ class BaseEvmLiquidityAddProvider: ILiquidityAddProvider {
         fatalError("Must be implemented in subclass")
     }
 
+    func confirmationQuote(token0: Token, token1: Token, amount0: Decimal, amount1 _: Decimal?, transactionSettings: TransactionSettings?) async throws -> LiquidityAddFinalQuote {
+        try await confirmationQuote(token0: token0, token1: token1, amount0: amount0, transactionSettings: transactionSettings)
+    }
+
     func otherSections(token0: Token, token1: Token, amount0: Decimal, transactionSettings: TransactionSettings?) -> [SendDataSection] {
         useMevProtection = false
         return []

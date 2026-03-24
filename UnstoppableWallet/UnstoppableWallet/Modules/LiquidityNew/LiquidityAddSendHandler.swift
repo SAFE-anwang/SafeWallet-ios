@@ -22,13 +22,14 @@ class LiquidityAddSendHandler {
     let amount1: Decimal
     let provider: ILiquidityAddProvider
     let v3TickType: LiquidityTickType?
+    let manualAmountOutMode: Bool
 
     private var slippage = MultiSwapSlippage.default
     private var recipient: String?
 
     private let refreshSubject = PassthroughSubject<Void, Never>()
     
-    init(baseToken: Token, token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType? = nil) {
+    init(baseToken: Token, token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType? = nil, manualAmountOutMode: Bool = false) {
         self.baseToken = baseToken
         self.token0 = token0
         self.token1 = token1
@@ -36,6 +37,7 @@ class LiquidityAddSendHandler {
         self.amount1 = amount1
         self.provider = provider
         self.v3TickType = v3TickType
+        self.manualAmountOutMode = manualAmountOutMode
     }
 }
 
@@ -91,8 +93,16 @@ extension LiquidityAddSendHandler: ISendHandler {
     }
 
     func sendData(transactionSettings: TransactionSettings?) async throws -> ISendData {
-        let quote = try await provider.confirmationQuote(
-            token0: token0, token1: token1, amount0: amount0, transactionSettings: transactionSettings)
+        let quote: LiquidityAddFinalQuote
+        if manualAmountOutMode {
+            quote = try await provider.confirmationQuote(
+                token0: token0, token1: token1, amount0: amount0, amount1: amount1, transactionSettings: transactionSettings
+            )
+        } else {
+            quote = try await provider.confirmationQuote(
+                token0: token0, token1: token1, amount0: amount0, transactionSettings: transactionSettings
+            )
+        }
         return SendData(token0: token0, token1: token1, amount0: amount0, quote: quote, otherSections: [])
     }
 
@@ -289,7 +299,7 @@ extension LiquidityAddSendHandler {
 }
 
 extension LiquidityAddSendHandler {
-    static func instance(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType? = nil) -> LiquidityAddSendHandler? {
+    static func instance(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType? = nil, manualAmountOutMode: Bool = false) -> LiquidityAddSendHandler? {
         let baseToken: Token?
 
         switch token0.type {
@@ -305,6 +315,6 @@ extension LiquidityAddSendHandler {
             return nil
         }
 
-        return LiquidityAddSendHandler(baseToken: baseToken, token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider, v3TickType: v3TickType)
+        return LiquidityAddSendHandler(baseToken: baseToken, token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider, v3TickType: v3TickType, manualAmountOutMode: manualAmountOutMode)
     }
 }

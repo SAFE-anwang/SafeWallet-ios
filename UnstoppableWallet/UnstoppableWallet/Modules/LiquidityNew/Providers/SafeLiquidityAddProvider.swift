@@ -21,4 +21,8 @@ class SafeLiquidityAddProvider: BaseUniswapV2LiquidityAddProvider {
         default: return false
         }
     }
+
+    override func spenderAddress(chain: Chain) throws -> EvmKit.Address {
+        try kit.routerAddress(chain: chain, isSafeSwap: true)
+    }
 }

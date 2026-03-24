@@ -23,6 +23,8 @@ class RestoreViewModel: ObservableObject {
     @Published var selectedWalletBip32Paths: [String] = []
     @Published var currentBip32PathIndex: Int = 0
     @Published var isLoading: Bool = false
+    @Published var walletNameCaution: CautionState = .none
+    @Published var bip32PathCaution: CautionState = .none
 
     let proceedSubject = PassthroughSubject<(String, AccountType), Never>()
     let errorSubject = PassthroughSubject<String, Never>()
@@ -55,10 +57,16 @@ class RestoreViewModel: ObservableObject {
 
     var proceedEnabled: AnyPublisher<Bool, Never> {
         Publishers.CombineLatest4($text, $requirePassword, $password, $isLoading)
-            .map { text, requirePassword, password, isLoading in
+            .combineLatest($selectedWalletName, $selectedWalletBip32Paths)
+            .map { combined in
+                let (text, requirePassword, password, isLoading) = combined.0
+                let walletName = combined.1
+                let bip32Paths = combined.2
                 let hasMnemonicText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 let hasPassphrase = !requirePassword || !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                return hasMnemonicText && hasPassphrase && !isLoading
+                let hasWalletName = !walletName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                let hasBip32Path = !bip32Paths.isEmpty
+                return hasMnemonicText && hasPassphrase && !isLoading && hasWalletName && hasBip32Path
             }
             .eraseToAnyPublisher()
     }
@@ -110,16 +118,26 @@ class RestoreViewModel: ObservableObject {
             .sink { [weak self] isOn in
                 guard let self else { return }
 
-                if !supportsPassphrase, requirePassword {
-                    requirePassword = false
-                }
-
                 if !isOn || !supportsPassphrase {
                     if !password.isEmpty {
                         password = ""
                     }
                     passwordCaution = .none
                 }
+            }
+            .store(in: &cancellables)
+
+        $selectedWalletName
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.walletNameCaution = .none
+            }
+            .store(in: &cancellables)
+
+        $selectedWalletBip32Paths
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.bip32PathCaution = .none
             }
             .store(in: &cancellables)
     }

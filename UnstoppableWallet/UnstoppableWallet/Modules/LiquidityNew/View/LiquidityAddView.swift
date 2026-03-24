@@ -83,16 +83,17 @@ struct LiquidityAddView: View {
             if let tokenIn = viewModel.tokenIn,
                let tokenOut = viewModel.tokenOut,
                let amountIn = viewModel.amountIn,
-               let currentQuote = viewModel.currentQuote
+               let provider = viewModel.proceedProvider,
+               let amountOut = viewModel.proceedAmountOut
             {
-                let amountOut = viewModel.currentQuote?.quote.expectedBuyAmount
                 LiquidityAddSendView(
                     token0: tokenIn,
                     token1: tokenOut,
                     amount0: amountIn,
-                    amount1: amountOut ?? 0,
-                    provider: currentQuote.provider,
+                    amount1: amountOut,
+                    provider: provider,
                     v3TickType: viewModel.currentV3TickType,
+                    manualAmountOutMode: viewModel.isSafeSwapManualAmountOutMode,
                     onFinish: onFinish ?? {
                         viewModel.reset()
                         sendPresented = false
@@ -144,59 +145,6 @@ struct LiquidityAddView: View {
                         .frame(height: 20)
                 }
             }
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    if isInputActive {
-                        HStack(spacing: 0) {
-                            if viewModel.availableBalance != nil {
-                                ForEach(1 ... 4, id: \.self) { multiplier in
-                                    let percent = multiplier * 25
-
-                                    Button(action: {
-                                        viewModel.setAmountIn(percent: percent)
-                                        isInputActive = false
-                                    }) {
-                                        Text("\(percent)%").textSubhead1(color: .themeLeah)
-                                    }
-                                    .frame(maxWidth: .infinity)
-
-                                    RoundedRectangle(cornerRadius: 0.5, style: .continuous)
-                                        .fill(Color.themeBlade)
-                                        .frame(width: 1)
-                                        .frame(maxHeight: .infinity)
-                                }
-                            } else {
-                                Spacer()
-                            }
-
-                            Button(action: {
-                                viewModel.clearAmountIn()
-                            }) {
-                                Image(systemName: "trash")
-                                    .font(.themeSubhead1)
-                                    .foregroundColor(.themeLeah)
-                            }
-                            .frame(maxWidth: .infinity)
-
-                            RoundedRectangle(cornerRadius: 0.5, style: .continuous)
-                                .fill(Color.themeBlade)
-                                .frame(width: 1)
-                                .frame(maxHeight: .infinity)
-
-                            Button(action: {
-                                isInputActive = false
-                            }) {
-                                Image(systemName: "keyboard.chevron.compact.down")
-                                    .font(.themeSubhead1)
-                                    .foregroundColor(.themeLeah)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        .padding(.horizontal, -16)
-                        .frame(maxWidth: .infinity)
-                    }
-                }
-            }
 
             Spacer()
 
@@ -231,12 +179,15 @@ struct LiquidityAddView: View {
         HStack(spacing: .margin8) {
             VStack(spacing: 3) {
                 if viewModel.currentQuote == nil {
-                    Text("0").themeHeadline1(color: .themeGray, alignment: .leading)
-//                    TextField("", text: $viewModel.amountOutString, prompt: Text("0").foregroundColor(.themeGray))
-//                        .foregroundColor(.themeLeah)
-//                        .font(.themeHeadline1)
-//                        .keyboardType(.decimalPad)
-//                        .focused($isInputActive)
+                    if viewModel.isSafeSwapManualAmountOutMode {
+                        TextField("", text: $viewModel.manualAmountOutString, prompt: Text("0").foregroundColor(.themeGray))
+                            .foregroundColor(.themeLeah)
+                            .font(.themeHeadline1)
+                            .keyboardType(.decimalPad)
+                            .focused($isInputActive)
+                    } else {
+                        Text("0").themeHeadline1(color: .themeGray, alignment: .leading)
+                    }
                 } else {
                     if let amountOutString = viewModel.amountOutString {
                         Text(amountOutString)
@@ -635,7 +586,9 @@ struct LiquidityAddView: View {
             title = "swap.no_providers".localized
         } else if viewModel.amountIn == nil {
             title = "swap.enter_amount".localized
-        } else if viewModel.amountOutString == nil {
+        } else if viewModel.isSafeSwapManualAmountOutMode, (viewModel.proceedAmountOut ?? 0) <= 0 {
+            title = "swap.enter_amount".localized
+        } else if viewModel.amountOutString == nil, !viewModel.isSafeSwapManualAmountOutMode {
             title = "swap.no_providers".localized
         } else if viewModel.adapterState == nil || viewModel.adapterStateOut == nil {
             title = "swap.token_not_enabled".localized
@@ -651,12 +604,12 @@ struct LiquidityAddView: View {
             title = "swap.token_not_synced".localized
         } else if let availableBalance = viewModel.availableBalance, let amountIn = viewModel.amountIn, amountIn > availableBalance {
             title = "swap.insufficient_balance".localized
-        } else if let amountOut = viewModel.currentQuote?.quote.expectedBuyAmount,
+        } else if let amountOut = viewModel.proceedAmountOut,
                   let availableBalanceOut = viewModel.availableBalanceOut,
                   amountOut > availableBalanceOut
         {
             title = "swap.insufficient_balance".localized
-        }else if let currentQuote = viewModel.currentQuote {
+        } else if let currentQuote = viewModel.currentQuote {
             let token: Token
             let amount: Decimal
             let state: MultiSwapButtonState
@@ -683,6 +636,9 @@ struct LiquidityAddView: View {
             if let step = state.preSwapStep {
                 preSwap = (step, token, amount, currentQuote.provider)
             }
+        } else if viewModel.isSafeSwapManualAmountOutMode {
+            title = "swap.proceed_button".localized
+            disabled = false
         } else {
             title = "swap.proceed_button".localized
             disabled = false
