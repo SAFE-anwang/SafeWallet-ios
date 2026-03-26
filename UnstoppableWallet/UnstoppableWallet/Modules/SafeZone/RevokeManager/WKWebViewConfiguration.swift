@@ -59,8 +59,8 @@ extension WKWebViewConfiguration {
     
     /// 禁用自动钱包注入的域名列表
     private static let disabledInjectionHosts: [String] = [
-        "safecoreswap.com",
-        "www.safecoreswap.com"
+//        "safecoreswap.com",
+//        "www.safecoreswap.com"
     ]
     
     static func make(forChainId chainId: Int, address: String, messageHandler: WKScriptMessageHandler, host: String? = nil) -> WKWebViewConfiguration {
