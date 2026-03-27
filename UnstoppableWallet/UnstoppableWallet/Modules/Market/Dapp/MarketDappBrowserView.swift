@@ -90,6 +90,7 @@ struct MarketDappBrowserView: View {
     @StateObject private var connectionObserver: MarketDappConnectionObserver
     @State private var progress: Double = 0
     @State private var isLoading = false
+    @State private var showConnectionWarning = true
 
     init(url: URL, connectInfo: MarketDappBrowserConnectInfo?, onClose: @escaping () -> Void) {
         self.url = url
@@ -104,6 +105,24 @@ struct MarketDappBrowserView: View {
 
     @ViewBuilder
     private var connectionStatusView: some View {
+        if showConnectionWarning {
+            ZStack(alignment: .topTrailing) {
+                HighlightedTextView(text: "wallet_connect.no_connection".localized, style: .warning)
+                    .padding(.horizontal, .margin16)
+                    .padding(.vertical, .margin8)
+
+                Button(action: {
+                    showConnectionWarning = false
+                }) {
+                    Image("close")
+//                        .themeIcon(color: .themeYellow)
+                        .padding(.margin10)
+                }
+                .padding(.trailing, .margin8)
+            }
+        }
+
+/*
         switch connectionObserver.connectionState {
         case .connected:
             EmptyView()
@@ -124,6 +143,7 @@ struct MarketDappBrowserView: View {
                 .padding(.horizontal, .margin16)
                 .padding(.vertical, .margin8)
         }
+ */
     }
 
     var body: some View {
