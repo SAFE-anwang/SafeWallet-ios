@@ -87,10 +87,13 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
         let blockchainType = token0.blockchainType
         let chain = try evmBlockchainManager.chain(blockchainType: blockchainType)
 
+        print("[SafeSwap Liquidity] Starting quote calculation - Provider: \(name), Token0: \(token0.coin.code), Token1: \(token1.coin.code), Amount0: \(amount0)")
+
         let kitToken0 = try kitToken(chain: chain, token: token0)
         let kitToken1 = try kitToken(chain: chain, token: token1)
 
         guard let rpcSource = evmSyncSourceManager.httpSyncSource(blockchainType: blockchainType)?.rpcSource else {
+            print("[SafeSwap Liquidity] Error: No HTTP RPC source available")
             throw SwapError.noHttpRpcSource
         }
 
@@ -104,22 +107,34 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
             feeOnTransfer: false
         )
 
+        print("[SafeSwap Liquidity] Fetching trade data...")
         let trade = try await trade(rpcSource: rpcSource, chain: chain, token0: kitToken0, token1: kitToken1, amountIn: amount0, tradeOptions: tradeOptions)
-        let amount1 = trade.amountOut ?? 0//quotedAmountOut(trade: trade)
+        
+        let amount1: Decimal
+        if let calculatedAmount = quotedAmountOut(trade: trade) {
+            amount1 = calculatedAmount
+            print("[SafeSwap Liquidity] Using calculated amount1 from quotedAmountOut: \(amount1)")
+        } else {
+            amount1 = trade.amountOut ?? 0
+            print("[SafeSwap Liquidity] Using trade amountOut: \(amount1)")
+        }
 
         async let allowanceState0 = allowanceState(token: token0, amount: amount0)
         async let allowanceState1 = allowanceState(token: token1, amount: amount1)
 
-        return await UniswapLiquidityAddQuote(
+        let quote = await UniswapLiquidityAddQuote(
             trade: trade,
             tradeOptions: tradeOptions,
             providerName: name,
             allowanceState0: allowanceState0,
             allowanceState1: allowanceState1
         )
+
+        print("[SafeSwap Liquidity] Quote calculation completed - Amount1: \(amount1)")
+        return quote
     }
 
-    private func quotedAmountOut(trade: UniswapLiquidityAddQuote.Trade) -> Decimal {
+    private func quotedAmountOut(trade: UniswapLiquidityAddQuote.Trade) -> Decimal? {
         switch trade {
         case let .v2(tradeData):
             if let amountIn = tradeData.amountIn, let midPrice = tradeData.midPrice {
@@ -129,7 +144,7 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
             ()
         }
 
-        return trade.amountOut ?? 0
+        return nil
     }
 }
 

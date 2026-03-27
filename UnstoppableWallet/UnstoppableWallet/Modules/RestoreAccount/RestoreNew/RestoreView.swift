@@ -258,28 +258,29 @@ struct RestoreView: View {
             ThemeButton(text: "button.next".localized, style: .primary) {
                 handleNextButtonTap()
             }
-            .disabled(!proceedEnabled)
-            .opacity(proceedEnabled ? 1 : 0.5)
         }
     }
 
     private func handleNextButtonTap() {
-        viewModel.walletNameCaution = .none
-        viewModel.bip32PathCaution = .none
 
-        let hasWalletName = !viewModel.selectedWalletName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasBip32Path = !viewModel.selectedWalletBip32Paths.isEmpty
+        if viewModel.supportsCustomName {
+            viewModel.walletNameCaution = .none
+            viewModel.bip32PathCaution = .none
 
-        if !hasWalletName {
-            viewModel.walletNameCaution = .caution(Caution(text: "请先选择钱包名称", type: .error))
-            showError(message: "请先选择钱包名称")
-            return
-        }
+            let hasWalletName = !viewModel.selectedWalletName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasBip32Path = !viewModel.selectedWalletBip32Paths.isEmpty
 
-        if !hasBip32Path {
-            viewModel.bip32PathCaution = .caution(Caution(text: "请先选择BIP32路径", type: .error))
-            showError(message: "请先选择BIP32路径")
-            return
+            if !hasWalletName {
+                viewModel.walletNameCaution = .caution(Caution(text: "请先选择钱包名称", type: .error))
+                showError(message: "请先选择钱包名称")
+                return
+            }
+
+            if !hasBip32Path {
+                viewModel.bip32PathCaution = .caution(Caution(text: "请先选择BIP32路径", type: .error))
+                showError(message: "请先选择BIP32路径")
+                return
+            }
         }
 
         viewModel.onProceed()
