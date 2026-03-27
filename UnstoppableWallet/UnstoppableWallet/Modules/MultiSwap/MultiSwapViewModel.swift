@@ -290,6 +290,13 @@ class MultiSwapViewModel: ObservableObject {
     private var nextQuoteTime: Double?
 
     @Published var priceImpact: Decimal?
+    
+    var shouldShowKlineButton: Bool {
+        guard let tokenIn, let tokenOut else {
+            return false
+        }
+        return tokenIn.blockchainType == .safe4 && tokenOut.blockchainType == .safe4
+    }
 
     init(token: Token? = nil) {
         providers = swapProviderManager.providers

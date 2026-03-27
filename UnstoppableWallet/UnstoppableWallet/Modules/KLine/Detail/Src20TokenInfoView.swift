@@ -70,7 +70,7 @@ struct Src20TokenInfoView: View {
     @ViewBuilder func tokenInfoView() -> some View {
         VStack {
             HStack{
-                KFImage.url(URL(string: viewModel.currentToken?.logoURI ?? ""))
+                KFImage.url(URL(string: viewModel.currentToken?.logoURI ?? viewModel.token.coin.imageUrl))
                     .placeholder({
                         Image(viewModel.token.placeholderImageName)
                     })
@@ -79,11 +79,11 @@ struct Src20TokenInfoView: View {
                 VStack {
                     Text("资产名称".localized)
                         .themeSubhead1(alignment: .trailing)
-                    Text(viewModel.currentToken?.name ?? "")
+                    Text(viewModel.currentToken?.name ?? viewModel.token.coin.name)
                         .themeSubhead1(color: .themeLeah, alignment: .trailing)
                     Text("资产符号".localized)
                         .themeSubhead1(alignment: .trailing)
-                    Text(viewModel.currentToken?.symbol ?? "")
+                    Text(viewModel.currentToken?.symbol ?? viewModel.token.coin.code)
                         .themeSubhead1(color: .themeLeah, alignment: .trailing)
                 }
             }
@@ -91,7 +91,7 @@ struct Src20TokenInfoView: View {
             VStack(spacing: .margin8) {
                 Text("SRC20_Info_Contract".localized)
                     .themeSubhead1()
-                Text(viewModel.currentToken?.address ?? "")
+                Text(viewModel.currentToken?.address ?? viewModel.address)
                     .themeSubhead1(color: .blue)
                     .onTapGesture {
                         if let address = viewModel.currentToken?.address {

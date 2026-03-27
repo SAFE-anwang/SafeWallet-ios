@@ -16,6 +16,7 @@ class Src20TokenInfoViewModel: ObservableObject {
     @Published var totalSupply: String = ""
     @Published var description: String = ""
     @Published var canAdditionalIssuance: Bool = false
+    @Published var address: String = ""
     init(provider: Safe4Provider, token: MarketKit.Token) {
         self.provider = provider
         self.token = token
@@ -31,6 +32,7 @@ class Src20TokenInfoViewModel: ObservableObject {
             if let tokenRecord = try? storage.asset(address: address) {
                 let service = SRC20Service(token: tokenRecord, privateKey: privateKey, lockAddress: evmKitWrapper.evmKit.receiveAddress.eip55)
                 self.canAdditionalIssuance = tokenRecord.canAdditionalIssuance
+                self.address = address
                 Task {
                     do {
                         let totalSupply = try await service.totalSupply(type: tokenRecord.deployType)

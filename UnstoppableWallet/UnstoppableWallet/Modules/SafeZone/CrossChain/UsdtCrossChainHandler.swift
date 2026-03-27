@@ -149,7 +149,7 @@ enum USDT_CrossChain: CaseIterable {
     var errorTips: String {
         switch self {
         case .ETH: return "safe_zone.send.openCoin".localized("USDT ERC20")
-        case .BSC: return "safe_zone.send.openCoin".localized("BSC-USD BEP20")
+        case .BSC: return "safe_zone.send.openCoin".localized("BSC-USDT BEP20")
         case .TRON: return "safe_zone.send.openCoin".localized("USDT TRC20")
         case .SOL: return "safe_zone.send.openCoin".localized("USDT SOLANA")
         }

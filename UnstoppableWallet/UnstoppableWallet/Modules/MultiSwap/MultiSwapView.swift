@@ -61,6 +61,16 @@ struct MultiSwapView: View {
         .onDisappear {
             viewModel.stopAutoQuoting()
         }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if viewModel.shouldShowKlineButton {
+                    Button("行情".localized) {
+                        onKlines()
+                    }
+                    .foregroundColor(.themeYellow20)
+                }
+            }
+        }
         .navigationDestination(isPresented: $sendPresented) {
             if let tokenIn = viewModel.tokenIn,
                let tokenOut = viewModel.tokenOut,
@@ -408,5 +418,15 @@ struct MultiSwapView: View {
         }
 
         return (title, style, disabled, showProgress, preSwapStep)
+    }
+    
+    private func onKlines() {
+        guard let token0 = viewModel.tokenIn, let token1 = viewModel.tokenOut else { return }
+        guard token0.blockchainType == .safe4, token1.blockchainType == .safe4 else { return }
+        Coordinator.shared.present { _ in
+            ThemeNavigationStack {
+                KLineChartView(provider: Safe4Provider(networkManager: Core.shared.networkManager), token0: token0, token1: token1)
+            }
+        }
     }
 }

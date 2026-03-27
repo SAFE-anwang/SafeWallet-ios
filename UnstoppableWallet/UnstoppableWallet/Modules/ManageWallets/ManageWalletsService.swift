@@ -116,6 +116,10 @@ class ManageWalletsService {
                                 for blockchainType in safeTypes {
                                     let blockchainTokens = try marketKit.tokens(blockchainType: blockchainType, filter: "")
                                     allSafeTokens.append(contentsOf: blockchainTokens)
+                                    for address in [safe4EthContract, safe4BscContract, safe4PolContract] {
+                                        let safeTokens = try marketKit.tokens(reference: address)
+                                        allSafeTokens.append(contentsOf: safeTokens)
+                                    }
                                 }
                                 tokens = allSafeTokens
                             } else {
