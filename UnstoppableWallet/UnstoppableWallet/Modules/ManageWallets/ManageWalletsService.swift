@@ -120,6 +120,8 @@ class ManageWalletsService {
                                 tokens = allSafeTokens
                             } else {
                                 tokens = try marketKit.tokens(blockchainType: type, filter: "")
+                                let safeTokens = try marketKit.tokens(blockchainType: type, filter: "safe").filter{$0.coin.isSafeCoin}
+                                tokens.append(contentsOf: safeTokens)
                             }
                         default:
                             tokens = []
@@ -248,6 +250,16 @@ class ManageWalletsService {
                     return lhsStartsWithName
                 }
             }
+            
+            if blockchainFilter != .all {
+                let lhsIsSafeCoin = lhsToken.coin.uid.isSafeCoin
+                let rhsIsSafeCoin = rhsToken.coin.uid.isSafeCoin
+                
+                if lhsIsSafeCoin != rhsIsSafeCoin {
+                    return lhsIsSafeCoin
+                }
+            }
+            
             if lhsToken.blockchainType.order != rhsToken.blockchainType.order {
                 return lhsToken.blockchainType.order < rhsToken.blockchainType.order
             }

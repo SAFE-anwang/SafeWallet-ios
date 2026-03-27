@@ -2892,7 +2892,7 @@
 "loadData.nomore" = "No more data";
 "manage_wallets.filter_by_blockchain" = "Filter By Blockchain";
 "manage_wallets.filter_all_blockchains" = "All Blockchains";
-"manage_wallets.filter_bitcoin_series" = "Bitcoin Series";
+"manage_wallets.filter_bitcoin_series" = "Bitcoin";
 // Secure Send Bottom Sheet
 "secure_send.bottom_sheet.title" = "Secure Send";
 "secure_send.bottom_sheet.description" = "Choose security checks.";

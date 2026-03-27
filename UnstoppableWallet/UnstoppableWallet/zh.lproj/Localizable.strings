@@ -2029,7 +2029,7 @@
 "wallet_connect.main.no_any_supported_chains" = "没有任何支持的链！";
 "wallet_connect.main.unsupported_chains" = "一些链是不支持的！";
 "wallet_connect.connect_description" = "点击批准，表示您允许此应用查看您的公开地址。这是保护您的数据免受潜在钓鱼风险威胁的重要安全步骤。";
-"wallet_connect.no_connection" = "未建立连接。可选择 WalletConnect -> MetaMask 快速连接至本钱包";
+"wallet_connect.no_connection" = "可选择 WalletConnect -> MetaMask 快速连接至本钱包";
 "wallet_connect.button_reconnect" = "重新连接";
 "wallet_connect.button_disconnect" = "断开连接";
 "ethereum_transaction.error.title" = "出错";
@@ -2952,7 +2952,7 @@
 "loadData.nomore" = "没有更多了";
 "manage_wallets.filter_by_blockchain" = "按区块链过滤";
 "manage_wallets.filter_all_blockchains" = "全部区块链";
-"manage_wallets.filter_bitcoin_series" = "Bitcoin系列";
+"manage_wallets.filter_bitcoin_series" = "Bitcoin";
 
 // Secure Send Bottom Sheet
 "secure_send.bottom_sheet.title" = "安全发送";

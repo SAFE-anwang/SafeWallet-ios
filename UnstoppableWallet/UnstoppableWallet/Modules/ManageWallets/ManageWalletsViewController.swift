@@ -162,7 +162,7 @@ class ManageWalletsViewController: ThemeSearchViewController {
                 image = nil
             case .bitcoinSeries:
                 title = "manage_wallets.filter_bitcoin_series".localized
-                image = .local(UIImage(named: "bitcoin_32"))
+                image = .url(BlockchainType.bitcoin.imageUrl, placeholder: "placeholder_circle_32")
             case .blockchain(let type):
                 title = viewModel.blockchainName(blockchainType: type) ?? type.uid
                 image = .url(type.imageUrl, placeholder: "placeholder_circle_32")
