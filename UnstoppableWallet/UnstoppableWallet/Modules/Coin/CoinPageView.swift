@@ -15,11 +15,12 @@ struct CoinPageView: View {
     @State private var loadedTabs = [Tab]()
 
     init(coin: Coin) {
+        let coinUid = coin.isSafeCoin ? safeCoinUid : coin.uid
         _viewModel = StateObject(wrappedValue: CoinPageViewModel(coin: coin))
-        _overviewViewModel = StateObject(wrappedValue: CoinOverviewViewModel(coinUid: coin.uid))
-        _chartViewModel = StateObject(wrappedValue: CoinChartViewModel.instance(coinUid: coin.uid))
+        _overviewViewModel = StateObject(wrappedValue: CoinOverviewViewModel(coinUid: coinUid))
+        _chartViewModel = StateObject(wrappedValue: CoinChartViewModel.instance(coinUid: coinUid))
         _analyticsViewModel = StateObject(wrappedValue: CoinAnalyticsViewModel(coin: coin))
-        _marketsViewModel = StateObject(wrappedValue: CoinMarketsViewModel(coinUid: coin.uid))
+        _marketsViewModel = StateObject(wrappedValue: CoinMarketsViewModel(coinUid: coinUid))
     }
 
     var body: some View {
