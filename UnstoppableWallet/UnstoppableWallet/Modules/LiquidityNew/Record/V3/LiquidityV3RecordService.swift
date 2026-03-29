@@ -18,8 +18,6 @@ import HsToolKit
 class LiquidityV3RecordService {
     private let blockchainType: BlockchainType
     private let marketKit: MarketKit.Kit
-    private let walletManager: WalletManager
-    private let adapterManager: AdapterManager
 
     private let disposeBag = DisposeBag()
     private let stateRelay = PublishRelay<State>()
@@ -36,11 +34,7 @@ class LiquidityV3RecordService {
         }
     }
     
-    private var activeWallets: [Wallet] {
-        walletManager.activeWallets.filter { $0.token.blockchainType == blockchainType }
-    }
-
-    init?(dexType: DexType, marketKit: MarketKit.Kit, walletManager: WalletManager, adapterManager: AdapterManager, blockchainType: BlockchainType) {
+    init?(dexType: DexType, marketKit: MarketKit.Kit, walletManager _: WalletManager, adapterManager _: AdapterManager, blockchainType: BlockchainType) {
         
         guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else { return nil }
         
@@ -50,8 +44,6 @@ class LiquidityV3RecordService {
         let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKitWrapper.evmKit)
         
         self.marketKit = marketKit
-        self.walletManager = walletManager
-        self.adapterManager = adapterManager
         self.blockchainType = blockchainType
         
         self.evmKitWrapper = evmKitWrapper
@@ -68,16 +60,14 @@ class LiquidityV3RecordService {
     }
     
     private func liquidityV3Records() {
+        state = .loading
         Task {
             do {
                 let chain = evmKitWrapper.evmKit.chain
                 let owner = evmKitWrapper.evmKit.receiveAddress
-                let tokenQuerys = activeWallets.compactMap { TokenQuery(blockchainType: $0.token.blockchainType, tokenType: $0.token.type) }
-                guard let tokens = try? marketKit.tokens(queries: tokenQuerys), tokens.count > 0 else {
-                    return state = .completed(datas: [])
-                }
                 let datas = try await uniswapKit.ownedLiquidity(rpcSource: rpcSource, chain: chain, owner: owner)
                 let ownedDatas = datas.filter{$0.liquidity > 0}
+                let tokens = try fetchTokens(for: ownedDatas)
                 var items = [LiquidityV3RecordViewModel.V3RecordItem]()
                 for positions in ownedDatas {
                     if let item = try await viewItem(tokens: tokens, positions: positions) {
@@ -89,6 +79,29 @@ class LiquidityV3RecordService {
                 state = .failed(error: error.localizedDescription)
             }
         }
+    }
+    
+    private func fetchTokens(for positions: [Positions]) throws -> [MarketKit.Token] {
+        var queries = [TokenQuery]()
+        var seen = Set<String>()
+        
+        for position in positions {
+            let token0Address = position.token0.hex.lowercased()
+            if seen.insert(token0Address).inserted {
+                queries.append(TokenQuery(blockchainType: blockchainType, tokenType: .eip20(address: token0Address)))
+            }
+            
+            let token1Address = position.token1.hex.lowercased()
+            if seen.insert(token1Address).inserted {
+                queries.append(TokenQuery(blockchainType: blockchainType, tokenType: .eip20(address: token1Address)))
+            }
+        }
+        
+        if queries.isEmpty {
+            return []
+        }
+        
+        return try marketKit.tokens(queries: queries)
     }
     
     func getAmountsForLiquidity(item: LiquidityV3RecordViewModel.V3RecordItem, liquidity: BigUInt) async throws -> (String?, String?) {

@@ -3894,6 +3894,8 @@
 		C86A1C012E993F2F00C0769E /* OneInchKit in Frameworks */ = {isa = PBXBuildFile; productRef = C86A1C002E993F2F00C0769E /* OneInchKit */; };
 		C86A1C032E993F3A00C0769E /* UniswapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C86A1C022E993F3A00C0769E /* UniswapKit */; };
 		C86A1C052E993F6400C0769E /* MarketKit in Frameworks */ = {isa = PBXBuildFile; productRef = C86A1C042E993F6400C0769E /* MarketKit */; };
+		C88F44892F7936DA005417B8 /* LiquidityRPCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C88F44882F7936DA005417B8 /* LiquidityRPCService.swift */; };
+		C88F448A2F7936DA005417B8 /* LiquidityRPCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C88F44882F7936DA005417B8 /* LiquidityRPCService.swift */; };
 		C89BE9612E9A47CD00039AD8 /* BitcoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE9602E9A47CD00039AD8 /* BitcoinKit */; };
 		C89BE9642E9A5DAC00039AD8 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE9632E9A5DAC00039AD8 /* SafeCoinKit */; };
 		C8B86DCC2E9F4A9C008BB1A5 /* NftKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8B86DCB2E9F4A9C008BB1A5 /* NftKit */; };
@@ -6024,6 +6026,7 @@
 		6B5A13D42DF0414B006E609C /* Manrope-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Medium.ttf"; sourceTree = "<group>"; };
 		6B5A13D52DF0414B006E609C /* Manrope-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Regular.ttf"; sourceTree = "<group>"; };
 		6B5A13D62DF0414B006E609C /* Manrope-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-SemiBold.ttf"; sourceTree = "<group>"; };
+		C88F44882F7936DA005417B8 /* LiquidityRPCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidityRPCService.swift; sourceTree = "<group>"; };
 		C8D072C72F654CE700AE3077 /* BaseEvmLiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseEvmLiquidityAddProvider.swift; sourceTree = "<group>"; };
 		C8D072CA2F654CE700AE3077 /* BaseUniswapLiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseUniswapLiquidityAddProvider.swift; sourceTree = "<group>"; };
 		C8D072CC2F654CE700AE3077 /* BaseUniswapV2LiquidityAddProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseUniswapV2LiquidityAddProvider.swift; sourceTree = "<group>"; };
@@ -7689,6 +7692,7 @@
 		67DC3F352F63B29700CFAE73 /* Record */ = {
 			isa = PBXGroup;
 			children = (
+				C837D2052F76EFBC0048C2C6 /* Services */,
 				67DC3F242F63B29700CFAE73 /* Confirm */,
 				67DC3F282F63B29700CFAE73 /* Main */,
 				67DC3F2D2F63B29700CFAE73 /* V3 */,
@@ -11353,6 +11357,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		C837D2052F76EFBC0048C2C6 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				C88F44882F7936DA005417B8 /* LiquidityRPCService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
 		C8D072D42F654CE700AE3077 /* Providers */ = {
 			isa = PBXGroup;
 			children = (
@@ -11871,6 +11883,7 @@
 				67595F3B2F6D24810033AE64 /* WalletSelectView.swift in Sources */,
 				67DC4DFC2F63B29700CFAE73 /* BadgeView.swift in Sources */,
 				67DC4DFD2F63B29700CFAE73 /* DogecoinAdapter.swift in Sources */,
+				C88F44892F7936DA005417B8 /* LiquidityRPCService.swift in Sources */,
 				67DC4DFE2F63B29700CFAE73 /* ContractAddressValidatorChain.swift in Sources */,
 				67DC4DFF2F63B29700CFAE73 /* MasterNodeChangeViewModel.swift in Sources */,
 				67DC4E002F63B29700CFAE73 /* AddressService.swift in Sources */,
@@ -13825,6 +13838,7 @@
 				67595F3D2F6D24810033AE64 /* WalletSelectView.swift in Sources */,
 				67DC46202F63B29700CFAE73 /* BadgeView.swift in Sources */,
 				67DC46212F63B29700CFAE73 /* DogecoinAdapter.swift in Sources */,
+				C88F448A2F7936DA005417B8 /* LiquidityRPCService.swift in Sources */,
 				67DC46222F63B29700CFAE73 /* ContractAddressValidatorChain.swift in Sources */,
 				67DC46232F63B29700CFAE73 /* MasterNodeChangeViewModel.swift in Sources */,
 				67DC46242F63B29700CFAE73 /* AddressService.swift in Sources */,
@@ -15907,18 +15921,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Development.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 326;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
+				DEVELOPMENT_TEAM = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MARKETING_VERSION = 0.47.260401;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet_Dev;
 				PRODUCT_NAME = SafeWallet;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = SafeWalletProd;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				ShowBuildNumber = true;
@@ -16159,7 +16170,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/MarketKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.6.23;
+				version = 3.6.22;
 			};
 		};
 		C86A1BD62E98C36900C0769E /* XCRemoteSwiftPackageReference "OneInchKit.Swift" */ = {

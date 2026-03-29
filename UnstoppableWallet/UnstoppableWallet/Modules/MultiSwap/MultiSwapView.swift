@@ -67,7 +67,7 @@ struct MultiSwapView: View {
                     Button("行情".localized) {
                         onKlines()
                     }
-                    .foregroundColor(.themeYellow20)
+                    .foregroundColor(.themeYellow)
                 }
             }
         }

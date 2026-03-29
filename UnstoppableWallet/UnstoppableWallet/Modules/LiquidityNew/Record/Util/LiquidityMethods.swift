@@ -152,12 +152,12 @@ class RemoveLiquidityWithPermitMethod: ContractMethod {
     let amountBMin: BigUInt
     let to: EvmKit.Address
     let deadline: BigUInt
-    let approveMax: String
-    let v: BigUInt
-    let r: BigUInt
-    let s: BigUInt
+    let approveMax: Bool
+    let v: UInt8
+    let r: Data
+    let s: Data
     
-    init(tokenA: EvmKit.Address, tokenB: EvmKit.Address, liquidity: BigUInt, amountAMin: BigUInt, amountBMin: BigUInt, to: EvmKit.Address, deadline: BigUInt, approveMax: Bool, v: BigUInt, r: BigUInt, s: BigUInt) {
+    init(tokenA: EvmKit.Address, tokenB: EvmKit.Address, liquidity: BigUInt, amountAMin: BigUInt, amountBMin: BigUInt, to: EvmKit.Address, deadline: BigUInt, approveMax: Bool, v: UInt8, r: Data, s: Data) {
         self.tokenA = tokenA
         self.tokenB = tokenB
         self.liquidity = liquidity
@@ -165,7 +165,7 @@ class RemoveLiquidityWithPermitMethod: ContractMethod {
         self.amountBMin = amountBMin
         self.to = to
         self.deadline = deadline
-        self.approveMax = approveMax ? "1" : "0"
+        self.approveMax = approveMax
         self.v = v
         self.r = r
         self.s = s
@@ -177,7 +177,6 @@ class RemoveLiquidityWithPermitMethod: ContractMethod {
     override var arguments: [Any] {
         [tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline, approveMax, v, r, s]
     }
-
 }
 
 class ApproveMethod: ContractMethod {

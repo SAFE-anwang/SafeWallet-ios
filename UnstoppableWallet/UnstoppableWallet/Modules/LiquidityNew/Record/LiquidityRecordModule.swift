@@ -8,14 +8,6 @@ import UniswapKit
 
 class LiquidityRecordModule {
     
-//    static func viewController() -> UIViewController? {
-//                      
-//        let viewModel = LiquidityRecordTabViewModel()
-//        let viewController = LiquidityRecordTabViewController(viewModel: viewModel)
-//
-//        return viewController
-//    }
-    
     static func subViewController(dexType: UniswapKit.DexType, blockchainType: BlockchainType) -> LiquidityRecordViewController {
 
         let v2Service = LiquidityRecordService(
