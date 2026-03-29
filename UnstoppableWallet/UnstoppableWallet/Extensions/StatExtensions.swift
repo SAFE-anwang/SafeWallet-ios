@@ -42,7 +42,7 @@ extension MarketModule.Tab {
     var statTab: StatTab {
         switch self {
         case .coins: return .coins
-        case .news: return .news
+//        case .news: return .news
         case .pairs: return .pairs
         case .platforms: return .platforms
         case .watchlist: return .watchlist

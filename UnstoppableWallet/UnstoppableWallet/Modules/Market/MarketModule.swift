@@ -76,7 +76,7 @@ enum MarketModule {
         case watchlist
         case vaults
         case sectors
-        case news
+//        case news
         case platforms
         case pairs
         case dapp
@@ -87,7 +87,7 @@ enum MarketModule {
             case .watchlist: return "market.tab.watchlist".localized
             case .vaults: return "market.tab.vaults".localized
             case .sectors: return "market.tab.sectors".localized
-            case .news: return "market.tab.news".localized
+//            case .news: return "market.tab.news".localized
             case .platforms: return "market.tab.platforms".localized
             case .pairs: return "market.tab.pairs".localized
             case .dapp: return "Dapp".localized
