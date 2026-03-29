@@ -465,11 +465,14 @@ struct LiquidityAddView: View {
                         amount: item.amount,
                         isPresented: isPresented
                     ) {
+                        // 审批交易发送成功后，立即刷新并启动区块高度监听刷新模式
                         viewModel.refreshAfterPreSwap()
+                        viewModel.startPendingAllowanceRefresh()
                     }
                 } onDismiss: {
                     viewModel.refreshAfterPreSwap()
                     viewModel.autoQuoteIfRequired()
+                    viewModel.stopPendingAllowanceRefresh()
                 }
             }
         }

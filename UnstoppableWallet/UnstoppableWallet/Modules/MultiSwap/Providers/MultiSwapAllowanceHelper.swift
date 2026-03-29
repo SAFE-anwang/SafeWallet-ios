@@ -39,6 +39,11 @@ class MultiSwapAllowanceHelper {
                 if pendingAllowance == 0 {
                     return .pendingRevoke
                 } else {
+                    // Safe 链特殊处理：如果 pending 的授权金额足够，直接返回 allowed
+                    // 这样在区块高度变化后，用户就可以立即执行 swap
+                    if token.blockchainType == .safe4 && amount <= pendingAllowance {
+                        return .allowed
+                    }
                     return .pendingAllowance(appValue: AppValue(token: token, value: pendingAllowance))
                 }
             }

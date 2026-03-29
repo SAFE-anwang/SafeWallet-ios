@@ -272,11 +272,14 @@ struct MultiSwapView: View {
                             amount: amount,
                             isPresented: isPresented
                         ) {
+                            // 审批交易发送成功后，立即刷新 quote 并启动区块高度监听刷新模式
                             viewModel.syncQuotes()
+                            viewModel.startPendingAllowanceRefresh()
                         }
 
                     } onDismiss: {
                         viewModel.autoQuoteIfRequired()
+                        viewModel.stopPendingAllowanceRefresh()
                     }
                 }
             } else if viewModel.shouldShowTerms {

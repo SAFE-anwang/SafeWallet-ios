@@ -55,6 +55,11 @@ class LiquidityAddAllowanceHelper {
                     // pending的是授权交易
                     // 检查pending的授权额度是否满足要求
                     if amount <= pendingAllowance {
+                        // Safe 链特殊处理：如果 pending 的授权金额足够，直接返回 allowed
+                        // 这样在区块高度变化后，用户就可以立即执行添加流动性
+                        if token.blockchainType == .safe4 {
+                            return .allowed
+                        }
                         return .pendingAllowance(appValue: AppValue(token: token, value: pendingAllowance))
                     } else {
                         // pending的授权额度仍不满足要求，显示为notEnough

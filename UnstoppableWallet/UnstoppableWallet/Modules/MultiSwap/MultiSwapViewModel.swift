@@ -6,7 +6,11 @@ import RxSwift
 
 class MultiSwapViewModel: ObservableObject {
     private let autoRefreshDuration: Double = 20
-
+    // 用于控制是否需要在区块高度变化时刷新审批状态
+    // 只有在发起审批交易后才启用，审批完成后或视图关闭后停止
+    private let pendingAllowanceRefreshDuration: Double = 3  // pending 审批状态下更频繁的刷新间隔
+    private var pendingAllowanceTimer: Timer?
+    private var isPendingAllowanceRefreshEnabled = false
     private var cancellables = Set<AnyCancellable>()
     private var providerCancellables = Set<AnyCancellable>()
     private var quotesTask: AnyTask?
@@ -16,6 +20,7 @@ class MultiSwapViewModel: ObservableObject {
     private var timer: Timer?
 
     private var balanceDisposeBag = DisposeBag()
+    private var transactionsDisposeBag = DisposeBag()
 
     private var providers: [IMultiSwapProvider]
     private let swapProviderManager = Core.shared.swapProviderManager
@@ -55,6 +60,7 @@ class MultiSwapViewModel: ObservableObject {
             }
 
             balanceDisposeBag = .init()
+            transactionsDisposeBag = .init()
 
             if let internalTokenIn,
                let wallet = walletManager.activeWallets.first(where: { $0.token == internalTokenIn }),
@@ -78,6 +84,20 @@ class MultiSwapViewModel: ObservableObject {
                         self?.availableBalance = balanceData.available
                     }
                     .disposed(by: balanceDisposeBag)
+                
+                // 监听区块高度变化，只在需要更新审批状态时刷新 quote
+                // 使用 adapter(for:) 获取 IAdapter，然后转换为 ITransactionsAdapter
+                if let adapter = adapterManager.adapter(for: wallet) as? Eip20Adapter {
+                    adapter.lastBlockUpdatedObservable
+                        .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                        .observeOn(MainScheduler.instance)
+                        .subscribe { [weak self] _ in
+                            // 只有在 pending 审批刷新模式下才刷新 quote
+                            guard self?.isPendingAllowanceRefreshEnabled == true else { return }
+                            self?.syncQuotes(silent: true)
+                        }
+                        .disposed(by: transactionsDisposeBag)
+                }
             } else {
                 adapterState = nil
                 availableBalance = nil
@@ -572,6 +592,32 @@ extension MultiSwapViewModel {
                 self?.syncQuotes(silent: true)
             }
         }
+    }
+    
+    // MARK: - Pending Allowance Refresh Mode
+    
+    /// 启动审批状态刷新模式
+    /// 启用后，会监听区块高度变化并在每个新区块产生时刷新 quote
+    /// 同时启动定时器作为后备机制
+    func startPendingAllowanceRefresh() {
+        isPendingAllowanceRefreshEnabled = true
+        pendingAllowanceTimer?.invalidate()
+        // 立即刷新一次
+        syncQuotes(silent: true)
+        // 启动定时器作为后备机制，每5秒检查一次
+        pendingAllowanceTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            // 只有在启用了 pending 刷新模式时才刷新
+            guard self?.isPendingAllowanceRefreshEnabled == true else { return }
+            self?.syncQuotes(silent: true)
+        }
+    }
+    
+    /// 停止审批状态刷新模式
+    /// 禁用区块高度监听刷新和定时器刷新
+    func stopPendingAllowanceRefresh() {
+        isPendingAllowanceRefreshEnabled = false
+        pendingAllowanceTimer?.invalidate()
+        pendingAllowanceTimer = nil
     }
 
     func reset() {
