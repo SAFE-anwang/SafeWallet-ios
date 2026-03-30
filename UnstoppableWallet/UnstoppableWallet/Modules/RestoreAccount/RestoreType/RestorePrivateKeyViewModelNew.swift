@@ -21,12 +21,27 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
     @Published var isLoading: Bool = false
 
     @Published var detectedKeyType: PrivateKeyType = .unsupported
-    @Published var showBip38PasswordPrompt: Bool = false
-    @Published var bip38Password: String = ""
-    @Published var bip38PasswordError: String?
-
     @Published var availableKeyTypes: [PrivateKeyType] = []
     @Published var selectedKeyType: PrivateKeyType?
+
+    // Password-related properties
+    @Published var password: String = ""
+    @Published var passwordCaution: CautionState = .none
+    @Published var passwordHint: String?
+    @Published var requiresPassword: Bool = false
+    @Published var passwordErrorCount: Int = 0
+    
+    // Input validation and security properties
+    @Published var isValidatingInput: Bool = false
+    @Published var showSecurityConfirmation: Bool = false
+    @Published var inputSource: InputSource = .manual
+    @Published var lastScannedText: String = ""
+    
+    enum InputSource {
+        case manual
+        case paste
+        case scan
+    }
 
     let proceedSubject = PassthroughSubject<(String, AccountType), Never>()
     let errorSubject = PassthroughSubject<String, Never>()
@@ -62,10 +77,15 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
             }
             .store(in: &cancellables)
 
-        $bip38Password
+        $password
             .dropFirst()
-            .sink { [weak self] _ in
-                self?.bip38PasswordError = nil
+            .sink { [weak self] newPassword in
+                self?.passwordCaution = .none
+                self?.privateKeyService.setBip38Password(newPassword)
+                // Reset error count when user starts typing new password
+                if !newPassword.isEmpty {
+                    self?.passwordErrorCount = 0
+                }
             }
             .store(in: &cancellables)
     }
@@ -77,12 +97,16 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
             detectedKeyType = .unsupported
             availableKeyTypes = []
             selectedKeyType = nil
-            showBip38PasswordPrompt = false
-            bip38PasswordError = nil
+            password = ""
+            passwordCaution = .none
+            passwordHint = nil
+            requiresPassword = false
+            passwordErrorCount = 0
             privateKeyService.clearBip38Password()
             return
         }
 
+        let previousRequiresPassword = requiresPassword
         detectedKeyType = privateKeyService.detectPrivateKeyType(trimmed)
 
         let fallbackTypes: [PrivateKeyType] = [
@@ -109,9 +133,23 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
             selectedKeyType = availableKeyTypes.first
         }
 
-        if selectedKeyType != .bitcoinBip38 {
-            showBip38PasswordPrompt = false
-            bip38PasswordError = nil
+        // Handle password field visibility and state
+        let newEffectiveType = selectedKeyType ?? detectedKeyType
+        let currentRequiresPassword = newEffectiveType == .bitcoinBip38
+        
+        // Update the published property to trigger UI updates
+        requiresPassword = currentRequiresPassword
+        
+        if currentRequiresPassword {
+            passwordHint = "restore.private_key.bip38_password_hint".localized
+            if !password.isEmpty {
+                privateKeyService.setBip38Password(password)
+            }
+        } else {
+            password = ""
+            passwordCaution = .none
+            passwordHint = nil
+            passwordErrorCount = 0
             privateKeyService.clearBip38Password()
         }
     }
@@ -130,6 +168,157 @@ extension RestorePrivateKeyViewModelNew {
         self.text = text
         textCaution = .none
         cautionRelay.accept(nil)
+        self.inputSource = .manual
+    }
+    
+    func onPaste(text: String) {
+        isValidatingInput = true
+        
+        // Validate pasted content
+        let validationResult = validatePastedContent(text)
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            self.isValidatingInput = false
+            
+            switch validationResult {
+            case .success(let cleanedText):
+                self.text = cleanedText
+                self.inputSource = .paste
+                self.textCaution = .none
+                self.cautionRelay.accept(nil)
+                // Trigger detection after paste
+                self.detectKeyTypeOnTextChange()
+                
+            case .failure(let message):
+                self.text = text
+                self.inputSource = .paste
+                let caution = Caution(text: message, type: .error)
+                self.textCaution = .caution(caution)
+                self.cautionRelay.accept(caution)
+                self.errorSubject.send(message)
+            }
+        }
+    }
+    
+    func onScan(text: String) {
+        isValidatingInput = true
+        
+        // Validate scanned content
+        let validationResult = validateScannedContent(text)
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            self.isValidatingInput = false
+            
+            switch validationResult {
+            case .success(let cleanedText):
+                self.lastScannedText = cleanedText
+                self.text = cleanedText
+                self.inputSource = .scan
+                self.textCaution = .none
+                self.cautionRelay.accept(nil)
+                // Show security confirmation for scanned private keys
+                self.showSecurityConfirmation = true
+                // Trigger detection
+                self.detectKeyTypeOnTextChange()
+                
+            case .failure(let message):
+                self.text = text
+                self.inputSource = .scan
+                let caution = Caution(text: message, type: .error)
+                self.textCaution = .caution(caution)
+                self.cautionRelay.accept(caution)
+                self.errorSubject.send(message)
+            }
+        }
+    }
+    
+    func confirmScannedInput() {
+        showSecurityConfirmation = false
+        // Proceed with the scanned input
+        detectKeyTypeOnTextChange()
+    }
+    
+    func rejectScannedInput() {
+        showSecurityConfirmation = false
+        text = ""
+        lastScannedText = ""
+        clear()
+    }
+    
+    private func validatePastedContent(_ content: String) -> ValidationResult {
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Check for empty content
+        guard !trimmed.isEmpty else {
+            return .failure(message: "restore.private_key.paste_empty".localized)
+        }
+        
+        // Check for reasonable length (private keys are typically 32-64 characters)
+        guard trimmed.count >= 16 else {
+            return .failure(message: "restore.private_key.paste_too_short".localized)
+        }
+        
+        // Check for suspicious content (multiple lines, etc.)
+        let lines = trimmed.components(separatedBy: .newlines)
+        if lines.count > 3 {
+            return .failure(message: "restore.private_key.paste_multiple_lines".localized)
+        }
+        
+        // Clean the input (remove common prefixes/suffixes that might be copied)
+        var cleaned = trimmed
+        
+        // Remove common prefixes that users might accidentally copy
+        let prefixesToRemove = ["Private Key:", "Key:", "Secret:", "Seed:"]
+        for prefix in prefixesToRemove {
+            if cleaned.lowercased().hasPrefix(prefix.lowercased()) {
+                cleaned = String(cleaned.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        
+        return .success(cleanedText: cleaned)
+    }
+    
+    private func validateScannedContent(_ content: String) -> ValidationResult {
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Check for empty content
+        guard !trimmed.isEmpty else {
+            return .failure(message: "restore.private_key.scan_empty".localized)
+        }
+        
+        // Check for reasonable length
+        guard trimmed.count >= 16 else {
+            return .failure(message: "restore.private_key.scan_too_short".localized)
+        }
+        
+        // QR codes might contain additional data, try to extract just the key
+        var cleaned = trimmed
+        
+        // Handle common QR code formats
+        // Format 1: privatekey://<key>
+        if cleaned.lowercased().hasPrefix("privatekey://") {
+            cleaned = String(cleaned.dropFirst(13))
+        }
+        // Format 2: key://<key>
+        else if cleaned.lowercased().hasPrefix("key://") {
+            cleaned = String(cleaned.dropFirst(6))
+        }
+        
+        // Remove any whitespace that might have been introduced by scanning
+        cleaned = cleaned.replacingOccurrences(of: " ", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "\n", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "\r", with: "")
+        
+        return .success(cleanedText: cleaned)
+    }
+    
+    enum ValidationResult {
+        case success(cleanedText: String)
+        case failure(message: String)
     }
 
     func onChange(name: String) {
@@ -142,49 +331,24 @@ extension RestorePrivateKeyViewModelNew {
     func onSelectKeyType(_ type: PrivateKeyType) {
         selectedKeyType = type
 
+        // Update requiresPassword based on selection
+        requiresPassword = (type == .bitcoinBip38)
+
         if type == .bitcoinBip38 {
-            if bip38Password.isEmpty {
-                showBip38PasswordPrompt = true
-            } else {
-                privateKeyService.setBip38Password(bip38Password)
-                showBip38PasswordPrompt = false
+            passwordHint = "restore.private_key.bip38_password_hint".localized
+            if !password.isEmpty {
+                privateKeyService.setBip38Password(password)
             }
         } else {
-            showBip38PasswordPrompt = false
-            bip38PasswordError = nil
+            password = ""
+            passwordCaution = .none
+            passwordHint = nil
+            passwordErrorCount = 0
             privateKeyService.clearBip38Password()
         }
     }
 
-    @discardableResult
-    func onSubmitBip38Password() -> Bool {
-        guard !bip38Password.isEmpty else {
-            bip38PasswordError = "restore.private_key.bip38_password_required".localized
-            return false
-        }
-
-        privateKeyService.setBip38Password(bip38Password)
-        showBip38PasswordPrompt = false
-        bip38PasswordError = nil
-        return true
-    }
-
-    func onCancelBip38Password() {
-        showBip38PasswordPrompt = false
-        bip38PasswordError = nil
-    }
-
     func onProceed() {
-        if requiresBip38Password, bip38Password.isEmpty {
-            bip38PasswordError = "restore.private_key.bip38_password_required".localized
-            showBip38PasswordPrompt = true
-            return
-        }
-
-        if requiresBip38Password {
-            privateKeyService.setBip38Password(bip38Password)
-        }
-
         guard validateInputs() else {
             return
         }
@@ -194,17 +358,14 @@ extension RestorePrivateKeyViewModelNew {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
 
-            if let accountType = self.resolveAccountType() {
-                let accountName = self.resolveAccountName()
+            let accountType = self.resolveAccountType()
+            let accountName = self.resolveAccountName()
 
-                DispatchQueue.main.async {
-                    self.isLoading = false
+            DispatchQueue.main.async {
+                self.isLoading = false
+                if let accountType = accountType {
                     self.proceedSubject.send((accountName, accountType))
                     self.proceedRelay.accept((accountName, accountType))
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.isLoading = false
                 }
             }
         }
@@ -213,8 +374,30 @@ extension RestorePrivateKeyViewModelNew {
     private func validateInputs() -> Bool {
         let nameValid = validateName()
         let textValid = validateText()
+        let passwordValid = validatePassword()
 
-        return nameValid && textValid
+        return nameValid && textValid && passwordValid
+    }
+
+    private func validatePassword() -> Bool {
+        guard requiresPassword else {
+            return true
+        }
+
+        if password.isEmpty {
+            let caution = Caution(text: "restore.private_key.password_required".localized, type: .error)
+            passwordCaution = .caution(caution)
+            return false
+        }
+
+        if password.count < 1 {
+            let caution = Caution(text: "restore.private_key.password_too_short".localized, type: .error)
+            passwordCaution = .caution(caution)
+            return false
+        }
+
+        passwordCaution = .none
+        return true
     }
 
     private func validateText() -> Bool {
@@ -251,14 +434,30 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
         } catch let error as RestorePrivateKeyService.RestoreError {
             let errorMessage = self.errorMessage(for: error)
             let caution = Caution(text: errorMessage, type: .error)
-            textCaution = .caution(caution)
+            
+            // Track password errors for BIP38 decryption failures
+            if case .decryptionFailed = error {
+                passwordErrorCount += 1
+                passwordCaution = .caution(caution)
+            } else {
+                textCaution = .caution(caution)
+            }
+            
             cautionRelay.accept(caution)
             errorSubject.send(errorMessage)
             return nil
         } catch let error as BitcoinKeyError {
             let errorMessage = errorMessage(for: error)
             let caution = Caution(text: errorMessage, type: .error)
-            textCaution = .caution(caution)
+            
+            // Track password errors for BIP38 decryption failures
+            if case .decryptionFailed = error {
+                passwordErrorCount += 1
+                passwordCaution = .caution(caution)
+            } else {
+                textCaution = .caution(caution)
+            }
+            
             cautionRelay.accept(caution)
             errorSubject.send(errorMessage)
             return nil
@@ -309,10 +508,19 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
         detectedKeyType = .unsupported
         availableKeyTypes = []
         selectedKeyType = nil
-        bip38Password = ""
-        bip38PasswordError = nil
-        showBip38PasswordPrompt = false
+        password = ""
+        passwordCaution = .none
+        passwordHint = nil
+        requiresPassword = false
+        passwordErrorCount = 0
         privateKeyService.clearBip38Password()
+    }
+    
+    var passwordErrorWarning: String? {
+        guard requiresPassword && passwordErrorCount >= 3 else {
+            return nil
+        }
+        return "restore.private_key.password_error_warning".localized
     }
 
     private func errorMessage(for error: RestorePrivateKeyService.RestoreError) -> String {
@@ -357,15 +565,18 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
 extension RestorePrivateKeyViewModelNew {
     var isValid: Bool {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmedText.isEmpty && validateName()
+        let passwordValid = !requiresPassword || !password.isEmpty
+        return !trimmedText.isEmpty && validateName() && passwordValid
     }
 
     var proceedEnabled: AnyPublisher<Bool, Never> {
-        Publishers.CombineLatest4($text, $name, $isLoading, $showBip38PasswordPrompt)
-            .map { text, name, loading, showPrompt in
+        Publishers.CombineLatest4($text, $name, $isLoading, $password)
+            .map { [weak self] text, name, loading, password in
+                guard let self = self else { return false }
                 let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
                 let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-                return !trimmedText.isEmpty && !trimmedName.isEmpty && !loading && !showPrompt
+                let passwordValid = !self.requiresPassword || !password.isEmpty
+                return !trimmedText.isEmpty && !trimmedName.isEmpty && !loading && passwordValid
             }
             .eraseToAnyPublisher()
     }
@@ -376,10 +587,5 @@ extension RestorePrivateKeyViewModelNew {
 
     var keyTypeDescriptions: [String] {
         availableKeyTypes.map { $0.rawValue }
-    }
-
-    private var requiresBip38Password: Bool {
-        let effectiveType = selectedKeyType ?? detectedKeyType
-        return effectiveType == .bitcoinBip38
     }
 }

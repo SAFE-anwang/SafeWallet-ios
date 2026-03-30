@@ -138,11 +138,16 @@ class ManageWalletsService {
                 
                 let featuredUids = featuredTokens.map{$0.coin.uid.lowercased()}
                 let enabledUids = enabledTokens.map{$0.coin.uid.lowercased()}
-                let customTokens = try safe4CustomTokens()
-                let result = customTokens.filter({
-                    !featuredUids.contains($0.coin.uid.lowercased()) &&
-                    !enabledUids.contains($0.coin.uid.lowercased())
-                })
+                
+                // Only fetch safe4 custom tokens if account type supports safe4
+                var result: [Token] = []
+                if supportsSafe4Blockchain() {
+                    let customTokens = try safe4CustomTokens()
+                    result = customTokens.filter({
+                        !featuredUids.contains($0.coin.uid.lowercased()) &&
+                        !enabledUids.contains($0.coin.uid.lowercased())
+                    })
+                }
                 
                 var allEnabledTokens = enabledTokens
                 if blockchainFilter != .all {
@@ -174,6 +179,17 @@ class ManageWalletsService {
         }
     }
     
+    private func supportsSafe4Blockchain() -> Bool {
+        switch account.type {
+        case .mnemonic:
+            return true
+        case .evmPrivateKey, .evmAddress:
+            return true
+        default:
+            return false
+        }
+    }
+
     private func safe4CustomTokens() throws -> [Token] {
         let shouldFetchCustomTokens: Bool
         switch blockchainFilter {
