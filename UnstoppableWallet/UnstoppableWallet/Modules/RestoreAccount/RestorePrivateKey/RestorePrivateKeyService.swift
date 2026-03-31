@@ -170,8 +170,7 @@ class RestorePrivateKeyService {
     private func parseBitcoinHexPrivateKey(text: String) throws -> AccountType {
         do {
             let privateKeyData = try BitcoinPrivateKeyParser.parsePrivateKey(text, format: .hex)
-            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(from: privateKeyData, compressed: true, testNet: false)
-            return .btcAddress(address: address, blockchainType: .bitcoin, tokenType: .derived(derivation: .bip44))
+            return .btcPrivateKey(data: privateKeyData, compressed: true, blockchainType: .bitcoin)
         } catch let error as BitcoinKeyError {
             throw map(bitcoinError: error)
         } catch {
@@ -182,12 +181,7 @@ class RestorePrivateKeyService {
     private func parseBitcoinWifPrivateKey(text: String) throws -> AccountType {
         do {
             let parsed = try BitcoinPrivateKeyParser.decodeWif(text)
-            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(
-                from: parsed.privateKey,
-                compressed: parsed.isCompressed,
-                testNet: parsed.isTestNet
-            )
-            return .btcAddress(address: address, blockchainType: .bitcoin, tokenType: .derived(derivation: .bip44))
+            return .btcPrivateKey(data: parsed.privateKey, compressed: parsed.isCompressed, blockchainType: .bitcoin)
         } catch let error as BitcoinKeyError {
             throw map(bitcoinError: error)
         } catch {
@@ -198,12 +192,7 @@ class RestorePrivateKeyService {
     private func parseBitcoinMiniKey(text: String) throws -> AccountType {
         do {
             let parsed = try BitcoinPrivateKeyParser.parsePrivateKeyInfo(text, format: .miniKey)
-            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(
-                from: parsed.privateKey,
-                compressed: parsed.isCompressed,
-                testNet: parsed.isTestNet
-            )
-            return .btcAddress(address: address, blockchainType: .bitcoin, tokenType: .derived(derivation: .bip44))
+            return .btcPrivateKey(data: parsed.privateKey, compressed: parsed.isCompressed, blockchainType: .bitcoin)
         } catch let error as BitcoinKeyError {
             throw map(bitcoinError: error)
         } catch {
@@ -214,12 +203,7 @@ class RestorePrivateKeyService {
     private func parseBrainWallet(text: String) throws -> AccountType {
         do {
             let parsed = try BitcoinPrivateKeyParser.parsePrivateKeyInfo(text, format: .brainWalletSingle)
-            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(
-                from: parsed.privateKey,
-                compressed: parsed.isCompressed,
-                testNet: parsed.isTestNet
-            )
-            return .btcAddress(address: address, blockchainType: .bitcoin, tokenType: .derived(derivation: .bip44))
+            return .btcPrivateKey(data: parsed.privateKey, compressed: parsed.isCompressed, blockchainType: .bitcoin)
         } catch let error as BitcoinKeyError {
             throw map(bitcoinError: error)
         } catch {
@@ -230,12 +214,7 @@ class RestorePrivateKeyService {
     private func parseBip38PrivateKey(text: String, password: String) throws -> AccountType {
         do {
             let parsed = try BitcoinPrivateKeyParser.parsePrivateKeyInfo(text, format: .bip38Encrypted, bip38Password: password)
-            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(
-                from: parsed.privateKey,
-                compressed: parsed.isCompressed,
-                testNet: parsed.isTestNet
-            )
-            return .btcAddress(address: address, blockchainType: .bitcoin, tokenType: .derived(derivation: .bip44))
+            return .btcPrivateKey(data: parsed.privateKey, compressed: parsed.isCompressed, blockchainType: .bitcoin)
         } catch let error as BitcoinKeyError {
             throw map(bitcoinError: error)
         } catch {

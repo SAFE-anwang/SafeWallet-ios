@@ -186,6 +186,8 @@ extension BlockchainType {
             return self == blockchainType
         case .moneroWatchAccount:
             return self == .monero
+        case let .btcPrivateKey(_, _, accountBlockchainType):
+            return self == accountBlockchainType
         }
     }
 

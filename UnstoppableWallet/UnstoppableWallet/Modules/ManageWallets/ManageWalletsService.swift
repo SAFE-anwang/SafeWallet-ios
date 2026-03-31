@@ -185,6 +185,8 @@ class ManageWalletsService {
             return true
         case .evmPrivateKey, .evmAddress:
             return true
+        case .btcPrivateKey:
+            return false
         default:
             return false
         }

@@ -66,6 +66,19 @@ class DogecoinAdapter: BitcoinBaseAdapter {
                 confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
                 logger: logger
             )
+        case let .btcPrivateKey(data, compressed, _):
+            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(from: data, compressed: compressed, testNet: networkType != .mainNet)
+            
+            dogecoinKit = try DogecoinKit.Kit(
+                watchAddress: address,
+                purpose: .bip44,
+                walletId: wallet.account.id,
+                syncMode: effectiveSyncMode,
+                hasher: hasher,
+                networkType: networkType,
+                confirmationsThreshold: BitcoinBaseAdapter.confirmationsThreshold,
+                logger: logger
+            )
         default:
             throw AdapterError.unsupportedAccount
         }
@@ -101,6 +114,37 @@ extension DogecoinAdapter {
 
     static func clear(except excludedWalletIds: [String]) throws {
         try Kit.clear(exceptFor: excludedWalletIds)
+    }
+
+    static func firstAddress(accountType: AccountType, tokenType: TokenType, networkType: DogecoinKit.Kit.NetworkType) throws -> String {
+        switch accountType {
+        case .mnemonic:
+            guard let seed = accountType.mnemonicSeed else {
+                throw AdapterError.unsupportedAccount
+            }
+
+            let address = try DogecoinKit.Kit.firstAddress(
+                seed: seed,
+                purpose: .bip44,
+                networkType: networkType
+            )
+
+            return address.stringValue
+        case let .hdExtendedKey(key):
+            let address = try DogecoinKit.Kit.firstAddress(
+                extendedKey: key,
+                purpose: .bip44,
+                networkType: networkType
+            )
+
+            return address.stringValue
+        case let .btcAddress(address, _, _):
+            return address
+        case let .btcPrivateKey(data, compressed, _):
+            return try BitcoinPrivateKeyParser.generateBitcoinAddress(from: data, compressed: compressed, testNet: networkType != .mainNet)
+        default:
+            throw AdapterError.unsupportedAccount
+        }
     }
 
 }

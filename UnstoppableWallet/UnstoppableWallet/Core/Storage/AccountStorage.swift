@@ -98,6 +98,18 @@ class AccountStorage {
             }
 
             type = .btcAddress(address: address, blockchainType: BlockchainType(uid: blockchainTypeUid), tokenType: tokenType)
+        case .btcPrivateKey:
+            guard let data = recoverData(id: id, typeName: typeName, keyName: .data) else {
+                return nil
+            }
+            guard let compressedString = record.saltKey else {
+                return nil
+            }
+            guard let blockchainTypeUid = record.wordsKey else {
+                return nil
+            }
+            let compressed = (compressedString == "true")
+            type = .btcPrivateKey(data: data, compressed: compressed, blockchainType: BlockchainType(uid: blockchainTypeUid))
         case .moneroWatchAccount:
             let viewKey: String? = recover(id: id, typeName: typeName, keyName: .data)
             guard let address = record.wordsKey, let viewKey else {
@@ -159,6 +171,11 @@ class AccountStorage {
             wordsKey = address
             saltKey = blockchainType.uid
             dataKey = tokenType.id
+        case let .btcPrivateKey(data, compressed, blockchainType):
+            typeName = .btcPrivateKey
+            wordsKey = blockchainType.uid
+            saltKey = compressed ? "true" : "false"
+            dataKey = try store(data: data, id: id, typeName: typeName, keyName: .data)
         case let .moneroWatchAccount(address, viewKey):
             typeName = .moneroWatchAccount
             wordsKey = address
@@ -199,6 +216,8 @@ class AccountStorage {
             try keychainStorage.removeValue(for: secureKey(id: id, typeName: .hdExtendedKey, keyName: .data))
         case .btcAddress:
             try keychainStorage.removeValue(for: secureKey(id: id, typeName: .btcAddress, keyName: .data))
+        case .btcPrivateKey:
+            try keychainStorage.removeValue(for: secureKey(id: id, typeName: .btcPrivateKey, keyName: .data))
         case .moneroWatchAccount:
             try keychainStorage.removeValue(for: secureKey(id: id, typeName: .moneroWatchAccount, keyName: .data))
         default:
@@ -289,6 +308,7 @@ extension AccountStorage {
         case stellarAccount
         case hdExtendedKey
         case btcAddress
+        case btcPrivateKey
         case moneroWatchAccount
     }
 

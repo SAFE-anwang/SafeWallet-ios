@@ -36,6 +36,8 @@ class MultiSwapViewModel: ObservableObject {
     private var enteringFiat = false
 
     @Published var validProviders = [IMultiSwapProvider]()
+    
+    var USDT_src20: Token?
 
     private var internalTokenIn: Token? {
         didSet {

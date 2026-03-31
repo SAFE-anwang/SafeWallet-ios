@@ -231,7 +231,7 @@ class WatchViewModel: ObservableObject {
         let tokenQueries: [TokenQuery]
 
         switch accountType {
-        case .mnemonic, .evmPrivateKey, .stellarSecretKey:
+        case .mnemonic, .evmPrivateKey, .stellarSecretKey, .btcPrivateKey:
             return nil
 
         case .evmAddress:

@@ -58,6 +58,22 @@ class BitcoinAdapter: BitcoinBaseAdapter {
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
             )
+        case let .btcPrivateKey(data, compressed, _):
+            guard let derivation = wallet.token.type.derivation else {
+                throw AdapterError.wrongParameters
+            }
+
+            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(from: data, compressed: compressed, testNet: Self.networkType != .mainNet)
+            
+            bitcoinKit = try BitcoinKit.Kit(
+                watchAddress: address,
+                purpose: derivation.purpose,
+                walletId: wallet.account.id,
+                syncMode: syncMode,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
+                logger: logger
+            )
         default:
             throw AdapterError.unsupportedAccount
         }
@@ -123,6 +139,8 @@ extension BitcoinAdapter {
             return address.stringValue
         case let .btcAddress(address, _, _):
             return address
+        case let .btcPrivateKey(data, compressed, _):
+            return try BitcoinPrivateKeyParser.generateBitcoinAddress(from: data, compressed: compressed, testNet: networkType != .mainNet)
         default:
             throw AdapterError.unsupportedAccount
         }

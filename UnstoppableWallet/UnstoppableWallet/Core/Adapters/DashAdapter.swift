@@ -47,6 +47,17 @@ class DashAdapter: BitcoinBaseAdapter {
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
             )
+        case let .btcPrivateKey(data, compressed, _):
+            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(from: data, compressed: compressed, testNet: Self.networkType != .mainNet)
+            
+            dashKit = try DashKit.Kit(
+                watchAddress: address,
+                walletId: wallet.account.id,
+                syncMode: syncMode,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
+                logger: logger
+            )
         default:
             throw AdapterError.unsupportedAccount
         }
@@ -117,6 +128,8 @@ extension DashAdapter {
             return address.stringValue
         case let .btcAddress(address, _, _):
             return address
+        case let .btcPrivateKey(data, compressed, _):
+            return try BitcoinPrivateKeyParser.generateBitcoinAddress(from: data, compressed: compressed, testNet: networkType != .mainNet)
         default:
             throw AdapterError.unsupportedAccount
         }
