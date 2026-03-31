@@ -46,12 +46,13 @@ class ProposalStorageManager: NSObject {
     }
     
     static func getNeedShowTips() -> Bool {
+        let isShowNewProposalKey: String = "safe4_proposal_isShow_new_key_\(Core.shared.accountManager.activeAccount?.id ?? "")"
         guard let isNeed: Bool = Core.shared.userDefaultsStorage.value(for: isShowNewProposalKey) else{ return true }
         return isNeed
     }
     
     static func saveNeedShowTips(_ isNeed: Bool) {
+        let isShowNewProposalKey: String = "safe4_proposal_isShow_new_key_\(Core.shared.accountManager.activeAccount?.id ?? "")"
         Core.shared.userDefaultsStorage.set(value: isNeed, for: isShowNewProposalKey)
     }
 }
-private let isShowNewProposalKey: String = "safe4_proposal_isShow_new_key"

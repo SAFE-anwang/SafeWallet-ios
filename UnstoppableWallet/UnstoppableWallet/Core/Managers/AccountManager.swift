@@ -86,8 +86,6 @@ extension AccountManager {
         do {
             try Core.shared.safe4StorageManager.superNodeLockRecordStorage.clear()
         }catch{}
-        ProposalStorageManager.saveNeedShowTips(true)
-
         storage.set(activeAccountId: activeAccountId)
         activeAccountSubject.send(storage.activeAccount)
     }

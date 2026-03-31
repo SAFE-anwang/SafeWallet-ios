@@ -50,7 +50,8 @@ class MasterNodeRegisterService {
             }
         }
     }
-        
+    
+    private var createdNodes: BigUInt = 0
     var masterNodeIncentive = MasterNodeIncentive()
     
     private var createModeRelay = BehaviorRelay<CreateMode>(value: .Independent)
@@ -83,6 +84,7 @@ class MasterNodeRegisterService {
         Task {
             do {
                 balance = try await availableBlance()
+                createdNodes = try await getAddrNum4Creator()
             }catch{}
         }
     }
@@ -125,6 +127,12 @@ extension MasterNodeRegisterService {
         let isUnion = createMode == .crowdFunding
         return try await web3().safe4.masternode.register(privateKey: privateKey, value: amount, isUnion: isUnion, addr: addr, lockDay: lockDays, enode: sendData.ENODE, description: sendData.desc, creatorIncentive: masterNodeIncentive.creatorIncentive, partnerIncentive: masterNodeIncentive.partnerIncentive)
     }
+    
+    func getAddrNum4Creator() async throws -> BigUInt {
+        let creator = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.masternode.getAddrNum4Creator(creator)
+    }
+
 }
 
 
@@ -254,7 +262,7 @@ extension MasterNodeRegisterService {
     }
     
     var lockDays: BigUInt {
-        720
+        (24 + createdNodes) * 30//720
     }
     
     struct MasterNodeIncentive {

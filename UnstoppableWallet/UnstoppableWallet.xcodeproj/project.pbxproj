@@ -3896,6 +3896,8 @@
 		C86A1C052E993F6400C0769E /* MarketKit in Frameworks */ = {isa = PBXBuildFile; productRef = C86A1C042E993F6400C0769E /* MarketKit */; };
 		C88F44892F7936DA005417B8 /* LiquidityRPCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C88F44882F7936DA005417B8 /* LiquidityRPCService.swift */; };
 		C88F448A2F7936DA005417B8 /* LiquidityRPCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C88F44882F7936DA005417B8 /* LiquidityRPCService.swift */; };
+		C88F45262F7C1952005417B8 /* UnstoppableDomainsResolution in Frameworks */ = {isa = PBXBuildFile; productRef = C88F45252F7C1952005417B8 /* UnstoppableDomainsResolution */; };
+		C88F45282F7C19C3005417B8 /* UnstoppableDomainsResolution in Frameworks */ = {isa = PBXBuildFile; productRef = C88F45272F7C19C3005417B8 /* UnstoppableDomainsResolution */; };
 		C89BE9612E9A47CD00039AD8 /* BitcoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE9602E9A47CD00039AD8 /* BitcoinKit */; };
 		C89BE9642E9A5DAC00039AD8 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE9632E9A5DAC00039AD8 /* SafeCoinKit */; };
 		C8B86DCC2E9F4A9C008BB1A5 /* NftKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8B86DCB2E9F4A9C008BB1A5 /* NftKit */; };
@@ -4000,8 +4002,6 @@
 		D38406C221832757007D50AD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D3285F4C20BD158F00644076 /* Assets.xcassets */; };
 		D38406C5218327E3007D50AD /* AppIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D38406C3218327B1007D50AD /* AppIcon.xcassets */; };
 		D38406C921832968007D50AD /* AppIconDev.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D38406C821832968007D50AD /* AppIconDev.xcassets */; };
-		D3993DC228F42992008720FB /* UnstoppableDomainsResolution in Frameworks */ = {isa = PBXBuildFile; productRef = D3993DC128F42992008720FB /* UnstoppableDomainsResolution */; };
-		D3993DC428F429AA008720FB /* UnstoppableDomainsResolution in Frameworks */ = {isa = PBXBuildFile; productRef = D3993DC328F429AA008720FB /* UnstoppableDomainsResolution */; };
 		D3AEB8752DB8FAA200E385C8 /* StellarKit in Frameworks */ = {isa = PBXBuildFile; productRef = D3AEB8742DB8FAA200E385C8 /* StellarKit */; };
 		D3AEB8772DB8FAB600E385C8 /* StellarKit in Frameworks */ = {isa = PBXBuildFile; productRef = D3AEB8762DB8FAB600E385C8 /* StellarKit */; };
 		D3AF5A8929FFD85800C1399E /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = D3AF5A8829FFD85800C1399E /* RxCocoa */; };
@@ -6113,12 +6113,12 @@
 				C8C558A92EA339390062F13E /* DogecoinKit in Frameworks */,
 				67DC558D2F63B67300CFAE73 /* YttriumWrapper in Frameworks */,
 				D3AEB8752DB8FAA200E385C8 /* StellarKit in Frameworks */,
+				C88F45262F7C1952005417B8 /* UnstoppableDomainsResolution in Frameworks */,
 				C8C558BB2EA33E230062F13E /* UniswapKit in Frameworks */,
 				D36287C82CA3DF7A00ADAF3B /* TonConnectAPI in Frameworks */,
 				D092D63D2E3116780039BDB4 /* MoneroKit in Frameworks */,
 				D3E41E082C244CE200499F50 /* TonSwift in Frameworks */,
 				67DC5BDA2F63EE5300CFAE73 /* ZcashLightClientKit in Frameworks */,
-				D3993DC428F429AA008720FB /* UnstoppableDomainsResolution in Frameworks */,
 				D023D2652A24B9DC004F65B0 /* TronKit in Frameworks */,
 				D3AF5A9329FFD87500C1399E /* RxSwift in Frameworks */,
 				6BDDB59C2C1816B500DE9D56 /* TonKit in Frameworks */,
@@ -6184,8 +6184,8 @@
 				D3AEB8772DB8FAB600E385C8 /* StellarKit in Frameworks */,
 				C86A1BCE2E98BB1100C0769E /* Eip20Kit in Frameworks */,
 				D092D63F2E3116A90039BDB4 /* MoneroKit in Frameworks */,
+				C88F45282F7C19C3005417B8 /* UnstoppableDomainsResolution in Frameworks */,
 				D3DDFA362DDF2D14003CADDF /* TonConnectAPI in Frameworks */,
-				D3993DC228F42992008720FB /* UnstoppableDomainsResolution in Frameworks */,
 				C86A1BC92E98B3FC00C0769E /* BitcoinCashKit in Frameworks */,
 				C86A1BF52E993E8200C0769E /* Hodler in Frameworks */,
 				D38406A721831B3D007D50AD /* LocalAuthentication.framework in Frameworks */,
@@ -11532,7 +11532,6 @@
 				D36E0C2B28D084CB00B622B9 /* CollectionViewCenteredFlowLayout */,
 				D3604E9928F03DC00066C366 /* Chart */,
 				D3604E9B28F03DC00066C366 /* FeeRateKit */,
-				D3993DC328F429AA008720FB /* UnstoppableDomainsResolution */,
 				D3C187B42907A63600FE1900 /* HdWalletKit */,
 				D3C187E7290FD00E00FE1900 /* SectionsTableView */,
 				D339A93E29126D2A00B895BE /* HsCryptoKit */,
@@ -11581,6 +11580,7 @@
 				67DC558A2F63B67300CFAE73 /* YttriumUtilsWrapper */,
 				67DC558C2F63B67300CFAE73 /* YttriumWrapper */,
 				67DC5BD92F63EE5300CFAE73 /* ZcashLightClientKit */,
+				C88F45252F7C1952005417B8 /* UnstoppableDomainsResolution */,
 			);
 			productName = Wallet;
 			productReference = D38405CE218317DF007D50AD /* SafeWallet D.app */;
@@ -11608,7 +11608,6 @@
 				D36E0C2928D084AB00B622B9 /* CollectionViewCenteredFlowLayout */,
 				D3604E7E28F03C1D0066C366 /* Chart */,
 				D3604E8128F03C6B0066C366 /* FeeRateKit */,
-				D3993DC128F42992008720FB /* UnstoppableDomainsResolution */,
 				D3C187B22907A60800FE1900 /* HdWalletKit */,
 				D3C187DA290FCFBC00FE1900 /* SectionsTableView */,
 				D339A93C29126D0F00B895BE /* HsCryptoKit */,
@@ -11641,6 +11640,7 @@
 				C8B86DCB2E9F4A9C008BB1A5 /* NftKit */,
 				C8B86DCD2E9F4B0E008BB1A5 /* DogecoinKit */,
 				C80FEB2A2F27C023002DA812 /* SwiftKLine */,
+				C88F45272F7C19C3005417B8 /* UnstoppableDomainsResolution */,
 			);
 			productName = Wallet;
 			productReference = D38406BE21831B3D007D50AD /* SafeWallet.app */;
@@ -11689,7 +11689,6 @@
 				D36E0C2828D084AB00B622B9 /* XCRemoteSwiftPackageReference "CollectionViewCenteredFlowLayout" */,
 				D3604E7D28F03C1D0066C366 /* XCRemoteSwiftPackageReference "Chart" */,
 				D3604E8028F03C6B0066C366 /* XCRemoteSwiftPackageReference "FeeRateKit" */,
-				D3993DC028F42992008720FB /* XCRemoteSwiftPackageReference "resolution-swift" */,
 				D3C187B12907A60700FE1900 /* XCRemoteSwiftPackageReference "HdWalletKit" */,
 				D3C187D9290FCFBC00FE1900 /* XCRemoteSwiftPackageReference "SectionsTableView" */,
 				D339A93B29126D0E00B895BE /* XCRemoteSwiftPackageReference "HsCryptoKit" */,
@@ -11726,6 +11725,7 @@
 				C80FEB272F27BFBA002DA812 /* XCRemoteSwiftPackageReference "SwiftKLine" */,
 				67DC55712F63B67300CFAE73 /* XCRemoteSwiftPackageReference "reown-swift" */,
 				67DC5BD82F63EE5300CFAE73 /* XCRemoteSwiftPackageReference "ZcashLightClientKit" */,
+				C88F45242F7C1952005417B8 /* XCRemoteSwiftPackageReference "UnstoppableDomainsResolution" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D3285F4320BD158E00644076 /* Products */;
@@ -16169,8 +16169,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SAFE-anwang/MarketKit.Swift.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.6.22;
+				kind = exactVersion;
+				version = 3.6.24;
 			};
 		};
 		C86A1BD62E98C36900C0769E /* XCRemoteSwiftPackageReference "OneInchKit.Swift" */ = {
@@ -16186,7 +16186,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/UniswapKit.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.0.22;
+				version = 3.0.25;
 			};
 		};
 		C86A1BEB2E98FC5900C0769E /* XCRemoteSwiftPackageReference "ECashKit.Swift" */ = {
@@ -16203,6 +16203,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 3.0.1;
+			};
+		};
+		C88F45242F7C1952005417B8 /* XCRemoteSwiftPackageReference "UnstoppableDomainsResolution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SAFE-anwang/UnstoppableDomainsResolution.git";
+			requirement = {
+				branch = main;
+				kind = branch;
 			};
 		};
 		C89BE95B2E99F15000039AD8 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */ = {
@@ -16283,14 +16291,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.0.4;
-			};
-		};
-		D3993DC028F42992008720FB /* XCRemoteSwiftPackageReference "resolution-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/unstoppabledomains/resolution-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 6.1.0;
 			};
 		};
 		D3AEB8732DB8FAA200E385C8 /* XCRemoteSwiftPackageReference "StellarKit" */ = {
@@ -16556,6 +16556,16 @@
 			package = C86A1BD42E98C26200C0769E /* XCRemoteSwiftPackageReference "MarketKit.Swift" */;
 			productName = MarketKit;
 		};
+		C88F45252F7C1952005417B8 /* UnstoppableDomainsResolution */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C88F45242F7C1952005417B8 /* XCRemoteSwiftPackageReference "UnstoppableDomainsResolution" */;
+			productName = UnstoppableDomainsResolution;
+		};
+		C88F45272F7C19C3005417B8 /* UnstoppableDomainsResolution */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C88F45242F7C1952005417B8 /* XCRemoteSwiftPackageReference "UnstoppableDomainsResolution" */;
+			productName = UnstoppableDomainsResolution;
+		};
 		C89BE9602E9A47CD00039AD8 /* BitcoinKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C89BE95F2E9A47CC00039AD8 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */;
@@ -16724,16 +16734,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D36E0C2828D084AB00B622B9 /* XCRemoteSwiftPackageReference "CollectionViewCenteredFlowLayout" */;
 			productName = CollectionViewCenteredFlowLayout;
-		};
-		D3993DC128F42992008720FB /* UnstoppableDomainsResolution */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D3993DC028F42992008720FB /* XCRemoteSwiftPackageReference "resolution-swift" */;
-			productName = UnstoppableDomainsResolution;
-		};
-		D3993DC328F429AA008720FB /* UnstoppableDomainsResolution */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D3993DC028F42992008720FB /* XCRemoteSwiftPackageReference "resolution-swift" */;
-			productName = UnstoppableDomainsResolution;
 		};
 		D3AEB8742DB8FAA200E385C8 /* StellarKit */ = {
 			isa = XCSwiftPackageProductDependency;
