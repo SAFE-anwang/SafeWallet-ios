@@ -11,6 +11,9 @@ enum RestoreSelectModule {
         isManualBackedUp: Bool = true,
         isFileBackedUp: Bool = false,
         allowedBitcoinDerivations: Set<MnemonicDerivation>? = nil,
+        allowedBlockchainTypes: Set<BlockchainType>? = nil,
+        autoEnableDefaultTokensForAllowedBlockchains: Bool = false,
+        blockchainsRequireManualTokenSelection: Set<BlockchainType>? = nil,
         onRestore: @escaping () -> Void
     ) -> UIViewController {
         let (blockchainTokensService, blockchainTokensView) = BlockchainTokensModule.module()
@@ -29,7 +32,10 @@ enum RestoreSelectModule {
             marketKit: Core.shared.marketKit,
             blockchainTokensService: blockchainTokensService,
             restoreSettingsService: restoreSettingsService,
-            allowedBitcoinDerivations: allowedBitcoinDerivations
+            allowedBitcoinDerivations: allowedBitcoinDerivations,
+            allowedBlockchainTypes: allowedBlockchainTypes,
+            autoEnableDefaultTokensForAllowedBlockchains: autoEnableDefaultTokensForAllowedBlockchains,
+            blockchainsRequireManualTokenSelection: blockchainsRequireManualTokenSelection
         )
 
         let viewModel = RestoreSelectViewModel(service: service)

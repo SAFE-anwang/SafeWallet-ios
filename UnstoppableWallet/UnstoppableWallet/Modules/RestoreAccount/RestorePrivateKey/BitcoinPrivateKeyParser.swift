@@ -71,6 +71,7 @@ struct BitcoinParsedPrivateKey {
     let format: BitcoinPrivateKeyFormat
     let isCompressed: Bool
     let isTestNet: Bool
+    let wifPrefix: UInt8?
 }
 
 class BitcoinPrivateKeyParser {
@@ -124,14 +125,14 @@ class BitcoinPrivateKeyParser {
         switch keyFormat {
         case .hex:
             let privateKey = try parseHexPrivateKey(trimmed)
-            return BitcoinParsedPrivateKey(privateKey: privateKey, format: .hex, isCompressed: true, isTestNet: false)
+            return BitcoinParsedPrivateKey(privateKey: privateKey, format: .hex, isCompressed: true, isTestNet: false, wifPrefix: nil)
 
         case .wifMainNet, .wifCompressedMainNet, .wifTestNet, .wifCompressedTestNet:
             return try decodeWif(trimmed)
 
         case .miniKey:
             let privateKey = try parseMiniKey(trimmed)
-            return BitcoinParsedPrivateKey(privateKey: privateKey, format: .miniKey, isCompressed: false, isTestNet: false)
+            return BitcoinParsedPrivateKey(privateKey: privateKey, format: .miniKey, isCompressed: false, isTestNet: false, wifPrefix: nil)
 
         case .bip38Encrypted:
             guard let bip38Password, !bip38Password.isEmpty else {
@@ -141,7 +142,7 @@ class BitcoinPrivateKeyParser {
 
         case .brainWalletSingle, .brainWalletDouble:
             let privateKey = try parseBrainWallet(trimmed, doubleHash: keyFormat == .brainWalletDouble)
-            return BitcoinParsedPrivateKey(privateKey: privateKey, format: keyFormat, isCompressed: false, isTestNet: false)
+            return BitcoinParsedPrivateKey(privateKey: privateKey, format: keyFormat, isCompressed: false, isTestNet: false, wifPrefix: nil)
         }
     }
 
@@ -224,6 +225,9 @@ class BitcoinPrivateKeyParser {
             isTestNet = false
         case wifTestNetPrefix:
             isTestNet = true
+        case 0xB0, 0x9E, 0xCC:
+            // Litecoin / Dogecoin / Dash mainnet WIF prefixes
+            isTestNet = false
         default:
             throw BitcoinKeyError.invalidWifPrefix
         }
@@ -252,7 +256,13 @@ class BitcoinPrivateKeyParser {
         case (true, true): format = .wifCompressedTestNet
         }
 
-        return BitcoinParsedPrivateKey(privateKey: privateKey, format: format, isCompressed: isCompressed, isTestNet: isTestNet)
+        return BitcoinParsedPrivateKey(
+            privateKey: privateKey,
+            format: format,
+            isCompressed: isCompressed,
+            isTestNet: isTestNet,
+            wifPrefix: prefix
+        )
     }
 
     static func encodeToWif(_ privateKey: Data, compressed: Bool = false, testNet: Bool = false) -> String {
@@ -441,7 +451,13 @@ class BitcoinPrivateKeyParser {
                 throw BitcoinKeyError.decryptionFailed
             }
 
-            return BitcoinParsedPrivateKey(privateKey: privateKey, format: .bip38Encrypted, isCompressed: isCompressed, isTestNet: false)
+            return BitcoinParsedPrivateKey(
+                privateKey: privateKey,
+                format: .bip38Encrypted,
+                isCompressed: isCompressed,
+                isTestNet: false,
+                wifPrefix: nil
+            )
         } catch let error as BitcoinKeyError {
             throw error
         } catch {

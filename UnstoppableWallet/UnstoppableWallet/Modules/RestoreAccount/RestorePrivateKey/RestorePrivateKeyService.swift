@@ -35,6 +35,7 @@ enum PrivateKeyType: String, CaseIterable {
 
 class RestorePrivateKeyService {
     private var bip38Password: String?
+    private(set) var wifRoutingContext: WifRoutingContext?
 
     func setBip38Password(_ password: String?) {
         self.bip38Password = password
@@ -46,6 +47,7 @@ class RestorePrivateKeyService {
 
     func accountType(text: String, forceType: PrivateKeyType? = nil) throws -> AccountType {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        wifRoutingContext = nil
 
         guard !text.isEmpty else {
             throw RestoreError.emptyText
@@ -181,11 +183,51 @@ class RestorePrivateKeyService {
     private func parseBitcoinWifPrivateKey(text: String) throws -> AccountType {
         do {
             let parsed = try BitcoinPrivateKeyParser.decodeWif(text)
-            return .btcPrivateKey(data: parsed.privateKey, compressed: parsed.isCompressed, blockchainType: .bitcoin)
+            let blockchainType = blockchainType(wifPrefix: parsed.wifPrefix, isTestNet: parsed.isTestNet)
+            let allowedBitcoinDerivations: Set<MnemonicDerivation>?
+            let requireManualDerivationSelection: Bool
+            if blockchainType == .bitcoin || blockchainType == .litecoin {
+                if parsed.isCompressed {
+                    allowedBitcoinDerivations = Set(MnemonicDerivation.allCases)
+                    requireManualDerivationSelection = true
+                } else {
+                    allowedBitcoinDerivations = [.bip44]
+                    requireManualDerivationSelection = false
+                }
+            } else {
+                allowedBitcoinDerivations = nil
+                requireManualDerivationSelection = false
+            }
+
+            wifRoutingContext = WifRoutingContext(
+                blockchainType: blockchainType,
+                allowedBitcoinDerivations: allowedBitcoinDerivations,
+                skipCoinSelection: true,
+                requireManualDerivationSelection: requireManualDerivationSelection
+            )
+
+            return .btcPrivateKey(data: parsed.privateKey, compressed: parsed.isCompressed, blockchainType: blockchainType)
         } catch let error as BitcoinKeyError {
             throw map(bitcoinError: error)
         } catch {
             throw RestoreError.invalidPrivateKey
+        }
+    }
+
+    private func blockchainType(wifPrefix: UInt8?, isTestNet: Bool) -> BlockchainType {
+        guard !isTestNet else {
+            return .bitcoin
+        }
+
+        switch wifPrefix {
+        case 0xB0:
+            return .litecoin
+        case 0x9E:
+            return .dogecoin
+        case 0xCC:
+            return .dash
+        default:
+            return .bitcoin
         }
     }
 
@@ -330,6 +372,13 @@ class RestorePrivateKeyService {
 }
 
 extension RestorePrivateKeyService {
+    struct WifRoutingContext {
+        let blockchainType: BlockchainType
+        let allowedBitcoinDerivations: Set<MnemonicDerivation>?
+        let skipCoinSelection: Bool
+        let requireManualDerivationSelection: Bool
+    }
+
     enum RestoreError: Error, LocalizedError {
         case emptyText
         case notSupportedDerivedType

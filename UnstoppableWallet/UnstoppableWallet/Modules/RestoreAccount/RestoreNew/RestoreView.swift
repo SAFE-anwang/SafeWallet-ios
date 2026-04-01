@@ -85,12 +85,15 @@ struct RestoreView: View {
         }
         .navigationDestination(for: RestoreSelectDestination.self) { destination in
             switch destination {
-            case let .selectCoins(accountName, accountType):
+            case let .selectCoins(accountName, accountType, options):
                 RestoreSelectWrapperNew(
                     accountName: accountName,
                     accountType: accountType,
                     statPage: .importWalletFromKey,
-                    allowedBitcoinDerivations: viewModel.allowedBitcoinDerivations,
+                    allowedBitcoinDerivations: options?.allowedBitcoinDerivations ?? viewModel.allowedBitcoinDerivations,
+                    allowedBlockchainTypes: options?.allowedBlockchainTypes,
+                    autoEnableDefaultTokensForAllowedBlockchains: options?.autoEnableDefaultTokens ?? false,
+                    blockchainsRequireManualTokenSelection: options?.blockchainsRequireManualTokenSelection,
                     onRestore: handleRestore
                 )
                 .ignoresSafeArea()
@@ -299,7 +302,7 @@ struct RestoreView: View {
 
     private func navigateToSelectCoins(accountName: String, accountType: AccountType) {
         withAnimation(.easeInOut(duration: 0.3)) {
-            path.append(RestoreSelectDestination.selectCoins(accountName: accountName, accountType: accountType))
+            path.append(RestoreSelectDestination.selectCoins(accountName: accountName, accountType: accountType, options: nil))
         }
     }
 

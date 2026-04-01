@@ -305,6 +305,12 @@ struct MarketDappWebView: UIViewRepresentable {
                 return
             }
 
+            if isMetaMaskExternalUrl(url: url) {
+                print("[WalletConnect] MetaMask external navigation blocked: \(url.absoluteString)")
+                decisionHandler(.cancel)
+                return
+            }
+
             if shouldOpenExternally(url: url) {
                 print("[WalletConnect] Opening externally: \(url.absoluteString)")
                 UIApplication.shared.open(url, options: [:], completionHandler: nil)
@@ -324,6 +330,11 @@ struct MarketDappWebView: UIViewRepresentable {
                 Task { @MainActor in
                     try? await Core.shared.appEventHandler.handle(source: .main, event: uri, eventType: .walletConnectUri)
                 }
+                return nil
+            }
+
+            if isMetaMaskExternalUrl(url: url) {
+                print("[WalletConnect] MetaMask external window blocked: \(url.absoluteString)")
                 return nil
             }
 
@@ -364,6 +375,12 @@ struct MarketDappWebView: UIViewRepresentable {
             }
 
             return false
+        }
+
+        private func isMetaMaskExternalUrl(url: URL) -> Bool {
+            let scheme = url.scheme?.lowercased() ?? ""
+            let host = url.host?.lowercased() ?? ""
+            return scheme == "metamask" || host == "metamask.app.link"
         }
 
         private func walletConnectUri(url: URL) -> String? {

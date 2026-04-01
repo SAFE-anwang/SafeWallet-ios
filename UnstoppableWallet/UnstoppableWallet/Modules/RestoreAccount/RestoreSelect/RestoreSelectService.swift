@@ -16,6 +16,9 @@ class RestoreSelectService {
     private let blockchainTokensService: BlockchainTokensService
     private let restoreSettingsService: RestoreSettingsService
     private let allowedBitcoinDerivations: Set<MnemonicDerivation>?
+    private let allowedBlockchainTypes: Set<BlockchainType>?
+    private let autoEnableDefaultTokensForAllowedBlockchains: Bool
+    private let blockchainsRequireManualTokenSelection: Set<BlockchainType>?
     private let disposeBag = DisposeBag()
 
     private var tokens = [Token]()
@@ -48,7 +51,10 @@ class RestoreSelectService {
         marketKit: MarketKit.Kit,
         blockchainTokensService: BlockchainTokensService,
         restoreSettingsService: RestoreSettingsService,
-        allowedBitcoinDerivations: Set<MnemonicDerivation>? = nil
+        allowedBitcoinDerivations: Set<MnemonicDerivation>? = nil,
+        allowedBlockchainTypes: Set<BlockchainType>? = nil,
+        autoEnableDefaultTokensForAllowedBlockchains: Bool = false,
+        blockchainsRequireManualTokenSelection: Set<BlockchainType>? = nil
     ) {
         self.accountName = accountName
         self.accountType = accountType
@@ -63,6 +69,9 @@ class RestoreSelectService {
         self.blockchainTokensService = blockchainTokensService
         self.restoreSettingsService = restoreSettingsService
         self.allowedBitcoinDerivations = allowedBitcoinDerivations
+        self.allowedBlockchainTypes = allowedBlockchainTypes
+        self.autoEnableDefaultTokensForAllowedBlockchains = autoEnableDefaultTokensForAllowedBlockchains
+        self.blockchainsRequireManualTokenSelection = blockchainsRequireManualTokenSelection
 
         subscribe(disposeBag, blockchainTokensService.approveTokensObservable) { [weak self] blockchain, tokens in
             self?.handleApproveTokens(blockchain: blockchain, tokens: tokens)
@@ -78,6 +87,7 @@ class RestoreSelectService {
         }
 
         syncInternalItems()
+        autoEnableAllowedBlockchainsIfNeeded()
         syncState()
     }
 
@@ -87,10 +97,43 @@ class RestoreSelectService {
             let allTokens = try marketKit.tokens(queries: tokenQueries)
 
             tokens = allTokens.filter { token in
-                accountType.supports(token: token) && supportsDerivationLimit(token: token)
+                accountType.supports(token: token)
+                    && supportsDerivationLimit(token: token)
+                    && supportsBlockchainLimit(token: token)
             }
         } catch {
             // todo
+        }
+    }
+
+    private func supportsBlockchainLimit(token: Token) -> Bool {
+        guard let allowedBlockchainTypes else {
+            return true
+        }
+
+        return allowedBlockchainTypes.contains(token.blockchainType)
+    }
+
+    private func autoEnableAllowedBlockchainsIfNeeded() {
+        guard autoEnableDefaultTokensForAllowedBlockchains, let allowedBlockchainTypes else {
+            return
+        }
+
+        for blockchainType in allowedBlockchainTypes {
+            let blockchainTokens = tokens.filter { $0.blockchainType == blockchainType }
+            guard let firstToken = blockchainTokens.first else {
+                continue
+            }
+
+            let tokensToEnable: [Token]
+            if blockchainTokens.count == 1 {
+                tokensToEnable = [firstToken]
+            } else {
+                let defaults = blockchainTokens.filter(\.type.isDefault)
+                tokensToEnable = defaults.isEmpty ? [firstToken] : defaults
+            }
+
+            handleApproveTokens(blockchain: firstToken.blockchain, tokens: tokensToEnable)
         }
     }
 
@@ -193,6 +236,8 @@ extension RestoreSelectService {
             return
         }
 
+        let requireManualSelection = blockchainsRequireManualTokenSelection?.contains(token.blockchainType) ?? false
+
         if tokens.count == 1 {
             if !token.blockchainType.restoreSettingTypes.isEmpty {
                 restoreSettingsService.approveSettings(token: token)
@@ -200,7 +245,8 @@ extension RestoreSelectService {
                 handleApproveTokens(blockchain: token.blockchain, tokens: [token])
             }
         } else {
-            blockchainTokensService.approveTokens(blockchain: token.blockchain, tokens: tokens, enabledTokens: tokens.filter(\.type.isDefault))
+            let enabledTokens = requireManualSelection ? [] : tokens.filter(\.type.isDefault)
+            blockchainTokensService.approveTokens(blockchain: token.blockchain, tokens: tokens, enabledTokens: enabledTokens)
         }
     }
 

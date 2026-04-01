@@ -1,4 +1,5 @@
 import Combine
+import MarketKit
 import SwiftUI
 import UIKit
 
@@ -46,8 +47,8 @@ struct RestorePrivateKeyView: View {
                 }
             }
         }
-        .onReceive(viewModel.proceedSubject) { accountName, accountType in
-            navigateToSelectCoins(accountName: accountName, accountType: accountType)
+        .onReceive(viewModel.proceedSubject) { accountName, accountType, options in
+            navigateToSelectCoins(accountName: accountName, accountType: accountType, options: options)
         }
         .onReceive(viewModel.errorSubject) { errorMessage in
             showError(message: errorMessage)
@@ -68,12 +69,15 @@ struct RestorePrivateKeyView: View {
         }
         .navigationDestination(for: RestoreSelectDestination.self) { destination in
             switch destination {
-            case let .selectCoins(accountName, accountType):
+            case let .selectCoins(accountName, accountType, options):
                 RestoreSelectWrapperNew(
                     accountName: accountName,
                     accountType: accountType,
                     statPage: .importWalletFromKey,
-                    allowedBitcoinDerivations: nil,
+                    allowedBitcoinDerivations: options?.allowedBitcoinDerivations,
+                    allowedBlockchainTypes: options?.allowedBlockchainTypes,
+                    autoEnableDefaultTokensForAllowedBlockchains: options?.autoEnableDefaultTokens ?? false,
+                    blockchainsRequireManualTokenSelection: options?.blockchainsRequireManualTokenSelection,
                     onRestore: handleRestore
                 )
                 .ignoresSafeArea()
@@ -351,9 +355,9 @@ struct RestorePrivateKeyView: View {
             .store(in: &cancellables)
     }
 
-    private func navigateToSelectCoins(accountName: String, accountType: AccountType) {
+    private func navigateToSelectCoins(accountName: String, accountType: AccountType, options: RestorePrivateKeyViewModelNew.RestoreSelectOptions?) {
         withAnimation(.easeInOut(duration: 0.3)) {
-            path.append(RestoreSelectDestination.selectCoins(accountName: accountName, accountType: accountType))
+            path.append(RestoreSelectDestination.selectCoins(accountName: accountName, accountType: accountType, options: options))
         }
     }
 
@@ -370,7 +374,7 @@ struct RestorePrivateKeyView: View {
 }
 
 enum RestoreSelectDestination: Hashable {
-    case selectCoins(accountName: String, accountType: AccountType)
+    case selectCoins(accountName: String, accountType: AccountType, options: RestorePrivateKeyViewModelNew.RestoreSelectOptions?)
 }
 
 struct RestoreSelectWrapperNew: UIViewControllerRepresentable {
@@ -378,6 +382,9 @@ struct RestoreSelectWrapperNew: UIViewControllerRepresentable {
     let accountType: AccountType
     let statPage: StatPage
     let allowedBitcoinDerivations: Set<MnemonicDerivation>?
+    let allowedBlockchainTypes: Set<BlockchainType>?
+    let autoEnableDefaultTokensForAllowedBlockchains: Bool
+    let blockchainsRequireManualTokenSelection: Set<BlockchainType>?
     let onRestore: () -> Void
 
     func makeUIViewController(context _: Context) -> UINavigationController {
@@ -387,6 +394,9 @@ struct RestoreSelectWrapperNew: UIViewControllerRepresentable {
             statPage: statPage,
             isManualBackedUp: true,
             allowedBitcoinDerivations: allowedBitcoinDerivations,
+            allowedBlockchainTypes: allowedBlockchainTypes,
+            autoEnableDefaultTokensForAllowedBlockchains: autoEnableDefaultTokensForAllowedBlockchains,
+            blockchainsRequireManualTokenSelection: blockchainsRequireManualTokenSelection,
             onRestore: onRestore
         )
 

@@ -1,5 +1,7 @@
 import Combine
 import Foundation
+import HdWalletKit
+import MarketKit
 import RxCocoa
 import RxRelay
 import RxSwift
@@ -11,7 +13,7 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
 
     private let cautionRelay = BehaviorRelay<Caution?>(value: nil)
     private let nameCautionRelay = BehaviorRelay<Caution?>(value: nil)
-    private let proceedRelay = PublishRelay<(String, AccountType)>()
+    private let proceedRelay = PublishRelay<(String, AccountType, RestoreSelectOptions?)>()
 
     let defaultAccountName: String
     @Published var name: String = ""
@@ -30,6 +32,7 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
     @Published var passwordHint: String?
     @Published var requiresPassword: Bool = false
     @Published var passwordErrorCount: Int = 0
+    @Published private(set) var restoreSelectOptions: RestoreSelectOptions?
     
     // Input validation and security properties
     @Published var isValidatingInput: Bool = false
@@ -43,7 +46,7 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
         case scan
     }
 
-    let proceedSubject = PassthroughSubject<(String, AccountType), Never>()
+    let proceedSubject = PassthroughSubject<(String, AccountType, RestoreSelectOptions?), Never>()
     let errorSubject = PassthroughSubject<String, Never>()
 
     private var cancellables = Set<AnyCancellable>()
@@ -160,7 +163,7 @@ extension RestorePrivateKeyViewModelNew {
         cautionRelay.asDriver()
     }
 
-    var proceedSignal: Signal<(String, AccountType)> {
+    var proceedSignal: Signal<(String, AccountType, RestoreSelectOptions?)> {
         proceedRelay.asSignal()
     }
 
@@ -360,12 +363,13 @@ extension RestorePrivateKeyViewModelNew {
 
             let accountType = self.resolveAccountType()
             let accountName = self.resolveAccountName()
+            let restoreSelectOptions = self.restoreSelectOptions
 
             DispatchQueue.main.async {
                 self.isLoading = false
                 if let accountType = accountType {
-                    self.proceedSubject.send((accountName, accountType))
-                    self.proceedRelay.accept((accountName, accountType))
+                    self.proceedSubject.send((accountName, accountType, restoreSelectOptions))
+                    self.proceedRelay.accept((accountName, accountType, restoreSelectOptions))
                 }
             }
         }
@@ -428,6 +432,14 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
         do {
             let forceType = selectedKeyType
             let accountType = try privateKeyService.accountType(text: trimmedText, forceType: forceType)
+            restoreSelectOptions = privateKeyService.wifRoutingContext.map { context in
+                RestoreSelectOptions(
+                    allowedBlockchainTypes: Set([context.blockchainType]),
+                    allowedBitcoinDerivations: context.allowedBitcoinDerivations,
+                    autoEnableDefaultTokens: context.skipCoinSelection && !context.requireManualDerivationSelection,
+                    blockchainsRequireManualTokenSelection: context.requireManualDerivationSelection ? Set([context.blockchainType]) : nil
+                )
+            }
             cautionRelay.accept(nil)
             textCaution = .none
             return accountType
@@ -445,6 +457,7 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
             
             cautionRelay.accept(caution)
             errorSubject.send(errorMessage)
+            restoreSelectOptions = nil
             return nil
         } catch let error as BitcoinKeyError {
             let errorMessage = errorMessage(for: error)
@@ -460,12 +473,14 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
             
             cautionRelay.accept(caution)
             errorSubject.send(errorMessage)
+            restoreSelectOptions = nil
             return nil
         } catch {
             let caution = Caution(text: "restore.private_key.invalid_key".localized, type: .error)
             textCaution = .caution(caution)
             cautionRelay.accept(caution)
             errorSubject.send("restore.private_key.invalid_key".localized)
+            restoreSelectOptions = nil
             return nil
         }
     }
@@ -514,6 +529,7 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
         requiresPassword = false
         passwordErrorCount = 0
         privateKeyService.clearBip38Password()
+        restoreSelectOptions = nil
     }
     
     var passwordErrorWarning: String? {
@@ -559,6 +575,15 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
         default:
             return "restore.private_key.invalid_key".localized
         }
+    }
+}
+
+extension RestorePrivateKeyViewModelNew {
+    struct RestoreSelectOptions: Hashable {
+        let allowedBlockchainTypes: Set<BlockchainType>?
+        let allowedBitcoinDerivations: Set<MnemonicDerivation>?
+        let autoEnableDefaultTokens: Bool
+        let blockchainsRequireManualTokenSelection: Set<BlockchainType>?
     }
 }
 
