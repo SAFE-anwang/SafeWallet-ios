@@ -63,7 +63,13 @@ class BitcoinAdapter: BitcoinBaseAdapter {
                 throw AdapterError.wrongParameters
             }
 
-            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(from: data, compressed: compressed, testNet: Self.networkType != .mainNet)
+            let scriptType = Self.scriptType(for: derivation)
+            let address = try BitcoinPrivateKeyParser.generateBitcoinAddress(
+                from: data,
+                compressed: compressed,
+                testNet: Self.networkType != .mainNet,
+                scriptType: scriptType
+            )
             
             bitcoinKit = try BitcoinKit.Kit(
                 watchAddress: address,
@@ -140,9 +146,27 @@ extension BitcoinAdapter {
         case let .btcAddress(address, _, _):
             return address
         case let .btcPrivateKey(data, compressed, _):
-            return try BitcoinPrivateKeyParser.generateBitcoinAddress(from: data, compressed: compressed, testNet: networkType != .mainNet)
+            guard let derivation = tokenType.derivation else {
+                throw AdapterError.wrongParameters
+            }
+
+            return try BitcoinPrivateKeyParser.generateBitcoinAddress(
+                from: data,
+                compressed: compressed,
+                testNet: networkType != .mainNet,
+                scriptType: scriptType(for: derivation)
+            )
         default:
             throw AdapterError.unsupportedAccount
+        }
+    }
+
+    private static func scriptType(for derivation: MnemonicDerivation) -> ScriptType {
+        switch derivation {
+        case .bip44: return .p2pkh
+        case .bip49: return .p2wpkhSh
+        case .bip84: return .p2wpkh
+        case .bip86: return .p2tr
         }
     }
 }

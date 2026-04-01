@@ -295,13 +295,15 @@ class RestorePrivateKeyService {
                 TokenQuery(blockchainType: .safe4, tokenType: .native),
             ]
         case .bitcoinPrivateKey, .bitcoinWif, .bitcoinMiniKey, .bitcoinBrainWallet, .bitcoinBip38:
-            return [
-                TokenQuery(blockchainType: .bitcoin, tokenType: .native),
-                TokenQuery(blockchainType: .litecoin, tokenType: .native),
-                TokenQuery(blockchainType: .bitcoinCash, tokenType: .native),
-                TokenQuery(blockchainType: .dash, tokenType: .native),
-                TokenQuery(blockchainType: .dogecoin, tokenType: .native),
+            let blockchainTypes: [BlockchainType] = [
+                .bitcoin,
+                .litecoin,
+                .bitcoinCash,
+                .dash,
+                .dogecoin,
             ]
+
+            return blockchainTypes.flatMap(\.nativeTokenQueries)
         case .hdExtendedKey:
             return [
                 TokenQuery(blockchainType: .bitcoin, tokenType: .derived(derivation: MnemonicDerivation.default.derivation)),

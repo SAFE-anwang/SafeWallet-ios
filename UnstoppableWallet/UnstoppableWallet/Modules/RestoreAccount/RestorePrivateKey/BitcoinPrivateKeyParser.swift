@@ -1,3 +1,4 @@
+import BitcoinCore
 import CryptoSwift
 import Foundation
 import HsCryptoKit
@@ -144,24 +145,53 @@ class BitcoinPrivateKeyParser {
         }
     }
 
-    static func generateBitcoinAddress(from privateKeyData: Data, compressed: Bool = true, testNet: Bool = false) throws -> String {
+    static func generateBitcoinAddress(
+        from privateKeyData: Data,
+        compressed: Bool = true,
+        testNet: Bool = false,
+        scriptType: ScriptType = .p2pkh
+    ) throws -> String {
         guard isValidPrivateKeyData(privateKeyData) else {
             throw BitcoinKeyError.invalidPrivateKey
         }
 
-        let publicKey = HsCryptoKit.Crypto.publicKey(privateKey: privateKeyData, compressed: compressed)
-        guard !publicKey.isEmpty else {
+        let useCompressedPublicKey: Bool
+        switch scriptType {
+        case .p2pkh:
+            useCompressedPublicKey = compressed
+        case .p2wpkhSh, .p2wpkh, .p2tr:
+            // SegWit/Taproot addresses are based on compressed public keys.
+            useCompressedPublicKey = true
+        default:
             throw BitcoinKeyError.addressGenerationFailed
         }
 
-        let pubKeyHash = HsCryptoKit.Crypto.ripeMd160Sha256(publicKey)
-        var payload = Data([testNet ? 0x6F : 0x00])
-        payload.append(pubKeyHash)
+        let rawPublicKey = HsCryptoKit.Crypto.publicKey(privateKey: privateKeyData, compressed: useCompressedPublicKey)
+        guard !rawPublicKey.isEmpty else {
+            throw BitcoinKeyError.addressGenerationFailed
+        }
 
-        let checksum = HsCryptoKit.Crypto.doubleSha256(payload).prefix(4)
-        payload.append(checksum)
+        let publicKey = try PublicKey(withAccount: 0, index: 0, external: true, hdPublicKeyData: rawPublicKey)
+        let addressString: String
 
-        return Base58.encode(payload)
+        switch scriptType {
+        case .p2pkh, .p2wpkhSh:
+            let converter = Base58AddressConverter(
+                addressVersion: testNet ? 0x6F : 0x00,
+                addressScriptVersion: testNet ? 0xC4 : 0x05
+            )
+            addressString = try converter.convert(publicKey: publicKey, type: scriptType).stringValue
+        case .p2wpkh, .p2tr:
+            let converter = SegWitBech32AddressConverter(
+                prefix: testNet ? "tb" : "bc",
+                scriptConverter: ScriptConverter()
+            )
+            addressString = try converter.convert(publicKey: publicKey, type: scriptType).stringValue
+        default:
+            throw BitcoinKeyError.addressGenerationFailed
+        }
+
+        return addressString
     }
 
     static func decodeWif(_ input: String) throws -> BitcoinParsedPrivateKey {
