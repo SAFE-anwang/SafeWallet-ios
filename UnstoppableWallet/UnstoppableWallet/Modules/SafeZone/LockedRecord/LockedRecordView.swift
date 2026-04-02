@@ -73,16 +73,15 @@ struct LockedRecordView: View {
     
     @ViewBuilder
     private func list() -> some View {
-        ScrollView {
-            LazyVStack(spacing: .margin12) {
-                ForEach(viewModel.viewItems) { item in
-                    view(for: item)
-                        .onAppear {
-                            if item.id == viewModel.viewItems.last?.id {
-                                loadNextItems()
-                            }
+        ThemeList {
+            ListForEach(viewModel.viewItems) { item in
+                view(for: item)
+                    .padding(.horizontal, .margin16)
+                    .onAppear {
+                        if item.id == viewModel.viewItems.last?.id {
+                            loadNextItems()
                         }
-                }
+                    }
             }
         }
     }

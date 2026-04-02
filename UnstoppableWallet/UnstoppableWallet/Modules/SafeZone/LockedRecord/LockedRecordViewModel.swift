@@ -163,6 +163,8 @@ extension LockedRecordViewModel {
                 await MainActor.run {
                     if viewItems.isEmpty {
                         dataState = .error(RequestError.getInfo as NSError)
+                    } else {
+                        dataState = .items
                     }
                 }
             }
@@ -372,7 +374,7 @@ extension Sequence {
     
 }
 
-class WithdrawItemRecord: Identifiable {
+class WithdrawItemRecord: Identifiable, Hashable {
     private let nullAddress = "0x0000000000000000000000000000000000000000"
 
     let id: Int
@@ -415,5 +417,20 @@ class WithdrawItemRecord: Identifiable {
         self.withdrawEnable = withdrawEnable
         self.addLockDayEnable = addLockDayEnable
     }
+    
+    static func == (lhs: WithdrawItemRecord, rhs: WithdrawItemRecord) -> Bool {
+        lhs.id == rhs.id &&
+        lhs.amount == rhs.amount &&
+        lhs.unlockHeight == rhs.unlockHeight &&
+        lhs.releaseHeight == rhs.releaseHeight &&
+        lhs.address == rhs.address
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(amount)
+        hasher.combine(unlockHeight)
+        hasher.combine(releaseHeight)
+        hasher.combine(address)
+    }
 }
-

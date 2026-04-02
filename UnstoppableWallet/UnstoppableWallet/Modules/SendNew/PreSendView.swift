@@ -302,33 +302,6 @@ struct PreSendView: View {
         let (title, disabled, showProgress) = buttonState()
 
         Button(action: {
-//<<<<<<< HEAD
-//            if let step = viewModel.allowanceHandler.allowanceState?.customButtonState?.preSwapStep, let amount = viewModel.amount {
-//                Coordinator.shared.present { isPresented in
-//                    viewModel.allowanceHandler.preSwapView(step: step, amount: amount, isPresented: isPresented) {
-//                        viewModel.syncSendData()
-//                        isPresented.wrappedValue = false
-//                    }
-//                }
-//            }else if viewModel.resolvedAddress.issueTypes.isEmpty {
-//                confirmPresented = true
-//            } else {
-//                Coordinator.shared.present(type: .bottomSheet) { isPresented in
-//                    BottomSheetView(
-//                        icon: .local(name: "warning_2_24", tint: .themeLucian),
-//                        title: "send.address.risky.title".localized,
-//                        items: [
-//                            .highlightedDescription(text: "send.address.risky.description".localized, style: .alert),
-//                        ],
-//                        buttons: [
-//                            .init(style: .red, title: "send.continue_anyway".localized) {
-//                                isPresented.wrappedValue = false
-//                                confirmPresented = true
-//                            },
-//                            .init(style: .transparent, title: "button.cancel".localized) { isPresented.wrappedValue = false },
-//                        ],
-//                        isPresented: isPresented
-//=======
             guard let sendData = viewModel.sendData else { return }
             let proceedToSend = {
                 if #available(iOS 17.0, *) {
@@ -357,7 +330,6 @@ struct PreSendView: View {
                                 .init(style: .transparent, title: "button.cancel".localized) { isPresented.wrappedValue = false },
                             ])),
                         ],
-//>>>>>>> master
                     )
                 }
             }

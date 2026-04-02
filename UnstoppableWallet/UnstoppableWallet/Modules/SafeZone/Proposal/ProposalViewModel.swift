@@ -41,8 +41,14 @@ extension ProposalViewModel {
                    let totalNum = try await service.getTotalNum()
                     safe4Page.set(totalNum: totalNum)
                 }
-                guard safe4Page.totalNum > 0 else { return  state = .completed(datas: []) }
-                guard viewItems.count < safe4Page.totalNum else { return }
+                guard safe4Page.totalNum > 0 else {
+                    state = .completed(datas: [])
+                    return
+                }
+                guard viewItems.count < safe4Page.totalNum else {
+                    state = .completed(datas: viewItems)
+                    return
+                }
                 
                 let ids = try await service.proposalIds(page: safe4Page)
                 var results: [ViewItem] = []

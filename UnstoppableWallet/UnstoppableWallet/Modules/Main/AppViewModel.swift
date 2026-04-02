@@ -7,6 +7,7 @@ class AppViewModel: ObservableObject {
     private let themeManager = Core.shared.themeManager
     private let accountManager = Core.shared.accountManager
     private var cancellables = Set<AnyCancellable>()
+    private var proposalCancellable: AnyCancellable?
 
     @Published private(set) var passcodeLockState: PasscodeLockState
     @Published private(set) var introVisible: Bool
@@ -30,9 +31,13 @@ class AppViewModel: ObservableObject {
             .store(in: &cancellables)
         
         accountManager.activeAccountPublisher
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] account in
-                if account != nil {
-                    self?.checkProposalUpdate()
+                if let account = account {
+                    let delay: TimeInterval = account.backedUp ? 0.5 : 2.5
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                        self?.checkProposalUpdate()
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -48,19 +53,22 @@ extension AppViewModel {
 
 extension AppViewModel {
     func checkProposalUpdate() {
+        proposalCancellable = nil
+        
         let viewModel = ProposalModule.viewModel(type: .All)
         viewModel.loadNewProposals()
         
-        viewModel.$hasNewProposal
+        proposalCancellable = viewModel.$hasNewProposal
             .sink { [weak self] hasNewProposal in
                 if hasNewProposal {
                     self?.showAlerView(viewModel: viewModel)
                 }
-            }.store(in: &cancellables)
+            }
     }
     
     private func showAlerView(viewModel: ProposalViewModel) {
         guard Core.shared.accountManager.activeAccount != nil else { return }
+        
         Coordinator.shared.present(type: .bottomSheet) { isPresented in
             BottomSheetView(
                 items: [
@@ -68,16 +76,20 @@ extension AppViewModel {
                     .highlightedDescription(text: "有新的提案,是否查看?", type: .caution, style: .structured),
                     .buttonGroup(.init(buttons: [
                             .init(style: .yellow, title: "查看") {
-                                guard let viewModel = ProposalModule.tabViewModel() else { return }
-                                Coordinator.shared.present { _ in
-                                    ProposalTabView(viewModel: viewModel)
-                                        .ignoresSafeArea()
+                                DispatchQueue.main.async {
+                                    guard let viewModel = ProposalModule.tabViewModel() else { return }
+                                    Coordinator.shared.present { _ in
+                                        ProposalTabView(viewModel: viewModel)
+                                            .ignoresSafeArea()
+                                    }
+                                    isPresented.wrappedValue = false
                                 }
-                                isPresented.wrappedValue = false
                             },
                             .init(style: .transparent, title: "不再提醒") {
-                                ProposalStorageManager.saveNeedShowTips(false)
-                                isPresented.wrappedValue = false
+                                DispatchQueue.main.async {
+                                    ProposalStorageManager.saveNeedShowTips(false)
+                                    isPresented.wrappedValue = false
+                                }
                             }
                         ],
                         alignment: .horizontal)),

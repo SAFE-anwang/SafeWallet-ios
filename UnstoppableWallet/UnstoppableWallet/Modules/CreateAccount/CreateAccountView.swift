@@ -183,8 +183,10 @@ struct CreateAccountView: View {
                 isPresented = false
             }
 
-            Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                BackupRequiredView.afterCreate(account: account, isPresented: isPresented)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                    BackupRequiredView.afterCreate(account: account, isPresented: isPresented)
+                }
             }
         } catch {
             if case CreateAccountViewModel.CreateError.emptyPassphrase = error {

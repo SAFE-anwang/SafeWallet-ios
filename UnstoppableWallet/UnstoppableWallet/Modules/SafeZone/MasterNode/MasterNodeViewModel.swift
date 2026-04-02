@@ -55,8 +55,14 @@ extension MasterNodeViewModel {
                     partnerAddrs = try await allPartnerAddrs()
                 }
                 
-                guard safe4Page.totalNum > 0 || partnerAddressArray.count > 0 else { return  state = .completed(datas: []) }
-                guard viewItems.count < safe4Page.totalNum + partnerAddressArray.count else { return }
+                guard safe4Page.totalNum > 0 || partnerAddressArray.count > 0 else {
+                    state = .completed(datas: [])
+                    return
+                }
+                guard viewItems.count < safe4Page.totalNum + partnerAddressArray.count else {
+                    state = .completed(datas: viewItems)
+                    return
+                }
                 
                 var creatorAddrs = [Web3Core.EthereumAddress]()
                 if safe4Page.totalNum > 0 {
@@ -141,8 +147,14 @@ extension MasterNodeViewModel {
                     try await safe4Page.set(totalNum: Int(totalNum))
                 }
                 
-                guard safe4Page.totalNum > 0 else { return  state = .completed(datas: []) }
-                guard viewItems.count < safe4Page.totalNum else { return }
+                guard safe4Page.totalNum > 0 else {
+                    state = .completed(datas: [])
+                    return
+                }
+                guard viewItems.count < safe4Page.totalNum else {
+                    state = .completed(datas: viewItems)
+                    return
+                }
                 
                 let addrs = try await service.masteNodeAddressArray(page: safe4Page)
                 

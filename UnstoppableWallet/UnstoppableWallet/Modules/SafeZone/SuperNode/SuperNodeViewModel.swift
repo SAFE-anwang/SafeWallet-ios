@@ -70,8 +70,14 @@ extension SuperNodeViewModel {
                     safe4Page.set(totalNum: Int(totalNum))
                     partnerAddrs = try await allPartnerAddrs()
                 }
-                guard safe4Page.totalNum > 0 || partnerAddressArray.count > 0 else { return  state = .completed(datas: []) }
-                guard viewItems.count < safe4Page.totalNum + partnerAddressArray.count else { return }
+                guard safe4Page.totalNum > 0 || partnerAddressArray.count > 0 else {
+                    state = .completed(datas: [])
+                    return
+                }
+                guard viewItems.count < safe4Page.totalNum + partnerAddressArray.count else {
+                    state = .completed(datas: viewItems)
+                    return
+                }
                 var creatorAddrs = [Web3Core.EthereumAddress]()
                 if safe4Page.totalNum > 0 {
                     creatorAddrs = try await service.getAddrs4Creator(page: safe4Page)
@@ -160,8 +166,14 @@ extension SuperNodeViewModel {
                     safe4Page.set(totalNum: Int(totalNum))
                     let _ = try await allPartnerAddrs()
                 }
-                guard safe4Page.totalNum > 0 else { return  state = .completed(datas: []) }
-                guard viewItems.count < safe4Page.totalNum else { return }
+                guard safe4Page.totalNum > 0 else {
+                    state = .completed(datas: [])
+                    return
+                }
+                guard viewItems.count < safe4Page.totalNum else {
+                    state = .completed(datas: viewItems)
+                    return
+                }
                 let addrs = try await service.superNodeAddressArray(page: safe4Page)
                 if addrs.count > 0 { safe4Page.plusPage() }
                 
@@ -308,7 +320,9 @@ extension SuperNodeViewModel {
         }
         switch type {
         case .All:
-            requestInfos(loadMore: true)
+            if safe4Page.isAbleLoadMore {
+                requestInfos(loadMore: true)
+            }
         case .Mine:
             requestMineNodeInfos(loadMore: true)
         }
@@ -467,4 +481,3 @@ extension SuperNodeViewModel {
         }
     }
 }
-

@@ -15899,10 +15899,10 @@
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Development.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 402;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.47.260401;
+				MARKETING_VERSION = 0.47.0.202606;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet_Dev;
 				PRODUCT_NAME = "SafeWallet D";
@@ -15922,10 +15922,10 @@
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Development.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 402;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.47.260401;
+				MARKETING_VERSION = 0.47.0.202606;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwangsafe.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet_Dev;
 				PRODUCT_NAME = SafeWallet;
