@@ -131,9 +131,20 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
 
     func send() {
         guard case .ready = state, case let .completed(fallibleTransaction) = settingsService.status else {
+            let error = TransactionError.notReady
+            print("[SendEvmTransaction] ERROR: Transaction not ready, state=\(state)")
+            sendState = .failed(error: error)
             return
         }
         let transaction = fallibleTransaction.data
+
+        // Log transaction details for debugging
+        print("[SendEvmTransaction] Sending transaction:")
+        print("  - to: \(transaction.transactionData.to.eip55)")
+        print("  - value: \(transaction.transactionData.value)")
+        print("  - gasLimit: \(transaction.gasData.limit)")
+        print("  - gasPrice: \(transaction.gasData.price)")
+        print("  - nonce: \(transaction.nonce ?? -1)")
 
         sendState = .sending
         switch privateSendMode {
@@ -141,6 +152,7 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
             if transaction.transactionData.times != -1 {
                 guard let value = (transaction.transactionData.value / BigUInt(transaction.transactionData.times)).safe4ToDecimal(),
                       let type = web3swift.AccountManager.ContractType.contractType(value: value) else {
+                    sendState = .failed(error: TransactionError.invalidParameters)
                     return
                 }
                 
@@ -148,8 +160,9 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
                     .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
                     .subscribe(onSuccess: { [weak self] hashStr in
                         self?.sendState = .sent(transactionHash: hashStr.hs.data)
-                    }, onError: { error in
-                        self.sendState = .failed(error: error)
+                    }, onError: { [weak self] error in
+                        let categorizedError = self?.categorizeError(error) ?? error
+                        self?.sendState = .failed(error: categorizedError)
                     })
                     .disposed(by: disposeBag)
             }else {
@@ -162,9 +175,14 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
                 )
                 .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
                 .subscribe(onSuccess: { [weak self] fullTransaction in
+                    let txHash = fullTransaction.transaction.hash.hs.hexString
+                    print("[SendEvmTransaction] SUCCESS: Transaction sent, hash=\(txHash)")
                     self?.sendState = .sent(transactionHash: fullTransaction.transaction.hash)
-                }, onError: { error in
-                    self.sendState = .failed(error: error)
+                }, onError: { [weak self] error in
+                    print("[SendEvmTransaction] ERROR: Transaction failed: \(error.localizedDescription)")
+                    print("  - underlying error: \(error)")
+                    let categorizedError = self?.categorizeError(error) ?? error
+                    self?.sendState = .failed(error: categorizedError)
                 })
                 .disposed(by: disposeBag)
                 
@@ -174,15 +192,58 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
                 do {
                     let successful = try await self?.evmKitWrapper.sendCancel(hash: hash)
                     if successful ?? false {
+                        print("[SendEvmTransaction] SUCCESS: Cancel transaction sent")
                         self?.sendState = .sent(transactionHash: hash)
                     } else {
+                        print("[SendEvmTransaction] ERROR: Cancel transaction failed")
                         self?.sendState = .failed(error: SendEvmTransactionService.TransactionError.unexpectedError)
                     }
                 } catch {
-                    self?.sendState = .failed(error: error)
+                    print("[SendEvmTransaction] ERROR: Cancel transaction exception: \(error.localizedDescription)")
+                    let categorizedError = self?.categorizeError(error) ?? error
+                    self?.sendState = .failed(error: categorizedError)
                 }
             }
         }
+    }
+    
+    // MARK: - Error Categorization
+    
+    private func categorizeError(_ error: Error) -> Error {
+        let errorDescription = error.localizedDescription.lowercased()
+        
+        // Gas-related errors
+        if errorDescription.contains("insufficient funds") || 
+           errorDescription.contains("gas") ||
+           errorDescription.contains("out of gas") {
+            print("[SendEvmTransaction] Categorized as: insufficientBalance")
+            return TransactionError.insufficientBalance(requiredBalance: 0)
+        }
+        
+        // Nonce errors
+        if errorDescription.contains("nonce") || 
+           errorDescription.contains("replacement transaction") {
+            print("[SendEvmTransaction] Categorized as: nonceError")
+            return TransactionError.nonceError
+        }
+        
+        // Network errors
+        if errorDescription.contains("network") || 
+           errorDescription.contains("timeout") ||
+           errorDescription.contains("connection") {
+            print("[SendEvmTransaction] Categorized as: networkError")
+            return TransactionError.networkError
+        }
+        
+        // Contract execution errors
+        if errorDescription.contains("revert") || 
+           errorDescription.contains("execution failed") {
+            print("[SendEvmTransaction] Categorized as: contractError")
+            return TransactionError.contractError(reason: error.localizedDescription)
+        }
+        
+        print("[SendEvmTransaction] Error not categorized, returning original")
+        return error
     }
 }
 
@@ -224,5 +285,10 @@ extension SendEvmTransactionService {
         case unexpectedError
         case noTransactionData
         case insufficientBalance(requiredBalance: BigUInt)
+        case notReady
+        case invalidParameters
+        case nonceError
+        case networkError
+        case contractError(reason: String)
     }
 }

@@ -8,7 +8,7 @@
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.anwangsafe.safewallet</string>
+		<string>group.com.anwang4.safewallet</string>
 	</array>
 </dict>
 </plist>

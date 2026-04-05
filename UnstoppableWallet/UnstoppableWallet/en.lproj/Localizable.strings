@@ -493,6 +493,7 @@
 "send.confirmation.title" = "Confirm Send";
 "send.confirmation.you_send" = "You Send";
 "send.confirmation.transfer" = "Transfer";
+"send.confirmation.dapp_transaction" = "DApp Transaction";
 "send.confirmation.to" = "To";
 "send.confirmation.from" = "From";
 "send.confirmation.own" = "Own";

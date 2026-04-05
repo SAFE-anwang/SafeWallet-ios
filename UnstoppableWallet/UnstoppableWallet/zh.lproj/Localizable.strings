@@ -503,6 +503,7 @@
 "send.confirmation.title" = "确认发送";
 "send.confirmation.you_send" = "您发送";
 "send.confirmation.transfer" = "转帐";
+"send.confirmation.dapp_transaction" = "DApp 交易";
 "send.confirmation.to" = "接收人";
 "send.confirmation.own" = "自有";
 "send.confirmation.contact_name" = "联系人姓名";

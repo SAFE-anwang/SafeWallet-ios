@@ -32,8 +32,10 @@ class WalletConnectService {
     init(info: WalletConnectClientInfo/*, logger: Logger? = nil*/) {
         let bundleIdentifier: String = Bundle.main.bundleIdentifier ?? ""
 
+        _ = WalletConnectKeychainCleaner.clearIfNeeded(currentBundleId: bundleIdentifier)
+
         Networking.configure(
-            groupIdentifier: "group.\(bundleIdentifier)",
+            groupIdentifier: WalletConnectKeychainCleaner.fixedAppGroupId,
             projectId: info.projectId,
             socketFactory: DefaultSocketFactory(),
             socketConnectionType: .automatic

@@ -21,7 +21,7 @@ enum MarketDappSendEvmConfirmationModule {
             return nil
         }
 
-        let predefinedGasLimit: Int? = [.ethereum, .polygon, .binanceSmartChain].contains(evmKitWrapper.blockchainType) ? 100000 : nil
+        let predefinedGasLimit: Int? = nil
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
             evmKit: evmKit,
@@ -45,6 +45,52 @@ enum MarketDappSendEvmConfirmationModule {
             onSendSuccess: onSendSuccess,
             onSendFailed: onSendFailed
         )
+    }
+
+    static func swiftUIView(
+        evmKitWrapper: EvmKitWrapper,
+        sendData: SendEvmData,
+        onSendSuccess: @escaping (Data) -> Void,
+        onSendFailed: @escaping (String) -> Void,
+        onDismissed: (() -> Void)? = nil
+    ) -> MarketDappSendEvmConfirmationView? {
+        let evmKit = evmKitWrapper.evmKit
+
+        guard let coinServiceFactory = EvmCoinServiceFactory(
+            blockchainType: evmKitWrapper.blockchainType,
+            marketKit: Core.shared.marketKit,
+            currencyManager: Core.shared.currencyManager,
+            coinManager: Core.shared.coinManager
+        ) else {
+            return nil
+        }
+
+        let predefinedGasLimit: Int? = nil
+
+        guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
+            evmKit: evmKit,
+            blockchainType: evmKitWrapper.blockchainType,
+            sendData: sendData,
+            coinServiceFactory: coinServiceFactory,
+            predefinedGasLimit: predefinedGasLimit,
+            gasLimitType: .common
+        ) else {
+            return nil
+        }
+
+        let service = SendEvmTransactionService(sendData: sendData, privateSendMode: .none, evmKitWrapper: evmKitWrapper, settingsService: settingsService, evmLabelManager: Core.shared.evmLabelManager)
+        let contactLabelService = ContactLabelService(contactManager: Core.shared.contactManager, blockchainType: evmKitWrapper.blockchainType)
+        let transactionViewModel = SendEvmTransactionViewModel(service: service, coinServiceFactory: coinServiceFactory, cautionsFactory: SendEvmCautionsFactory(), evmLabelManager: Core.shared.evmLabelManager, contactLabelService: contactLabelService)
+
+        let confirmationViewModel = MarketDappSendEvmConfirmationViewModel(
+            transactionViewModel: transactionViewModel,
+            settingsViewModel: settingsViewModel,
+            onSendSuccess: onSendSuccess,
+            onSendFailed: onSendFailed,
+            onDismissed: onDismissed
+        )
+
+        return MarketDappSendEvmConfirmationView(viewModel: confirmationViewModel)
     }
 }
 

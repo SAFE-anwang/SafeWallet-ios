@@ -641,13 +641,26 @@ class SendEvmTransactionViewModel {
         let toValue = transactionData.to.eip55
         let contactData = contactLabelService.contactData(for: toValue)
 
-        var viewItems: [ViewItem] = [
-            amountViewItem(
-                title: "send.confirmation.transfer".localized,
-                coinService: coinServiceFactory.baseCoinService,
-                value: transactionData.value,
-                type: .neutral
-            ),
+        var viewItems: [ViewItem] = []
+
+        if transactionData.value > 0 {
+            viewItems.append(
+                amountViewItem(
+                    title: "send.confirmation.transfer".localized,
+                    coinService: coinServiceFactory.baseCoinService,
+                    value: transactionData.value,
+                    type: .neutral
+                )
+            )
+        } else if dAppInfo != nil {
+            viewItems.append(.subhead(
+                iconName: "arrow_medium_2_up_right_24",
+                title: "send.confirmation.dapp_transaction".localized,
+                value: dAppInfo?.name ?? "DApp"
+            ))
+        }
+
+        viewItems.append(
             .address(
                 title: "send.confirmation.to".localized,
                 value: toValue,
@@ -655,7 +668,7 @@ class SendEvmTransactionViewModel {
                 contactAddress: contactData.contactAddress,
                 statSection: .addressTo
             ),
-        ]
+        )
 
         if let contactName = contactData.name {
             viewItems.append(.value(title: "send.confirmation.contact_name".localized, value: contactName, type: .regular))

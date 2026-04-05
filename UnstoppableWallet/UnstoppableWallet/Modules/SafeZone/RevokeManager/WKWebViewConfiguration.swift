@@ -1,5 +1,4 @@
 import Foundation
-import JavaScriptCore
 import WebKit
 import EvmKit
 
@@ -76,24 +75,25 @@ extension WKWebViewConfiguration {
             print("[Web3Injection] Disabled for host: \(host ?? "unknown")")
             return webViewConfig
         }
-
+        
         let js = """
         class CustomEthereumProvider {
             constructor() {
                 this.chainId = "0x\(String(chainId, radix: 16))";
-                this.selectedAddress = "\(address)";
-                this.isConnected = true;
+                this.selectedAddress = "";
+                this.isConnected = false;
                 this.isMetaMask = false;
                 this.isSafeWallet = true;
                 this._listeners = {};
                 this._nextId = 1;
                 this._pendingRequests = {};
+                this._address = "\(address)";
             }
             enable() {
                 return this.request({ method: 'eth_requestAccounts' });
             }
             isConnected() {
-                return true;
+                return this.selectedAddress !== "";
             }
             request(request) {
                 return new Promise((resolve, reject) => {
@@ -129,11 +129,16 @@ extension WKWebViewConfiguration {
                     
                     switch(request.method) {
                         case 'eth_requestAccounts':
-                            this.emit('accountsChanged', [this.selectedAddress]);
+                            if (!this.selectedAddress) {
+                                this.selectedAddress = this._address;
+                                this.isConnected = true;
+                                this.emit('accountsChanged', [this.selectedAddress]);
+                                this.emit('connect', { chainId: this.chainId });
+                            }
                             finalizeResolve([this.selectedAddress]);
                             break;
                         case 'eth_accounts':
-                            finalizeResolve([this.selectedAddress]);
+                            finalizeResolve(this.selectedAddress ? [this.selectedAddress] : []);
                             break;
                         case 'eth_chainId':
                             finalizeResolve(this.chainId);
@@ -176,24 +181,23 @@ extension WKWebViewConfiguration {
                     delete this._pendingRequests[id];
                 }
             }
+        
+            approveConnection() {
+                this.selectedAddress = this._address;
+                this.isConnected = true;
+                this.emit('accountsChanged', [this.selectedAddress]);
+                this.emit('connect', { chainId: this.chainId });
+            }
+        
+            rejectConnection() {
+                this.emit('accountsChanged', []);
+            }
         }
-
+        
         window.ethereum = new CustomEthereumProvider();
         window.ethereum.providers = [window.ethereum];
         
-        // 触发连接事件
-        setTimeout(() => {
-            window.dispatchEvent(new Event('ethereum#initialized'));
-            window.ethereum.emit('connect', { 
-                chainId: window.ethereum.chainId 
-            });
-            
-            console.log('[CustomProvider] Wallet connected:', 
-                window.ethereum.selectedAddress, 
-                'on chain', 
-                window.ethereum.chainId
-            );
-        }, 1000);
+        window.dispatchEvent(new Event('ethereum#initialized'));
         
         window.handleProviderResponse = function(id, result, error) {
             window.ethereum.handleResponse(id, result, error);
@@ -206,7 +210,10 @@ extension WKWebViewConfiguration {
         webViewConfig.userContentController.add(messageHandler, name: Web3Method.walletSwitchChain.name)
         webViewConfig.userContentController.add(messageHandler, name: Web3Method.ethSendTransaction.name)
         webViewConfig.userContentController.add(messageHandler, name: Web3Method.ethChainId.name)
-
         return webViewConfig
+    }
+    
+    public static func base() -> WKWebViewConfiguration {
+        WKWebViewConfiguration()
     }
 }

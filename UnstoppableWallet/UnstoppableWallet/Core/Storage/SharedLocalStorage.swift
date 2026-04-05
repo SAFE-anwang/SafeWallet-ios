@@ -20,10 +20,6 @@ struct SharedLocalStorage {
     }
 
     private var userDefaults: UserDefaults? {
-        guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
-            return nil
-        }
-
-        return UserDefaults(suiteName: "group.\(bundleIdentifier.replacingOccurrences(of: ".widget", with: ""))")
+        UserDefaults(suiteName: WalletConnectKeychainCleaner.fixedAppGroupId)
     }
 }
