@@ -372,19 +372,44 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     var params = args.params || [];
                     var id = this._requestId++;
                     
-                    console.log('[SafeWallet] request() called:', method);
+                    console.log('[SafeWallet] 🔵 request() called:', method, 'id:', id);
+                    console.log('[SafeWallet] 🔵 params:', JSON.stringify(params));
                     
                     var self = this;
                     return new Promise(function(resolve, reject) {
                         self._pendingRequests[id] = { resolve: resolve, reject: reject };
                         
                         try {
+                            // ✅ 关键修复：检查消息处理器是否存在
+                            if (!window.webkit || !window.webkit.messageHandlers || !window.webkit.messageHandlers.\(DAppConstants.transactionHandlerName)) {
+                                console.error('[SafeWallet] ❌ Message handler not found! Available handlers:', Object.keys(window.webkit?.messageHandlers || {}));
+                                reject({ code: 4900, message: 'Message handler not available' });
+                                return;
+                            }
+                            
+                            console.log('[SafeWallet] 📤 Sending to Swift via \(DAppConstants.transactionHandlerName):', { type: 'transaction', id: id, method: method });
+                            
                             window.webkit.messageHandlers.\(DAppConstants.transactionHandlerName).postMessage({
-                                type: 'transaction', id: id, method: method, params: params
+                                type: 'transaction',
+                                id: id,
+                                method: method,
+                                params: params
                             });
+                            
+                            console.log('[SafeWallet] ✅ Message sent successfully');
                         } catch(e) {
-                            reject({ code: 4900, message: 'Disconnected' });
+                            console.error('[SafeWallet] ❌ Failed to send message to Swift:', e);
+                            reject({ code: 4900, message: 'Disconnected: ' + e.message });
                         }
+                        
+                        // ✅ 新增：超时检测（30秒）
+                        setTimeout(function() {
+                            if (self._pendingRequests[id]) {
+                                console.warn('[SafeWallet] ⚠️ Request timeout for id:', id, 'method:', method);
+                                delete self._pendingRequests[id];
+                                reject({ code: -32603, message: 'Request timeout' });
+                            }
+                        }, 30000);
                     });
                 },
                 
@@ -611,6 +636,53 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
             
             console.log('[SafeWallet] ✅✅✅ V3 Provider System INITIALIZED (Uniswap Compatible)');
             console.log('[SafeWallet] Features: EIP-1193 + EIP-6963 + Multi-phase Events');
+            
+            // ==========================================
+            // 第 10 步：🔍 诊断测试 - 验证消息通道是否正常工作
+            // ==========================================
+            
+            setTimeout(function() {
+                console.log('[SafeWallet] 🔍 Running diagnostic test...');
+                
+                // 测试 1：检查 window.ethereum 是否存在
+                if (!window.ethereum) {
+                    console.error('[SafeWallet] ❌ DIAGNOSTIC FAIL: window.ethereum is undefined!');
+                    return;
+                }
+                console.log('[SafeWallet] ✅ DIAGNOSTIC PASS: window.ethereum exists');
+                
+                // 测试 2：检查 messageHandlers 是否可用
+                if (!window.webkit || !window.webkit.messageHandlers) {
+                    console.error('[SafeWallet] ❌ DIAGNOSTIC FAIL: webkit.messageHandlers not available!');
+                    return;
+                }
+                
+                var handlerNames = Object.keys(window.webkit.messageHandlers);
+                console.log('[SafeWallet] ✅ DIAGNOSTIC PASS: Available handlers:', handlerNames);
+                
+                // 测试 3：检查 transactionHandler 是否注册
+                if (!window.webkit.messageHandlers.\(DAppConstants.transactionHandlerName)) {
+                    console.error('[SafeWallet] ❌ DIAGNOSTIC FAIL: \(DAppConstants.transactionHandlerName) handler not found!');
+                    console.error('[SafeWallet] ❌ This means Swift did NOT register the message handler!');
+                    return;
+                }
+                console.log('[SafeWallet] ✅ DIAGNOSTIC PASS: \(DAppConstants.transactionHandlerName) handler is registered');
+                
+                // 测试 4：发送诊断消息到 Swift（不期望响应，只测试通道）
+                try {
+                    window.webkit.messageHandlers.\(DAppConstants.transactionHandlerName).postMessage({
+                        type: 'diagnostic',
+                        id: -1,
+                        method: '_diagnostic_test',
+                        params: { timestamp: Date.now(), providerVersion: 'V3' }
+                    });
+                    console.log('[SafeWallet] ✅ DIAGNOSTIC PASS: Test message sent to Swift successfully');
+                } catch(e) {
+                    console.error('[SafeWallet] ❌ DIAGNOSTIC FAIL: Failed to send test message:', e);
+                }
+                
+                console.log('[SafeWallet] 🔍 Diagnostic test complete');
+            }, 500);
             
         })();
         """
