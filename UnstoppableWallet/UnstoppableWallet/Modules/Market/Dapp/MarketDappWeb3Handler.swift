@@ -278,7 +278,7 @@ final class MarketDappWeb3Handler: NSObject, ObservableObject {
     }
 
     private func signatureJson(_ data: Data) -> String {
-        "\"0x\(data.hs.hexString)\""
+        "\"\(data.hs.hexString)\""
     }
 }
 
@@ -552,7 +552,7 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
             onSendSuccess: { [weak self] transactionHash in
                 print("[Dapp] Transaction success, hash: \(transactionHash.hs.hexString)")
                 // ✅ 关键修复：通知 DApp 交易成功（在 SlideButton 动画之前）
-                let json = "\"0x\(transactionHash.hs.hexString)\""
+                let json = "\"\(transactionHash.hs.hexString)\""
                 self?.sendProviderResponse(id: id, resultJson: json, error: nil)
                 self?.complete(id: id)
             },

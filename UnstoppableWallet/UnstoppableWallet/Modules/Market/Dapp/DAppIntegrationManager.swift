@@ -316,17 +316,8 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
     
     private func generateProviderScript() -> String {
         """
-        // ✅🔥🔥 革命性新方案 V3: Uniswap/wagmi/viem 完全兼容版
-        // 核心改进：
-        // 1. EIP-6963 同步立即发射（解决 wagmi 检测时机问题）
-        // 2. 持久监听 requestProvider 并立即响应（支持 Uniswap 主动请求）
-        // 3. 多阶段事件发射策略（覆盖所有 DApp 初始化时序）
-        // 4. 完整的 EIP-1193 + EIP-6963 双协议兼容
-        
         (function() {
             'use strict';
-            
-            console.log('[SafeWallet] 🚀 Initializing V3 Provider System (Uniswap Compatible)');
             
             var chainId = "0x\(chainIdHex)";
             var address = \(encodedAddress);
@@ -334,21 +325,34 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
             var chainIdDecimal = \(chainId);
             
             // ==========================================
+            // 工具函数：安全的 UUID 生成（兼容 iOS WKWebView）
+            // ==========================================
+            function generateUUID() {
+                if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                    try {
+                        return crypto.randomUUID();
+                    } catch(e) {}
+                }
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0;
+                    var v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+            
+            // ==========================================
             // 第 1 步：创建核心 SafeWallet Provider (EIP-1193 完整兼容)
             // ==========================================
             
             var safeProvider = {
-                // ✅ EIP-1193 核心属性
                 chainId: chainId,
                 networkVersion: chainIdDecimal.toString(),
                 selectedAddress: address,
                 
-                // ✅ 兼容性标志（让 DApp 认为这是合法的 Provider）
                 isMetaMask: false,
                 isSafeWallet: true,
                 _isSafeWallet: true,
                 
-                // ✅ 内部状态管理
                 _internalState: {
                     accounts: isConnected === "true" ? [address] : [],
                     chainId: chainId,
@@ -356,38 +360,28 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     initialized: true
                 },
                 
-                // ✅ 事件系统
                 _listeners: {},
                 _requestId: 1,
                 _pendingRequests: {},
                 
-                // ✅ EIP-1193: isConnected() 方法
                 isConnected: function() { 
                     return this._internalState.isConnected === "true" && this.selectedAddress !== ""; 
                 },
                 
-                // ✅ EIP-1193: 核心 request() 方法
                 request: function(args) {
                     var method = args.method;
                     var params = args.params || [];
                     var id = this._requestId++;
-                    
-                    console.log('[SafeWallet] 🔵 request() called:', method, 'id:', id);
-                    console.log('[SafeWallet] 🔵 params:', JSON.stringify(params));
                     
                     var self = this;
                     return new Promise(function(resolve, reject) {
                         self._pendingRequests[id] = { resolve: resolve, reject: reject };
                         
                         try {
-                            // ✅ 关键修复：检查消息处理器是否存在
                             if (!window.webkit || !window.webkit.messageHandlers || !window.webkit.messageHandlers.\(DAppConstants.transactionHandlerName)) {
-                                console.error('[SafeWallet] ❌ Message handler not found! Available handlers:', Object.keys(window.webkit?.messageHandlers || {}));
                                 reject({ code: 4900, message: 'Message handler not available' });
                                 return;
                             }
-                            
-                            console.log('[SafeWallet] 📤 Sending to Swift via \(DAppConstants.transactionHandlerName):', { type: 'transaction', id: id, method: method });
                             
                             window.webkit.messageHandlers.\(DAppConstants.transactionHandlerName).postMessage({
                                 type: 'transaction',
@@ -395,17 +389,12 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                                 method: method,
                                 params: params
                             });
-                            
-                            console.log('[SafeWallet] ✅ Message sent successfully');
                         } catch(e) {
-                            console.error('[SafeWallet] ❌ Failed to send message to Swift:', e);
                             reject({ code: 4900, message: 'Disconnected: ' + e.message });
                         }
                         
-                        // ✅ 新增：超时检测（30秒）
                         setTimeout(function() {
                             if (self._pendingRequests[id]) {
-                                console.warn('[SafeWallet] ⚠️ Request timeout for id:', id, 'method:', method);
                                 delete self._pendingRequests[id];
                                 reject({ code: -32603, message: 'Request timeout' });
                             }
@@ -413,15 +402,12 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     });
                 },
                 
-                // ✅ EIP-1193: 事件监听
                 on: function(event, listener) {
                     if (!this._listeners[event]) this._listeners[event] = [];
                     this._listeners[event].push(listener);
-                    console.log('[SafeWallet] Listener added for:', event);
                     return this;
                 },
                 
-                // ✅ EIP-1193: 移除监听器
                 removeListener: function(event, listener) {
                     if (!this._listeners[event]) return;
                     var idx = this._listeners[event].indexOf(listener);
@@ -429,10 +415,8 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     return this;
                 },
                 
-                // ✅ EIP-1193: 发射事件
                 emit: function(event) {
                     var args = Array.prototype.slice.call(arguments, 1);
-                    console.log('[SafeWallet] Emitting:', event, args);
                     
                     if (this._listeners[event]) {
                         this._listeners[event].forEach(function(fn) {
@@ -441,7 +425,6 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     }
                 },
                 
-                // ✅ 响应处理
                 handleResponse: function(id, result, error) {
                     var pending = this._pendingRequests[id];
                     if (pending) {
@@ -451,7 +434,6 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     }
                 },
                 
-                // ✅ 连接批准
                 approveConnection: function(force) {
                     if (!force && this._internalState.isConnected === "true") return;
                     this._internalState.isConnected = "true";
@@ -461,7 +443,6 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     this.emit('accountsChanged', [address]);
                 },
                 
-                // ✅ 断开连接
                 disconnect: function() {
                     var wasConnected = this._internalState.isConnected === "true";
                     this._internalState.isConnected = "false";
@@ -474,10 +455,8 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                 }
             };
             
-            console.log('[SafeWallet] Core provider created');
-            
             // ==========================================
-            // 第 2 步：创建 Proxy 保护层（只拦截删除操作）
+            // 第 2 步：创建 Proxy 保护层
             // ==========================================
             
             var protectedProvider = new Proxy(safeProvider, {
@@ -492,38 +471,36 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     return true;
                 },
                 deleteProperty: function(target, prop) {
-                    console.warn('[SafeWallet] Blocked deletion of:', prop);
                     return true;
                 }
             });
             
             // ==========================================
-            // 第 3 步：🔒 设置 window.ethereum（使用可写方式以兼容 viem）
+            // 第 3 步：设置 window.ethereum
             // ==========================================
             
             window.ethereum = protectedProvider;
             window.ethereum.providers = [protectedProvider];
             
-            console.log('[SafeWallet] window.ethereum assigned');
-            
             // ==========================================
-            // 第 4 步：✨ 立即同步构建 EIP-6963 ProviderInfo
+            // 第 4 步：构建 EIP-6963 ProviderInfo（使用安全 UUID）
             // ==========================================
             
             var providerInfo = {
-                uuid: 'safe-wallet-' + crypto.randomUUID(),
+                uuid: 'safe-wallet-' + generateUUID(),
                 name: 'SafeWallet',
                 icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="%23FF6B35"/></svg>',
                 rdns: 'com.safewallet.app'
             };
             
-            var providerDetail = Object.freeze({
-                info: Object.freeze(providerInfo),
+            // ✅ 不使用 Object.freeze，避免与 Proxy 冲突
+            var providerDetail = {
+                info: providerInfo,
                 provider: protectedProvider
-            });
+            };
             
             // ==========================================
-            // 第 5 步：⚡ 立即同步发射 EIP-6963 announceProvider（关键修复！）
+            // 第 5 步：立即同步发射 EIP-6963 announceProvider
             // ==========================================
             
             try {
@@ -531,18 +508,13 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     detail: providerDetail
                 });
                 window.dispatchEvent(announceEvent);
-                console.log('[SafeWallet] ✅ EIP-6963 announceProvider dispatched IMMEDIATELY');
-            } catch(e) {
-                console.error('[SafeWallet] Failed to dispatch announceProvider:', e);
-            }
+            } catch(e) {}
             
             // ==========================================
-            // 第 6 步：🔄 持久监听 requestProvider 并立即响应（关键修复！）
+            // 第 6 步：持久监听 requestProvider
             // ==========================================
             
             window.addEventListener('eip6963:requestProvider', function handleRequestProvider() {
-                console.log('[SafeWallet] 📢 Received requestProvider, re-announcing immediately');
-                
                 try {
                     var reAnnounceEvent = new CustomEvent('eip6963:announceProvider', {
                         detail: providerDetail
@@ -551,54 +523,28 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                 } catch(e) {}
             });
             
-            console.log('[SafeWallet] Listening for eip6963:requestProvider events');
-            
             // ==========================================
-            // 第 7 步：🎯 多阶段事件发射策略（覆盖所有 DApp 初始化时序）
+            // 第 7 步：简化的事件发射策略（3 个关键时机）
             // ==========================================
             
-            // 阶段 A: 同步发射连接事件（针对同步检测的 DApp）
+            // 时机 1: 同步发射（针对同步检测的 DApp）
             safeProvider.emit('connect', { chainId: chainId });
             safeProvider.emit('accountsChanged', isConnected === "true" ? [address] : []);
-            console.log('[SafeWallet] Phase A: Sync connection events emitted');
             
-            // 阶段 B: 微任务队列（针对 Promise-based 检测的 DApp）
+            // 时机 2: 微任务队列（针对 Promise-based 检测的 DApp，如 wagmi/viem）
             Promise.resolve().then(function() {
                 safeProvider.emit('connect', { chainId: chainId });
                 safeProvider.emit('accountsChanged', isConnected === "true" ? [address] : []);
-                console.log('[SafeWallet] Phase B: Microtask events emitted');
-            });
-            
-            // 阶段 C: setTimeout(0) - 事件循环下一轮
-            setTimeout(function() {
-                safeProvider.emit('connect', { chainId: chainId });
-                safeProvider.emit('accountsChanged', isConnected === "true" ? [address] : []);
-                console.log('[SafeWallet] Phase C: setTimeout(0) events emitted');
-            }, 0);
-            
-            // 阶段 D: 延迟 50ms - 给 React/Svelte 时间挂载组件
-            setTimeout(function() {
-                safeProvider.emit('connect', { chainId: chainId });
-                safeProvider.emit('accountsChanged', isConnected === "true" ? [address] : []);
                 
-                // 再次发射 EIP-6963（防止 DApp 错过第一次）
+                // 再次发射 EIP-6963
                 try {
                     window.dispatchEvent(new CustomEvent('eip6963:announceProvider', {
                         detail: providerDetail
                     }));
                 } catch(e) {}
-                
-                console.log('[SafeWallet] Phase D: 50ms events + EIP-6963 re-emit');
-            }, 50);
+            });
             
-            // 阶段 E: 延迟 100ms - 确保 wagmi hook 接收到
-            setTimeout(function() {
-                safeProvider.emit('connect', { chainId: chainId });
-                safeProvider.emit('accountsChanged', isConnected === "true" ? [address] : []);
-                console.log('[SafeWallet] Phase E: 100ms events emitted');
-            }, 100);
-            
-            // 阶段 F: 延迟 300ms - 最终确认（针对慢速初始化的 DApp）
+            // 时机 3: 延迟 100ms（给 React/Svelte 时间挂载组件）
             setTimeout(function() {
                 safeProvider.emit('connect', { chainId: chainId });
                 safeProvider.emit('accountsChanged', isConnected === "true" ? [address] : []);
@@ -607,9 +553,7 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                 try {
                     window.dispatchEvent(new Event('ethereum#initialized'));
                 } catch(e) {}
-                
-                console.log('[SafeWallet] Phase F: 300ms final events + ethereum#initialized');
-            }, 300);
+            }, 100);
             
             // ==========================================
             // 第 8 步：设置全局响应处理器
@@ -629,60 +573,9 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                 setTimeout(function() {
                     if (window.ethereum && window.ethereum.approveConnection) {
                         window.ethereum.approveConnection(true);
-                        console.log('[SafeWallet] Auto-connection approved');
                     }
                 }, 25);
             }
-            
-            console.log('[SafeWallet] ✅✅✅ V3 Provider System INITIALIZED (Uniswap Compatible)');
-            console.log('[SafeWallet] Features: EIP-1193 + EIP-6963 + Multi-phase Events');
-            
-            // ==========================================
-            // 第 10 步：🔍 诊断测试 - 验证消息通道是否正常工作
-            // ==========================================
-            
-            setTimeout(function() {
-                console.log('[SafeWallet] 🔍 Running diagnostic test...');
-                
-                // 测试 1：检查 window.ethereum 是否存在
-                if (!window.ethereum) {
-                    console.error('[SafeWallet] ❌ DIAGNOSTIC FAIL: window.ethereum is undefined!');
-                    return;
-                }
-                console.log('[SafeWallet] ✅ DIAGNOSTIC PASS: window.ethereum exists');
-                
-                // 测试 2：检查 messageHandlers 是否可用
-                if (!window.webkit || !window.webkit.messageHandlers) {
-                    console.error('[SafeWallet] ❌ DIAGNOSTIC FAIL: webkit.messageHandlers not available!');
-                    return;
-                }
-                
-                var handlerNames = Object.keys(window.webkit.messageHandlers);
-                console.log('[SafeWallet] ✅ DIAGNOSTIC PASS: Available handlers:', handlerNames);
-                
-                // 测试 3：检查 transactionHandler 是否注册
-                if (!window.webkit.messageHandlers.\(DAppConstants.transactionHandlerName)) {
-                    console.error('[SafeWallet] ❌ DIAGNOSTIC FAIL: \(DAppConstants.transactionHandlerName) handler not found!');
-                    console.error('[SafeWallet] ❌ This means Swift did NOT register the message handler!');
-                    return;
-                }
-                console.log('[SafeWallet] ✅ DIAGNOSTIC PASS: \(DAppConstants.transactionHandlerName) handler is registered');
-                
-                // 测试 4：发送诊断消息到 Swift（不期望响应，只测试通道）
-                try {
-                    window.webkit.messageHandlers.\(DAppConstants.transactionHandlerName).postMessage({
-                        type: 'diagnostic',
-                        id: -1,
-                        method: '_diagnostic_test',
-                        params: { timestamp: Date.now(), providerVersion: 'V3' }
-                    });
-                    console.log('[SafeWallet] ✅ DIAGNOSTIC PASS: Test message sent to Swift successfully');
-                } catch(e) {
-                    console.error('[SafeWallet] ❌ DIAGNOSTIC FAIL: Failed to send test message:', e);
-                }
-                
-                console.log('[SafeWallet] 🔍 Diagnostic test complete');
-            }, 500);
             
         })();
         """
@@ -862,7 +755,6 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
         (function() {
             try {
                 if (window.ethereum && window.ethereum._isSafeWallet) {
-                    console.log('[SafeWallet] Provider already exists, resetting state');
                     window.ethereum._internalState = window.ethereum._internalState || {};
                     window.ethereum._internalState.isConnected = 'true';
                     window.ethereum._internalState.accounts = [\(encodedAddress)];
@@ -871,16 +763,27 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                     window.ethereum.emit('connect', { chainId: window.ethereum.chainId });
                     window.ethereum.emit('accountsChanged', [\(encodedAddress)]);
                     
-                    // ✅ 关键修复：重新触发 EIP-6963 通知
                     notifyDAppOfConnection();
                     
                     return { success: true, action: 'reset' };
                 }
                 
-                console.log('[SafeWallet] Creating new lightweight provider');
-                
                 var chainId = "0x\(chainIdHex)";
                 var address = \(encodedAddress);
+                
+                // 工具函数：安全的 UUID 生成
+                function generateUUID() {
+                    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                        try {
+                            return crypto.randomUUID();
+                        } catch(e) {}
+                    }
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        var r = Math.random() * 16 | 0;
+                        var v = c === 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                }
                 
                 window.ethereum = {
                     chainId: chainId,
@@ -984,47 +887,52 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                 
                 window.dispatchEvent(new Event('ethereum#initialized'));
                 
-                // ✅ 关键修复：主动通知 DApp（Uniswap/wagmi）钱包已连接
                 notifyDAppOfConnection();
                 
-                console.log('[SafeWallet] Lightweight provider created and connected');
                 return { success: true, action: 'created' };
                 
             } catch(e) {
-                console.error('[SafeWallet] Error creating provider:', e);
                 return { success: false, error: e.message };
             }
         })();
         
-        // ✅ 关键函数：通知 DApp 钱包已连接
+        // 关键函数：通知 DApp 钱包已连接（简化版）
         function notifyDAppOfConnection() {
-            console.log('[SafeWallet] Notifying DApp of wallet connection...');
-            
             var address = \(encodedAddress);
             var chainId = "0x\(chainIdHex)";
+            
+            // 工具函数：安全的 UUID 生成
+            function generateUUID() {
+                if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                    try {
+                        return crypto.randomUUID();
+                    } catch(e) {}
+                }
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0;
+                    var v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
             
             // 1. 立即发射 EIP-6963 announceProvider 事件
             try {
                 var providerInfo = {
-                    uuid: 'safe-wallet-' + crypto.randomUUID(),
+                    uuid: 'safe-wallet-' + generateUUID(),
                     name: 'SafeWallet',
                     icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="%23FF6B35"/></svg>',
                     rdns: 'com.safewallet.app',
                     provider: window.ethereum
                 };
                 
-                console.log('[SafeWallet] Dispatching EIP-6963 announceProvider event');
                 window.dispatchEvent(new CustomEvent('eip6963:announceProvider', {
-                    detail: Object.freeze(providerInfo)
+                    detail: providerInfo
                 }));
-            } catch(e) {
-                console.error('[SafeWallet] Failed to dispatch EIP-6963:', e);
-            }
+            } catch(e) {}
             
             // 2. 发射 ethereum#initialized
             try {
                 window.dispatchEvent(new Event('ethereum#initialized'));
-                console.log('[SafeWallet] Dispatched ethereum#initialized');
             } catch(e) {}
             
             // 3. 立即发射连接事件
@@ -1032,49 +940,21 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
                 try {
                     window.ethereum.emit('connect', { chainId: chainId });
                     window.ethereum.emit('accountsChanged', [address]);
-                    console.log('[SafeWallet] Emitted immediate connection events');
                 } catch(e) {}
             }
             
-            // 4. 延迟重发（给 DApp 时间处理）
+            // 4. 延迟重发（给 DApp 时间处理） - 只保留一个关键延迟
             setTimeout(function() {
                 try {
                     if (window.ethereum && window.ethereum.emit) {
                         window.ethereum.emit('connect', { chainId: chainId });
                         window.ethereum.emit('accountsChanged', [address]);
-                        console.log('[SafeWallet] Re-emitted connection events (100ms)');
+                        
+                        // 触发 EIP-6963 requestProvider
+                        window.dispatchEvent(new Event('eip6963:requestProvider'));
                     }
                 } catch(e) {}
             }, 100);
-            
-            // 5. 再次延迟重发（确保 React 状态更新）
-            setTimeout(function() {
-                try {
-                    if (window.ethereum && window.ethereum.emit) {
-                        window.ethereum.emit('connect', { chainId: chainId });
-                        window.ethereum.emit('accountsChanged', [address]);
-                        console.log('[SafeWallet] Re-emitted connection events (300ms)');
-                    }
-                    
-                    // ✅ 触发 EIP-6963 requestProvider（让 DApp 重新发现）
-                    window.dispatchEvent(new Event('eip6963:requestProvider'));
-                    console.log('[SafeWallet] Dispatched eip6963:requestProvider');
-                    
-                } catch(e) {}
-            }, 300);
-            
-            // 6. 最终确认（500ms 后）
-            setTimeout(function() {
-                try {
-                    if (window.ethereum && window.ethereum.emit) {
-                        window.ethereum.emit('connect', { chainId: chainId });
-                        window.ethereum.emit('accountsChanged', [address]);
-                        console.log('[SafeWallet] Final connection events emitted (500ms)');
-                    }
-                } catch(e) {}
-            }, 500);
-            
-            console.log('[SafeWallet] DApp notification scheduled');
         }
         """
     }
