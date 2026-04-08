@@ -27,8 +27,8 @@ struct MasterNodeModule {
         
         var title: String {
             switch self {
-            case .all: return "主节点列表".localized
-            case .mine: return "我的主节点".localized
+            case .all: return "safe_zone.master_node.list".localized
+            case .mine: return "safe_zone.my_master_node".localized
             }
         }
     }
@@ -46,17 +46,17 @@ enum MasterNodeInputType {
     
     var title: String {
         switch self {
-        case .address: return "主节点钱包地址".localized
+        case .address: return "safe_zone.master_node.wallet_address".localized
         case .ENODE: return "ENODE".localized
-        case .desc: return "简介".localized
+        case .desc: return "safe_zone.description".localized
         }
     }
     
     var placeholder: String {
         switch self {
-        case .address: return "输入主节点钱包地址".localized
-        case .ENODE: return "输入主节点ENODE".localized
-        case .desc: return "输入简介信息".localized
+        case .address: return "safe_zone.enter_master_node_address".localized
+        case .ENODE: return "safe_zone.enter_master_node_enode".localized
+        case .desc: return "safe_zone.enter_description".localized
         }
     }
     

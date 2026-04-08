@@ -150,7 +150,7 @@ class SuperNodeCell: UITableViewCell {
             make.height.equalTo(.heightButton/2)
         }
         
-        voteButton.setTitle("投票".localized, for: .normal)
+        voteButton.setTitle("safe_zone.vote".localized, for: .normal)
         voteButton.setTitleColor(.themeLeah, for: .normal)
         voteButton.setTitleColor(.themeGray, for: .disabled)
         voteButton.addTarget(self, action: #selector(vote), for: .touchUpInside)
@@ -207,9 +207,9 @@ class SuperNodeCell: UITableViewCell {
         rankingLabel.isHidden = viewItem.isEnabledEdit
         rankingLabel.text = "safe_zone.safe4.ranking".localized + "\(index)"
 
-        titleLabel.text = "节点名称:".localized + viewItem.info.name
-        votesLabel.text = "投票数:".localized + viewItem.totalVoteNum.safe4FomattedAmount
-        safeAmountLabel.text = "质押数:".localized + "\(viewItem.totalAmount.safe4FomattedAmount) SAFE"
+        titleLabel.text = "safe_zone.node_name".localized + viewItem.info.name
+        votesLabel.text = "safe_zone.votes".localized + viewItem.totalVoteNum.safe4FomattedAmount
+        safeAmountLabel.text = "safe_zone.stake_amount".localized + "\(viewItem.totalAmount.safe4FomattedAmount) SAFE"
 
         let attributedString: NSAttributedString = NSMutableAttributedString(string: "safe_zone.safe4.node.address".localized + truncatedText(viewItem.info.addr.address, maxLength: 20), attributes: [
             .foregroundColor: viewItem.ownerType != .None ? UIColor.themeIssykBlue : UIColor.themeLeah,

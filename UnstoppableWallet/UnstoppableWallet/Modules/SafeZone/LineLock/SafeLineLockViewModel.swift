@@ -308,11 +308,11 @@ extension SafeLineLockViewModel {
     private func validateAmountIn() -> Caution? {
         var caution: Caution?
         guard let availableBalance else {
-            return Caution(text: "未获取到余额".localized, type: .error)
+            return Caution(text: "safe_zone.balance_not_available".localized, type: .error)
         }
         if let amount, !amount.isZero {
             if amount < 0.01 {
-                caution = Caution(text: "每次锁仓金额至少 0.01 SAFE".localized, type: .error)
+                caution = Caution(text: "safe_zone.min_lock_amount_error".localized, type: .error)
                 
             }else if amount > availableBalance {
                 caution = Caution(text: "safe_zone.send.insufficientBalance".localized, type: .error)
@@ -321,7 +321,7 @@ extension SafeLineLockViewModel {
                 caution = Caution(text: "send.amount_warning.coin_needed_for_fee".localized(token.coin.code), type: .warning)
             }
         }else {
-            caution = Caution(text: "每次锁仓金额至少 0.01 SAFE".localized, type: .error)
+            caution = Caution(text: "safe_zone.min_lock_amount_error".localized, type: .error)
         }
         
         return caution

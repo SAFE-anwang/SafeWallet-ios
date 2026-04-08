@@ -75,7 +75,7 @@ extension SRC20PromotionViewModel {
     private func validateBalance() -> Caution? {
         var caution: Caution?
         guard let fee else{
-            caution = Caution(text: "未获取到费用".localized, type: .error)
+            caution = Caution(text: "safe_zone.fee_not_available".localized, type: .error)
             return caution
         }
         

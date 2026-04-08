@@ -776,7 +776,7 @@ extension LiquidityAddViewModel {
 
         let parsed = decimalParser.parseAnyDecimal(from: text)
         guard let price = parsed else {
-            v3PriceError = "无效的价格输入"
+            v3PriceError = "liquidity.invalid_price_input"
             return
         }
 
@@ -795,28 +795,28 @@ extension LiquidityAddViewModel {
             case (.lowest, true):
                 adjustedTick = max(tick, provider.minTickValue)
                 if let upper = v3TickUpper, adjustedTick >= upper {
-                    v3PriceError = "最低价格必须小于最高价格"
+                    v3PriceError = "liquidity.min_price_must_less_than_max"
                     return
                 }
                 v3TickLower = adjustedTick
             case (.lowest, false):
                 adjustedTick = min(tick, provider.maxTickValue)
                 if let lower = v3TickLower, adjustedTick <= lower {
-                    v3PriceError = "最低价格必须小于最高价格"
+                    v3PriceError = "liquidity.min_price_must_less_than_max"
                     return
                 }
                 v3TickUpper = adjustedTick
             case (.highest, true):
                 adjustedTick = min(tick, provider.maxTickValue)
                 if let lower = v3TickLower, adjustedTick <= lower {
-                    v3PriceError = "最高价格必须大于最低价格"
+                    v3PriceError = "liquidity.max_price_must_greater_than_min"
                     return
                 }
                 v3TickUpper = adjustedTick
             case (.highest, false):
                 adjustedTick = max(tick, provider.minTickValue)
                 if let upper = v3TickUpper, adjustedTick >= upper {
-                    v3PriceError = "最高价格必须大于最低价格"
+                    v3PriceError = "liquidity.max_price_must_greater_than_min"
                     return
                 }
                 v3TickLower = adjustedTick
@@ -826,7 +826,7 @@ extension LiquidityAddViewModel {
             shouldApplyInitialV3Range = false
             applyV3TickType(provider: provider)
         } catch {
-            v3PriceError = "价格转换失败"
+            v3PriceError = "liquidity.price_conversion_failed"
             return
         }
     }
@@ -850,14 +850,14 @@ extension LiquidityAddViewModel {
                 case .lowest:
                     let candidate = lower + step
                     guard candidate < upper else {
-                        v3PriceError = "最低价格不能超过最高价格"
+                        v3PriceError = "liquidity.min_price_cannot_exceed_max"
                         return
                     }
                     v3TickLower = max(provider.minTickValue, candidate)
                 case .highest:
                     let candidate = upper + step
                     guard candidate > lower else {
-                        v3PriceError = "最高价格不能低于最低价格"
+                        v3PriceError = "liquidity.max_price_cannot_be_less_than_min"
                         return
                     }
                     v3TickUpper = min(provider.maxTickValue, candidate)
@@ -867,14 +867,14 @@ extension LiquidityAddViewModel {
                 case .lowest:
                     let candidate = upper - step
                     guard candidate > lower else {
-                        v3PriceError = "最低价格不能超过最高价格"
+                        v3PriceError = "liquidity.min_price_cannot_exceed_max"
                         return
                     }
                     v3TickUpper = min(provider.maxTickValue, candidate)
                 case .highest:
                     let candidate = lower - step
                     guard candidate < upper else {
-                        v3PriceError = "最高价格不能低于最低价格"
+                        v3PriceError = "liquidity.max_price_cannot_be_less_than_min"
                         return
                     }
                     v3TickLower = max(provider.minTickValue, candidate)

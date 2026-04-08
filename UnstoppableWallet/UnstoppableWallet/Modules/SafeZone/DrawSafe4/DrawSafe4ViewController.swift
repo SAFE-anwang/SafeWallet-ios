@@ -28,10 +28,10 @@ class DrawSafe4ViewController: ThemeViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "SAFE领取".localized
-        tipsCell.bind(text: "每个地址每天只能领取一次".localized, type: .normal)
-        addressCell.setTitle(text: "SAFE4 钱包地址".localized)
-        addressCell.setInput(keyboardType: .default, placeholder: "请输入SAFE地址".localized)
+        title = "safe_zone.safe4.claim".localized
+        tipsCell.bind(text: "safe_zone.safe4.claim_once_per_day".localized, type: .normal)
+        addressCell.setTitle(text: "safe_zone.safe4.wallet_address".localized)
+        addressCell.setInput(keyboardType: .default, placeholder: "safe_zone.enter_safe_address".localized)
         addressCell.onChangeHeight = { [weak self] in self?.reloadTable()}
         addressCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
         
@@ -45,7 +45,7 @@ class DrawSafe4ViewController: ThemeViewController {
         tableView.sectionDataSource = self
         
         buttonCell.set(style: .yellow)
-        buttonCell.title = "领取".localized
+        buttonCell.title = "safe_zone.claim".localized
         buttonCell.onTap = { [weak self] in
             self?.viewModel.drawSafe4()
         }
@@ -62,7 +62,7 @@ class DrawSafe4ViewController: ThemeViewController {
         subscribe(disposeBag, viewModel.addressDriver) { [weak self] in
             self?.addressCell.setInput(value: $0)
             self?.drawSafe4Info = nil
-            self?.buttonCell.title = "领取".localized
+            self?.buttonCell.title = "safe_zone.claim".localized
             self?.buttonCell.isEnabled = true
         }
         
@@ -84,9 +84,9 @@ class DrawSafe4ViewController: ThemeViewController {
             case let .success(info):
                 self?.drawSafe4Info = info
                 self?.tableView.reload()
-                self?.buttonCell.title = "领取成功".localized
+                self?.buttonCell.title = "safe_zone.claim_success".localized
                 self?.buttonCell.isEnabled = false
-                HudHelper.instance.show(banner: .success(string: "领取成功".localized))
+                HudHelper.instance.show(banner: .success(string: "safe_zone.claim_success".localized))
                 
             case let .failed(error):
                 self?.drawSafe4Info = nil
@@ -157,11 +157,11 @@ extension DrawSafe4ViewController: SectionsDataSource {
             id: "info",
             footerState: .margin(height: .margin32),
             rows: [
-                tableView.multilineRow(id: "amount", title: "领取数量".localized, value: drawSafe4Info?.amount ?? ""),
-                tableView.multilineRow(id: "tx_hash", title: "交易hash".localized, value: drawSafe4Info?.transactionHash ?? ""),
-                tableView.multilineRow(id: "time", title: "领取时间".localized, value: drawSafe4Info?.time ?? ""),
-                tableView.multilineRow(id: "sender", title: "发送者".localized, value: drawSafe4Info?.from ?? ""),
-                tableView.multilineRow(id: "revicer", title: "接收者".localized, value: drawSafe4Info?.address ?? ""),
+                tableView.multilineRow(id: "amount", title: "safe_zone.claim_amount".localized, value: drawSafe4Info?.amount ?? ""),
+                tableView.multilineRow(id: "tx_hash", title: "safe_zone.tx_hash".localized, value: drawSafe4Info?.transactionHash ?? ""),
+                tableView.multilineRow(id: "time", title: "safe_zone.claim_time".localized, value: drawSafe4Info?.time ?? ""),
+                tableView.multilineRow(id: "sender", title: "safe_zone.sender".localized, value: drawSafe4Info?.from ?? ""),
+                tableView.multilineRow(id: "revicer", title: "safe_zone.receiver".localized, value: drawSafe4Info?.address ?? ""),
                 tableView.multilineRow(id: "nonce", title: "Nonce".localized, value: "\(drawSafe4Info?.nonce ?? 0)"),
             ]
         )

@@ -25,11 +25,11 @@ class AddLockDaysViewModel: ObservableObject {
                 let _ = try await service.addLock(id: info.lockID, day: info.selectedLockedDays)
                 info.updateInfo()
                 DispatchQueue.main.async { [self] in
-                    state = .success(message: "追加成功".localized)
+                    state = .success(message: "safe_zone.add_lock_success".localized)
                 }
             }catch{
                 DispatchQueue.main.async { [self] in
-                    state = .failed(error: "追加失败！".localized)
+                    state = .failed(error: "safe_zone.add_lock_failed".localized)
                 }
             }
         }

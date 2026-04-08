@@ -64,7 +64,7 @@ struct ProposalTabView: View {
         ToolbarItem(placement: .navigationBarTrailing) {
             Button(action: {
                 guard viewModel.isEnabledAdd else {
-                    HudHelper.instance.show(banner: .error(string: "无法创建，需区块高度大于86400".localized))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.proposal.create_height_error".localized))
                     return
                 }
                 let viewModel = ProposalCreateModule.viewModel(privateKey: viewModel.privateKey)

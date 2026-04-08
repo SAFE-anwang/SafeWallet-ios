@@ -196,7 +196,7 @@ struct SafeLineLockView: View {
     
     @ViewBuilder private func lockNumView() -> some View {
         VStack() {
-            SectionHeader(text: "锁定次数".localized)
+            SectionHeader(text: "safe_zone.lock_times".localized)
             HStack(spacing: .margin8) {
                 TextField("", text: $viewModel.lockNumString, prompt: Text("").foregroundColor(.themeGray))
                     .foregroundColor(.themeLeah)

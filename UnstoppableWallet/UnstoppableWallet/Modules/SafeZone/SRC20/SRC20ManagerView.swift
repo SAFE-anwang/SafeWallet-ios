@@ -20,7 +20,7 @@ struct SRC20ManagerView: View {
                     ProgressView()
                 case let .completed(items):
                     if items.isEmpty {
-                        PlaceholderViewNew(icon: "no_data_48", title: "暂无发行资产".localized)
+                        PlaceholderViewNew(icon: "no_data_48", title: "safe_zone.no_issued_asset".localized)
                     }else {
                         ScrollableThemeView {
                             VStack(spacing: .margin8) {

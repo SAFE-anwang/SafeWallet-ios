@@ -147,8 +147,8 @@ class MasterNodeCell: UITableViewCell {
     }
     
     func bind(viewItem: MasterNodeViewModel.ViewItem) {
-        votesLabel.text = "投票数:".localized + viewItem.amount
-        safeAmountLabel.text = "质押数:".localized + "\(viewItem.amount) SAFE"
+        votesLabel.text = "safe_zone.votes".localized + viewItem.amount
+        safeAmountLabel.text = "safe_zone.stake_amount".localized + "\(viewItem.amount) SAFE"
         let attributedString: NSAttributedString = NSMutableAttributedString(string: "safe_zone.safe4.node.address".localized + truncatedText(viewItem.info.addr.address, maxLength: 20), attributes: [
             .foregroundColor: viewItem.ownerType != .None ? UIColor.themeIssykBlue : UIColor.themeGray,//UIColor.themeGray,
             .font: UIFont.subhead1,

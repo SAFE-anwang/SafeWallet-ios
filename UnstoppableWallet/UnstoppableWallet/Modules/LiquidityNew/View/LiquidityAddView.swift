@@ -277,7 +277,7 @@ struct LiquidityAddView: View {
         VStack(spacing: .margin12) {
             HStack(spacing: .margin12) {
                 v3PriceInputView(
-                    title: "最低价格",
+                    title: "liquidity.min_price".localized,
                     text: $v3LowestPriceInput,
                     isInputActive: $isV3LowestPriceInputActive,
                     onMinus: { viewModel.onTapV3LowestMinus() },
@@ -289,7 +289,7 @@ struct LiquidityAddView: View {
                 )
 
                 v3PriceInputView(
-                    title: "最高价格",
+                    title: "liquidity.max_price".localized,
                     text: $v3HighestPriceInput,
                     isInputActive: $isV3HighestPriceInputActive,
                     onMinus: { viewModel.onTapV3HighestMinus() },
@@ -371,7 +371,7 @@ struct LiquidityAddView: View {
                 if isInputActive.wrappedValue {
                     HStack {
                         Spacer()
-                        Button("确定") {
+                        Button("liquidity.confirm".localized) {
                             onConfirm()
                         }
                         .foregroundColor(.themeLeah)
@@ -383,7 +383,7 @@ struct LiquidityAddView: View {
 
     @ViewBuilder private func v3CurrentPriceView() -> some View {
         VStack(spacing: .margin8) {
-            Text("当前价格").textSubhead2(color: .themeGray)
+            Text("liquidity.current_price".localized).textSubhead2(color: .themeGray)
             Text(viewModel.v3CurrentPrice ?? "---")
                 .themeHeadline2(color: .themeLeah, alignment: .center)
                 .lineLimit(1)

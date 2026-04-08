@@ -19,7 +19,7 @@ struct CoinAnalyticsView: View {
                 content(viewItem: viewModel.viewItem(analytics))
             case .failed:
                 if viewModel.coin.isSafeCoin {
-                    PlaceholderViewNew(icon: "sync_error_48", subtitle: "此项目没有分析数据")
+                    PlaceholderViewNew(icon: "sync_error_48", subtitle: "coin_analytics.no_data".localized)
                 }else {
                     SyncErrorView {
                         viewModel.load()

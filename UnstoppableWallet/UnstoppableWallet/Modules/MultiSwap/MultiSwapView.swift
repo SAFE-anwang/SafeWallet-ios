@@ -64,7 +64,7 @@ struct MultiSwapView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if viewModel.shouldShowKlineButton {
-                    Button("行情".localized) {
+                    Button("swap.market".localized) {
                         onKlines()
                     }
                     .foregroundColor(.themeYellow)

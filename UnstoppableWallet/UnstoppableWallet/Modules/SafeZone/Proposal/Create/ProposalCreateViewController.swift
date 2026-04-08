@@ -190,7 +190,7 @@ private extension ProposalCreateViewController {
                     component.button.setTitleColor(.themeLeah, for: .normal)
                     component.button.setImage(UIImage(named: "circle_radiooff_24")?.withTintColor(.themeIssykBlue), for: .normal)
                     component.button.setImage(UIImage(named: "circle_radioon_24")?.withTintColor(.themeIssykBlue), for: .selected)
-                    component.button.setTitle("一次", for: .normal)
+                    component.button.setTitle("safe_zone.safe4.pay.method.disposable".localized, for: .normal)
                     component.button.isSelected = viewModel.payType == .all
                     component.onTap = {
                         viewModel.update(payType: .all)

@@ -104,14 +104,14 @@ extension SRC20DestroyViewModel {
         var caution: Caution?
         if let number, !number.isZero {
             if number < 1 {
-                caution = Caution(text: "请输入有效值".localized, type: .error)
-                
+                caution = Caution(text: "safe_zone.invalid_input".localized, type: .error)
+
             }else if number > balance {
                 caution = Caution(text: "safe_zone.send.insufficientBalance".localized, type: .error)
-                
+
             }
         }else {
-            caution = Caution(text: "请输入有效值".localized, type: .error)
+            caution = Caution(text: "safe_zone.invalid_input".localized, type: .error)
         }
         
         return caution

@@ -29,9 +29,9 @@ class RedeemSafe3ViewController: ThemeViewController {
         self.viewModel = viewModel
 
  
-        privateKeyInputCell.setTitle(text: "SAFE3钱包私钥".localized)
-        privateKeyInputCell.setInput(keyboardType: .default, placeholder: "请输入钱包私钥".localized)
-        tipsCell.bind(text: "SAFE3网络的资产将会迁移到SAFE网络".localized, type: .normal)
+        privateKeyInputCell.setTitle(text: "safe_zone.safe3.private_key".localized)
+        privateKeyInputCell.setInput(keyboardType: .default, placeholder: "safe_zone.enter_private_key".localized)
+        tipsCell.bind(text: "safe_zone.safe3.migration_tip".localized, type: .normal)
         
         switch viewModel.redeemWalletType {
         case.local:
@@ -211,7 +211,7 @@ class RedeemSafe3ViewController: ThemeViewController {
                 
             case .sent:
                 self?.spinner.isHidden = true
-                self?.show(message: "迁移成功！".localized)
+                self?.show(message: "safe_zone.migration_success".localized)
                 self?.parentNavigationController?.popViewController(animated: true)
                 
             case .success:
@@ -264,7 +264,7 @@ extension RedeemSafe3ViewController {
                     component.setContentHuggingPriority(.required, for: .vertical)
                     component.font = titleFont
                     component.textColor = .themeGray
-                    component.text = "SAFE(SAFE3) 钱包地址".localized
+                    component.text = "safe_zone.safe3.wallet_address".localized
                 },
                 .margin4,
                 .text { (component: TextComponent) -> () in
@@ -295,7 +295,7 @@ extension RedeemSafe3ViewController {
                     component.setContentHuggingPriority(.required, for: .vertical)
                     component.font = titleFont
                     component.textColor = .themeGray
-                    component.text = "锁仓余额（锁仓记录\(item.maxLockedCount)）".localized
+                    component.text = "safe_zone.locked_balance_with_record".localized(item.maxLockedCount)
                 },
                 .margin4,
                 .text { (component: TextComponent) -> () in
@@ -315,7 +315,7 @@ extension RedeemSafe3ViewController {
                     component.setContentHuggingPriority(.required, for: .vertical)
                     component.font = titleFont
                     component.textColor = .themeGray
-                    component.text = "小额锁仓余额".localized
+                    component.text = "safe_zone.petty_locked_balance".localized
                 },
                 .margin4,
                 .text { (component: TextComponent) -> () in
@@ -365,24 +365,24 @@ extension RedeemSafe3ViewController {
                     .text { (component: TextComponent) -> () in
                         component.setContentHuggingPriority(.required, for: .horizontal)
                         component.font = titleFont
-                        component.text = "可用余额: ".localized + "\(balanceInfo.availableValue)"
+                        component.text = "safe_zone.available_balance".localized + "\(balanceInfo.availableValue)"
                     },
                     .text { (component: TextComponent) -> () in
                         component.font = titleFont
                         component.textAlignment = .right
-                        component.text = "可迁移余额: " + "\(balanceInfo.redeemableValue)"
+                        component.text = "safe_zone.redeemable_balance".localized + "\(balanceInfo.redeemableValue)"
                     }
                 ]),
                 .hStack([
                     .text { (component: TextComponent) -> () in
                         component.setContentHuggingPriority(.required, for: .horizontal)
                         component.font = titleFont
-                        component.text = "锁仓余额: ".localized + "\(balanceInfo.lockedValue)"
+                        component.text = "safe_zone.locked_balance".localized + "\(balanceInfo.lockedValue)"
                     },
                     .text { (component: TextComponent) -> () in
                         component.font = titleFont
                         component.textAlignment = .right
-                        component.text = "可迁移余额: " + "\(balanceInfo.redeemableLockedValue)"
+                        component.text = "safe_zone.redeemable_balance".localized + "\(balanceInfo.redeemableLockedValue)"
                     },
                 ]),
             ]),
@@ -475,7 +475,7 @@ extension RedeemSafe3ViewController: SectionsDataSource {
                             id: "safe4-address",
                             headerState: .margin(height: CGFloat.margin12),
                             rows: [
-                                tableView.multilineRow(id: "safe4-address", title: "SAFE钱包地址".localized, value: safe4Address, backgroundStyle: .transparent, isFirst: true, isLast: true)
+                                tableView.multilineRow(id: "safe4-address", title: "safe_zone.safe4_address".localized, value: safe4Address, backgroundStyle: .transparent, isFirst: true, isLast: true)
                             ]
                         )
                     )
@@ -494,9 +494,9 @@ extension RedeemSafe3ViewController: SectionsDataSource {
                         headerState: .margin(height: CGFloat.margin12),
                         rows: [
                             tableView.multilineRow(id: "balance", title: "safe_zone.safe4..account.balance".localized, value: "\(info.balance.safe4FomattedAmount) SAFE", isFirst: true, isLineThrough: !viewModel.existAvailable),
-                            tableView.multilineRow(id: "pettyBalance", title: "小额锁仓余额:".localized, value: "\(info.pettyBalance.safe4FomattedAmount) SAFE", isFirst: true, isLineThrough: !viewModel.existPettyLocked),
-                            tableView.multilineRow(id: "balance_lock", title: "账户余额（锁仓记录\(info.maxLockedCount)）".localized, value: "\(info.lockBalance.safe4FomattedAmount) SAFE", isLineThrough: !viewModel.existLocked),
-                            tableView.multilineRow(id: "node", title: "主节点".localized, value: "\(info.masterNodeLockBalance.safe4FomattedAmount) SAFE" ,isLast: true, isLineThrough: !viewModel.existMasterNode),
+                            tableView.multilineRow(id: "pettyBalance", title: "safe_zone.petty_locked_balance".localized, value: "\(info.pettyBalance.safe4FomattedAmount) SAFE", isFirst: true, isLineThrough: !viewModel.existPettyLocked),
+                            tableView.multilineRow(id: "balance_lock", title: "safe_zone.account_balance_with_lock_record".localized(info.maxLockedCount), value: "\(info.lockBalance.safe4FomattedAmount) SAFE", isLineThrough: !viewModel.existLocked),
+                            tableView.multilineRow(id: "node", title: "safe_zone.master_node".localized, value: "\(info.masterNodeLockBalance.safe4FomattedAmount) SAFE" ,isLast: true, isLineThrough: !viewModel.existMasterNode),
                         ]
                     )
                 )
@@ -505,13 +505,13 @@ extension RedeemSafe3ViewController: SectionsDataSource {
                     sections.append(
                         Section(
                             id: "safe4-address",
-                            headerState: .text(text: "SAFE钱包地址", topMargin: CGFloat.margin12, bottomMargin: CGFloat.margin12),
+                            headerState: .text(text: "safe_zone.safe4_address".localized, topMargin: CGFloat.margin12, bottomMargin: CGFloat.margin12),
                             rows: [
-                                tableView.multilineRow(id: "local-address", title: "本地钱包地址".localized, value: viewModel.localWalletSafe4Address,  isFirst: true, isShowCheckbox: true, isChoosed: isLocalWallet, action: {
+                                tableView.multilineRow(id: "local-address", title: "safe_zone.local_wallet_address".localized, value: viewModel.localWalletSafe4Address,  isFirst: true, isShowCheckbox: true, isChoosed: isLocalWallet, action: {
                                     self.viewModel.choosed(address: self.viewModel.localWalletSafe4Address)
                                     self.tableView.reload()
                                 }),
-                                tableView.multilineRow(id: "privateKey-address", title: "私钥对应地址".localized, value: safe4Address, isLast: true, isShowCheckbox: true, isChoosed: viewModel.targetSafe4Address == safe4Address,action: {
+                                tableView.multilineRow(id: "privateKey-address", title: "safe_zone.private_key_address".localized, value: safe4Address, isLast: true, isShowCheckbox: true, isChoosed: viewModel.targetSafe4Address == safe4Address,action: {
                                     self.viewModel.choosed(address: safe4Address)
                                     self.tableView.reload()
                                 })

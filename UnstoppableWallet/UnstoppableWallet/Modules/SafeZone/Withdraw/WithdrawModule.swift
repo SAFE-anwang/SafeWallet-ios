@@ -31,7 +31,7 @@ enum SafeWithdrawType: Int {
         case .masterNode: "safe_zone.row.masterNode".localized + "safe_zone.safe4.withdraw".localized
         case .superNode: "safe_zone.row.superNode".localized + "safe_zone.safe4.withdraw".localized
         case .proposal: "safe_zone.row.proposal".localized + "safe_zone.safe4.withdraw".localized
-        case .voteLocked: "投票锁仓".localized + "safe_zone.safe4.withdraw".localized
+        case .voteLocked: "safe_zone.vote_locked".localized + "safe_zone.safe4.withdraw".localized
         }
     }
 }

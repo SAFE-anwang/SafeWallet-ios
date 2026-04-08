@@ -385,7 +385,7 @@ class TransactionInfoViewController: ThemeViewController {
         let id = "lock_info"
         let image = UIImage(named: lockState.locked ? "lock_24" : "unlock_24")
         let formattedDate = DateHelper.instance.formatFullTime(from: lockState.date)
-        let unlockedHeight = (lockState.unlockedHeight != nil) ? "  解锁高度：\(lockState.unlockedHeight!)" : ""
+        let unlockedHeight = (lockState.unlockedHeight != nil) ? "tx_info.unlock_height".localized + "\(lockState.unlockedHeight!)" : ""
 
         if lockState.locked {
             return warningRow(rowInfo: rowInfo, id: id, image: image, text: "tx_info.locked_until".localized(formattedDate) + unlockedHeight) { [weak self] in

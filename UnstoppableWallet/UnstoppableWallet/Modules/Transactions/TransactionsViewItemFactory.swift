@@ -639,9 +639,9 @@ class TransactionsViewItemFactory {
                     }
                 } else {
                     if method == EvmKit.Safe4Methods.MasterNodeRegister.title, record.value.value == -masterNodeRegisterCrowdFundingSafeLockNum {
-                        title = "创建众筹主节点".localized
+                        title = "safe_zone.create_crowdfunding_master_node".localized
                     }else if method == EvmKit.Safe4Methods.SuperNodeRegister.title, record.value.value == -superNodeRegisterCrowdFundingSafeLockNum {
-                        title = "创建众筹超级节点".localized
+                        title = "safe_zone.create_crowdfunding_super_node".localized
                     } else {
                         title = method
                     }

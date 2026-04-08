@@ -140,7 +140,7 @@ extension ContactBookContactService {
                 addresses.append(address)
             }
         }else {
-            HudHelper.instance.show(banner: .error(string: "超出当前区块添加上限"))
+            HudHelper.instance.show(banner: .error(string: "contact_book.address_limit_exceeded".localized))
         }
 
 //        if let index = tempArray.firstIndex(where: { $0.blockchainUid == address.blockchainUid }) {

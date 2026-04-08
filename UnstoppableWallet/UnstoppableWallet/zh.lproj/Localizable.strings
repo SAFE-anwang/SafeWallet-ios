@@ -2995,3 +2995,119 @@
 "wallet_select.imtoken" = "ImToken";
 "wallet_select.token_pocket" = "Token Pocket";
 "wallet_select.import_private_key" = "使用私钥导入";
+
+// SAFE Zone
+"safe_zone.lock" = "锁仓";
+"safe_zone.safe4.claim" = "SAFE领取";
+"safe_zone.feature_unavailable" = "功能未开放";
+"safe_zone.safe4.withdraw" = "提现";
+"safe_zone.safe_swap" = "SAFE兑换";
+"safe_zone.safe3.private_key" = "SAFE3钱包私钥";
+"safe_zone.enter_private_key" = "请输入钱包私钥";
+"safe_zone.safe3.migration_tip" = "SAFE3网络的资产将会迁移到SAFE网络";
+"safe_zone.migration_success" = "迁移成功";
+"safe_zone.safe3.wallet_address" = "SAFE(SAFE3) 钱包地址";
+"safe_zone.locked_balance_with_record" = "锁仓余额（锁仓记录%@）";
+"safe_zone.petty_locked_balance" = "小额锁仓余额";
+"safe_zone.available_balance" = "可用余额: ";
+"safe_zone.redeemable_balance" = "可迁移余额: ";
+"safe_zone.locked_balance" = "锁仓余额: ";
+"safe_zone.safe4_address" = "SAFE钱包地址";
+"safe_zone.local_wallet_address" = "本地钱包地址";
+"safe_zone.private_key_address" = "私钥对应地址";
+"safe_zone.migration_failed" = "资产迁移失败";
+"safe_zone.master_node" = "主节点";
+"safe_zone.super_node.invalid_address" = "请输入合法的节点地址";
+"safe_zone.super_node.address_not_exist" = "节点地址不存在";
+"safe_zone.super_node.id_not_exist" = "节点ID不存在";
+"safe_zone.super_node.invalid_id_or_address" = "请输入合法的节点ID或地址";
+"safe_zone.node_name" = "节点名称:";
+"safe_zone.votes" = "投票数:";
+"safe_zone.stake_amount" = "质押数:";
+"safe_zone.super_node.remaining_share" = "超级节点剩余份额";
+"safe_zone.master_node.list" = "主节点列表";
+"safe_zone.my_master_node" = "我的主节点";
+"safe_zone.master_node.wallet_address" = "主节点钱包地址";
+"safe_zone.description" = "简介";
+"safe_zone.enter_master_node_address" = "输入主节点钱包地址";
+"safe_zone.enter_master_node_enode" = "输入主节点ENODE";
+"safe_zone.enter_description" = "输入简介信息";
+"safe_zone.safe4.claim_once_per_day" = "每个地址每天只能领取一次";
+"safe_zone.safe4.wallet_address" = "SAFE4 钱包地址";
+"safe_zone.enter_safe_address" = "请输入SAFE地址";
+"safe_zone.claim" = "领取";
+"safe_zone.claim_success" = "领取成功";
+"safe_zone.claim_amount" = "领取数量";
+"safe_zone.tx_hash" = "交易hash";
+"safe_zone.claim_time" = "领取时间";
+"safe_zone.sender" = "发送者";
+"safe_zone.receiver" = "接收者";
+"safe_zone.one_click_withdraw" = "一键提现";
+"safe_zone.withdraw_no_more_yield" = "提现后将不再产生收益，确定提取吗？";
+"safe_zone.vote_locked" = "投票锁仓";
+"safe_zone.lock_times" = "锁定次数";
+"safe_zone.balance_not_available" = "未获取到余额";
+"safe_zone.min_lock_amount_error" = "每次锁仓金额至少 0.01 SAFE";
+"safe_zone.no_issued_asset" = "暂无发行资产";
+"safe_zone.fee_not_available" = "未获取到费用";
+"safe_zone.invalid_input" = "请输入有效值";
+"safe_zone.proposal.create_height_error" = "无法创建，需区块高度大于86400";
+"safe_zone.add_lock_success" = "追加成功";
+"safe_zone.add_lock_failed" = "追加失败";
+"safe_zone.create_crowdfunding_master_node" = "创建众筹主节点";
+"safe_zone.create_crowdfunding_super_node" = "创建众筹超级节点";
+"safe_zone.vote_release" = "投票释放";
+"safe_zone.cross_chain" = "跨链";
+"safe_zone.locked_balance_migration" = "锁仓余额迁移";
+"safe_zone.register_master_node" = "注册主节点";
+
+// Restore
+"restore.wallet.name" = "钱包名称";
+"restore.please_select_wallet_name" = "请先选择钱包名称";
+"restore.please_select_bip32_path" = "请先选择BIP32路径";
+
+// Liquidity
+"liquidity.invalid_price_input" = "无效的价格输入";
+"liquidity.min_price_must_less_than_max" = "最低价格必须小于最高价格";
+"liquidity.max_price_must_greater_than_min" = "最高价格必须大于最低价格";
+"liquidity.price_conversion_failed" = "价格转换失败";
+"liquidity.min_price_cannot_exceed_max" = "最低价格不能超过最高价格";
+"liquidity.max_price_cannot_be_less_than_min" = "最高价格不能低于最低价格";
+"liquidity.min_price" = "最低价格";
+"liquidity.max_price" = "最高价格";
+"liquidity.confirm" = "确定";
+"liquidity.current_price" = "当前价格";
+
+// Swap
+"swap.market" = "行情";
+
+// Send
+"send.time_lock_tip" = "时间锁（TimeLock）只适用于发送 SAFE（从 1 开始）";
+"send.min_lock_amount" = "最小锁定数为 %@";
+
+// KLine
+"kline.candlestick" = "K线";
+"kline.time_series" = "分时";
+"kline.safe_usdt_price" = "SAFE/USDT 价格";
+"kline.asset_details" = "资产详情";
+"kline.asset_name" = "资产名称";
+"kline.asset_symbol" = "资产符号";
+"kline.feature" = "特性";
+"kline.can_additional_issuance" = "可增发资产";
+"kline.cannot_additional_issuance" = "不可增发资产";
+"kline.warning_external_link" = "无论您是否信任该资产，请谨慎访问外部链接。";
+"kline.asset_description" = "资产简介";
+
+// Transaction Info
+"tx_info.unlock_height" = "  解锁高度：";
+
+// Proposal
+"safe_zone.proposal.new" = "提案";
+"safe_zone.proposal.new_tip" = "有新的提案,是否查看?";
+"safe_zone.proposal.dont_remind" = "不再提醒";
+
+// Contact Book
+"contact_book.address_limit_exceeded" = "超出当前区块添加上限";
+
+// Coin Analytics
+"coin_analytics.no_data" = "此项目没有分析数据";

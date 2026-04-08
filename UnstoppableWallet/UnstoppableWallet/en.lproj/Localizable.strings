@@ -2933,3 +2933,119 @@
 "wallet_select.imtoken" = "ImToken";
 "wallet_select.token_pocket" = "Token Pocket";
 "wallet_select.import_private_key" = "Import with Private Key";
+
+// SAFE Zone
+"safe_zone.lock" = "Lock";
+"safe_zone.safe4.claim" = "Claim SAFE";
+"safe_zone.feature_unavailable" = "Feature Unavailable";
+"safe_zone.safe4.withdraw" = "Withdraw";
+"safe_zone.safe_swap" = "SAFE Swap";
+"safe_zone.safe3.private_key" = "SAFE3 Private Key";
+"safe_zone.enter_private_key" = "Enter private key";
+"safe_zone.safe3.migration_tip" = "Assets on SAFE3 network will be migrated to SAFE network";
+"safe_zone.migration_success" = "Migration Successful";
+"safe_zone.safe3.wallet_address" = "SAFE3 Wallet Address";
+"safe_zone.locked_balance_with_record" = "Locked Balance (Lock Record %@)";
+"safe_zone.petty_locked_balance" = "Petty Locked Balance";
+"safe_zone.available_balance" = "Available Balance: ";
+"safe_zone.redeemable_balance" = "Redeemable Balance: ";
+"safe_zone.locked_balance" = "Locked Balance: ";
+"safe_zone.safe4_address" = "SAFE4 Address";
+"safe_zone.local_wallet_address" = "Local Wallet Address";
+"safe_zone.private_key_address" = "Private Key Address";
+"safe_zone.migration_failed" = "Migration Failed";
+"safe_zone.master_node" = "Master Node";
+"safe_zone.super_node.invalid_address" = "Please enter a valid node address";
+"safe_zone.super_node.address_not_exist" = "Node address does not exist";
+"safe_zone.super_node.id_not_exist" = "Node ID does not exist";
+"safe_zone.super_node.invalid_id_or_address" = "Please enter a valid node ID or address";
+"safe_zone.node_name" = "Node Name:";
+"safe_zone.votes" = "Votes:";
+"safe_zone.stake_amount" = "Stake Amount:";
+"safe_zone.super_node.remaining_share" = "Super Node Remaining Share";
+"safe_zone.master_node.list" = "Master Node List";
+"safe_zone.my_master_node" = "My Master Node";
+"safe_zone.master_node.wallet_address" = "Master Node Wallet Address";
+"safe_zone.description" = "Description";
+"safe_zone.enter_master_node_address" = "Enter master node address";
+"safe_zone.enter_master_node_enode" = "Enter master node ENODE";
+"safe_zone.enter_description" = "Enter description";
+"safe_zone.safe4.claim_once_per_day" = "Each address can only claim once per day";
+"safe_zone.safe4.wallet_address" = "SAFE4 Wallet Address";
+"safe_zone.enter_safe_address" = "Enter SAFE address";
+"safe_zone.claim" = "Claim";
+"safe_zone.claim_success" = "Claim Successful";
+"safe_zone.claim_amount" = "Claim Amount";
+"safe_zone.tx_hash" = "Tx Hash";
+"safe_zone.claim_time" = "Claim Time";
+"safe_zone.sender" = "Sender";
+"safe_zone.receiver" = "Receiver";
+"safe_zone.one_click_withdraw" = "One-Click Withdraw";
+"safe_zone.withdraw_no_more_yield" = "After withdrawal, no more yield will be generated. Confirm withdrawal?";
+"safe_zone.vote_locked" = "Vote Locked";
+"safe_zone.lock_times" = "Lock Times";
+"safe_zone.balance_not_available" = "Balance Not Available";
+"safe_zone.min_lock_amount_error" = "Minimum lock amount is 0.01 SAFE";
+"safe_zone.no_issued_asset" = "No Issued Asset";
+"safe_zone.fee_not_available" = "Fee Not Available";
+"safe_zone.invalid_input" = "Invalid Input";
+"safe_zone.proposal.create_height_error" = "Cannot create, block height must be greater than 86400";
+"safe_zone.add_lock_success" = "Lock Added Successfully";
+"safe_zone.add_lock_failed" = "Lock Addition Failed";
+"safe_zone.create_crowdfunding_master_node" = "Create Crowdfunding Master Node";
+"safe_zone.create_crowdfunding_super_node" = "Create Crowdfunding Super Node";
+"safe_zone.vote_release" = "Vote Release";
+"safe_zone.cross_chain" = "Cross Chain";
+"safe_zone.locked_balance_migration" = "Locked Balance Migration";
+"safe_zone.register_master_node" = "Register Master Node";
+
+// Restore
+"restore.wallet.name" = "Wallet Name";
+"restore.please_select_wallet_name" = "Please select a wallet name";
+"restore.please_select_bip32_path" = "Please select BIP32 path";
+
+// Liquidity
+"liquidity.invalid_price_input" = "Invalid price input";
+"liquidity.min_price_must_less_than_max" = "Minimum price must be less than maximum price";
+"liquidity.max_price_must_greater_than_min" = "Maximum price must be greater than minimum price";
+"liquidity.price_conversion_failed" = "Price conversion failed";
+"liquidity.min_price_cannot_exceed_max" = "Minimum price cannot exceed maximum price";
+"liquidity.max_price_cannot_be_less_than_min" = "Maximum price cannot be less than minimum price";
+"liquidity.min_price" = "Minimum Price";
+"liquidity.max_price" = "Maximum Price";
+"liquidity.confirm" = "Confirm";
+"liquidity.current_price" = "Current Price";
+
+// Swap
+"swap.market" = "Market";
+
+// Send
+"send.time_lock_tip" = "Time Lock (TimeLock) only applies to sending SAFE (starting from 1)";
+"send.min_lock_amount" = "Minimum lock amount is %@";
+
+// KLine
+"kline.candlestick" = "Candlestick";
+"kline.time_series" = "Time Series";
+"kline.safe_usdt_price" = "SAFE/USDT Price";
+"kline.asset_details" = "Asset Details";
+"kline.asset_name" = "Asset Name";
+"kline.asset_symbol" = "Asset Symbol";
+"kline.feature" = "Feature";
+"kline.can_additional_issuance" = "Can Additional Issuance";
+"kline.cannot_additional_issuance" = "Cannot Additional Issuance";
+"kline.warning_external_link" = "Whether or not you trust this asset, please be cautious when visiting external links.";
+"kline.asset_description" = "Asset Description";
+
+// Transaction Info
+"tx_info.unlock_height" = "  Unlock Height:";
+
+// Proposal
+"safe_zone.proposal.new" = "Proposal";
+"safe_zone.proposal.new_tip" = "There is a new proposal, would you like to view it?";
+"safe_zone.proposal.dont_remind" = "Don't Remind";
+
+// Contact Book
+"contact_book.address_limit_exceeded" = "Exceeds current block address limit";
+
+// Coin Analytics
+"coin_analytics.no_data" = "No analytics data for this item";

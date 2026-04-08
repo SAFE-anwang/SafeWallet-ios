@@ -79,7 +79,7 @@ struct WithdrawView: View {
                                 confirmWithdrawView(ids: [], isAll: true, isPresented: isPresented)
                             }
                         }) {
-                            Text("一键提现".localized)
+                            Text("safe_zone.one_click_withdraw".localized)
                                 .themeSubhead1(color: viewModel.enableItems.count > 0 ? .themeYellow : .themeGray)
                         }
                         .disabled(viewModel.enableItems.count == 0)
@@ -94,7 +94,7 @@ struct WithdrawView: View {
         BottomSheetView(
             items: [
                 .title(icon: nil, title: "safe_zone.safe4.withdraw".localized),
-                .highlightedDescription(text: "提现后将不再产生收益，确定提取吗？", type: .caution, style: .structured),
+                .highlightedDescription(text: "safe_zone.withdraw_no_more_yield".localized, type: .caution, style: .structured),
                 .buttonGroup(.init(buttons: [
                     .init(style: .yellow, title: "button.ok".localized) {
                         viewModel.allWithdraw()

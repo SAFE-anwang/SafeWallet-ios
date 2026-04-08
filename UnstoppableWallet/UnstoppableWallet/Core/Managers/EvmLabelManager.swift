@@ -151,11 +151,11 @@ extension EvmLabelManager {
             case .promotion: "SRC20_Info_Promotion".localized
             case .deploy_0, .deploy_1: "SRC20_Deploy_Title".localized
             case .destroy: "SRC20_Info_Destroy".localized
-            case .removeVote: "投票释放".localized
-            case .src20Lock: "SRC20 锁仓".localized
-            case .usdtCross, .usdtCrossToSafe: "跨链".localized
-            case .lockRedeem1, .lockRedeem2, .lockRedeem3, .lockRedeem4: "锁仓余额迁移".localized
-            case .registerMN: "注册主节点".localized
+            case .removeVote: "safe_zone.vote_release".localized
+            case .src20Lock: "SRC20_lock".localized
+            case .usdtCross, .usdtCrossToSafe: "safe_zone.cross_chain".localized
+            case .lockRedeem1, .lockRedeem2, .lockRedeem3, .lockRedeem4: "safe_zone.locked_balance_migration".localized
+            case .registerMN: "safe_zone.register_master_node".localized
             }
         }
     }

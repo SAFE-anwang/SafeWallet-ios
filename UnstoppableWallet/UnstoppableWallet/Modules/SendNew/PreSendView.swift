@@ -399,7 +399,7 @@ struct PreSendView: View {
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin12, trailing: .margin16))
             .background(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous).fill(Color.themeLawrence))
             
-            Text("时间锁（TimeLock）只适用于发送 SAFE（从 1 开始）".localized)
+            Text("send.time_lock_tip".localized)
                 .themeCaption(alignment: .leading)
                 .multilineTextAlignment(.trailing)
         }
@@ -429,15 +429,8 @@ struct PreSendView: View {
             title = "send.enter_amount".localized
         } else if let availableBalance = viewModel.availableBalance, let amount = viewModel.amount, amount > availableBalance {
             title = "send.insufficient_balance".localized
-//<<<<<<< HEAD
         } else if let amount = viewModel.amount, viewModel.selectedTimeLock != .none, amount < viewModel.minTimeLockCoinValue {
-            title = "最小锁定数为 \(viewModel.minTimeLockCoinValue)".localized
-//        } else if viewModel.allowanceHandler.allowanceSyncing == true {
-//            title = ""
-//            showProgress = true
-//        } else if viewModel.allowanceHandler.isApproving == true {
-//            title = "审批中"
-//            showProgress = true
+            title = "send.min_lock_amount".localized("\(viewModel.minTimeLockCoinValue)")
         } else if let state = viewModel.allowanceHandler.allowanceState, let buttonState = state.customButtonState {
             if case .allowed = state {
                 title = "send.next_button".localized
@@ -447,8 +440,6 @@ struct PreSendView: View {
                 disabled = buttonState.disabled
                 showProgress = buttonState.showProgress
             }
-//=======
-//>>>>>>> master
         } else {
             title = "send.next_button".localized
             disabled = viewModel.sendData == nil

@@ -447,7 +447,7 @@ extension RedeemSafe3ViewModel {
                     _ = try await service.redeemMasterNode(callerPrivateKey: callerPrivateKey, privateKeys: masterNodeArray, enodes: enodes, targetAddr: targetSafe4Address)
                 }
             }catch {
-                self.state = .failed(error: "资产迁移失败".localized)
+                self.state = .failed(error: "safe_zone.migration_failed".localized)
             }
         }
     }

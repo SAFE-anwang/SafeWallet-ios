@@ -11,8 +11,8 @@ enum ChartDisplayMode: String, CaseIterable, Identifiable {
     
     var title: String {
         switch self {
-        case .candlestick: return "K线"
-        case .timeSeries: return "分时"
+        case .candlestick: return "kline.candlestick".localized
+        case .timeSeries: return "kline.time_series".localized
         }
     }
 }

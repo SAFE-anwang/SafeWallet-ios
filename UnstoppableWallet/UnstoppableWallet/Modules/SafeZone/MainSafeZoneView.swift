@@ -63,7 +63,7 @@ struct MainSafeZoneView: View {
                         code: "SAFE3",
                         codeFont: .themeMicro
             )
-            Text("锁仓")
+            Text("safe_zone.lock".localized)
                 .themeSubhead1(color: .themeLeah)
                 .fixedSize()
             Spacer()
@@ -134,7 +134,7 @@ struct MainSafeZoneView: View {
                         .ignoresSafeArea()
                 }
             }) {
-                ItemView(title: "SAFE领取".localized)
+                ItemView(title: "safe_zone.safe4.claim".localized)
             }
         }
     }
@@ -144,10 +144,10 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4Native()?.eth?.safe2eth == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放".localized))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable".localized))
                     return
                 }
-                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .ETH, direction: .SAFE_CrossChain_to_other)) {
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .POL, direction: .SAFE_CrossChain_to_other)) {
                     Coordinator.shared.present { _ in
                         ThemeNavigationStack {
                             CrossPreSendView(viewModel: viewModel)
@@ -160,7 +160,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4Native()?.eth?.eth2safe == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放".localized))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable".localized))
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .ETH, direction: .other_CrossChain_to_SAFE)) {
@@ -193,7 +193,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4Native()?.bsc?.safe2bsc == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放"))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable"))
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .BSC, direction: .SAFE_CrossChain_to_other)) {
@@ -208,7 +208,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4Native()?.bsc?.bsc2safe == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放".localized))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable".localized))
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .BSC, direction: .other_CrossChain_to_SAFE)) {
@@ -241,7 +241,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4Native()?.matic?.safe2matic == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放".localized))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable".localized))
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .POL, direction: .SAFE_CrossChain_to_other)) {
@@ -256,7 +256,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4Native()?.matic?.matic2safe == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放"))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable"))
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .POL, direction: .other_CrossChain_to_SAFE)) {
@@ -284,7 +284,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4USDT()?.eth?.safe2eth == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放"))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable"))
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .ETH, direction: .SAFE_CrossChain_to_other)) {
@@ -300,7 +300,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4USDT()?.eth?.eth2safe == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放"))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable"))
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .ETH, direction: .other_CrossChain_to_SAFE)) {
@@ -327,7 +327,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4USDT()?.bsc?.safe2bsc == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放"))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable"))
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .BSC, direction: .SAFE_CrossChain_to_other)) {
@@ -342,7 +342,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 if viewModel.crossChainManager.getSafe4USDT()?.bsc?.bsc2safe == false {
-                    HudHelper.instance.show(banner: .error(string: "功能未开放"))
+                    HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable"))
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .BSC, direction: .other_CrossChain_to_SAFE)) {
@@ -366,7 +366,7 @@ struct MainSafeZoneView: View {
     
     @ViewBuilder private func SectionSafeSwapView() -> some View {
         HStack(){
-            Text("SAFE兑换")
+            Text("safe_zone.safe_swap".localized)
                 .themeSubhead1(color: .themeLeah)
                 .fixedSize()
             TagCoinView(name: "SAFE",

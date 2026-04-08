@@ -145,7 +145,7 @@ class SwapViewController: ThemeViewController {
             navigationItem.rightBarButtonItem = nil
             return
         }
-        let rightButton = UIBarButtonItem(title: "行情".localized, style: .plain, target: self, action: #selector(onkLines))
+        let rightButton = UIBarButtonItem(title: "swap.market".localized, style: .plain, target: self, action: #selector(onkLines))
         rightButton.tintColor = .themeYellowL
         navigationItem.rightBarButtonItem = rightButton
     }

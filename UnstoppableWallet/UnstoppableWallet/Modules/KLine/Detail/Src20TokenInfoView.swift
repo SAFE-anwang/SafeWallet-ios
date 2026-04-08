@@ -12,13 +12,13 @@ struct Src20TokenInfoView: View {
         ThemeNavigationStack {
             ScrollableThemeView {
                 VStack(spacing: .margin8) {
-                    ListSectionHeader(text: "SAFE/USDT 价格")
+                    ListSectionHeader(text: "kline.safe_usdt_price".localized)
                     ListSection {
                         ListForEach(viewModel.viewItems) { item in
                             cell(item: item)
                         }
                     }
-                    ListSectionHeader(text: "资产详情")
+                    ListSectionHeader(text: "kline.asset_details".localized)
                     ListSection {
                         tokenInfoView()
                     }
@@ -26,7 +26,7 @@ struct Src20TokenInfoView: View {
                 .padding(EdgeInsets(top: .margin2, leading: .margin16, bottom: .margin32, trailing: .margin16))
             }
             .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle("资产详情".localized)
+            .navigationTitle("kline.asset_details".localized)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("button.close".localized) {
@@ -77,11 +77,11 @@ struct Src20TokenInfoView: View {
                     .resizable()
                     .frame(size: .iconSize48)
                 VStack {
-                    Text("资产名称".localized)
+                    Text("kline.asset_name".localized)
                         .themeSubhead1(alignment: .trailing)
                     Text(viewModel.currentToken?.name ?? viewModel.token.coin.name)
                         .themeSubhead1(color: .themeLeah, alignment: .trailing)
-                    Text("资产符号".localized)
+                    Text("kline.asset_symbol".localized)
                         .themeSubhead1(alignment: .trailing)
                     Text(viewModel.currentToken?.symbol ?? viewModel.token.coin.code)
                         .themeSubhead1(color: .themeLeah, alignment: .trailing)
@@ -101,23 +101,23 @@ struct Src20TokenInfoView: View {
                 HStack{
                     Text("SRC20_Deploy_Supply".localized)
                         .themeSubhead1()
-                    Text("特性".localized)
+                    Text("kline.feature".localized)
                         .themeSubhead1(alignment: .trailing)
                 }
                 HStack{
                     Text("\(viewModel.totalSupply) \(viewModel.currentToken?.symbol ?? "")")
                         .themeSubhead1(color: .themeLeah)
-                    Text("\(viewModel.canAdditionalIssuance ? "可增发资产".localized : "不可增发资产".localized)")
+                    Text("\(viewModel.canAdditionalIssuance ? "kline.can_additional_issuance".localized : "kline.cannot_additional_issuance".localized)")
                         .themeSubhead1(color: .themeGreen, alignment: .trailing)
                 }
             }
             HorizontalDivider()
             HStack {
-                Label("无论您是否信任该资产，请谨慎访问外部链接。".localized, image: "circle_warning_24")
+                Label("kline.warning_external_link".localized, image: "circle_warning_24")
             }
             HorizontalDivider()
             VStack(spacing: .margin16) {
-                Text("资产简介".localized)
+                Text("kline.asset_description".localized)
                     .themeSubhead1()
                 Text("\(viewModel.description)")
                     .themeSubhead1(color: .themeLeah)

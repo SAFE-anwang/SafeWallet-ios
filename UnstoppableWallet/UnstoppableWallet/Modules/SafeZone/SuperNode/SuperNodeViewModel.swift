@@ -229,7 +229,7 @@ extension SuperNodeViewModel {
             do {
                 if text.contains("0x") {
                     guard service.isValidAddress(text) else {
-                        let caution = Caution(text: "请输入合法的节点地址".localized, type: .error)
+                        let caution = Caution(text: "safe_zone.super_node.invalid_address".localized, type: .error)
                         searchCautionRelay.accept(caution)
                         state = .searchResults(datas: [])
                         return
@@ -237,7 +237,7 @@ extension SuperNodeViewModel {
                     let address = Web3Core.EthereumAddress(text)!
                     let isExist = try await service.exist(address)
                     guard isExist else {
-                        let caution = Caution(text: "节点地址不存在".localized, type: .error)
+                        let caution = Caution(text: "safe_zone.super_node.address_not_exist".localized, type: .error)
                         searchCautionRelay.accept(caution)
                         state = .searchResults(datas: [])
                         return
@@ -248,7 +248,7 @@ extension SuperNodeViewModel {
                 }else if let id = BigUInt(text) {
                     let isExist = try await service.existID(id)
                     guard isExist else {
-                        let caution = Caution(text: "节点ID不存在".localized, type: .error)
+                        let caution = Caution(text: "safe_zone.super_node.id_not_exist".localized, type: .error)
                         searchCautionRelay.accept(caution)
                         state = .searchResults(datas: [])
                         return
@@ -256,7 +256,7 @@ extension SuperNodeViewModel {
                     let viewItem = try await nodeInfoBy(id: id)
                     state = .searchResults(datas: [viewItem])
                 }else {
-                    let caution = Caution(text: "请输入合法的节点ID或地址".localized, type: .error)
+                    let caution = Caution(text: "safe_zone.super_node.invalid_id_or_address".localized, type: .error)
                     searchCautionRelay.accept(caution)
                     state = .searchResults(datas: [])
                 }

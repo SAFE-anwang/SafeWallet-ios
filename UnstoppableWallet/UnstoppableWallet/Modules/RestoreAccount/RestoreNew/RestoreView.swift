@@ -110,7 +110,7 @@ struct RestoreView: View {
             ClickableRow {
                 showWalletSelect = true
             } content: {
-                Text("钱包名称").themeBody()
+                Text("restore.wallet.name".localized).themeBody()
                 Spacer()
                 Text(viewModel.selectedWalletName).themeSubhead2(alignment: .trailing)
                 Image("arrow_big_forward_20")
@@ -274,14 +274,14 @@ struct RestoreView: View {
             let hasBip32Path = !viewModel.selectedWalletBip32Paths.isEmpty
 
             if !hasWalletName {
-                viewModel.walletNameCaution = .caution(Caution(text: "请先选择钱包名称", type: .error))
-                showError(message: "请先选择钱包名称")
+                viewModel.walletNameCaution = .caution(Caution(text: "restore.please_select_wallet_name".localized, type: .error))
+                showError(message: "restore.please_select_wallet_name".localized)
                 return
             }
 
             if !hasBip32Path {
-                viewModel.bip32PathCaution = .caution(Caution(text: "请先选择BIP32路径", type: .error))
-                showError(message: "请先选择BIP32路径")
+                viewModel.bip32PathCaution = .caution(Caution(text: "restore.please_select_bip32_path".localized, type: .error))
+                showError(message: "restore.please_select_bip32_path".localized)
                 return
             }
         }

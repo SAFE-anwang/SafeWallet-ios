@@ -289,7 +289,7 @@ private extension SuperNodeDetailViewController {
     var joinPartnerRows: [RowProtocol] {
         [
             sectionHeaderCellRow(id: "header", tableView: tableView, title: "safe_zone.safe4.node.super.vote.locked.join".localized, isFirst: true),
-            tableView.multilineRow(id: "node_balance", title: "超级节点剩余份额".localized, value: viewModel.detailInfo.foundersBalanceAmount.safe4FormattedAmount + " SAFE"),
+            tableView.multilineRow(id: "node_balance", title: "safe_zone.super_node.remaining_share".localized, value: viewModel.detailInfo.foundersBalanceAmount.safe4FormattedAmount + " SAFE"),
             StaticRow(
                     cell: joinPartnerCell,
                     id: "node_join",
@@ -343,7 +343,7 @@ private extension SuperNodeDetailViewController {
             tableView.multilineRow(id: "node_address", title: "safe_zone.safe4.node.address".localized, value: viewModel.detailInfo.info.addr.address, subTextColor: .themeIssykBlue, action: { [self] in
                 CopyHelper.copyAndNotify(value: viewModel.detailInfo.info.addr.address)
             }),
-            tableView.multilineRow(id: "node_creater", title: "节点名称:".localized, value: viewModel.detailInfo.info.name),
+            tableView.multilineRow(id: "node_creater", title: "safe_zone.node_name".localized, value: viewModel.detailInfo.info.name),
             tableView.multilineRow(id: "node_creater", title: "safe_zone.safe4.node.creator".localized + ": ", value: viewModel.detailInfo.info.creator.address, subTextColor: .themeIssykBlue, action: { [self] in
                 CopyHelper.copyAndNotify(value: viewModel.detailInfo.info.creator.address)
             }),
