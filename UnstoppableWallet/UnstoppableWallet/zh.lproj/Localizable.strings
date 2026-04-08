@@ -2817,6 +2817,9 @@
 "purchases.scam_protection" = "防骗保护";
 "purchases.scam_protection.description" = "在连接到虚假或恶意 dApps 时向您发出警告。";
 "purchases.scam_protection.info" = "在连接前检测伪造或恶意的 dApp，防止钓鱼攻击，保障您的资产安全。";
+
+// DApp Browser
+"dapp.reconnect.prompt" = "点击右上角刷新按钮重新连接至SafeWallet";
 "purchases.swap_protection" = "兑换保护";
 "purchases.swap_protection.description" = "在兑换过程中防止 bots 和 MEV 攻击。";
 "purchases.swap_protection.info" = "在兑换过程中阻止 bots 和抢跑（front-running）攻击，确保您的交易公平且安全。";

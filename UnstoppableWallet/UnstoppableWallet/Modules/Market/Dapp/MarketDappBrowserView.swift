@@ -40,6 +40,7 @@ struct MarketDappBrowserView: View {
     @StateObject private var connectionObserver: MarketDappConnectionObserver
     @State private var progress: Double = 0
     @State private var isLoading = false
+    @State private var showReconnectPrompt = true
     
     // DApp 集成管理器
     @StateObject private var dAppManager: DAppIntegrationManager
@@ -88,6 +89,23 @@ struct MarketDappBrowserView: View {
                         progress: $progress,
                         isLoading: $isLoading
                     )
+                    if showReconnectPrompt {
+                        ZStack {
+                            HighlightedTextView(caution: CautionNew(text: "dapp.reconnect.prompt".localized, type: .warning))
+                            HStack {
+                                Spacer()
+                                Image("close_1_20")
+                                    .themeIcon(color: .themeYellow)
+                                    .padding(.trailing, .margin8)
+                                    .onTapGesture {
+                                        showReconnectPrompt = false
+                                    }
+                            }
+                        }
+                        .padding(.horizontal, .margin8)
+                        .padding(.vertical, .margin8)
+                        .transition(.opacity)
+                    }
                 }
             }
             .edgesIgnoringSafeArea(.bottom)
@@ -97,6 +115,15 @@ struct MarketDappBrowserView: View {
                     Button("button.close".localized) {
                         onClose()
                     }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        NotificationCenter.default.post(name: .init("RefreshDappWebView"), object: nil)
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.themeYellow)
+                    }
+                    .disabled(isLoading)
                 }
             }
             .sheet(item: $web3Handler.destination, onDismiss: {
@@ -121,7 +148,7 @@ struct MarketDappWebView: UIViewRepresentable {
     @Binding var isLoading: Bool
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(
+        let coordinator = Coordinator(
             onProgress: { progress in
                 self.progress = progress
             },
@@ -129,6 +156,8 @@ struct MarketDappWebView: UIViewRepresentable {
                 self.isLoading = isLoading
             }
         )
+        coordinator.setupRefreshObserver()
+        return coordinator
     }
 
     func makeUIView(context: Context) -> WKWebView {
@@ -182,7 +211,9 @@ struct MarketDappWebView: UIViewRepresentable {
         private let onProgress: (Double) -> Void
         private let onLoadingChanged: (Bool) -> Void
         private var progressObservation: NSKeyValueObservation?
-        
+        private var refreshObserver: NSObjectProtocol?
+        private weak var webView: WKWebView?
+
         // DApp 管理器引用
         weak var dAppManager: DAppIntegrationManager?
 
@@ -191,7 +222,29 @@ struct MarketDappWebView: UIViewRepresentable {
             self.onLoadingChanged = onLoadingChanged
         }
 
+        deinit {
+            if let observer = refreshObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
+        }
+
+        func setupRefreshObserver() {
+            refreshObserver = NotificationCenter.default.addObserver(
+                forName: .init("RefreshDappWebView"),
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.handleRefresh()
+            }
+        }
+
+        private func handleRefresh() {
+            guard let webView = webView else { return }
+            webView.reload()
+        }
+
         func bind(webView: WKWebView) {
+            self.webView = webView
             progressObservation = webView.observe(\.estimatedProgress, options: [.new]) { [weak self] webView, _ in
                 DispatchQueue.main.async {
                     self?.onProgress(webView.estimatedProgress)

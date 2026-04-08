@@ -2765,6 +2765,9 @@
 "purchases.scam_protection" = "Scam Protection";
 "purchases.scam_protection.description" = "Warns you when connecting to fake or malicious dApps.";
 "purchases.scam_protection.info" = "Detects fake or malicious dApps before connection. Prevents phishing and keeps your assets safe.";
+
+// DApp Browser
+"dapp.reconnect.prompt" = "Click the refresh button in the upper right corner to reconnect SafeWallet";
 "purchases.swap_protection" = "Swap Protection";
 "purchases.swap_protection.description" = "Prevents bots and MEV attacks during swaps.";
 "purchases.swap_protection.info" = "Stops bots and front-running attacks during swaps. Keeps your transactions fair and secure.";
@@ -2794,7 +2797,6 @@
 "purchases.trade_signals.info" = "Sends real-time alerts on trading opportunities. Highlights profit chances or market risks instantly.";
 
 "purchase.bottom_sheet.description" = "One purchase unlocks all Premium features.";
->>>>>>> efad40b37c2595971bbf5a796b00834a3f758cb8
 
 "purchases.wallet_description.title" = "Highly rated security, exceptional privacy, and a truly non-custodial wallet.";
 "purchases.wallet_description.approved" = "Approved and Audited By:";

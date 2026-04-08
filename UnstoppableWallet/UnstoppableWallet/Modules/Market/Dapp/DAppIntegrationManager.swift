@@ -163,6 +163,7 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
     private lazy var encodedAddress: String = encodeForJavaScript(address)
     private lazy var chainIdHex: String = String(chainId, radix: 16)
     private var isConnectedFlag: Bool = false
+    private lazy var fixedUUID: String = "safe-wallet-\(address.lowercased())-\(chainId)"
     
     // MARK: - 初始化
     /// 初始化 DApp 集成管理器
@@ -487,7 +488,7 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
             // ==========================================
             
             var providerInfo = {
-                uuid: 'safe-wallet-' + generateUUID(),
+                uuid: '\(fixedUUID)',
                 name: 'SafeWallet',
                 icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="%23FF6B35"/></svg>',
                 rdns: 'com.safewallet.app'
