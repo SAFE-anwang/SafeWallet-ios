@@ -35,7 +35,7 @@ class MevProtectionHelper {
         )
 
         return .init([
-            .mevProtection(isOn: binding),
+//            .mevProtection(isOn: binding),
         ], isList: false)
     }
 }

@@ -27,7 +27,9 @@ extension AppVersion: CustomStringConvertible {
     }
 
     var description: String {
-        guard let build else {
+        let showBuildNumber = Bundle.main.object(forInfoDictionaryKey: "ShowBuildNumber") as? String == "true"
+        
+        guard showBuildNumber, let build else {
             return version
         }
 

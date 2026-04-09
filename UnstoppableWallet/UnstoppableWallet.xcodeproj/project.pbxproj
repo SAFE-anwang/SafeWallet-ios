@@ -9696,13 +9696,6 @@
 			path = Main;
 			sourceTree = "<group>";
 		};
-		67DC42E72F63B29700CFAE73 /* PersonalSupport */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = PersonalSupport;
-			sourceTree = "<group>";
-		};
 		67DC42EA2F63B29700CFAE73 /* Privacy */ = {
 			isa = PBXGroup;
 			children = (
@@ -9752,7 +9745,6 @@
 				67DC42DF2F63B29700CFAE73 /* Donate */,
 				67DC42E22F63B29700CFAE73 /* FallbackBlock */,
 				67DC42E52F63B29700CFAE73 /* Main */,
-				67DC42E72F63B29700CFAE73 /* PersonalSupport */,
 				67DC42EA2F63B29700CFAE73 /* Privacy */,
 				67DC42EE2F63B29700CFAE73 /* Security */,
 				67DC42F12F63B29700CFAE73 /* Support */,
@@ -15957,7 +15949,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 408;
+				CURRENT_PROJECT_VERSION = 4.9.1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -15983,7 +15975,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 408;
+				CURRENT_PROJECT_VERSION = 4.9.1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -16009,11 +16001,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4.8.3;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.47.202604;
+				MARKETING_VERSION = v0.47.1.202604;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwang4.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = SafeWallet;
@@ -16034,11 +16026,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4.8.3;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.47.202604;
+				MARKETING_VERSION = v0.47.1.202604;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwang4.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = SafeWallet;

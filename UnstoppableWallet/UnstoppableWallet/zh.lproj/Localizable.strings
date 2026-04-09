@@ -3102,6 +3102,7 @@
 "tx_info.unlock_height" = "  解锁高度：";
 
 // Proposal
+"button.view" = "查看";
 "safe_zone.proposal.new" = "提案";
 "safe_zone.proposal.new_tip" = "有新的提案,是否查看?";
 "safe_zone.proposal.dont_remind" = "不再提醒";

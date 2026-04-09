@@ -15,7 +15,7 @@ enum SendField {
     case selfAddress(value: String)
     case price(title: String, tokenA: Token, tokenB: Token, amountA: Decimal, amountB: Decimal)
     case hex(title: String, value: String)
-    case mevProtection(isOn: Binding<Bool>)
+//    case mevProtection(isOn: Binding<Bool>)
 
     @ViewBuilder var listRow: some View {
         switch self {
@@ -133,28 +133,28 @@ enum SendField {
                 }
                 .buttonStyle(SecondaryCircleButtonStyle(style: .default))
             }
-        case let .mevProtection(isOn):
-            VStack(spacing: 0) {
-                HStack(spacing: 6) {
-                    Image("star_filled_16").themeIcon(color: .themeJacob)
-                    Text("subscription.premium.label".localized).themeSubhead1(color: .themeJacob)
-                }
-                .padding(.horizontal, .margin16)
-                .frame(height: .margin32)
-
-                ListSection {
-                    ListRow {
-                        Image("shield_24").themeIcon(color: .themeJacob)
-                        Toggle(isOn: isOn) {
-                            Text("mev_protection.title".localized).themeBody()
-                        }
-                        .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
-                    }
-                }
-                .modifier(ThemeListStyleModifier(themeListStyle: .borderedLawrence, selected: true))
-
-                ListSectionFooter(text: "mev_protection.description".localized)
-            }
+//        case let .mevProtection(isOn):
+//            VStack(spacing: 0) {
+//                HStack(spacing: 6) {
+//                    Image("star_filled_16").themeIcon(color: .themeJacob)
+//                    Text("subscription.premium.label".localized).themeSubhead1(color: .themeJacob)
+//                }
+//                .padding(.horizontal, .margin16)
+//                .frame(height: .margin32)
+//
+//                ListSection {
+//                    ListRow {
+//                        Image("shield_24").themeIcon(color: .themeJacob)
+//                        Toggle(isOn: isOn) {
+//                            Text("mev_protection.title".localized).themeBody()
+//                        }
+//                        .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
+//                    }
+//                }
+//                .modifier(ThemeListStyleModifier(themeListStyle: .borderedLawrence, selected: true))
+//
+//                ListSectionFooter(text: "mev_protection.description".localized)
+//            }
         case let .doubleValue(title, infoDescription, value1, value2):
             ListRow(padding: EdgeInsets(top: .margin12, leading: infoDescription == nil ? .margin16 : 0, bottom: .margin12, trailing: .margin16)) {
                 if let infoDescription {
