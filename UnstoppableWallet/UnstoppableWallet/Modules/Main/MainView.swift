@@ -27,20 +27,13 @@ struct MainView: View {
 
                 HStack(spacing: 0) {
                     ForEach(viewModel.tabs, id: \.self) { tab in
-                        ZStack {
-                            Image(tab.image).icon(colorStyle: viewModel.selectedTab == tab ? .yellow : .secondary)
-
-                            if tab == MainViewModel.Tab.settings, let badge = badgeViewModel.badge {
-                                BadgeView(badge: badge)
-                                    .offset(x: 12, y: -12)
+                        TabBarIcon(tab: tab, isSelected: viewModel.selectedTab == tab, badge: badgeViewModel.badge)
+                            .padding(.vertical, .margin16)
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                viewModel.selectedTab = tab
                             }
-                        }
-                        .padding(.vertical, .margin16)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            viewModel.selectedTab = tab
-                        }
                     }
                 }
                 .padding(.horizontal, .margin16)
@@ -158,6 +151,44 @@ extension MainView {
                         }
                     )
                     .clipShape(Capsule())
+            }
+        }
+    }
+
+    struct TabBarIcon: View {
+         let tab: MainViewModel.Tab
+         let isSelected: Bool
+         let badge: String?
+
+         var body: some View {
+             ZStack {
+                 if tab == .safe {
+                     safeTabIcon
+                 } else {
+                     Image(tab.image).icon(colorStyle: isSelected ? .yellow : .secondary)
+                 }
+
+                 if tab == MainViewModel.Tab.settings, let badge = badge {
+                     BadgeView(badge: badge)
+                         .offset(x: 12, y: -12)
+                 }
+             }
+         }
+
+        @ViewBuilder private var safeTabIcon: some View {
+            if isSelected {
+                Image(tab.image)
+                    .resizable()
+                    .renderingMode(.original)
+                    .frame(width: .iconSize24, height: .iconSize24)
+                    
+            } else {
+                Image(tab.image)
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(.themeGray)
+                    .frame(width: .iconSize24, height: .iconSize24)
+                    
             }
         }
     }

@@ -2998,6 +2998,11 @@
 "safe_zone.cross_chain" = "Cross Chain";
 "safe_zone.locked_balance_migration" = "Locked Balance Migration";
 "safe_zone.register_master_node" = "Register Master Node";
+"safe_zone.account_balance_with_lock_record" = "Account Balance (Lock Record %@)";
+"safe_zone.send.insufficientBalance" = "Insufficient Balance";
+"safe_zone.vote" = "Vote";
+"market.category.overview" = "Market";
+"settings_security.safe_block_height" = "SAFE Block Height";
 
 // Restore
 "restore.wallet.name" = "Wallet Name";

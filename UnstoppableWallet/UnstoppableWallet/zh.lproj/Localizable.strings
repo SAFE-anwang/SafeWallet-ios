@@ -105,8 +105,6 @@
 
 "number.thousand" = "%@千";
 "number.million" = "%@百万";
-"numberx10.million" = "%@千万";
-"numberx100.million" = "%@亿";
 "number.billion" = "%@0亿";
 "number.trillion" = "%@万亿";
 "number.quadrillion" = "%@千萬億";
@@ -323,18 +321,15 @@
 // Balance
 
 "balance.title" = "钱包";
-"balance.tab_bar_item" = "余额";
 "balance.send" = "发送​​";
 "balance.withdraw" = "提取";
 "balance.swap" = "互兑交易";
 "balance.receive" = "接收";
-"balance.deposit" = "接收";
 "balance.chart" = "图表";
 "balance.scan" = "扫描";
 "balance.copy_address" = "复制地址";
 "balance.coin_info" = "币种信息";
 "balance.hide_coin" = "隐藏币种";
-"balance.address" = "地址";
 "balance.rate_per_coin" = "%@ / %@";
 "balance.syncing" = "正在同步...";
 "balance.searching" = "正在搜索交易…...";
@@ -360,9 +355,7 @@
 
 // Token Balance Page
 "balance.token.locked" = "锁住";
-"balance.token.locked.stellar.title" = "鎖定金額";
 "balance.token.locked.stellar.description" = "Stellar 網路會鎖定 1 XLM 以啟用錢包，並為您啟用的每個代幣額外保留 0.5 XLM 作為儲備金。";
-"balance.token.locked.stellar.description.currently_locked" = "當前鎖定：";
 "balance.token.locked.stellar.description.wallet_activation" = "錢包啟用";
 "balance.token.locked.info.title" = "TimeLock";
 "balance.token.locked.info.description" = "汇款人通过将在所显示日期失效的消费锁定汇出这些资金。\n\n无需担心，收到的比特币已经属于您，但在锁定期限结束前，您无法在比特币网络上消费它们。";
@@ -501,6 +494,7 @@
 
 
 "send.confirmation.title" = "确认发送";
+"send.confirmation.from" = "从";
 "send.confirmation.you_send" = "您发送";
 "send.confirmation.transfer" = "转帐";
 "send.confirmation.dapp_transaction" = "DApp 交易";
@@ -626,7 +620,6 @@
 // Swap
 
 "swap.title" = "互兑交易";
-"swap.no_assets" = "您目前没有可供交换的资产。";
 "swap.you_pay" = "您支付";
 "swap.estimated" = "估计";
 "swap.balance" = "余额";
@@ -637,7 +630,6 @@
 "swap.approve.title" = "互兑批准";
 "swap.approve.description" = "您应为智能合约授予权限，以代表您互兑给定的代币。此权限设定了智能合约可以使用的金额。它不会影响您的余额，但需要小额费用以执行批准交易。\n\n虽然这可以在每一次交易之前按需完成，但是预先对将来的交易批准较大的金额将使成本更低。";
 "swap.approve.amount_error.already_approved" = "您已经有了此金额的限额";
-"swap.approve.not_found" = "无法批准这些代币";
 "swap.approving_button" = "审批中...";
 "swap.revoking_button" = "正在取消...";
 "swap.not_available_button" = "余额 N/A";
@@ -741,7 +733,6 @@
 "swap.unlock.unlimited" = "无限";
 
 "swap.price_impact" = "价格影响";
-"swap.price_impact.description" = "从显示的价格预期的价格偏差通常随着交换金额的增加而增加。";
 "swap.high_price_impact" = "高价格影响";
 "swap.recipient" = "收款人";
 "swap.slippage" = "滑点";
@@ -799,6 +790,8 @@
 "swap.confirmation.set_recipient" = "设置接收方";
 
 "swap.confirmation.slide_to_swap" = "滑动切换";
+"swap.confirmation.swap_button" = "兑换";
+"swap.confirmation.swap_button_liquidity" = "添加流动性";
 "swap.confirmation.swapping" = "交易";
 "swap.confirmation.refresh" = "刷新";
 "swap.confirmation.impact_high" = "在此次兑换交易中，您将损失您资金中的很大一部分（%@）。";
@@ -819,10 +812,6 @@
 
 "market.title" = "市场";
 "market.category.overview" = "行情";
-"market.category.posts" = "发现";
-"market.category.watchlist" = "关注";
-"market.category.twiitter" = "推文";
-"market.category.dapp" = "Dapp";
 
 
 "market.global.market_cap" = "总市值";
@@ -1263,17 +1252,11 @@
 "coin_analytics.indicators.sell" = "出售";
 "coin_analytics.indicators.strong_sell" = "强烈建议卖出";
 "coin_analytics.indicators.overbought" = "有风险";
-"coin_analytics.period" = "句号";
 "coin_analytics.period.select_title" = "选择时间段";
-"coin_analytics.period.1h" = "1 小时";
-"coin_analytics.period.4h" = "4 小时";
-"coin_analytics.period.1d" = "1天";
-"coin_analytics.period.1w" = "1周";
-"coin_analytics.period.1m" = "1 个月";
-
 "coin_analytics.details" = "详细信息";
 
 "coin_analytics.not_available" = "此项目没有分析数据";
+"coin_analytics.locked" = "此页面仅对SafeWallet的高级用户开放";
 "coin_analytics.locked.not_subscribed" = "此页面仅对SafeWallet的高级用户开放";
 "coin_analytics.locked.learn_more" = "了解更多";
 "coin_analytics.locked.not_activated" = "请激活您的订阅以获取分析权限";
@@ -1555,8 +1538,6 @@
 "settings.base_currency" = "基本货币";
 "settings.language" = "语言";
 "settings.faq" = "常见问题";
-"settings.theme" = "主题";
-"settings.info_title" = "SafeWallet";
 "settings.info_subtitle" = "SafeWallet";
 "settings.donate.title" = "捐助";
 "settings.rate_us" = "评价我们";
@@ -1672,12 +1653,6 @@
 // Settings -> Security
 
 "settings_security.title" = "安全中心";
-"settings_security.passcode" = "密码";
-"settings_security.change_pin" = "编辑密码";
-"settings_security.touch_id" = "指纹识别";
-"settings_security.face_id" = "面部识别";
-"settings_security.blockchain_settings" = "区块链设置";
-"settings_security.safe_fallback" = "SAFE区块回退";
 "settings_security.safe_block_height" = "SAFE高度";
 "settings_security.enable_passcode" = "启用密码";
 "settings_security.edit_passcode" = "编辑密码";
@@ -1760,6 +1735,8 @@
 "btc_restore_mode.blockchair" = "快速，不私密";
 "btc_restore_mode.hybrid" = "慢，无隐私";
 "btc_restore_mode.blockchain" = "慢，私密";
+"btc_restore_mode.recommended" = "推荐";
+"btc_restore_mode.more_private" = "更私密";
 
 "btc_transaction_sort_mode.shuffle" = "随机排序";
 "btc_transaction_sort_mode.shuffle.description" = "随机索引";
@@ -1771,8 +1748,6 @@
 "blockchain_settings.info.rpc_source" = "RPC 源";
 "blockchain_settings.info.rpc_source.content" = "这个设置控制了这个应用程序在发送或接收交易时与区块链的互动方式。\n\n就比特币、比特币现金、莱特币和达世币而言，与区块链网络节点的通信是完全点对点的。%@ 会联系许多节点并与其中一个进行通信。每次应用都会连接到不同的节点。\n\n就以太坊、币安智能链和其他EVM区块链而言，移动钱包与相应区块链互动的方式除了通过第三方RPC服务提供商（例如 Infura.io）或个人节点外，没有其他选择。这基本上意味着您与该区块链的通信不是去中心化的。这不会以任何方式影响您的资金，只影响连接到区块链网络的能力。\n\n请放心，我们正在关注这一点，并将很快尝试提供一种去中心化的同步方式。耐心等待。";
 
-"blockchain_settings.info.transaction_inputs_outputs" = "交易输入 / 输出";
-"blockchain_settings.info.transaction_inputs_outputs.content" = "大多数比特币交易，以及比特币现金、Dash和莱特币等加密货币的交易，都会产生两种输出。一种输出是发送给接收者的数量，另一个是返回给发送者的找零输出。大多数钱包构造交易的方式使第三方很容易理解哪些输出发送给了接收方，哪些是返回给发送方的找零。当返回给发送方的输出稍后用于未来的交易时，这两个交易之间的连接就变得明显了。\n\nSafeWallet钱包实施了一些措施，让人们更难弄清楚哪些输出流向了哪里。\n\n对于SafeWallet用户有两种选项可用：\n\n1. 随机变换：每一交易的交易输出顺序均实现了随机化。有时候便令可能是第一个输出，有时可能是第二个。如果用户信任应用的开发者，那么可以考虑这一推荐选项。\n\n2. 确定性：有一个共同商定的交易输出顺序标准（称为BIP69）。在开源钱包中，该标准确保钱包用户不需要信任应用程序开发者如何实现输出顺序。由于这个标准非常新，还没有太多钱包对其进行了实现。因此，有可能可以看到在一个区块链上的一个交易是否是从使用或不使用该标准的钱包上发送。";
 // Manage Accounts
 
 "manage_accounts.migration_required" = "需要迁移";
@@ -1795,6 +1770,9 @@
 "settings.about_app.title" = "关于应用";
 "settings.about_app.app_version" = "应用程序版本";
 "settings.about_app.website" = "网站";
+"settings.about_app.app_name" = "SafeWallet";
+"settings.about_app.description" = "SafeWallet是一款去中心化非托管钱包，用户100%控制资金。";
+"settings.about_app.whats_new" = "新功能";
 
 // Settings -> About App -> Contact
 
@@ -1814,6 +1792,9 @@
 // Settings -> Appearance
 
 "appearance.title" = "应用设置";
+"settings.app_settings" = "应用设置";
+"settings.contact_us" = "联系我们";
+"settings.get_your_tokens" = "获取您的代币";
 
 "appearance.theme" = "主题";
 "appearance.theme.system" = "系统";
@@ -2030,7 +2011,6 @@
 "wallet_connect.title" = "WalletConnect";
 "wallet_connect.error.invalid_url" = "无效的URL地址";
 "wallet_connect.active_account" = "激活钱包";
-"wallet_connect.address" = "地址";
 "wallet_connect.network" = "网络";
 "wallet_connect.list.pending_requests" = "待处理请求";
 "wallet_connect.main.connect" = "连接到 %@";
@@ -2474,6 +2454,11 @@
 "safe_zone.safe4.proposal.detail.info.num" = "申请SAFE数量:";
 "safe_zone.safe4.proposal.detail.info.method" = "发放方式:";
 "safe_zone.safe4.proposal.detail.info.vote.record" = "提案投票记录";
+"safe_zone.safe4.proposal.vote.record" = "提案投票记录";
+"safe_zone.safe4.node.master.balance" = "主节点剩余份额";
+"safe_zone.safe4.node.address.used" = "该地址已被使用";
+"safe_zone.safe4.node.enode.used" = "该ENODE已被使用";
+"safe_zone.safe4.account.lockd" = "锁仓账户";
 "safe_zone.safe4.proposal.vote.node.super.can" = "当前账户是排名前49且在线的超级节点，可以对提案进行投票!";
 "safe_zone.safe4.proposal.vote.node.super.cannot" = "当前账户不是排名前49且在线的超级节点，不能对提案进行投票!";
 "safe_zone.safe4.proposal.vote.completed" = "已完成投票";
@@ -3060,6 +3045,8 @@
 "safe_zone.cross_chain" = "跨链";
 "safe_zone.locked_balance_migration" = "锁仓余额迁移";
 "safe_zone.register_master_node" = "注册主节点";
+"safe_zone.account_balance_with_lock_record" = "账户余额（锁仓记录%@）";
+"safe_zone.vote" = "投票";
 
 // Restore
 "restore.wallet.name" = "钱包名称";

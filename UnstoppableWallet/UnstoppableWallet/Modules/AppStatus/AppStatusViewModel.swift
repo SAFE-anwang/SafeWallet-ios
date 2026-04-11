@@ -34,7 +34,7 @@ class AppStatusViewModel: ObservableObject {
                 blocks: [
                     [
                         .info(title: "Current Time", value: dateFormatter.string(from: Date())),
-                        .info(title: "App Version", value: systemInfoManager.appVersion.description),
+                        .info(title: "App Version", value: systemInfoManager.appVersion.desc),
                         .info(title: "Device Model", value: systemInfoManager.deviceModel),
                         .info(title: "iOS Version", value: systemInfoManager.osVersion),
                         .info(title: "App ID", value: AppConfig.appId ?? "n/a"),
@@ -43,20 +43,20 @@ class AppStatusViewModel: ObservableObject {
             )
         )
 
-        let appVersions = appVersionStorage.appVersions
-
-        if !appVersions.isEmpty {
-            sections.append(
-                Section(
-                    title: "Version History",
-                    blocks: [
-                        appVersions.map { version in
-                            .info(title: version.description, value: dateFormatter.string(from: version.date))
-                        },
-                    ]
-                )
-            )
-        }
+//        let appVersions = appVersionStorage.appVersions
+//
+//        if !appVersions.isEmpty {
+//            sections.append(
+//                Section(
+//                    title: "Version History",
+//                    blocks: [
+//                        appVersions.map { version in
+//                            .info(title: version.description, value: dateFormatter.string(from: version.date))
+//                        },
+//                    ]
+//                )
+//            )
+//        }
 
         let accounts = accountManager.accounts
 
