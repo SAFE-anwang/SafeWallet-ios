@@ -17,6 +17,8 @@ class PreSendAllowanceHandler: ObservableObject {
     private(set) var sendApprovelastBlockHeight: Int = 0
     private var onSuccess: ((MultiSwapAllowanceHelper.AllowanceState?) -> Void)? = nil
     private let disposeBag = DisposeBag()
+    private var currentTaskId: Int = 0
+    
     init(token: Token) {
         self.token = token
         
@@ -25,7 +27,7 @@ class PreSendAllowanceHandler: ObservableObject {
                 guard let self = self else { return }
                 guard case .pendingAllowance = allowanceState else { return }
                 guard onSuccess != nil else {return }
-                if self.sendApprovelastBlockHeight > 0, let lastBlockHeight = eip20Adapter.lastBlockInfo?.height, lastBlockHeight >= (self.sendApprovelastBlockHeight + 1) {
+                if self.sendApprovelastBlockHeight > 0, let lastBlockHeight = eip20Adapter.lastBlockInfo?.height, lastBlockHeight > self.sendApprovelastBlockHeight {
                     let allowanceState: MultiSwapAllowanceHelper.AllowanceState = .allowed
                     self.allowanceState = allowanceState
                     onSuccess?(allowanceState)
@@ -35,6 +37,16 @@ class PreSendAllowanceHandler: ObservableObject {
     }
 }
 extension PreSendAllowanceHandler {
+    
+    func resetState() {
+        allowanceState = nil
+        allowedAmount = 0
+        pendingAllowanceAmount = 0
+        preSendAmount = 0
+        allowanceSyncing = false
+        currentTaskId += 1
+        onSuccess = nil
+    }
     
     var scr20TimeLockAddress: String {
         if isSafe4TestNet {
@@ -47,20 +59,11 @@ extension PreSendAllowanceHandler {
     func getAllowanceState(amount: Decimal, availableBalance: Decimal, onSuccess: @escaping (MultiSwapAllowanceHelper.AllowanceState?) -> Void) {
         self.onSuccess = onSuccess
         preSendAmount = amount
-        if allowedAmount == 0, !allowanceSyncing {
-            syncAllowanceState(amount: availableBalance, onSuccess: onSuccess)
-        }else if allowedAmount > 0, amount <= allowedAmount {
-            self.allowanceState = nil
-            onSuccess(nil)
-            
-        } else if allowedAmount > 0, amount > allowedAmount {
-            if pendingAllowanceAmount > 0, amount <= pendingAllowanceAmount {
-                let allowanceState: MultiSwapAllowanceHelper.AllowanceState = .pendingAllowance(appValue:AppValue(value: pendingAllowanceAmount))
-                self.allowanceState = allowanceState
-                onSuccess(allowanceState)
-            }else {
-                syncAllowanceState(amount: amount, onSuccess: onSuccess)
-            }
+        
+        if !allowanceSyncing {
+            syncAllowanceState(amount: amount, onSuccess: onSuccess)
+        } else if let currentAllowanceState = allowanceState {
+            onSuccess(currentAllowanceState)
         } else {
             syncAllowanceState(amount: amount, onSuccess: onSuccess)
         }
@@ -68,8 +71,13 @@ extension PreSendAllowanceHandler {
     
     func syncAllowanceState(amount: Decimal, onSuccess: @escaping (MultiSwapAllowanceHelper.AllowanceState?) -> Void) {
         allowanceSyncing = true
+        currentTaskId += 1
+        let taskId = currentTaskId
+        
         Task {
             let allowanceState = await allowanceState(amount: amount)
+            
+            guard taskId == currentTaskId else { return }
             
             if case let .notEnough(appValue, _, _) = allowanceState {
                 allowedAmount = appValue.value

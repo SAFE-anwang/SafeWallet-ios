@@ -656,6 +656,7 @@
 "swap.allowance.description" = "Allowance is the amount you let the exchange use on your behalf for swaps. Before making a swap, you first need to approve an allowance transaction.";
 "swap.pending_allowance" = "Pending Allowance";
 "swap.approve" = "Approve";
+"swap.increase_approval" = "Increase Approval";
 "swap.approving" = "Approving";
 "swap.allowance_error" = "Allowance Error";
 "swap.revoke" = "Revoke";
@@ -2898,6 +2899,7 @@
 "SRC20_Info_Promotion" = "Promotion";
 "SRC20_Info_Add" = "Add";
 "SRC20_Info_Destroy" = "Destroy";
+"SRC20_lock" = "SRC20 Lock";
 "SRC20_Edit_Name" = "Name:";
 "SRC20_Edit_Symbol" = "Symbol:";
 "SRC20_Edit_White_Paper" = "White Paper URL";

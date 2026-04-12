@@ -21,56 +21,6 @@ struct PreSendView: View {
 
     var body: some View {
         ThemeView {
-//<<<<<<< HEAD
-//            ScrollView {
-//                VStack(spacing: .margin16) {
-//                    if addressVisible {
-//                        if viewModel.resolvedAddress.issueTypes.isEmpty {
-//                            addressView()
-//                        } else {
-//                            addressView()
-//                                .overlay(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous)
-//                                .stroke(Color.themeRed50, lineWidth: .heightOneDp))
-//                        }
-//                    }
-//
-//                    VStack(spacing: .margin8) {
-//                        inputView()
-//                        availableBalanceView(value: balanceValue())
-//                    }
-//                    
-//                    if viewModel.isSupportedTimeLockToken {
-//                        VStack(spacing: .margin8) {
-//                            lockTimeView()
-//                        }
-//                    }
-//
-//                    if viewModel.hasMemo {
-//                        memoView()
-//                    }
-//
-//                    buttonView()
-//
-//                    if !viewModel.cautions.isEmpty {
-//                        cautionsView()
-//                    }
-//                }
-//                .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
-//                .animation(.linear, value: viewModel.hasMemo)
-//            }
-//        }
-//        .navigationTitle(viewModel.title)
-//        .navigationBarTitleDisplayMode(.inline)
-//        .navigationDestination(isPresented: $confirmPresented) {
-//            if let sendData = viewModel.sendData {
-//                RegularSendView(sendData: sendData.sendData, address: sendData.address) {
-//                    HudHelper.instance.show(banner: .sent)
-//                    onDismiss()
-//                }
-//                .toolbarRole(.editor)
-//            }
-//        }
-//=======
             BottomGradientWrapper {
                 ScrollView {
                     VStack(spacing: .margin16) {
@@ -137,7 +87,6 @@ struct PreSendView: View {
         }
         .navigationTitle(viewModel.title)
         .navigationBarTitleDisplayMode(.inline)
-//>>>>>>> master
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if let handler = viewModel.handler, handler.hasSettings {
@@ -204,65 +153,6 @@ struct PreSendView: View {
         .padding(.horizontal, .margin16)
         .padding(.vertical, 20)
         .modifier(ThemeListStyleModifier(cornerRadius: 18))
-//<<<<<<< HEAD
-//        .onFirstAppear {
-//            focusField = .amount
-//        }
-//        .toolbar {
-//            ToolbarItemGroup(placement: .keyboard) {
-//                if focusField != nil {
-//                    HStack(spacing: 0) {
-//                        if viewModel.availableBalance != nil {
-//                            ForEach(1 ... 4, id: \.self) { multiplier in
-//                                let percent = multiplier * 25
-//
-//                                Button(action: {
-//                                    viewModel.setAmountIn(percent: percent)
-//                                    focusField = nil
-//                                }) {
-//                                    Text("\(percent)%").textSubhead1(color: .themeLeah)
-//                                }
-//                                .frame(maxWidth: .infinity)
-//
-//                                RoundedRectangle(cornerRadius: 0.5, style: .continuous)
-//                                    .fill(Color.themeBlade)
-//                                    .frame(width: 1)
-//                                    .frame(maxHeight: .infinity)
-//                            }
-//                        } else {
-//                            Spacer()
-//                        }
-//
-//                        Button(action: {
-//                            viewModel.clearAmountIn()
-//                        }) {
-//                            Image(systemName: "trash")
-//                                .font(.themeSubhead1)
-//                                .foregroundColor(.themeLeah)
-//                        }
-//                        .frame(maxWidth: .infinity)
-//
-//                        RoundedRectangle(cornerRadius: 0.5, style: .continuous)
-//                            .fill(Color.themeBlade)
-//                            .frame(width: 1)
-//                            .frame(maxHeight: .infinity)
-//
-//                        Button(action: {
-//                            focusField = nil
-//                        }) {
-//                            Image(systemName: "keyboard.chevron.compact.down")
-//                                .font(.themeSubhead1)
-//                                .foregroundColor(.themeLeah)
-//                        }
-//                        .frame(maxWidth: .infinity)
-//                    }
-//                    .padding(.horizontal, -16)
-//                    .frame(maxWidth: .infinity)
-//                }
-//            }
-//        }
-//=======
-//>>>>>>> master
     }
 
     @ViewBuilder private func addressView() -> some View {
@@ -299,9 +189,46 @@ struct PreSendView: View {
     }
 
     @ViewBuilder private func buttonView() -> some View {
-        let (title, disabled, showProgress) = buttonState()
+        let state = buttonState()
 
         Button(action: {
+            if let allowanceState = viewModel.allowanceHandler.allowanceState {
+                switch allowanceState {
+                case .notEnough(_, let spenderAddress, _):
+                    Coordinator.shared.present { isPresented in
+                        viewModel.allowanceHandler.preSwapView(
+                            step: allowanceState.customButtonState!.preSwapStep!,
+                            amount: viewModel.amount ?? 0,
+                            isPresented: isPresented,
+                            onSuccess: {
+                                viewModel.syncSendData()
+                            }
+                        )
+                    }
+                    return
+                case .pendingCanIncrease(_, _, _):
+                    if let customButtonState = allowanceState.customButtonState, let preSwapStep = customButtonState.preSwapStep {
+                        Coordinator.shared.present { isPresented in
+                            viewModel.allowanceHandler.preSwapView(
+                                step: preSwapStep,
+                                amount: viewModel.amount ?? 0,
+                                isPresented: isPresented,
+                                onSuccess: {
+                                    viewModel.syncSendData()
+                                }
+                            )
+                        }
+                    }
+                    return
+                case .allowed, .pendingCanProceed, .notRequired:
+                    break
+                case .pendingAllowance, .pendingRevoke, .unknown:
+                    return
+                default:
+                    return
+                }
+            }
+
             guard let sendData = viewModel.sendData else { return }
             let proceedToSend = {
                 if #available(iOS 17.0, *) {
@@ -335,14 +262,14 @@ struct PreSendView: View {
             }
         }) {
             HStack(spacing: .margin8) {
-                if showProgress {
+                if state.2 {
                     ProgressView()
                 }
 
-                Text(title)
+                Text(state.0)
             }
         }
-        .disabled(disabled)
+        .disabled(state.1)
         .buttonStyle(PrimaryButtonStyle(style: .yellow))
     }
 
@@ -432,10 +359,11 @@ struct PreSendView: View {
         } else if let amount = viewModel.amount, viewModel.selectedTimeLock != .none, amount < viewModel.minTimeLockCoinValue {
             title = "send.min_lock_amount".localized("\(viewModel.minTimeLockCoinValue)")
         } else if let state = viewModel.allowanceHandler.allowanceState, let buttonState = state.customButtonState {
-            if case .allowed = state {
+            switch state {
+            case .allowed, .pendingCanProceed:
                 title = "send.next_button".localized
                 disabled = viewModel.sendData == nil
-            }else {
+            default:
                 title = buttonState.title
                 disabled = buttonState.disabled
                 showProgress = buttonState.showProgress

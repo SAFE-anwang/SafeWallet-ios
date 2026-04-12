@@ -62,7 +62,7 @@ extension EvmSendHandler: ISendHandler {
         }
 
         let transactionDecoration = evmKitWrapper.evmKit.decorate(transactionData: transactionData)
-        let decoration = decorator.decorate(baseToken: baseToken, transactionData: transactionData, transactionDecoration: transactionDecoration)
+        let decoration = decorator.decorate(baseToken: baseToken, transactionData: transactionData, transactionDecoration: transactionDecoration, timeLock: timeLock)
 
         return EvmSendData(
             decoration: decoration,

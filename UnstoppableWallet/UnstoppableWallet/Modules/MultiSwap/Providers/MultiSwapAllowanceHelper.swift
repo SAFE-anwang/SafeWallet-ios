@@ -39,11 +39,16 @@ class MultiSwapAllowanceHelper {
                 if pendingAllowance == 0 {
                     return .pendingRevoke
                 } else {
-                    // Safe 链特殊处理：如果 pending 的授权金额足够，直接返回 allowed
-                    // 这样在区块高度变化后，用户就可以立即执行 swap
-                    if token.blockchainType == .safe4 && amount <= pendingAllowance {
-                        return .allowed
-                    }
+            if token.blockchainType == .safe4 {
+                let usedAmount = usedAllowance(pendingTransactions: adapter.pendingTransactions)
+                let availableAmount = max(0, pendingAllowance - usedAmount)
+
+                if amount <= availableAmount {
+                    return .pendingCanProceed(pendingAmount: availableAmount, spenderAddress: spenderAddress)
+                } else {
+                    return .pendingCanIncrease(currentAmount: availableAmount, requiredAmount: amount, spenderAddress: spenderAddress)
+                }
+            }
                     return .pendingAllowance(appValue: AppValue(token: token, value: pendingAllowance))
                 }
             }
@@ -64,13 +69,27 @@ class MultiSwapAllowanceHelper {
     }
 
     private func pendingAllowance(pendingTransactions: [TransactionRecord], spenderAddress: Address) -> Decimal? {
+        var latestAllowance: Decimal?
+
         for transaction in pendingTransactions {
             if let record = transaction as? IApproveTransaction, record.spender.lowercased() == spenderAddress.raw.lowercased() {
-                return record.value.value
+                latestAllowance = record.value.value
             }
         }
 
-        return nil
+        return latestAllowance
+    }
+
+    private func usedAllowance(pendingTransactions: [TransactionRecord]) -> Decimal {
+        var totalUsed: Decimal = 0
+
+        for transaction in pendingTransactions {
+            if let withdrawRecord = transaction as? Safe4WithdrawTransactionRecord {
+                totalUsed += withdrawRecord.value.value
+            }
+        }
+
+        return totalUsed
     }
 
     private func mustBeRevoked(token: Token) -> Bool {
@@ -90,6 +109,10 @@ extension MultiSwapAllowanceHelper {
         case pendingAllowance(appValue: AppValue)
         case pendingRevoke
         case notEnough(appValue: AppValue, spenderAddress: Address, revokeRequired: Bool)
+        
+        case pendingCanProceed(pendingAmount: Decimal, spenderAddress: Address)
+        case pendingCanIncrease(currentAmount: Decimal, requiredAmount: Decimal, spenderAddress: Address)
+        
         case allowed
         case unknown
 
@@ -97,6 +120,7 @@ extension MultiSwapAllowanceHelper {
             switch self {
             case let .notEnough(_, spenderAddress, revokeRequired): return .init(title: revokeRequired ? "swap.revoke".localized : "swap.approve".localized, preSwapStep: UnlockStep(spenderAddress: spenderAddress, isRevoke: revokeRequired))
             case .pendingAllowance: return .init(title: "swap.approving".localized, disabled: true, showProgress: true)
+            case let .pendingCanIncrease(_, _, spenderAddress): return .init(title: "swap.increase_approval".localized, preSwapStep: UnlockStep(spenderAddress: spenderAddress, isRevoke: false))
             case .pendingRevoke: return .init(title: "swap.revoking".localized, disabled: true, showProgress: true)
             case .unknown: return .init(title: "swap.allowance_error".localized, disabled: true)
             default: return nil

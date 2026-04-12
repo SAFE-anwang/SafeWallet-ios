@@ -662,6 +662,7 @@
 "swap.allowance.description" = "当执行令牌交换时，交易所可以代表用户花费的金额。 在进行实际互换交易之前，需要先确定足够的备抵。";
 "swap.pending_allowance" = "待批准的额度";
 "swap.approve" = "批准";
+"swap.increase_approval" = "增加授权";
 "swap.approving" = "审批中";
 "swap.allowance_error" = "授权错误";
 "swap.revoke" = "撤回";
@@ -2944,6 +2945,7 @@
 "SRC20_Info_Promotion" = "推广";
 "SRC20_Info_Add" = "增发";
 "SRC20_Info_Destroy" = "销毁";
+"SRC20_lock" = "SRC20 锁仓";
 "SRC20_Edit_Name" = "资产名称:";
 "SRC20_Edit_Symbol" = "资产符号:";
 "SRC20_Edit_White_Paper" = "白皮书链接";

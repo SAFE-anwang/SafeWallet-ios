@@ -20,6 +20,9 @@ class PreSendViewModel: ObservableObject {
     }
     var selectedTimeLock: TimeLockService.Item = .none {
         didSet {
+            allowanceHandler.resetState()
+            sendData = nil
+            cautions = []
             syncSendData()
         }
     }
@@ -226,7 +229,6 @@ extension PreSendViewModel {
             sendData = nil
             return
         }
-//<<<<<<< HEAD
     
         let trimmedMemo = memo.trimmingCharacters(in: .whitespaces)
         let memo = hasMemo && !trimmedMemo.isEmpty ? trimmedMemo : nil
@@ -236,10 +238,11 @@ extension PreSendViewModel {
                 sendData = nil
                 return
             }
-            synceTimeLock()
         }
         
-        if let sendHandler = handler as? EvmPreSendHandler, sendHandler.timeLock != nil {
+        synceTimeLock()
+
+        if let sendHandler = handler as? EvmPreSendHandler, !token.type.isNative, selectedTimeLock != .none {
             if let availableBalance {
                 allowanceHandler.getAllowanceState(amount: amount, availableBalance: availableBalance, onSuccess: { [weak self] state in
                     self?.synceSendDataResult(handler: handler, amount: amount, memo: memo)
@@ -258,18 +261,6 @@ extension PreSendViewModel {
                 self.sendData = ExtendedSendData(sendData: sendData, address: self.resolvedAddress.address)
                 self.cautions = []
             }
-//=======
-//
-//        let trimmedMemo = memo.trimmingCharacters(in: .whitespaces)
-//        let memo = hasMemo && !trimmedMemo.isEmpty ? trimmedMemo : nil
-//
-//        let result = handler.sendData(amount: amount, address: resolvedAddress.address, memo: memo)
-//
-//        switch result {
-//        case let .valid(sendData):
-//            self.sendData = ExtendedSendData(sendData: sendData, address: resolvedAddress.address)
-//            cautions = []
-//>>>>>>> master
         case let .invalid(cautions):
             sendData = nil
             self.cautions = cautions

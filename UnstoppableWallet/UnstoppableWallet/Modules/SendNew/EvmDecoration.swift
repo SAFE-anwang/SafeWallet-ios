@@ -10,6 +10,7 @@ struct EvmDecoration {
         switch type {
         case let .outgoingEip20(_, _, token): return [token.coin]
         case let .approveEip20(_, _, token): return [token.coin]
+        case let .safe4TimeLock(_, _, token, _): return [token.coin]
         default: return []
         }
     }
@@ -22,6 +23,8 @@ struct EvmDecoration {
             return outgoingFlow(token: token, to: to, value: value, currency: currency, rates: rates)
         case let .approveEip20(spender, value, token):
             return approveFlowSection(token: token, spender: spender, value: value, currency: currency, rates: rates)
+        case let .safe4TimeLock(to, value, token, _):
+            return outgoingFlow(token: token, to: to, value: value, currency: currency, rates: rates)
         case let .unknown(to, value, _, _):
             return outgoingFlow(token: baseToken, to: to, value: value, currency: currency, rates: rates)
         }
@@ -29,7 +32,7 @@ struct EvmDecoration {
 
     func fields(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendField] {
         switch type {
-        case .outgoingEvm, .outgoingEip20:
+        case .outgoingEvm, .outgoingEip20, .safe4TimeLock:
             return []
         case let .approveEip20(spender, _, _):
             return approveFields(baseToken: baseToken, spender: spender)
@@ -131,6 +134,7 @@ extension EvmDecoration {
         case outgoingEvm(to: EvmKit.Address, value: Decimal)
         case outgoingEip20(to: EvmKit.Address, value: Decimal, token: Token)
         case approveEip20(spender: EvmKit.Address, value: Decimal, token: Token)
+        case safe4TimeLock(to: EvmKit.Address, value: Decimal, token: Token, lockDays: Int?)
         case unknown(to: EvmKit.Address, value: Decimal, input: Data, method: String?)
     }
 }
