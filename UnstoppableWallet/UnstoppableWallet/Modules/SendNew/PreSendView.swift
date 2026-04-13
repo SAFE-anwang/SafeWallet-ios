@@ -206,21 +206,7 @@ struct PreSendView: View {
                         )
                     }
                     return
-                case .pendingCanIncrease(_, _, _):
-                    if let customButtonState = allowanceState.customButtonState, let preSwapStep = customButtonState.preSwapStep {
-                        Coordinator.shared.present { isPresented in
-                            viewModel.allowanceHandler.preSwapView(
-                                step: preSwapStep,
-                                amount: viewModel.amount ?? 0,
-                                isPresented: isPresented,
-                                onSuccess: {
-                                    viewModel.syncSendData()
-                                }
-                            )
-                        }
-                    }
-                    return
-                case .allowed, .pendingCanProceed, .notRequired:
+                case .allowed, .notRequired:
                     break
                 case .pendingAllowance, .pendingRevoke, .unknown:
                     return
@@ -360,7 +346,7 @@ struct PreSendView: View {
             title = "send.min_lock_amount".localized("\(viewModel.minTimeLockCoinValue)")
         } else if let state = viewModel.allowanceHandler.allowanceState, let buttonState = state.customButtonState {
             switch state {
-            case .allowed, .pendingCanProceed:
+            case .allowed:
                 title = "send.next_button".localized
                 disabled = viewModel.sendData == nil
             default:
