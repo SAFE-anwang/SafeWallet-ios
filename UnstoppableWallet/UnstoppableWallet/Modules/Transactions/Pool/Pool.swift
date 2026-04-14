@@ -32,7 +32,7 @@ class Pool {
             })
             .disposed(by: disposeBag)
     }
-
+/*
     private func handleUpdated(records: [TransactionRecord]) {
         queue.async {
             guard !records.isEmpty else {
@@ -75,6 +75,43 @@ class Pool {
 
             self.invalidated = true
             self.invalidatedRelay.accept(())
+        }
+    }
+*/
+    // new
+    private func handleUpdated(records: [TransactionRecord]) {
+        queue.async {
+            guard !records.isEmpty else {
+                return
+            }
+
+            var updatedItems = [TransactionItem]()
+            var newRecords = [TransactionRecord]()
+            let lastBlockInfo = self.provider.lastBlockInfo
+
+            for record in records {
+                if let index = self.items.firstIndex(where: { $0.record == record }) {
+                    self.items[index].record = record
+                    if self.items[index].status.isPendingOrProcessing {
+                        let newStatus = record.status(lastBlockHeight: lastBlockInfo?.height)
+                        if self.items[index].status != newStatus {
+                            self.items[index].status = newStatus
+                        }
+                    }
+                    updatedItems.append(self.items[index])
+                } else {
+                    newRecords.append(record)
+                }
+            }
+
+            if !updatedItems.isEmpty {
+                self.itemsUpdatedRelay.accept(updatedItems)
+            }
+
+            if !newRecords.isEmpty {
+                self.invalidated = true
+                self.invalidatedRelay.accept(())
+            }
         }
     }
 
