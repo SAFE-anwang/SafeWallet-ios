@@ -6,9 +6,7 @@ import RxSwift
 
 class MultiSwapViewModel: ObservableObject {
     private let autoRefreshDuration: Double = 20
-    // 用于控制是否需要在区块高度变化时刷新审批状态
-    // 只有在发起审批交易后才启用，审批完成后或视图关闭后停止
-    private let pendingAllowanceRefreshDuration: Double = 3  // pending 审批状态下更频繁的刷新间隔
+    private let pendingAllowanceRefreshDuration: Double = 3
     private var pendingAllowanceTimer: Timer?
     private var isPendingAllowanceRefreshEnabled = false
     private var cancellables = Set<AnyCancellable>()
@@ -24,8 +22,10 @@ class MultiSwapViewModel: ObservableObject {
 
     private var providers: [IMultiSwapProvider]
     private let swapProviderManager = Core.shared.swapProviderManager
+    private let swapHistoryManager = Core.shared.swapHistoryManager
     private let currencyManager = Core.shared.currencyManager
     private let marketKit = Core.shared.marketKit
+    private let accountManager = Core.shared.accountManager
     private let walletManager = Core.shared.walletManager
     private let adapterManager = Core.shared.adapterManager
     private let localStorage = Core.shared.localStorage
@@ -36,7 +36,7 @@ class MultiSwapViewModel: ObservableObject {
     private var enteringFiat = false
 
     @Published var validProviders = [IMultiSwapProvider]()
-    
+
     var USDT_src20: Token?
 
     private var internalTokenIn: Token? {
@@ -61,49 +61,7 @@ class MultiSwapViewModel: ObservableObject {
                 rateInCancellable = nil
             }
 
-            balanceDisposeBag = .init()
-            transactionsDisposeBag = .init()
-
-            if let internalTokenIn,
-               let wallet = walletManager.activeWallets.first(where: { $0.token == internalTokenIn }),
-               let adapter = adapterManager.balanceAdapter(for: wallet)
-            {
-                adapterState = adapter.balanceState
-                availableBalance = adapter.balanceData.available
-
-                adapter.balanceStateUpdatedObservable
-                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                    .observeOn(MainScheduler.instance)
-                    .subscribe { [weak self] state in
-                        self?.adapterState = state
-                    }
-                    .disposed(by: balanceDisposeBag)
-
-                adapter.balanceDataUpdatedObservable
-                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                    .observeOn(MainScheduler.instance)
-                    .subscribe { [weak self] balanceData in
-                        self?.availableBalance = balanceData.available
-                    }
-                    .disposed(by: balanceDisposeBag)
-                
-                // 监听区块高度变化，只在需要更新审批状态时刷新 quote
-                // 使用 adapter(for:) 获取 IAdapter，然后转换为 ITransactionsAdapter
-                if let adapter = adapterManager.adapter(for: wallet) as? Eip20Adapter {
-                    adapter.lastBlockUpdatedObservable
-                        .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                        .observeOn(MainScheduler.instance)
-                        .subscribe { [weak self] _ in
-                            // 只有在 pending 审批刷新模式下才刷新 quote
-                            guard self?.isPendingAllowanceRefreshEnabled == true else { return }
-                            self?.syncQuotes(silent: true)
-                        }
-                        .disposed(by: transactionsDisposeBag)
-                }
-            } else {
-                adapterState = nil
-                availableBalance = nil
-            }
+            syncAdapter()
         }
     }
 
@@ -119,10 +77,12 @@ class MultiSwapViewModel: ObservableObject {
                 amountIn = nil
             }
 
+            let oldTokenIn = internalTokenIn
+
             internalTokenIn = tokenIn
 
             if internalTokenOut == tokenIn {
-                internalTokenOut = nil
+                internalTokenOut = oldTokenIn
             }
 
             priceFlipped = false
@@ -162,11 +122,13 @@ class MultiSwapViewModel: ObservableObject {
                 return
             }
 
+            let oldTokenOut = internalTokenOut
+
             internalTokenOut = tokenOut
 
             if internalTokenIn == tokenOut {
                 amountIn = nil
-                internalTokenIn = nil
+                internalTokenIn = oldTokenOut
             }
 
             priceFlipped = false
@@ -178,6 +140,8 @@ class MultiSwapViewModel: ObservableObject {
 
     @Published var adapterState: AdapterState?
     @Published var availableBalance: Decimal?
+
+    var spendMode: BalanceAdapterSpendMode
 
     @Published var coinPriceIn: CoinPrice? {
         didSet {
@@ -309,10 +273,13 @@ class MultiSwapViewModel: ObservableObject {
     private var priceFlipped = false
 
     @Published var quoting = false
+    @Published var validatingProvider = false
     private var nextQuoteTime: Double?
 
     @Published var priceImpact: Decimal?
-    
+
+    @Published var quoteSortType: QuoteSortType = .bestRate
+
     var shouldShowKlineButton: Bool {
         guard let tokenIn, let tokenOut else {
             return false
@@ -321,12 +288,12 @@ class MultiSwapViewModel: ObservableObject {
     }
 
     init(token: Token? = nil) {
-        providers = swapProviderManager.providers
+        providers = swapProviderManager.providers.compactMap { SwapProviderFactory.provider(id: $0) }
         currency = currencyManager.baseCurrency
+        spendMode = .fromBalanceState
 
         defer {
-            internalTokenIn = token
-            internalTokenOut = MultiSwapDefaultTokenResolver.default(for: token)
+            syncDefaultTokens(token: token)
         }
 
         currencyManager.$baseCurrency
@@ -337,12 +304,19 @@ class MultiSwapViewModel: ObservableObject {
         swapProviderManager.$providers
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.providers = $0
+                self?.providers = $0.compactMap { SwapProviderFactory.provider(id: $0) }
                 self?.syncValidProviders()
                 self?.syncQuotes(silent: true)
                 self?.subscribeToProviders()
             }
             .store(in: &cancellables)
+
+        accountManager.activeAccountPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.syncDefaultTokens() }
+            .store(in: &cancellables)
+
+        subscribe(balanceDisposeBag, adapterManager.adapterDataReadyObservable) { [weak self] _ in self?.syncAdapter() }
 
         subscribeToProviders()
 
@@ -350,6 +324,67 @@ class MultiSwapViewModel: ObservableObject {
         syncFiatAmountOut()
 
         swapProviderManager.sync()
+    }
+
+    private func syncDefaultTokens(token: Token? = nil) {
+        let bitcoin = try? marketKit.token(query: TokenQuery(blockchainType: .bitcoin, tokenType: .derived(derivation: .bip84)))
+        let monero = try? marketKit.token(query: TokenQuery(blockchainType: .monero, tokenType: .native))
+
+        if let token {
+            internalTokenIn = token
+            internalTokenOut = MultiSwapDefaultTokenResolver.default(for: token) ?? (token.blockchainType == .bitcoin ? monero : bitcoin)
+        } else if let account = accountManager.activeAccount, let lastSwap = swapHistoryManager.lastSwap(accountId: account.id) {
+            internalTokenIn = lastSwap.tokenIn
+            internalTokenOut = lastSwap.tokenOut
+        } else {
+            internalTokenIn = bitcoin
+            internalTokenOut = monero
+        }
+    }
+
+    private func syncAdapter() {
+        balanceDisposeBag = .init()
+
+        if let internalTokenIn,
+           let wallet = walletManager.activeWallets.first(where: { $0.token == internalTokenIn }),
+           let adapter = adapterManager.balanceAdapter(for: wallet)
+        {
+            adapterState = adapter.balanceState
+            availableBalance = adapter.balanceData.available
+
+            adapter.balanceStateUpdatedObservable
+                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                .observeOn(MainScheduler.instance)
+                .subscribe { [weak self, weak adapter] state in
+                    self?.adapterState = state
+                    self?.spendMode = adapter?.spendMode ?? .fromBalanceState
+                }
+                .disposed(by: balanceDisposeBag)
+
+            adapter.balanceDataUpdatedObservable
+                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                .observeOn(MainScheduler.instance)
+                .subscribe { [weak self] balanceData in
+                    self?.availableBalance = balanceData.available
+                }
+                .disposed(by: balanceDisposeBag)
+
+            transactionsDisposeBag = .init()
+            if let adapter = adapterManager.adapter(for: wallet) as? Eip20Adapter {
+                adapter.lastBlockUpdatedObservable
+                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .observeOn(MainScheduler.instance)
+                    .subscribe { [weak self] _ in
+                        guard self?.isPendingAllowanceRefreshEnabled == true else { return }
+                        self?.syncQuotes(silent: true)
+                    }
+                    .disposed(by: transactionsDisposeBag)
+            }
+        } else {
+            adapterState = nil
+            availableBalance = nil
+            spendMode = .fromBalanceState
+        }
     }
 
     func subscribeToProviders() {
@@ -595,27 +630,17 @@ extension MultiSwapViewModel {
             }
         }
     }
-    
-    // MARK: - Pending Allowance Refresh Mode
-    
-    /// 启动审批状态刷新模式
-    /// 启用后，会监听区块高度变化并在每个新区块产生时刷新 quote
-    /// 同时启动定时器作为后备机制
+
     func startPendingAllowanceRefresh() {
         isPendingAllowanceRefreshEnabled = true
         pendingAllowanceTimer?.invalidate()
-        // 立即刷新一次
         syncQuotes(silent: true)
-        // 启动定时器作为后备机制，每5秒检查一次
         pendingAllowanceTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
-            // 只有在启用了 pending 刷新模式时才刷新
             guard self?.isPendingAllowanceRefreshEnabled == true else { return }
             self?.syncQuotes(silent: true)
         }
     }
-    
-    /// 停止审批状态刷新模式
-    /// 禁用区块高度监听刷新和定时器刷新
+
     func stopPendingAllowanceRefresh() {
         isPendingAllowanceRefreshEnabled = false
         pendingAllowanceTimer?.invalidate()
@@ -624,8 +649,69 @@ extension MultiSwapViewModel {
 
     func reset() {
         amountIn = nil
-        internalTokenIn = nil
-        internalTokenOut = nil
+    }
+
+    func validateAndProceed(onSuccess: @escaping () -> Void, onRiskDetected: @escaping (AmlRiskResult) -> Void) {
+        guard let currentQuote, let tokenIn = internalTokenIn else {
+            return
+        }
+
+        if let debuggingResult = localStorage.debuggingAmlCheckResult {
+            onRiskDetected(debuggingResult)
+            return
+        }
+
+        validatingProvider = true
+        let amountIn = amountIn ?? 0
+
+        Task { [weak self, provider = currentQuote.provider] in
+            let hasNetworkError: Bool
+            let trusted: Bool?
+
+            do {
+                trusted = try await provider.validateTrustedProvider(tokenIn: tokenIn, amountIn: amountIn)
+                hasNetworkError = false
+            } catch {
+                trusted = nil
+                hasNetworkError = true
+            }
+
+            guard let self else { return }
+
+            await MainActor.run {
+                self.validatingProvider = false
+
+                guard !hasNetworkError else {
+                    onRiskDetected(.networkError)
+                    return
+                }
+
+                guard let trusted else {
+                    onRiskDetected(.unprocessed)
+                    return
+                }
+
+                if trusted {
+                    onSuccess()
+                } else {
+                    onRiskDetected(.dirty)
+                }
+            }
+        }
+    }
+
+    var sortedQuotes: [Quote] {
+        switch quoteSortType {
+        case .bestRate:
+            return quotes.sorted { $0.quote.expectedBuyAmount > $1.quote.expectedBuyAmount }
+        case .bestTime:
+            return quotes.sorted {
+                let t0 = $0.quote.estimatedTime ?? .infinity
+                let t1 = $1.quote.estimatedTime ?? .infinity
+                if t0 != t1 { return t0 < t1 }
+                return $0.quote.expectedBuyAmount > $1.quote.expectedBuyAmount
+            }
+        }
     }
 }
 
@@ -633,6 +719,18 @@ extension MultiSwapViewModel {
     struct Quote {
         let provider: IMultiSwapProvider
         let quote: MultiSwapQuote
+    }
+
+    enum QuoteSortType: CaseIterable {
+        case bestRate
+        case bestTime
+
+        var title: String {
+            switch self {
+            case .bestRate: return "swap.quotes.sort.best_rate".localized
+            case .bestTime: return "swap.quotes.sort.best_time".localized
+            }
+        }
     }
 
     enum PriceImpactLevel {
@@ -662,6 +760,42 @@ extension MultiSwapViewModel {
             case .negligible, .low: return .regular
             case .normal: return .warning
             case .warning, .forbidden: return .error
+            }
+        }
+    }
+
+    enum AmlRiskResult: String, CaseIterable {
+        case dirty
+        case unprocessed
+        case networkError
+
+        var title: String {
+            switch self {
+            case .dirty, .unprocessed: return "swap.aml.risk.title".localized
+            case .networkError: return "swap.aml.connection.title".localized
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .dirty: return "swap.aml.risk.description".localized
+            case .unprocessed: return "swap.aml.undefined.description".localized
+            case .networkError: return "swap.aml.connection.description".localized
+            }
+        }
+
+        var buttonTitle: String {
+            switch self {
+            case .dirty: return "swap.aml.risk.button".localized
+            case .unprocessed: return "swap.aml.undefined.button".localized
+            case .networkError: return "swap.aml.connection.button".localized
+            }
+        }
+
+        var icon: ComponentImage {
+            switch self {
+            case .dirty, .networkError: return ThemeImage.error
+            case .unprocessed: return ThemeImage.warning
             }
         }
     }

@@ -1,77 +1,93 @@
+import Combine
 import Foundation
 import MarketKit
-import RxCocoa
-import RxRelay
+import MoneroKit
 import RxSwift
 
-class MoneroNetworkViewModel {
-    let service: MoneroNetworkService
-    private let disposeBag = DisposeBag()
+class MoneroNetworkViewModel: ObservableObject {
+    let blockchain: Blockchain
+    private let moneroNodeManager = Core.shared.moneroNodeManager
+    private var disposeBag = DisposeBag()
 
-    private let stateRelay = BehaviorRelay<State>(value: State(defaultViewItems: [], customViewItems: []))
-    private let finishRelay = PublishRelay<Void>()
+    @Published var defaultItems: [NodeItem] = []
+    @Published var customItems: [NodeItem] = []
+    @Published var saveEnabled = false
 
-    init(service: MoneroNetworkService) {
-        self.service = service
+    private(set) var selectedNode: MoneroNode
 
-        subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
+    init(blockchain: Blockchain) {
+        self.blockchain = blockchain
 
-        sync(state: service.state)
+        selectedNode = moneroNodeManager.node(blockchainType: blockchain.type)
+
+        subscribe(disposeBag, moneroNodeManager.nodesUpdatedObservable) { [weak self] _ in
+            DispatchQueue.main.async { self?.handleNodesUpdated() }
+        }
+
+        syncItems()
     }
 
-    private func sync(state: MoneroNetworkService.State) {
-        let state = State(
-            defaultViewItems: state.defaultItems.map { viewItem(item: $0) },
-            customViewItems: state.customItems.map { viewItem(item: $0) }
-        )
+    private func handleNodesUpdated() {
+        let (defaultNodes, customNodes) = moneroNodeManager.defaultAndCustomNodes(blockchainType: blockchain.type)
+        let allNodes = defaultNodes + customNodes
 
-        stateRelay.accept(state)
+        // If the locally selected node was deleted, reset selection to the manager's current
+        if !allNodes.contains(where: { $0.node.url == selectedNode.node.url }) {
+            selectedNode = moneroNodeManager.node(blockchainType: blockchain.type)
+        }
+
+        defaultItems = defaultNodes.map { nodeItem(node: $0) }
+        customItems = customNodes.map { nodeItem(node: $0) }
+        updateSaveEnabled()
     }
 
-    private func viewItem(item: MoneroNetworkService.Item) -> ViewItem {
-        ViewItem(
-            name: item.node.name,
-            url: item.node.node.url.absoluteString,
-            selected: item.selected
-        )
-    }
-}
-
-extension MoneroNetworkViewModel {
-    var stateDriver: Driver<State> {
-        stateRelay.asDriver()
+    private func syncItems() {
+        let (defaultNodes, customNodes) = moneroNodeManager.defaultAndCustomNodes(blockchainType: blockchain.type)
+        defaultItems = defaultNodes.map { nodeItem(node: $0) }
+        customItems = customNodes.map { nodeItem(node: $0) }
     }
 
-    var finishSignal: Signal<Void> {
-        finishRelay.asSignal()
+    private func nodeItem(node: MoneroNode) -> NodeItem {
+        NodeItem(node: node, selected: node.node.url == selectedNode.node.url)
     }
 
-    var title: String {
-        service.blockchain.name
-    }
-
-    var iconUrl: String {
-        service.blockchain.type.imageUrl
-    }
-
-    var blockchainType: BlockchainType {
-        service.blockchain.type
-    }
-
-    func onRemoveCustom(index: Int) {
-        service.removeCustom(index: index)
+    private func updateSaveEnabled() {
+        let current = moneroNodeManager.node(blockchainType: blockchain.type)
+        saveEnabled = selectedNode.node.url != current.node.url || selectedNode.node.isTrusted != current.node.isTrusted
     }
 }
 
 extension MoneroNetworkViewModel {
-    struct State {
-        let defaultViewItems: [ViewItem]
-        let customViewItems: [ViewItem]
+    func selectNode(_ item: NodeItem, isTrusted: Bool) {
+        let kitNode = MoneroKit.Node(url: item.node.node.url, isTrusted: isTrusted, login: item.node.node.login, password: item.node.node.password)
+        selectedNode = MoneroNode(name: item.node.name, node: kitNode)
+
+        let (defaultNodes, customNodes) = moneroNodeManager.defaultAndCustomNodes(blockchainType: blockchain.type)
+        defaultItems = defaultNodes.map { nodeItem(node: $0) }
+        customItems = customNodes.map { nodeItem(node: $0) }
+        updateSaveEnabled()
     }
 
-    struct ViewItem {
-        let name: String
-        let url: String?
+    func removeCustomNode(_ item: NodeItem) {
+        stat(page: .blockchainSettingsMonero, event: .deleteCustomMoneroNode(chainUid: blockchain.uid))
+        moneroNodeManager.delete(node: item.node, blockchainType: blockchain.type)
+    }
+
+    func save() {
+        let isCustom = customItems.contains { $0.node.node.url == selectedNode.node.url }
+        stat(page: .blockchainSettingsMonero, event: .switchMoneroNode(chainUid: blockchain.uid, name: isCustom ? "custom" : selectedNode.name))
+        moneroNodeManager.setCurrent(node: selectedNode, blockchainType: blockchain.type)
+    }
+}
+
+extension MoneroNetworkViewModel {
+    struct NodeItem: Identifiable {
+        let node: MoneroNode
         let selected: Bool
+
+        var id: String { node.node.url.absoluteString }
+        var name: String { node.name }
+        var url: String { node.node.url.absoluteString }
+        var isTrusted: Bool { node.node.isTrusted }
     }
 }

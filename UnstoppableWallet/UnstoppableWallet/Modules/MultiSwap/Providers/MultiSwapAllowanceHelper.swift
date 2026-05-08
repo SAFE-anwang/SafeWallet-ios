@@ -59,15 +59,13 @@ class MultiSwapAllowanceHelper {
     }
 
     private func pendingAllowance(pendingTransactions: [TransactionRecord], spenderAddress: Address) -> Decimal? {
-        var latestAllowance: Decimal?
-
         for transaction in pendingTransactions {
             if let record = transaction as? IApproveTransaction, record.spender.lowercased() == spenderAddress.raw.lowercased() {
-                latestAllowance = record.value.value
+                return record.value.value
             }
         }
 
-        return latestAllowance
+        return nil
     }
 
     private func mustBeRevoked(token: Token) -> Bool {

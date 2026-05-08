@@ -31,6 +31,7 @@ class EvmSyncSourceManager {
         case .fantom: return .fantom(apiKeys: AppConfig.ftmscanKeys)
         case .base: return .basescan(apiKeys: AppConfig.basescanKeys)
         case .zkSync: return .eraZkSync(apiKeys: AppConfig.eraZkSyncKeys)
+        case .tron: return EvmKit.TransactionSource(name: "trongrid", type: .etherscan(apiBaseUrl: "", txBaseUrl: "", apiKeys: []))
         default: fatalError("Non-supported EVM blockchain")
         }
     }
@@ -281,6 +282,29 @@ extension EvmSyncSourceManager {
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
             ]
+        case .tron:
+            if testNetManager.testNetEnabled {
+                return [
+                    EvmSyncSource(
+                        name: "TronGrid",
+                        rpcSource: .http(urls: [URL(string: "https://nile.trongrid.io/")!], auth: AppConfig.tronGridApiKeys.first),
+                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+                    ),
+                ]
+            } else {
+                return [
+                    EvmSyncSource(
+                        name: "TronGrid",
+                        rpcSource: .http(urls: [URL(string: "https://api.trongrid.io/")!], auth: AppConfig.tronGridApiKeys.first),
+                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+                    ),
+                    EvmSyncSource(
+                        name: "Pocket Network",
+                        rpcSource: .http(urls: [URL(string: "https://tron.api.pocket.network")!], auth: AppConfig.tronGridApiKeys.first),
+                        transactionSource: defaultTransactionSource(blockchainType: blockchainType)
+                    ),
+                ]
+            }
         default:
             return []
         }
@@ -362,10 +386,6 @@ extension EvmSyncSourceManager {
 
         try? evmSyncSourceStorage.save(record: record)
 
-        if let syncSource = customSyncSources(blockchainType: blockchainType).first(where: { $0.rpcSource.url == url }) {
-            saveCurrent(syncSource: syncSource, blockchainType: blockchainType)
-        }
-
         syncSourcesUpdatedRelay.accept(blockchainType)
     }
 
@@ -388,8 +408,7 @@ extension EvmSyncSourceManager {
     }
 
     var selectedSources: [SelectedSource] {
-        EvmBlockchainManager
-            .blockchainTypes
+        (EvmBlockchainManager.blockchainTypes + [BlockchainType.tron])
             .map { type in
                 SelectedSource(
                     blockchainTypeUid: type.uid,

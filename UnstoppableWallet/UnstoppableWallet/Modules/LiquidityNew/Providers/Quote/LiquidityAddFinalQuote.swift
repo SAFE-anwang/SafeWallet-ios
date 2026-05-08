@@ -68,7 +68,7 @@ class LiquidityAddFinalQuote {
 
         if let estimatedTime {
             fields.append(.simpleValue(
-                title: SendField.InformedTitle("swap.swapped_time".localized, info: InfoDescription(
+                title: ComponentInformedTitle("swap.swapped_time".localized, info: InfoDescription(
                     title: "swap.swapped_time".localized,
                     description: "swap.swapped_time.info".localized
                 )),

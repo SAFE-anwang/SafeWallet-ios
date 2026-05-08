@@ -16,8 +16,12 @@ class BalanceErrorBottomViewModel: ObservableObject {
             sourceType = .btc(blockchain: blockchain)
         } else if let blockchain = evmBlockchainManager.blockchain(token: wallet.token) {
             sourceType = .evm(blockchain: blockchain)
+        } else if wallet.token.blockchainType == .tron {
+            sourceType = .evm(blockchain: wallet.token.blockchain)
         } else if wallet.token.blockchainType == .monero {
             sourceType = .monero(blockchain: wallet.token.blockchain)
+        } else if wallet.token.blockchainType == .zano {
+            sourceType = .zano(blockchain: wallet.token.blockchain)
         }
 
         item = Item(wallet: wallet, error: error, sourceType: sourceType)
@@ -43,5 +47,6 @@ extension BalanceErrorBottomViewModel {
         case btc(blockchain: Blockchain)
         case evm(blockchain: Blockchain)
         case monero(blockchain: Blockchain)
+        case zano(blockchain: Blockchain)
     }
 }

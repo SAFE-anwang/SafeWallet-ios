@@ -6,7 +6,7 @@ import Foundation
 class SafeSwapMultiSwapProvider: BaseUniswapV2MultiSwapProvider {
     override var id: String { "SafeSwap" }
     override var name: String { "SafeSwap" }
-    override var type: SwapProviderType { .dex }
+    override var type: SwapProviderType { .flexible }
     override var icon: String { "safelog" }
 
     override func spenderAddress(chain: Chain) throws -> EvmKit.Address {

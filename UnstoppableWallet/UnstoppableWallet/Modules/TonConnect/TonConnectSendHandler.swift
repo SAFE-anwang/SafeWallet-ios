@@ -222,6 +222,7 @@ extension TonConnectSendHandler {
                         fields.append(.levelValue(title: "send.confirmation.status".localized, value: "send.confirmation.status.failed".localized, level: .error))
                     default: ()
                     }
+
                     sections.append(.init(fields, isMain: false))
                 }
             }

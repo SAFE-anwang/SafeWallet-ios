@@ -13,7 +13,6 @@ class BaseEvmMultiSwapProvider: IMultiSwapProvider {
     var id: String { fatalError("Must be implemented in subclass") }
     var name: String { fatalError("Must be implemented in subclass") }
     var type: SwapProviderType { fatalError("Must be implemented in subclass") }
-    var aml: Bool { true }
     var icon: String { fatalError("Must be implemented in subclass") }
 
     func supports(tokenIn _: Token, tokenOut _: Token) -> Bool {
@@ -34,6 +33,10 @@ class BaseEvmMultiSwapProvider: IMultiSwapProvider {
 
     func preSwapView(step: MultiSwapPreSwapStep, tokenIn: Token, tokenOut _: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
         allowanceHelper.preSwapView(step: step, tokenIn: tokenIn, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
+    }
+
+    func track(swap _: Swap) async throws -> Swap {
+        fatalError("Must be implemented in subclass")
     }
 
     func spenderAddress(chain _: Chain) throws -> EvmKit.Address {

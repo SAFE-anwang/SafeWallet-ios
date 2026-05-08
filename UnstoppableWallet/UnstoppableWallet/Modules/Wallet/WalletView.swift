@@ -7,7 +7,7 @@ struct WalletView: View {
     @State private var transactionsPresented = false
     
     @Binding var path: NavigationPath
-    
+
     var body: some View {
         Group {
             if let account = viewModel.account {
@@ -19,6 +19,7 @@ struct WalletView: View {
                                 .listRowInsets(EdgeInsets())
                                 .listRowSeparator(.hidden)
                                 .themeListTopView()
+
                             AccountWarningView(viewModel: accountWarningViewModel)
                                 .listRowBackground(Color.themeTyler)
                                 .listRowInsets(EdgeInsets())
@@ -26,6 +27,7 @@ struct WalletView: View {
                                 .padding(.horizontal, .margin16)
                                 .padding(.top, .margin8)
                                 .padding(.bottom, .margin12)
+
                             Section {
                                 itemsView()
                             } header: {
@@ -244,8 +246,8 @@ struct WalletView: View {
 
             IconButton(icon: "manage", style: .secondary, size: .small) {
                 if let account = viewModel.account {
-                    Coordinator.shared.present { _ in
-                        ManageWalletsView(account: account).ignoresSafeArea()
+                    Coordinator.shared.present { isPresented in
+                        ManageWalletsView(account: account, isPresented: isPresented).ignoresSafeArea()
                     }
                     stat(page: .balance, event: .open(page: .coinManager))
                 }
@@ -277,8 +279,8 @@ struct WalletView: View {
                     }
                 }
             case .scan:
-                Coordinator.shared.present { _ in
-                    ScanQrViewNew(reportAfterDismiss: true, pasteEnabled: true) { text in
+                Coordinator.shared.present { isPresented in
+                    ScanQrViewNew(reportAfterDismiss: true, isPresented: isPresented) { text in
                         viewModel.process(scanned: text)
                     }
                     .ignoresSafeArea()

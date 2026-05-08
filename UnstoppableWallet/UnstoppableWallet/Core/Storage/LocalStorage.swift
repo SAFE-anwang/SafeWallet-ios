@@ -24,8 +24,10 @@ class LocalStorage {
     private let keyPurchaseCancelled = "emulate-purchase-cancelled"
     private let keyHasBep2Token = "has-bep2-token"
     private let keyAmountRounding = "amount-rounding"
-    private let keyUseMevProtection = "use-mev-protection"
     private let keyRecentlySent = "recently-sent"
+    private let keyUseMevProtection = "use-mev-protection"
+    private let keyScamProtection = "scam-protection"
+    private let keySpamFilterEnabled = "spam-filter"
     private let keySwapTermsAccepted = "swap-terms-accepted"
     private let keyLiquidityTermsAccepted = "liquidity-terms-accepted"
     private let keySwapProvidersLastSyncTimestamp = "swap-providers-last-sync-timestamp"
@@ -33,6 +35,10 @@ class LocalStorage {
     private let keySwapEnabled = "swap_enabled"
     private let keyAppStateLastSyncTimestamp = "app-state-last-sync-timestamp"
     private let keyForceEnableSwap = "force-enable-swap"
+
+    private let keyRecipientAddressCheck = "recipient-address-check"
+
+    private let keyDebuggingAmlCheckResult = "debugging-aml-check-result"
 
     private let userDefaultsStorage: UserDefaultsStorage
 
@@ -97,7 +103,7 @@ extension LocalStorage {
         let key = [keyDefaultProvider, blockchainType.uid].joined(separator: "|")
         userDefaultsStorage.set(value: provider.rawValue, for: key)
     }
-    
+
     var chartIndicators: Data? {
         get { userDefaultsStorage.value(for: keyUserChartIndicatorsSync) }
         set { userDefaultsStorage.set(value: newValue, for: keyUserChartIndicatorsSync) }
@@ -160,9 +166,17 @@ extension LocalStorage {
 
     var useMevProtection: Bool {
         get { userDefaultsStorage.value(for: keyUseMevProtection) ?? false }
-        set {
-            userDefaultsStorage.set(value: newValue, for: keyUseMevProtection)
-        }
+        set { userDefaultsStorage.set(value: newValue, for: keyUseMevProtection) }
+    }
+
+    var scamProtection: Bool {
+        get { userDefaultsStorage.value(for: keyScamProtection) ?? true }
+        set { userDefaultsStorage.set(value: newValue, for: keyScamProtection) }
+    }
+
+    var spamFilterEnabled: Bool {
+        get { userDefaultsStorage.value(for: keySpamFilterEnabled) ?? true }
+        set { userDefaultsStorage.set(value: newValue, for: keySpamFilterEnabled) }
     }
 
     var swapTermsAccepted: Bool {
@@ -202,6 +216,30 @@ extension LocalStorage {
     var forceEnableSwap: Bool {
         get { userDefaultsStorage.value(for: keyForceEnableSwap) ?? false }
         set { userDefaultsStorage.set(value: newValue, for: keyForceEnableSwap) }
+    }
+
+    // Send Security
+    var recipientAddressCheckOld: Bool? {
+        get { userDefaultsStorage.value(for: keyRecipientAddressCheck) }
+        set { userDefaultsStorage.set(value: newValue, for: keyRecipientAddressCheck) }
+    }
+
+    var debuggingAmlCheckResult: MultiSwapViewModel.AmlRiskResult? {
+        get {
+            let raw: String? = userDefaultsStorage.value(for: keyDebuggingAmlCheckResult)
+            return raw.flatMap { MultiSwapViewModel.AmlRiskResult(rawValue: $0) }
+        }
+        set {
+            userDefaultsStorage.set(value: newValue?.rawValue, for: keyDebuggingAmlCheckResult)
+        }
+    }
+
+    func addressSecurityIssue(_ type: AddressSecurityIssueType) -> Bool? {
+        userDefaultsStorage.value(for: type.storageKey)
+    }
+
+    func setAddressSecurityIssue(_ value: Bool, type: AddressSecurityIssueType) {
+        userDefaultsStorage.set(value: value, for: type.storageKey)
     }
 }
 

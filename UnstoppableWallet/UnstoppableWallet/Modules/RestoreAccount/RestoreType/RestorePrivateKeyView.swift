@@ -114,14 +114,7 @@ struct RestorePrivateKeyView: View {
                     text: $viewModel.text,
                     statPage: .watchWallet,
                     statEntity: .key,
-                    onButtonTap: { focusedField = nil },
-                    onPaste: { pastedText in
-                        pendingPasteText = pastedText
-                        showPasteConfirmation = true
-                    },
-                    onScan: { scannedText in
-                        viewModel.onScan(text: scannedText)
-                    }
+                    onButtonTap: { focusedField = nil }
                 )
                 .focused($focusedField, equals: .privateKey)
                 .modifier(CautionBorder(cautionState: $viewModel.textCaution))

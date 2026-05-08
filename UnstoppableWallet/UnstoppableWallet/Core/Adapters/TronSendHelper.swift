@@ -98,11 +98,9 @@ extension TronSendHelper {
             let currencyValue = feeTokenRate.map { CurrencyValue(currency: currency, value: decimalAmount * $0) }
 
             viewItems.append(
-                .value(
-                    title: SendField.InformedTitle("fee_settings.network_fee".localized, info: .fee),
-                    appValue: appValue,
-                    currencyValue: currencyValue,
-                    formatFull: true
+                .fee(
+                    title: ComponentInformedTitle("fee_settings.network_fee".localized, info: .fee),
+                    amountData: .init(appValue: appValue, currencyValue: currencyValue)
                 )
             )
         }
@@ -122,7 +120,7 @@ extension TronSendHelper {
 
                     viewItems.append(
                         .value(
-                            title: SendField.InformedTitle("tron.send.activation_fee".localized, info: info),
+                            title: ComponentInformedTitle("tron.send.activation_fee".localized, info: info),
                             appValue: appValue,
                             currencyValue: currencyValue,
                             formatFull: true

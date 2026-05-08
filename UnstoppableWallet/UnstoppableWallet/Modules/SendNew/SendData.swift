@@ -19,6 +19,8 @@ enum SendData {
     case walletConnect(request: WalletConnectRequest)
     case tonConnect(request: TonConnectSendTransactionRequest)
     case monero(token: Token, amount: MoneroSendAmount, address: String, memo: String?)
+    case zano(token: Token, amount: ZanoSendAmount, address: String, memo: String?)
+    case zanoAsset(token: Token, baseToken: Token, amount: ZanoSendAmount, address: String, memo: String?)
     case evmSafe4TimeLock(blockchainType: BlockchainType, transactionData: TransactionData, timeLock: TimeLock)
     case crossChain(baseWallet: Wallet, transactionData: TransactionData)
     case liquidityAdd(token0: Token, token1: Token, amount0: Decimal, amount1: Decimal, provider: ILiquidityAddProvider, v3TickType: LiquidityTickType?, manualAmountOutMode: Bool)

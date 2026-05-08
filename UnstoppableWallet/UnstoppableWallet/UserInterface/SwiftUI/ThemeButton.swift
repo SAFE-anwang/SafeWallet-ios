@@ -15,6 +15,7 @@ struct ThemeButton: View {
                 if spinner {
                     ProgressView()
                 }
+
                 if let icon {
                     Image(icon).buttonIcon(size: size.iconSize)
                 }

@@ -42,7 +42,7 @@ struct MarketVaultView: View {
 
                     if let url = vault.url {
                         Button(action: {
-                            Coordinator.shared.present(url: URL(string: url))
+                            Coordinator.shared.present(url: url)
                             stat(page: .vault, event: .open(page: .externalDapp))
                         }) {
                             Text("market.vault.open_dapp".localized)
@@ -60,9 +60,11 @@ struct MarketVaultView: View {
             }
             .navigationTitle(viewModel.vault.assetSymbol)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("button.close".localized) {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
                         isPresented = false
+                    }) {
+                        Image("close")
                     }
                 }
             }

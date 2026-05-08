@@ -132,8 +132,7 @@ struct MarketVaultsView: View {
                         .blur(radius: 5)
 
                         VStack(spacing: .margin24) {
-                            Image("lock_48").themeIcon()
-
+                            Image.lock(size: .iconSize48)
                             Text("market.vaults.premium.description".localized)
                                 .textHeadline2()
                                 .multilineTextAlignment(.center)
@@ -301,9 +300,12 @@ extension MarketVaultsView {
                 .navigationTitle("market.vaults.chains.title".localized)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("button.done".localized) {
+                        Button(action: {
                             isPresented = false
+                        }) {
+                            Image("check")
                         }
+                        .modifier(ConfirmationButtonStyle())
                     }
                 }
             }

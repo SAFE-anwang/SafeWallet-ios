@@ -125,12 +125,6 @@ extension Coordinator {
         }
         stat(page: page, section: section, event: .openCoin(coinUid: coin.uid))
     }
-    
-    func presentSrc20Info(token: Token, page: StatPage, section: StatSection? = nil) {
-        present { _ in
-            Src20TokenInfoView(provider: Safe4Provider(networkManager: Core.shared.networkManager), token: token)
-        }
-    }
 
     func presentAfterAcceptTerms(@ViewBuilder content: @escaping (Binding<Bool>) -> some View, onDismiss: (() -> Void)? = nil, onPresent: (() -> Void)? = nil) {
         let onAccept = {
@@ -165,18 +159,38 @@ extension Coordinator {
         }
     }
 
-    func presentAfterUnlock(@ViewBuilder content: @escaping (Binding<Bool>) -> some View, onDismiss: (() -> Void)? = nil, onPresent: (() -> Void)? = nil) {
-        performAfterUnlock {
+    func presentWalletBackup(account: Account, statPage: StatPage) {
+        let cloudBackupManager = Core.shared.cloudBackupManager
+
+        guard cloudBackupManager.iCloudUrl != nil else {
+            Coordinator.shared.present(type: .bottomSheet) { sheetPresented in
+                CloudNotAvailableView(isPresented: sheetPresented)
+            }
+            return
+        }
+
+        Coordinator.shared.present { isPresented in
+            BackupModule.backupWallet(
+                accountId: account.id,
+                destination: .cloud,
+                isPresented: isPresented
+            )
+        }
+        stat(page: statPage, event: .open(page: .cloudBackup))
+    }
+
+    func presentAfterUnlock(biometryAllowed: Bool = true, @ViewBuilder content: @escaping (Binding<Bool>) -> some View, onDismiss: (() -> Void)? = nil, onPresent: (() -> Void)? = nil) {
+        performAfterUnlock(biometryAllowed: biometryAllowed) {
             Coordinator.shared.present(content: content, onDismiss: onDismiss)
             onPresent?()
         }
     }
 
-    func performAfterUnlock(onUnlock: @escaping () -> Void) {
+    func performAfterUnlock(biometryAllowed: Bool = true, onUnlock: @escaping () -> Void) {
         if Core.shared.passcodeManager.isPasscodeSet {
             Coordinator.shared.present { _ in
                 ThemeNavigationStack {
-                    ModuleUnlockView {
+                    ModuleUnlockView(biometryAllowed: biometryAllowed) {
                         DispatchQueue.main.async {
                             onUnlock()
                         }
@@ -186,6 +200,14 @@ extension Coordinator {
         } else {
             onUnlock()
         }
+    }
+
+    func present(url: String?) {
+        guard let url else {
+            return
+        }
+
+        present(url: URL(string: url))
     }
 
     func present(url: URL?) {
@@ -211,6 +233,21 @@ extension Coordinator {
                     ])),
                 ],
             )
+        }
+    }
+}
+extension Coordinator {
+    
+    func presentSrc20Info(token: Token, page: StatPage, section: StatSection? = nil) {
+        present { _ in
+            Src20TokenInfoView(provider: Safe4Provider(networkManager: Core.shared.networkManager), token: token)
+        }
+    }
+    
+    func presentAfterUnlock(@ViewBuilder content: @escaping (Binding<Bool>) -> some View, onDismiss: (() -> Void)? = nil, onPresent: (() -> Void)? = nil) {
+        performAfterUnlock {
+            Coordinator.shared.present(content: content, onDismiss: onDismiss)
+            onPresent?()
         }
     }
 }

@@ -1,7 +1,6 @@
+import Combine
 import HdWalletKit
 import MarketKit
-import RxRelay
-import RxSwift
 
 class RestoreSelectService {
     private let accountName: String
@@ -15,24 +14,24 @@ class RestoreSelectService {
     private let marketKit: MarketKit.Kit
     private let blockchainTokensService: BlockchainTokensService
     private let restoreSettingsService: RestoreSettingsService
+    private var cancellables = Set<AnyCancellable>()
     private let allowedBitcoinDerivations: Set<MnemonicDerivation>?
     private let allowedBlockchainTypes: Set<BlockchainType>?
     private let autoEnableDefaultTokensForAllowedBlockchains: Bool
     private let blockchainsRequireManualTokenSelection: Set<BlockchainType>?
-    private let disposeBag = DisposeBag()
 
     private var tokens = [Token]()
     private(set) var enabledTokens = Set<Token>()
 
     private var restoreSettingsMap = [Token: RestoreSettings]()
 
-    private let cancelEnableBlockchainRelay = PublishRelay<BlockchainType>()
-    private let canRestoreRelay = BehaviorRelay<Bool>(value: false)
+    private let cancelEnableBlockchainSubject = PassthroughSubject<BlockchainType, Never>()
+    private let canRestoreSubject = CurrentValueSubject<Bool, Never>(false)
 
-    private let itemsRelay = PublishRelay<[Item]>()
+    private let itemsSubject = PassthroughSubject<[Item], Never>()
     var items: [Item] = [] {
         didSet {
-            itemsRelay.accept(items)
+            itemsSubject.send(items)
         }
     }
 
@@ -73,18 +72,29 @@ class RestoreSelectService {
         self.autoEnableDefaultTokensForAllowedBlockchains = autoEnableDefaultTokensForAllowedBlockchains
         self.blockchainsRequireManualTokenSelection = blockchainsRequireManualTokenSelection
 
-        subscribe(disposeBag, blockchainTokensService.approveTokensObservable) { [weak self] blockchain, tokens in
-            self?.handleApproveTokens(blockchain: blockchain, tokens: tokens)
-        }
-        subscribe(disposeBag, blockchainTokensService.rejectApproveTokensObservable) { [weak self] blockchain in
-            self?.handleCancelEnable(blockchain: blockchain)
-        }
-        subscribe(disposeBag, restoreSettingsService.approveSettingsObservable) { [weak self] tokenWithSettings in
-            self?.handleApproveRestoreSettings(token: tokenWithSettings.token, settings: tokenWithSettings.settings)
-        }
-        subscribe(disposeBag, restoreSettingsService.rejectApproveSettingsObservable) { [weak self] token in
-            self?.handleCancelEnable(blockchain: token.blockchain)
-        }
+        blockchainTokensService.approveTokensPublisher
+            .sink { [weak self] blockchain, tokens in
+                self?.handleApproveTokens(blockchain: blockchain, tokens: tokens)
+            }
+            .store(in: &cancellables)
+
+        blockchainTokensService.rejectApproveTokensPublisher
+            .sink { [weak self] blockchain in
+                self?.handleCancelEnable(blockchain: blockchain)
+            }
+            .store(in: &cancellables)
+
+        restoreSettingsService.approveSettingsPublisher
+            .sink { [weak self] tokenWithSettings in
+                self?.handleApproveRestoreSettings(token: tokenWithSettings.token, settings: tokenWithSettings.settings)
+            }
+            .store(in: &cancellables)
+
+        restoreSettingsService.rejectApproveSettingsPublisher
+            .sink { [weak self] token in
+                self?.handleCancelEnable(blockchain: token.blockchain)
+            }
+            .store(in: &cancellables)
 
         syncInternalItems()
         autoEnableAllowedBlockchainsIfNeeded()
@@ -104,53 +114,6 @@ class RestoreSelectService {
         } catch {
             // todo
         }
-    }
-
-    private func supportsBlockchainLimit(token: Token) -> Bool {
-        guard let allowedBlockchainTypes else {
-            return true
-        }
-
-        return allowedBlockchainTypes.contains(token.blockchainType)
-    }
-
-    private func autoEnableAllowedBlockchainsIfNeeded() {
-        guard autoEnableDefaultTokensForAllowedBlockchains, let allowedBlockchainTypes else {
-            return
-        }
-
-        for blockchainType in allowedBlockchainTypes {
-            let blockchainTokens = tokens.filter { $0.blockchainType == blockchainType }
-            guard let firstToken = blockchainTokens.first else {
-                continue
-            }
-
-            let tokensToEnable: [Token]
-            if blockchainTokens.count == 1 {
-                tokensToEnable = [firstToken]
-            } else {
-                let defaults = blockchainTokens.filter(\.type.isDefault)
-                tokensToEnable = defaults.isEmpty ? [firstToken] : defaults
-            }
-
-            handleApproveTokens(blockchain: firstToken.blockchain, tokens: tokensToEnable)
-        }
-    }
-
-    private func supportsDerivationLimit(token: Token) -> Bool {
-        guard let allowedBitcoinDerivations else {
-            return true
-        }
-
-        guard token.blockchainType == .bitcoin || token.blockchainType == .litecoin else {
-            return true
-        }
-
-        guard let derivation = token.type.derivation else {
-            return true
-        }
-
-        return allowedBitcoinDerivations.contains(derivation)
     }
 
     private func isEnabled(blockchain: Blockchain) -> Bool {
@@ -177,7 +140,7 @@ class RestoreSelectService {
     }
 
     private func syncCanRestore() {
-        canRestoreRelay.accept(!enabledTokens.isEmpty)
+        canRestoreSubject.send(!enabledTokens.isEmpty)
     }
 
     private func handleApproveTokens(blockchain: Blockchain, tokens: [Token]) {
@@ -211,22 +174,22 @@ class RestoreSelectService {
 
     private func handleCancelEnable(blockchain: Blockchain) {
         if !isEnabled(blockchain: blockchain) {
-            cancelEnableBlockchainRelay.accept(blockchain.type)
+            cancelEnableBlockchainSubject.send(blockchain.type)
         }
     }
 }
 
 extension RestoreSelectService {
-    var itemsObservable: Observable<[Item]> {
-        itemsRelay.asObservable()
+    var itemsPublisher: AnyPublisher<[Item], Never> {
+        itemsSubject.eraseToAnyPublisher()
     }
 
-    var cancelEnableBlockchainObservable: Observable<BlockchainType> {
-        cancelEnableBlockchainRelay.asObservable()
+    var cancelEnableBlockchainPublisher: AnyPublisher<BlockchainType, Never> {
+        cancelEnableBlockchainSubject.eraseToAnyPublisher()
     }
 
-    var canRestoreObservable: Observable<Bool> {
-        canRestoreRelay.asObservable()
+    var canRestorePublisher: AnyPublisher<Bool, Never> {
+        canRestoreSubject.eraseToAnyPublisher()
     }
 
     func enable(blockchainUid: String) {
@@ -309,4 +272,53 @@ extension RestoreSelectService {
         let enabled: Bool
         let hasSettings: Bool
     }
+}
+extension RestoreSelectService {
+    private func supportsBlockchainLimit(token: Token) -> Bool {
+        guard let allowedBlockchainTypes else {
+            return true
+        }
+
+        return allowedBlockchainTypes.contains(token.blockchainType)
+    }
+
+    private func autoEnableAllowedBlockchainsIfNeeded() {
+        guard autoEnableDefaultTokensForAllowedBlockchains, let allowedBlockchainTypes else {
+            return
+        }
+
+        for blockchainType in allowedBlockchainTypes {
+            let blockchainTokens = tokens.filter { $0.blockchainType == blockchainType }
+            guard let firstToken = blockchainTokens.first else {
+                continue
+            }
+
+            let tokensToEnable: [Token]
+            if blockchainTokens.count == 1 {
+                tokensToEnable = [firstToken]
+            } else {
+                let defaults = blockchainTokens.filter(\.type.isDefault)
+                tokensToEnable = defaults.isEmpty ? [firstToken] : defaults
+            }
+
+            handleApproveTokens(blockchain: firstToken.blockchain, tokens: tokensToEnable)
+        }
+    }
+
+    private func supportsDerivationLimit(token: Token) -> Bool {
+        guard let allowedBitcoinDerivations else {
+            return true
+        }
+
+        guard token.blockchainType == .bitcoin || token.blockchainType == .litecoin else {
+            return true
+        }
+
+        guard let derivation = token.type.derivation else {
+            return true
+        }
+
+        return allowedBitcoinDerivations.contains(derivation)
+    }
+
 }

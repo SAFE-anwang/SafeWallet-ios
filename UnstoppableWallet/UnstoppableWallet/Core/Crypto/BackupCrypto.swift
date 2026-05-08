@@ -84,11 +84,11 @@ extension BackupCrypto {
         guard !passphrase.isEmpty else {
             throw ValidationError.emptyPassphrase
         }
-        guard passphrase.count >= BackupCloudModule.minimumPassphraseLength else {
+        guard passphrase.count >= BackupModule.minimumPassphraseLength else {
             throw ValidationError.simplePassword
         }
 
-        let allSatisfy = BackupCloudModule.PassphraseCharacterSet.allCases.allSatisfy { set in set.contains(passphrase) }
+        let allSatisfy = BackupModule.PassphraseCharacterSet.allCases.allSatisfy { set in set.contains(passphrase) }
         if !allSatisfy {
             throw ValidationError.simplePassword
         }
@@ -127,5 +127,14 @@ extension BackupCrypto {
     enum ValidationError: Error {
         case emptyPassphrase
         case simplePassword
+    }
+}
+
+extension BackupCrypto.ValidationError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .emptyPassphrase: return "backup.cloud.password.error.empty_passphrase".localized
+        case .simplePassword: return "backup.cloud.password.error.minimum_requirement".localized
+        }
     }
 }

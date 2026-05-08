@@ -115,6 +115,13 @@
 "face_id" = "Face ID";
 "touch_id" = "Touch ID";
 
+"auto_lock.immediate" = "立即";
+"auto_lock.minute1" = "1 分钟";
+"auto_lock.minute5" = "5 分钟";
+"auto_lock.minute15" = "15 分钟";
+"auto_lock.minute30" = "30 分钟";
+"auto_lock.hour1" = "1 小时";
+
 "powered_by" = "由 %@ 提供支持";
 
 "filter.all" = "所有";
@@ -189,6 +196,13 @@
 
 "restore.error.non_standard.link" = "点击获取更多信息";
 
+"restore.select_key_type" = "选择网络";
+"restore.select_key_type.evm" = "EVM 网络";
+"restore.select_key_type.evm.description" = "Ethereum、Arbitrum、Optimism ...";
+"restore.select_key_type.trc" = "TRON";
+"restore.select_key_type.trc.description" = "仅限 TRON 网络。";
+
+
 // Restore Type
 
 "restore_type.title" = "恢复自";
@@ -217,6 +231,9 @@
 
 // Coin Settings
 
+"coin_settings.title" = "区块链设置";
+"coin_settings.bitcoin_cash_coin_type.title.type0" = "Legacy";
+"coin_settings.bitcoin_cash_coin_type.title.type145" = "CashAddress";
 "sync_mode.hybrid" = "混合型";
 "sync_mode.from_blockchain" = "来自区块链";
 "blockchain_settings.description" = "请选择该币种的地址格式。";
@@ -244,6 +261,9 @@
 
 "evm_private_key.title" = "EVM 私钥";
 "evm_private_key.tap_to_show" = "点击显示私钥";
+
+"tron_private_key.title" = "Tron 私钥";
+"tron_private_key.tap_to_show" = "点击显示私钥";
 
 // Stellar Secret Key
 
@@ -558,7 +578,7 @@
 "send.fee_settings.fee_rate_unavailable" = "费用率不可用。请手动检查费率。";
 
 "send.unspent_outputs" = "UTxOs";
-"send.unspent_outputs.description" = "手动选择 UTxO 将资金花在余额中";
+"send.unspent_outputs.description" = "手动选择在交易中花费哪些币。";
 "send.unspent_outputs.send_to" = "发送至";
 "send.unspent_outputs.change" = "更改";
 
@@ -657,6 +677,17 @@
 
 "swap.quotes.providers" = "服务提供商";
 "swap.quotes.best_price" = "最优价格";
+"swap.quotes.sort.title" = "排序方式";
+"swap.quotes.sort.best_rate" = "最佳汇率";
+"swap.quotes.sort.best_time" = "最快速度";
+
+"swap.quotes.providers.risk_levels.title" = "提供商风险等级";
+"swap.quotes.providers.risk_levels.description" = "风险等级显示提供商在执行过程中可能采取的操作。";
+"swap.quotes.providers.risk_levels.auto.description" = "该交易所使用自有流动性，注重隐私保护。交易处理过程中不会进行 AML 拦截。";
+"swap.quotes.providers.risk_levels.flexible.description" = "该交易所通常会退还未通过 AML 检查的交易。在极少数情况下，如果需要额外验证，资金可能会被暂时冻结。";
+"swap.quotes.providers.risk_levels.preCheck.description" = "提供商在处理兑换之前会自行进行地址筛查。拒绝的情况很少见。冻结理论上可能发生，但可能性极低。";
+"swap.quotes.providers.risk_levels.controlled.description" = "该交易所会冻结未通过 AML 检查的交易，直到完成 KYC/身份验证要求。";
+
 
 "swap.allowance" = "补贴";
 "swap.allowance.description" = "当执行令牌交换时，交易所可以代表用户花费的金额。 在进行实际互换交易之前，需要先确定足够的备抵。";
@@ -678,7 +709,7 @@
 "swap.high_price_impact" = "高价格影响";
 "swap.recipient" = "收款人";
 "swap.slippage" = "滑点";
-"swap.swapped_time" = "兑换时间";
+"swap.swapped_time" = "预计时间";
 "swap.swapped_time.info" = "预计到账时间。兑换处理和交易确认所需时间可能会因网络和服务提供方而有所不同。";
 
 "swap.affiliate_fee" = "联盟费";
@@ -687,6 +718,14 @@
 "swap.total_fee" = "总费用";
 
 "swap.aml" = "反洗钱（AML）";
+"swap.aml.risk.title" = "警告！";
+"swap.aml.risk.description" = "此交易已识别出潜在风险。在处理过程中，您的资金可能会被拒绝或受到限制。请选择其他提供商。";
+"swap.aml.risk.button" = "选择其他提供商";
+"swap.aml.undefined.description" = "无法完成此交易的风险检查。如果您继续，此兑换在处理过程中可能会遇到延迟、拒绝或限制。";
+"swap.aml.undefined.button" = "继续并承担风险";
+"swap.aml.connection.title" = "连接问题";
+"swap.aml.connection.description" = "目前无法获取响应，请重试。";
+"swap.aml.connection.button" = "重试";
 
 // Swap options
 
@@ -799,7 +838,7 @@
 "swap.confirmation.impact_too_high" = "%@ 已禁用此交易的掉期操作，因为您得到的价格极其不利。 这是由于流动性极低造成的。\n如果您仍想兑换，请使用 %@ 网站。";
 "swap.confirmation.impact_warning" = "重要提示！您正在以极其不利的价格进行交易。这是因为流动性非常低。";
 
-"swap.confirmation.minimum_received" = "最小获取金额";
+"swap.confirmation.minimum_received" = "保证到账";
 "swap.confirmation.minimum_received.info" = "兑换完成后您将收到的最小金额。该金额由服务提供方保证，不受处理过程中价格波动的影响。";
 "swap.confirmation.maximum_sent" = "最大支出";
 
@@ -808,6 +847,34 @@
 "swap.dex_info.header_price_impact" = "价格影响";
 "swap.dex_info.content_price_impact" = "预期价格和显示价格的偏差通常会增加互兑金额。";
 "swap.maya.shielded_address.error" = "无法获取用于备注（Memo）的屏蔽地址（Maya）。";
+
+// Swap History
+
+"swap_history.title" = "兑换记录";
+"swap_history.all" = "全部";
+"swap_history.empty" = "您还没有任何待处理或已完成的兑换记录。";
+
+// Swap Info
+
+"swap_info.title" = "兑换详情";
+"swap_info.provider" = "服务商";
+"swap_info.date" = "日期";
+"swap_info.status" = "状态";
+"swap_info.recipient" = "接收方";
+"swap_info.view" = "查看";
+"swap_info.deposit" = "存入 %@";
+"swap_info.swap" = "兑换";
+"swap_info.send" = "发送 %@";
+"swap_info.refund" = "退款 %@";
+"swap_info.unknown" = "未知";
+
+"swap_info.status.not_started" = "未开始";
+"swap_info.status.pending" = "待处理";
+"swap_info.status.swapping" = "兑换中";
+"swap_info.status.completed" = "已完成";
+"swap_info.status.refunded" = "已退款";
+"swap_info.status.unknown" = "未知";
+"swap_info.status.failed" = "失败";
 
 // Market
 
@@ -959,6 +1026,7 @@
 "top_platform.title" = "%@ 星系";
 "top_platform.total_cap" = "总市值";
 
+"market.search.title" = "搜索";
 "market.search.recent" = "最近使用";
 "market.search.popular" = "流行";
 
@@ -1019,7 +1087,6 @@
 "market.advanced_search.price_close_to_atl" = "接近历史最低价";
 
 "market.advanced_search.top" = "前 %d";
-"market.advanced_search.reset_all" = "重置";
 
 "market.advanced_search.less_5_m" = "<5M";
 "market.advanced_search.less_10_m" = "<1千万";
@@ -1564,6 +1631,7 @@
 "manage_wallets.derivation_description" = "有四种常见的地址格式 %@ 钱包可以用来接收收到的付款:\n\n- BIP44 (旧版)\n- BIP49\n- BIP84 (推荐)\n- BIP86 (新版)\n\n而 %@ 钱包支持所有4 它建议使用一个 %@ 钱包以BIP84 格式操作。";
 "manage_wallets.bitcoin_cash_coin_type_description" = "有2种地址格式的比特币现金钱包可以用来接收收到的付款：\n\n- TYPE 0 (旧)\n- TYPE 145 (更新)\n\n虽然 %@ 钱包支持它们，它建议使用TYPE 145 格式的比特币现金钱包。";
 
+
 // Settings -> Terms
 
 "terms.title" = "条款";
@@ -1609,6 +1677,7 @@
 "backup_app.backup_list.other.contacts.title" = "联系人";
 "backup_app.backup_list.other.custom_evm_sync_sources.title" = "自定义 RPC";
 "backup_app.backup_list.other.custom_monero_nodes.title" = "自定义 Monero 节点";
+"backup_app.backup_list.other.custom_zano_nodes.title" = "自定义 Zano 节点";
 "backup_app.backup_list.other.app_settings.title" = "应用设置";
 "backup_app.backup_list.other.app_settings.description" = "语言、 货币、 外观...";
 
@@ -1659,6 +1728,7 @@
 "settings_security.edit_passcode" = "编辑密码";
 "settings_security.disable_passcode" = "禁用密码";
 "settings_security.auto_lock" = "自动锁定";
+"settings_security.auto_lock.description" = "在选定的时间后自动锁定应用。";
 "settings_security.balance_auto_hide" = "自动隐藏余额";
 "settings_security.balance_auto_hide.description" = "每次打开应用程序时自动隐藏平衡，不管先前的偏好设置。";
 "settings_security.enable_duress_mode" = "设置压力模式";
@@ -1667,11 +1737,8 @@
 "settings_security.duress_mode.description" = "专用模式用于在胁迫下使选定的钱包安全。";
 
 "biometry.off" = "关";
-"biometry.manual" = "手册";
+"biometry.manual" = "手动";
 "biometry.on" = "开启";
-"biometry.off.description" = "在所有情况下禁用";
-"biometry.manual.description" = "使用按钮扫描";
-"biometry.on.description" = "自动扫描";
 
 // Create Passcode
 
@@ -1741,7 +1808,7 @@
 
 "btc_transaction_sort_mode.shuffle" = "随机排序";
 "btc_transaction_sort_mode.shuffle.description" = "随机索引";
-"btc_transaction_sort_mode.bip69" = "Bip69";
+"btc_transaction_sort_mode.bip69" = "确定性";
 "btc_transaction_sort_mode.bip69.description" = "词典索引";
 
 "blockchain_settings.info.restore_source" = "恢复参数";
@@ -1814,7 +1881,6 @@
 "appearance.launch_screen.description" = "选择应用默认打开的界面。";
 "appearance.launch_screen.auto" = "自动";
 "appearance.launch_screen.balance" = "余额";
-"appearance.launch_screen.market_overview" = "行情";
 "appearance.launch_screen.watchlist" = "关注";
 
 "appearance.balance_tab" = "余额标签";
@@ -2150,6 +2216,8 @@
 "public_keys.title" = "公钥";
 "public_keys.evm_address" = "EVM 地址";
 "public_keys.evm_address.description" = "允许只读监视持有Etherum、 Binance Smart Chain和其他基于 EVM 的区块链的钱包。";
+"public_keys.tron_address" = "TRON 地址";
+"public_keys.tron_address.description" = "允许以只读方式监控在 TRON 区块链上持有资产的钱包。";
 "public_keys.account_extended_public_key" = "Account Extended Public Key";
 "public_keys.account_extended_public_key.description" = "允许只读监视持有比特币和其他基于 UTXO 的加密钱包(即Liteco、 比特币现金、 破折号等)。";
 "public_keys.monero_public_key" = "Monero 公钥";
@@ -2160,6 +2228,8 @@
 "private_keys.title" = "私钥";
 "private_keys.evm_private_key" = "EVM 私钥";
 "private_keys.evm_private_key.description" = "授予对本钱包中基于 EVM 网络（如以太坊、BNB 智能链、Polygon、Avalanche）资产的完全控制权。";
+"private_keys.tron_private_key" = "Tron 私钥";
+"private_keys.tron_private_key.description" = "授予对此钱包中 Tron 网络资产的完全控制权。";
 "private_keys.stellar_secret_key" = "Stellar 私钥";
 "private_keys.stellar_secret_key.description" = "授予对本钱包中 Stellar 网络资产的完全控制权。";
 "private_keys.bip32_root_key" = "BIP32 Root Key";
@@ -2172,6 +2242,7 @@
 // Manage Account -> EVM Address
 
 "evm_address.title" = "EVM 地址";
+"tron_address.title" = "TRON 地址";
 
 // Birthday Height
 
@@ -2223,6 +2294,16 @@
 "add_monero_node.warning.url_exists" = "已存在相同 URL 的节点";
 "add_monero_node.error.invalid_url" = "输入的 URL 无效。有效的 URL 必须使用 https 协议";
 
+"zano_network.node" = "节点";
+"zano_network.added" = "已添加";
+"zano_network.add_new" = "添加新节点";
+"zano_network.description" = "选择 Unstoppable 应用用于同步钱包的节点。";
+
+"add_zano_node.title" = "添加节点";
+"add_zano_node.node_url" = "节点 URL";
+"add_zano_node.warning.url_exists" = "具有此 URL 的节点已存在";
+"add_zano_node.error.invalid_url" = "输入的 URL 无效";
+
 // Send Settings
 
 "evm_send_settings.nonce" = "交易nonce";
@@ -2237,6 +2318,7 @@
 "fee_settings.fee_rate" = "费率";
 "fee_settings.fee_rate.description" = "这是击中下2个区块的推荐值";
 "fee_settings.inputs_outputs" = "输入/输出";
+"fee_settings.inputs_outputs.description" = "更改交易输入和输出的结构方式。";
 "fee_settings.transaction_settings" = "交易设置";
 "fee_settings.transaction_settings.description" = "通过更改建构交易的方式使您的比特币交易更难被追踪。";
 "fee_settings.replace_by_fee" = "替换交易";
@@ -2901,69 +2983,67 @@
 
 // MEV Protection
 
-"mev_protection.title" = "MEV 保护";
-"mev_protection.description" = "所谓的「抢跑机器人」会监控每一笔交易，企图让您多付费用。此功能可阻止它们。";
-"transaction_filter.coin" = "代币";
-"transaction_filter.all_coins" = "所有代币";
-"transaction_filter.contact" = "合约";
-"transaction_filter.all_contacts" = "所有合约";
-"transaction_filter.hide_suspicious_txs" = "隐藏可疑的发送";
-"transaction_filter.hide_safe4_income" = "隐藏挖矿收益";
-"transaction_filter.hide_safe4_node.state" = "隐藏节点状态上传";
-"transaction_filter.hide_suspicious_txs.description" = "隐藏微量的代币转入交易，部分解决地址攻击问题。";
-
-// SRC20
-"SRC20_Deploy_Promotion" = "资产管理";
-"SRC20_Deploy_One_Click_Issu" = "一键发币";
+"Revoke_Manager" = "合约授权管理（BrowserWallet连接）";
+"SRC20_Additional_Address" = "增发地址";
+"SRC20_Additional_Hint" = "确认增发资产吗？";
+"SRC20_Additional_Number" = "增发数量";
+"SRC20_Asset_Logo" = "资产LOGO";
+"SRC20_Balance" = "账户余额：";
+"SRC20_Deploy_Confirm" = "确认发行 %@ 吗？";
 "SRC20_Deploy_Mode" = "选择模式";
+"SRC20_Deploy_Name" = "资产名称";
+"SRC20_Deploy_One_Click_Issu" = "一键发币";
+"SRC20_Deploy_Process" = "发行";
+"SRC20_Deploy_Promotion" = "资产管理";
+"SRC20_Deploy_Supply" = "供应量";
+"SRC20_Deploy_Symbol" = "资产符号";
 "SRC20_Deploy_Title" = "发行资产";
-"SRC20_Deploy_Type_Normal" = "普通资产";
-"SRC20_Deploy_Type_Normal_Desc" = "具备通用的转账功能";
 "SRC20_Deploy_Type_Burnable" = "可增发/可销毁资产";
 "SRC20_Deploy_Type_Burnable_Desc" = "合约管理者可以增发或者销毁该资产";
 "SRC20_Deploy_Type_Mintable" = "可增发资产";
 "SRC20_Deploy_Type_Mintable_Desc" = "合约管理者可以对指定账户增发该资产";
-"SRC20_Deploy_Name" = "资产名称";
-"SRC20_Deploy_Symbol" = "资产符号";
-"SRC20_Deploy_Supply" = "供应量";
-"SRC20_Deploy_Process" = "发行";
-"SRC20_Manger" = "资产管理";
-"SRC20_Edit" = "资产编辑";
-"SRC20_Promotion" = "推广资产";
-"SRC20_Issuance" = "增发资产";
+"SRC20_Deploy_Type_Normal" = "普通资产";
+"SRC20_Deploy_Type_Normal_Desc" = "具备通用的转账功能";
 "SRC20_Destroy" = "销毁资产";
-"SRC20_Asset_Logo" = "资产LOGO";
-"SRC20_Select_Image" = "选择PNG图片";
-"SRC20_Promotion_Fee" = "支付%@, 为您的资产设置LOGO";
-"SRC20_Additional_Address" = "增发地址";
-"SRC20_Additional_Number" = "增发数量";
+"SRC20_Destroy_Hint" = "确认销毁资产吗？";
 "SRC20_Destroy_Number" = "销毁数量";
-"SRC20_Deploy_Confirm" = "确认发行 %@ 吗？";
-"SRC20_Info_Contract" = "合约地址：";
-"SRC20_Info_Creator" = "管理者：";
-"SRC20_Info_Edit" = "编辑";
-"SRC20_Info_Promotion" = "推广";
-"SRC20_Info_Add" = "增发";
-"SRC20_Info_Destroy" = "销毁";
-"SRC20_lock" = "SRC20 锁仓";
-"SRC20_Edit_Name" = "资产名称:";
-"SRC20_Edit_Symbol" = "资产符号:";
-"SRC20_Edit_White_Paper" = "白皮书链接";
-"SRC20_Edit_Org" = "组织机构";
-"SRC20_Edit_Official" = "官方网站";
+"SRC20_Edit" = "资产编辑";
 "SRC20_Edit_Desc" = "资产简介";
 "SRC20_Edit_Hint" = "确认修改资产信息吗？";
-"SRC20_Promotion_Hint" = "确认推广资产吗？";
-"SRC20_Additional_Hint" = "确认增发资产吗？";
-"SRC20_Destroy_Hint" = "确认销毁资产吗？";
-"SRC20_Balance" = "账户余额：";
+"SRC20_Edit_Name" = "资产名称:";
+"SRC20_Edit_Official" = "官方网站";
+"SRC20_Edit_Org" = "组织机构";
+"SRC20_Edit_Symbol" = "资产符号:";
+"SRC20_Edit_White_Paper" = "白皮书链接";
+"SRC20_Info_Add" = "增发";
+"SRC20_Info_Contract" = "合约地址：";
+"SRC20_Info_Creator" = "管理者：";
+"SRC20_Info_Destroy" = "销毁";
+"SRC20_Info_Edit" = "编辑";
+"SRC20_Info_Promotion" = "推广";
+"SRC20_Issuance" = "增发资产";
+"SRC20_Manger" = "资产管理";
 "SRC20_No_Deploy" = "您还没有发行资产";
+"SRC20_Promotion" = "推广资产";
+"SRC20_Promotion_Fee" = "支付%@, 为您的资产设置LOGO";
+"SRC20_Promotion_Hint" = "确认推广资产吗？";
+"SRC20_Select_Image" = "选择PNG图片";
+"SRC20_lock" = "SRC20 锁仓";
 "Super_Node_Modify_IncentivePlan" = "修改分红比例";
-"Revoke_Manager" = "合约授权管理（BrowserWallet连接）";
 "loadData.nomore" = "没有更多了";
-"manage_wallets.filter_by_blockchain" = "按区块链过滤";
 "manage_wallets.filter_all_blockchains" = "全部区块链";
 "manage_wallets.filter_bitcoin_series" = "Bitcoin";
+"manage_wallets.filter_by_blockchain" = "按区块链过滤";
+"mev_protection.description" = "所谓的「抢跑机器人」会监控每一笔交易，企图让您多付费用。此功能可阻止它们。";
+"mev_protection.title" = "MEV 保护";
+"transaction_filter.all_coins" = "所有代币";
+"transaction_filter.all_contacts" = "所有合约";
+"transaction_filter.coin" = "代币";
+"transaction_filter.contact" = "合约";
+"transaction_filter.hide_safe4_income" = "隐藏挖矿收益";
+"transaction_filter.hide_safe4_node.state" = "隐藏节点状态上传";
+"transaction_filter.hide_suspicious_txs" = "隐藏可疑的发送";
+"transaction_filter.hide_suspicious_txs.description" = "隐藏微量的代币转入交易，部分解决地址攻击问题。";
 
 // Secure Send Bottom Sheet
 "secure_send.bottom_sheet.title" = "安全发送";

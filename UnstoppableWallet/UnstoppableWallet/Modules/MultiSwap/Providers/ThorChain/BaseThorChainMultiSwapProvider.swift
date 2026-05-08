@@ -13,8 +13,8 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
     private let assetMapExpiration: TimeInterval = 60 * 60
 
     let networkManager = Core.shared.networkManager
+//    let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
     let adapterManager = Core.shared.adapterManager
-    // let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
     private let evmBlockchainManager = Core.shared.evmBlockchainManager
     private let swapAssetStorage = Core.shared.swapAssetStorage
     private let allowanceHelper = MultiSwapAllowanceHelper()
@@ -35,7 +35,6 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
     var id: String { fatalError("Must be overridden by subclass") }
     var name: String { fatalError("Must be overridden by subclass") }
     var type: SwapProviderType { fatalError("Must be overridden by subclass") }
-    var aml: Bool { false }
     var icon: String { fatalError("Must be overridden by subclass") }
 
     var syncPublisher: AnyPublisher<Void, Never>? {
@@ -67,10 +66,11 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
 
             return await EvmMultiSwapQuote(
                 expectedBuyAmount: swapQuote.expectedAmountOut,
-                allowanceState: allowanceHelper.allowanceState(spenderAddress: .init(raw: router), token: tokenIn, amount: amountIn)
+                allowanceState: allowanceHelper.allowanceState(spenderAddress: .init(raw: router), token: tokenIn, amount: amountIn),
+                estimatedTime: estimatedTime(swapQuote, tokenOut: tokenOut)
             )
         case .bitcoin, .bitcoinCash, .dash, .litecoin, .zcash:
-            return MultiSwapQuote(expectedBuyAmount: swapQuote.expectedAmountOut)
+            return MultiSwapQuote(expectedBuyAmount: swapQuote.expectedAmountOut, estimatedTime: swapQuote.totalSwapSeconds)
         default:
             throw SwapError.unsupportedTokenIn
         }
@@ -78,6 +78,7 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
 
     func confirmationQuote(tokenIn: Token, tokenOut: Token, amountIn: Decimal, slippage: Decimal, recipient: String?, transactionSettings: TransactionSettings?) async throws -> SwapFinalQuote {
         let swapQuote = try await swapQuote(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, slippage: slippage, recipient: recipient)
+        let toAddress = try await resolveDestination(recipient: nil, token: tokenOut)
 
         switch tokenIn.blockchainType {
         case .arbitrumOne, .avalanche, .base, .binanceSmartChain, .ethereum:
@@ -117,7 +118,11 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
             var evmFeeData: EvmFeeData?
             var transactionError: Error?
 
-            if let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper, let gasPriceData {
+            guard let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
+                throw SwapError.noEvmKit
+            }
+
+            if let gasPriceData {
                 do {
                     let _evmFeeData = try await evmFeeEstimator.estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData)
                     evmFeeData = _evmFeeData
@@ -134,19 +139,22 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
                 transactionError: transactionError,
                 slippage: slippage,
                 recipient: recipient,
-                estimatedTime: swapQuote.totalSwapSeconds,
+                estimatedTime: estimatedTime(swapQuote, tokenOut: tokenOut),
                 gasPrice: gasPriceData?.userDefined,
                 evmFeeData: evmFeeData,
-                nonce: transactionSettings?.nonce
+                nonce: transactionSettings?.nonce,
+                toAddress: toAddress
             )
         case .bitcoin, .bitcoinCash, .dash, .litecoin:
             var transactionError: Error?
             var sendInfo: SendInfo?
             var params: SendParameters?
 
-            if let satoshiPerByte = transactionSettings?.satoshiPerByte,
-               let adapter = adapterManager.adapter(for: tokenIn) as? BitcoinBaseAdapter
-            {
+            guard let adapter = adapterManager.adapter(for: tokenIn) as? BitcoinBaseAdapter else {
+                throw SwapError.noAdapter
+            }
+
+            if let satoshiPerByte = transactionSettings?.satoshiPerByte {
                 do {
                     let value = adapter.convertToSatoshi(value: amountIn)
                     if let dustThreshold = swapQuote.dustThreshold, value <= dustThreshold {
@@ -176,15 +184,41 @@ class BaseThorChainMultiSwapProvider: IMultiSwapProvider {
                 recipient: recipient,
                 estimatedTime: swapQuote.totalSwapSeconds,
                 transactionError: transactionError,
-                fee: sendInfo?.fee
+                fee: sendInfo?.fee,
+                toAddress: toAddress
             )
         default:
             throw SwapError.unsupportedTokenIn
         }
     }
 
+    private func estimatedTime(_ swapQuote: SwapQuote, tokenOut: Token) -> TimeInterval {
+        let inbound = swapQuote.inboundConfirmationSeconds ?? 0
+        let swap = swapQuote.streamingSwapSeconds ?? 6
+        let outbound = (swapQuote.outboundDelaySeconds ?? 6) + (tokenOut.blockchainType.blockTime ?? 6)
+        return inbound + swap + outbound
+    }
+
     func preSwapView(step: MultiSwapPreSwapStep, tokenIn: Token, tokenOut _: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
         allowanceHelper.preSwapView(step: step, tokenIn: tokenIn, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
+    }
+
+    func track(swap: Swap) async throws -> Swap {
+        var parameters: Parameters = [
+            "provider": swap.providerId,
+            "toAddress": swap.toAddress,
+        ]
+
+        func set(_ dict: inout Parameters, _ key: String, _ value: Any?) {
+            guard let value else { return }
+            dict[key] = value
+        }
+
+        set(&parameters, "hash", swap.txHash)
+        set(&parameters, "fromAsset", assetMap[swap.tokenIn.tokenQuery.id.lowercased()])
+        set(&parameters, "toAsset", assetMap[swap.tokenOut.tokenQuery.id.lowercased()])
+
+        return try await USwapMultiSwapProvider.track(swap: swap, parameters: parameters, networkManager: networkManager)
     }
 
     func swapQuote(tokenIn: Token, tokenOut: Token, amountIn: Decimal, slippage: Decimal? = nil, recipient: String? = nil, params: Parameters? = nil) async throws -> SwapQuote {
@@ -350,6 +384,9 @@ extension BaseThorChainMultiSwapProvider {
         let totalFee: Decimal
 
         let dustThreshold: Int?
+        let inboundConfirmationSeconds: TimeInterval?
+        let outboundDelaySeconds: TimeInterval?
+        let streamingSwapSeconds: TimeInterval?
         let totalSwapSeconds: TimeInterval?
 
         init(map: Map) throws {
@@ -364,6 +401,10 @@ extension BaseThorChainMultiSwapProvider {
             totalFee = try map.value("fees.total", using: Transform.stringToDecimalTransform) / pow(10, 8)
 
             dustThreshold = try? map.value("dust_threshold", using: Transform.stringToIntTransform)
+
+            inboundConfirmationSeconds = try? map.value("inbound_confirmation_seconds")
+            outboundDelaySeconds = try? map.value("outbound_delay_seconds")
+            streamingSwapSeconds = try? map.value("streaming_swap_seconds")
             totalSwapSeconds = try? map.value("total_swap_seconds")
         }
     }
@@ -373,7 +414,8 @@ extension BaseThorChainMultiSwapProvider {
         case unsupportedTokenOut
         case noRouterAddress
         case invalidTokenInType
-        case noZcashAdapter
+        case noAdapter
+        case noEvmKit
     }
 }
 

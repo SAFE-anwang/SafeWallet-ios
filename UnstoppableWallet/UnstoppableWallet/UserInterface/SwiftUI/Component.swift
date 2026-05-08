@@ -8,11 +8,26 @@ struct ComponentText: CustomStringConvertible {
     var description: String { text }
 }
 
+struct AttibutedComponentText: CustomStringConvertible {
+    let text: AttributedString
+
+    var description: String { text.description }
+}
+
 struct ComponentBadge: CustomStringConvertible {
     let text: String
     var change: Int?
     var mode: BadgeViewNew.Mode?
     var colorStyle: ColorStyle?
+    var onTap: (() -> Void)?
+
+    init(text: String, change: Int? = nil, mode: BadgeViewNew.Mode? = nil, colorStyle: ColorStyle? = nil, onTap: (() -> Void)? = nil) {
+        self.text = text
+        self.change = change
+        self.mode = mode
+        self.colorStyle = colorStyle
+        self.onTap = onTap
+    }
 
     var description: String { text }
 }

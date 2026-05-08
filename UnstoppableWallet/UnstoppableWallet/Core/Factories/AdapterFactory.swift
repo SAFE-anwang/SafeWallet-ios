@@ -13,6 +13,7 @@ class AdapterFactory {
     private let tronKitManager: TronKitManager
     private let tonKitManager: TonKitManager
     private let stellarKitManager: StellarKitManager
+    private let zanoKitManager: ZanoKitManager
     private let restoreSettingsManager: RestoreSettingsManager
     private let coinManager: CoinManager
     private let spamWrapper: SpamWrapper
@@ -20,7 +21,7 @@ class AdapterFactory {
 
     init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, moneroNodeManager: MoneroNodeManager,
          btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager,
-         restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager, spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager)
+         zanoKitManager: ZanoKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager, spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager)
     {
         self.evmBlockchainManager = evmBlockchainManager
         self.evmSyncSourceManager = evmSyncSourceManager
@@ -29,6 +30,7 @@ class AdapterFactory {
         self.tronKitManager = tronKitManager
         self.tonKitManager = tonKitManager
         self.stellarKitManager = stellarKitManager
+        self.zanoKitManager = zanoKitManager
         self.restoreSettingsManager = restoreSettingsManager
         self.coinManager = coinManager
         self.spamWrapper = spamWrapper
@@ -186,6 +188,25 @@ extension AdapterFactory {
             let restoreSettings = restoreSettingsManager.settings(accountId: wallet.account.id, blockchainType: .monero)
             let moneroNode = moneroNodeManager.node(blockchainType: .monero)
             return try? MoneroAdapter(wallet: wallet, restoreSettings: restoreSettings, node: moneroNode.node)
+
+        case (.native, .zano):
+            if let kit = try? zanoKitManager.kit(account: wallet.account) {
+                return ZanoAdapter(kit: kit, wallet: wallet, zanoKitManager: zanoKitManager)
+            }
+
+        case let (.zanoAsset(assetId), .zano):
+            if let kit = try? zanoKitManager.kit(account: wallet.account),
+               let baseToken = try? coinManager.token(query: .init(blockchainType: .zano, tokenType: .native))
+            {
+                return ZanoAdapter(
+                    kit: kit,
+                    assetId: assetId,
+                    token: wallet.token,
+                    baseToken: baseToken,
+                    transactionSource: wallet.transactionSource,
+                    zanoKitManager: zanoKitManager
+                )
+            }
 
         case (.native, .ethereum), (.native, .binanceSmartChain), (.native, .polygon), (.native, .avalanche), (.native, .optimism), (.native, .arbitrumOne), (.native, .gnosis), (.native, .fantom), (.native, .base), (.native, .zkSync):
             return evmAdapter(wallet: wallet)

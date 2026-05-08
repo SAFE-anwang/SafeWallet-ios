@@ -36,7 +36,6 @@ struct ZcashWalletTokenView: View {
         }
     }
 
-
     @ViewBuilder private func view(transparent: Decimal) -> some View {
         Cell(
             middle: {

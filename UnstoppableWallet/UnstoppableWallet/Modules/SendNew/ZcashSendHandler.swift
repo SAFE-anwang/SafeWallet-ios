@@ -7,9 +7,9 @@ class ZcashSendHandler {
     private let amount: Decimal
     private let recipient: Recipient
     private let memo: String?
-    private var adapter: ISendZcashAdapter
+    private var adapter: ZcashAdapter
 
-    init(token: Token, amount: Decimal, recipient: Recipient, memo: String?, adapter: ISendZcashAdapter) {
+    init(token: Token, amount: Decimal, recipient: Recipient, memo: String?, adapter: ZcashAdapter) {
         self.token = token
         self.amount = amount
         self.recipient = recipient
@@ -121,12 +121,14 @@ extension ZcashSendHandler {
             var feeFields = [SendField]()
             if let proposal {
                 let fee = proposal.totalFeeRequired().decimalValue.decimalValue
-                feeFields.append(.value(
-                    title: SendField.InformedTitle("fee_settings.network_fee".localized, info: .fee),
-                    appValue: AppValue(token: baseToken, value: fee),
-                    currencyValue: rates[baseToken.coin.uid].map { CurrencyValue(currency: currency, value: fee * $0) },
-                    formatFull: true
-                )
+                let appValue = AppValue(token: baseToken, value: fee)
+                let currencyValue = rates[baseToken.coin.uid].map { CurrencyValue(currency: currency, value: fee * $0) }
+
+                feeFields.append(
+                    .fee(
+                        title: ComponentInformedTitle("fee_settings.network_fee".localized, info: .fee),
+                        amountData: .init(appValue: appValue, currencyValue: currencyValue)
+                    )
                 )
             }
 
@@ -150,7 +152,7 @@ extension ZcashSendHandler {
             return nil
         }
 
-        guard let adapter = Core.shared.adapterManager.adapter(for: token) as? ISendZcashAdapter else {
+        guard let adapter = Core.shared.adapterManager.adapter(for: token) as? ZcashAdapter else {
             return nil
         }
 

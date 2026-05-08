@@ -7,18 +7,17 @@ struct SendAddressView: View {
     private let fromAddress: String?
     private let amount: Decimal?
     private let memo: String?
+
     @Binding var path: NavigationPath
     @Binding var isPresented: Bool
-    private let onDismiss: (() -> Void)?
 
-    init(wallet: Wallet, address: String? = nil, amount: Decimal? = nil, memo: String? = nil, path: Binding<NavigationPath>, isPresented: Binding<Bool>, onDismiss: (() -> Void)? = nil) {
+    init(wallet: Wallet, address: String? = nil, amount: Decimal? = nil, memo: String? = nil, path: Binding<NavigationPath>, isPresented: Binding<Bool>) {
         self.wallet = wallet
         self.address = address
         self.amount = amount
         self.memo = memo
         _path = path
         _isPresented = isPresented
-        self.onDismiss = onDismiss
 
         fromAddress = Core.shared.adapterManager.depositAdapter(for: wallet)?.receiveAddress.address
     }
@@ -35,19 +34,19 @@ struct SendAddressView: View {
         .navigationDestination(for: ResolvedAddress.self) { resolvedAddress in
             if let handler = SendHandlerFactory.preSendHandler(wallet: wallet, address: resolvedAddress) {
                 PreSendView(wallet: wallet, handler: handler, resolvedAddress: resolvedAddress, amount: amount, memo: memo, path: $path) {
-                    if let onDismiss {
-                        onDismiss()
-                    } else {
-                        isPresented = false
-                    }
+                    isPresented = false
                 }
                 .toolbarRole(.editor)
             }
         }
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("button.cancel".localized) {
-                    isPresented = false
+            ToolbarItem(placement: .cancellationAction) {
+                if path.count == 0 {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
                 }
             }
         }

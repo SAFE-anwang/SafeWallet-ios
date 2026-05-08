@@ -10,17 +10,19 @@ import MoneroKit
 import ObjectMapper
 import SwiftUI
 import TronKit
+import ZanoKit
 import ZcashLightClientKit
 
 class USwapMultiSwapProvider: IMultiSwapProvider {
-    private let assetMapExpiration: TimeInterval = 60 * 60
+    static let baseUrl = "\(AppConfig.swapApiUrl)/v1"
+    static var headers: HTTPHeaders? { AppConfig.uswapApiKey.map { HTTPHeaders([HTTPHeader(name: "x-api-key", value: $0)]) } }
 
-    private let baseUrl = "\(AppConfig.swapApiUrl)/v1"
+    private let assetMapExpiration: TimeInterval = 60 * 60
     private var headers: HTTPHeaders?
 
     private let provider: Provider
     private let networkManager = Core.shared.networkManager
-    // private let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
+//    private let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
     private let evmBlockchainManager = Core.shared.evmBlockchainManager
     private let adapterManager = Core.shared.adapterManager
     private let swapAssetStorage = Core.shared.swapAssetStorage
@@ -29,36 +31,9 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
     private var assetMap = [String: String]()
     private let syncSubject = PassthroughSubject<Void, Never>()
 
-    private let blockchainTypeMap: [String: BlockchainType] = [
-        "bitcoin": .bitcoin,
-        "bitcoincash": .bitcoinCash,
-        "ecash": .ecash,
-        "litecoin": .litecoin,
-        "dash": .dash,
-        "zcash": .zcash,
-        "monero": .monero,
-        "1": .ethereum,
-        "56": .binanceSmartChain,
-        "137": .polygon,
-        "43114": .avalanche,
-        "10": .optimism,
-        "42161": .arbitrumOne,
-        "100": .gnosis,
-        "250": .fantom,
-        "728126428": .tron,
-        "solana": .solana,
-        "ton": .ton,
-        "8453": .base,
-        "324": .zkSync,
-        "stellar": .stellar,
-    ]
-
-    init(provider: Provider, apiKey: String?) {
+    init(provider: Provider) {
         self.provider = provider
-
-        if let apiKey {
-            headers = HTTPHeaders([HTTPHeader(name: "x-api-key", value: apiKey)])
-        }
+        headers = Self.headers
 
         assetMap = (try? swapAssetStorage.swapAssetMap(provider: id, as: String.self)) ?? [:]
         syncAssets()
@@ -67,7 +42,7 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
     var id: String { provider.rawValue }
     var name: String { provider.title }
     var type: SwapProviderType { provider.type }
-    var aml: Bool { provider.aml }
+
     var requireTerms: Bool { provider.requireTerms }
     var icon: String { provider.icon }
 
@@ -82,8 +57,8 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             return
         }
 
-        Task { [weak self, networkManager, baseUrl, provider, headers] in
-            let response: ProviderResponse = try await networkManager.fetch(url: "\(baseUrl)/tokens", parameters: ["provider": provider.rawValue], headers: headers)
+        Task { [weak self, networkManager, provider, headers] in
+            let response: ProviderResponse = try await networkManager.fetch(url: "\(Self.baseUrl)/tokens", parameters: ["provider": provider.rawValue], headers: headers)
             self?.sync(tokens: response.tokens)
         }
     }
@@ -92,7 +67,7 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
         var assetMap = [String: String]()
 
         for token in tokens {
-            guard let blockchainType = blockchainTypeMap[token.chainId] else {
+            guard let blockchainType = Self.blockchainTypeMap[token.chainId] else {
                 continue
             }
 
@@ -123,6 +98,13 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
 
             case .bitcoin, .bitcoinCash, .ecash, .dash, .zcash, .monero, .stellar:
                 tokenQueries = blockchainType.nativeTokenQueries
+
+            case .zano:
+                if let assetId = token.address, !assetId.isEmpty {
+                    tokenQueries = [TokenQuery(blockchainType: .zano, tokenType: .zanoAsset(id: assetId))]
+                } else {
+                    tokenQueries = blockchainType.nativeTokenQueries
+                }
 
             case .litecoin:
                 let supportedDerivations: [TokenType.Derivation] = [.bip44, .bip49, .bip84]
@@ -172,7 +154,7 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             try await appendAddresses(tokenIn: tokenIn, parameters: &parameters)
         }
 
-        let response: QuoteResponse = try await networkManager.fetch(url: "\(baseUrl)/quote", method: .post, parameters: parameters, encoding: JSONEncoding.default, headers: headers)
+        let response: QuoteResponse = try await networkManager.fetch(url: "\(Self.baseUrl)/quote", method: .post, parameters: parameters, encoding: JSONEncoding.default, headers: headers)
 
         guard let quote = response.routes.first else {
             throw SwapError.noRoutes
@@ -219,10 +201,11 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
                 )
             }
 
-            return EvmMultiSwapQuote(expectedBuyAmount: quote.expectedBuyAmount, allowanceState: allowanceState)
+            let esimatedTime = quote.esimatedTime ?? MultiSwapHelpers.estimate(tokenIn: tokenIn, tokenOut: tokenOut)
+            return EvmMultiSwapQuote(expectedBuyAmount: quote.expectedBuyAmount, allowanceState: allowanceState, estimatedTime: esimatedTime)
 
-        case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dash, .zcash, .monero, .ton, .stellar:
-            return MultiSwapQuote(expectedBuyAmount: quote.expectedBuyAmount)
+        case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dash, .zcash, .monero, .ton, .stellar, .zano:
+            return MultiSwapQuote(expectedBuyAmount: quote.expectedBuyAmount, estimatedTime: quote.esimatedTime)
 
         default:
             throw SwapError.unsupportedTokenIn
@@ -316,15 +299,76 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
                 quote: quote,
                 slippage: slippage,
                 recipient: recipient,
-                priority: transactionSettings?.priority ?? .default
+                priority: transactionSettings?.moneroPriority ?? .default
+            )
+        case .zano:
+            return try await buildZanoConfirmationQuote(
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
+                amountIn: amountIn,
+                amountOut: amountOut,
+                amountOutMin: amountOutMin,
+                quote: quote,
+                slippage: slippage,
+                recipient: recipient
             )
         default:
             throw SwapError.unsupportedTokenIn
         }
     }
 
+    func validateTrustedProvider(tokenIn: Token, amountIn: Decimal) async throws -> Bool? {
+        guard provider.type == .preCheck else {
+            return true
+        }
+
+        let addresses = await DestinationHelper.sourceAddresses(
+            token: tokenIn, amountIn: amountIn, destinationAddress: nil
+        )
+
+        guard !addresses.isEmpty else {
+            return true
+        }
+
+        do {
+            let response: CheckAddressesResponse = try await networkManager.fetch(
+                url: "\(Self.baseUrl)/quote/check-addresses",
+                parameters: ["addresses": addresses.joined(separator: ",")],
+                headers: headers
+            )
+
+            return response.passedAmlCheck
+        } catch {
+            print("Error: \(error)")
+            throw error
+        }
+    }
+
     func preSwapView(step: MultiSwapPreSwapStep, tokenIn: Token, tokenOut _: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
         allowanceHelper.preSwapView(step: step, tokenIn: tokenIn, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
+    }
+
+    func track(swap: Swap) async throws -> Swap {
+        let blockchainType = swap.tokenIn.blockchainType
+
+        var parameters: Parameters = [
+            "provider": swap.providerId,
+            "toAddress": swap.toAddress,
+        ]
+
+        func set(_ dict: inout Parameters, _ key: String, _ value: Any?) {
+            guard let value else { return }
+            dict[key] = value
+        }
+
+        set(&parameters, "hash", swap.txHash)
+        set(&parameters, "chainId", Self.blockchainTypeMap.first(where: { $0.value == blockchainType })?.key)
+        set(&parameters, "fromAsset", assetMap[swap.tokenIn.tokenQuery.id.lowercased()])
+        set(&parameters, "toAsset", assetMap[swap.tokenOut.tokenQuery.id.lowercased()])
+        set(&parameters, "depositAddress", swap.depositAddress)
+        set(&parameters, "providerSwapId", swap.providerSwapId)
+
+        return try await Self.track(swap: swap, parameters: parameters, networkManager: networkManager)
     }
 
     private func sendingAddress(token: Token) -> String? {
@@ -403,7 +447,10 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             estimatedTime: quote.esimatedTime,
             gasPrice: gasPriceData?.userDefined,
             evmFeeData: evmFeeData,
-            nonce: transactionSettings?.nonce
+            nonce: transactionSettings?.nonce,
+            toAddress: quote.destinationAddress,
+            depositAddress: quote.inboundAddress,
+            providerSwapId: quote.providerSwapId
         )
     }
 
@@ -453,6 +500,9 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             estimatedTime: quote.esimatedTime,
             transactionError: transactionError,
             fee: sendInfo?.fee,
+            toAddress: quote.destinationAddress,
+            depositAddress: quote.inboundAddress,
+            providerSwapId: quote.providerSwapId
         )
     }
 
@@ -501,6 +551,9 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             estimatedTime: quote.esimatedTime,
             transactionError: transactionError,
             fee: totalFeeRequired?.decimalValue.decimalValue,
+            toAddress: quote.destinationAddress,
+            depositAddress: quote.inboundAddress,
+            providerSwapId: quote.providerSwapId
         )
     }
 
@@ -564,6 +617,9 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             transactionParam: transactionParam,
             fee: fee,
             transactionError: transactionError,
+            toAddress: quote.destinationAddress,
+            depositAddress: quote.inboundAddress,
+            providerSwapId: quote.providerSwapId
         )
     }
 
@@ -618,7 +674,10 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             transactionData: transactionData,
             token: tokenIn,
             fee: fee,
-            transactionError: transactionError
+            transactionError: transactionError,
+            toAddress: quote.destinationAddress,
+            depositAddress: quote.inboundAddress,
+            providerSwapId: quote.providerSwapId
         )
     }
 
@@ -665,7 +724,10 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             estimatedTime: quote.esimatedTime,
             createdTransaction: transaction,
             fees: fees,
-            transactionError: transactionError
+            transactionError: transactionError,
+            toAddress: quote.destinationAddress,
+            depositAddress: quote.inboundAddress,
+            providerSwapId: quote.providerSwapId
         )
     }
 
@@ -678,7 +740,7 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
         quote: Quote,
         slippage: Decimal,
         recipient: String?,
-        priority: SendPriority
+        priority: MoneroKit.SendPriority
     ) async throws -> SwapFinalQuote {
         guard let adapter = adapterManager.adapter(for: tokenIn) as? MoneroAdapter else {
             throw SwapError.noMoneroAdapter
@@ -715,8 +777,128 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             token: tokenIn,
             priority: priority,
             fee: fee,
-            transactionError: transactionError
+            transactionError: transactionError,
+            toAddress: quote.destinationAddress,
+            depositAddress: quote.inboundAddress,
+            providerSwapId: quote.providerSwapId
         )
+    }
+
+    private func buildZanoConfirmationQuote(
+        tokenIn: Token,
+        tokenOut _: Token,
+        amountIn: Decimal,
+        amountOut: Decimal,
+        amountOutMin _: Decimal,
+        quote: Quote,
+        slippage: Decimal,
+        recipient: String?
+    ) async throws -> SwapFinalQuote {
+        guard let adapter = adapterManager.adapter(for: tokenIn) as? ZanoAdapter else {
+            throw SwapError.noZanoAdapter
+        }
+
+        let amount: ZanoSendAmount = adapter.balanceData.available == amountIn ? .all(amountIn) : .value(amountIn)
+        var fee: Decimal?
+        var transactionError: Error?
+
+        do {
+            let estimatedFee = adapter.estimateFee()
+            fee = estimatedFee
+
+            if adapter.isNative {
+                if amountIn + estimatedFee > adapter.balanceData.available {
+                    throw ZanoCoreError.insufficientFunds(adapter.balanceData.available.description)
+                }
+            } else {
+                if amountIn > adapter.balanceData.available {
+                    throw ZanoCoreError.insufficientFunds(adapter.balanceData.available.description)
+                }
+                if let nativeAdapter = adapterManager.adapter(for: adapter.baseToken) as? ZanoAdapter,
+                   estimatedFee > nativeAdapter.balanceData.available
+                {
+                    throw ZanoCoreError.insufficientFunds(nativeAdapter.balanceData.available.description)
+                }
+            }
+        } catch {
+            transactionError = error
+        }
+
+        return ZanoSwapFinalQuote(
+            expectedAmountOut: amountOut,
+            recipient: recipient,
+            slippage: slippage,
+            estimatedTime: quote.esimatedTime,
+            amount: amount,
+            address: quote.inboundAddress,
+            memo: quote.memo,
+            fee: fee,
+            transactionError: transactionError,
+            toAddress: quote.destinationAddress,
+            depositAddress: quote.inboundAddress,
+            providerSwapId: quote.providerSwapId
+        )
+    }
+}
+
+extension USwapMultiSwapProvider {
+    static let legTypeNativeSend = "native_send"
+    static let legTypeSwap = "swap"
+
+    static let blockchainTypeMap: [String: BlockchainType] = [
+        "bitcoin": .bitcoin,
+        "bitcoincash": .bitcoinCash,
+        "ecash": .ecash,
+        "litecoin": .litecoin,
+        "dash": .dash,
+        "zcash": .zcash,
+        "monero": .monero,
+        "1": .ethereum,
+        "56": .binanceSmartChain,
+        "137": .polygon,
+        "43114": .avalanche,
+        "10": .optimism,
+        "42161": .arbitrumOne,
+        "100": .gnosis,
+        "250": .fantom,
+        "728126428": .tron,
+        "solana": .solana,
+        "ton": .ton,
+        "8453": .base,
+        "324": .zkSync,
+        "stellar": .stellar,
+        "zano": .zano,
+    ]
+
+    static func track(swap: Swap, parameters: Parameters, networkManager _: NetworkManager, isEvm: Bool = false) async throws -> Swap {
+        let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
+        let response: USwapMultiSwapProvider.TrackResponse = try await networkManager.fetch(
+            url: "\(USwapMultiSwapProvider.baseUrl)/track\(isEvm ? "/evm" : "")",
+            method: .post,
+            parameters: parameters,
+            headers: USwapMultiSwapProvider.headers
+        )
+
+        var swap = swap
+        swap.status = response.status
+        swap.fromAsset = response.fromAsset
+        swap.toAsset = response.toAsset
+        swap.legs = response.legs.map { leg in
+            Swap.Leg(
+                status: Swap.Status(rawValue: leg.status) ?? .unknown,
+                type: leg.type,
+                chainId: leg.chainId,
+                txHash: leg.txHash,
+                fromAsset: leg.fromAsset,
+                toAsset: leg.toAsset
+            )
+        }
+
+        if response.status == .completed {
+            swap.amountOut = response.toAmount
+        }
+
+        return swap
     }
 }
 
@@ -732,6 +914,7 @@ extension USwapMultiSwapProvider {
         case letsExchange = "LETSEXCHANGE"
         case stealthex = "STEALTHEX"
         case swapuz = "SWAPUZ"
+        case exolix = "EXOLIX"
 
         var icon: String {
             switch self {
@@ -740,6 +923,7 @@ extension USwapMultiSwapProvider {
             case .letsExchange: return "swap_provider_letsexchange"
             case .stealthex: return "swap_provider_stealthex"
             case .swapuz: return "swap_provider_swapuz"
+            case .exolix: return "swap_provider_exolix"
             }
         }
 
@@ -750,28 +934,20 @@ extension USwapMultiSwapProvider {
             case .letsExchange: return "LetsExchange"
             case .stealthex: return "StealthEX"
             case .swapuz: return "Swapuz"
+            case .exolix: return "Exolix"
             }
         }
 
         var type: SwapProviderType {
             switch self {
-            case .near: return .dex
-            case .quickEx, .letsExchange, .stealthex, .swapuz: return .p2p
-            }
-        }
-
-        var aml: Bool {
-            switch self {
-            case .quickEx, .letsExchange, .stealthex: return true
-            default: return false
+            case .swapuz: return .flexible
+            case .letsExchange, .stealthex, .near, .exolix: return .controlled
+            case .quickEx: return .preCheck
             }
         }
 
         var requireTerms: Bool {
-            switch self {
-            case .quickEx, .letsExchange, .stealthex: return true
-            default: return false
-            }
+            true
         }
     }
 
@@ -797,6 +973,14 @@ extension USwapMultiSwapProvider {
         }
     }
 
+    struct CheckAddressesResponse: ImmutableMappable {
+        let passedAmlCheck: Bool?
+
+        init(map: Map) throws {
+            passedAmlCheck = try? map.value("passedAmlCheck")
+        }
+    }
+
     struct QuoteResponse: ImmutableMappable {
         let routes: [Quote]
 
@@ -808,6 +992,7 @@ extension USwapMultiSwapProvider {
     class Quote: ImmutableMappable {
         let expectedBuyAmount: Decimal
         let inboundAddress: String
+        let destinationAddress: String
         let approvalAddress: String?
         let tx: [String: Any]?
         let txExtraAttribute: [String: Any]?
@@ -816,10 +1001,12 @@ extension USwapMultiSwapProvider {
         let dustThreshold: Int?
         let providers: [String]?
         let esimatedTime: TimeInterval?
+        let providerSwapId: String?
 
         required init(map: Map) throws {
             expectedBuyAmount = try map.value("expectedBuyAmount", using: Transform.stringToDecimalTransform)
             inboundAddress = try map.value("inboundAddress")
+            destinationAddress = try map.value("destinationAddress")
             approvalAddress = try? map.value("meta.approvalAddress")
             tx = try? map.value("tx")
             txExtraAttribute = try? map.value("txExtraAttribute")
@@ -828,6 +1015,41 @@ extension USwapMultiSwapProvider {
             dustThreshold = try? map.value("dustThreshold", using: Transform.stringToIntTransform)
             providers = try? map.value("providers")
             esimatedTime = try? map.value("estimatedTime.total")
+            providerSwapId = try? map.value("providerSwapId")
+        }
+    }
+
+    struct TrackResponse: ImmutableMappable {
+        let status: Swap.Status
+        let fromAsset: String
+        let toAsset: String
+        let toAmount: Decimal
+        let legs: [Leg]
+
+        init(map: Map) throws {
+            status = try map.value("status")
+            toAmount = try map.value("toAmount", using: Transform.stringToDecimalTransform)
+            fromAsset = try map.value("fromAsset")
+            toAsset = try map.value("toAsset")
+            legs = try map.value("legs")
+        }
+
+        struct Leg: ImmutableMappable {
+            let status: String
+            let type: String
+            let chainId: String
+            let txHash: String
+            let fromAsset: String
+            let toAsset: String
+
+            init(map: Map) throws {
+                status = try map.value("status")
+                type = try map.value("type")
+                chainId = try map.value("chainId")
+                txHash = try map.value("hash")
+                fromAsset = try map.value("fromAsset")
+                toAsset = try map.value("toAsset")
+            }
         }
     }
 
@@ -841,5 +1063,6 @@ extension USwapMultiSwapProvider {
         case noTonAdapter
         case noStellarAdapter
         case noMoneroAdapter
+        case noZanoAdapter
     }
 }

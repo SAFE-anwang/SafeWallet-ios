@@ -14,8 +14,9 @@ enum SendField {
     case recipient(title: String, value: String, copyable: Bool, blockchainType: BlockchainType)
     case selfAddress(value: String)
     case price(title: String, tokenA: Token, tokenB: Token, amountA: Decimal, amountB: Decimal)
+    case fee(title: CustomStringConvertible, amountData: AmountData?)
     case hex(title: String, value: String)
-//    case mevProtection(isOn: Binding<Bool>)
+    case mevProtection(isOn: Binding<Bool>)
 
     @ViewBuilder var listRow: some View {
         switch self {
@@ -38,17 +39,10 @@ enum SendField {
                 }
             )
         case let .value(title, appValue, currencyValue, formatFull):
-            let infoDescription = (title as? SendField.InformedTitle)?.info
-
             Cell(
                 style: .secondary,
                 middle: {
-                    if let infoDescription {
-                        MiddleTextIcon(text: title)
-                            .modifier(Informed(infoDescription: infoDescription, horizontalPadding: 0))
-                    } else {
-                        MiddleTextIcon(text: title)
-                    }
+                    MiddleTextIcon(text: title).styled(title)
                 },
                 right: {
                     let formatted = (formatFull ? appValue?.formattedFull() : appValue?.formattedShort())
@@ -91,10 +85,12 @@ enum SendField {
                 }
             )
         case let .price(title, tokenA, tokenB, amountA, amountB):
-            PriceRow(title: title, tokenA: tokenA, tokenB: tokenB, amountA: amountA, amountB: amountB)
+            let priceData = FlipRow.TokenPriceData(tokenA: tokenA, tokenB: tokenB, amountA: amountA, amountB: amountB)
+            FlipRow(title: title, flipData: priceData)
+        case let .fee(title, amountData):
+            let feeData = FlipRow.TokenFeeData(amountData: amountData)
+            FlipRow(title: title, flipData: feeData, initialFlipped: false)
         case let .simpleValue(icon, title, value):
-            let infoDescription = (title as? SendField.InformedTitle)?.info
-
             Cell(
                 style: .secondary,
                 left: {
@@ -103,13 +99,7 @@ enum SendField {
                     }
                 },
                 middle: {
-                    if let infoDescription {
-                        MiddleTextIcon(text: title)
-                            .modifier(Informed(infoDescription: infoDescription, horizontalPadding: 0))
-
-                    } else {
-                        MiddleTextIcon(text: title)
-                    }
+                    MiddleTextIcon(text: title).styled(title)
                 },
                 right: {
                     RightMultiText(subtitle: value.styled(.primary))
@@ -133,28 +123,23 @@ enum SendField {
                 }
                 .buttonStyle(SecondaryCircleButtonStyle(style: .default))
             }
-//        case let .mevProtection(isOn):
-//            VStack(spacing: 0) {
-//                HStack(spacing: 6) {
-//                    Image("star_filled_16").themeIcon(color: .themeJacob)
-//                    Text("subscription.premium.label".localized).themeSubhead1(color: .themeJacob)
-//                }
-//                .padding(.horizontal, .margin16)
-//                .frame(height: .margin32)
-//
-//                ListSection {
-//                    ListRow {
-//                        Image("shield_24").themeIcon(color: .themeJacob)
-//                        Toggle(isOn: isOn) {
-//                            Text("mev_protection.title".localized).themeBody()
-//                        }
-//                        .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
-//                    }
-//                }
-//                .modifier(ThemeListStyleModifier(themeListStyle: .borderedLawrence, selected: true))
-//
-//                ListSectionFooter(text: "mev_protection.description".localized)
-//            }
+        case let .mevProtection(isOn):
+            VStack(spacing: 0) {
+                SectionHeader(image: Image.defenseIcon, text: "purchases.swap_protection".localized, horizontalInsets: .margin16)
+                ListSection {
+                    Cell(
+                        middle: {
+                            MiddleTextIcon(text: "mev_protection.title".localized)
+                        },
+                        right: {
+                            ThemeToggle(isOn: isOn)
+                        }
+                    )
+                }
+                .themeListStyle(.bordered)
+
+                ListSectionFooter(text: "mev_protection.description".localized)
+            }
         case let .doubleValue(title, infoDescription, value1, value2):
             ListRow(padding: EdgeInsets(top: .margin12, leading: infoDescription == nil ? .margin16 : 0, bottom: .margin12, trailing: .margin16)) {
                 if let infoDescription {
@@ -227,20 +212,6 @@ enum SendField {
 }
 
 extension SendField {
-    struct InformedTitle: CustomStringConvertible {
-        let title: String
-        let info: InfoDescription
-
-        var description: String { title }
-
-        init(_ title: String, info: InfoDescription) {
-            self.title = title
-            self.info = info
-        }
-    }
-}
-
-extension SendField {
     static func recipient(_ recipient: String, copyable: Bool = false, blockchainType: BlockchainType) -> Self {
         .recipient(
             title: "swap.recipient".localized,
@@ -267,7 +238,7 @@ extension SendField {
         }
 
         return .simpleValue(
-            title: SendField.InformedTitle("swap.confirmation.minimum_received".localized, info: InfoDescription(
+            title: ComponentInformedTitle("swap.confirmation.minimum_received".localized, info: InfoDescription(
                 title: "swap.confirmation.minimum_received".localized,
                 description: "swap.confirmation.minimum_received.info".localized
             )),

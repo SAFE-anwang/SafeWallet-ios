@@ -200,11 +200,9 @@ extension TonSendHandler {
                 let currencyValue = feeTokenRate.map { CurrencyValue(currency: currency, value: fee * $0) }
 
                 viewItems.append(
-                    .value(
-                        title: SendField.InformedTitle("fee_settings.network_fee".localized, info: .fee),
-                        appValue: appValue,
-                        currencyValue: currencyValue,
-                        formatFull: true
+                    .fee(
+                        title: ComponentInformedTitle("fee_settings.network_fee".localized, info: .fee),
+                        amountData: .init(appValue: appValue, currencyValue: currencyValue)
                     )
                 )
             }

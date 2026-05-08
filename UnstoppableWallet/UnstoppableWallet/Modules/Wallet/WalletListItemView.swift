@@ -97,14 +97,9 @@ struct WalletListItemView: View, Equatable {
         }
 
         switch item.state {
-//<<<<<<< HEAD
-//        case let .syncing(_, lastBlockDate):
-//            return lastBlockDate.map { "balance.synced_through".localized(DateHelper.instance.formatSyncedThroughDate(from: $0)) } ?? secondaryValue
-//=======
         case .syncing:
 //            return lastBlockDate.map { "balance.synced_through".localized(DateHelper.instance.formatSyncedThroughDate(from: $0)) } ?? secondaryValue
             return secondaryValue
-//>>>>>>> master
         case let .customSyncing(_, secondary, _):
             return secondary
         case .stopped:
@@ -122,6 +117,7 @@ struct WalletListItemView: View, Equatable {
         if item.caution != nil {
             return nil
         }
+
         switch balancePrimaryValue {
         case .coin: return coinValue(value: item.balanceData.total, decimalCount: item.wallet.decimals, state: item.state)
         case .currency: return currencyValue(value: item.balanceData.total, state: item.state, priceItem: item.priceItem)
@@ -136,6 +132,7 @@ struct WalletListItemView: View, Equatable {
         if let caution = item.caution {
             return ComponentText(text: caution.text, colorStyle: caution.type.colorStyle)
         }
+
         switch balancePrimaryValue {
         case .coin: return currencyValue(value: item.balanceData.total, state: item.state, priceItem: item.priceItem)
         case .currency: return coinValue(value: item.balanceData.total, decimalCount: item.wallet.decimals, state: item.state)

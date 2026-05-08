@@ -5,6 +5,7 @@ import MarketKit
 
 class SendViewModel: ObservableObject {
     private let autoRefreshDuration: Double = 20
+
     private let currencyManager = Core.shared.currencyManager
     private let marketKit = Core.shared.marketKit
     private let recentAddressStorage = Core.shared.recentAddressStorage
@@ -113,6 +114,7 @@ class SendViewModel: ObservableObject {
     @MainActor private func set(sending: Bool) {
         self.sending = sending
     }
+
     @MainActor private func report(error: Error) {
         errorSubject.send(error.smartDescription)
     }

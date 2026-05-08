@@ -32,7 +32,7 @@ struct OutputSelectorView: View {
                                 output(viewItem: viewItem)
                             }
                         }
-                        .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
+                        .padding(.padding16)
                     }
                     .animation(.easeInOut, value: viewModel.changeViewItem)
                     .padding(EdgeInsets(top: .margin12, leading: 0, bottom: .margin32, trailing: 0))
@@ -49,24 +49,27 @@ struct OutputSelectorView: View {
             }
         }
         .navigationTitle("send.unspent_outputs".localized)
-        .navigationBarTitleDisplayMode(.inline)
         .interactiveDismissDisabled(viewModel.resetEnabled)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("button.reset".localized) {
+                Button(action: {
                     viewModel.reset()
+                }) {
+                    Image("reset")
                 }
                 .disabled(!viewModel.resetEnabled)
             }
 
             ToolbarItem(placement: .confirmationAction) {
-                Button("button.done".localized) {
+                Button(action: {
                     presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image("check")
                 }
+                .modifier(ConfirmationButtonStyle())
                 .disabled(!viewModel.doneEnabled)
             }
         }
-        .accentColor(Color.themeJacob)
     }
 
     @ViewBuilder func amount(subtitle: String?, viewItem: AmountOutputSelectorViewModel.ViewItem?) -> some View {

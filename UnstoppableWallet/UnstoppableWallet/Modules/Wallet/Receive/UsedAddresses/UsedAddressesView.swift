@@ -15,7 +15,7 @@ struct UsedAddressesView: View {
     var body: some View {
         ScrollableThemeView {
             VStack(spacing: .margin12) {
-                Text(description).textSubhead2().padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
+                Text(description).textSubhead2().padding(.padding16)
 
                 if hasChangeAddresses {
                     TabHeaderView(
@@ -62,19 +62,19 @@ struct UsedAddressesView: View {
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
         }
         .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("button.done".localized) {
+                Button(action: {
                     if let onDismiss {
                         onDismiss()
                     } else {
                         presentationMode.wrappedValue.dismiss()
                     }
+                }) {
+                    Image("check")
                 }
             }
         }
-        .accentColor(.themeJacob)
     }
 
     private func width(index: Int) -> CGFloat {

@@ -36,23 +36,26 @@ struct BalanceErrorBottomView: View {
 
                     switch sourceType {
                     case let .btc(blockchain):
-                        Coordinator.shared.present { _ in
-                            ThemeNavigationStack {
-                                BtcBlockchainSettingsModule.view(blockchain: blockchain)
-                            }
+                        Coordinator.shared.present { isPresented in
+                            BtcBlockchainSettingsView(blockchain: blockchain, isPresented: isPresented)
                         }
                     case let .evm(blockchain):
-                        Coordinator.shared.present { _ in
-                            EvmNetworkView(blockchain: blockchain).ignoresSafeArea()
+                        Coordinator.shared.present { isPresented in
+                            EvmNetworkView(blockchain: blockchain, isPresented: isPresented)
                         }
                     case let .monero(blockchain):
-                        Coordinator.shared.present { _ in
-                            MoneroNetworkView(blockchain: blockchain).ignoresSafeArea()
+                        Coordinator.shared.present { isPresented in
+                            MoneroNetworkView(blockchain: blockchain, isPresented: isPresented)
+                        }
+                    case let .zano(blockchain):
+                        Coordinator.shared.present { isPresented in
+                            ZanoNetworkView(blockchain: blockchain, isPresented: isPresented)
                         }
                     }
                 }
             )
         }
+
         return buttons
     }
 }

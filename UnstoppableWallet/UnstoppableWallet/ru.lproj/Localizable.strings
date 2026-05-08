@@ -146,7 +146,7 @@
 "restore.restore_type.mnemonic" = "Фраза восстановления";
 "restore.restore_type.private_key" = "Приватный ключ";
 "restore.mnemonic.placeholder" = "Введите фразу восстановления";
-"restore.private_key.placeholder" = "Введите приватный ключ EVM, BIP32 Root Key или Account Extended Private Key";
+"restore.private_key.placeholder" = "Введите приватный ключ EVM или TRON, секретный ключ Stellar, корневой ключ BIP32 или расширенный приватный ключ аккаунта";
 "restore.private_key.invalid_key" = "Неверный ключ";
 "restore_error.mnemonic_word_count" = "Неверное количество слов. Должно быть от 12 до 24 слов. Вы ввели: %@";
 "restore.checksum_error" = "Неверная контрольная сумма";
@@ -163,6 +163,13 @@
 "restore.error.non_standard.description" = "Это нестандартный кошелек.\n\nНАЖМИТЕ, ЧТОБЫ ПОЛУЧИТЬ БОЛЬШЕ ИНФОРМАЦИИ";
 
 "restore.error.non_standard.link" = "Нажмите для подробной информации";
+
+"restore.select_key_type" = "Выберите сеть";
+"restore.select_key_type.evm" = "Сети EVM";
+"restore.select_key_type.evm.description" = "Ethereum, Arbitrum, Optimism ...";
+"restore.select_key_type.trc" = "TRON";
+"restore.select_key_type.trc.description" = "Только сеть TRON.";
+
 
 // Restore Type
 
@@ -222,6 +229,9 @@
 
 "evm_private_key.title" = "Приватный ключ EVM";
 "evm_private_key.tap_to_show" = "Нажмите, чтобы показать приватный ключ";
+
+"tron_private_key.title" = "Приватный ключ Tron";
+"tron_private_key.tap_to_show" = "Нажмите, чтобы показать приватный ключ";
 
 // Stellar Secret Key
 
@@ -591,7 +601,7 @@
 "send.lock_time" = "TimeLock";
 
 "send.unspent_outputs" = "UTxOs";
-"send.unspent_outputs.description" = "Вручную выбрать UTxO для траты средств";
+"send.unspent_outputs.description" = "Вручную выберите, какие монеты потратить в транзакции.";
 "send.unspent_outputs.send_to" = "Отправить";
 "send.unspent_outputs.change" = "Изменить";
 
@@ -691,6 +701,17 @@
 
 "swap.quotes.providers" = "Провайдеры";
 "swap.quotes.best_price" = "Лучшая цена";
+"swap.quotes.sort.title" = "Сортировка";
+"swap.quotes.sort.best_rate" = "Лучший курс";
+"swap.quotes.sort.best_time" = "Самый быстрый";
+
+"swap.quotes.providers.risk_levels.title" = "Уровни риска провайдеров";
+"swap.quotes.providers.risk_levels.description" = "Уровни риска показывают, какие действия провайдер может предпринять в процессе выполнения.";
+"swap.quotes.providers.risk_levels.auto.description" = "Эта биржа использует собственную ликвидность и обеспечивает конфиденциальность. Транзакции обрабатываются без AML-блокировки.";
+"swap.quotes.providers.risk_levels.flexible.description" = "Эта биржа обычно возвращает средства по транзакциям, не прошедшим проверку AML. В редких случаях средства могут быть временно заблокированы, если потребуется дополнительная верификация.";
+"swap.quotes.providers.risk_levels.preCheck.description" = "Провайдер выполняет собственную проверку адреса перед обработкой свапа. Отклонения редки. Заморозка теоретически возможна, но крайне маловероятна.";
+"swap.quotes.providers.risk_levels.controlled.description" = "Эта биржа блокирует транзакции, не прошедшие проверку AML, до выполнения требований KYC/верификации.";
+
 
 "swap.allowance" = "Разрешение";
 "swap.allowance.description" = "Сумма, которую биржа может потратить от имени пользователя при выполнении обмена токенов. Для осуществления фактической операции обмена необходимо предварительно установить достаточное разрешение для последующей транзакции.";
@@ -711,7 +732,7 @@
 "swap.high_price_impact" = "Высокое отклонение цены";
 "swap.recipient" = "Получатель";
 "swap.slippage" = "Отклонение от курса";
-"swap.swapped_time" = "Время обмена";
+"swap.swapped_time" = "Время";
 "swap.swapped_time.info" = "Примерное время получения средств. Обработка обмена и подтверждение транзакции могут занять некоторое время в зависимости от сети и провайдера.";
 
 "swap.affiliate_fee" = "Партнерская плата";
@@ -720,6 +741,14 @@
 "swap.total_fee" = "Итоговая комиссия";
 
 "swap.aml" = "AML";
+"swap.aml.connection.button" = "Повторить";
+"swap.aml.connection.description" = "Не удалось получить ответ. Пожалуйста, попробуйте снова.";
+"swap.aml.connection.title" = "Проблема с подключением";
+"swap.aml.risk.button" = "Выбрать другого провайдера";
+"swap.aml.risk.description" = "Для этой транзакции были выявлены потенциальные риски. В процессе обработки ваши средства могут быть отклонены или ограничены. Пожалуйста, выберите другого провайдера.";
+"swap.aml.risk.title" = "Внимание!";
+"swap.aml.undefined.button" = "Продолжить с риском";
+"swap.aml.undefined.description" = "Не удалось завершить проверку рисков для этой транзакции. Если вы продолжите, этот обмен может столкнуться с задержками, отклонением или ограничениями в процессе обработки.";
 // Swap options
 
 "swap_options.title" = "Варианты обмена";
@@ -785,7 +814,7 @@
 "swap.confirmation.impact_too_high" = "%@ отключил действие обмена для этой сделки, потому что вы получаете крайне невыгодную цену. Это связано с крайне низкой ликвидностью.Если вы все равно хотите выполнить обмен, используйте вместо этого веб-сайт %@.";
 "swap.confirmation.impact_warning" = "Важно! Вы получаете крайне невыгодную цену из-за низкой ликвидности.";
 
-"swap.confirmation.minimum_received" = "Гарантированная сумма";
+"swap.confirmation.minimum_received" = "Гарантировано";
 "swap.confirmation.minimum_received.info" = "Минимальная сумма, которую вы получите после завершения обмена. Эта сумма гарантируется провайдером и не зависит от изменения цены во время обработки.";
 "swap.confirmation.maximum_sent" = "Максимальная трата";
 
@@ -812,18 +841,36 @@
 
 "swap.maya.shielded_address.error" = "Не удалось получить shielded-адрес для Memo (Maya)";
 
-
-// Market
-
-"market.tab_bar_item" = "Рынки";
-"market.title" = "Рынки";
+"market.24h_volume" = "Объем торгов (24ч)";
 "market.category.overview" = "Обзор";
 "market.category.posts" = "Новости";
 "market.category.watchlist" = "Избранное";
-"market.total_market_cap" = "Общая капитализация";
-"market.24h_volume" = "Объем торгов (24ч)";
 "market.defi_cap" = "Капитализация DeFi";
 "market.defi_tvl" = "TVL в DeFi";
+"market.tab_bar_item" = "Рынки";
+"market.title" = "Рынки";
+"market.total_market_cap" = "Общая капитализация";
+"swap_history.all" = "Все";
+"swap_history.empty" = "У вас пока нет ожидающих или завершённых свопов.";
+"swap_history.title" = "История свопов";
+"swap_info.date" = "Дата";
+"swap_info.deposit" = "Депозит %@";
+"swap_info.provider" = "Провайдер";
+"swap_info.recipient" = "Получатель";
+"swap_info.refund" = "Возврат %@";
+"swap_info.send" = "Отправить %@";
+"swap_info.status" = "Статус";
+"swap_info.status.completed" = "Завершён";
+"swap_info.status.failed" = "Ошибка";
+"swap_info.status.not_started" = "Не начат";
+"swap_info.status.pending" = "В ожидании";
+"swap_info.status.refunded" = "Возвращён";
+"swap_info.status.swapping" = "Обмен";
+"swap_info.status.unknown" = "Неизвестно";
+"swap_info.swap" = "Своп";
+"swap_info.title" = "Информация о свопе";
+"swap_info.unknown" = "Неизвестно";
+"swap_info.view" = "Просмотр";
 
 "market.global.market_cap" = "Общ. кап.";
 "market.global.volume" = "24ч объем";
@@ -920,7 +967,7 @@
 "top_platform.title" = "%@ Экосистема";
 "top_platform.total_cap" = "Общ. кап.";
 
-
+"market.search.title" = "Поиск";
 "market.search.recent" = "Недавние";
 "market.search.popular" = "Популярные";
 
@@ -981,7 +1028,6 @@
 "market.advanced_search.price_close_to_atl" = "Цена близка к ATL";
 
 "market.advanced_search.top" = "Топ %d";
-"market.advanced_search.reset_all" = "Сбросить";
 
 "market.advanced_search.less_5_m" = "< 5млн";
 "market.advanced_search.less_10_m" = "< 10млн";
@@ -1521,18 +1567,16 @@
 "manage_wallets.derivation_description" = "Существует 4 распространенных формата адресов %@ кошельков для получения входящих платежей:\n\n- BIP44 (более старый)\n- BIP49\n- BIP84 (рекомендованный)\n- BIP86 (самый новый)\n\nХотя кошелек %@ поддерживает все четыре формата, рекомендуется использовать %@ кошелек, работающий в формате BIP84.";
 "manage_wallets.bitcoin_cash_coin_type_description" = "Существует 2 формата адресов, которые кошельки Bitcoin Cash могут использовать для приема входящих платежей:\n\n- TYPE 0 (более старый)\n- TYPE 145 (более новый)\n\nХотя кошелек %@ поддерживает оба формата, рекомендуется использовать кошелек Bitcoin Cash, работающий в формате TYPE 145.";
 
-// Settings -> Personal Support
-
-"settings.personal_support.telegram_username.title" = "Аккаунт";
-"settings.personal_support.telegram_username.placeholder" = "@username!";
 "settings.personal_support.description" = "Введите имя аккаунта Telegram, чтобы открыть личный чат поддержки, и мы отправим вам сообщение.";
-"settings.personal_support.request" = "Запрос";
-"settings.personal_support.requested" = "Запрошено";
 "settings.personal_support.failed" = "Ошибка запроса";
 "settings.personal_support.need_subscription" = "Эта функция доступна только для премиум-пользователей %@ Wallet . Дополнительная информация на нашем официальном сайте.";
+"settings.personal_support.request" = "Запрос";
+"settings.personal_support.requested" = "Запрошено";
 "settings.personal_support.requested.description" = "Вы уже запросили приватный чат, найдите его в Telegram";
-"settings.personal_support.requested.open_telegram" = "Открыть Telegram";
 "settings.personal_support.requested.new_request" = "Новый запрос";
+"settings.personal_support.requested.open_telegram" = "Открыть Telegram";
+"settings.personal_support.telegram_username.placeholder" = "@username!";
+"settings.personal_support.telegram_username.title" = "Аккаунт";
 
 // Settings -> Terms
 
@@ -1578,6 +1622,7 @@
 "backup_app.backup_list.other.contacts.title" = "Контакты";
 "backup_app.backup_list.other.custom_evm_sync_sources.title" = "Пользовательские RPC";
 "backup_app.backup_list.other.custom_monero_nodes.title" = "Пользовательские узлы Monero";
+"backup_app.backup_list.other.custom_zano_nodes.title" = "Пользовательские ноды Zano";
 "backup_app.backup_list.other.app_settings.title" = "Настройки приложения";
 "backup_app.backup_list.other.app_settings.description" = "Язык, валюта, внешний вид ...";
 
@@ -1617,6 +1662,7 @@
 "settings_security.edit_passcode" = "Изменить код";
 "settings_security.disable_passcode" = "Отключить код доступа";
 "settings_security.auto_lock" = "Автоблокировка";
+"settings_security.auto_lock.description" = "Автоматически блокирует приложение по истечении выбранного времени.";
 "settings_security.balance_auto_hide" = "Автоскрытие баланса";
 "settings_security.balance_auto_hide.description" = "Автоматически скрывает баланс при открытии приложения, независимо от предыдущих настроек.";
 "settings_security.enable_duress_mode" = "Установить режим Duress";
@@ -1627,9 +1673,6 @@
 "biometry.off" = "Выкл.";
 "biometry.manual" = "Вручную";
 "biometry.on" = "Вкл.";
-"biometry.off.description" = "Отключено во всех случаях";
-"biometry.manual.description" = "Сканирование с помощью кнопки";
-"biometry.on.description" = "Автоматическое сканирование";
 
 // Create Passcode
 
@@ -1697,7 +1740,7 @@
 
 "btc_transaction_sort_mode.shuffle" = "Перемешать";
 "btc_transaction_sort_mode.shuffle.description" = "Случайное индексирование";
-"btc_transaction_sort_mode.bip69" = "Детерминированный BIP69";
+"btc_transaction_sort_mode.bip69" = "Детерминированный";
 "btc_transaction_sort_mode.bip69.description" = "Лексикографическая индексация";
 
 "blockchain_settings.info.restore_source" = "Источник восстановления";
@@ -1764,7 +1807,6 @@
 "appearance.launch_screen.description" = "Выберите, какой экран будет открываться в приложении по умолчанию.";
 "appearance.launch_screen.auto" = "По умолчанию";
 "appearance.launch_screen.balance" = "Баланс";
-"appearance.launch_screen.market_overview" = "Обзор рынка";
 "appearance.launch_screen.watchlist" = "Избранное";
 
 "appearance.balance_tab" = "Вкладка баланс";
@@ -2098,6 +2140,8 @@
 "public_keys.title" = "Публичные ключи";
 "public_keys.evm_address" = "EVM адрес";
 "public_keys.evm_address.description" = "Позволяет отслеживать кошельки с активами на Ethereum, Binance Smart Chain и других блокчейнах на базе EVM, только для чтения.";
+"public_keys.tron_address" = "Адрес TRON";
+"public_keys.tron_address.description" = "Позволяет отслеживать в режиме только для чтения кошельки с активами в блокчейне TRON.";
 "public_keys.account_extended_public_key" = "Расширенный публичный ключ аккаунта";
 "public_keys.account_extended_public_key.description" = "Позволяет осуществлять мониторинг кошельков, содержащих Bitcoin и другие криптовалюты на основе UTXO (например, Litecoin, Bitcoin Cash, Dash и т.д.), только для чтения.";
 "public_keys.monero_public_key" = "Публичные ключи Monero";
@@ -2108,6 +2152,8 @@
 "private_keys.title" = "Приватные ключи";
 "private_keys.evm_private_key" = "Приватный ключ EVM";
 "private_keys.evm_private_key.description" = "Предоставляет полный контроль над активами в сетях, совместимых с EVM (например, Ethereum, BNB Smart Chain, Polygon, Avalanche) в данном кошельке.";
+"private_keys.tron_private_key" = "Приватный ключ Tron";
+"private_keys.tron_private_key.description" = "Предоставляет полный контроль над активами в сети Tron в этом кошельке.";
 "private_keys.stellar_secret_key" = "Секретный ключ Stellar";
 "private_keys.stellar_secret_key.description" = "Предоставляет полный контроль над активами в сети Stellar в данном кошельке.";
 "private_keys.bip32_root_key" = "BIP32 Root ключ";
@@ -2120,6 +2166,7 @@
 // Manage Account -> EVM Address
 
 "evm_address.title" = "EVM адрес";
+"tron_address.title" = "Адрес TRON";
 
 // Birthday Height
 
@@ -2171,6 +2218,14 @@
 "add_monero_node.warning.url_exists" = "Нода с таким URL уже существует";
 "add_monero_node.error.invalid_url" = "Введённый URL недействителен. Корректный URL должен использовать схему https";
 
+"add_zano_node.error.invalid_url" = "Введённый URL недействителен";
+"add_zano_node.node_url" = "URL ноды";
+"add_zano_node.title" = "Добавить ноду";
+"add_zano_node.warning.url_exists" = "Нода с таким URL уже существует";
+"zano_network.add_new" = "Добавить новый";
+"zano_network.added" = "Добавлено";
+"zano_network.description" = "Выберите ноду, которую приложение Unstoppable будет использовать для синхронизации кошелька(ов).";
+"zano_network.node" = "Нода";
 
 // Send Settings
 
@@ -2186,6 +2241,7 @@
 "fee_settings.fee_rate" = "Комиссия";
 "fee_settings.fee_rate.description" = "Это рекомендуемое значение для попадания в следующие 2 блока";
 "fee_settings.inputs_outputs" = "Вводы/Выводы";
+"fee_settings.inputs_outputs.description" = "Изменяет структуру входов и выходов транзакции.";
 "fee_settings.transaction_settings" = "Настройки транзакций";
 "fee_settings.transaction_settings.description" = "Затрудните отслеживание Биткойн-транзакций, изменив их структурирование.";
 "fee_settings.replace_by_fee" = "Изменить комиссию";
@@ -2377,7 +2433,7 @@
 "transaction_filter.contact" = "Kонтакты";
 "transaction_filter.all_contacts" = "Все контакты";
 "transaction_filter.hide_suspicious_txs" = "Скрыть подозрительные транзакции";
-"transaction_filter.hide_suspicious_txs.description" = "Скрывает входящие переводы с небольшой суммой (например, USDT менее $1.5). Такие транзакции часто используются для фишинга и атак с подменой адреса.";
+"transaction_filter.hide_suspicious_txs.description" = "Скрывает подозрительные мелкие переводы, часто используемые в фишинговых атаках.";
 
 // Black Friday
 
@@ -2505,5 +2561,7 @@
 
 // MEV Protection
 
-"mev_protection.title" = "Защита от MEV";
 "mev_protection.description" = "Так называемые фронт-раннинг-боты отслеживают каждую сделку, стараясь заставить вас переплатить. Эта функция блокирует их.";
+"mev_protection.title" = "Защита от MEV";
+"secure_send.bottom_sheet.description" = "Выберите проверки безопасности.";
+"secure_send.bottom_sheet.title" = "Безопасная отправка";

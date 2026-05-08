@@ -3,22 +3,15 @@ import Foundation
 import MarketKit
 
 class AddressViewModel: ObservableObject {
-    private let purchaseManager = Core.shared.purchaseManager
-    private let appSettingManager = Core.shared.appSettingManager
     private let recentlySentManager = Core.shared.recentlySentManager
+
     let token: Token
     let destination: Destination
     let initialAddress: String
-    let issueTypes: [AddressSecurityIssueType]
     let contacts: [Contact]
     let recentContact: Contact?
+    let securityCheckViewModel: AddressSecurityCheckViewModel
     private var cancellables = Set<AnyCancellable>()
-
-    private var premiumEnabled: Bool {
-        didSet {
-            syncAddressState()
-        }
-    }
 
     @Published var address: String = ""
     @Published var addressResult: AddressInput.Result = .idle {
@@ -29,41 +22,29 @@ class AddressViewModel: ObservableObject {
 
     @Published private(set) var state: State = .empty
 
-    @Published private(set) var checkStates = [AddressSecurityIssueType: CheckState]() {
-        didSet {
-            syncValidState()
-        }
-    }
-
     init(token: Token, destination: AddressViewModel.Destination, address: String?) {
         self.token = token
         self.destination = destination
         initialAddress = address ?? ""
-        issueTypes = AddressSecurityIssueType.issueTypes(token: token)
+        securityCheckViewModel = AddressSecurityCheckViewModel(token: token)
 
-//        let contacts = Core.shared.contactManager.contacts(blockchainUid: token.blockchainType.uid)
-//            .compactMap { contact -> Contact? in
-//                guard let address = contact.address(blockchainUid: token.blockchainType.uid) else {
-//                    return nil
-//                }
-//
-//                return Contact(uid: contact.uid, name: contact.name, address: address.address)
-//            }
-//            .sorted { $0.name ?? "" < $1.name ?? "" }
-        var contacts = [Contact]()
-        if let contact = Core.shared.contactManager.contacts(blockchainUid: token.blockchainType.uid).first {
-            contacts = contact.addresses.map{
-                Contact(uid: contact.uid, name: contact.name, address: $0.address)
-            }.sorted { $0.name ?? "" < $1.name ?? "" }
-        }
-        
+        let contacts = Core.shared.contactManager.contacts(blockchainUid: token.blockchainType.uid)
+            .compactMap { contact -> Contact? in
+                guard let address = contact.address(blockchainUid: token.blockchainType.uid) else {
+                    return nil
+                }
+
+                return Contact(uid: contact.uid, name: contact.name, address: address.address)
+            }
+            .sorted { $0.name ?? "" < $1.name ?? "" }
+
         let recentAddress = recentlySentManager.recentlySent ? try? Core.shared.recentAddressStorage.address(blockchainUid: token.blockchainType.uid) : nil
+
         recentContact = recentAddress.map { address in
             Contact(uid: "recent", name: contacts.first(where: { $0.address.lowercased() == address.lowercased() })?.name, address: address)
         }
 
         self.contacts = contacts
-        premiumEnabled = purchaseManager.activated(.secureSend)
 
         defer {
             if let address {
@@ -71,9 +52,10 @@ class AddressViewModel: ObservableObject {
             }
         }
 
-        purchaseManager.$activeFeatures
-            .sink { [weak self] features in
-                self?.premiumEnabled = features.contains(.secureSend)
+        securityCheckViewModel.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] checkState in
+                self?.syncFromCheckState(checkState)
             }
             .store(in: &cancellables)
     }
@@ -82,105 +64,45 @@ class AddressViewModel: ObservableObject {
         switch addressResult {
         case .idle:
             state = .empty
+            securityCheckViewModel.check(address: nil)
         case .loading:
             state = .invalid(nil)
+            securityCheckViewModel.check(address: nil)
         case .invalid:
             state = .invalid(nil)
+            securityCheckViewModel.check(address: nil)
         case let .valid(success):
             if case let .send(fromAddress) = destination, fromAddress == success.address.raw, !token.sendToSelfAllowed {
                 state = .invalid(CautionNew(
                     title: "send.address.invalid_address".localized,
                     text: "send.address_error.own_address".localized(token.coin.code),
                     type: .error
-                )
-                )
+                ))
+                securityCheckViewModel.check(address: nil)
             } else {
-                if premiumEnabled {
-                    if appSettingManager.recipientAddressCheck {
-                        check(address: success.address)
-                    } else {
-                        for type in issueTypes {
-                            checkStates[type] = .disabled
-                        }
-
-                        state = .valid(resolvedAddress: ResolvedAddress(address: address, issueTypes: []))
-                    }
-                } else {
-                    for type in issueTypes {
-                        checkStates[type] = .locked
-                    }
-
-                    state = .valid(resolvedAddress: ResolvedAddress(address: address, issueTypes: []))
-                }
+                securityCheckViewModel.check(address: success.address)
             }
         }
     }
 
-    private func check(address: Address) {
-        for type in issueTypes {
-            checkStates[type] = .checking
+    private func syncFromCheckState(_ checkState: AddressSecurityCheckViewModel.State) {
+        switch checkState {
+        case .idle:
+            ()
+        case .checking:
+            state = .checking
+        case let .completed(address, detectedTypes):
+            state = .valid(resolvedAddress: ResolvedAddress(address: address.raw, issueTypes: detectedTypes))
         }
-
-        state = .checking
-
-        for type in issueTypes {
-            let checker = AddressSecurityCheckerFactory.addressSecurityChecker(type: type)
-
-            Task {
-                do {
-                    let isClear = try await checker.isClear(address: address, token: token)
-
-                    await MainActor.run {
-                        checkStates[type] = isClear ? .clear : .detected
-                    }
-                } catch {
-                    await MainActor.run {
-                        checkStates[type] = .notAvailable
-                    }
-                }
-            }
-        }
-    }
-
-    private func syncValidState() {
-        guard case .checking = state else {
-            return
-        }
-
-        var detectedTypes = [AddressSecurityIssueType]()
-
-        for type in issueTypes {
-            let checkState = checkStates[type] ?? .notAvailable
-
-            switch checkState {
-            case .checking:
-                return
-            case .detected:
-                detectedTypes.append(type)
-            default: ()
-            }
-        }
-
-        let resolvedAddress = ResolvedAddress(address: address, issueTypes: detectedTypes)
-        state = .valid(resolvedAddress: resolvedAddress)
     }
 }
 
 extension AddressViewModel {
-    enum State {
+    enum State: Equatable {
         case empty
         case invalid(CautionNew?)
         case checking
         case valid(resolvedAddress: ResolvedAddress)
-    }
-
-    enum CheckState {
-        case checking
-        case clear
-        case detected
-        case notAvailable
-        case locked
-        case disabled
     }
 
     enum Destination {

@@ -4,9 +4,13 @@ import MarketKit
 class SwapFinalQuote {
     private let expectedBuyAmount: Decimal
     private let slippage: Decimal?
-    private let recipient: String?
+    let recipient: String?
     private let estimatedTime: TimeInterval?
     private let transactionError: Error?
+
+    let toAddress: String
+    let depositAddress: String?
+    let providerSwapId: String?
 
     init(
         expectedBuyAmount: Decimal,
@@ -14,12 +18,18 @@ class SwapFinalQuote {
         recipient: String?,
         estimatedTime: TimeInterval? = nil,
         transactionError: Error?,
+        toAddress: String,
+        depositAddress: String? = nil,
+        providerSwapId: String? = nil
     ) {
         self.expectedBuyAmount = expectedBuyAmount
         self.slippage = slippage
         self.recipient = recipient
         self.estimatedTime = estimatedTime
         self.transactionError = transactionError
+        self.toAddress = toAddress
+        self.depositAddress = depositAddress
+        self.providerSwapId = providerSwapId
     }
 
     var amountOut: Decimal {
@@ -68,7 +78,7 @@ class SwapFinalQuote {
 
         if let estimatedTime {
             fields.append(.simpleValue(
-                title: SendField.InformedTitle("swap.swapped_time".localized, info: InfoDescription(
+                title: ComponentInformedTitle("swap.swapped_time".localized, info: InfoDescription(
                     title: "swap.swapped_time".localized,
                     description: "swap.swapped_time.info".localized
                 )),

@@ -11,35 +11,41 @@ struct MainView: View {
 
     var body: some View {
         ThemeNavigationStack(path: $path) {
-            VStack(spacing: 0) {
-                TabView(selection: $viewModel.selectedTab) {
-                    Group {
-                        if viewModel.showMarket {
-                            MarketView().tag(MainViewModel.Tab.markets)
+
+            TabView(selection: $viewModel.selectedTab) {
+                if viewModel.showMarket {
+                    MarketView()
+                        .tabItem { Label("", image: "market_filled") }
+                        .tag(MainViewModel.Tab.markets)
+                        .tint(.themeLeah)
+                }
+
+                WalletView(viewModel: walletViewModel, path: $path)
+                    .tabItem { Label("", image: "wallet_filled") }
+                    .tag(MainViewModel.Tab.wallet)
+                    .tint(.themeLeah)
+
+                MainSafeZoneView()
+                    .tabItem {
+                        Label {
+                            Text("")
+                        } icon: {
+                            Image("safe_logo_24")
+                                .resizable()
+                                .renderingMode(viewModel.selectedTab == .safe ? .original : .template)
+                                .frame(width: .iconSize24, height: .iconSize24)
                         }
-
-                        WalletView(viewModel: walletViewModel, path: $path).tag(MainViewModel.Tab.wallet)
-                        MainSafeZoneView().tag(MainViewModel.Tab.safe)
-                        MainSettingsView().tag(MainViewModel.Tab.settings)
                     }
-                    .toolbar(.hidden, for: .tabBar)
-                }
+                    .tag(MainViewModel.Tab.safe)
+                    .tint(.themeLeah)
 
-                HStack(spacing: 0) {
-                    ForEach(viewModel.tabs, id: \.self) { tab in
-                        TabBarIcon(tab: tab, isSelected: viewModel.selectedTab == tab, badge: badgeViewModel.badge)
-                            .padding(.vertical, .margin16)
-                            .frame(maxWidth: .infinity)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                viewModel.selectedTab = tab
-                            }
-                    }
-                }
-                .padding(.horizontal, .margin16)
-                .background(Color.themeBlade)
+                MainSettingsView()
+                    .tabItem { Label("", image: "settings_filled") }
+                    .tag(MainViewModel.Tab.settings)
+                    .badge(badgeViewModel.badge.map { _ in "1" })
+                    .tint(.themeLeah)
             }
-            .ignoresSafeArea(.keyboard)
+            .tint(.themeJacob)
             .navigationDestination(for: Wallet.self) { wallet in
                 WalletTokenModule.view(wallet: wallet)
             }
@@ -52,21 +58,19 @@ struct MainView: View {
     @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
         switch viewModel.selectedTab {
         case .markets:
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 Button(action: {
                     Coordinator.shared.present { isPresented in
-                        MarketAdvancedSearchView(isPresented: isPresented)
+                        MarketSearchView(isPresented: isPresented)
                     }
-                    stat(page: .markets, event: .open(page: .advancedSearch))
+                    stat(page: .markets, event: .open(page: .marketSearch))
                 }) {
-                    Image("manage_2_24")
-                        .renderingMode(.template)
-                        .foregroundColor(.themeGray)
+                    Image("search")
                 }
             }
         case .wallet:
             if walletViewModel.account != nil {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         Coordinator.shared.present { isPresented in
                             ThemeNavigationStack { ManageAccountsView(isPresented: isPresented) }
@@ -78,19 +82,19 @@ struct MainView: View {
                 }
 
                 if walletViewModel.totalItem.state == .syncing {
-                    ToolbarItem(placement: .navigationBarTrailing) {
+                    ToolbarItem(placement: .navigationBarLeading) {
                         ProgressView(value: 0.55)
                             .progressViewStyle(DeterminiteSpinnerStyle())
-                            .frame(width: 20, height: 20)
+                            .frame(size: 24)
                             .spinning()
                     }
                 }
 
                 if walletViewModel.buttonHidden {
-                    ToolbarItem(placement: .navigationBarTrailing) {
+                    ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: {
-                            Coordinator.shared.present { _ in
-                                ScanQrViewNew(reportAfterDismiss: true, pasteEnabled: true) { text in
+                            Coordinator.shared.present { isPresented in
+                                ScanQrViewNew(reportAfterDismiss: true, isPresented: isPresented) { text in
                                     walletViewModel.process(scanned: text)
                                 }
                                 .ignoresSafeArea()
@@ -103,9 +107,9 @@ struct MainView: View {
                 }
             }
         case .safe:
-            ToolbarItem(placement: .navigationBarTrailing) {}
+            ToolbarItem {}
         case .settings:
-            ToolbarItem(placement: .navigationBarTrailing) {}
+            ToolbarItem {}
         }
     }
 
@@ -154,44 +158,6 @@ extension MainView {
             }
         }
     }
-
-    struct TabBarIcon: View {
-         let tab: MainViewModel.Tab
-         let isSelected: Bool
-         let badge: String?
-
-         var body: some View {
-             ZStack {
-                 if tab == .safe {
-                     safeTabIcon
-                 } else {
-                     Image(tab.image).icon(colorStyle: isSelected ? .yellow : .secondary)
-                 }
-
-                 if tab == MainViewModel.Tab.settings, let badge = badge {
-                     BadgeView(badge: badge)
-                         .offset(x: 12, y: -12)
-                 }
-             }
-         }
-
-        @ViewBuilder private var safeTabIcon: some View {
-            if isSelected {
-                Image(tab.image)
-                    .resizable()
-                    .renderingMode(.original)
-                    .frame(width: .iconSize24, height: .iconSize24)
-                    
-            } else {
-                Image(tab.image)
-                    .resizable()
-                    .renderingMode(.template)
-                    .foregroundColor(.themeGray)
-                    .frame(width: .iconSize24, height: .iconSize24)
-                    
-            }
-        }
-    }
 }
 
 struct AccountsLostView: View {
@@ -217,19 +183,14 @@ struct ToolbarBadgeModifier: ViewModifier {
     let visible: Bool
 
     func body(content: Content) -> some View {
-        ZStack {
-            content
-
-            if visible {
-                VStack {
-                    HStack {
-                        Spacer()
-                        Circle().fill(Color.red).frame(width: 8, height: 8)
-                    }
-                    Spacer()
+        content
+            .overlay(alignment: .topTrailing) {
+                if visible {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 3, y: -3)
                 }
             }
-        }
-        .frame(width: 28, height: 28)
     }
 }

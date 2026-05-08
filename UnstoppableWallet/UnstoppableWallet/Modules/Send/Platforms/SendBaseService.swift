@@ -8,7 +8,7 @@ extension SendBaseService {
         case ready
         case notReady
     }
-    
+
     enum AmountError: Error {
         case invalidDecimal
         case insufficientBalance

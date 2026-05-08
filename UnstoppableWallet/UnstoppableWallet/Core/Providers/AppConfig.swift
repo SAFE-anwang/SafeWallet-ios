@@ -18,6 +18,7 @@ enum AppConfig {
     static let appGitHubRepository = ""
     static let appTwitterAccount = "safeanwang"
     static let appTelegramAccount = ""
+    static let appTelegramSupportSlug = ""
     static let appTokenTelegramAccount = ""
     static let mempoolSpaceUrl = "https://mempool.space"
     static let guidesIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/blockchain-crypto-guides/v1.2/index.json")!
@@ -131,8 +132,8 @@ enum AppConfig {
         (Bundle.main.object(forInfoDictionaryKey: "HsProviderApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 
-    static var tronGridApiKey: String? {
-        (Bundle.main.object(forInfoDictionaryKey: "TronGridApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    static var tronGridApiKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "TronGridApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var walletConnectV2ProjectKey: String? {

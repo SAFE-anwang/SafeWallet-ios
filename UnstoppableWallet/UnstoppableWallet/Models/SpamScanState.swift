@@ -1,7 +1,6 @@
 import Foundation
 import GRDB
 
-
 struct SpamScanState: Codable, FetchableRecord, PersistableRecord {
     static let databaseTableName = "spamScanStates"
 

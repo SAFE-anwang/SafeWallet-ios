@@ -45,7 +45,63 @@ class RestorePrivateKeyService {
         self.bip38Password = nil
     }
 
-    func accountType(text: String, forceType: PrivateKeyType? = nil) throws -> AccountType {
+    func accountType(text: String) throws -> [AccountType] {
+        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        wifRoutingContext = nil
+
+        guard !text.isEmpty else {
+            throw RestoreError.emptyText
+        }
+
+        var accountTypes = [AccountType]()
+
+        do {
+            let extendedKey = try HDExtendedKey(extendedKey: text)
+
+            switch extendedKey {
+            case .private:
+                switch extendedKey.derivedType {
+                case .master, .account:
+                    accountTypes.append(.hdExtendedKey(key: extendedKey))
+                default:
+                    throw RestoreError.notSupportedDerivedType
+                }
+            default:
+                throw RestoreError.nonPrivateKey
+            }
+        } catch {}
+
+        do {
+            let privateKey = try Signer.privateKey(string: normalizeHexPrefix(text))
+            accountTypes.append(.evmPrivateKey(data: privateKey))
+        } catch {}
+
+        do {
+            _ = try KeyPair(secretSeed: text)
+            accountTypes.append(.stellarSecretKey(secretSeed: text))
+        } catch {}
+
+        do {
+            let btcType = try parseBitcoinPrivateKey(text: text)
+            accountTypes.append(btcType)
+        } catch let error as RestoreError {
+            if case .unsupportedKeyType = error {
+                // Keep trying other key families
+            } else {
+                throw error
+            }
+        } catch {
+            // Keep compatibility with previous fallback behavior
+        }
+
+        if !accountTypes.isEmpty {
+            return accountTypes
+        }
+
+        throw RestoreError.noValidKey
+    }
+
+    func accountType(text: String, forceType: PrivateKeyType?) throws -> AccountType {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         wifRoutingContext = nil
 
@@ -57,9 +113,14 @@ class RestorePrivateKeyService {
             return try parseWithForcedType(text: text, type: forcedType)
         }
 
+        return try parseWithAutoDetection(text: text)
+    }
+
+    private func parseWithAutoDetection(text: String) throws -> AccountType {
+        wifRoutingContext = nil
+
         do {
             let extendedKey = try HDExtendedKey(extendedKey: text)
-
             switch extendedKey {
             case .private:
                 switch extendedKey.derivedType {
@@ -83,19 +144,7 @@ class RestorePrivateKeyService {
             return .stellarSecretKey(secretSeed: text)
         } catch {}
 
-        do {
-            return try parseBitcoinPrivateKey(text: text)
-        } catch let error as RestoreError {
-            if case .unsupportedKeyType = error {
-                // Keep trying other key families
-            } else {
-                throw error
-            }
-        } catch {
-            // Keep compatibility with previous fallback behavior
-        }
-
-        throw RestoreError.noValidKey
+        return try parseBitcoinPrivateKey(text: text)
     }
 
     private func parseWithForcedType(text: String, type: PrivateKeyType) throws -> AccountType {
@@ -281,7 +330,7 @@ class RestorePrivateKeyService {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let normalizedForEvm = normalizeHexPrefix(trimmed)
-        if normalizedForEvm.count == 64, normalizedForEvm.allSatisfy(\.isHexDigit) {
+        if normalizedForEvm.count == 64, normalizedForEvm.allSatisfy({ $0.isHexDigit }) {
             do {
                 _ = try Signer.privateKey(string: normalizedForEvm)
                 return .evm
@@ -308,7 +357,7 @@ class RestorePrivateKeyService {
         }
 
         do {
-            let _ = try HDExtendedKey(extendedKey: trimmed)
+            _ = try HDExtendedKey(extendedKey: trimmed)
             return .hdExtendedKey
         } catch {}
 

@@ -1,42 +1,18 @@
 import SwiftUI
 
 struct MarketTabView: View {
-    @StateObject var viewModel: MarketTabViewModel
-    @ObservedObject var watchlistViewModel: WatchlistViewModel
+    @StateObject var viewModel = MarketTabViewModel()
 
-    @StateObject var coinsViewModel: MarketCoinsViewModel
-    @StateObject var marketWatchlistViewModel: MarketWatchlistViewModel
-    @StateObject var vaultsViewModel: MarketVaultsViewModel
-    @StateObject var newsViewModel: MarketNewsViewModel
-    @StateObject var platformsViewModel: MarketPlatformsViewModel
-    @StateObject var pairsViewModel: MarketPairsViewModel
-    @StateObject var sectorsViewModel: MarketSectorsViewModel
-    @StateObject var dappViewModel: MarketDappViewModel
+    @StateObject var watchlistViewModel = WatchlistViewModel(page: .markets, section: .coins)
+    @StateObject var coinsViewModel = MarketCoinsViewModel()
+    @StateObject var marketWatchlistViewModel = MarketWatchlistViewModel()
+    @StateObject var dappViewModel = MarketDappViewModel()
     @State private var loadedTabs = [MarketModule.Tab]()
-
-    init(watchlistViewModel: WatchlistViewModel) {
-        _viewModel = StateObject(wrappedValue: MarketTabViewModel())
-        self.watchlistViewModel = watchlistViewModel
-
-        _coinsViewModel = StateObject(wrappedValue: MarketCoinsViewModel())
-        _marketWatchlistViewModel = StateObject(wrappedValue: MarketWatchlistViewModel())
-        _vaultsViewModel = StateObject(wrappedValue: MarketVaultsViewModel())
-        _newsViewModel = StateObject(wrappedValue: MarketNewsViewModel())
-        _platformsViewModel = StateObject(wrappedValue: MarketPlatformsViewModel())
-        _pairsViewModel = StateObject(wrappedValue: MarketPairsViewModel())
-        _sectorsViewModel = StateObject(wrappedValue: MarketSectorsViewModel())
-        _dappViewModel = StateObject(wrappedValue: MarketDappViewModel())
-    }
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollableTabHeaderView(
-                tabs: MarketModule.Tab.allCases.map {
-                    ScrollableTabHeaderView.Tab(
-                        title: $0.title,
-                        highlighted: $0 == MarketModule.Tab.vaults
-                    )
-                },
+                tabs: MarketModule.Tab.allCases.map { .init(title: $0.title, highlighted: false) },
                 currentTabIndex: Binding(
                     get: {
                         MarketModule.Tab.allCases.firstIndex(of: viewModel.currentTab) ?? 0
@@ -51,14 +27,7 @@ struct MarketTabView: View {
                 switch viewModel.currentTab {
                 case .coins: MarketCoinsView(viewModel: coinsViewModel, watchlistViewModel: watchlistViewModel)
                 case .watchlist: MarketWatchlistView(viewModel: marketWatchlistViewModel)
-                case .vaults: MarketVaultsView(viewModel: vaultsViewModel)
-//                case .news: MarketNewsView(viewModel: newsViewModel)
-                case .platforms: MarketPlatformsView(viewModel: platformsViewModel)
-                case .pairs: MarketPairsView(viewModel: pairsViewModel)
-                case .sectors: MarketSectorsView(viewModel: sectorsViewModel)
                 case .dapp: MarketDappView(viewModel: dappViewModel)
-//                case .twiitter:
-//                    MarketSectorsView(viewModel: sectorsViewModel)
                 }
             }
             .frame(maxHeight: .infinity)
@@ -82,14 +51,7 @@ struct MarketTabView: View {
         switch tab {
         case .coins: coinsViewModel.load()
         case .watchlist: marketWatchlistViewModel.load()
-        case .vaults: vaultsViewModel.load()
-//        case .news: newsViewModel.load()
-        case .platforms: platformsViewModel.load()
-        case .pairs: pairsViewModel.load()
-        case .sectors: sectorsViewModel.load()
-        case .dapp: sectorsViewModel.load()
-//        case .twiitter:
-//            sectorsViewModel.load()
+        case .dapp: dappViewModel.load()
         }
     }
 }

@@ -13,9 +13,8 @@ extension Image {
     }
 
     func icon(size: CGSize, colorStyle: ColorStyle = .secondary) -> some View {
-        resizable()
-            .foregroundColor(colorStyle.color)
-            .frame(width: size.width, height: size.height)
+        foregroundColor(colorStyle.color)
+            .applyFrame(size: size)
     }
 
     func buttonIcon(size: CGFloat = .iconSize24) -> some View {
@@ -39,7 +38,32 @@ extension Image {
         Image("check_1_20").themeIcon(color: .themeJacob)
     }
 
+    static var lockIcon: some View {
+        Image("lock_filled").themeIcon(color: .gray)
+    }
+
     static var warningIcon: some View {
         Image("warning_2_20").themeIcon(color: .themeLucian)
+    }
+
+    static func checkbox(active: Bool, size: CGFloat = .margin24) -> some View {
+        ThemeImage(
+            active ?
+                ComponentImage(image: "checkbox_active", size: CGSize(width: size, height: size)) :
+                "checkbox_diactive",
+            size: size
+        )
+    }
+
+    static func lock(unlocked: Bool = false, size: CGFloat = .iconSize24) -> some View {
+        ThemeImage(unlocked ? "unlock_filled" : "lock_filled", size: size)
+    }
+
+    static var defenseIcon: CustomStringConvertible {
+        ComponentImage(image: "defense_filled", size: .size20)
+    }
+
+    static var premiumIcon: CustomStringConvertible {
+        ComponentImage(image: "premium_filled", size: .size20)
     }
 }

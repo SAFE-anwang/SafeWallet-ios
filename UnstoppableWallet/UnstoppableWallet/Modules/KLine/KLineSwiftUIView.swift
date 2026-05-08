@@ -40,37 +40,39 @@ private struct KLineRepresentable: UIViewRepresentable {
 
     func updateUIView(_ uiView: KLineView, context: Context) {
         if context.coordinator.period != period {
-            if context.coordinator.provider == nil {
-                context.coordinator.provider = SafeKLineDataProvider(period: period, provider: provider, token0: token0, token1: token1)
+            context.coordinator.error = nil
+
+            if context.coordinator.dataProvider == nil {
+                context.coordinator.dataProvider = SafeKLineDataProvider(period: period, provider: provider, token0: token0, token1: token1)
             } else {
-                let _ = context.coordinator.provider?.updatePeriod(period)
+                let _ = context.coordinator.dataProvider?.updatePeriod(period)
             }
-            
-            if let provider = context.coordinator.provider {
-                uiView.setProvider(provider)
-                uiView.invalidateIntrinsicContentSize()
+
+            if let dataProvider = context.coordinator.dataProvider {
                 context.coordinator.period = period
                 Task {
                     do {
-                        _ = try await provider.reloadData()
+                        _ = try await dataProvider.reloadData()
                     } catch {
-    
+                        await MainActor.run {
+                            context.coordinator.error = error
+                        }
                     }
                 }
             }
-        }
-
-        switch mode {
-        case .candlestick:
-            uiView.useCandlesticks()
-        case .timeSeries:
-            uiView.useTimeSeries()
         }
     }
 
     final class Coordinator {
         var period: KLinePeriod = .fourHours
-        var provider: SafeKLineDataProvider?
+        var dataProvider: SafeKLineDataProvider?
+        var error: Error?
+        var retryCount: Int = 0
+
+        func retry() {
+            retryCount += 1
+            dataProvider = nil
+        }
     }
 }
 

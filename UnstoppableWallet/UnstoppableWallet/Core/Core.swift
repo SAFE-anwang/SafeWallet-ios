@@ -9,8 +9,6 @@ class Core {
     static func initApp() throws {
         let core = try Core()
         instance = core
-
-        core.finishInitialize()
     }
 
     static var shared: Core {
@@ -40,6 +38,7 @@ class Core {
     let deeplinkStorage: DeeplinkStorage
     let launchScreenManager: LaunchScreenManager
     let appSettingManager: AppSettingManager
+    let securityManager: SecurityManager
     let balanceHiddenManager: BalanceHiddenManager
     let balanceConversionManager: BalanceConversionManager
     let walletButtonHiddenManager: WalletButtonHiddenManager
@@ -68,15 +67,18 @@ class Core {
     let passcodeLockManager: PasscodeLockManager
     let amountRoundingManager: AmountRoundingManager
     let recentlySentManager: RecentlySentManager
+
     let btcBlockchainManager: BtcBlockchainManager
     let evmSyncSourceManager: EvmSyncSourceManager
     let moneroNodeManager: MoneroNodeManager
+    let zanoNodeManager: ZanoNodeManager
     let restoreStateManager: RestoreStateManager
     let evmBlockchainManager: EvmBlockchainManager
     let evmLabelManager: EvmLabelManager
     let tronAccountManager: TronAccountManager
     let tonKitManager: TonKitManager
     let stellarKitManager: StellarKitManager
+    let zanoKitManager: ZanoKitManager
 
     let restoreSettingsManager: RestoreSettingsManager
     let predefinedBlockchainService: PredefinedBlockchainService
@@ -112,6 +114,7 @@ class Core {
     let appManager: AppManager
 
     let appEventHandler: EventHandler
+
     let performanceDataManager: PerformanceDataManager
     let releaseNotesService: ReleaseNotesService
 
@@ -124,6 +127,7 @@ class Core {
 
     let swapAssetStorage: SwapAssetStorage
     let swapProviderManager: MultiSwapProviderManager
+    let swapHistoryManager: SwapHistoryManager
 
     let apiKeyManager: ApiKeyManager
     let safe4CustomTokenStorage: Safe4CustomTokenStorage
@@ -171,6 +175,7 @@ class Core {
         deeplinkStorage = DeeplinkStorage()
         launchScreenManager = LaunchScreenManager(userDefaultsStorage: userDefaultsStorage)
         appSettingManager = AppSettingManager(userDefaultsStorage: userDefaultsStorage)
+        securityManager = SecurityManager(localStorage: localStorage)
         balanceHiddenManager = BalanceHiddenManager(userDefaultsStorage: userDefaultsStorage)
         balanceConversionManager = BalanceConversionManager(marketKit: marketKit, userDefaultsStorage: userDefaultsStorage)
         walletButtonHiddenManager = WalletButtonHiddenManager(userDefaultsStorage: userDefaultsStorage)
@@ -179,6 +184,7 @@ class Core {
         let appVersionRecordStorage = AppVersionRecordStorage(dbPool: dbPool)
         appVersionStorage = AppVersionStorage(storage: appVersionRecordStorage)
         appVersionManager = AppVersionManager(systemInfoManager: systemInfoManager, storage: appVersionStorage)
+
         currencyManager = CurrencyManager(storage: sharedLocalStorage)
         networkManager = NetworkManager(logger: logger)
         termsManager = TermsManager(userDefaultsStorage: userDefaultsStorage)
@@ -217,6 +223,9 @@ class Core {
         let moneroNodeStorage = MoneroNodeStorage(dbPool: dbPool)
         moneroNodeManager = MoneroNodeManager(blockchainSettingsStorage: blockchainSettingsStorage, moneroNodeStorage: moneroNodeStorage)
 
+        let zanoNodeStorage = ZanoNodeStorage(dbPool: dbPool)
+        zanoNodeManager = ZanoNodeManager(blockchainSettingsStorage: blockchainSettingsStorage, zanoNodeStorage: zanoNodeStorage)
+
         let restoreStateStorage = RestoreStateStorage(dbPool: dbPool)
         restoreStateManager = RestoreStateManager(storage: restoreStateStorage)
 
@@ -228,7 +237,7 @@ class Core {
         let syncerStateStorage = SyncerStateStorage(dbPool: dbPool)
         evmLabelManager = EvmLabelManager(provider: hsLabelProvider, storage: evmLabelStorage, syncerStateStorage: syncerStateStorage)
 
-        let tronKitManager = TronKitManager(testNetManager: testNetManager)
+        let tronKitManager = TronKitManager(testNetManager: testNetManager, evmSyncSourceManager: evmSyncSourceManager)
         tronAccountManager = TronAccountManager(accountManager: accountManager, walletManager: walletManager, marketKit: marketKit, tronKitManager: tronKitManager, restoreStateManager: restoreStateManager)
 
         tonKitManager = TonKitManager(restoreStateManager: restoreStateManager, marketKit: marketKit, walletManager: walletManager)
@@ -236,6 +245,8 @@ class Core {
 
         let restoreSettingsStorage = RestoreSettingsStorage(dbPool: dbPool)
         restoreSettingsManager = RestoreSettingsManager(storage: restoreSettingsStorage)
+
+        zanoKitManager = ZanoKitManager(restoreSettingsManager: restoreSettingsManager, walletManager: walletManager, zanoNodeManager: zanoNodeManager)
         predefinedBlockchainService = PredefinedBlockchainService(restoreSettingsManager: restoreSettingsManager)
 
         feeCoinProvider = FeeCoinProvider(marketKit: marketKit)
@@ -291,6 +302,7 @@ class Core {
             accountManager: accountManager,
             logger: logger
         )
+
         let adapterFactory = AdapterFactory(
             evmBlockchainManager: evmBlockchainManager,
             evmSyncSourceManager: evmSyncSourceManager,
@@ -299,6 +311,7 @@ class Core {
             tronKitManager: tronKitManager,
             tonKitManager: tonKitManager,
             stellarKitManager: stellarKitManager,
+            zanoKitManager: zanoKitManager,
             restoreSettingsManager: restoreSettingsManager,
             coinManager: coinManager,
             spamWrapper: spamWrapper,
@@ -311,8 +324,10 @@ class Core {
             tronKitManager: tronKitManager,
             tonKitManager: tonKitManager,
             stellarKitManager: stellarKitManager,
+            zanoKitManager: zanoKitManager,
             btcBlockchainManager: btcBlockchainManager,
-            moneroNodeManager: moneroNodeManager
+            moneroNodeManager: moneroNodeManager,
+            zanoNodeManager: zanoNodeManager
         )
         transactionAdapterManager = TransactionAdapterManager(
             adapterManager: adapterManager,
@@ -330,6 +345,7 @@ class Core {
             watchlistManager: watchlistManager,
             evmSyncSourceManager: evmSyncSourceManager,
             moneroNodeManager: moneroNodeManager,
+            zanoNodeManager: zanoNodeManager,
             btcBlockchainManager: btcBlockchainManager,
             restoreSettingsManager: restoreSettingsManager,
             chartRepository: chartRepository,
@@ -436,17 +452,8 @@ class Core {
 
         swapAssetStorage = SwapAssetStorage(dbPool: dbPool)
         swapProviderManager = MultiSwapProviderManager(localStorage: localStorage, networkManager: networkManager, apiKey: AppConfig.uswapApiKey)
-    }
 
-    func finishInitialize() {
-        swapProviderManager.onCoreInitialization()
-    }
-
-    func newSendEnabled(wallet _: Wallet) -> Bool {
-        true
-        // switch wallet.token.blockchainType {
-        // case .ton: return true
-        // default: return localStorage.newSendEnabled
-        // }
+        let swapStorage = SwapStorage(dbPool: dbPool, marketKit: marketKit)
+        swapHistoryManager = SwapHistoryManager(accountManager: accountManager, storage: swapStorage)
     }
 }

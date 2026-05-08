@@ -23,6 +23,10 @@ enum StatPage: String {
     case blockchainSettingsEvmAdd = "blockchain_settings_evm_add"
     case blockchainSettingsMonero = "blockchain_settings_monero"
     case blockchainSettingsMoneroAdd = "blockchain_settings_monero_add"
+    case blockchainSettingsZano = "blockchain_settings_zano"
+    case blockchainSettingsZanoAdd = "blockchain_settings_zano_add"
+    case blockchainSettingsTron = "blockchain_settings_tron"
+    case blockchainSettingsTronAdd = "blockchain_settings_tron_add"
     case checkAddress = "check_address"
     case cloudBackup = "cloud_backup"
     case coinAnalytics = "coin_analytics"
@@ -56,6 +60,7 @@ enum StatPage: String {
     case education
     case evmAddress = "evm_address"
     case evmPrivateKey = "evm_private_key"
+    case tronPrivateKey = "tron_private_key"
     case exportFull = "export_full"
     case exportFullToCloud = "export_full_to_cloud"
     case exportFullToFiles = "export_full_to_files"
@@ -183,6 +188,8 @@ enum StatEvent {
     case add(entity: StatEntity)
     case addEvmSource(chainUid: String)
     case addMoneroNode(chainUid: String)
+    case addZanoNode(chainUid: String)
+    case addTronRpcSource(chainUid: String)
     case addToken(token: Token)
     case addToWallet
     case addToWatchlist(coinUid: String)
@@ -198,6 +205,8 @@ enum StatEvent {
     case delete(entity: StatEntity)
     case deleteCustomEvmSource(chainUid: String)
     case deleteCustomMoneroNode(chainUid: String)
+    case deleteCustomZanoNode(chainUid: String)
+    case deleteCustomTronRpcSource(chainUid: String)
     case disableToken(token: Token)
     case edit(entity: StatEntity)
     case enableToken(token: Token)
@@ -210,8 +219,12 @@ enum StatEvent {
     case openBlockchainSettingsBtc(chainUid: String)
     case openBlockchainSettingsEvm(chainUid: String)
     case openBlockchainSettingsMonero
+    case openBlockchainSettingsZano
+    case openBlockchainSettingsTron
     case openBlockchainSettingsEvmAdd(chainUid: String)
     case openBlockchainSettingsMoneroAdd(chainUid: String)
+    case openBlockchainSettingsZanoAdd(chainUid: String)
+    case openBlockchainSettingsTronAdd(chainUid: String)
     case openCategory(categoryUid: String)
     case openCoin(coinUid: String)
     case openPlatform(chainUid: String)
@@ -250,6 +263,8 @@ enum StatEvent {
     case switchEvmSource(chainUid: String, name: String)
     case switchField(field: StatField)
     case switchMoneroNode(chainUid: String, name: String)
+    case switchZanoNode(chainUid: String, name: String)
+    case switchTronRpcSource(chainUid: String, name: String)
     case switchMarketTypeFilter(type: String)
     case switchFilterType(type: String)
     case switchLanguage(language: String)
@@ -274,6 +289,8 @@ enum StatEvent {
         case .add, .addToken: return "add"
         case .addEvmSource: return "add_evm_source"
         case .addMoneroNode: return "add_monero_node"
+        case .addZanoNode: return "add_zano_node"
+        case .addTronRpcSource: return "add_tron_rpc_source"
         case .addToWallet: return "add_to_wallet"
         case .addToWatchlist: return "add_to_watchlist"
         case .amountRounding: return "use_amount_rounding"
@@ -287,6 +304,8 @@ enum StatEvent {
         case .delete: return "delete"
         case .deleteCustomEvmSource: return "delete_custom_evm_source"
         case .deleteCustomMoneroNode: return "delete_custom_monero_node"
+        case .deleteCustomZanoNode: return "delete_custom_zano_node"
+        case .deleteCustomTronRpcSource: return "delete_custom_tron_rpc_source"
         case .disableToken: return "disable_token"
         case .disconnect: return "disconnect"
         case .edit: return "edit"
@@ -296,8 +315,8 @@ enum StatEvent {
         case .importFull: return "import_full"
         case .importWallet: return "import_wallet"
         case .open, .openCategory, .openCoin, .openPlatform, .openReceive, .openResend, .openSector, .openSend, .openSendTokenList, .openTokenPage,
-             .openBlockchainSettingsBtc, .openBlockchainSettingsEvm, .openBlockchainSettingsMonero, .openBlockchainSettingsEvmAdd,
-             .openBlockchainSettingsMoneroAdd: return "open_page"
+             .openBlockchainSettingsBtc, .openBlockchainSettingsEvm, .openBlockchainSettingsMonero, .openBlockchainSettingsZano, .openBlockchainSettingsTron,
+             .openBlockchainSettingsEvmAdd, .openBlockchainSettingsMoneroAdd, .openBlockchainSettingsZanoAdd, .openBlockchainSettingsTronAdd: return "open_page"
         case .openPremium: return "open_premium_from"
         case .openTokenInfo: return "open_token_info"
         case .paste: return "paste"
@@ -329,6 +348,8 @@ enum StatEvent {
         case .switchChartPeriod: return "switch_chart_period"
         case .switchEvmSource: return "switch_evm_source"
         case .switchMoneroNode: return "switch_monero_node"
+        case .switchZanoNode: return "switch_zano_node"
+        case .switchTronRpcSource: return "switch_tron_rpc_source"
         case .switchField: return "switch_field"
         case .switchFilterType: return "switch_filter_type"
         case .switchMarketTypeFilter: return "switch_market_type_filter"
@@ -375,6 +396,8 @@ enum StatEvent {
         case let .openBlockchainSettingsBtc(chainUid: chainUid): return [.page: StatPage.blockchainSettingsBtc.rawValue, .chainUid: chainUid]
         case let .openBlockchainSettingsEvm(chainUid: chainUid): return [.page: StatPage.blockchainSettingsEvm.rawValue, .chainUid: chainUid]
         case .openBlockchainSettingsMonero: return [.page: StatPage.blockchainSettingsMonero.rawValue]
+        case .openBlockchainSettingsZano: return [.page: StatPage.blockchainSettingsZano.rawValue]
+        case .openBlockchainSettingsTron: return [.page: StatPage.blockchainSettingsTron.rawValue]
         case let .openBlockchainSettingsEvmAdd(chainUid: chainUid): return [.page: StatPage.blockchainSettingsEvmAdd.rawValue, .chainUid: chainUid]
         case let .openCategory(categoryUid): return [.page: StatPage.coinCategory.rawValue, .categoryUid: categoryUid]
         case let .openCoin(coinUid): return [.page: StatPage.coinPage.rawValue, .coinUid: coinUid]
@@ -594,6 +617,7 @@ enum StatEntity: String {
     case derivation
     case evmAddress = "evm_address"
     case evmPrivateKey = "evm_private_key"
+    case tronPrivateKey = "tron_private_key"
     case key
     case viewKey = "view_key"
     case height

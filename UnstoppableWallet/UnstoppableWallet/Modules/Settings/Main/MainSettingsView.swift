@@ -4,9 +4,9 @@ import SwiftUI
 
 struct MainSettingsView: View {
     @StateObject var viewModel = MainSettingsViewModel()
+    @Environment(\.openURL) var openURL
 
     @State private var manageWalletsPresented = false
-    @State private var addressCheckerPresented = false
     @State private var walletConnectPresented = false
     @StateObject var walletConnectVerificationModel = WalletConnectVerificationModel(
         accountManager: Core.shared.accountManager,
@@ -43,7 +43,30 @@ struct MainSettingsView: View {
                     Spacer().frame(height: .margin32)
 
                     ListSection {
+                        contacts()
+                    }
+
+                    Spacer().frame(height: .margin32)
+
+                    ListSection {
                         appSettings()
+//<<<<<<< HEAD
+//                        subscription()
+//                        backupManager()
+//                    }
+//
+//                    Spacer().frame(height: .margin24)
+//
+//                    VStack(spacing: 0) {
+//                        SectionHeader(image: Image.premiumIcon, text: ComponentText(text: "subscription.premium.label".localized, colorStyle: .yellow), horizontalInsets: .margin16)
+//
+//                        ListSection {
+//                            vipSupport()
+//                            addressChecker()
+//                        }
+//                        .modifier(ThemeListStyleModifier(themeListStyle: .borderedPremium, selected: true))
+//                    }
+//=======
 //                        subscription()
                         contacts()
 //                        backupManager()
@@ -60,6 +83,7 @@ struct MainSettingsView: View {
 //                        }
 //                        .modifier(ThemeListStyleModifier(themeListStyle: .borderedLawrence, selected: true))
 //                    }
+//>>>>>>> develop
 
                     Spacer().frame(height: .margin32)
 
@@ -99,14 +123,16 @@ struct MainSettingsView: View {
 //                        testSwitchersSection()
 //                    }
                 }
-                .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
+                .padding(.padding16)
             }
             .padding(EdgeInsets(top: .margin12, leading: 0, bottom: .margin32, trailing: 0))
         }
-        .navigationDestination(isPresented: $addressCheckerPresented) {
-            AddressCheckerView()
+        .navigationDestination(isPresented: $walletConnectPresented) {
+            WalletConnectListView()
+                .navigationTitle("wallet_connect_list.title".localized)
+                .ignoresSafeArea()
                 .onFirstAppear {
-                    stat(page: .settings, event: .open(page: .addressChecker))
+                    stat(page: .settings, event: .open(page: .walletConnect))
                 }
         }
     }
@@ -164,7 +190,14 @@ struct MainSettingsView: View {
         case .miniApp:
             miniAppSlide()
                 .onTapGesture {
-                    UrlManager.open(url: "https://t.me/\(AppConfig.appTokenTelegramAccount)/app")
+                    let appUrl = URL(string: "tg://resolve?domain=\(AppConfig.appTokenTelegramAccount)&startapp")!
+                    let webUrl = URL(string: "https://t.me/\(AppConfig.appTokenTelegramAccount)?startapp")!
+
+                    if UIApplication.shared.canOpenURL(appUrl) {
+                        openURL(appUrl)
+                    } else {
+                        Coordinator.shared.present(url: webUrl)
+                    }
                 }
         }
     }
@@ -193,7 +226,7 @@ struct MainSettingsView: View {
             ManageAccountsView()
         }) {
             HStack(spacing: .margin16) {
-                Image("wallet_24").themeIcon()
+                ThemeImage("wallet", size: .iconSize24)
                 Text("settings.manage_accounts".localized).textBody()
             }
 
@@ -214,7 +247,7 @@ struct MainSettingsView: View {
                     stat(page: .settings, event: .open(page: .blockchainSettings))
                 }
         }) {
-            Image("blocks_24").themeIcon()
+            ThemeImage("box", size: .iconSize24)
             Text("settings.blockchain_settings".localized).themeBody()
             Image.disclosureIcon
         }
@@ -222,13 +255,13 @@ struct MainSettingsView: View {
 
     @ViewBuilder private func security() -> some View {
         NavigationRow(spacing: .margin8, destination: {
-            SecuritySettingsModule.view()
+            SecuritySettingsView()
                 .onFirstAppear {
                     stat(page: .settings, event: .open(page: .security))
                 }
         }) {
             HStack(spacing: .margin16) {
-                Image("shield_24").themeIcon()
+                ThemeImage("shield", size: .iconSize24)
                 Text("settings.security".localized).textBody()
             }
 
@@ -249,7 +282,7 @@ struct MainSettingsView: View {
                     stat(page: .settings, event: .open(page: .privacy))
                 }
         }) {
-            Image("lock_24").themeIcon()
+            ThemeImage("lock", size: .iconSize24)
             Text("settings.privacy".localized).themeBody()
             Image.disclosureIcon
         }
@@ -262,7 +295,7 @@ struct MainSettingsView: View {
             }
         } content: {
             HStack(spacing: .margin16) {
-                Image("wallet_connect_24").themeIcon()
+                ThemeImage("link", size: .iconSize24)
                 Text("settings.dapp_connection".localized).textBody()
             }
 
@@ -336,7 +369,7 @@ struct MainSettingsView: View {
                     stat(page: .settings, event: .open(page: .appearance))
                 }
         }) {
-            Image("uw_24").themeIcon()
+            ThemeImage("uw_logo", size: .iconSize24)
             Text("settings.appearance".localized).themeBody()
             Image.disclosureIcon
         }
@@ -349,7 +382,7 @@ struct MainSettingsView: View {
                     stat(page: .settings, event: .open(page: .subscription))
                 }
         }) {
-            Image("star_24").themeIcon()
+            ThemeImage("premium", size: .iconSize24)
             Text("subscription.title".localized).themeBody()
             Image.disclosureIcon
         }
@@ -366,7 +399,7 @@ struct MainSettingsView: View {
             }
         } content: {
             HStack(spacing: .margin16) {
-                Image("user_24").themeIcon()
+                ThemeImage("user", size: .iconSize24)
                 Text("contacts.title".localized).textBody()
             }
 
@@ -387,7 +420,7 @@ struct MainSettingsView: View {
                     stat(page: .settings, event: .open(page: .backupManager))
                 }
         }) {
-            Image("icloud_24").themeIcon()
+            ThemeImage("cloud", size: .iconSize24)
             Text("settings.backup_manager".localized).themeBody()
             Image.disclosureIcon
         }
@@ -405,11 +438,19 @@ struct MainSettingsView: View {
     @ViewBuilder private func vipSupport() -> some View {
         ClickableRow(action: {
             Coordinator.shared.performAfterPurchase(premiumFeature: .prioritySupport, page: .settings, trigger: .vipSupport) {
-                UrlManager.open(url: MainSettingsViewModel.supportLink)
+                let appUrl = URL(string: "tg://message?slug=\(AppConfig.appTelegramSupportSlug)")!
+                let webUrl = URL(string: "https://t.me/m/\(AppConfig.appTelegramSupportSlug)")!
+
+                if UIApplication.shared.canOpenURL(appUrl) {
+                    openURL(appUrl)
+                } else {
+                    Coordinator.shared.present(url: webUrl)
+                }
+
                 stat(page: .settings, event: .open(page: .vipSupport))
             }
         }) {
-            Image("support_2_24").themeIcon(color: .themeJacob)
+            ThemeImage("support", size: .iconSize24, colorStyle: .yellow)
             Text("purchases.priority_support".localized).themeBody()
             Image.disclosureIcon
         }
@@ -417,9 +458,16 @@ struct MainSettingsView: View {
 
     @ViewBuilder private func addressChecker() -> some View {
         ClickableRow(action: {
-            addressCheckerPresented = true
+            Coordinator.shared.performAfterPurchase(premiumFeature: .scamProtection, page: .settings, trigger: .vipSupport) {
+                Coordinator.shared.present { isPresented in
+                    CheckAddressView(isPresented: isPresented)
+                        .onFirstAppear {
+                            stat(page: .settings, event: .open(page: .addressChecker))
+                        }
+                }
+            }
         }) {
-            Image("radar_24").themeIcon(color: .themeJacob)
+            ThemeImage("radar", size: .iconSize24, colorStyle: .yellow)
             Text("address_checker.title".localized).themeBody()
             Image.disclosureIcon
         }
@@ -433,7 +481,7 @@ struct MainSettingsView: View {
                 }
         }) {
             HStack(spacing: .margin16) {
-                Image("circle_information_24").themeIcon()
+                ThemeImage("information", size: .iconSize24)
                 Text("settings.about_app.title".localized).textBody()
             }
 
@@ -452,7 +500,7 @@ struct MainSettingsView: View {
             viewModel.rateApp()
             stat(page: .settings, event: .open(page: .rateUs))
         }) {
-            Image("chart_24").themeIcon()
+            ThemeImage("star", size: .iconSize24)
             Text("settings.rate_us".localized).themeBody()
             Image.disclosureIcon
         }
@@ -465,7 +513,7 @@ struct MainSettingsView: View {
             }
             stat(page: .settings, event: .open(page: .tellFriends))
         }) {
-            Image("share_1_24").themeIcon()
+            ThemeImage("arrow_out", size: .iconSize24)
             Text("settings.tell_friends".localized).themeBody()
             Image.disclosureIcon
         }
@@ -480,30 +528,39 @@ struct MainSettingsView: View {
                     stat(page: .settings, event: .open(page: .faq))
                 }
         }) {
-            Image("message_square_24").themeIcon()
+            ThemeImage("message", size: .iconSize24)
             Text("settings.faq".localized).themeBody()
             Image.disclosureIcon
         }
     }
 
-//    @ViewBuilder private func academy() -> some View {
-//        NavigationRow(destination: {
-//            EducationView().onFirstAppear {
-//                stat(page: .settings, event: .open(page: .education))
-//            }
-//        }) {
-//            Image("academy_1_24").themeIcon()
-//            Text("education.title".localized).themeBody()
-//            Image.disclosureIcon
-//        }
-//    }
+    @ViewBuilder private func academy() -> some View {
+        NavigationRow(destination: {
+            EducationView().onFirstAppear {
+                stat(page: .settings, event: .open(page: .education))
+            }
+        }) {
+            ThemeImage("book", size: .iconSize24)
+            Text("education.title".localized).themeBody()
+            Image.disclosureIcon
+        }
+    }
+
 
     @ViewBuilder private func telegram() -> some View {
         ClickableRow(action: {
-            UrlManager.open(url: "https://t.me/\(AppConfig.appTelegramAccount)")
+            let appUrl = URL(string: "tg://resolve?domain=\(AppConfig.appTelegramAccount)")!
+            let webUrl = URL(string: "https://t.me/\(AppConfig.appTelegramAccount)")!
+
+            if UIApplication.shared.canOpenURL(appUrl) {
+                openURL(appUrl)
+            } else {
+                Coordinator.shared.present(url: webUrl)
+            }
+
             stat(page: .settings, event: .open(page: .externalTelegram))
         }) {
-            Image("telegram_24").themeIcon()
+            ThemeImage("telegram_logo", size: .iconSize24)
             Text("Telegram").themeBody()
             Image.disclosureIcon
         }
@@ -516,12 +573,12 @@ struct MainSettingsView: View {
             if let appUrl = URL(string: "twitter://user?screen_name=\(account)"), UIApplication.shared.canOpenURL(appUrl) {
                 UIApplication.shared.open(appUrl)
             } else {
-                UrlManager.open(url: "https://twitter.com/\(account)")
+                Coordinator.shared.present(url: "https://twitter.com/\(account)")
             }
 
             stat(page: .settings, event: .open(page: .externalTwitter))
         }) {
-            Image("twitter_24").themeIcon()
+            ThemeImage("x_logo", size: .iconSize24)
             Text("Twitter").themeBody()
             Image.disclosureIcon
         }
@@ -557,34 +614,79 @@ struct MainSettingsView: View {
 
             Image("HS Logo Image")
                 .onTapGesture {
-                    UrlManager.open(url: AppConfig.companyWebPageLink)
+                    Coordinator.shared.present(url: AppConfig.companyWebPageLink)
                     stat(page: .settings, event: .open(page: .externalCompanyWebsite))
                 }
         }
     }
 
-    @ViewBuilder private func testSwitchersSection() -> some View {
-        ListSection {
-            ListRow {
-                Toggle(isOn: $viewModel.emulatePurchase) {
-                    Text("Emulate Purchase").themeBody()
-                }
-                .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
-            }
+//    @ViewBuilder private func testSwitchersSection() -> some View {
+//        ListSection {
+//            ListRow {
+//                Toggle(isOn: $viewModel.emulatePurchase) {
+//                    Text("Emulate Purchase").themeBody()
+//                }
+//                .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
+//            }
+//
+//            ListRow {
+//                Toggle(isOn: $viewModel.testNetEnabled) {
+//                    Text("TestNet Enabled").themeBody()
+//                }
+//                .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
+//            }
+//
+//            ListRow {
+//                Toggle(isOn: $viewModel.mayaStagenetEnabled) {
+//                    Text("Maya Stagenet Enabled").themeBody()
+//                }
+//                .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
+//            }
+//
+//            row(
+//                title: "AML checking result".localized,
+//                subtitle: "Oerride checking result from serer".localized,
+//                value: viewModel.debuggingAmlResult?.rawValue ?? "clear",
+//                action: {
+//                    Coordinator.shared.present(type: .alert) { isPresented in
+//                        OptionAlertView(
+//                            title: "AML Result".localized,
+//                            viewItems: [.init(text: "clear".localized, selected: viewModel.debuggingAmlResult == nil)] +
+//                                MultiSwapViewModel.AmlRiskResult.allCases.map {
+//                                    AlertViewItem(text: $0.rawValue, selected: viewModel.debuggingAmlResult == $0)
+//                                },
+//                            onSelect: { index in
+//                                switch index {
+//                                case 0: viewModel.debuggingAmlResult = nil
+//                                default: viewModel.debuggingAmlResult = MultiSwapViewModel.AmlRiskResult.allCases[index - 1]
+//                                }
+//                            },
+//                            isPresented: isPresented
+//                        )
+//                    }
+//                }
+//            )
+//        }
+//    }
 
-            ListRow {
-                Toggle(isOn: $viewModel.testNetEnabled) {
-                    Text("TestNet Enabled").themeBody()
-                }
-                .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
-            }
-
-            ListRow {
-                Toggle(isOn: $viewModel.mayaStagenetEnabled) {
-                    Text("Maya Stagenet Enabled").themeBody()
-                }
-                .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
-            }
-        }
+    @ViewBuilder private func row(title: String, subtitle: String, value: String, action: (() -> Void)?) -> some View {
+        let enabled = action != nil
+        Cell(
+            middle: {
+                MultiText(title: title, subtitle: subtitle)
+            },
+            right: {
+                ThemeText(
+                    value,
+                    style: .subheadSB,
+                    colorStyle: enabled ? .primary : .secondary
+                )
+                .arrow(
+                    style: .dropdown,
+                    colorStyle: enabled ? .primary : .secondary
+                )
+            },
+            action: action
+        )
     }
 }

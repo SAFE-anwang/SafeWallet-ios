@@ -10,55 +10,16 @@ struct BlockchainSettingsView: View {
             VStack(spacing: .margin32) {
                 ListSection {
                     ForEach(viewModel.btcItems, id: \.blockchain.uid) { item in
-//<<<<<<< HEAD
-//                        ClickableRow(action: {
-//                            Coordinator.shared.present { _ in
-//                                ThemeNavigationStack { BtcBlockchainSettingsModule.view(blockchain: item.blockchain) }
-//                            }
-//                            stat(page: .blockchainSettings, event: .openBlockchainSettingsBtc(chainUid: item.blockchain.uid))
-//                        }) {
-//                            ItemView(
-//                                blockchain: item.blockchain,
-//                                value: item.title
-//                            )
-//                        }
-//                    }
-//
-//                    if let item = viewModel.moneroItem {
-//                        ClickableRow(action: {
-//                            Coordinator.shared.present { _ in
-//                                MoneroNetworkView(blockchain: item.blockchain).ignoresSafeArea()
-//                            }
-//                            stat(page: .blockchainSettings, event: .openBlockchainSettingsEvm(chainUid: item.blockchain.uid))
-//                        }) {
-//                            ItemView(
-//                                blockchain: item.blockchain,
-//                                value: item.node.name
-//                            )
-//                        }
-//=======
                         ItemView(item: item)
-//>>>>>>> master
                     }
                 }
 
                 ListSection {
                     ForEach(viewModel.evmItems, id: \.blockchain.uid) { item in
-//<<<<<<< HEAD
-//                        ClickableRow(action: {
-//                            Coordinator.shared.present { _ in
-//                                EvmNetworkView(blockchain: item.blockchain).ignoresSafeArea()
-//                            }
-//                            stat(page: .blockchainSettings, event: .openBlockchainSettingsEvm(chainUid: item.blockchain.uid))
-//                        }) {
-//                            ItemView(
-//                                blockchain: item.blockchain,
-//                                value: item.syncSource.name
-//                            )
-//                        }
-//=======
                         ItemView(item: item)
-//>>>>>>> master
+                    }
+                    if let tronItem = viewModel.tronItem {
+                        ItemView(item: tronItem)
                     }
                 }
             }
@@ -74,23 +35,29 @@ struct BlockchainSettingsView: View {
             ClickableRow(action: {
                 switch item.type {
                 case .evm:
-                    Coordinator.shared.present { _ in
-                        EvmNetworkView(blockchain: item.blockchain).ignoresSafeArea()
+                    Coordinator.shared.present { isPresented in
+                        EvmNetworkView(blockchain: item.blockchain, isPresented: isPresented)
                     }
 
                     stat(page: .blockchainSettings, event: .openBlockchainSettingsEvm(chainUid: item.blockchain.uid))
                 case .btc:
-                    Coordinator.shared.present { _ in
-                        ThemeNavigationStack { BtcBlockchainSettingsModule.view(blockchain: item.blockchain) }
+                    Coordinator.shared.present { isPresented in
+                        BtcBlockchainSettingsView(blockchain: item.blockchain, isPresented: isPresented)
                     }
 
                     stat(page: .blockchainSettings, event: .openBlockchainSettingsBtc(chainUid: item.blockchain.uid))
                 case .monero:
-                    Coordinator.shared.present { _ in
-                        MoneroNetworkView(blockchain: item.blockchain).ignoresSafeArea()
+                    Coordinator.shared.present { isPresented in
+                        MoneroNetworkView(blockchain: item.blockchain, isPresented: isPresented)
                     }
 
                     stat(page: .blockchainSettings, event: .openBlockchainSettingsMonero)
+                case .zano:
+                    Coordinator.shared.present { isPresented in
+                        ZanoNetworkView(blockchain: item.blockchain, isPresented: isPresented)
+                    }
+
+                    stat(page: .blockchainSettings, event: .openBlockchainSettingsZano)
                 }
 
             }) {

@@ -33,6 +33,7 @@ extension TermsViewModel {
     func isTermAccepted(_ term: TermsManager.Term) -> Bool {
         acceptedTermIds.contains(term.id)
     }
+
     func setTermsAccepted() {
         termsManager.setTermsAccepted()
     }

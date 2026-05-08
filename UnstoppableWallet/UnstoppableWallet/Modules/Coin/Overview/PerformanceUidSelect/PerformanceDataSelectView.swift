@@ -16,8 +16,6 @@ struct PerformanceDataSelectView: View {
         ThemeNavigationStack {
             ThemeView {
                 VStack(spacing: 0) {
-                    SearchBar(text: $viewModel.searchText, prompt: "placeholder.search".localized)
-
                     ListSection {
                         ListRow {
                             Text("coin_overview.performance.period".localized(1)).textBody()
@@ -87,17 +85,19 @@ struct PerformanceDataSelectView: View {
                     }
                 }
                 .navigationTitle("coin_overview.performance.select_coins.title".localized)
-                .navigationBarTitleDisplayMode(.inline)
+                .searchBar(text: $viewModel.searchText, prompt: "placeholder.search".localized)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("button.done".localized) {
+                        Button(action: {
                             viewModel.setData()
                             isPresented = false
+                        }) {
+                            Image("check")
                         }
+                        .modifier(ConfirmationButtonStyle())
                         .disabled(viewModel.selectedCoins.count != viewModel.coinCount)
                     }
                 }
-                .accentColor(Color.themeJacob)
             }
         }
     }

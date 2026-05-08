@@ -887,6 +887,42 @@ enum StorageMigrator {
             }
         }
 
+        migrator.registerMigration("Create SwapRecord") { db in
+            try db.create(table: SwapRecord.databaseTableName) { t in
+                t.column(SwapRecord.Columns.uid.name, .text).notNull().primaryKey(onConflict: .replace)
+                t.column(SwapRecord.Columns.txHash.name, .text)
+                t.column(SwapRecord.Columns.accountId.name, .text).notNull()
+                t.column(SwapRecord.Columns.providerId.name, .text).notNull()
+                t.column(SwapRecord.Columns.status.name, .text).notNull()
+                t.column(SwapRecord.Columns.tokenQueryIdIn.name, .text).notNull()
+                t.column(SwapRecord.Columns.tokenQueryIdOut.name, .text).notNull()
+                t.column(SwapRecord.Columns.amountIn.name, .text).notNull()
+                t.column(SwapRecord.Columns.amountOut.name, .text).notNull()
+                t.column(SwapRecord.Columns.toAddress.name, .text).notNull()
+                t.column(SwapRecord.Columns.depositAddress.name, .text)
+                t.column(SwapRecord.Columns.providerSwapId.name, .text)
+                t.column(SwapRecord.Columns.date.name, .datetime).notNull()
+                t.column(SwapRecord.Columns.fromAsset.name, .text)
+                t.column(SwapRecord.Columns.toAsset.name, .text)
+                t.column(SwapRecord.Columns.legs.name, .text)
+            }
+        }
+
+        migrator.registerMigration("Add recipient to SwapRecord") { db in
+            try db.alter(table: SwapRecord.databaseTableName) { t in
+                t.add(column: SwapRecord.Columns.recipient.name, .text)
+            }
+        }
+
+        migrator.registerMigration("Create ZanoNodeRecord") { db in
+            try db.create(table: ZanoNodeRecord.databaseTableName) { t in
+                t.column(ZanoNodeRecord.Columns.blockchainTypeUid.name, .text).notNull()
+                t.column(ZanoNodeRecord.Columns.url.name, .text).notNull()
+
+                t.primaryKey([ZanoNodeRecord.Columns.blockchainTypeUid.name, ZanoNodeRecord.Columns.url.name], onConflict: .replace)
+            }
+        }
+
         try migrator.migrate(dbPool)
     }
 

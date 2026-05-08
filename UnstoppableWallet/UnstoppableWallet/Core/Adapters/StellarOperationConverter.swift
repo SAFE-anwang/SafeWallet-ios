@@ -61,6 +61,7 @@ class StellarOperationConverter {
 extension StellarOperationConverter {
     func transactionRecord(operation: TxOperation) -> StellarTransactionRecord {
         let type = type(type: operation.type)
+
         return StellarTransactionRecord(source: source, operation: operation, baseToken: baseToken, type: type, spam: false)
     }
 }

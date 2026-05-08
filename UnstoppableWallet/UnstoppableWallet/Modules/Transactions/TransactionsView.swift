@@ -22,7 +22,6 @@ struct TransactionsView: View {
                 }
             } header: {
                 ThemeText(section.title, style: .subheadSB, colorStyle: .andy)
-                    .textCase(.uppercase)
                     .padding(.horizontal, .margin16)
                     .padding(.top, .margin24)
                     .padding(.bottom, .margin12)
@@ -69,7 +68,8 @@ struct TransactionsView: View {
                                     }
 
                                     if let locked = viewItem.locked {
-                                        Image(locked ? "lock_20" : "unlock_20").themeIcon()
+                                        ThemeImage(locked ? "lock_filled" : "unlock_filled", size: .iconSize20)
+                                        Image.lock(unlocked: !locked, size: .iconSize20)
                                     }
                                 }
                             }

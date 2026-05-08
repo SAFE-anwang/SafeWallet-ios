@@ -181,8 +181,8 @@
 	<string>${thorchain_affiliate}</string>
 	<key>ThorchainAffiliateBps</key>
 	<string>${thorchain_affiliate_bps}</string>
-	<key>TronGridApiKey</key>
-	<string>${trongrid_api_key}</string>
+	<key>TronGridApiKeys</key>
+	<string>${trongrid_api_keys}</string>
 	<key>TwitterBearerToken</key>
 	<string>${twitter_bearer_token}</string>
 	<key>UIAppFonts</key>
@@ -225,5 +225,7 @@
 	<string>${unstoppable_domains_api_key}</string>
 	<key>WallectConnectV2ProjectKey</key>
 	<string>${wallet_connect_v2_project_key}</string>
+	<key>USwapApiKey</key>
+	<string>${uswap_api_key}</string>
 </dict>
 </plist>

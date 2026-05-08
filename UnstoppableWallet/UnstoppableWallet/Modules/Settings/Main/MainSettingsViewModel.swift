@@ -4,7 +4,6 @@ import MarketKit
 import RxSwift
 
 class MainSettingsViewModel: ObservableObject {
-    static let supportLink = "https://t.me/m/-uTI4HwKZWNi"
     private let disposeBag = DisposeBag()
     private var cancellables = Set<AnyCancellable>()
 
@@ -31,6 +30,8 @@ class MainSettingsViewModel: ObservableObject {
     @Published var iCloudUnavailable: Bool = false
     @Published var slides: [Slide] = [.premium, .miniApp]
     @Published var introductoryOffer: String?
+
+    @Published var debu: String?
 
     let showTestSwitchers: Bool
 
@@ -61,12 +62,19 @@ class MainSettingsViewModel: ObservableObject {
         }
     }
 
+    @Published var debuggingAmlResult: MultiSwapViewModel.AmlRiskResult? {
+        didSet {
+            localStorage.debuggingAmlCheckResult = debuggingAmlResult
+        }
+    }
+
     init() {
         showTestSwitchers = Bundle.main.object(forInfoDictionaryKey: "ShowTestNetSwitcher") as? String == "true"
         forceEnableSwap = localStorage.forceEnableSwap
         emulatePurchase = localStorage.emulatePurchase
         testNetEnabled = testNetManager.testNetEnabled
         mayaStagenetEnabled = testNetManager.mayaStagenetEnabled
+        debuggingAmlResult = localStorage.debuggingAmlCheckResult
 
         subscribe(MainScheduler.instance, disposeBag, backupManager.allBackedUpObservable) { [weak self] _ in self?.syncManageWalletsAlert() }
         subscribe(MainScheduler.instance, disposeBag, walletConnectSessionManager.sessionsObservable) { [weak self] _ in self?.syncWalletConnectSessionCount() }

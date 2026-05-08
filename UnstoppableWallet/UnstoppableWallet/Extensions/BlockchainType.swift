@@ -14,6 +14,7 @@ extension BlockchainType {
         .dash,
         .zcash,
         .monero,
+        .zano,
         .ethereum,
         .polygon,
         .avalanche,
@@ -89,7 +90,7 @@ extension BlockchainType {
 
     var restoreSettingTypes: [RestoreSettingType] {
         switch self {
-        case .zcash, .monero: return [.birthdayHeight]
+        case .zcash, .monero, .zano: return [.birthdayHeight]
         default: return []
         }
     }
@@ -104,6 +105,7 @@ extension BlockchainType {
             .tron,
             .zcash,
             .dash,
+            .zano,
             .litecoin,
             .binanceSmartChain,
             .polygon,
@@ -176,6 +178,11 @@ extension BlockchainType {
                 return true
             default: return false
             }
+        case .trcPrivateKey:
+            switch self {
+            case .tron: return true
+            default: return false
+            }
         case .stellarSecretKey, .stellarAccount:
             return self == .stellar
         case .tronAddress:
@@ -218,6 +225,7 @@ extension BlockchainType {
         case .arbitrumOne: return "L2 chain"
         case .zcash: return "ZEC"
         case .monero: return "XMR"
+        case .zano: return "ZANO, confidential assets"
         case .dash: return "DASH"
         case .bitcoinCash: return "BCH (Legacy, CashAddress)"
         case .ecash: return "XEC"
@@ -303,11 +311,20 @@ extension BlockchainType {
 
     var blockTime: TimeInterval? {
         switch self {
-        case .ethereum: return 15
+        case .ethereum: return 12
         case .binanceSmartChain, .tron: return 3
-        case .polygon, .avalanche, .optimism, .arbitrumOne, .fantom, .base, .zkSync: return 2
-        case .gnosis, .stellar: return 5
-        default: return nil
+        case .polygon, .avalanche, .optimism, .fantom, .base, .zkSync: return 2
+        case .gnosis, .stellar, .ton: return 5
+        case .bitcoin, .bitcoinCash, .ecash: return 600
+        case .dash, .litecoin: return 150
+        case .zcash: return 75
+        case .monero: return 120
+        case .zano: return 60
+        case .arbitrumOne: return 1
+        case .solana, .unsupported: return nil
+        case .dogecoin: return 60
+        case .safe: return 5
+        case .safe4: return 3
         }
     }
 }

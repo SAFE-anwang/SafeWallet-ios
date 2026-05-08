@@ -49,7 +49,6 @@ class TronSendData: ISendData {
                 currency: currency,
                 rate: rates[token.coin.uid]
             )
-
         case let decoration as OutgoingEip20Decoration:
             return sendFields(
                 to: decoration.to,
@@ -57,7 +56,6 @@ class TronSendData: ISendData {
                 currency: currency,
                 rate: rates[token.coin.uid]
             )
-
         default:
             return nil
         }

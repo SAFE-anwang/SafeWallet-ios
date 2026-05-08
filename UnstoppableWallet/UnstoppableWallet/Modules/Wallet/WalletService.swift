@@ -72,7 +72,7 @@ extension WalletService {
     func caution(wallet: Wallet) -> CautionNew? {
         adapterService.balanceCaution(wallet: wallet)
     }
-    
+
     func state(wallet: Wallet) -> AdapterState? {
         adapterService.state(wallet: wallet)
     }

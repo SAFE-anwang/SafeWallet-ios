@@ -1,5 +1,4 @@
 import Combine
-
 import SwiftUI
 
 private let qrSize: CGFloat = 203
@@ -40,18 +39,18 @@ struct BaseReceiveAddressView<Content: View>: View {
             }
         }
         .navigationTitle(viewModel.title)
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("button.done".localized) {
+                Button(action: {
                     if let onDismiss {
                         onDismiss()
                     } else {
                         presentationMode.wrappedValue.dismiss()
                     }
+                }) {
+                    Image("check")
                 }
             }
         }
-        .accentColor(.themeGray)
     }
 }

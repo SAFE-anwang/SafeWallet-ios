@@ -144,7 +144,7 @@
 "restore.restore_type.mnemonic" = "복구 문구";
 "restore.restore_type.private_key" = "개인 암호";
 "restore.mnemonic.placeholder" = "12, 15, 18, 21 또는 24단어 입력";
-"restore.private_key.placeholder" = "EVM 개인 키, BIP32 Root Key 또는 Account Extended Private Key 입력";
+"restore.private_key.placeholder" = "EVM 또는 TRON 개인 키, Stellar 비밀 키, BIP32 루트 키 또는 계정 확장 개인 키를 입력하세요";
 "restore.private_key.invalid_key" = "잘못된 암호입니다";
 "restore_error.mnemonic_word_count" = "단어 수가 틀렸습니다. 12 개 와 24개 사이여야 합니다. 이렇게 입력했습니다: %@";
 "restore.checksum_error" = "유효하지 않은 체크섬";
@@ -159,6 +159,13 @@
 "restore.error.non_standard.description" = "비표준 호환 지갑입니다. 자세한 내용은 아래를 참조하십시오.\n\n더 많은 정보를 얻으려면 클릭하십시오";
 
 "restore.error.non_standard.link" = "자세한 정보 보려면 클릭";
+
+"restore.select_key_type" = "네트워크 선택";
+"restore.select_key_type.evm" = "EVM 네트워크";
+"restore.select_key_type.evm.description" = "Ethereum, Arbitrum, Optimism ...";
+"restore.select_key_type.trc" = "TRON";
+"restore.select_key_type.trc.description" = "TRON 네트워크 전용.";
+
 
 // Restore Type
 
@@ -186,9 +193,9 @@
 
 // Coin Settings
 
-"coin_settings.title" = "블록 체인 설정";
 "coin_settings.bitcoin_cash_coin_type.title.type0" = "Legacy";
 "coin_settings.bitcoin_cash_coin_type.title.type145" = "현금주소(권장)";
+"coin_settings.title" = "블록 체인 설정";
 "sync_mode.hybrid" = "하이브리드";
 "sync_mode.from_blockchain" = "블록체인으로 부터";
 "blockchain_settings.description" = "코인의 주소 형식을 선택하세요.";
@@ -218,6 +225,9 @@
 
 "evm_private_key.title" = "EVM 개인 키";
 "evm_private_key.tap_to_show" = "개인 키 보기";
+
+"tron_private_key.title" = "Tron 개인 키";
+"tron_private_key.tap_to_show" = "탭하여 개인 키 보기";
 
 // Stellar Secret Key
 
@@ -587,7 +597,7 @@
 "send.lock_time" = "시간 자물쇠";
 
 "send.unspent_outputs" = "UTxOs";
-"send.unspent_outputs.description" = "잔액에서 자금을 사용하기 위해 수동으로 UTxO를 선택하세요.";
+"send.unspent_outputs.description" = "거래에서 사용할 코인을 수동으로 선택하세요.";
 "send.unspent_outputs.send_to" = "보내기";
 "send.unspent_outputs.change" = "변경";
 
@@ -687,6 +697,17 @@
 
 "swap.quotes.providers" = "제공자";
 "swap.quotes.best_price" = "최상의 가격";
+"swap.quotes.sort.title" = "정렬 기준";
+"swap.quotes.sort.best_rate" = "최적 환율";
+"swap.quotes.sort.best_time" = "가장 빠른";
+
+"swap.quotes.providers.risk_levels.title" = "공급자 위험 수준";
+"swap.quotes.providers.risk_levels.description" = "위험 수준은 공급자가 실행 중에 취할 수 있는 조치를 나타냅니다.";
+"swap.quotes.providers.risk_levels.auto.description" = "이 거래소는 자체 유동성을 사용하며 개인정보 보호에 친화적입니다. 거래는 AML 차단 없이 처리됩니다.";
+"swap.quotes.providers.risk_levels.flexible.description" = "이 거래소는 일반적으로 AML 검사를 통과하지 못한 거래를 환불합니다. 드문 경우, 추가 인증이 필요하면 자금이 일시적으로 차단될 수 있습니다.";
+"swap.quotes.providers.risk_levels.preCheck.description" = "제공자는 스왑을 처리하기 전에 자체적으로 주소 심사를 수행합니다. 거부는 드물며, 동결은 이론적으로 가능하지만 매우 드뭅니다.";
+"swap.quotes.providers.risk_levels.controlled.description" = "이 거래소는 KYC/인증 요구 사항이 완료될 때까지 AML 검사를 통과하지 못한 거래를 차단합니다.";
+
 
 "swap.allowance" = "허용량";
 "swap.allowance.description" = "토큰 스왑을 실행할 때 거래소가 사용자 대신 소비할 수 있는 금액입니다. 실제 스왑 거래가 발생하기 전에 충분한 할당을 설정하는 이전 거래가 필요합니다.";
@@ -707,7 +728,7 @@
 "swap.high_price_impact" = "높은 가격 영향";
 "swap.recipient" = "수령인";
 "swap.slippage" = "미끄러짐";
-"swap.swapped_time" = "스왑 완료 시간";
+"swap.swapped_time" = "예상 시간";
 "swap.swapped_time.info" = "자금을 수령하기까지의 예상 시간입니다. 네트워크와 제공업체에 따라 스왑 처리 및 트랜잭션 확인에 시간이 걸릴 수 있습니다.";
 
 "swap.affiliate_fee" = "제휴 수수료";
@@ -716,6 +737,14 @@
 "swap.total_fee" = "총 수수료";
 
 "swap.aml" = "AML";
+"swap.aml.risk.title" = "경고!";
+"swap.aml.risk.description" = "이 거래에서 잠재적 위험이 확인되었습니다. 처리 중 자금이 거부되거나 제한될 수 있습니다. 다른 제공업체를 선택해 주세요.";
+"swap.aml.risk.button" = "다른 제공업체 선택";
+"swap.aml.undefined.description" = "이 거래에 대한 위험 검사를 완료할 수 없었습니다. 계속 진행하면 이 스왑이 처리 중 지연, 거부 또는 제한이 발생할 수 있습니다.";
+"swap.aml.undefined.button" = "위험을 감수하고 계속";
+"swap.aml.connection.title" = "연결 문제";
+"swap.aml.connection.description" = "현재 응답을 받을 수 없습니다. 다시 시도해 주세요.";
+"swap.aml.connection.button" = "재시도";
 
 // Swap options
 
@@ -782,7 +811,7 @@
 "swap.confirmation.impact_too_high" = "%@은 현재 유동성이 매우 낮아 매우 불리한 가격으로 거래되고 있으므로, 이 거래에 대한 스왑 조치를 비활성화했습니다.\n교환을 원하시면 %@ 웹사이트를 사용하십시오.";
 "swap.confirmation.impact_warning" = "중요한 사항입니다! 매우 불리한 가격을 받고 있습니다. 이는 유동성이 극도로 낮기 때문입니다.";
 
-"swap.confirmation.minimum_received" = "최대 지급액";
+"swap.confirmation.minimum_received" = "보장 수량";
 "swap.confirmation.minimum_received.info" = "스왑이 완료된 후 수령하게 되는 최소 금액입니다. 이 금액은 제공업체에 의해 보장되며, 처리 중 발생하는 가격 변동의 영향을 받지 않습니다.";
 "swap.confirmation.maximum_sent" = "최대 속도";
 
@@ -809,18 +838,36 @@
 
 "swap.maya.shielded_address.error" = "메모(Maya)에 대한 보호 주소를 가져올 수 없습니다";
 
-
-// Market
-
-"market.tab_bar_item" = "시장";
-"market.title" = "시장";
+"market.24h_volume" = "24시간 거래량";
 "market.category.overview" = "개요";
 "market.category.posts" = "뉴스";
 "market.category.watchlist" = "관심 목록";
-"market.total_market_cap" = "총 시가총액";
-"market.24h_volume" = "24시간 거래량";
 "market.defi_cap" = "디파이(DeFi) 시가총액";
 "market.defi_tvl" = "디파이(DeFi)에서의 총 예치 가치";
+"market.tab_bar_item" = "시장";
+"market.title" = "시장";
+"market.total_market_cap" = "총 시가총액";
+"swap_history.all" = "전체";
+"swap_history.empty" = "대기 중이거나 완료된 스왑이 없습니다.";
+"swap_history.title" = "스왑 내역";
+"swap_info.date" = "날짜";
+"swap_info.deposit" = "입금 %@";
+"swap_info.provider" = "제공자";
+"swap_info.recipient" = "수신자";
+"swap_info.refund" = "환불 %@";
+"swap_info.send" = "전송 %@";
+"swap_info.status" = "상태";
+"swap_info.status.completed" = "완료됨";
+"swap_info.status.failed" = "실패";
+"swap_info.status.not_started" = "시작되지 않음";
+"swap_info.status.pending" = "대기 중";
+"swap_info.status.refunded" = "환불됨";
+"swap_info.status.swapping" = "스왑 중";
+"swap_info.status.unknown" = "알 수 없음";
+"swap_info.swap" = "스왑";
+"swap_info.title" = "스왑 정보";
+"swap_info.unknown" = "알 수 없음";
+"swap_info.view" = "보기";
 
 "market.global.market_cap" = "시가 총액";
 "market.global.volume" = "24h 거래량";
@@ -917,7 +964,7 @@
 "top_platform.title" = "%@ 생태계";
 "top_platform.total_cap" = "시가 총액";
 
-
+"market.search.title" = "검색";
 "market.search.recent" = "최근";
 "market.search.popular" = "인기있는";
 
@@ -978,7 +1025,6 @@
 "market.advanced_search.price_close_to_atl" = "Price Close to ATL";
 
 "market.advanced_search.top" = "상위 %d";
-"market.advanced_search.reset_all" = "초기화";
 
 "market.advanced_search.less_5_m" = "< 5백만";
 "market.advanced_search.less_10_m" = "< 10백만";
@@ -1519,18 +1565,16 @@
 "manage_wallets.derivation_description" = "%@ 지갑이 입금을 받는 데 사용할 수 있는 4가지 일반적인 주소 형식이 있습니다.\n\n- BIP44(이전)\n- BIP49\n- BIP84(추천)\n- BIP86(최신)\n\n%@ 지갑은 이 4가지 모두를 지원합니다. BIP84 형식으로 작동하는 %@ 지갑을 사용하는 것이 좋습니다.";
 "manage_wallets.bitcoin_cash_coin_type_description" = "비트코인 캐시 지갑이 수신 지불을 받는 데 사용할 수 있는 2가지 주소 형식이 있습니다.\n\n- 유형 0(이전)\n- 유형 145(최신)\n\n%@ 지갑은 두 가지를 모두 지원하지만 비트코인 캐시를 사용하는 것이 좋습니다. TYPE 145 형식으로 작동하는 지갑.";
 
-// Settings -> Personal Support
-
-"settings.personal_support.telegram_username.title" = "계정";
-"settings.personal_support.telegram_username.placeholder" = "@username";
 "settings.personal_support.description" = "개인 지원 채팅을 열려면 텔레그램 계정 이름을 입력하십시오. 그런 다음 메시지를 보내드립니다.";
-"settings.personal_support.request" = "요청";
-"settings.personal_support.requested" = "신청 완료";
 "settings.personal_support.failed" = "요청 실패";
 "settings.personal_support.need_subscription" = "이 기능은 %@ 월렛 프리미엄 사용자 전용입니다. 공식 웹사이트에서 자세한 정보를 확인하세요.";
+"settings.personal_support.request" = "요청";
+"settings.personal_support.requested" = "신청 완료";
 "settings.personal_support.requested.description" = "이미 비공개 채팅을 요청하셨습니다. Telegram에서 찾아보세요.";
-"settings.personal_support.requested.open_telegram" = "오픈 텔레그램";
 "settings.personal_support.requested.new_request" = "요청";
+"settings.personal_support.requested.open_telegram" = "오픈 텔레그램";
+"settings.personal_support.telegram_username.placeholder" = "@username";
+"settings.personal_support.telegram_username.title" = "계정";
 
 // Settings -> Terms
 
@@ -1576,6 +1620,7 @@
 "backup_app.backup_list.other.contacts.title" = "연락처";
 "backup_app.backup_list.other.custom_evm_sync_sources.title" = "사용자 지정 RPC";
 "backup_app.backup_list.other.custom_monero_nodes.title" = "사용자 지정 Monero 노드";
+"backup_app.backup_list.other.custom_zano_nodes.title" = "사용자 지정 Zano 노드";
 "backup_app.backup_list.other.app_settings.title" = "앱 설정";
 "backup_app.backup_list.other.app_settings.description" = "언어, 통화, 외관...";
 
@@ -1615,6 +1660,7 @@
 "settings_security.edit_passcode" = "비밀번호 변경";
 "settings_security.disable_passcode" = "비밀번호 비활성화";
 "settings_security.auto_lock" = "자동 잠금";
+"settings_security.auto_lock.description" = "선택한 시간이 지나면 앱을 자동으로 잠급니다.";
 "settings_security.balance_auto_hide" = "밸런스 자동 숨기기";
 "settings_security.balance_auto_hide.description" = "앱이 열릴 때마다 잔고를 자동으로 숨깁니다. 이전 설정에 관계없이 적용됩니다.";
 "settings_security.enable_duress_mode" = "긴급 상황 모드 설정";
@@ -1625,9 +1671,6 @@
 "biometry.off" = "끄기";
 "biometry.manual" = "수동";
 "biometry.on" = "켜기";
-"biometry.off.description" = "모든 경우에 비활성화";
-"biometry.manual.description" = "버튼으로 스캔하기";
-"biometry.on.description" = "자동 스캔";
 
 // Create Passcode
 
@@ -1695,7 +1738,7 @@
 
 "btc_transaction_sort_mode.shuffle" = "셔플";
 "btc_transaction_sort_mode.shuffle.description" = "랜덤 인덱싱";
-"btc_transaction_sort_mode.bip69" = "BIP69";
+"btc_transaction_sort_mode.bip69" = "결정론적";
 "btc_transaction_sort_mode.bip69.description" = "사전 색인 작성";
 
 "blockchain_settings.info.restore_source" = "매개 변수 복원";
@@ -1762,7 +1805,6 @@
 "appearance.launch_screen.description" = "앱이 기본적으로 열릴 화면을 선택하세요.";
 "appearance.launch_screen.auto" = "자동";
 "appearance.launch_screen.balance" = "잔액";
-"appearance.launch_screen.market_overview" = "시장 개요";
 "appearance.launch_screen.watchlist" = "관심 목록";
 
 "appearance.balance_tab" = "잔고 탭";
@@ -2098,6 +2140,8 @@
 "public_keys.title" = "공개 키";
 "public_keys.evm_address" = "EVM 주소";
 "public_keys.evm_address.description" = "Ethereum, Binance Smart Chain 및 기타 EVM 기반 블록체인에 자산을 보유하고 있는 지갑의 읽기 전용 모니터링을 허용합니다.";
+"public_keys.tron_address" = "TRON 주소";
+"public_keys.tron_address.description" = "TRON 블록체인에 자산을 보유한 지갑을 읽기 전용으로 모니터링할 수 있습니다.";
 "public_keys.account_extended_public_key" = "Account Extended Public Key";
 "public_keys.account_extended_public_key.description" = "Bitcoin 및 기타 UTXO 기반 암호화폐(예: Litecoin, Bitcoin Cash, Dash 등)를 보유한 지갑의 읽기 전용 모니터링을 허용합니다.";
 "public_keys.monero_public_key" = "Monero 공개 키";
@@ -2108,6 +2152,8 @@
 "private_keys.title" = "개인 암호";
 "private_keys.evm_private_key" = "EVM 개인 키";
 "private_keys.evm_private_key.description" = "이 지갑은 EVM 기반 네트워크(예: Ethereum, BNB Smart Chain, Polygon, Avalanche)의 자산에 대한 완전한 제어 권한을 부여합니다.";
+"private_keys.tron_private_key" = "Tron 개인 키";
+"private_keys.tron_private_key.description" = "이 지갑 내 Tron 네트워크의 자산에 대한 전체 제어 권한을 부여합니다.";
 "private_keys.stellar_secret_key" = "Stellar 비밀 키";
 "private_keys.stellar_secret_key.description" = "이 지갑은 Stellar 네트워크 자산에 대한 완전한 제어 권한을 부여합니다.";
 "private_keys.bip32_root_key" = "BIP32 Root Key";
@@ -2120,6 +2166,7 @@
 // Manage Account -> EVM Address
 
 "evm_address.title" = "EVM 주소";
+"tron_address.title" = "TRON 주소";
 
 // Birthday Height
 
@@ -2171,6 +2218,14 @@
 "add_monero_node.warning.url_exists" = "이 URL의 노드는 이미 존재합니다";
 "add_monero_node.error.invalid_url" = "입력한 URL이 잘못되었습니다. 유효한 URL은 https 스킴을 포함해야 합니다";
 
+"add_zano_node.error.invalid_url" = "입력한 URL이 유효하지 않습니다";
+"add_zano_node.node_url" = "노드 URL";
+"add_zano_node.title" = "노드 추가";
+"add_zano_node.warning.url_exists" = "이 URL을 가진 노드가 이미 존재합니다";
+"zano_network.add_new" = "새로 추가";
+"zano_network.added" = "추가됨";
+"zano_network.description" = "Unstoppable 앱이 지갑 동기화에 사용할 노드를 선택하세요.";
+"zano_network.node" = "노드";
 
 // Send Settings
 
@@ -2186,6 +2241,7 @@
 "fee_settings.fee_rate" = "수수료율";
 "fee_settings.fee_rate.description" = "다음 2 블록 타격에 대한 권장 값은 다음과 같습니다.";
 "fee_settings.inputs_outputs" = "입력/출력";
+"fee_settings.inputs_outputs.description" = "트랜잭션 입력 및 출력의 구조 방식을 변경합니다.";
 "fee_settings.transaction_settings" = "거래 설정";
 "fee_settings.transaction_settings.description" = "트랜잭션이 구조화되는 방식을 변경하여 Bitcoin 트랜잭션을 추적하기 어렵게 만드십시오.";
 "fee_settings.replace_by_fee" = "수수료로 대체";
@@ -2376,7 +2432,7 @@
 "transaction_filter.contact" = "연락처";
 "transaction_filter.all_contacts" = "모든 연락처";
 "transaction_filter.hide_suspicious_txs" = "의심스러운 거래 숨기기";
-"transaction_filter.hide_suspicious_txs.description" = "소액의 수신 트랜잭션(예: $1.5 미만의 USDT)을 숨깁니다. 이러한 트랜잭션은 피싱 및 주소 포이즈닝 공격에 자주 사용됩니다.";
+"transaction_filter.hide_suspicious_txs.description" = "피싱 공격에 자주 사용되는 의심스러운 소액 전송을 숨깁니다.";
 
 // Black Friday
 
@@ -2504,5 +2560,7 @@
 
 // MEV Protection
 
-"mev_protection.title" = "MEV 보호";
 "mev_protection.description" = "일명 프런트러닝 봇은 모든 거래를 감시하며 사용자가 더 많은 수수료를 내도록 유도합니다. 이 기능은 그런 봇을 차단합니다.";
+"mev_protection.title" = "MEV 보호";
+"secure_send.bottom_sheet.description" = "보안 검사를 선택하세요.";
+"secure_send.bottom_sheet.title" = "보안 전송";

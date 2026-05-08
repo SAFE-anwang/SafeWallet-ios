@@ -17,7 +17,16 @@ class EvmTransactionsAdapter: BaseEvmAdapter {
     init(evmKitWrapper: EvmKitWrapper, source: TransactionSource, baseToken: MarketKit.Token, evmTransactionSource: EvmKit.TransactionSource, coinManager: CoinManager, spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager) {
         self.evmTransactionSource = evmTransactionSource
         spamManager = spamWrapper.spamManager(source: source)
-        transactionConverter = EvmTransactionConverter(source: source, baseToken: baseToken, coinManager: coinManager, evmKitWrapper: evmKitWrapper, blockchainType: evmKitWrapper.blockchainType, userAddress: evmKitWrapper.evmKit.address, evmLabelManager: evmLabelManager)
+
+        transactionConverter = EvmTransactionConverter(
+            source: source,
+            baseToken: baseToken,
+            coinManager: coinManager,
+            evmKitWrapper: evmKitWrapper,
+            blockchainType: evmKitWrapper.blockchainType,
+            userAddress: evmKitWrapper.evmKit.address,
+            evmLabelManager: evmLabelManager
+        )
 
         super.init(evmKitWrapper: evmKitWrapper, decimals: EvmAdapter.decimals)
 

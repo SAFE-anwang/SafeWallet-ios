@@ -30,6 +30,7 @@ protocol IAdapter: AnyObject {
 protocol IBalanceAdapter: IBaseAdapter {
     var balanceState: AdapterState { get }
     var balanceStateUpdatedObservable: Observable<AdapterState> { get }
+    var spendMode: BalanceAdapterSpendMode { get }
     var balanceData: BalanceData { get }
     var balanceDataUpdatedObservable: Observable<BalanceData> { get }
     var caution: CautionNew? { get }
@@ -43,6 +44,24 @@ extension IBalanceAdapter {
 
     var cautionUpdatedObservable: Observable<CautionNew?> {
         .just(nil)
+    }
+
+    var spendMode: BalanceAdapterSpendMode {
+        .fromBalanceState
+    }
+}
+
+enum BalanceAdapterSpendMode {
+    case fromBalanceState
+    case allowedWhenSyncing
+
+    func spendAllowed(state: AdapterState) -> Bool {
+        switch self {
+        case .fromBalanceState:
+            state.isSynced
+        case .allowedWhenSyncing:
+            state.isSynced || state.syncing
+        }
     }
 }
 
@@ -158,7 +177,7 @@ protocol ISendZcashAdapter {
     func validate(address: String, checkSendToSelf: Bool) throws -> ZcashAdapter.AddressType
     func sendProposal(amount: Decimal, address: Recipient, memo: Memo?) async throws -> Proposal
     func sendSingle(amount: Decimal, address: Recipient, memo: Memo?) -> Single<Void>
-    func send(proposal: Proposal) async throws
+    func send(proposal: Proposal) async throws -> String?
     func recipient(from stringEncodedAddress: String) -> Recipient?
 }
 

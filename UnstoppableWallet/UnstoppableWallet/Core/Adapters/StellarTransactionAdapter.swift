@@ -10,6 +10,7 @@ class StellarTransactionAdapter {
     private let converter: StellarOperationConverter
     private let spamWrapper: SpamWrapper
     private let spamManager: SpamManager?
+
     private var cancellables = Set<AnyCancellable>()
 
     private let adapterStateSubject = PublishSubject<AdapterState>()

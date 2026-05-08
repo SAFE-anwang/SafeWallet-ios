@@ -11,6 +11,9 @@ import SwiftUI
 import TronKit
 
 class AllBridgeMultiSwapProvider: IMultiSwapProvider {
+    static let id = "ALLBRIDGE"
+    static let name = "AllBridge"
+
     private let assetMapExpiration: TimeInterval = 60 * 60
 
     //    private let baseUrl = "https://allbridge.io/"
@@ -75,10 +78,9 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
         syncAssets()
     }
 
-    var id: String { "allbridge" }
-    var name: String { "AllBridge" }
-    var type: SwapProviderType { .dex }
-    var aml: Bool { true }
+    var id: String { Self.id }
+    var name: String { Self.name }
+    var type: SwapProviderType { .auto }
     var icon: String { "swap_provider_allbridge" }
 
     var syncPublisher: AnyPublisher<Void, Never>? {
@@ -234,6 +236,7 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
         logger?.log(level: .debug, message: "AllBridge: Quote Crosschain: \(crosschain) | amountOut = \(amountOut.description)")
 
         let bridgeAddress = assetIn.bridgeAddress
+        let estimatedTime: TimeInterval? = MultiSwapHelpers.estimate(tokenIn: tokenIn, tokenOut: tokenOut)
 
         if tokenIn.blockchainType.isEvm {
             let router = proxies[bridgeAddress] ?? bridgeAddress
@@ -241,20 +244,20 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
             let state = await allowanceHelper.allowanceState(spenderAddress: .init(raw: router), token: tokenIn, amount: amountIn)
             logger?.log(level: .debug, message: "AllBridge: Allowance = \(state)")
 
-            return EvmMultiSwapQuote(expectedBuyAmount: amountOut, allowanceState: state)
+            return EvmMultiSwapQuote(expectedBuyAmount: amountOut, allowanceState: state, estimatedTime: estimatedTime)
         } else if tokenIn.blockchainType == .tron {
             let state = await allowanceHelper.allowanceState(spenderAddress: .init(raw: bridgeAddress), token: tokenIn, amount: amountIn)
             logger?.log(level: .debug, message: "AllBridge: Allowance = \(state)")
 
-            return EvmMultiSwapQuote(expectedBuyAmount: amountOut, allowanceState: state)
+            return EvmMultiSwapQuote(expectedBuyAmount: amountOut, allowanceState: state, estimatedTime: estimatedTime)
         } else if tokenIn.blockchainType == .stellar {
-            return MultiSwapQuote(expectedBuyAmount: amountOut)
+            return MultiSwapQuote(expectedBuyAmount: amountOut, estimatedTime: estimatedTime)
         }
 
         throw SwapError.unsupportedTokenIn
     }
 
-    private func transactionParameters(tokenIn: Token, tokenOut: Token, recipient: String?, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> Parameters {
+    private func transactionParameters(tokenIn: Token, tokenOut: Token, recipient: String, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> Parameters {
         guard let assetIn = assetMap[tokenIn.tokenQuery.id.lowercased()] else {
             throw SwapError.unsupportedTokenIn
         }
@@ -267,12 +270,11 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
             throw SwapError.invalidAmount
         }
 
-        let sender = try await resolveDestination(recipient: recipient, token: tokenIn)
-        let recipient = try await resolveDestination(recipient: recipient, token: tokenOut)
-
         guard let amountOutMinInt = tokenOut.rawAmount(expectedAmountOutMin) else {
             throw SwapError.invalidAmount
         }
+
+        let sender = try await resolveDestination(recipient: nil, token: tokenIn)
 
         var parameters: Parameters = [
             "amount": amount.description,
@@ -292,7 +294,7 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
         return parameters
     }
 
-    func fetchTransactionData<T: ImmutableMappable>(tokenIn: Token, tokenOut: Token, recipient: String?, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> T {
+    func fetchTransactionData<T: ImmutableMappable>(tokenIn: Token, tokenOut: Token, recipient: String, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> T {
         let parameters = try await transactionParameters(tokenIn: tokenIn, tokenOut: tokenOut, recipient: recipient, crosschain: crosschain, amountIn: amountIn, expectedAmountOutMin: expectedAmountOutMin)
 
         let path = crosschain ? "bridge" : "swap"
@@ -300,7 +302,7 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
         return try await networkManager.fetch(url: "\(baseUrl)/raw/\(path)", parameters: parameters)
     }
 
-    func fetchStellarData(tokenIn: Token, tokenOut: Token, recipient: String?, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> Data {
+    func fetchStellarData(tokenIn: Token, tokenOut: Token, recipient: String, crosschain: Bool, amountIn: Decimal, expectedAmountOutMin: Decimal) async throws -> Data {
         let parameters = try await transactionParameters(tokenIn: tokenIn, tokenOut: tokenOut, recipient: recipient, crosschain: crosschain, amountIn: amountIn, expectedAmountOutMin: expectedAmountOutMin)
 
         let path = crosschain ? "bridge" : "swap"
@@ -312,6 +314,8 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
         let crosschain = tokenIn.blockchainType != tokenOut.blockchainType
 
         let amountOut = try await estimateAmountOut(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn)
+
+        let recipient = try await resolveDestination(recipient: recipient, token: tokenOut)
 
         if tokenIn.blockchainType.isEvm {
             let evmResponse: EvmSwapResponse = try await fetchTransactionData(
@@ -361,7 +365,8 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
                 estimatedTime: crosschain ? nil : blockchainType.blockTime,
                 gasPrice: gasPriceData?.userDefined,
                 evmFeeData: evmFeeData,
-                nonce: transactionSettings?.nonce
+                nonce: transactionSettings?.nonce,
+                toAddress: recipient
             )
         } else if tokenIn.blockchainType == .tron {
             let createdTransaction: TronKit.CreatedTransactionResponse = try await fetchTransactionData(
@@ -406,7 +411,8 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
                 estimatedTime: crosschain ? nil : BlockchainType.tron.blockTime,
                 createdTransaction: createdTransaction,
                 fees: fees,
-                transactionError: transactionError
+                transactionError: transactionError,
+                toAddress: recipient
             )
         } else if tokenIn.blockchainType == .stellar {
             let transactionEnvelopeData: Data = try await fetchStellarData(
@@ -453,7 +459,8 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
                 transactionData: .envelope(transactionEnvelope),
                 token: tokenIn,
                 fee: fee,
-                transactionError: transactionError
+                transactionError: transactionError,
+                toAddress: recipient
             )
         }
 
@@ -462,6 +469,155 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
 
     func preSwapView(step: MultiSwapPreSwapStep, tokenIn: Token, tokenOut _: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
         allowanceHelper.preSwapView(step: step, tokenIn: tokenIn, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
+    }
+
+    func track(swap: Swap) async throws -> Swap {
+        guard let txHash = swap.txHash else {
+            logger?.log(level: .debug, message: "AllBridge Track: no txHash, skipping")
+            return swap
+        }
+
+        let chainSymbol = blockchainTypes.first(where: { $0.value == swap.tokenIn.blockchainType })?.key
+
+        guard let chainSymbol else {
+            logger?.log(level: .debug, message: "AllBridge Track: unknown chain for \(swap.tokenIn.blockchainType)")
+            return swap
+        }
+
+        let parameters: Parameters = [
+            "chain": chainSymbol,
+            "txId": txHash,
+        ]
+
+        let response: TransferStatusResponse? = try? await networkManager.fetch(
+            url: "\(baseUrl)/transfer/status",
+            parameters: parameters
+        )
+
+        var swap = swap
+        swap.status = response.map { resolveStatus(response: $0) } ?? .pending
+
+        let tokenFrom = swap.tokenIn.tokenQuery.id.lowercased()
+        let tokenTo = swap.tokenOut.tokenQuery.id.lowercased()
+
+        let fromAsset = assetMap[tokenFrom]?.tokenAddress ?? tokenFrom
+        let toAsset = assetMap[tokenTo]?.tokenAddress ?? tokenTo
+
+        swap.fromAsset = fromAsset
+        swap.toAsset = toAsset
+
+        var legs = [Swap.Leg]()
+
+        let isCrosschain = swap.tokenIn.blockchainType != swap.tokenOut.blockchainType
+
+        let chainIdIn = USwapMultiSwapProvider.blockchainTypeMap.first(where: { $0.value == swap.tokenIn.blockchainType })?.key
+        let chainIdOut = USwapMultiSwapProvider.blockchainTypeMap.first(where: { $0.value == swap.tokenOut.blockchainType })?.key
+
+        let isDepositSuspended = (response?.isSuspended ?? false) && (response?.receive == nil)
+        var isDepositCompleted = false
+        if let depositConf = response?.send.confirmations, let depositConfNeeded = response?.send.confirmationsNeeded {
+            isDepositCompleted = depositConf >= depositConfNeeded
+        }
+
+        if isCrosschain { // Show Deposit/Send for crosschain and only swap for non-crosschain
+            legs.append(
+                .init(
+                    status: isDepositSuspended ? .failed : (isDepositCompleted ? .completed : .pending),
+                    type: USwapMultiSwapProvider.legTypeNativeSend,
+                    chainId: chainIdIn ?? "",
+                    txHash: txHash,
+                    fromAsset: fromAsset,
+                    toAsset: fromAsset
+                )
+            )
+
+            if isDepositSuspended {
+                swap.legs = legs
+                return swap
+            }
+        }
+
+        var isSwappingCompleted = false
+        if response?.receive != nil {
+            isSwappingCompleted = isDepositCompleted
+        }
+
+        if isCrosschain { // show swap status for crosschain
+            var status: Swap.Status = .notStarted
+            if isDepositCompleted {
+                status = isSwappingCompleted ? .completed : .swapping
+            }
+            legs.append(
+                .init(
+                    status: status,
+                    type: USwapMultiSwapProvider.legTypeSwap,
+                    chainId: "",
+                    txHash: "",
+                    fromAsset: fromAsset,
+                    toAsset: toAsset
+                )
+            )
+        } else { // show only swap leg for non-crosschain
+            legs.append(
+                .init(
+                    status: isDepositSuspended ? .failed : (isSwappingCompleted ? .completed : .swapping),
+                    type: USwapMultiSwapProvider.legTypeSwap,
+                    chainId: chainIdIn ?? "",
+                    txHash: txHash,
+                    fromAsset: fromAsset,
+                    toAsset: toAsset
+                )
+            )
+
+            if isDepositSuspended {
+                swap.legs = legs
+                return swap
+            }
+        }
+
+        if isCrosschain { // add send leg for crosschain
+            let isSendSuspended = (response?.isSuspended ?? false) && (response?.receive != nil)
+
+            var isSendCompleted = false
+            if let receiveConf = response?.receive?.confirmations, let receiveConfNeeded = response?.receive?.confirmationsNeeded {
+                isSendCompleted = receiveConf >= receiveConfNeeded
+            }
+
+            var status: Swap.Status = .notStarted
+            if isSwappingCompleted {
+                status = isSendSuspended ? .failed : (isSendCompleted ? .completed : .pending)
+            }
+
+            legs.append(
+                .init(
+                    status: status,
+                    type: USwapMultiSwapProvider.legTypeNativeSend,
+                    chainId: chainIdOut ?? "",
+                    txHash: response?.receive?.txId ?? "",
+                    fromAsset: toAsset,
+                    toAsset: toAsset
+                )
+            )
+        }
+
+        swap.legs = legs
+        return swap
+    }
+
+    private func resolveStatus(response: TransferStatusResponse) -> Swap.Status {
+        if response.isSuspended {
+            return .failed
+        }
+
+        if let receive = response.receive {
+            return receive.blockTime != nil ? .completed : .swapping
+        }
+
+        if response.send.confirmations >= response.send.confirmationsNeeded {
+            return .swapping
+        }
+
+        return .pending
     }
 }
 
@@ -563,6 +719,44 @@ extension AllBridgeMultiSwapProvider {
 
         init(map: Map) throws {
             transactionEnvelope = try map.value("from")
+        }
+    }
+
+    struct TransferStatusResponse: ImmutableMappable {
+        let txId: String
+        let sourceChainSymbol: String
+        let destinationChainSymbol: String
+        let signaturesCount: Int
+        let signaturesNeeded: Int
+        let send: BridgeTransaction
+        let receive: BridgeTransaction?
+        let isSuspended: Bool
+
+        init(map: Map) throws {
+            txId = try map.value("txId")
+            sourceChainSymbol = try map.value("sourceChainSymbol")
+            destinationChainSymbol = try map.value("destinationChainSymbol")
+            signaturesCount = try map.value("signaturesCount")
+            signaturesNeeded = try map.value("signaturesNeeded")
+            send = try map.value("send")
+            receive = try? map.value("receive")
+            isSuspended = (try? map.value("isSuspended")) ?? false
+        }
+    }
+
+    struct BridgeTransaction: ImmutableMappable {
+        let txId: String?
+        let hash: String?
+        let confirmations: Int
+        let confirmationsNeeded: Int
+        let blockTime: Int?
+
+        init(map: Map) throws {
+            txId = try? map.value("txId")
+            hash = try? map.value("hash")
+            confirmations = try map.value("confirmations")
+            confirmationsNeeded = try map.value("confirmationsNeeded")
+            blockTime = try? map.value("blockTime")
         }
     }
 }

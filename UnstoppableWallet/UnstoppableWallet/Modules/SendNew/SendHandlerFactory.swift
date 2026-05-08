@@ -19,6 +19,10 @@ enum SendHandlerFactory {
             return StellarSendHandler.instance(data: data, token: token, memo: memo)
         case let .monero(token, amount, address, memo):
             return MoneroSendHandler.instance(token: token, amount: amount, address: address, memo: memo)
+        case let .zano(token, amount, address, memo):
+            return ZanoSendHandler.instance(token: token, feeToken: token, amount: amount, address: address, memo: memo)
+        case let .zanoAsset(token, baseToken, amount, address, memo):
+            return ZanoSendHandler.instance(token: token, feeToken: baseToken, amount: amount, address: address, memo: memo)
         case let .swap(tokenIn, tokenOut, amountIn, provider):
             return MultiSwapSendHandler.instance(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, provider: provider)
         case let .liquidityAdd(token0, token1, amount0, amount1, provider, v3TickType, manualAmountOutMode):
@@ -63,6 +67,10 @@ enum SendHandlerFactory {
 
         if let adapter = adapter as? MoneroAdapter {
             return MoneroPreSendHandler(token: wallet.token, adapter: adapter)
+        }
+
+        if let adapter = adapter as? ZanoAdapter {
+            return ZanoPreSendHandler(token: wallet.token, baseToken: adapter.baseToken, adapter: adapter)
         }
 
         return nil

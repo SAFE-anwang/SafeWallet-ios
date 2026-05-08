@@ -38,7 +38,9 @@ struct ThemeImage: View {
         case let .icon(name):
             Image(name)
                 .renderingMode(.template)
-                .icon(size: size ?? .size24, colorStyle: colorStyle)
+                .resizable()
+                .foregroundColor(colorStyle.color)
+                .applyFrame(size: size ?? .size24)
         case let .image(name: name, contentMode: contentMode):
             if let size {
                 Image(name)
@@ -79,4 +81,5 @@ extension ThemeImage {
     static let book = ComponentImage("book", size: .iconSize72)
     static let trash = ComponentImage("trash_filled", size: .iconSize72, colorStyle: .red)
     static let shieldOff = ComponentImage("shield_off", size: .iconSize72)
+    static let key = ComponentImage("key", size: .iconSize72)
 }

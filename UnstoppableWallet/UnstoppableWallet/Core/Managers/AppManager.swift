@@ -121,14 +121,13 @@ extension AppManager {
 
         statManager.sendStats()
 
-        statManager.sendStats()
-
         nftMetadataSyncer.sync()
 
         tonKitManager.tonKit?.startListener()
         stellarKitManager.stellarKit?.startListener()
 
         AppStateManager.instance.syncIfRequired()
+
         AppWidgetConstants.allKinds.forEach { WidgetCenter.shared.reloadTimelines(ofKind: $0) }
     }
 

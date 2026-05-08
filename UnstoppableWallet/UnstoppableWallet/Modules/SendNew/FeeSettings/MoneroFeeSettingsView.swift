@@ -48,10 +48,10 @@ struct MoneroFeeSettingsView: View {
                                             Coordinator.shared.present(type: .alert) { isPresented in
                                                 OptionAlertView(
                                                     title: "monero.priority".localized,
-                                                    viewItems: SendPriority.allCases.map {
+                                                    viewItems: MoneroKit.SendPriority.allCases.map {
                                                         AlertViewItem(text: $0.description, selected: $0 == viewModel.priority)
                                                     },
-                                                    onSelect: { viewModel.priority = SendPriority.allCases[$0] },
+                                                    onSelect: { viewModel.priority = MoneroKit.SendPriority.allCases[$0] },
                                                     isPresented: isPresented
                                                 )
                                             }
@@ -73,16 +73,20 @@ struct MoneroFeeSettingsView: View {
             .navigationTitle("fee_settings.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("button.reset".localized) {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
                         viewModel.onReset()
+                    }) {
+                        Image("reset")
                     }
-                    .foregroundStyle(viewModel.resetEnabled ? Color.themeJacob : Color.themeGray)
                     .disabled(!viewModel.resetEnabled)
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("button.cancel".localized) {
+
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
                         presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Image("close")
                     }
                 }
             }

@@ -23,6 +23,7 @@ struct AddressUri: Equatable {
 
         return value.map { $0 as! T }
     }
+
     var amount: Amount? {
         value(field: .value).map { .points($0) } ??
             (value(field: .amount) ?? value(field: .txAmount)).map { .decimals($0) }

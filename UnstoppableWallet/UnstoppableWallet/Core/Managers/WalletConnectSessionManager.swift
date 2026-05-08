@@ -121,7 +121,6 @@ class WalletConnectSessionManager {
         activePendingRequestsRelay.accept(activePendingRequests)
     }
 
-
     private func requests(accountId: String? = nil) -> [Request] {
         let allRequests = service.pendingRequests
         let dbSessions = storage.sessions(accountId: accountId)
@@ -135,7 +134,6 @@ class WalletConnectSessionManager {
 }
 
 extension WalletConnectSessionManager {
-
     public var sessions: [Session] {
         guard let accountId = accountManager.activeAccount?.id else {
             return []

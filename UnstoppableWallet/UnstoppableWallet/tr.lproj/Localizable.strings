@@ -146,7 +146,7 @@ Ayarlar - > %@ ekranına giderek kamera erişimine izin verin.";
 "restore.restore_type.mnemonic" = "Kurtarma cümlesi";
 "restore.restore_type.private_key" = "Gizli Anahtar";
 "restore.mnemonic.placeholder" = "12, 15, 18, 21 veya 24 kelime girin";
-"restore.private_key.placeholder" = "EVM Özel Anahtarını, BIP32 Root Key veya Account Extended Private Key girin";
+"restore.private_key.placeholder" = "EVM veya TRON Özel Anahtarı, Stellar Gizli Anahtarı, BIP32 Kök Anahtarı veya Hesap Genişletilmiş Özel Anahtarını girin";
 "restore.private_key.invalid_key" = "Geçersiz Anahtar";
 "restore_error.mnemonic_word_count" = "Hatalı sözcük sayısı. 12-24 arası sözcük olmalıdır. Girilen: %@";
 "restore.checksum_error" = "Geçersiz sağlama toplamı";
@@ -161,6 +161,13 @@ Ayarlar - > %@ ekranına giderek kamera erişimine izin verin.";
 "restore.error.non_standard.description" = "Bu standart olmayan bir cüzdandır. \n\nDAHA FAZLA BİLGİ ALMAK İÇİN TIKLAYIN";
 
 "restore.error.non_standard.link" = "Daha fazla bilgi için tıklayın";
+
+"restore.select_key_type" = "Ağ Seçin";
+"restore.select_key_type.evm" = "EVM Ağları";
+"restore.select_key_type.evm.description" = "Ethereum, Arbitrum, Optimism ...";
+"restore.select_key_type.trc" = "TRON";
+"restore.select_key_type.trc.description" = "Yalnızca TRON Ağı.";
+
 
 // Restore Type
 
@@ -188,9 +195,9 @@ Ayarlar - > %@ ekranına giderek kamera erişimine izin verin.";
 
 // Coin Settings
 
-"coin_settings.title" = "Blockchain Ayarları";
 "coin_settings.bitcoin_cash_coin_type.title.type0" = "Legacy";
 "coin_settings.bitcoin_cash_coin_type.title.type145" = "CashAddress (önerilen)";
+"coin_settings.title" = "Blockchain Ayarları";
 "sync_mode.hybrid" = "Hybrid";
 "sync_mode.from_blockchain" = "Blockchain çıkışlı";
 "blockchain_settings.description" = "Coin için adres formatını seçin.";
@@ -220,6 +227,9 @@ Ayarlar - > %@ ekranına giderek kamera erişimine izin verin.";
 
 "evm_private_key.title" = "EVM Özel anahtar";
 "evm_private_key.tap_to_show" = "Özel anahtarı göstermek için dokunun";
+
+"tron_private_key.title" = "Tron Özel Anahtarı";
+"tron_private_key.tap_to_show" = "Özel anahtarı görmek için dokunun";
 
 // Stellar Secret Key
 
@@ -589,7 +599,7 @@ Cüzdan etkinleştirilene kadar token’lar alınabilir, ancak bakiyeler görün
 "send.lock_time" = "TiemLock";
 
 "send.unspent_outputs" = "UTxOs";
-"send.unspent_outputs.description" = "Bakiyedeki fonları harcamak için UTxO'yu manuel olarak seçin";
+"send.unspent_outputs.description" = "İşlemde harcanacak coinleri manuel olarak seçin.";
 "send.unspent_outputs.send_to" = "Göndermek için";
 "send.unspent_outputs.change" = "Değiştir";
 
@@ -689,6 +699,17 @@ Cüzdan etkinleştirilene kadar token’lar alınabilir, ancak bakiyeler görün
 
 "swap.quotes.providers" = "Sağlayıcılar";
 "swap.quotes.best_price" = "En İyi Fiyat";
+"swap.quotes.sort.title" = "Sırala";
+"swap.quotes.sort.best_rate" = "En İyi Oran";
+"swap.quotes.sort.best_time" = "En Hızlı";
+
+"swap.quotes.providers.risk_levels.title" = "Sağlayıcı Risk Seviyeleri";
+"swap.quotes.providers.risk_levels.description" = "Risk seviyeleri, bir sağlayıcının işlem sırasında hangi eylemleri gerçekleştirebileceğini gösterir.";
+"swap.quotes.providers.risk_levels.auto.description" = "Bu borsa kendi likiditesini kullanır ve gizlilik dostudur. İşlemler AML engellemesi olmadan gerçekleştirilir.";
+"swap.quotes.providers.risk_levels.flexible.description" = "Bu borsa genellikle AML kontrollerini geçemeyen işlemleri iade eder. Nadir durumlarda, ek doğrulama gerektiğinde fonlar geçici olarak bloke edilebilir.";
+"swap.quotes.providers.risk_levels.preCheck.description" = "Sağlayıcı, swap işlemini gerçekleştirmeden önce kendi adres taramasını yapar. Reddetmeler nadirdir. Dondurma teorik olarak mümkündür ancak oldukça düşük bir ihtimaldir.";
+"swap.quotes.providers.risk_levels.controlled.description" = "Bu borsa, KYC/doğrulama gereksinimleri tamamlanana kadar AML kontrollerini geçemeyen işlemleri bloke eder.";
+
 
 "swap.allowance" = "Ödenek";
 "swap.allowance.description" = "Bir takas işlemi gerçekleştirirken bir borsanın bir kullanıcı adına harcayabileceği miktar. Gerçek bir takas işlemi gerçekleşmeden önce yeterli izin belirleyen bir önceki işlem gereklidir.";
@@ -709,7 +730,7 @@ Cüzdan etkinleştirilene kadar token’lar alınabilir, ancak bakiyeler görün
 "swap.high_price_impact" = "Yüksek Fiyat Etkisi";
 "swap.recipient" = "Alıcı";
 "swap.slippage" = "Kayma";
-"swap.swapped_time" = "Swap Zamanı";
+"swap.swapped_time" = "Tahmini Süre";
 "swap.swapped_time.info" = "Fonların alınması için gereken tahmini süre. Swap işleminin işlenmesi ve işlem onayları, ağ ve sağlayıcıya bağlı olarak zaman alabilir.";
 
 "swap.affiliate_fee" = "Ortaklık Ücreti";
@@ -718,6 +739,14 @@ Cüzdan etkinleştirilene kadar token’lar alınabilir, ancak bakiyeler görün
 "swap.total_fee" = "Toplam Ücret";
 
 "swap.aml" = "AML";
+"swap.aml.risk.title" = "Uyarı!";
+"swap.aml.risk.description" = "Bu işlem için potansiyel riskler tespit edildi. İşlem sırasında fonlarınız reddedilebilir veya kısıtlanabilir. Lütfen başka bir sağlayıcı seçin.";
+"swap.aml.risk.button" = "Başka Sağlayıcı Seç";
+"swap.aml.undefined.description" = "Bu işlem için risk kontrolü tamamlanamadı. Devam ederseniz, bu takas işlemi sırasında gecikmeler, ret veya kısıtlamalarla karşılaşabilir.";
+"swap.aml.undefined.button" = "Riski Kabul Ederek Devam Et";
+"swap.aml.connection.title" = "Bağlantı Sorunu";
+"swap.aml.connection.description" = "Şu anda yanıt alınamıyor. Lütfen tekrar deneyin.";
+"swap.aml.connection.button" = "Tekrar Dene";
 
 // Swap options
 
@@ -786,7 +815,7 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "swap.confirmation.impact_too_high" = "%@, son derece elverişsiz bir fiyat aldığınız için bu ticaret için takas işlemini devre dışı bıraktı. Bunun nedeni son derece düşük likiditedir.\nHala takas yapmak istiyorsanız lütfen bunun yerine %@ web sitesini kullanın.";
 "swap.confirmation.impact_warning" = "Önemli! Son derece olumsuz bir fiyat alıyorsunuz. Bunun nedeni son derece düşük likiditedir.";
 
-"swap.confirmation.minimum_received" = "Minimum Kazanılan";
+"swap.confirmation.minimum_received" = "Garantili";
 "swap.confirmation.minimum_received.info" = "Swap tamamlandıktan sonra alacağınız minimum tutar. Bu tutar sağlayıcı tarafından garanti edilir ve işlem sırasında fiyat değişikliklerinden etkilenmez.";
 "swap.confirmation.maximum_sent" = "Maksimum Harcama";
 
@@ -813,18 +842,36 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 
 "swap.maya.shielded_address.error" = "Memo (Maya) için shielded adres alınamadı";
 
-
-// Market
-
-"market.tab_bar_item" = "Marketler";
-"market.title" = "Marketler";
+"market.24h_volume" = "24 saat hacim";
 "market.category.overview" = "İzleme";
 "market.category.posts" = "Haberler";
 "market.category.watchlist" = "İzleme Listesi";
-"market.total_market_cap" = "Total Cap";
-"market.24h_volume" = "24 saat hacim";
 "market.defi_cap" = "DeFi Cap";
 "market.defi_tvl" = "DeFi'de TVL";
+"market.tab_bar_item" = "Marketler";
+"market.title" = "Marketler";
+"market.total_market_cap" = "Total Cap";
+"swap_history.all" = "Tümü";
+"swap_history.empty" = "Henüz bekleyen veya geçmiş bir swap işleminiz yok.";
+"swap_history.title" = "Swap Geçmişi";
+"swap_info.date" = "Tarih";
+"swap_info.deposit" = "Yatırma %@";
+"swap_info.provider" = "Sağlayıcı";
+"swap_info.recipient" = "Alıcı";
+"swap_info.refund" = "İade %@";
+"swap_info.send" = "Gönder %@";
+"swap_info.status" = "Durum";
+"swap_info.status.completed" = "Tamamlandı";
+"swap_info.status.failed" = "Başarısız";
+"swap_info.status.not_started" = "Başlamadı";
+"swap_info.status.pending" = "Beklemede";
+"swap_info.status.refunded" = "İade edildi";
+"swap_info.status.swapping" = "Takas ediliyor";
+"swap_info.status.unknown" = "Bilinmiyor";
+"swap_info.swap" = "Swap";
+"swap_info.title" = "Swap Bilgisi";
+"swap_info.unknown" = "Bilinmiyor";
+"swap_info.view" = "Görüntüle";
 
 "market.global.market_cap" = "Toplam Piyasa Değeri";
 "market.global.volume" = "24s Hacim";
@@ -921,7 +968,7 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "top_platform.title" = "%@ Ekosistemi";
 "top_platform.total_cap" = "Toplam Piyasa Değeri";
 
-
+"market.search.title" = "Ara";
 "market.search.recent" = "Son İşlemler";
 "market.search.popular" = "Popüler";
 
@@ -982,7 +1029,6 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "market.advanced_search.price_close_to_atl" = "ATL'ye Yakın Fiyat";
 
 "market.advanced_search.top" = "En İyiler %d";
-"market.advanced_search.reset_all" = "Sıfırla";
 
 "market.advanced_search.less_5_m" = "< 5M";
 "market.advanced_search.less_10_m" = "< 10M";
@@ -1526,18 +1572,16 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "manage_wallets.derivation_description" = "%@ cüzdanlarının gelen ödemeleri almak için kullanabileceği 4 yaygın adres biçimi vardır:\n \n- BIP-44 (eski)\n- BIP-49\n- BIP-84 (önerilen)\n- BIP-86 (en yeni)\n \n%@ cüzdan 4'ünü de desteklerken, BIP-84 formatında çalışan bir %@ cüzdanı kullanmanızı önerir.";
 "manage_wallets.bitcoin_cash_coin_type_description" = "Bitcoin Cash cüzdanlarının gelen ödemeleri almak için kullanabileceği 2 adres formatı vardır: \n \n- TYPE0 (eski) \n- TYPE145 (daha yeni) \n \n%@ cüzdan her ikisini de desteklerken, TYPE145 formatında çalışan bir Bitcoin Cash cüzdanı kullanmanızı önerir.";
 
-// Settings -> Personal Support
-
-"settings.personal_support.telegram_username.title" = "Account";
-"settings.personal_support.telegram_username.placeholder" = "@username";
 "settings.personal_support.description" = "Kişisel destek sohbeti açmak için Telegram hesap adınızı girin ve size mesaj göndereceğiz.";
-"settings.personal_support.request" = "İstek";
-"settings.personal_support.requested" = "Talep Edildi";
 "settings.personal_support.failed" = "Talep Başarısız oldu";
 "settings.personal_support.need_subscription" = "Bu özellik yalnızca %@ Cüzdan premium kullanıcıları içindir. Daha fazla bilgi resmi sitemizde.";
+"settings.personal_support.request" = "İstek";
+"settings.personal_support.requested" = "Talep Edildi";
 "settings.personal_support.requested.description" = "Zaten özel bir sohbet talep ettiniz, bunu Telegram'da bulun";
-"settings.personal_support.requested.open_telegram" = "Abrir Telegram";
 "settings.personal_support.requested.new_request" = "Yeni istek";
+"settings.personal_support.requested.open_telegram" = "Abrir Telegram";
+"settings.personal_support.telegram_username.placeholder" = "@username";
+"settings.personal_support.telegram_username.title" = "Account";
 
 // Settings -> Terms
 
@@ -1583,6 +1627,7 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "backup_app.backup_list.other.contacts.title" = "Kişiler";
 "backup_app.backup_list.other.custom_evm_sync_sources.title" = "Özel RPC";
 "backup_app.backup_list.other.custom_monero_nodes.title" = "Özel Monero Node’ları";
+"backup_app.backup_list.other.custom_zano_nodes.title" = "Özel Zano Düğümleri";
 "backup_app.backup_list.other.app_settings.title" = "Uygulama Ayarları";
 "backup_app.backup_list.other.app_settings.description" = "Dil, Para Birimi, Görünüm ...";
 
@@ -1622,6 +1667,7 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "settings_security.edit_passcode" = "Kod Değiştir";
 "settings_security.disable_passcode" = "Şifre Kodunu Devre Dışı Bırak";
 "settings_security.auto_lock" = "Otomatik kilit";
+"settings_security.auto_lock.description" = "Seçilen süre sonunda uygulamayı otomatik olarak kilitler.";
 "settings_security.balance_auto_hide" = "Denge Otomatik Gizleme";
 "settings_security.balance_auto_hide.description" = "Uygulama her açıldığında, önceki tercihlere bakılmaksızın bakiyeyi otomatik olarak gizler.";
 "settings_security.enable_duress_mode" = "Baskı Modunu Ayarla";
@@ -1632,9 +1678,6 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "biometry.off" = "Kapat";
 "biometry.manual" = "Manuel";
 "biometry.on" = "Açık";
-"biometry.off.description" = "Tüm durumlarda devre dışı";
-"biometry.manual.description" = "Düğme ile tarama";
-"biometry.on.description" = "Otomatik tarama";
 
 // Create Passcode
 
@@ -1702,7 +1745,7 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 
 "btc_transaction_sort_mode.shuffle" = "Karıştır";
 "btc_transaction_sort_mode.shuffle.description" = "Rastgele Dizinleme";
-"btc_transaction_sort_mode.bip69" = "BIP69";
+"btc_transaction_sort_mode.bip69" = "Deterministik";
 "btc_transaction_sort_mode.bip69.description" = "Lexicographical Dizinleme";
 
 "blockchain_settings.info.restore_source" = "Geri Yükleme Ayarları";
@@ -1769,7 +1812,6 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "appearance.launch_screen.description" = "Uygulamanın varsayılan olarak hangi ekranda açılacağını seçin.";
 "appearance.launch_screen.auto" = "Oto";
 "appearance.launch_screen.balance" = "Bakiye";
-"appearance.launch_screen.market_overview" = "Piyasaya Genel Bakış";
 "appearance.launch_screen.watchlist" = "İzleme Listesi";
 
 "appearance.balance_tab" = "Bakiye Sekmesi";
@@ -2103,6 +2145,8 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "public_keys.title" = "Genel Anahtarlar";
 "public_keys.evm_address" = "EVM Adresi";
 "public_keys.evm_address.description" = "Ethereum, Binance Smart Chain ve diğer EVM tabanlı blok zincirlerinde varlık tutan cüzdanların salt okunur olarak izlenmesini sağlar.";
+"public_keys.tron_address" = "TRON Adresi";
+"public_keys.tron_address.description" = "TRON blok zincirinde varlık tutan cüzdanların salt okunur izlenmesine olanak tanır.";
 "public_keys.account_extended_public_key" = "Account Extended Public Key";
 "public_keys.account_extended_public_key.description" = "Bitcoin ve diğer UTXO tabanlı kriptoları (örneğin Litecoin, Bitcoin Cash, Dash vb.) tutan cüzdanların salt okunur olarak izlenmesine izin verir.";
 "public_keys.monero_public_key" = "Monero Genel Anahtarları";
@@ -2113,6 +2157,8 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "private_keys.title" = "Özel Anahtar";
 "private_keys.evm_private_key" = "EVM Özel anahtar";
 "private_keys.evm_private_key.description" = "Bu cüzdan, EVM tabanlı ağlardaki (ör. Ethereum, BNB Smart Chain, Polygon, Avalanche) varlıklar üzerinde tam kontrol sağlar.";
+"private_keys.tron_private_key" = "Tron Özel Anahtarı";
+"private_keys.tron_private_key.description" = "Bu cüzdandaki Tron ağındaki varlıklar üzerinde tam kontrol sağlar.";
 "private_keys.stellar_secret_key" = "Stellar Gizli Anahtarı";
 "private_keys.stellar_secret_key.description" = "Bu cüzdan, Stellar ağındaki varlıklar üzerinde tam kontrol sağlar.";
 "private_keys.bip32_root_key" = "BIP32 Root Key";
@@ -2125,6 +2171,7 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 // Manage Account -> EVM Address
 
 "evm_address.title" = "EVM Adresi";
+"tron_address.title" = "TRON Adresi";
 
 // Birthday Height
 
@@ -2176,6 +2223,14 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "add_monero_node.warning.url_exists" = "Bu URL’ye sahip bir node zaten mevcut";
 "add_monero_node.error.invalid_url" = "Girilen URL geçersiz. Geçerli bir URL, https şemasına sahip olmalıdır";
 
+"add_zano_node.error.invalid_url" = "Girilen URL geçersiz";
+"add_zano_node.node_url" = "Düğüm URL'si";
+"add_zano_node.title" = "Düğüm Ekle";
+"add_zano_node.warning.url_exists" = "Bu URL'ye sahip bir düğüm zaten mevcut";
+"zano_network.add_new" = "Yeni Ekle";
+"zano_network.added" = "Eklendi";
+"zano_network.description" = "Unstoppable uygulamasının cüzdan(lar)ı senkronize etmek için kullanacağı düğümü seçin.";
+"zano_network.node" = "Düğüm";
 
 // Send Settings
 
@@ -2191,6 +2246,7 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "fee_settings.fee_rate" = "Ücret oranı";
 "fee_settings.fee_rate.description" = "İşte sonraki 2 bloğa eklenmek için önerilen değer";
 "fee_settings.inputs_outputs" = "Giriş/Çıkış";
+"fee_settings.inputs_outputs.description" = "İşlem girdilerinin ve çıktılarının nasıl yapılandırıldığını değiştirir.";
 "fee_settings.transaction_settings" = "İşlem Ayarları";
 "fee_settings.transaction_settings.description" = "İşlemlerin yapılandırılma şeklini değiştirerek Bitcoin işlemlerinizin izlenilmesini zorlaştırın.";
 "fee_settings.replace_by_fee" = "Ücretle Değiştir";
@@ -2385,7 +2441,7 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 "transaction_filter.contact" = "Kişi";
 "transaction_filter.all_contacts" = "Tüm Kişiler";
 "transaction_filter.hide_suspicious_txs" = "Şüpheli İşlemleri Gizle";
-"transaction_filter.hide_suspicious_txs.description" = "Küçük tutarlı gelen transferleri gizler (ör. $1.5 altındaki USDT). Bu tür işlemler genellikle phishing ve adres zehirleme (address poisoning) saldırılarında kullanılır.";
+"transaction_filter.hide_suspicious_txs.description" = "Kimlik avı saldırılarında sıkça kullanılan şüpheli küçük transferleri gizler.";
 
 // Black Friday
 
@@ -2513,5 +2569,7 @@ Unstoppable, swap sağlayıcılarının davranışlarını veya kararlarını ga
 
 // MEV Protection
 
-"mev_protection.title" = "MEV Koruması";
 "mev_protection.description" = "Sözde front-running botları her işlemi izleyerek sizi fazla ödemeye zorlamaya çalışır. Bu özellik onları engeller.";
+"mev_protection.title" = "MEV Koruması";
+"secure_send.bottom_sheet.description" = "Güvenlik kontrollerini seçin.";
+"secure_send.bottom_sheet.title" = "Güvenli Gönderim";

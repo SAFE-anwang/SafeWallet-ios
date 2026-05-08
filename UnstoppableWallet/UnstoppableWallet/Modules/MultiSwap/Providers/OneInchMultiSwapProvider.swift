@@ -1,3 +1,4 @@
+import Alamofire
 import BigInt
 import EvmKit
 import Foundation
@@ -7,9 +8,14 @@ import OneInchKit
 import SwiftUI
 
 class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
-    private let kit: OneInchKit.Kit
+    static let id = "ONEINCH"
+    static let name = "1Inch"
+
     private let networkManager = Core.shared.networkManager
 //    private let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
+    private let evmSyncSourceManager = Core.shared.evmSyncSourceManager
+
+    private let kit: OneInchKit.Kit
     private let evmFeeEstimator = EvmFeeEstimator()
     private let commission: Decimal? = AppConfig.oneInchCommission
     private let commissionAddress: String? = AppConfig.oneInchCommissionAddress
@@ -20,9 +26,9 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
         super.init()
     }
 
-    override var id: String { "1inch" }
-    override var name: String { "1Inch" }
-    override var type: SwapProviderType { .dex }
+    override var id: String { Self.id }
+    override var name: String { Self.name }
+    override var type: SwapProviderType { .controlled }
     override var icon: String { "swap_provider_1inch" }
 
     override func supports(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token) -> Bool {
@@ -58,7 +64,8 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
 
         return await EvmMultiSwapQuote(
             expectedBuyAmount: quote.amountOut ?? 0,
-            allowanceState: allowanceState(token: tokenIn, amount: amountIn)
+            allowanceState: allowanceState(token: tokenIn, amount: amountIn),
+            estimatedTime: blockchainType.blockTime
         )
     }
 
@@ -78,18 +85,20 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
         }
 
         let evmKit = evmKitWrapper.evmKit
+        let receiveAddress = evmKit.receiveAddress
+        let recipientAddress = recipient.flatMap { try? EvmKit.Address(hex: $0) }
 
         let swap = try await kit.swap(
             networkManager: networkManager,
             chain: evmKit.chain,
-            receiveAddress: evmKit.receiveAddress,
+            receiveAddress: receiveAddress,
             fromToken: address(token: tokenIn),
             toToken: address(token: tokenOut),
             amount: amount,
             slippage: slippage,
             referrer: commissionAddress,
             fee: commission,
-            recipient: recipient.flatMap { try? EvmKit.Address(hex: $0) },
+            recipient: recipientAddress,
             gasPrice: gasPriceData.userDefined
         )
 
@@ -115,8 +124,27 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
             estimatedTime: blockchainType.blockTime,
             gasPrice: swap.transaction.gasPrice,
             evmFeeData: evmFeeData,
-            nonce: transactionSettings?.nonce
+            nonce: transactionSettings?.nonce,
+            toAddress: receiveAddress.eip55
         )
+    }
+
+    override func track(swap: Swap) async throws -> Swap {
+        let blockchainType = swap.tokenIn.blockchainType
+
+        var parameters: Parameters = try [
+            "provider": swap.providerId,
+            "chainId": String(evmBlockchainManager.chain(blockchainType: blockchainType).id),
+            "fromAsset": address(token: swap.tokenIn).eip55,
+            "toAsset": address(token: swap.tokenOut).eip55,
+            "toAddress": swap.toAddress,
+        ]
+
+        if let hash = swap.txHash {
+            parameters["hash"] = hash
+        }
+
+        return try await USwapMultiSwapProvider.track(swap: swap, parameters: parameters, networkManager: networkManager, isEvm: true)
     }
 
     override func spenderAddress(chain: Chain) throws -> EvmKit.Address {
@@ -140,9 +168,15 @@ extension OneInchMultiSwapProvider {
         case noEvmKitWrapper
         case noGasPriceData
     }
+
+    enum TrackError: Error {
+        case noEvmKitWrapper
+        case noRpcSource
+        case invalidTxHash
+    }
 }
 
-extension Swap {
+extension OneInchKit.Swap {
     var transactionData: TransactionData {
         TransactionData(to: transaction.to, value: transaction.value, input: transaction.data)
     }

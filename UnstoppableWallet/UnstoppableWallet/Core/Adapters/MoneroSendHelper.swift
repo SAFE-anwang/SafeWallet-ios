@@ -34,7 +34,7 @@ class MoneroSendHelper {
         feeToken: Token,
         currency: Currency,
         feeTokenRate: Decimal?,
-        priority: SendPriority
+        priority: MoneroKit.SendPriority
     ) -> [SendField] {
         guard let fee else { return [] }
 
@@ -54,11 +54,9 @@ class MoneroSendHelper {
         }
 
         return fields + [
-            .value(
-                title: SendField.InformedTitle("fee_settings.network_fee".localized, info: .fee),
-                appValue: appValue,
-                currencyValue: currencyValue,
-                formatFull: true
+            .fee(
+                title: ComponentInformedTitle("fee_settings.network_fee".localized, info: .fee),
+                amountData: .init(appValue: appValue, currencyValue: currencyValue)
             ),
         ]
     }

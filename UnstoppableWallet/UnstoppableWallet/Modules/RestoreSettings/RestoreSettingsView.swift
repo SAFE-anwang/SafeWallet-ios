@@ -1,14 +1,14 @@
+import Combine
 import Foundation
 import MarketKit
 import MoneroKit
-import RxCocoa
-import RxSwift
+import ZanoKit
 import ZcashLightClientKit
 
 class RestoreSettingsView {
     private let viewModel: RestoreSettingsViewModel
     private let statPage: StatPage
-    private let disposeBag = DisposeBag()
+    private var cancellables: [AnyCancellable] = []
 
     private var enteredHeight: Int?
 
@@ -16,9 +16,9 @@ class RestoreSettingsView {
         self.viewModel = viewModel
         self.statPage = statPage
 
-        subscribe(disposeBag, viewModel.openBirthdayAlertSignal) { [weak self] token in
+        viewModel.openBirthdayAlertPublisher.sink { [weak self] token in
             self?.showBirthdayAlert(blockchain: token.blockchain)
-        }
+        }.store(in: &cancellables)
     }
 
     private func showBirthdayAlert(blockchain: Blockchain) {
@@ -46,6 +46,7 @@ class RestoreSettingsView {
         switch token.blockchainType {
         case .zcash: return ZCashBirthdayInputProvider()
         case .monero: return MoneroBirthdayInputProvider()
+        case .zano: return ZanoBirthdayInputProvider()
         default: return nil
         }
     }
@@ -62,6 +63,7 @@ enum BirthdayInputProviderFactory {
         switch blockchainType {
         case .zcash: return ZCashBirthdayInputProvider()
         case .monero: return MoneroBirthdayInputProvider()
+        case .zano: return ZanoBirthdayInputProvider()
         default: return nil
         }
     }
@@ -92,5 +94,19 @@ class MoneroBirthdayInputProvider: IBirthdayInputProvider {
 
     func date(height: Int) -> Date {
         MoneroKit.RestoreHeight.getDate(height: Int64(height))
+    }
+}
+
+class ZanoBirthdayInputProvider: IBirthdayInputProvider {
+    var lastBlockHeight: Int {
+        height(date: Date())
+    }
+
+    func height(date: Date) -> Int {
+        Int(ZanoKit.RestoreHeight.getHeight(date: date))
+    }
+
+    func date(height: Int) -> Date {
+        ZanoKit.RestoreHeight.getDate(height: Int64(height))
     }
 }

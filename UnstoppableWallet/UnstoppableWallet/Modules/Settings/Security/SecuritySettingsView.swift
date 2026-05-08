@@ -1,85 +1,75 @@
 import SwiftUI
 
 struct SecuritySettingsView: View {
-    @ObservedObject var viewModel: SecuritySettingsViewModel
+    @StateObject var viewModel = SecuritySettingsViewModel()
 
     var body: some View {
         ScrollableThemeView {
             VStack(spacing: .margin32) {
                 ListSection {
                     if viewModel.isPasscodeSet {
-                        ClickableRow(action: {
-                            Coordinator.shared.presentAfterUnlock { isPresented in
-                                ThemeNavigationStack { EditPasscodeModule.editPasscodeView(showParentSheet: isPresented) }
+                        Cell(
+                            middle: {
+                                MultiText(title: "settings_security.edit_passcode".localized)
+                            },
+                            right: {
+                                Image.disclosureIcon
+                            },
+                            action: {
+                                Coordinator.shared.presentAfterUnlock(biometryAllowed: false) { isPresented in
+                                    ThemeNavigationStack { EditPasscodeModule.editPasscodeView(showParentSheet: isPresented) }
+                                }
                             }
-                        }) {
-                            Image("dialpad_alt_2_24").themeIcon(color: .themeJacob)
-                            Text("settings_security.edit_passcode".localized).themeBody(color: .themeJacob)
-                        }
-
-                        ClickableRow(action: {
-                            Coordinator.shared.performAfterUnlock {
-                                viewModel.removePasscode()
+                        )
+                        Cell(
+                            middle: {
+                                MultiText(title: ComponentText(text: "settings_security.disable_passcode".localized, colorStyle: .red))
+                            },
+                            action: {
+                                Coordinator.shared.performAfterUnlock(biometryAllowed: false) {
+                                    viewModel.removePasscode()
+                                }
                             }
-                        }) {
-                            Image("trash_24").themeIcon(color: .themeLucian)
-                            Text("settings_security.disable_passcode".localized).themeBody(color: .themeLucian)
-                        }
+                        )
                     } else {
-                        ClickableRow(action: {
-                            presentCreatePasscode(reason: .regular)
-                        }) {
-                            Image("dialpad_alt_2_24").themeIcon(color: .themeJacob)
-                            Text("settings_security.enable_passcode".localized).themeBody(color: .themeJacob)
-                            Image("warning_2_20").themeIcon(color: .themeLucian)
-                        }
-                    }
-                }
-
-                if viewModel.isPasscodeSet {
-                    ListSection {
-                        NavigationRow(spacing: .margin8, destination: {
-                            AutoLockView(period: $viewModel.autoLockPeriod)
-                        }) {
-                            HStack(spacing: .margin16) {
-                                Image("lock_24").themeIcon()
-                                Text("settings_security.auto_lock".localized).textBody()
+                        Cell(
+                            middle: {
+                                MultiText(title: "settings_security.enable_passcode".localized)
+                            },
+                            right: {
+                                Image.warningIcon
+                            },
+                            action: {
+                                presentCreatePasscode(reason: .regular)
                             }
-
-                            Spacer()
-
-                            Text(viewModel.autoLockPeriod.title).textSubhead1()
-                            Image.disclosureIcon
-                        }
+                        )
                     }
                 }
 
                 if let biometryType = viewModel.biometryType {
                     ListSection {
-                        ClickableRow(spacing: .margin8, action: {
-                            Coordinator.shared.present(type: .alert) { isPresented in
-                                OptionAlertView(
-                                    title: biometryType.title,
-                                    viewItems: BiometryManager.BiometryEnabledType.allCases.map {
-                                        .init(text: $0.title, description: $0.description, selected: $0 == viewModel.biometryEnabledType)
-                                    },
-                                    onSelect: { index in
-                                        viewModel.biometryEnabledType = BiometryManager.BiometryEnabledType.allCases[index]
-                                    },
-                                    isPresented: isPresented
-                                )
+                        Cell(
+                            middle: {
+                                MultiText(title: biometryType.title)
+                            },
+                            right: {
+                                ThemeText(viewModel.biometryEnabledType.title, style: .subheadSB).arrow(style: .dropdown)
+                            },
+                            action: {
+                                Coordinator.shared.present(type: .alert) { isPresented in
+                                    OptionAlertView(
+                                        title: biometryType.title,
+                                        viewItems: BiometryManager.BiometryEnabledType.allCases.map {
+                                            .init(text: $0.title, selected: $0 == viewModel.biometryEnabledType)
+                                        },
+                                        onSelect: { index in
+                                            viewModel.biometryEnabledType = BiometryManager.BiometryEnabledType.allCases[index]
+                                        },
+                                        isPresented: isPresented
+                                    )
+                                }
                             }
-                        }) {
-                            HStack(spacing: .margin16) {
-                                Image(biometryType.iconName)
-                                Text(biometryType.title).textBody()
-                            }
-
-                            Spacer()
-
-                            Text(viewModel.biometryEnabledType.title).textSubhead1(color: viewModel.biometryEnabledType.isEnabled ? .themeLeah : .themeGray)
-                            Image("arrow_small_down_20").themeIcon()
-                        }
+                        )
                         .onChange(of: viewModel.biometryEnabledType) { type in
                             if !viewModel.isPasscodeSet, type.isEnabled {
                                 presentCreatePasscode(reason: .biometry(enabledType: type, type: biometryType))
@@ -88,65 +78,35 @@ struct SecuritySettingsView: View {
                     }
                 }
 
-                VStack(spacing: 0) {
-                    ListSection {
-                        ListRow {
-                            Image("eye_off_24").themeIcon()
-                            Toggle(isOn: $viewModel.balanceAutoHide) {
-                                Text("settings_security.balance_auto_hide".localized).themeBody()
+                ListSection {
+                    if viewModel.isPasscodeSet {
+                        Cell(
+                            middle: {
+                                MultiText(title: "settings_security.auto_lock".localized, subtitle: "settings_security.auto_lock.description".localized)
+                            },
+                            right: {
+                                ThemeText(viewModel.autoLockPeriod.title, style: .subheadSB).arrow(style: .dropdown)
+                            },
+                            action: {
+                                Coordinator.shared.present(type: .alert) { isPresented in
+                                    OptionAlertView(
+                                        title: "settings_security.auto_lock".localized,
+                                        viewItems: AutoLockPeriod.allCases.map { .init(text: $0.title, selected: viewModel.autoLockPeriod == $0) },
+                                        onSelect: { index in
+                                            viewModel.autoLockPeriod = AutoLockPeriod.allCases[index]
+                                        },
+                                        isPresented: isPresented
+                                    )
+                                }
                             }
-                            .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
-                        }
+                        )
                     }
+                    toggledRow(title: "settings_security.balance_auto_hide".localized, subtitle: "settings_security.balance_auto_hide.description".localized, isOn: $viewModel.balanceAutoHide)
 
-                    ListSectionFooter(text: "settings_security.balance_auto_hide.description".localized)
+                    toggledRow(title: "transaction_filter.hide_suspicious_txs".localized, subtitle: "transaction_filter.hide_suspicious_txs.description".localized, isOn: $viewModel.spamFilterEnabled)
                 }
 
-//                VStack(spacing: 0) {
-//                    PremiumListSectionHeader()
-//
-//                    ListSection {
-//                        if viewModel.isDuressPasscodeSet {
-//                            ClickableRow(action: {
-//                                Coordinator.shared.performAfterPurchase(premiumFeature: .duressMode, page: .security, trigger: .duressMode) {
-//                                    Coordinator.shared.presentAfterUnlock { isPresented in
-//                                        ThemeNavigationStack { EditPasscodeModule.editDuressPasscodeView(showParentSheet: isPresented) }
-//                                    }
-//                                }
-//                            }) {
-//                                Image("switch_wallet_24").themeIcon(color: .themeJacob)
-//                                Text("settings_security.edit_duress_passcode".localized).themeBody()
-//                            }
-//
-//                            ClickableRow(action: {
-//                                Coordinator.shared.performAfterUnlock {
-//                                    viewModel.removeDuressPasscode()
-//                                }
-//                            }) {
-//                                Image("trash_24").themeIcon(color: .themeLucian)
-//                                Text("settings_security.disable_duress_mode".localized).themeBody(color: .themeLucian)
-//                            }
-//                        } else {
-//                            ClickableRow(action: {
-//                                Coordinator.shared.performAfterPurchase(premiumFeature: .duressMode, page: .security, trigger: .duressMode) {
-//                                    if viewModel.isPasscodeSet {
-//                                        Coordinator.shared.performAfterUnlock {
-//                                            presentCreateDuressPasscode()
-//                                        }
-//                                    } else {
-//                                        presentCreatePasscode(reason: .duress)
-//                                    }
-//                                }
-//                            }) {
-//                                Image("switch_wallet_24").themeIcon(color: .themeJacob)
-//                                Text("settings_security.enable_duress_mode".localized).themeBody()
-//                            }
-//                        }
-//                    }
-//                    .modifier(ColoredBorder())
-//
-//                    ListSectionFooter(text: "settings_security.duress_mode.description".localized)
-//                }
+//                premiumSection()
             }
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
         }
@@ -186,30 +146,124 @@ struct SecuritySettingsView: View {
         }
     }
 
-    private struct AutoLockView: View {
-        @Binding var period: AutoLockPeriod
-        @Environment(\.presentationMode) private var presentationMode
+    @ViewBuilder
+    private func premiumSection() -> some View {
+        VStack(spacing: 0) {
+            SectionHeader(image: Image.defenseIcon, text: "purchases.defense_system".localized, horizontalInsets: .margin16)
 
-        var body: some View {
-            ScrollableThemeView {
-                ListSection {
-                    ForEach(AutoLockPeriod.allCases, id: \.self) { period in
-                        ClickableRow(action: {
-                            self.period = period
-                            presentationMode.wrappedValue.dismiss()
-                        }) {
-                            Text(period.title).themeBody()
-
-                            if self.period == period {
-                                Image.checkIcon
-                            }
+            ListSection {
+                toggledRow(title: "purchases.secure_send".localized, subtitle: "purchases.secure_send.description".localized, isOn: viewModel.isEnabled(.secureSend))
+                    .tapIntercept(active: true) {
+                        Coordinator.shared.performAfterPurchase(premiumFeature: .secureSend, page: .security, trigger: .getPremium) {
+                            presentSecureSendSheet()
                         }
                     }
+
+                toggledRow(title: "purchases.scam_protection".localized, subtitle: "purchases.scam_protection.description".localized, isOn: binding(feature: .scamProtection))
+                    .tapIntercept(active: !viewModel.premiumEnabled) {
+                        Coordinator.shared.performAfterPurchase(premiumFeature: .scamProtection, page: .security, trigger: .getPremium) {
+                            viewModel.set(.scamProtection, enabled: !viewModel.isEnabled(.scamProtection))
+                        }
+                    }
+
+                if viewModel.swapEnabled {
+                    toggledRow(title: "purchases.swap_protection".localized, subtitle: "purchases.swap_protection.description".localized, isOn: binding(feature: .swapProtection))
+                        .tapIntercept(active: !viewModel.premiumEnabled) {
+                            Coordinator.shared.performAfterPurchase(premiumFeature: .swapProtection, page: .security, trigger: .getPremium) {
+                                viewModel.set(.swapProtection, enabled: !viewModel.isEnabled(.swapProtection))
+                            }
+                        }
                 }
-                .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
+
+                robberyRow()
             }
-            .navigationTitle("settings_security.auto_lock".localized)
-            .navigationBarTitleDisplayMode(.inline)
+            .themeListStyle(.borderedPremium)
         }
+    }
+
+    private func presentSecureSendSheet() {
+        Coordinator.shared.present(type: .bottomSheet) { isPresented in
+            SecureSendBottomSheetView(isPresented: isPresented)
+        }
+    }
+
+    private func binding(feature: PremiumFeature) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.isEnabled(feature) },
+            set: { viewModel.set(feature, enabled: $0) }
+        )
+    }
+
+    @ViewBuilder
+    private func toggledRow(title: CustomStringConvertible, subtitle: CustomStringConvertible, isOn: Binding<Bool>) -> some View {
+        Cell(
+            middle: {
+                MultiText(title: title, subtitle: subtitle)
+            },
+            right: {
+                ThemeToggle(isOn: isOn)
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func toggledRow(title: CustomStringConvertible, subtitle: CustomStringConvertible, isOn: Bool) -> some View {
+        Cell(
+            middle: {
+                MultiText(title: title, subtitle: subtitle)
+            },
+            right: {
+                ThemeToggle(isOn: .constant(isOn))
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func robberyRow() -> some View {
+        Cell(
+            middle: {
+                MultiText(title: "purchases.robbery_protection".localized, subtitle: "purchases.robbery_protection.description".localized)
+            },
+            right: {
+                if viewModel.isDuressPasscodeSet {
+                    HStack(spacing: .margin12) {
+                        Button {
+                            Coordinator.shared.performAfterPurchase(premiumFeature: .robberyProtection, page: .security, trigger: .robberyProtection) {
+                                Coordinator.shared.presentAfterUnlock { isPresented in
+                                    ThemeNavigationStack { EditPasscodeModule.editDuressPasscodeView(showParentSheet: isPresented) }
+                                }
+                            }
+                        } label: {
+                            Image("pen")
+                        }
+                        .buttonStyle(SecondaryCircleButtonStyle())
+
+                        Button {
+                            Coordinator.shared.performAfterUnlock {
+                                viewModel.removeDuressPasscode()
+                            }
+                        } label: {
+                            Image("trash")
+                        }
+                        .buttonStyle(SecondaryCircleButtonStyle())
+                    }
+                } else {
+                    Button {
+                        Coordinator.shared.performAfterPurchase(premiumFeature: .robberyProtection, page: .security, trigger: .robberyProtection) {
+                            if viewModel.isPasscodeSet {
+                                Coordinator.shared.performAfterUnlock {
+                                    presentCreateDuressPasscode()
+                                }
+                            } else {
+                                presentCreatePasscode(reason: .duress)
+                            }
+                        }
+                    } label: {
+                        Text("button.add".localized)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+        )
     }
 }

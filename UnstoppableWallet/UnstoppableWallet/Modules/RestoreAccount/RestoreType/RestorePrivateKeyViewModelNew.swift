@@ -355,13 +355,12 @@ extension RestorePrivateKeyViewModelNew {
         guard validateInputs() else {
             return
         }
-
         isLoading = true
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
 
-            let accountType = self.resolveAccountType()
+            let accountType = self.resolveAccountTypes()?.first
             let accountName = self.resolveAccountName()
             let restoreSelectOptions = self.restoreSelectOptions
 
@@ -419,7 +418,7 @@ extension RestorePrivateKeyViewModelNew {
 }
 
 extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
-    func resolveAccountType() -> AccountType? {
+    func resolveAccountTypes() -> [AccountType]? {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedText.isEmpty else {
@@ -442,7 +441,7 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
             }
             cautionRelay.accept(nil)
             textCaution = .none
-            return accountType
+            return [accountType]
         } catch let error as RestorePrivateKeyService.RestoreError {
             let errorMessage = self.errorMessage(for: error)
             let caution = Caution(text: errorMessage, type: .error)

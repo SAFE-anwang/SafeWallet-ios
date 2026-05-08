@@ -58,14 +58,6 @@ struct CloudRestoreBackupListView: View {
             }
         }
         .navigationTitle("restore.cloud.title".localized)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("button.cancel".localized) {
-                    isPresented = false
-                }
-            }
-        }
         .onReceive(viewModel.restorePublisher) { item in
             onSelectBackup(item)
         }

@@ -16,15 +16,11 @@ struct TransactionContactSelectView: View {
     var body: some View {
         ThemeView {
             VStack(spacing: .margin12) {
-                if !viewModel.contacts.isEmpty {
-                    SearchBar(text: $searchText, prompt: "placeholder.search".localized)
-                }
-
                 Text("transaction_filter.description".localized(
                     viewModel.allowedBlockchainsForContact.map(\.name).joined(separator: ", ")
                 ))
                 .themeSubhead2()
-                .padding(EdgeInsets(top: 0, leading: .margin16, bottom: 0, trailing: .margin16))
+                .padding(.padding16)
 
                 if !viewModel.contacts.isEmpty {
                     ScrollableThemeView {
@@ -65,10 +61,14 @@ struct TransactionContactSelectView: View {
                 }
             }
             .navigationTitle("contacts.title".localized)
-            .navigationBarTitleDisplayMode(.inline)
+            .searchBar(text: $searchText, prompt: "placeholder.search".localized)
             .toolbar {
-                Button("button.cancel".localized) {
-                    isPresented = false
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
                 }
             }
         }

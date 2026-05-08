@@ -28,7 +28,7 @@ extension MoneroSendHandler: ISendHandler {
     }
 
     func sendData(transactionSettings: TransactionSettings?) async throws -> ISendData {
-        let priority = transactionSettings?.priority
+        let priority = transactionSettings?.moneroPriority
         var fee: Decimal?
         var transactionError: Error?
 
@@ -65,12 +65,12 @@ extension MoneroSendHandler {
         let token: Token
         let amount: MoneroSendAmount
         let address: String
-        let priority: SendPriority
+        let priority: MoneroKit.SendPriority
         let memo: String?
         let transactionError: Error?
         let fee: Decimal?
 
-        init(token: Token, amount: MoneroSendAmount, address: String, priority: SendPriority, memo: String?, transactionError: Error?, fee: Decimal?) {
+        init(token: Token, amount: MoneroSendAmount, address: String, priority: MoneroKit.SendPriority, memo: String?, transactionError: Error?, fee: Decimal?) {
             self.token = token
             self.amount = amount
             self.address = address

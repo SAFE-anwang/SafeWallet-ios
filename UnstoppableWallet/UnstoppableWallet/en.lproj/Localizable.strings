@@ -114,6 +114,13 @@
 "face_id" = "Face ID";
 "touch_id" = "Touch ID";
 
+"auto_lock.immediate" = "Immediate";
+"auto_lock.minute1" = "1 minute";
+"auto_lock.minute5" = "5 minutes";
+"auto_lock.minute15" = "15 minutes";
+"auto_lock.minute30" = "30 minutes";
+"auto_lock.hour1" = "1 hour";
+
 "powered_by" = "Powered by %@";
 
 "filter.all" = "All";
@@ -188,6 +195,13 @@
 
 "restore.error.non_standard.link" = "Click to get more info";
 
+"restore.select_key_type" = "Select Network";
+"restore.select_key_type.evm" = "EVM Networks";
+"restore.select_key_type.evm.description" = "Ethereum, Arbitrum, Optimism ...";
+"restore.select_key_type.trc" = "TRON";
+"restore.select_key_type.trc.description" = "TRON Network only.";
+
+
 // Restore Type
 
 "restore_type.title" = "Import Wallet";
@@ -215,6 +229,9 @@
 
 // Coin Settings
 
+"coin_settings.title" = "Blockchain Settings";
+"coin_settings.bitcoin_cash_coin_type.title.type0" = "Legacy";
+"coin_settings.bitcoin_cash_coin_type.title.type145" = "CashAddress";
 "sync_mode.hybrid" = "Hybrid";
 "sync_mode.from_blockchain" = "%@ Blockchain";
 "blockchain_settings.description" = "Select the address format for the coin.";
@@ -242,6 +259,9 @@
 
 "evm_private_key.title" = "EVM Private Key";
 "evm_private_key.tap_to_show" = "Tap to show private key";
+
+"tron_private_key.title" = "Tron Private Key";
+"tron_private_key.tap_to_show" = "Tap to show private key";
 
 // Stellar Secret Key
 
@@ -556,7 +576,7 @@
 "send.fee_settings.fee_rate_unavailable" = "Fee Rate unavailable. Please, check fee rates manually";
 
 "send.unspent_outputs" = "UTxOs";
-"send.unspent_outputs.description" = "Manually select UTxO to spend the funds in the balance";
+"send.unspent_outputs.description" = "Manually choose which coins to spend in the transaction.";
 "send.unspent_outputs.send_to" = "Send To";
 "send.unspent_outputs.change" = "Change";
 
@@ -651,6 +671,17 @@
 
 "swap.quotes.providers" = "Providers";
 "swap.quotes.best_price" = "Best Price";
+"swap.quotes.sort.title" = "Sort By";
+"swap.quotes.sort.best_rate" = "Best Rate";
+"swap.quotes.sort.best_time" = "Fastest";
+
+"swap.quotes.providers.risk_levels.title" = "Provider Risk Levels";
+"swap.quotes.providers.risk_levels.description" = "Risk levels show what actions a provider may take during execution.";
+"swap.quotes.providers.risk_levels.auto.description" = "This exchange uses its own liquidity and is privacy-friendly. Transactions are processed without AML blocking.";
+"swap.quotes.providers.risk_levels.flexible.description" = "This exchange usually refunds transactions that fail AML checks. In rare cases, funds may be temporarily blocked if additional verification is required.";
+"swap.quotes.providers.risk_levels.preCheck.description" = "Provider does its own address screening before processing the swap. Rejections are rare. Freezes are theoretically possible but highly unlikely.";
+"swap.quotes.providers.risk_levels.controlled.description" = "This exchange blocks transactions that fail AML checks until KYC/verification requirements are completed.";
+
 
 "swap.allowance" = "Allowance";
 "swap.allowance.description" = "Allowance is the amount you let the exchange use on your behalf for swaps. Before making a swap, you first need to approve an allowance transaction.";
@@ -672,7 +703,7 @@
 "swap.high_price_impact" = "High Price Impact";
 "swap.recipient" = "Recipient";
 "swap.slippage" = "Slippage";
-"swap.swapped_time" = "Swapped Time";
+"swap.swapped_time" = "Est. Time";
 "swap.swapped_time.info" = "Approximate time to receive funds. Swap processing and transaction confirmations may take some time depending on the network and provider.";
 
 "swap.affiliate_fee" = "Affiliate Fee";
@@ -681,6 +712,14 @@
 "swap.total_fee" = "Total Fee";
 
 "swap.aml" = "AML";
+"swap.aml.risk.title" = "Alert!";
+"swap.aml.risk.description" = "Potential risks were identified for this transaction. During processing, your funds may be rejected or restricted. Please choose another provider.";
+"swap.aml.risk.button" = "Choose Another Provider";
+"swap.aml.undefined.description" = "We couldn’t complete the risk check for this transaction. If you continue, this swap may encounter delays, rejection, or restrictions during processing.";
+"swap.aml.undefined.button" = "Continue with Risk";
+"swap.aml.connection.title" = "Connection Issue";
+"swap.aml.connection.description" = "Unable to get a response right now. Please try again.";
+"swap.aml.connection.button" = "Retry";
 
 // Swap options
 
@@ -757,7 +796,7 @@
 "swap.confirmation.impact_too_high" = "This swap would result in a major loss (%@) due to very low liquidity.";
 "swap.confirmation.impact_warning" = "Important! You're getting an extremely unfavorable price. This is due to extremely low liquidity.";
 
-"swap.confirmation.minimum_received" = "Guaranteed Amount";
+"swap.confirmation.minimum_received" = "Guaranteed";
 "swap.confirmation.minimum_received.info" = "The minimum amount you will receive after the swap is completed. This amount is guaranteed by the provider and is not affected by price changes during processing.";
 "swap.confirmation.maximum_sent" = "Maximum Sent";
 
@@ -768,9 +807,37 @@
 
 "swap.maya.shielded_address.error" = "Can't fetch shielded address for Memo (Maya)";
 
+// Swap History
+
+"swap_history.title" = "Swap History";
+"swap_history.all" = "All";
+"swap_history.empty" = "You don’t have any pending or past swaps yet.";
+
+// Swap Info
+
+"swap_info.title" = "Swap Info";
+"swap_info.provider" = "Provider";
+"swap_info.date" = "Date";
+"swap_info.status" = "Status";
+"swap_info.recipient" = "Recipient";
+"swap_info.view" = "View";
+"swap_info.deposit" = "Deposit %@";
+"swap_info.swap" = "Swap";
+"swap_info.send" = "Send %@";
+"swap_info.refund" = "Refund %@";
+"swap_info.unknown" = "Unknown";
+
+"swap_info.status.not_started" = "Not Started";
+"swap_info.status.pending" = "Pending";
+"swap_info.status.swapping" = "Swapping";
+"swap_info.status.completed" = "Completed";
+"swap_info.status.refunded" = "Refunded";
+"swap_info.status.unknown" = "Unknown";
+"swap_info.status.failed" = "Failed";
+
 // Market
 
-"market.title" = "Markets";
+"market.title" = "Market";
 
 "market.global.market_cap" = "Total Cap";
 "market.global.volume" = "24h Vol.";
@@ -917,6 +984,7 @@
 "top_platform.title" = "%@ Ecosystem";
 "top_platform.total_cap" = "Total Cap";
 
+"market.search.title" = "Search";
 "market.search.recent" = "Recent";
 "market.search.popular" = "Popular";
 
@@ -978,7 +1046,6 @@
 "market.advanced_search.price_close_to_atl" = "ATL(All Time Low)";
 
 "market.advanced_search.top" = "Top %d";
-"market.advanced_search.reset_all" = "Reset";
 
 "market.advanced_search.less_5_m" = "< 5M";
 "market.advanced_search.less_10_m" = "< 10M";
@@ -1515,6 +1582,7 @@
 "manage_wallets.derivation_description" = "There are 4 common address formats %@ wallets can use to receive incoming payments:\n\n- BIP44 (oldest)\n- BIP49\n- BIP84 (recommended)\n- BIP86 (newest)\n\nWhile %@ wallet supports all 4, it recommends to use a %@ wallet operating in BIP84 format.";
 "manage_wallets.bitcoin_cash_coin_type_description" = "There are 2 address formats Bitcoin Cash wallets can use to receive incoming payments:\n\n- TYPE 0 (older)\n- TYPE 145 (newer)\n\nWhile %@ wallet supports both of them it recommends using a Bitcoin Cash wallet operating in TYPE 145 format.";
 
+
 // Settings -> Terms
 
 "terms.title" = "Security Terms";
@@ -1560,6 +1628,7 @@
 "backup_app.backup_list.other.contacts.title" = "Contacts";
 "backup_app.backup_list.other.custom_evm_sync_sources.title" = "Custom RPC";
 "backup_app.backup_list.other.custom_monero_nodes.title" = "Custom Monero Nodes";
+"backup_app.backup_list.other.custom_zano_nodes.title" = "Custom Zano Nodes";
 "backup_app.backup_list.other.app_settings.title" = "App Settings";
 "backup_app.backup_list.other.app_settings.description" = "Language, Currency, Appearance ...";
 
@@ -1609,6 +1678,7 @@
 "settings_security.edit_passcode" = "Edit Passcode";
 "settings_security.disable_passcode" = "Disable Passcode";
 "settings_security.auto_lock" = "Auto-Lock";
+"settings_security.auto_lock.description" = "Automatically locks the app after a selected time.";
 "settings_security.balance_auto_hide" = "Balance Auto Hide";
 "settings_security.balance_auto_hide.description" = "Automatically hides balance every time the app is opened.";
 "settings_security.enable_duress_mode" = "Set Duress Mode";
@@ -1617,11 +1687,8 @@
 "settings_security.duress_mode.description" = "A special mode that protects selected wallets in case of coercion.";
 
 "biometry.off" = "Off";
-"biometry.manual" = "Manual";
+"biometry.manual" = "Manually";
 "biometry.on" = "On";
-"biometry.off.description" = "Disabled in all cases";
-"biometry.manual.description" = "Scanning with the button";
-"biometry.on.description" = "Automatic scanning";
 
 // Create Passcode
 
@@ -1691,7 +1758,7 @@
 
 "btc_transaction_sort_mode.shuffle" = "Shuffle";
 "btc_transaction_sort_mode.shuffle.description" = "Random Indexing";
-"btc_transaction_sort_mode.bip69" = "Deterministic Bip69";
+"btc_transaction_sort_mode.bip69" = "Deterministic";
 "btc_transaction_sort_mode.bip69.description" = "Lexicographical Indexing";
 
 "blockchain_settings.info.restore_source" = "Restore Source";
@@ -1765,7 +1832,6 @@
 "appearance.launch_screen.description" = "Choose which screen the app opens on by default.";
 "appearance.launch_screen.auto" = "Auto";
 "appearance.launch_screen.balance" = "Balance";
-"appearance.launch_screen.market_overview" = "Market Overview";
 "appearance.launch_screen.watchlist" = "Favorites";
 
 "appearance.balance_tab" = "Balance Tab";
@@ -2103,6 +2169,8 @@
 "public_keys.title" = "Public Keys";
 "public_keys.evm_address" = "EVM Address";
 "public_keys.evm_address.description" = "Allows read-only monitoring of wallets holding assets on Ethereum, Binance Smart Chain and other EVM-based blockchains.";
+"public_keys.tron_address" = "TRON Address";
+"public_keys.tron_address.description" = "Allows read-only monitoring of wallets holding assets on TRON blockchain.";
 "public_keys.account_extended_public_key" = "Account Extended Public Key";
 "public_keys.account_extended_public_key.description" = "Allows read-only monitoring of wallets holding Bitcoin and other UTXO-based crypto (i.e. Litecoin, Bitcoin Cash, Dash, etc.).";
 "public_keys.monero_public_key" = "Monero Public Keys";
@@ -2113,6 +2181,8 @@
 "private_keys.title" = "Private Keys";
 "private_keys.evm_private_key" = "EVM Private Key";
 "private_keys.evm_private_key.description" = "Grants full control over assets on EVM-based networks (e.g., Ethereum, BNB Smart Chain, Polygon, Avalanche) within this wallet.";
+"private_keys.tron_private_key" = "Tron Private Key";
+"private_keys.tron_private_key.description" = "Grants full control over assets on the Tron network within this wallet.";
 "private_keys.stellar_secret_key" = "Stellar Secret Key";
 "private_keys.stellar_secret_key.description" = "Grants full control over assets on the Stellar network within this wallet.";
 "private_keys.bip32_root_key" = "BIP32 Root Key";
@@ -2125,6 +2195,7 @@
 // Manage Account -> EVM Address
 
 "evm_address.title" = "EVM Address";
+"tron_address.title" = "TRON Address";
 
 // Birthday Height
 
@@ -2176,6 +2247,16 @@
 "add_monero_node.warning.url_exists" = "Node with this URL already exists";
 "add_monero_node.error.invalid_url" = "The entered URL is invalid. Valid url must have https scheme";
 
+"zano_network.node" = "Node";
+"zano_network.added" = "Added";
+"zano_network.add_new" = "Add New";
+"zano_network.description" = "Choose the node Unstoppable app should use for synchronizing wallet(s).";
+
+"add_zano_node.title" = "Add Node";
+"add_zano_node.node_url" = "Node URL";
+"add_zano_node.warning.url_exists" = "Node with this URL already exists";
+"add_zano_node.error.invalid_url" = "The entered URL is invalid";
+
 // Send Settings
 
 "evm_send_settings.nonce" = "Transaction Nonce";
@@ -2190,6 +2271,7 @@
 "fee_settings.fee_rate" = "Fee Rate";
 "fee_settings.fee_rate.description" = "Here is the recommended value for hitting the next 2 blocks";
 "fee_settings.inputs_outputs" = "Inputs/Outputs";
+"fee_settings.inputs_outputs.description" = "Changes how transaction inputs and outputs are structured.";
 "fee_settings.transaction_settings" = "Transaction Settings";
 "fee_settings.transaction_settings.description" = "Make your %@ transaction harder to trace by changing the way transactions are structured.";
 "fee_settings.replace_by_fee" = "Replace by Fee";
@@ -2739,7 +2821,6 @@
 "transaction_filter.hide_suspicious_txs" = "Hide Suspicious Txs";
 "transaction_filter.hide_safe4_income" = "Hide mining income";
 "transaction_filter.hide_safe4_node.state" = "Hide node status upload";
-"transaction_filter.hide_suspicious_txs.description" = "Hiding incoming transactions with the dust amount in stablecoins, this partially solves the  address poisoning attack problems.";
 "transaction_filter.hide_suspicious_txs.description" = "Hides small-value incoming transfers (e.g. USDT below $1.5). These transactions are often used for phishing and address-poisoning attacks.";
 
 // Purchases
@@ -2864,60 +2945,59 @@
 
 // MEV Protection
 
-"mev_protection.title" = "MEV Protection";
-"mev_protection.description" = "So-called front-running bots watch every trade, trying to make you overpay. This feature blocks them.";
-// SRC20
-"SRC20_Deploy_One_Click_Issu" = "One-click coin issuance";
-"SRC20_Deploy_Promotion" = "Asset promotion";
-"SRC20_Deploy_Title" = "SRC20 Deploy";
+"Revoke_Manager" = "Revoke Manager";
+"SRC20_Additional_Address" = "Additional Address Issuance";
+"SRC20_Additional_Hint" = "Confirm additional asset?";
+"SRC20_Additional_Number" = "Number of additional issuances";
+"SRC20_Asset_Logo" = "Assets LOGO";
+"SRC20_Balance" = "Balance:";
+"SRC20_Deploy_Confirm" = "Are you sure to issue %@ ?";
 "SRC20_Deploy_Mode" = "Mode";
-"SRC20_Deploy_Type_Normal" = "Ordinary assets";
-"SRC20_Deploy_Type_Normal_Desc" = "Have general transfer function";
+"SRC20_Deploy_Name" = "Name";
+"SRC20_Deploy_One_Click_Issu" = "One-click coin issuance";
+"SRC20_Deploy_Process" = "Deploy";
+"SRC20_Deploy_Promotion" = "Asset promotion";
+"SRC20_Deploy_Supply" = "Supply";
+"SRC20_Deploy_Symbol" = "Symbol";
+"SRC20_Deploy_Title" = "SRC20 Deploy";
 "SRC20_Deploy_Type_Burnable" = "Burnable";
 "SRC20_Deploy_Type_Burnable_Desc" = "Contract managers can issue or destroy the asset";
-"SRC20_Deploy_Type_Mintable_Desc" = "Contract managers can issue the asset to the specified account";
 "SRC20_Deploy_Type_Mintable" = "Mintable";
-"SRC20_Deploy_Name" = "Name";
-"SRC20_Deploy_Symbol" = "Symbol";
-"SRC20_Deploy_Supply" = "Supply";
-"SRC20_Deploy_Process" = "Deploy";
-"SRC20_Manger" = "Asset management";
-"SRC20_Edit" = "Asset Edit";
-"SRC20_Select_Image" = "Select PNG image";
-"SRC20_Promotion_Fee" = "Pay %@, set a logo for your assets";
-"SRC20_Promotion" = "Promotion assets";
-"SRC20_Issuance" = "Issuance of additional assets";
+"SRC20_Deploy_Type_Mintable_Desc" = "Contract managers can issue the asset to the specified account";
+"SRC20_Deploy_Type_Normal" = "Ordinary assets";
+"SRC20_Deploy_Type_Normal_Desc" = "Have general transfer function";
 "SRC20_Destroy" = "Destroy assets";
-"SRC20_Asset_Logo" = "Assets LOGO";
-"SRC20_Additional_Address" = "Additional Address Issuance";
-"SRC20_Additional_Number" = "Number of additional issuances";
+"SRC20_Destroy_Hint" = "Confirm destroy asset?";
 "SRC20_Destroy_Number" = "Number of destroy";
-"SRC20_Deploy_Confirm" = "Are you sure to issue %@ ?";
-"SRC20_Info_Contract" = "Contract Address:";
-"SRC20_Info_Creator" = "Manager:";
-"SRC20_Info_Edit" = "Edit";
-"SRC20_Info_Promotion" = "Promotion";
-"SRC20_Info_Add" = "Add";
-"SRC20_Info_Destroy" = "Destroy";
-"SRC20_lock" = "SRC20 Lock";
-"SRC20_Edit_Name" = "Name:";
-"SRC20_Edit_Symbol" = "Symbol:";
-"SRC20_Edit_White_Paper" = "White Paper URL";
-"SRC20_Edit_Org" = "Organization";
-"SRC20_Edit_Official" = "Official URL";
+"SRC20_Edit" = "Asset Edit";
 "SRC20_Edit_Desc" = "Description";
 "SRC20_Edit_Hint" = "Confirm update asset information?";
-"SRC20_Promotion_Hint" = "Confirm promotion asset?";
-"SRC20_Additional_Hint" = "Confirm additional asset?";
-"SRC20_Destroy_Hint" = "Confirm destroy asset?";
-"SRC20_Balance" = "Balance:";
+"SRC20_Edit_Name" = "Name:";
+"SRC20_Edit_Official" = "Official URL";
+"SRC20_Edit_Org" = "Organization";
+"SRC20_Edit_Symbol" = "Symbol:";
+"SRC20_Edit_White_Paper" = "White Paper URL";
+"SRC20_Info_Add" = "Add";
+"SRC20_Info_Contract" = "Contract Address:";
+"SRC20_Info_Creator" = "Manager:";
+"SRC20_Info_Destroy" = "Destroy";
+"SRC20_Info_Edit" = "Edit";
+"SRC20_Info_Promotion" = "Promotion";
+"SRC20_Issuance" = "Issuance of additional assets";
+"SRC20_Manger" = "Asset management";
 "SRC20_No_Deploy" = "You don\'t have deploy asset.";
+"SRC20_Promotion" = "Promotion assets";
+"SRC20_Promotion_Fee" = "Pay %@, set a logo for your assets";
+"SRC20_Promotion_Hint" = "Confirm promotion asset?";
+"SRC20_Select_Image" = "Select PNG image";
+"SRC20_lock" = "SRC20 Lock";
 "Super_Node_Modify_IncentivePlan" = "Update incentive plan";
-"Revoke_Manager" = "Revoke Manager";
 "loadData.nomore" = "No more data";
-"manage_wallets.filter_by_blockchain" = "Filter By Blockchain";
 "manage_wallets.filter_all_blockchains" = "All Blockchains";
 "manage_wallets.filter_bitcoin_series" = "Bitcoin";
+"manage_wallets.filter_by_blockchain" = "Filter By Blockchain";
+"mev_protection.description" = "So-called front-running bots watch every trade, trying to make you overpay. This feature blocks them.";
+"mev_protection.title" = "MEV Protection";
 // Secure Send Bottom Sheet
 "secure_send.bottom_sheet.title" = "Secure Send";
 "secure_send.bottom_sheet.description" = "Choose security checks.";

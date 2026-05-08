@@ -86,9 +86,8 @@ struct PreSendView: View {
             .toolbarRole(.editor)
         }
         .navigationTitle(viewModel.title)
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 if let handler = viewModel.handler, handler.hasSettings {
                     Button(action: {
                         if let handler = viewModel.handler {
@@ -99,16 +98,13 @@ struct PreSendView: View {
                             }
                         }
                     }) {
-                        Image("settings_24")
-                            .renderingMode(.template)
-                            .foregroundColor(handler.settingsModified ? .themeJacob : .themeGray)
-                            .dotOverlay(visible: handler.settingsModified)
+                        Image("gear")
+                            .modifier(ToolbarBadgeModifier(visible: handler.settingsModified))
                     }
                 }
             }
         }
         .toolbarRole(.editor)
-        .accentColor(.themeJacob)
     }
 
     @ViewBuilder private func availableBalanceView(value: String?) -> some View {

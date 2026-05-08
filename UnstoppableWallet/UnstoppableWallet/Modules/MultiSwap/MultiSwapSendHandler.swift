@@ -4,6 +4,7 @@ import Eip20Kit
 import EvmKit
 import Foundation
 import MarketKit
+import ZanoKit
 
 class MultiSwapSendHandler {
     private let currencyManager = Core.shared.currencyManager
@@ -13,6 +14,7 @@ class MultiSwapSendHandler {
     private let evmBlockchainManager = Core.shared.evmBlockchainManager
     private let adapterManager = Core.shared.adapterManager
     private let tronKitManager = Core.shared.tronAccountManager.tronKitManager
+    private let swapHistoryManager = Core.shared.swapHistoryManager
     private let mevProtectionHelper = MevProtectionHelper()
 
     let baseToken: Token
@@ -106,6 +108,8 @@ extension MultiSwapSendHandler: ISendHandler {
             throw SendError.invalidData
         }
 
+        var txHash: String?
+
         if let quote = data.quote as? EvmSwapFinalQuote {
             guard let transactionData = quote.transactionData else {
                 throw SendError.invalidTransactionData
@@ -123,13 +127,15 @@ extension MultiSwapSendHandler: ISendHandler {
                 throw SendError.noEvmKitWrapper
             }
 
-            _ = try await evmKitWrapper.send(
+            let fullTransaction = try await evmKitWrapper.send(
                 transactionData: transactionData,
                 gasPrice: gasPrice,
                 gasLimit: gasLimit,
                 privateSend: mevProtectionHelper.isActive,
                 nonce: quote.nonce
             )
+
+            txHash = fullTransaction.transaction.hash.hs.hexString
         } else if let quote = data.quote as? UtxoSwapFinalQuote {
             guard let adapter = adapterManager.adapter(for: tokenIn) as? BitcoinBaseAdapter else {
                 throw SendError.noBitcoinAdapter
@@ -139,7 +145,9 @@ extension MultiSwapSendHandler: ISendHandler {
                 throw SendError.noSendParameters
             }
 
-            try adapter.send(params: sendParameters)
+            let fullTransaction = try adapter.send(params: sendParameters)
+
+            txHash = fullTransaction.header.dataHash.hs.reversedHex
         } else if let quote = data.quote as? ZcashSwapFinalQuote {
             guard let adapter = adapterManager.adapter(for: tokenIn) as? ZcashAdapter else {
                 throw SendError.noZcashAdapter
@@ -149,7 +157,9 @@ extension MultiSwapSendHandler: ISendHandler {
                 throw SendError.noProposal
             }
 
-            try await adapter.send(proposal: proposal)
+            let hash = try await adapter.send(proposal: proposal)
+
+            txHash = hash
         } else if let quote = data.quote as? TonSwapFinalQuote {
             guard let account = Core.shared.accountManager.activeAccount else {
                 throw SendError.noTonAdapter
@@ -197,6 +207,36 @@ extension MultiSwapSendHandler: ISendHandler {
                 priority: quote.priority,
                 memo: quote.memo
             )
+        } else if let quote = data.quote as? ZanoSwapFinalQuote {
+            guard let adapter = adapterManager.adapter(for: tokenIn) as? ZanoAdapter else {
+                throw SendError.noZanoAdapter
+            }
+
+            try adapter.send(to: quote.address, amount: quote.amount, memo: quote.memo)
+        }
+
+        if let account = accountManager.activeAccount {
+            let swap = Swap(
+                uid: UUID().uuidString,
+                txHash: txHash,
+                accountId: account.id,
+                providerId: provider.id,
+                status: .pending,
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
+                amountIn: amountIn,
+                amountOut: data.quote.amountOut,
+                recipient: data.quote.recipient,
+                toAddress: data.quote.recipient ?? data.quote.toAddress,
+                depositAddress: data.quote.depositAddress,
+                providerSwapId: data.quote.providerSwapId,
+                date: Date(),
+                fromAsset: nil,
+                toAsset: nil,
+                legs: nil
+            )
+
+            swapHistoryManager.save(swap: swap)
         }
 
         if !walletManager.activeWallets.contains(where: { $0.token == tokenOut }), let activeAccount = accountManager.activeAccount {
@@ -305,7 +345,7 @@ extension MultiSwapSendHandler {
                 case .normal, .warning, .forbidden:
                     fields.append(
                         .simpleValue(
-                            title: SendField.InformedTitle("swap.price_impact".localized, info: InfoDescription(
+                            title: ComponentInformedTitle("swap.price_impact".localized, info: InfoDescription(
                                 title: "swap.price_impact".localized,
                                 description: "swap.price_impact.info".localized
                             )),
@@ -344,6 +384,7 @@ extension MultiSwapSendHandler {
         case noSendParameters
         case noZcashAdapter
         case noMoneroAdapter
+        case noZanoAdapter
         case noProposal
         case noTonAdapter
         case noActiveAccount
@@ -365,7 +406,7 @@ extension MultiSwapSendHandler {
         switch tokenIn.type {
         case .native, .derived, .addressType:
             baseToken = tokenIn
-        case .eip20, .spl, .jetton, .stellar:
+        case .eip20, .spl, .jetton, .stellar, .zanoAsset:
             baseToken = try? Core.shared.marketKit.token(query: TokenQuery(blockchainType: tokenIn.blockchainType, tokenType: .native))
         case .unsupported:
             baseToken = nil

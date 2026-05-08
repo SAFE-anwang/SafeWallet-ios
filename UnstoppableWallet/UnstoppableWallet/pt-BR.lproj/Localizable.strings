@@ -119,9 +119,9 @@
 
 "auto_lock.immediate" = "Imediato";
 "auto_lock.minute1" = "1 minuto";
-"auto_lock.minute5" = "5 Minutos";
 "auto_lock.minute15" = "15 Minutos";
 "auto_lock.minute30" = "30 Minutos";
+"auto_lock.minute5" = "5 Minutos";
 "auto_lock.hour1" = "1 hora";
 
 "powered_by" = "Impulsionado por %@";
@@ -146,7 +146,7 @@ Go to Settings - > %@ and allow access to the camera.";
 "restore.restore_type.mnemonic" = "Frase de Recuperação";
 "restore.restore_type.private_key" = "Chave Privada";
 "restore.mnemonic.placeholder" = "Insira 12, 15, 18, 21 ou 24 palavras";
-"restore.private_key.placeholder" = "Give me that EVM Private Key, that BIP32 Root Key, or that Account Extended Private Key, folks. We're talking big league security here!";
+"restore.private_key.placeholder" = "Insira a chave privada EVM ou TRON, a chave secreta Stellar, a chave raiz BIP32 ou a chave privada estendida da conta";
 "restore.private_key.invalid_key" = "Chave Inválida";
 "restore_error.mnemonic_word_count" = "Hey, you, %@! You're off the mark. You need between 12 and 24 words, no less, no more. Let's get it right!";
 "restore.checksum_error" = "Soma de Verificação Inválida";
@@ -161,6 +161,13 @@ Go to Settings - > %@ and allow access to the camera.";
 "restore.error.non_standard.description" = "Esta é uma carteira não padrão. \n\nCLIQUE PARA OBTER MAIS INFORMAÇÕES";
 
 "restore.error.non_standard.link" = "Clique para mais informações";
+
+"restore.select_key_type" = "Selecionar rede";
+"restore.select_key_type.evm" = "Redes EVM";
+"restore.select_key_type.evm.description" = "Ethereum, Arbitrum, Optimism ...";
+"restore.select_key_type.trc" = "TRON";
+"restore.select_key_type.trc.description" = "Somente rede TRON.";
+
 
 // Restore Type
 
@@ -188,9 +195,9 @@ Go to Settings - > %@ and allow access to the camera.";
 
 // Coin Settings
 
-"coin_settings.title" = "Configurações da Blockchain";
 "coin_settings.bitcoin_cash_coin_type.title.type0" = "Legacy";
 "coin_settings.bitcoin_cash_coin_type.title.type145" = "CashAddress (recomendado)";
+"coin_settings.title" = "Configurações da Blockchain";
 "sync_mode.hybrid" = "Híbrido";
 "sync_mode.from_blockchain" = "Da Blockchain";
 "blockchain_settings.description" = "Selecione o formato de endereço para a moeda.";
@@ -220,6 +227,9 @@ Go to Settings - > %@ and allow access to the camera.";
 
 "evm_private_key.title" = "Chave Privada EVM";
 "evm_private_key.tap_to_show" = "Give it a tap, folks, and reveal that private key. It's like finding the secret to success!";
+
+"tron_private_key.title" = "Chave privada Tron";
+"tron_private_key.tap_to_show" = "Toque para exibir a chave privada";
 
 // Stellar Secret Key
 
@@ -590,7 +600,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "send.lock_time" = "TravaTempo";
 
 "send.unspent_outputs" = "UTxOs";
-"send.unspent_outputs.description" = "Selecionar manualmente UTxO para gastar os fundos no saldo";
+"send.unspent_outputs.description" = "Escolha manualmente quais moedas gastar na transação.";
 "send.unspent_outputs.send_to" = "Enviar para";
 "send.unspent_outputs.change" = "Alterar";
 
@@ -690,6 +700,17 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 
 "swap.quotes.providers" = "Provedores";
 "swap.quotes.best_price" = "Melhor Preço";
+"swap.quotes.sort.title" = "Ordenar por";
+"swap.quotes.sort.best_rate" = "Melhor taxa";
+"swap.quotes.sort.best_time" = "Mais rápido";
+
+"swap.quotes.providers.risk_levels.title" = "Níveis de risco do provedor";
+"swap.quotes.providers.risk_levels.description" = "Os níveis de risco mostram quais ações um provedor pode tomar durante a execução.";
+"swap.quotes.providers.risk_levels.auto.description" = "Esta exchange utiliza sua própria liquidez e é amigável à privacidade. As transações são processadas sem bloqueio AML.";
+"swap.quotes.providers.risk_levels.flexible.description" = "Esta exchange geralmente reembolsa transações que não passam nas verificações AML. Em casos raros, os fundos podem ser temporariamente bloqueados se uma verificação adicional for necessária.";
+"swap.quotes.providers.risk_levels.preCheck.description" = "O provedor realiza sua própria verificação de endereço antes de processar o swap. Rejeições são raras. Congelamentos são teoricamente possíveis, mas muito improváveis.";
+"swap.quotes.providers.risk_levels.controlled.description" = "Esta exchange bloqueia transações que não passam nas verificações AML até que os requisitos de KYC/verificação sejam concluídos.";
+
 
 "swap.allowance" = "Preço";
 "swap.allowance.description" = "O montante que uma exchange pode gastar em nome do usuário na execução de trocas simbólicas. É necessária uma margem suficiente para que uma transação de troca efetiva possa ocorrer.";
@@ -710,7 +731,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "swap.high_price_impact" = "Impacto de preços altos";
 "swap.recipient" = "Destinatário";
 "swap.slippage" = "Slippage";
-"swap.swapped_time" = "Horário do Swap";
+"swap.swapped_time" = "Tempo";
 "swap.swapped_time.info" = "Tempo aproximado para receber os fundos. O processamento do swap e as confirmações da transação podem levar algum tempo, dependendo da rede e do provedor.";
 
 "swap.affiliate_fee" = "Taxa de afiliado";
@@ -719,6 +740,14 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "swap.total_fee" = "Total de tarifas";
 
 "swap.aml" = "AML";
+"swap.aml.risk.title" = "Alerta!";
+"swap.aml.risk.description" = "Riscos potenciais foram identificados para esta transação. Durante o processamento, seus fundos podem ser rejeitados ou restringidos. Por favor, escolha outro provedor.";
+"swap.aml.risk.button" = "Escolher outro provedor";
+"swap.aml.undefined.description" = "Não foi possível concluir a verificação de risco para esta transação. Se você continuar, este swap pode sofrer atrasos, rejeição ou restrições durante o processamento.";
+"swap.aml.undefined.button" = "Continuar com risco";
+"swap.aml.connection.title" = "Problema de conexão";
+"swap.aml.connection.description" = "Não foi possível obter uma resposta no momento. Por favor, tente novamente.";
+"swap.aml.connection.button" = "Tentar novamente";
 
 // Swap options
 
@@ -785,7 +814,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "swap.confirmation.impact_too_high" = "%@ desativou a ação de troca para essa troca porque você está obtendo um preço extremamente desfavorável. Isso se deve a liquidez extremamente baixa.\nSe você ainda quiser trocar, use o site %@.";
 "swap.confirmation.impact_warning" = "Importante! Você está recebendo um preço extremamente desfavorável. Isso se deve a uma liquidez extremamente baixa.";
 
-"swap.confirmation.minimum_received" = "Valor garantido";
+"swap.confirmation.minimum_received" = "Garantido";
 "swap.confirmation.minimum_received.info" = "O valor mínimo que você receberá após a conclusão do swap. Esse valor é garantido pelo provedor e não é afetado por variações de preço durante o processamento.";
 "swap.confirmation.maximum_sent" = "Gastos máximos";
 
@@ -812,18 +841,36 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 
 "swap.maya.shielded_address.error" = "Não foi possível obter o endereço blindado para Memo (Maya)";
 
-
-// Market
-
-"market.tab_bar_item" = "Mercados";
-"market.title" = "Mercados";
+"market.24h_volume" = "Volume em 24h";
 "market.category.overview" = "Visão geral";
 "market.category.posts" = "Notícias";
 "market.category.watchlist" = "Lista de observação";
-"market.total_market_cap" = "Valor Total de M.";
-"market.24h_volume" = "Volume em 24h";
 "market.defi_cap" = "Mercado de DeFi";
 "market.defi_tvl" = "TVL no DeFi";
+"market.tab_bar_item" = "Mercados";
+"market.title" = "Mercados";
+"market.total_market_cap" = "Valor Total de M.";
+"swap_history.all" = "Todos";
+"swap_history.empty" = "Você ainda não tem swaps pendentes ou anteriores.";
+"swap_history.title" = "Histórico de Swaps";
+"swap_info.date" = "Data";
+"swap_info.deposit" = "Depósito %@";
+"swap_info.provider" = "Provedor";
+"swap_info.recipient" = "Destinatário";
+"swap_info.refund" = "Reembolso %@";
+"swap_info.send" = "Enviar %@";
+"swap_info.status" = "Status";
+"swap_info.status.completed" = "Concluído";
+"swap_info.status.failed" = "Falhou";
+"swap_info.status.not_started" = "Não iniciado";
+"swap_info.status.pending" = "Pendente";
+"swap_info.status.refunded" = "Reembolsado";
+"swap_info.status.swapping" = "Trocando";
+"swap_info.status.unknown" = "Desconhecido";
+"swap_info.swap" = "Swap";
+"swap_info.title" = "Informações do Swap";
+"swap_info.unknown" = "Desconhecido";
+"swap_info.view" = "Visualizar";
 
 "market.global.market_cap" = "Valor total de mercado";
 "market.global.volume" = "Volume em 24 horas";
@@ -920,7 +967,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "top_platform.title" = "%@ Ecossistema";
 "top_platform.total_cap" = "Valor total de mercado";
 
-
+"market.search.title" = "Buscar";
 "market.search.recent" = "Recente";
 "market.search.popular" = "Populares";
 
@@ -981,7 +1028,6 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "market.advanced_search.price_close_to_atl" = "Preço próximo a ATL";
 
 "market.advanced_search.top" = "Primeiros %d";
-"market.advanced_search.reset_all" = "Resetar";
 
 "market.advanced_search.less_5_m" = "< 5M";
 "market.advanced_search.less_10_m" = "< 10M";
@@ -1521,18 +1567,16 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "manage_wallets.derivation_description" = "Existem 4 formatos de endereço que %@ carteiras podem usar para receber pagamentos recebidos:\n\n- BIP44 (mais antigo)\n- BIP49\n- BIP84 (recomendado)\n- BIP86 (mais recente)\n\nEnquanto a Carteira %@ suporta todos os 4, ele recomenda usar uma carteira %@ operando no formato BIP84.";
 "manage_wallets.bitcoin_cash_coin_type_description" = "Existem 2 formatos de endereço, Bitcoin Cash carteiras podem usar para receber pagamentos recebidos:\n\n- TYPE 0 (mais antigo)\n- TYPE 145 (mais recente)\n\nEnquanto a carteira %@ suporta ambos eles recomenda o uso de uma carteira Bitcoin Cash operando no formato TYPE 145.";
 
-// Settings -> Personal Support
-
-"settings.personal_support.telegram_username.title" = "Conta";
-"settings.personal_support.telegram_username.placeholder" = "@nomedeusuario";
 "settings.personal_support.description" = "Digite seu nome de conta do Telegram para abrir um chat de suporte pessoal e enviaremos uma mensagem para você.";
-"settings.personal_support.request" = "Solicitar";
-"settings.personal_support.requested" = "Solicitado";
 "settings.personal_support.failed" = "Falha na solicitação";
 "settings.personal_support.need_subscription" = "Esse recurso somente para usuários premium da %@ Carteira. Mais informações em nosso site oficial.";
+"settings.personal_support.request" = "Solicitar";
+"settings.personal_support.requested" = "Solicitado";
 "settings.personal_support.requested.description" = "Você já pediu um chat privado, encontre-o no Telegram";
-"settings.personal_support.requested.open_telegram" = "Abrir Telegram";
 "settings.personal_support.requested.new_request" = "Nova solicitação";
+"settings.personal_support.requested.open_telegram" = "Abrir Telegram";
+"settings.personal_support.telegram_username.placeholder" = "@nomedeusuario";
+"settings.personal_support.telegram_username.title" = "Conta";
 
 // Settings -> Terms
 
@@ -1578,6 +1622,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "backup_app.backup_list.other.contacts.title" = "Contatos";
 "backup_app.backup_list.other.custom_evm_sync_sources.title" = "RPC Personalizado";
 "backup_app.backup_list.other.custom_monero_nodes.title" = "Nós Monero Personalizados";
+"backup_app.backup_list.other.custom_zano_nodes.title" = "Nodes Zano personalizados";
 "backup_app.backup_list.other.app_settings.title" = "Configurações do Aplicativo";
 "backup_app.backup_list.other.app_settings.description" = "Linguagem, Moeda, Aparência ...";
 
@@ -1617,6 +1662,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "settings_security.edit_passcode" = "Editar Senha";
 "settings_security.disable_passcode" = "Desativar Senha";
 "settings_security.auto_lock" = "Auto-Bloqueio";
+"settings_security.auto_lock.description" = "Bloqueia automaticamente o app após um tempo selecionado.";
 "settings_security.balance_auto_hide" = "Ocultar Saldo Automaticamente";
 "settings_security.balance_auto_hide.description" = "Oculta automaticamente o saldo cada vez que o aplicativo é aberto, independentemente das preferências anteriores.";
 "settings_security.enable_duress_mode" = "Definir modo de dureza";
@@ -1625,11 +1671,8 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "settings_security.duress_mode.description" = "Um modo especializado projetado para manter as carteiras selecionadas seguras sob coação.";
 
 "biometry.off" = "Desligado";
-"biometry.manual" = "Manual";
+"biometry.manual" = "Manualmente";
 "biometry.on" = "Ligado";
-"biometry.off.description" = "Desativado em todos os casos";
-"biometry.manual.description" = "Digitalização com o botão";
-"biometry.on.description" = "Digitalização automática";
 
 // Create Passcode
 
@@ -1697,7 +1740,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 
 "btc_transaction_sort_mode.shuffle" = "Embaralhar";
 "btc_transaction_sort_mode.shuffle.description" = "Indexação aleatória";
-"btc_transaction_sort_mode.bip69" = "Bip69 Determinístico";
+"btc_transaction_sort_mode.bip69" = "Determinístico";
 "btc_transaction_sort_mode.bip69.description" = "Indexação Lexicográfica";
 
 "blockchain_settings.info.restore_source" = "Restaurar Fonte";
@@ -1764,7 +1807,6 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "appearance.launch_screen.description" = "Escolha qual tela o app abre por padrão.";
 "appearance.launch_screen.auto" = "Automático";
 "appearance.launch_screen.balance" = "Saldo";
-"appearance.launch_screen.market_overview" = "Visão geral do mercado";
 "appearance.launch_screen.watchlist" = "Lista de observação";
 
 "appearance.balance_tab" = "Aba de Saldo";
@@ -2098,6 +2140,8 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "public_keys.title" = "Chaves públicas";
 "public_keys.evm_address" = "Endereço EVM";
 "public_keys.evm_address.description" = "Permite o monitoramento somente leitura de carteiras mantendo ativos na Ethereum, na Binance Smart Chain e em outras blockchains baseadas em EVM.";
+"public_keys.tron_address" = "Endereço TRON";
+"public_keys.tron_address.description" = "Permite o monitoramento somente leitura de carteiras que possuem ativos na blockchain TRON.";
 "public_keys.account_extended_public_key" = "Chave Pública Estendida da Conta";
 "public_keys.account_extended_public_key.description" = "Permite monitoramento somente leitura das carteiras segurando Bitcoin e outras cripto baseadas em UTXO (ou seja, Litecoin, Bitcoin Cash, Dash etc.).";
 "public_keys.monero_public_key" = "Chaves Públicas do Monero";
@@ -2108,6 +2152,8 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "private_keys.title" = "Chave Privada";
 "private_keys.evm_private_key" = "Chave Privada EVM";
 "private_keys.evm_private_key.description" = "Concede controle total sobre os ativos em redes baseadas em EVM (ex.: Ethereum, BNB Smart Chain, Polygon, Avalanche) dentro desta carteira.";
+"private_keys.tron_private_key" = "Chave privada Tron";
+"private_keys.tron_private_key.description" = "Concede controle total sobre os ativos na rede Tron dentro desta carteira.";
 "private_keys.stellar_secret_key" = "Chave Secreta Stellar";
 "private_keys.stellar_secret_key.description" = "Concede controle total sobre os ativos na rede Stellar dentro desta carteira.";
 "private_keys.bip32_root_key" = "Chave Raiz BIP32";
@@ -2120,6 +2166,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 // Manage Account -> EVM Address
 
 "evm_address.title" = "Endereço EVM";
+"tron_address.title" = "Endereço TRON";
 
 // Birthday Height
 
@@ -2171,6 +2218,14 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "add_monero_node.warning.url_exists" = "Já existe um nó com essa URL";
 "add_monero_node.error.invalid_url" = "A URL inserida é inválida. A URL válida deve usar o esquema https";
 
+"add_zano_node.error.invalid_url" = "A URL inserida é inválida";
+"add_zano_node.node_url" = "URL do node";
+"add_zano_node.title" = "Adicionar node";
+"add_zano_node.warning.url_exists" = "Já existe um node com esta URL";
+"zano_network.add_new" = "Adicionar novo";
+"zano_network.added" = "Adicionado";
+"zano_network.description" = "Escolha o node que o app Unstoppable deve usar para sincronizar a(s) carteira(s).";
+"zano_network.node" = "Node";
 
 // Send Settings
 
@@ -2186,6 +2241,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "fee_settings.fee_rate" = "Taxa de tarifa";
 "fee_settings.fee_rate.description" = "Aqui é o valor recomendado para atingir os próximos 2 blocos";
 "fee_settings.inputs_outputs" = "Entrada/Saída";
+"fee_settings.inputs_outputs.description" = "Altera como as entradas e saídas da transação são estruturadas.";
 "fee_settings.transaction_settings" = "Configurações de transação";
 "fee_settings.transaction_settings.description" = "Torne suas %@ transações mais difíceis de rastrear, mudando a maneira como as transações são estruturadas.";
 "fee_settings.replace_by_fee" = "Substituir pela taxa";
@@ -2376,7 +2432,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 "transaction_filter.contact" = "Contato";
 "transaction_filter.all_contacts" = "Todos os Contatos";
 "transaction_filter.hide_suspicious_txs" = "Ocultar Transações Suspeitas";
-"transaction_filter.hide_suspicious_txs.description" = "Oculta transferências de entrada de baixo valor (por exemplo, USDT abaixo de US$ 1,5). Essas transações são frequentemente usadas para ataques de phishing e address poisoning.";
+"transaction_filter.hide_suspicious_txs.description" = "Oculta pequenas transferências suspeitas frequentemente usadas em ataques de phishing.";
 
 // Black Friday
 
@@ -2504,5 +2560,7 @@ Até que a wallet seja ativada, os tokens podem ser recebidos, mas os saldos pod
 
 // MEV Protection
 
-"mev_protection.title" = "Proteção MEV";
 "mev_protection.description" = "Os chamados bots de front-running monitoram cada negociação, tentando fazê-lo pagar mais caro. Esse recurso os bloqueia.";
+"mev_protection.title" = "Proteção MEV";
+"secure_send.bottom_sheet.description" = "Escolha as verificações de segurança.";
+"secure_send.bottom_sheet.title" = "Envio Seguro";

@@ -23,7 +23,7 @@ class SendTokenListViewModel: WalletListViewModel {
             return true
         }
     }
-    
+
     func humanReadableUri(amount: Decimal?, wallet: Wallet) -> Decimal? {
         guard let amount else {
             return nil

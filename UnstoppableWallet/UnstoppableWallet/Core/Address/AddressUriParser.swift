@@ -90,6 +90,7 @@ class AddressUriParser {
 
         return nil
     }
+
     private func handleErc681(scheme: String, path: String) -> (address: String, blockchainType: BlockchainType?) {
 //         checking ERC-681. if scheme = "ethereum", address has @chainId. Parse blockchainType from chainId
 
@@ -217,8 +218,9 @@ extension BlockchainType {
         case .zcash: return "zcash"
         case .ethereum: return "ethereum"
         case .tron: return "tron"
-        case .ton: return "toncoin"
+        case .ton: return "ton"
         case .monero: return "monero"
+        case .zano: return "zano"
         case .stellar: return "stellar"
         default: return nil
         }
@@ -240,6 +242,7 @@ extension BlockchainType {
         case .tron: return true
         case .ton: return true
         case .monero: return true
+        case .zano: return true
         case .stellar: return true
         default: return false
         }

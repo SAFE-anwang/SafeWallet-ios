@@ -594,7 +594,6 @@ extension PurchaseManager {
     }
 }
 
-
 // test data for emulate purchases
 extension PurchaseManager.ProductData {
     static var testProducts: [PurchaseManager.ProductData] { [

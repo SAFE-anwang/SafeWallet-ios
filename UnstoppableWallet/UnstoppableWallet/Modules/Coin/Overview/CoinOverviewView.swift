@@ -9,8 +9,6 @@ struct CoinOverviewView: View {
 
     @State private var tokensExpanded = false
 
-    @Environment(\.openURL) private var openURL
-
     var body: some View {
         ThemeView {
             switch viewModel.state {
@@ -443,6 +441,7 @@ struct CoinOverviewView: View {
         case let .spl(address): return address.shortened
         case let .jetton(address): return address.shortened
         case let .stellar(_, issuer): return issuer.shortened
+        case let .zanoAsset(id): return id.shortened
         case let .unsupported(_, reference): return reference?.shortened
         }
     }
@@ -517,7 +516,7 @@ struct CoinOverviewView: View {
             return
         }
 
-        openURL(url)
+        Coordinator.shared.present(url: url)
 
         stat(page: .coinOverview, event: .open(page: statPage))
     }

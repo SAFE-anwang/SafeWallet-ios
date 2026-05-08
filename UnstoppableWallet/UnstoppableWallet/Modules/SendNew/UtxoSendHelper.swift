@@ -18,11 +18,9 @@ class UtxoSendHelper {
         let amountData = amountData(fee: fee, feeToken: feeToken, currency: currency, feeTokenRate: feeTokenRate)
 
         return [
-            .value(
-                title: SendField.InformedTitle("fee_settings.network_fee".localized, info: .fee),
-                appValue: amountData?.appValue,
-                currencyValue: amountData?.currencyValue,
-                formatFull: true
+            .fee(
+                title: ComponentInformedTitle("fee_settings.network_fee".localized, info: .fee),
+                amountData: amountData
             ),
         ]
     }

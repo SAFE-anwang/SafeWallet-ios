@@ -7,7 +7,6 @@ protocol IMultiSwapProvider {
     var id: String { get }
     var name: String { get }
     var type: SwapProviderType { get }
-    var aml: Bool { get }
     var requireTerms: Bool { get }
     var icon: String { get }
     var syncPublisher: AnyPublisher<Void, Never>? { get }
@@ -15,7 +14,9 @@ protocol IMultiSwapProvider {
     func supports(tokenIn: Token, tokenOut: Token) -> Bool
     func quote(tokenIn: Token, tokenOut: Token, amountIn: Decimal) async throws -> MultiSwapQuote
     func confirmationQuote(tokenIn: Token, tokenOut: Token, amountIn: Decimal, slippage: Decimal, recipient: String?, transactionSettings: TransactionSettings?) async throws -> SwapFinalQuote
+    func validateTrustedProvider(tokenIn: Token, amountIn: Decimal) async throws -> Bool?
     func preSwapView(step: MultiSwapPreSwapStep, tokenIn: Token, tokenOut: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView
+    func track(swap: Swap) async throws -> Swap
 }
 
 extension IMultiSwapProvider {
@@ -30,16 +31,51 @@ extension IMultiSwapProvider {
     func slippageSupported(tokenIn _: Token, tokenOut _: Token) -> Bool {
         true
     }
+
+    func validateTrustedProvider(tokenIn _: Token, amountIn _: Decimal) async -> Bool? {
+        if let result = Core.instance?.localStorage.debuggingAmlCheckResult {
+            return result == .dirty ? false : nil
+        }
+        return true
+    }
 }
 
-enum SwapProviderType {
-    case dex
-    case p2p
+enum SwapProviderType: String, CaseIterable, Identifiable {
+    case auto
+    case flexible
+    case controlled
+    case preCheck
 
     var title: String {
+        rawValue.capitalized(with: .autoupdatingCurrent)
+    }
+
+    var icon: String {
         switch self {
-        case .dex: return "DEX"
-        case .p2p: return "P2P"
+        case .auto: return "shield_check_filled"
+        case .flexible: return "thumbsup"
+        case .controlled: return "warning_filled"
+        case .preCheck: return "radar"
+        }
+    }
+
+    var сolorStyle: ColorStyle {
+        switch self {
+        case .auto: return .green
+        case .flexible: return .blue
+        case .controlled: return .yellow
+        case .preCheck: return .primary
+        }
+    }
+
+    var id: String {
+        rawValue
+    }
+
+    @ViewBuilder func body() -> some View {
+        HStack(spacing: .margin4) {
+            ThemeImage(icon, size: .iconSize16, colorStyle: сolorStyle)
+            ThemeText(title, style: .captionSB, colorStyle: сolorStyle)
         }
     }
 }

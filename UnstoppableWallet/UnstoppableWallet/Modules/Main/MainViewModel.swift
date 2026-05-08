@@ -8,21 +8,27 @@ class MainViewModel: ObservableObject {
     private let launchScreenManager = Core.shared.launchScreenManager
     private let userDefaultsStorage = Core.shared.userDefaultsStorage
     private let accountManager = Core.shared.accountManager
+    private let appStateManager = AppStateManager.instance
 
+    private var cancellables = Set<AnyCancellable>()
     private let disposeBag = DisposeBag()
 
     @Published private(set) var showMarket: Bool
+    @Published private(set) var showSwap: Bool
+
     @Published var selectedTab: Tab = .wallet {
         didSet {
             userDefaultsStorage.set(value: selectedTab.rawValue, for: keyTab)
 
             if oldValue == .wallet, selectedTab == .wallet {
                 let currentTimestamp = Date().timeIntervalSince1970
+
                 if currentTimestamp - lastTimeStamp < 0.3 {
                     if accountManager.accounts.count > 1 {
                         Coordinator.shared.present(type: .bottomSheet) { _ in
                             SwitchAccountView()
                         }
+
                         stat(page: .main, event: .open(page: .switchWallet))
                     }
                 } else {
@@ -36,11 +42,17 @@ class MainViewModel: ObservableObject {
 
     init() {
         showMarket = launchScreenManager.showMarket
+        showSwap = appStateManager.swapEnabled
 
         launchScreenManager.showMarketObservable
             .observeOn(MainScheduler.instance)
             .subscribe(onNext: { [weak self] in self?.showMarket = $0 })
             .disposed(by: disposeBag)
+
+        appStateManager.$swapEnabled
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.showSwap = $0 }
+            .store(in: &cancellables)
 
         selectedTab = initialTab
     }
@@ -58,7 +70,7 @@ class MainViewModel: ObservableObject {
             return .wallet
         case .balance:
             return .wallet
-        case .marketOverview, .watchlist:
+        case .watchlist:
             return .markets
         }
     }
@@ -68,10 +80,6 @@ extension MainViewModel {
     var lastCreatedAccount: Account? {
         accountManager.popLastCreatedAccount()
     }
-
-    var tabs: [Tab] {
-        (showMarket ? [.markets] : []) + [.wallet, .safe, .settings]
-    }
 }
 
 extension MainViewModel {
@@ -80,16 +88,9 @@ extension MainViewModel {
         case wallet
         case safe
         case settings
+
         var id: String {
             rawValue
-        }
-        var image: String {
-            switch self {
-            case .markets: return "market_filled"
-            case .wallet: return "wallet_filled"
-            case .safe: return "safe_logo_24"
-            case .settings: return "settings_filled"
-            }
         }
     }
 }

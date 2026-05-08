@@ -245,7 +245,7 @@ extension LiquidityAddSendHandler {
                 case .normal, .warning, .forbidden:
                     fields.append(
                         .simpleValue(
-                            title: SendField.InformedTitle("swap.price_impact".localized, info: InfoDescription(
+                            title: ComponentInformedTitle("swap.price_impact".localized, info: InfoDescription(
                                 title: "swap.price_impact".localized,
                                 description: "swap.price_impact.info".localized
                             )),
@@ -308,6 +308,8 @@ extension LiquidityAddSendHandler {
         case .eip20, .spl, .jetton, .stellar:
             baseToken = try? Core.shared.marketKit.token(query: TokenQuery(blockchainType: token0.blockchainType, tokenType: .native))
         case .unsupported:
+            baseToken = nil
+        default:
             baseToken = nil
         }
 
