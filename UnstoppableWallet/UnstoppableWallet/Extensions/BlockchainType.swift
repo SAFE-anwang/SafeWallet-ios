@@ -304,7 +304,7 @@ extension BlockchainType {
         }
 
         switch self {
-        case .bitcoin, .bitcoinCash, .litecoin, .dogecoin: return true
+        case .bitcoin, .bitcoinCash, .litecoin, .dogecoin, .dash: return true
         default: return false
         }
     }

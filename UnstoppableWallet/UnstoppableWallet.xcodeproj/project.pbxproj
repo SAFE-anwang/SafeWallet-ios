@@ -4023,6 +4023,8 @@
 		67DC558B2F63B67300CFAE73 /* YttriumUtilsWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC558A2F63B67300CFAE73 /* YttriumUtilsWrapper */; };
 		67DC558D2F63B67300CFAE73 /* YttriumWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC558C2F63B67300CFAE73 /* YttriumWrapper */; };
 		67DC5BDA2F63EE5300CFAE73 /* ZcashLightClientKit in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC5BD92F63EE5300CFAE73 /* ZcashLightClientKit */; };
+		67FBE9532FB3253400717AA7 /* SolanaKit in Frameworks */ = {isa = PBXBuildFile; productRef = 67FBE9522FB3253400717AA7 /* SolanaKit */; };
+		67FBE9552FB3254C00717AA7 /* SolanaKit in Frameworks */ = {isa = PBXBuildFile; productRef = 67FBE9542FB3254C00717AA7 /* SolanaKit */; };
 		6B55E33B2AF26D6400616B60 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 6B55E33A2AF26D6400616B60 /* Starscream */; };
 		6B55E33D2AF26D7A00616B60 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 6B55E33C2AF26D7A00616B60 /* Starscream */; };
 		6B6D3F2B2DED72B700AB2915 /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = 6B6D3F2A2DED72B700AB2915 /* SkeletonView */; };
@@ -6244,6 +6246,7 @@
 				C8C5589F2EA337FA0062F13E /* LitecoinKit in Frameworks */,
 				67DC55872F63B67300CFAE73 /* WalletConnectPush in Frameworks */,
 				6B6E14262DEDB57B007F4A39 /* Kingfisher in Frameworks */,
+				67FBE9532FB3253400717AA7 /* SolanaKit in Frameworks */,
 				D38405B9218317DF007D50AD /* AVFoundation.framework in Frameworks */,
 				C8C558A72EA3392E0062F13E /* Checkpoints in Frameworks */,
 				672B0EE22FAB142600787AA4 /* ZanoKit in Frameworks */,
@@ -6290,6 +6293,7 @@
 				671AFDED2F7F826B00FEA42B /* ReownRouter in Frameworks */,
 				671AFDEC2F7F826B00FEA42B /* ReownAppKitUI in Frameworks */,
 				671AFDEB2F7F826B00FEA42B /* ReownAppKit in Frameworks */,
+				67FBE9552FB3254C00717AA7 /* SolanaKit in Frameworks */,
 				D3AF5A8B29FFD85800C1399E /* RxRelay in Frameworks */,
 				D3C187DB290FCFBC00FE1900 /* SectionsTableView in Frameworks */,
 				C86A1C012E993F2F00C0769E /* OneInchKit in Frameworks */,
@@ -8867,13 +8871,6 @@
 			path = RestoreMnemonicNonStandard;
 			sourceTree = "<group>";
 		};
-		670285182FAF248D00AF6D75 /* RestoreNew */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = RestoreNew;
-			sourceTree = "<group>";
-		};
 		6702851C2FAF248D00AF6D75 /* RestoreNonStandard */ = {
 			isa = PBXGroup;
 			children = (
@@ -8937,7 +8934,6 @@
 				6702850D2FAF248D00AF6D75 /* RestoreHDWallet */,
 				670285122FAF248D00AF6D75 /* RestoreMnemonic */,
 				670285152FAF248D00AF6D75 /* RestoreMnemonicNonStandard */,
-				670285182FAF248D00AF6D75 /* RestoreNew */,
 				6702851C2FAF248D00AF6D75 /* RestoreNonStandard */,
 				670285202FAF248D00AF6D75 /* RestorePrivateKey */,
 				670285252FAF248D00AF6D75 /* RestoreSelect */,
@@ -11850,6 +11846,7 @@
 				67DC558C2F63B67300CFAE73 /* YttriumWrapper */,
 				67DC5BD92F63EE5300CFAE73 /* ZcashLightClientKit */,
 				672B0EE12FAB142600787AA4 /* ZanoKit */,
+				67FBE9522FB3253400717AA7 /* SolanaKit */,
 			);
 			productName = Wallet;
 			productReference = D38405CE218317DF007D50AD /* SafeWallet D.app */;
@@ -11925,6 +11922,7 @@
 				67DC558C2F63B67300CFAE73 /* YttriumWrapper */,
 				67DC5BD92F63EE5300CFAE73 /* ZcashLightClientKit */,
 				672B0EE32FAB143300787AA4 /* ZanoKit */,
+				67FBE9542FB3254C00717AA7 /* SolanaKit */,
 			);
 			productName = Wallet;
 			productReference = D38406BE21831B3D007D50AD /* SafeWallet.app */;
@@ -12009,6 +12007,7 @@
 				C80FEB272F27BFBA002DA812 /* XCRemoteSwiftPackageReference "SwiftKLine" */,
 				67DC55712F63B67300CFAE73 /* XCRemoteSwiftPackageReference "reown-swift" */,
 				67DC5BD82F63EE5300CFAE73 /* XCRemoteSwiftPackageReference "ZcashLightClientKit" */,
+				67FBE9512FB3253400717AA7 /* XCRemoteSwiftPackageReference "solana-kit-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D3285F4320BD158E00644076 /* Products */;
@@ -16388,6 +16387,14 @@
 				revision = f186d017a2d33d50f0276c10adf8b544484acfe6;
 			};
 		};
+		67FBE9512FB3253400717AA7 /* XCRemoteSwiftPackageReference "solana-kit-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/horizontalsystems/solana-kit-ios.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.0;
+			};
+		};
 		6B1D8DF32DEACF6A00A52B01 /* XCRemoteSwiftPackageReference "SkeletonView" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Juanpe/SkeletonView.git";
@@ -16488,8 +16495,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SAFE-anwang/DashKit.Swift.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.1.0;
+				kind = exactVersion;
+				version = 3.1.0;
 			};
 		};
 		C86A1BCC2E98BB1100C0769E /* XCRemoteSwiftPackageReference "Eip20Kit.Swift" */ = {
@@ -16805,6 +16812,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 67DC5BD82F63EE5300CFAE73 /* XCRemoteSwiftPackageReference "ZcashLightClientKit" */;
 			productName = ZcashLightClientKit;
+		};
+		67FBE9522FB3253400717AA7 /* SolanaKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67FBE9512FB3253400717AA7 /* XCRemoteSwiftPackageReference "solana-kit-ios" */;
+			productName = SolanaKit;
+		};
+		67FBE9542FB3254C00717AA7 /* SolanaKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67FBE9512FB3253400717AA7 /* XCRemoteSwiftPackageReference "solana-kit-ios" */;
+			productName = SolanaKit;
 		};
 		6B55E33A2AF26D6400616B60 /* Starscream */ = {
 			isa = XCSwiftPackageProductDependency;
