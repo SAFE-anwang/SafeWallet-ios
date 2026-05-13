@@ -79,6 +79,8 @@ class Core {
     let tonKitManager: TonKitManager
     let stellarKitManager: StellarKitManager
     let zanoKitManager: ZanoKitManager
+    let solanaRpcSourceManager: SolanaRpcSourceManager
+    let solanaKitManager: SolanaKitManager
 
     let restoreSettingsManager: RestoreSettingsManager
     let predefinedBlockchainService: PredefinedBlockchainService
@@ -243,6 +245,17 @@ class Core {
         tonKitManager = TonKitManager(restoreStateManager: restoreStateManager, marketKit: marketKit, walletManager: walletManager)
         stellarKitManager = StellarKitManager(restoreStateManager: restoreStateManager, marketKit: marketKit, walletManager: walletManager)
 
+        solanaRpcSourceManager = SolanaRpcSourceManager(
+            blockchainSettingsStorage: blockchainSettingsStorage,
+            marketKit: marketKit
+        )
+        solanaKitManager = SolanaKitManager(
+            rpcSourceManager: solanaRpcSourceManager,
+            restoreStateManager: restoreStateManager,
+            marketKit: marketKit,
+            walletManager: walletManager
+        )
+
         let restoreSettingsStorage = RestoreSettingsStorage(dbPool: dbPool)
         restoreSettingsManager = RestoreSettingsManager(storage: restoreSettingsStorage)
 
@@ -312,6 +325,7 @@ class Core {
             tonKitManager: tonKitManager,
             stellarKitManager: stellarKitManager,
             zanoKitManager: zanoKitManager,
+            solanaKitManager: solanaKitManager,
             restoreSettingsManager: restoreSettingsManager,
             coinManager: coinManager,
             spamWrapper: spamWrapper,
@@ -325,6 +339,7 @@ class Core {
             tonKitManager: tonKitManager,
             stellarKitManager: stellarKitManager,
             zanoKitManager: zanoKitManager,
+            solanaKitManager: solanaKitManager,
             btcBlockchainManager: btcBlockchainManager,
             moneroNodeManager: moneroNodeManager,
             zanoNodeManager: zanoNodeManager
@@ -447,7 +462,8 @@ class Core {
             statManager: statManager,
             nftMetadataSyncer: nftMetadataSyncer,
             tonKitManager: tonKitManager,
-            stellarKitManager: stellarKitManager
+            stellarKitManager: stellarKitManager,
+            solanaKitManager: solanaKitManager
         )
 
         swapAssetStorage = SwapAssetStorage(dbPool: dbPool)

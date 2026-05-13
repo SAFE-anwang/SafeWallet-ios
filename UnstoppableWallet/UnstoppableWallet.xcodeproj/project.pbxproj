@@ -3991,6 +3991,32 @@
 		6702A0D82FB17ACA00AF6D75 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6702A0D62FB17ACA00AF6D75 /* ImagePicker.swift */; };
 		6702A0DA2FB187A100AF6D75 /* ItemPrimaryButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6702A0D92FB187A100AF6D75 /* ItemPrimaryButtonStyle.swift */; };
 		6702A0DB2FB187A100AF6D75 /* ItemPrimaryButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6702A0D92FB187A100AF6D75 /* ItemPrimaryButtonStyle.swift */; };
+		670E90552FB3311200392508 /* SplAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90542FB3311200392508 /* SplAdapter.swift */; };
+		670E90562FB3311200392508 /* SolanaTransactionConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90522FB3311200392508 /* SolanaTransactionConverter.swift */; };
+		670E90572FB3311200392508 /* SolanaTransactionsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90532FB3311200392508 /* SolanaTransactionsAdapter.swift */; };
+		670E90582FB3311200392508 /* SolanaAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90512FB3311200392508 /* SolanaAdapter.swift */; };
+		670E90592FB3311200392508 /* SplAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90542FB3311200392508 /* SplAdapter.swift */; };
+		670E905A2FB3311200392508 /* SolanaTransactionConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90522FB3311200392508 /* SolanaTransactionConverter.swift */; };
+		670E905B2FB3311200392508 /* SolanaTransactionsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90532FB3311200392508 /* SolanaTransactionsAdapter.swift */; };
+		670E905C2FB3311200392508 /* SolanaAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90512FB3311200392508 /* SolanaAdapter.swift */; };
+		670E905E2FB3313200392508 /* SolanaAddressParserItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E905D2FB3313200392508 /* SolanaAddressParserItem.swift */; };
+		670E905F2FB3313200392508 /* SolanaAddressParserItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E905D2FB3313200392508 /* SolanaAddressParserItem.swift */; };
+		670E90622FB3314D00392508 /* SolanaKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90602FB3314D00392508 /* SolanaKitManager.swift */; };
+		670E90632FB3314D00392508 /* SolanaRpcSourceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90612FB3314D00392508 /* SolanaRpcSourceManager.swift */; };
+		670E90642FB3314D00392508 /* SolanaKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90602FB3314D00392508 /* SolanaKitManager.swift */; };
+		670E90652FB3314D00392508 /* SolanaRpcSourceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90612FB3314D00392508 /* SolanaRpcSourceManager.swift */; };
+		670E90682FB3317800392508 /* SolanaTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90662FB3317800392508 /* SolanaTransactionRecord.swift */; };
+		670E90692FB3317800392508 /* SolanaTransactionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90662FB3317800392508 /* SolanaTransactionRecord.swift */; };
+		670E906B2FB3319500392508 /* AddSplTokenBlockchainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E906A2FB3319500392508 /* AddSplTokenBlockchainService.swift */; };
+		670E906C2FB3319500392508 /* AddSplTokenBlockchainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E906A2FB3319500392508 /* AddSplTokenBlockchainService.swift */; };
+		670E90702FB331D200392508 /* SolanaSwapFinalQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E906F2FB331D200392508 /* SolanaSwapFinalQuote.swift */; };
+		670E90712FB331D200392508 /* JupiterMultiSwapProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E906D2FB331D200392508 /* JupiterMultiSwapProvider.swift */; };
+		670E90722FB331D200392508 /* SolanaSwapFinalQuote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E906F2FB331D200392508 /* SolanaSwapFinalQuote.swift */; };
+		670E90732FB331D200392508 /* JupiterMultiSwapProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E906D2FB331D200392508 /* JupiterMultiSwapProvider.swift */; };
+		670E90762FB331F600392508 /* SolanaPreSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90742FB331F600392508 /* SolanaPreSendHandler.swift */; };
+		670E90772FB331F600392508 /* SolanaSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90752FB331F600392508 /* SolanaSendHandler.swift */; };
+		670E90782FB331F600392508 /* SolanaPreSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90742FB331F600392508 /* SolanaPreSendHandler.swift */; };
+		670E90792FB331F600392508 /* SolanaSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90752FB331F600392508 /* SolanaSendHandler.swift */; };
 		671AFDEB2F7F826B00FEA42B /* ReownAppKit in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC55722F63B67300CFAE73 /* ReownAppKit */; };
 		671AFDEC2F7F826B00FEA42B /* ReownAppKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC55742F63B67300CFAE73 /* ReownAppKitUI */; };
 		671AFDED2F7F826B00FEA42B /* ReownRouter in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC55762F63B67300CFAE73 /* ReownRouter */; };
@@ -6179,6 +6205,19 @@
 		6702A0D32FB1792800AF6D75 /* RestoreViewModelNew.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreViewModelNew.swift; sourceTree = "<group>"; };
 		6702A0D62FB17ACA00AF6D75 /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 		6702A0D92FB187A100AF6D75 /* ItemPrimaryButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemPrimaryButtonStyle.swift; sourceTree = "<group>"; };
+		670E90512FB3311200392508 /* SolanaAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaAdapter.swift; sourceTree = "<group>"; };
+		670E90522FB3311200392508 /* SolanaTransactionConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaTransactionConverter.swift; sourceTree = "<group>"; };
+		670E90532FB3311200392508 /* SolanaTransactionsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaTransactionsAdapter.swift; sourceTree = "<group>"; };
+		670E90542FB3311200392508 /* SplAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplAdapter.swift; sourceTree = "<group>"; };
+		670E905D2FB3313200392508 /* SolanaAddressParserItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaAddressParserItem.swift; sourceTree = "<group>"; };
+		670E90602FB3314D00392508 /* SolanaKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaKitManager.swift; sourceTree = "<group>"; };
+		670E90612FB3314D00392508 /* SolanaRpcSourceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaRpcSourceManager.swift; sourceTree = "<group>"; };
+		670E90662FB3317800392508 /* SolanaTransactionRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaTransactionRecord.swift; sourceTree = "<group>"; };
+		670E906A2FB3319500392508 /* AddSplTokenBlockchainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSplTokenBlockchainService.swift; sourceTree = "<group>"; };
+		670E906D2FB331D200392508 /* JupiterMultiSwapProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JupiterMultiSwapProvider.swift; sourceTree = "<group>"; };
+		670E906F2FB331D200392508 /* SolanaSwapFinalQuote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaSwapFinalQuote.swift; sourceTree = "<group>"; };
+		670E90742FB331F600392508 /* SolanaPreSendHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaPreSendHandler.swift; sourceTree = "<group>"; };
+		670E90752FB331F600392508 /* SolanaSendHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaSendHandler.swift; sourceTree = "<group>"; };
 		D3373D9420BEC7B30082BC4A /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		D34A29B42BFB4AE200F63036 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/AppWidget.strings; sourceTree = "<group>"; };
 		D350DDAF2AE2526E00CF1989 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -6472,6 +6511,10 @@
 		670280A42FAF248D00AF6D75 /* Adapters */ = {
 			isa = PBXGroup;
 			children = (
+				670E90512FB3311200392508 /* SolanaAdapter.swift */,
+				670E90522FB3311200392508 /* SolanaTransactionConverter.swift */,
+				670E90532FB3311200392508 /* SolanaTransactionsAdapter.swift */,
+				670E90542FB3311200392508 /* SplAdapter.swift */,
 				6702806E2FAF248D00AF6D75 /* Compatibility */,
 				6702807E2FAF248D00AF6D75 /* Evm */,
 				670280802FAF248D00AF6D75 /* Nft */,
@@ -6516,6 +6559,7 @@
 		670280BD2FAF248D00AF6D75 /* Address */ = {
 			isa = PBXGroup;
 			children = (
+				670E905D2FB3313200392508 /* SolanaAddressParserItem.swift */,
 				670280A82FAF248D00AF6D75 /* ContractValidator */,
 				670280A92FAF248D00AF6D75 /* AddressParserChain.swift */,
 				670280AA2FAF248D00AF6D75 /* AddressSecurityIssueType.swift */,
@@ -6656,6 +6700,8 @@
 		670281332FAF248D00AF6D75 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				670E90602FB3314D00392508 /* SolanaKitManager.swift */,
+				670E90612FB3314D00392508 /* SolanaRpcSourceManager.swift */,
 				670299FD2FAF3AB700AF6D75 /* WalletConnectKeychainCleaner.swift */,
 				670280DC2FAF248D00AF6D75 /* Premium */,
 				670280EF2FAF248D00AF6D75 /* Spam */,
@@ -7016,6 +7062,7 @@
 		670281C92FAF248D00AF6D75 /* TransactionRecords */ = {
 			isa = PBXGroup;
 			children = (
+				670E90672FB3317800392508 /* Solana */,
 				670281A02FAF248D00AF6D75 /* Bitcoin */,
 				670281B22FAF248D00AF6D75 /* Evm */,
 				670281B62FAF248D00AF6D75 /* Monero */,
@@ -7172,6 +7219,7 @@
 		670282362FAF248D00AF6D75 /* AddToken */ = {
 			isa = PBXGroup;
 			children = (
+				670E906A2FB3319500392508 /* AddSplTokenBlockchainService.swift */,
 				6702822D2FAF248D00AF6D75 /* BlockchainSelector */,
 				6702822E2FAF248D00AF6D75 /* AddEvmTokenBlockchainService.swift */,
 				6702822F2FAF248D00AF6D75 /* AddJettonBlockchainService.swift */,
@@ -7711,13 +7759,6 @@
 				670283332FAF248D00AF6D75 /* FaqViewModel.swift */,
 			);
 			path = Faq;
-			sourceTree = "<group>";
-		};
-		670283352FAF248D00AF6D75 /* Guides */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Guides;
 			sourceTree = "<group>";
 		};
 		670283392FAF248D00AF6D75 /* Info */ = {
@@ -8452,6 +8493,8 @@
 		6702846A2FAF248D00AF6D75 /* Providers */ = {
 			isa = PBXGroup;
 			children = (
+				670E906E2FB331D200392508 /* Jupiter */,
+				670E906F2FB331D200392508 /* SolanaSwapFinalQuote.swift */,
 				670284452FAF248D00AF6D75 /* AllBridgeProvider */,
 				6702844A2FAF248D00AF6D75 /* BaseMultiSwap */,
 				6702844E2FAF248D00AF6D75 /* ThorChain */,
@@ -9716,6 +9759,8 @@
 		670286BA2FAF248D00AF6D75 /* SendNew */ = {
 			isa = PBXGroup;
 			children = (
+				670E90742FB331F600392508 /* SolanaPreSendHandler.swift */,
+				670E90752FB331F600392508 /* SolanaSendHandler.swift */,
 				670286872FAF248D00AF6D75 /* BitcoinPreSendHandler.swift */,
 				670286882FAF248D00AF6D75 /* BitcoinSendHandler.swift */,
 				670286892FAF248D00AF6D75 /* BitcoinSendSettingsView.swift */,
@@ -10792,13 +10837,6 @@
 			path = WalletConnect;
 			sourceTree = "<group>";
 		};
-		670288452FAF248D00AF6D75 /* WalletIntegration */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = WalletIntegration;
-			sourceTree = "<group>";
-		};
 		6702884A2FAF248D00AF6D75 /* Watch */ = {
 			isa = PBXGroup;
 			children = (
@@ -10879,7 +10917,6 @@
 				670283282FAF248D00AF6D75 /* EvmSendSettings */,
 				6702832D2FAF248D00AF6D75 /* ExtendedKey */,
 				670283342FAF248D00AF6D75 /* Faq */,
-				670283352FAF248D00AF6D75 /* Guides */,
 				670283392FAF248D00AF6D75 /* Info */,
 				670283422FAF248D00AF6D75 /* KLine */,
 				670283442FAF248D00AF6D75 /* Launch */,
@@ -10933,7 +10970,6 @@
 				670287AE2FAF248D00AF6D75 /* TronPrivateKey */,
 				670288012FAF248D00AF6D75 /* Wallet */,
 				670288442FAF248D00AF6D75 /* WalletConnect */,
-				670288452FAF248D00AF6D75 /* WalletIntegration */,
 				6702884A2FAF248D00AF6D75 /* Watch */,
 				6702884D2FAF248D00AF6D75 /* Welcome */,
 				670288552FAF248D00AF6D75 /* ZanoNetwork */,
@@ -11701,6 +11737,22 @@
 			path = Backup;
 			sourceTree = "<group>";
 		};
+		670E90672FB3317800392508 /* Solana */ = {
+			isa = PBXGroup;
+			children = (
+				670E90662FB3317800392508 /* SolanaTransactionRecord.swift */,
+			);
+			path = Solana;
+			sourceTree = "<group>";
+		};
+		670E906E2FB331D200392508 /* Jupiter */ = {
+			isa = PBXGroup;
+			children = (
+				670E906D2FB331D200392508 /* JupiterMultiSwapProvider.swift */,
+			);
+			path = Jupiter;
+			sourceTree = "<group>";
+		};
 		95AD93BB0A2D5F5C4A435252 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -12239,6 +12291,7 @@
 				67028A762FAF248D00AF6D75 /* WalletButtonView.swift in Sources */,
 				67028A772FAF248D00AF6D75 /* FilterHeaderView.swift in Sources */,
 				67028A782FAF248D00AF6D75 /* SendFeeCautionViewModel.swift in Sources */,
+				670E905F2FB3313200392508 /* SolanaAddressParserItem.swift in Sources */,
 				67028A792FAF248D00AF6D75 /* NSAttributedString.swift in Sources */,
 				67028A7A2FAF248D00AF6D75 /* DeterminiteSpinnerStyle.swift in Sources */,
 				67028A7B2FAF248D00AF6D75 /* NftAssetOverviewService.swift in Sources */,
@@ -12462,6 +12515,7 @@
 				67028B5B2FAF248D00AF6D75 /* BackupMnemonicWordCell.swift in Sources */,
 				67028B5C2FAF248D00AF6D75 /* KLineSwiftUIView.swift in Sources */,
 				67028B5D2FAF248D00AF6D75 /* WatchlistTimePeriod.swift in Sources */,
+				670E90692FB3317800392508 /* SolanaTransactionRecord.swift in Sources */,
 				67028B5E2FAF248D00AF6D75 /* DownloadService.swift in Sources */,
 				67028B5F2FAF248D00AF6D75 /* CoinSorter.swift in Sources */,
 				67028B602FAF248D00AF6D75 /* OutputSelectorView.swift in Sources */,
@@ -12789,6 +12843,8 @@
 				67028CA72FAF248D00AF6D75 /* BlockchainSettingsStorage.swift in Sources */,
 				67028CA82FAF248D00AF6D75 /* RedeemSafe3StepCell.swift in Sources */,
 				67028CA92FAF248D00AF6D75 /* MoneroWalletTokenView.swift in Sources */,
+				670E90642FB3314D00392508 /* SolanaKitManager.swift in Sources */,
+				670E90652FB3314D00392508 /* SolanaRpcSourceManager.swift in Sources */,
 				67028CAA2FAF248D00AF6D75 /* MainSafeZoneViewModel.swift in Sources */,
 				67028CAB2FAF248D00AF6D75 /* SendEvmModule.swift in Sources */,
 				67028CAC2FAF248D00AF6D75 /* AddEvmSyncSourceModule.swift in Sources */,
@@ -12829,6 +12885,7 @@
 				67028CD02FAF248D00AF6D75 /* SafeDropDownListCell.swift in Sources */,
 				67028CD12FAF248D00AF6D75 /* UniswapProvider.swift in Sources */,
 				67028CD22FAF248D00AF6D75 /* ActivateSubscriptionModule.swift in Sources */,
+				670E906C2FB3319500392508 /* AddSplTokenBlockchainService.swift in Sources */,
 				67028CD32FAF248D00AF6D75 /* StatManager.swift in Sources */,
 				67028CD42FAF248D00AF6D75 /* PurchasesView.swift in Sources */,
 				67028CD52FAF248D00AF6D75 /* TonPresendHandler.swift in Sources */,
@@ -12847,6 +12904,8 @@
 				67028CE22FAF248D00AF6D75 /* ResendBitcoinViewController.swift in Sources */,
 				67028CE32FAF248D00AF6D75 /* MasterNodeCell.swift in Sources */,
 				67028CE42FAF248D00AF6D75 /* SecondaryButtonComponent.swift in Sources */,
+				670E90762FB331F600392508 /* SolanaPreSendHandler.swift in Sources */,
+				670E90772FB331F600392508 /* SolanaSendHandler.swift in Sources */,
 				67028CE52FAF248D00AF6D75 /* BottomSingleSelectorViewController.swift in Sources */,
 				67028CE62FAF248D00AF6D75 /* NonceService.swift in Sources */,
 				67028CE72FAF248D00AF6D75 /* EnabledWalletCache.swift in Sources */,
@@ -13781,6 +13840,10 @@
 				670290A12FAF248D00AF6D75 /* FaqService.swift in Sources */,
 				670290A22FAF248D00AF6D75 /* DismissPanGestureRecognizer.swift in Sources */,
 				670290A32FAF248D00AF6D75 /* SendEvmCautionsFactory.swift in Sources */,
+				670E90552FB3311200392508 /* SplAdapter.swift in Sources */,
+				670E90562FB3311200392508 /* SolanaTransactionConverter.swift in Sources */,
+				670E90572FB3311200392508 /* SolanaTransactionsAdapter.swift in Sources */,
+				670E90582FB3311200392508 /* SolanaAdapter.swift in Sources */,
 				670290A42FAF248D00AF6D75 /* AddressSecurityIssueType.swift in Sources */,
 				670290A52FAF248D00AF6D75 /* MoneroNetworkView.swift in Sources */,
 				670290A62FAF248D00AF6D75 /* BaseThorChainMultiSwapProvider.swift in Sources */,
@@ -13848,6 +13911,8 @@
 				670290E52FAF248D00AF6D75 /* AddLockDaysModule.swift in Sources */,
 				670290E62FAF248D00AF6D75 /* AmountInputViewModel.swift in Sources */,
 				670290E72FAF248D00AF6D75 /* EvmKit.swift in Sources */,
+				670E90702FB331D200392508 /* SolanaSwapFinalQuote.swift in Sources */,
+				670E90712FB331D200392508 /* JupiterMultiSwapProvider.swift in Sources */,
 				670290E82FAF248D00AF6D75 /* Publisher.swift in Sources */,
 				670290E92FAF248D00AF6D75 /* ReleaseNotesViewController.swift in Sources */,
 				670290EA2FAF248D00AF6D75 /* ZanoNetworkViewModel.swift in Sources */,
@@ -14220,6 +14285,7 @@
 				670292612FAF248D00AF6D75 /* WalletButtonView.swift in Sources */,
 				670292622FAF248D00AF6D75 /* FilterHeaderView.swift in Sources */,
 				670292632FAF248D00AF6D75 /* SendFeeCautionViewModel.swift in Sources */,
+				670E905E2FB3313200392508 /* SolanaAddressParserItem.swift in Sources */,
 				670292642FAF248D00AF6D75 /* NSAttributedString.swift in Sources */,
 				670292652FAF248D00AF6D75 /* DeterminiteSpinnerStyle.swift in Sources */,
 				670292662FAF248D00AF6D75 /* NftAssetOverviewService.swift in Sources */,
@@ -14443,6 +14509,7 @@
 				670293462FAF248D00AF6D75 /* BackupMnemonicWordCell.swift in Sources */,
 				670293472FAF248D00AF6D75 /* KLineSwiftUIView.swift in Sources */,
 				670293482FAF248D00AF6D75 /* WatchlistTimePeriod.swift in Sources */,
+				670E90682FB3317800392508 /* SolanaTransactionRecord.swift in Sources */,
 				670293492FAF248D00AF6D75 /* DownloadService.swift in Sources */,
 				6702934A2FAF248D00AF6D75 /* CoinSorter.swift in Sources */,
 				6702934B2FAF248D00AF6D75 /* OutputSelectorView.swift in Sources */,
@@ -14770,6 +14837,8 @@
 				670294922FAF248D00AF6D75 /* BlockchainSettingsStorage.swift in Sources */,
 				670294932FAF248D00AF6D75 /* RedeemSafe3StepCell.swift in Sources */,
 				670294942FAF248D00AF6D75 /* MoneroWalletTokenView.swift in Sources */,
+				670E90622FB3314D00392508 /* SolanaKitManager.swift in Sources */,
+				670E90632FB3314D00392508 /* SolanaRpcSourceManager.swift in Sources */,
 				670294952FAF248D00AF6D75 /* MainSafeZoneViewModel.swift in Sources */,
 				670294962FAF248D00AF6D75 /* SendEvmModule.swift in Sources */,
 				670294972FAF248D00AF6D75 /* AddEvmSyncSourceModule.swift in Sources */,
@@ -14810,6 +14879,7 @@
 				670294BB2FAF248D00AF6D75 /* SafeDropDownListCell.swift in Sources */,
 				670294BC2FAF248D00AF6D75 /* UniswapProvider.swift in Sources */,
 				670294BD2FAF248D00AF6D75 /* ActivateSubscriptionModule.swift in Sources */,
+				670E906B2FB3319500392508 /* AddSplTokenBlockchainService.swift in Sources */,
 				670294BE2FAF248D00AF6D75 /* StatManager.swift in Sources */,
 				670294BF2FAF248D00AF6D75 /* PurchasesView.swift in Sources */,
 				670294C02FAF248D00AF6D75 /* TonPresendHandler.swift in Sources */,
@@ -14828,6 +14898,8 @@
 				670294CD2FAF248D00AF6D75 /* ResendBitcoinViewController.swift in Sources */,
 				670294CE2FAF248D00AF6D75 /* MasterNodeCell.swift in Sources */,
 				670294CF2FAF248D00AF6D75 /* SecondaryButtonComponent.swift in Sources */,
+				670E90782FB331F600392508 /* SolanaPreSendHandler.swift in Sources */,
+				670E90792FB331F600392508 /* SolanaSendHandler.swift in Sources */,
 				670294D02FAF248D00AF6D75 /* BottomSingleSelectorViewController.swift in Sources */,
 				670294D12FAF248D00AF6D75 /* NonceService.swift in Sources */,
 				670294D22FAF248D00AF6D75 /* EnabledWalletCache.swift in Sources */,
@@ -15762,6 +15834,10 @@
 				6702988C2FAF248D00AF6D75 /* FaqService.swift in Sources */,
 				6702988D2FAF248D00AF6D75 /* DismissPanGestureRecognizer.swift in Sources */,
 				6702988E2FAF248D00AF6D75 /* SendEvmCautionsFactory.swift in Sources */,
+				670E90592FB3311200392508 /* SplAdapter.swift in Sources */,
+				670E905A2FB3311200392508 /* SolanaTransactionConverter.swift in Sources */,
+				670E905B2FB3311200392508 /* SolanaTransactionsAdapter.swift in Sources */,
+				670E905C2FB3311200392508 /* SolanaAdapter.swift in Sources */,
 				6702988F2FAF248D00AF6D75 /* AddressSecurityIssueType.swift in Sources */,
 				670298902FAF248D00AF6D75 /* MoneroNetworkView.swift in Sources */,
 				670298912FAF248D00AF6D75 /* BaseThorChainMultiSwapProvider.swift in Sources */,
@@ -15829,6 +15905,8 @@
 				670298D02FAF248D00AF6D75 /* AddLockDaysModule.swift in Sources */,
 				670298D12FAF248D00AF6D75 /* AmountInputViewModel.swift in Sources */,
 				670298D22FAF248D00AF6D75 /* EvmKit.swift in Sources */,
+				670E90722FB331D200392508 /* SolanaSwapFinalQuote.swift in Sources */,
+				670E90732FB331D200392508 /* JupiterMultiSwapProvider.swift in Sources */,
 				670298D32FAF248D00AF6D75 /* Publisher.swift in Sources */,
 				670298D42FAF248D00AF6D75 /* ReleaseNotesViewController.swift in Sources */,
 				670298D52FAF248D00AF6D75 /* ZanoNetworkViewModel.swift in Sources */,

@@ -9,61 +9,73 @@ struct Safe4SwapView: View {
 
     @Environment(\.presentationMode) private var presentationMode
     @State private var sendPresented = false
+    @Binding private var isPresented: Bool
     
     @FocusState var isInputActive: Bool
 
-    init(tokenIn: Token, tokenOut: Token) {
+    init(tokenIn: Token, tokenOut: Token, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: Safe4SwapViewModel.instance(tokenIn: tokenIn, tokenOut: tokenOut))
+        _isPresented = isPresented
     }
     
-    init(viewModel: Safe4SwapViewModel) {
+    init(viewModel: Safe4SwapViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
     }
 
     var body: some View {
-        ThemeView {
-            ScrollView {
-                VStack(spacing: .margin12) {
-                    VStack(spacing: .margin16) {
-                        VStack(spacing: .margin8) {
-                            amountsView()
+        ThemeNavigationStack {
+            ThemeView {
+                ScrollView {
+                    VStack(spacing: .margin12) {
+                        VStack(spacing: .margin16) {
+                            VStack(spacing: .margin8) {
+                                amountsView()
+                            }
+                            buttonView()
                         }
-                        buttonView()
                     }
+                    .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
                 }
-                .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
             }
-        }
-        .navigationTitle("swap.safe4.title".localized)
-        .navigationDestination(isPresented: $sendPresented) {
-                    if let tokenIn = viewModel.tokenIn,
-                    let tokenOut = viewModel.tokenOut,
-                    let amountIn = viewModel.amountIn,
-                     let transactionData = viewModel.transactionData()
-                 {
-                        Safe4SwapSendView(
-                         transactionData: transactionData,
-                         tokenIn: tokenIn,
-                         tokenOut: tokenOut,
-                         amountIn: amountIn,
-                         swapPresentationMode: presentationMode
-                     )
-                 }
-
+            .navigationTitle("swap.safe4.title".localized)
+            .navigationDestination(isPresented: $sendPresented) {
+                if let tokenIn = viewModel.tokenIn,
+                   let tokenOut = viewModel.tokenOut,
+                   let amountIn = viewModel.amountIn,
+                   let transactionData = viewModel.transactionData()
+                {
+                    Safe4SwapSendView(
+                        transactionData: transactionData,
+                        tokenIn: tokenIn,
+                        tokenOut: tokenOut,
+                        amountIn: amountIn,
+                        swapPresentationMode: presentationMode
+                    )
+                }
+                
             }
             .onChange(of: sendPresented) { presented in
-//                    if !presented {
-//                        viewModel.autoQuoteIfRequired()
-//                    }
+                //                    if !presented {
+                //                        viewModel.autoQuoteIfRequired()
+                //                    }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("button.cancel".localized) {
-                        presentationMode.wrappedValue.dismiss()
+                        isPresented = false
                     }
                 }
             }
+        }
     }
 
     @ViewBuilder private func amountsView() -> some View {

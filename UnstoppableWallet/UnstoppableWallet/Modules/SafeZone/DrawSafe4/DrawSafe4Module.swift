@@ -19,10 +19,15 @@ struct DrawSafe4Module {
 struct DrawSafe4View: UIViewControllerRepresentable {
     typealias UIViewControllerType = UIViewController
     let viewModel: DrawSafe4ViewModel
+    @Binding var isPresented: Bool
     
     func makeUIViewController(context _: Context) -> UIViewController {
-        // TODO: must provide any VC
-        return ThemeNavigationController(rootViewController: DrawSafe4ViewController(viewModel: viewModel))
+        let viewController = DrawSafe4ViewController(viewModel: viewModel)
+        let navigationController = ThemeNavigationController(rootViewController: viewController)
+        viewController.onDismiss = {
+            isPresented = false
+        }
+        return navigationController
     }
 
     func updateUIViewController(_: UIViewController, context _: Context) {}

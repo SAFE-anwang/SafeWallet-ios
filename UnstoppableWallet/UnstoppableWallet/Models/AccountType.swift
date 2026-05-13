@@ -108,6 +108,7 @@ enum AccountType: Identifiable {
             case (.safe4, .native), (.safe4, .eip20): return true
             case (.ton, .native), (.ton, .jetton): return true
             case (.stellar, .native), (.stellar, .stellar), (.stellar, .unsupported(type: "native", reference: nil)): return true
+            case (.solana, .native), (.solana, .spl): return true
             default: return false
             }
         case let .hdExtendedKey(key):

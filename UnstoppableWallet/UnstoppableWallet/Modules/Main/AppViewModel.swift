@@ -7,7 +7,7 @@ class AppViewModel: ObservableObject {
     private let themeManager = Core.shared.themeManager
     private let accountManager = Core.shared.accountManager
     private var cancellables = Set<AnyCancellable>()
-    private var proposalCancellable: AnyCancellable?
+    private var proposalTask: Task<Void, Never>?
 
     @Published private(set) var passcodeLockState: PasscodeLockState
     @Published private(set) var introVisible: Bool
@@ -53,20 +53,25 @@ extension AppViewModel {
 
 extension AppViewModel {
     func checkProposalUpdate() {
-        proposalCancellable = nil
-        
-        let viewModel = ProposalModule.viewModel(type: .All)
-        viewModel.loadNewProposals()
-        
-        proposalCancellable = viewModel.$hasNewProposal
-            .sink { [weak self] hasNewProposal in
-                if hasNewProposal {
-                    self?.showAlerView(viewModel: viewModel)
+        proposalTask?.cancel()
+        proposalTask = Task { [weak self] in
+            guard let self = self else { return }
+            do {
+                let hasNew = try await ProposalService(type: .All).hasNewProposals()
+                if Task.isCancelled { return }
+                if hasNew {
+                    ProposalStorageManager.saveNeedShowTips(true)
+                    await MainActor.run {
+                        self.showAlerView()
+                    }
                 }
+            } catch {
+                // silent failure
             }
+        }
     }
     
-    private func showAlerView(viewModel: ProposalViewModel) {
+    private func showAlerView() {
         guard Core.shared.accountManager.activeAccount != nil else { return }
         
         Coordinator.shared.present(type: .bottomSheet) { isPresented in
@@ -78,8 +83,8 @@ extension AppViewModel {
                             .init(style: .yellow, title: "button.view".localized) {
                                 DispatchQueue.main.async {
                                     guard let viewModel = ProposalModule.tabViewModel() else { return }
-                                    Coordinator.shared.present { _ in
-                                        ProposalTabView(viewModel: viewModel)
+                                    Coordinator.shared.present { isPresented in
+                                        ProposalTabView(viewModel: viewModel, isPresented: isPresented)
                                             .ignoresSafeArea()
                                     }
                                     isPresented.wrappedValue = false

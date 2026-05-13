@@ -127,9 +127,7 @@
 
 "not_activated" = "Not Activated";
 
-"powered_by" = "Powered by %@";
 
-"filter.all" = "All";
 
 // Access Camera
 
@@ -683,7 +681,6 @@
 "swap.quotes.providers.risk_levels.controlled.description" = "This exchange blocks transactions that fail AML checks until KYC/verification requirements are completed.";
 
 
-"swap.allowance" = "Allowance";
 "swap.allowance.description" = "Allowance is the amount you let the exchange use on your behalf for swaps. Before making a swap, you first need to approve an allowance transaction.";
 "swap.pending_allowance" = "Pending Allowance";
 "swap.approve" = "Approve";
@@ -736,10 +733,6 @@
 "swap.terms.user_responsibility.description" = "I understand that using non-DEX providers introduces additional risks and that these risks are my responsibility. Unstoppable can not guarantee provider behavior.";
 "swap.terms.footer" = "Always choose a swap provider that aligns with your requirements.";
 
-"swap.affiliate_fee" = "Affiliate Fee";
-"swap.liquidity_fee" = "Liquidity Fee";
-"swap.outbound_fee" = "Outbound Fee";
-"swap.total_fee" = "Total Fee";
 
 // Swap Advanced Settings
 
@@ -767,8 +760,6 @@
 "swap.one_inch.error.cannotSwap" = "Can't swap these tikens";
 "swap.service" = "Service";
 "swap.service.title" = "Service";
-"swap.enter_amount" = "Enter amount";
-"swap.insufficient_balance" = "Insufficient Balance";
 
 // Swap Approving
 
@@ -793,7 +784,6 @@
 "swap.confirmation.swapping" = "Swapping";
 "swap.confirmation.refresh" = "Refresh";
 "swap.confirmation.impact_high" = "You’ll lose a big part (%@) of your funds on this swap.";
-"swap.confirmation.impact_too_high" = "This swap would result in a major loss (%@) due to very low liquidity.";
 "swap.confirmation.impact_warning" = "Important! You're getting an extremely unfavorable price. This is due to extremely low liquidity.";
 
 "swap.confirmation.minimum_received" = "Guaranteed";
@@ -888,54 +878,10 @@
 "market.time_period.4y.short" = "4Y";
 "market.time_period.5y.short" = "5Y";
 
-"market.global.market_cap" = "Total Cap";
-"market.global.volume" = "24h Vol.";
-"market.global.tvl" = "TVL";
-"market.global.etf" = "ETF";
 
-"market.tab.news" = "News";
-"market.tab.coins" = "Coins";
-"market.tab.watchlist" = "Favorites";
-"market.tab.vaults" = "Earn";
-"market.tab.platforms" = "Platforms";
-"market.tab.pairs" = "Pairs";
-"market.tab.sectors" = "Sectors";
 
-"market.sort_by.title" = "Sort By";
-"market.sort_by.manual" = "Manual";
-"market.sort_by.highest_cap" = "Highest Cap";
-"market.sort_by.lowest_cap" = "Lowest Cap";
-"market.sort_by.gainers" = "Gainers";
-"market.sort_by.losers" = "Losers";
-"market.sort_by.highest_volume" = "Highest Volume";
-"market.sort_by.lowest_volume" = "Lowest Volume";
 
-"market.top_coins.title" = "Coins";
-"market.top_coins" = "Top %@";
 
-"market.time_period.title" = "Period";
-"market.time_period.1d" = "1 Day";
-"market.time_period.1w" = "1 Week";
-"market.time_period.2w" = "2 Weeks";
-"market.time_period.1m" = "1 Month";
-"market.time_period.3m" = "3 Months";
-"market.time_period.6m" = "6 Months";
-"market.time_period.1y" = "1 Year";
-"market.time_period.2y" = "2 Years";
-"market.time_period.3y" = "3 Years";
-"market.time_period.4y" = "4 Years";
-"market.time_period.5y" = "5 Years";
-"market.time_period.1d.short" = "1D";
-"market.time_period.1w.short" = "1W";
-"market.time_period.2w.short" = "2W";
-"market.time_period.1m.short" = "1M";
-"market.time_period.3m.short" = "3M";
-"market.time_period.6m.short" = "6M";
-"market.time_period.1y.short" = "1Y";
-"market.time_period.2y.short" = "2Y";
-"market.time_period.3y.short" = "3Y";
-"market.time_period.4y.short" = "4Y";
-"market.time_period.5y.short" = "5Y";
 
 "market.project_has_no_coin" = "This project doesn’t have a coin";
 
@@ -976,7 +922,6 @@
 "market.pairs.volume" = "Volume";
 "top_pairs.title" = "Top Market Pairs";
 "top_pairs.description" = "Top trading pairs by volume in every exchanges";
-"market.top.protocols" = "Protocols";
 
 "top_platforms.title" = "Platforms Rank";
 "top_platforms.description" = "Leading blockchain platforms by cumulative market of projects built on top.";
@@ -2020,6 +1965,9 @@
 "add_token.jetton_master_not_found" = "Jetton Master not found in %@ blockchain";
 "add_token.input_placeholder.contract_address" = "Contract Address";
 "add_token.input_placeholder.jetton_master_address" = "Jetton Master Address";
+"add_token.input_placeholder.mint_address" = "Token Mint Address";
+"add_token.invalid_mint_address" = "Invalid Solana address";
+"add_token.mint_address_not_found" = "Token not found in %@ blockchain";
 "add_token.coin_name" = "Coin Name";
 "add_token.symbol" = "Symbol";
 "add_token.decimals" = "Decimals";
@@ -2098,18 +2046,6 @@
 
 // Ton Connect
 
-"ton_connect.list.new_connection" = "New Connection";
-"ton_connect.list.no_connected_apps" = "No Connected Apps";
-"ton_connect.list.disconnect_app" = "Disconnect App";
-"ton_connect.list.disconnect_app.description" = "Are you sure you want to disconnect from \"%@\"?";
-"ton_connect.list.disconnect_app.disconnect" = "Disconnect";
-"ton_connect.connect.url" = "URL";
-"ton_connect.connect.wallet" = "Wallet";
-"ton_connect.connect.no_eligible_wallets" = "No eligible wallets";
-"ton_connect.connect.warning" = "By clicking approve, you allow this app to view your public address. This is an important security step to protect your data from potential phishing risks.";
-"ton_connect.connect.connect" = "Connect";
-"ton_connect.connect.reject" = "Reject";
-"ton_connect.invalid_transaction" = "Invalid Transaction";
 
 // App Status
 
@@ -2499,8 +2435,6 @@
 "safe_zone.safe4.proposal.detail.info.id" = "Proposal ID: ";
 "safe_zone.safe4.proposal.detail.info.creator" = "Creator:";
 "safe_zone.safe4.proposal.detail.info.apply.num" = "Number of SAFE apply:";
-"safe_zone.safe4.proposal.detail.info.desc" = "Proposal Introduction:";
-"safe_zone.safe4.proposal.detail.info.method" = "Distribution method:";
 "safe_zone.safe4.proposal.detail.info.vote.state" = "Voting Status:";
 "safe_zone.safe4.vote.info.desc" = "%@ votes in total agree, %@ votes reject, %@ votes abstain, %@ votes“";
 "safe_zone.safe4.proposal.create.ID.exist" = "Proposal ID does not exist";
@@ -2508,7 +2442,6 @@
 
 "safe_zone.safe4.node.mater.balance" = "Mater node balance";
 "safe_zone.safe4.node.record.voters" = "Voters";
-"safe_zone.safe4.proposal.pool.balance" = "Proposal fund pool balance";
 "safe_zone.safe4.account.lock" = "Locked account";
 "safe_zone.safe4.proposal.vote.record" = "Proposal Voting Record";
 "safe_zone.safe4.node.info.update.tips" = "Update the attribute information corresponding to the node by calling the node contract. The updated node data will only take effect after the transaction is written to the blockchain";
@@ -2547,7 +2480,6 @@
 "safe_zone.safe4.node.create.mode" = "Create Mode";
 "safe_zone.safe4.node.create.mode.independence" = "Independence";
 "safe_zone.safe4.node.create.mode.crowdfunding" = "Crowdfunding";
-"safe_zone.safe4.account.lock" = "Lock account";
 "safe_zone.safe4.account.balance" = "Current account balance";
 "safe_zone.safe4.account.balance.tips" = "The account balance is insufficient to lock the position and create a master node";
 "safe_zone.safe4.mining.plan" = "Mining reward distribution plan";
@@ -2648,7 +2580,6 @@
 "safe_zone.safe4.redeem.master.fail" = "Master node migration failed";
 "safe_zone.safe4.redeem.fail" = "Migration failed";
 "safe_zone.safe4.redeem.fund.query.fail" = "Asset query failed";
-"safe_zone.safe4.node.edit" = "Edit";
 "safe_zone.safe4.node.address.wallet.unuse" = "Cannot use current wallet address";
 "safe_zone.safe4.node.locked.days.title" = "Days";
 "safe_zone.safe4.node.locked.days" = "Locked Days";
@@ -3020,7 +2951,6 @@
 "safe_zone.lock" = "Lock";
 "safe_zone.safe4.claim" = "Claim SAFE";
 "safe_zone.feature_unavailable" = "Feature Unavailable";
-"safe_zone.safe4.withdraw" = "Withdraw";
 "safe_zone.safe_swap" = "SAFE Swap";
 "safe_zone.safe3.private_key" = "SAFE3 Private Key";
 "safe_zone.enter_private_key" = "Enter private key";

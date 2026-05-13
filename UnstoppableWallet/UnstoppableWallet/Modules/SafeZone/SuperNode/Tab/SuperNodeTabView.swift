@@ -5,9 +5,11 @@ struct SuperNodeTabView: View {
     private var allViewModel: SuperNodeViewModel
     private var mineViewModel: SuperNodeViewModel
     @State private var loadedTabs = [SuperNodeModule.Tab]()
+    @Binding private var isPresented: Bool
 
-    init(viewModel: SuperNodeTabViewModel) {
+    init(viewModel: SuperNodeTabViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
         self.allViewModel = SuperNodeModule.viewModel(type: .All, evmKit: viewModel.evmKit, privateKey: viewModel.privateKey)
         self.mineViewModel = SuperNodeModule.viewModel(type: .Mine, evmKit: viewModel.evmKit, privateKey: viewModel.privateKey)
     }
@@ -61,6 +63,13 @@ struct SuperNodeTabView: View {
 
     }
     @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button(action: {
+                isPresented = false
+            }) {
+                Image("close")
+            }
+        }
         ToolbarItem(placement: .navigationBarTrailing) {
             Button(action: {
                 switch viewModel.nodeType {

@@ -2,8 +2,11 @@ import SwiftUI
 
 struct SafeLineLockRecoardView: View {
     @StateObject var viewModel: SafeLineLockRecoardViewModel
-    init(viewModel: SafeLineLockRecoardViewModel) {
+    @Binding private var isPresented: Bool
+    
+    init(viewModel: SafeLineLockRecoardViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
     }
 
     var body: some View {
@@ -32,6 +35,15 @@ struct SafeLineLockRecoardView: View {
             }
             .navigationBarTitle("safe_zone.row.linear".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
+            }
         }
     }
     

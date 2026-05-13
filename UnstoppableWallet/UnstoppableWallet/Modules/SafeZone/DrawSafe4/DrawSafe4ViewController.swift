@@ -13,6 +13,7 @@ class DrawSafe4ViewController: ThemeViewController {
     private let buttonCell = PrimaryButtonCell()
     
     private var drawSafe4Info: DrawSafe4Info?
+    var onDismiss: (() -> Void)?
     
     private var isLoaded = false
 

@@ -10,6 +10,7 @@ class LineLockRecoardViewController: ThemeViewController {
     private let viewModel: LineLockRecoardViewModel
     private let tableView = SectionsTableView(style: .grouped)
     private var viewItems = [LineLockRecoardViewModel.ViewItem]()
+    var onDismiss: (() -> Void)?
     
     init(viewModel: LineLockRecoardViewModel) {
         self.viewModel = viewModel

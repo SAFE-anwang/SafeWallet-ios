@@ -136,6 +136,14 @@ enum AppConfig {
         ((Bundle.main.object(forInfoDictionaryKey: "TronGridApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
+    static var solanaAlchemyApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "SolanaAlchemyApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var solanaAlchemyApiKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "SolanaAlchemyApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
     static var walletConnectV2ProjectKey: String? {
         apiKey(.walletConnectV2) ?? (Bundle.main.object(forInfoDictionaryKey: "WallectConnectV2ProjectKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
@@ -177,6 +185,10 @@ enum AppConfig {
     static var uswapApiKey: String? {
         "44fc76602e17e0c8259b6ce3bae3ca90804c6fd8f42ca00e6943a6b1ba7fe242"
 //        (Bundle.main.object(forInfoDictionaryKey: "USwapApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var jupiterApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "JupiterApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 
     static var referralAppServerUrl: String {

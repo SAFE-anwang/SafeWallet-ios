@@ -5,9 +5,11 @@ struct DeployView: View {
     @StateObject var viewModel: DeployViewModel
     @FocusState private var focusField: DeployViewModel.FocusField?
     @State private var isShowAlert: Bool = false
+    @Binding private var isPresented: Bool
     
-    init(viewModel: DeployViewModel) {
+    init(viewModel: DeployViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
     }
     
     var body: some View {
@@ -45,6 +47,13 @@ struct DeployView: View {
 
             }
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("button.done".localized) {
@@ -78,7 +87,7 @@ struct DeployView: View {
                             if case .completed = sendState {
                                 DispatchQueue.main.async {
                                     HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
-                                    presentationMode.wrappedValue.dismiss()
+                                    isPresented = false
                                 }
                             }
                             

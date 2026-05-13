@@ -24,13 +24,17 @@ struct LineLockRecoardModule {
 struct LineLockRecoardView: UIViewControllerRepresentable {
     typealias UIViewControllerType = UIViewController
     let viewModel: LineLockRecoardViewModel
+    @Binding var isPresented: Bool
     
     func makeUIViewController(context _: Context) -> UIViewController {
-        // TODO: must provide any VC
-        ThemeNavigationController(rootViewController: LineLockRecoardViewController(viewModel: viewModel))
+        let viewController = LineLockRecoardViewController(viewModel: viewModel)
+        let navigationController = ThemeNavigationController(rootViewController: viewController)
+        viewController.onDismiss = {
+            isPresented = false
+        }
+        return navigationController
     }
 
     func updateUIViewController(_: UIViewController, context _: Context) {}
     
-
 }

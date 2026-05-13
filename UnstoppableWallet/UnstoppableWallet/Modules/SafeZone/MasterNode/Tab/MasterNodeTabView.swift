@@ -5,9 +5,11 @@ struct MasterNodeTabView: View {
     var allViewController: MasterNodeViewController
     var mineViewController: MasterNodeViewController
     @State private var loadedTabs = [MasterNodeModule.Tab]()
+    @Binding private var isPresented: Bool
 
-    init(viewModel: MasterNodeTabViewModel) {
+    init(viewModel: MasterNodeTabViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
         let allViewModel = MasterNodeModule.viewModel(type: .All, evmKit: viewModel.evmKit)
         let mineViewModel = MasterNodeModule.viewModel(type: .Mine, evmKit: viewModel.evmKit)
         allViewController = MasterNodeViewController(viewModel: allViewModel)
@@ -54,6 +56,13 @@ struct MasterNodeTabView: View {
 
     }
     @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button(action: {
+                isPresented = false
+            }) {
+                Image("close")
+            }
+        }
         ToolbarItem(placement: .navigationBarTrailing) {
             Button(action: {
                 switch viewModel.nodeType {

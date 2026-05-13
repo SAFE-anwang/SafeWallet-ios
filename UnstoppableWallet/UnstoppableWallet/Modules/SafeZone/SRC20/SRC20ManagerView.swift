@@ -7,9 +7,11 @@ struct SRC20ManagerView: View {
     @State private var presentDestination: PresentDestination?
     @State private var selectedViewModel: (any ObservableObject)? = nil
     @State private var path = NavigationPath()
+    @Binding private var isPresented: Bool
     
-    init(viewModel: SRC20ManagerViewModel) {
+    init(viewModel: SRC20ManagerViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
     }
     
     var body: some View {
@@ -82,6 +84,15 @@ struct SRC20ManagerView: View {
             }
             .navigationBarTitle("SRC20_Deploy_Promotion".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
+            }
         }
     }
     

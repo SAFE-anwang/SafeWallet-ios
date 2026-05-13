@@ -30,6 +30,7 @@ extension BlockchainType {
         .safe,
         .safe4,
         .stellar,
+        .solana,
     ]
     
     static let swappable: [BlockchainType] = [
@@ -101,6 +102,7 @@ extension BlockchainType {
             .safe,
             .bitcoin,
             .ethereum,
+            .solana,
             .monero,
             .tron,
             .zcash,
@@ -234,6 +236,7 @@ extension BlockchainType {
         case .ton: return "TON"
         case .dogecoin: return "Dogecoin"
         case .stellar: return "Stellar"
+        case .solana: return "SOL, SPL tokens"
         default: return ""
         }
     }

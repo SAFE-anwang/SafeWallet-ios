@@ -8,56 +8,62 @@ struct CrossPreSendView: View {
     @Environment(\.addressParserFilter) private var parserFilter
     @FocusState private var focusField: FocusField?
     @State private var confirmPresented = false
+    @Binding private var isPresented: Bool
 
-    init(viewModel: CrossPreSendViewModel) {
+    init(viewModel: CrossPreSendViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
     }
 
     var body: some View {
-        ThemeView {
-            ScrollView {
-                VStack(spacing: .margin16) {
-                    balanceView()
-                    inputView()
-                    
-                    VStack(spacing: .margin8) {
-                        addressInputView()
+        ThemeNavigationStack {
+            ThemeView {
+                ScrollView {
+                    VStack(spacing: .margin16) {
+                        balanceView()
+                        inputView()
+                        
+                        VStack(spacing: .margin8) {
+                            addressInputView()
+                        }
+                        
+                        if viewModel.hasMemo {
+                            memoView()
+                        }
+                        
+                        buttonView()
+                        
+                        if !viewModel.cautions.isEmpty {
+                            cautionsView()
+                        }
                     }
-
-                    if viewModel.hasMemo {
-                        memoView()
-                    }
-
-                    buttonView()
-
-                    if !viewModel.cautions.isEmpty {
-                        cautionsView()
-                    }
-                }
-                .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
-                .animation(.linear, value: viewModel.hasMemo)
-            }
-        }
-        .navigationTitle(viewModel.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(isPresented: $confirmPresented) {
-            if let sendData = viewModel.sendData {
-                RegularSendView(sendData: sendData.sendData, address: sendData.address) {
-                    HudHelper.instance.show(banner: .sent)
-                    presentationMode.wrappedValue.dismiss()
-                }
-                .toolbarRole(.editor)
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("button.close".localized) {
-                    presentationMode.wrappedValue.dismiss()
+                    .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
+                    .animation(.linear, value: viewModel.hasMemo)
                 }
             }
+            .navigationTitle(viewModel.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(isPresented: $confirmPresented) {
+                if let sendData = viewModel.sendData {
+                    RegularSendView(sendData: sendData.sendData, address: sendData.address) {
+                        HudHelper.instance.show(banner: .sent)
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .toolbarRole(.editor)
+                }
+            }
+            .toolbar {
+//                ToolbarItem(placement: .cancellationAction) {
+//                    Button(action: {
+//                        isPresented = false
+//                    }) {
+//                        Image("close")
+//                    }
+//                }
+            }
+            .toolbarRole(.editor)
+            .accentColor(.themeJacob)
         }
-        .toolbarRole(.editor)
-        .accentColor(.themeJacob)
     }
     
     @ViewBuilder private func balanceView() -> some View {

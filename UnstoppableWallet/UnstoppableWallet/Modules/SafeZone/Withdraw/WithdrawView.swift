@@ -8,9 +8,11 @@ import BigInt
 struct WithdrawView: View {
     @StateObject var viewModel: WithdrawViewModel
     @Environment(\.presentationMode) private var presentationMode
+    @Binding private var isPresented: Bool
     
-    init(viewModel: WithdrawViewModel) {
+    init(viewModel: WithdrawViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
     }
     
     var body: some View {
@@ -72,6 +74,14 @@ struct WithdrawView: View {
             .navigationBarTitle(viewModel.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
+                
                 if viewModel.withdrawType == .voteLocked {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: {

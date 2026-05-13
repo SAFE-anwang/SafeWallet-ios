@@ -5,9 +5,11 @@ struct RedeemSafe3TabView: View {
     var localViewModel: RedeemSafe3ViewModel
     var otherViewModel: RedeemSafe3ViewModel
     @State private var loadedTabs = [RedeemSafe3Module.Tab]()
+    @Binding private var isPresented: Bool
 
-    init(viewModel: RedeemSafe3TabViewModel) {
+    init(viewModel: RedeemSafe3TabViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
         localViewModel = RedeemSafe3Module.viewModel(account: viewModel.account, safe4EvmKitWrapper: viewModel.safe4EvmKitWrapper, type: .local)
         otherViewModel = RedeemSafe3Module.viewModel(account: viewModel.account, safe4EvmKitWrapper: viewModel.safe4EvmKitWrapper, type: .other)
     }
@@ -56,6 +58,15 @@ struct RedeemSafe3TabView: View {
             .tint(.themeJacob)
             .navigationTitle("SAFE3 -> SAFE".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
+            }
         }
 
     }

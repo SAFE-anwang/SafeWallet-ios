@@ -32,6 +32,14 @@ extension ProposalService {
         }
     }
     
+    func hasNewProposals() async throws -> Bool {
+        let currentTotal = try await getTotalNum()
+        guard let cachedTotal = proposalStorageManager.getPageControl()?.totalNum else {
+            return true
+        }
+        return cachedTotal < currentTotal
+    }
+    
     func proposalIds(page: Safe4PageControl) async throws -> [BigUInt] {
         switch type {
         case .All:

@@ -8,9 +8,11 @@ struct RewardsView: View {
     
     @StateObject var viewModel: RewardsViewModel
     @Environment(\.presentationMode) private var presentationMode
+    @Binding private var isPresented: Bool
 
-    init(viewModel: RewardsViewModel) {
+    init(viewModel: RewardsViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
     }
 
     var body: some View {
@@ -86,6 +88,15 @@ struct RewardsView: View {
             }
             .navigationBarTitle("safe_zone.row.rewards".localized + "safe_zone.safe4.withdraw".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
+            }
         }
     }
 }

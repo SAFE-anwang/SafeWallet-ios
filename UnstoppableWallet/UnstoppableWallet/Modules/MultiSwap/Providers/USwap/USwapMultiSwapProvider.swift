@@ -8,6 +8,7 @@ import HsToolKit
 import MarketKit
 import MoneroKit
 import ObjectMapper
+import SolanaKit
 import SwiftUI
 import TronKit
 import ZanoKit
@@ -96,6 +97,17 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
 
                 tokenQueries = [TokenQuery(blockchainType: blockchainType, tokenType: tokenType)]
 
+            case .solana:
+                let tokenType: TokenType
+
+                if let address = token.address, !address.isEmpty {
+                    tokenType = .spl(address: address)
+                } else {
+                    tokenType = .native
+                }
+
+                tokenQueries = [TokenQuery(blockchainType: blockchainType, tokenType: tokenType)]
+                print(tokenQueries)
             case .bitcoin, .bitcoinCash, .ecash, .dash, .zcash, .monero, .stellar:
                 tokenQueries = blockchainType.nativeTokenQueries
 
@@ -167,7 +179,8 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
         // must provide address for calculate tx-data
         if tokenIn.blockchain.type.isEvm ||
             tokenIn.blockchainType == .tron ||
-            tokenIn.blockchainType == .ton
+            tokenIn.blockchainType == .ton ||
+            tokenIn.blockchainType == .solana
         {
             parameters["sourceAddress"] = try await DestinationHelper.resolveDestination(token: tokenIn).address
         }
@@ -181,7 +194,9 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
     }
 
     func supports(tokenIn: Token, tokenOut: Token) -> Bool {
-        assetMap[tokenIn.tokenQuery.id.lowercased()] != nil && assetMap[tokenOut.tokenQuery.id.lowercased()] != nil
+        print("Find support for : \(tokenIn)")
+        print("Founded: \(assetMap[tokenIn.tokenQuery.id.lowercased()] != nil && assetMap[tokenOut.tokenQuery.id.lowercased()] != nil)")
+        return assetMap[tokenIn.tokenQuery.id.lowercased()] != nil && assetMap[tokenOut.tokenQuery.id.lowercased()] != nil
     }
 
     func quote(tokenIn: Token, tokenOut: Token, amountIn: Decimal) async throws -> MultiSwapQuote {
@@ -204,8 +219,8 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             let esimatedTime = quote.esimatedTime ?? MultiSwapHelpers.estimate(tokenIn: tokenIn, tokenOut: tokenOut)
             return EvmMultiSwapQuote(expectedBuyAmount: quote.expectedBuyAmount, allowanceState: allowanceState, estimatedTime: esimatedTime)
 
-        case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dash, .zcash, .monero, .ton, .stellar, .zano:
-            return MultiSwapQuote(expectedBuyAmount: quote.expectedBuyAmount, estimatedTime: quote.esimatedTime)
+        case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dash, .zcash, .monero, .ton, .stellar, .zano, .solana:
+            return MultiSwapQuote(expectedBuyAmount: quote.expectedBuyAmount)
 
         default:
             throw SwapError.unsupportedTokenIn
@@ -312,6 +327,17 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
                 slippage: slippage,
                 recipient: recipient
             )
+        case .solana:
+            return try await buildSolanaConfirmationQuote(
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
+                amountIn: amountIn,
+                amountOut: amountOut,
+                amountOutMin: amountOutMin,
+                quote: quote,
+                slippage: slippage,
+                recipient: recipient
+            )
         default:
             throw SwapError.unsupportedTokenIn
         }
@@ -397,7 +423,7 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
         recipient: String?,
         transactionSettings: TransactionSettings?
     ) async throws -> SwapFinalQuote {
-        guard let jsonObject = quote.tx else {
+        guard let jsonObject = quote.tx as? [String: Any] else {
             throw SwapError.noTransactionData
         }
 
@@ -691,7 +717,7 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
         slippage: Decimal,
         recipient: String?
     ) async throws -> SwapFinalQuote {
-        guard let jsonObject = quote.tx else {
+        guard let jsonObject = quote.tx as? [String: Any] else {
             throw SwapError.noTransactionData
         }
 
@@ -832,6 +858,55 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
             amount: amount,
             address: quote.inboundAddress,
             memo: quote.memo,
+            fee: fee,
+            transactionError: transactionError,
+            toAddress: quote.destinationAddress,
+            depositAddress: quote.inboundAddress,
+            providerSwapId: quote.providerSwapId
+        )
+    }
+
+    private func buildSolanaConfirmationQuote(
+        tokenIn: Token,
+        tokenOut _: Token,
+        amountIn: Decimal,
+        amountOut: Decimal,
+        amountOutMin _: Decimal,
+        quote: Quote,
+        slippage: Decimal,
+        recipient: String?
+    ) async throws -> SwapFinalQuote {
+        guard let adapter = adapterManager.adapter(for: tokenIn) as? ISendSolanaAdapter & IBalanceAdapter else {
+            throw SwapError.noSolanaAdapter
+        }
+
+        guard let txString = quote.tx as? String,
+              let rawTransaction = Data(base64Encoded: txString)
+        else {
+            throw SwapError.noTransactionData
+        }
+
+        var transactionError: Error?
+        var fee: Decimal?
+
+        do {
+            let estimatedFee = try adapter.estimateFee(rawTransaction: rawTransaction)
+            fee = estimatedFee
+
+            let totalRequired = (tokenIn.type.isNative ? amountIn : 0) + estimatedFee
+            if adapter.balanceData.available < totalRequired {
+                throw SolanaSendHandler.TransactionError.insufficientSolBalance(balance: adapter.balanceData.available)
+            }
+        } catch {
+            transactionError = error
+        }
+
+        return SolanaSwapFinalQuote(
+            rawTransaction: rawTransaction,
+            expectedAmountOut: amountOut,
+            recipient: recipient,
+            slippage: slippage,
+            estimatedTime: quote.esimatedTime,
             fee: fee,
             transactionError: transactionError,
             toAddress: quote.destinationAddress,
@@ -994,7 +1069,7 @@ extension USwapMultiSwapProvider {
         let inboundAddress: String
         let destinationAddress: String
         let approvalAddress: String?
-        let tx: [String: Any]?
+        let tx: Any?
         let txExtraAttribute: [String: Any]?
         let memo: String?
         let shieldedMemoAddress: String?
@@ -1064,5 +1139,6 @@ extension USwapMultiSwapProvider {
         case noStellarAdapter
         case noMoneroAdapter
         case noZanoAdapter
+        case noSolanaAdapter
     }
 }

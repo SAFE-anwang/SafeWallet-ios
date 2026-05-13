@@ -9,9 +9,11 @@ import BigInt
 struct LockedRecordView: View {
     @StateObject private var viewModel: LockedRecordViewModel
     @Environment(\.presentationMode) private var presentationMode
+    @Binding private var isPresented: Bool
     
-    init(viewModel: LockedRecordViewModel) {
+    init(viewModel: LockedRecordViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
     }
     
     var body: some View {
@@ -45,6 +47,15 @@ struct LockedRecordView: View {
             .navigationBarTitle("safe_zone.safe4.account.lock".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar() }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
+            }
             .task(id: viewModel.sendState) {
                 if case let .success(message) = viewModel.sendState {
                     HudHelper.instance.show(banner: .success(string: message ?? ""))

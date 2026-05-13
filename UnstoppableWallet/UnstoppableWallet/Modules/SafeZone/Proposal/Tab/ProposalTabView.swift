@@ -5,9 +5,11 @@ struct ProposalTabView: View {
     private var allViewModel: ProposalViewModel
     private var mineViewModel: ProposalViewModel
     @State private var loadedTabs = [ProposalModule.Tab]()
+    @Binding private var isPresented: Bool
 
-    init(viewModel: ProposalTabViewModel) {
+    init(viewModel: ProposalTabViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
         allViewModel = ProposalModule.viewModel(type: .All)
         mineViewModel = ProposalModule.viewModel(type: .Mine(address: viewModel.evmKit.receiveAddress.hex))
     }
@@ -61,6 +63,13 @@ struct ProposalTabView: View {
 
     }
     @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button(action: {
+                isPresented = false
+            }) {
+                Image("close")
+            }
+        }
         ToolbarItem(placement: .navigationBarTrailing) {
             Button(action: {
                 guard viewModel.isEnabledAdd else {

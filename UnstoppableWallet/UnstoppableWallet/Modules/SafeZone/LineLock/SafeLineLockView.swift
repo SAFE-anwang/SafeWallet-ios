@@ -8,9 +8,11 @@ struct SafeLineLockView: View {
     @FocusState private var isInputActive: Bool
     @State private var dateText = ""
     @State private var presentDestination: PresentDestination?
+    @Binding private var isPresented: Bool
     
-    init(viewModel: SafeLineLockViewModel) {
+    init(viewModel: SafeLineLockViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
     }
     
     var borderColor: Color {
@@ -68,6 +70,13 @@ struct SafeLineLockView: View {
                 }
             }
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("button.done".localized) {
