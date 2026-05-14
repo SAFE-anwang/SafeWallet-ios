@@ -128,17 +128,17 @@ class SuperNodeViewController: ThemeViewController {
         }
     }
     
-    @objc private func add() {
-        switch viewModel.nodeType {
-        case .masterNode:
-            HudHelper.instance.show(banner: .error(string: "safe_zone.safe4.node.tips.state.master".localized))
-        case .superNode:
-            HudHelper.instance.show(banner: .error(string: "safe_zone.safe4.node.tips.state.super".localized))
-        case .normal:
-            guard let vc = SuperNodeRegisterModule.viewController() else {return }
-            parentNavigationController?.pushViewController(vc, animated: true)
-        }
-    }
+//    @objc private func add() {
+//        switch viewModel.nodeType {
+//        case .masterNode:
+//            HudHelper.instance.show(banner: .error(string: "safe_zone.safe4.node.tips.state.master".localized))
+//        case .superNode:
+//            HudHelper.instance.show(banner: .error(string: "safe_zone.safe4.node.tips.state.super".localized))
+//        case .normal:
+//            guard let vc = SuperNodeRegisterModule.viewController() else {return }
+//            parentNavigationController?.pushViewController(vc, animated: true)
+//        }
+//    }
     
     func didLoad() {
         tableView.buildSections()

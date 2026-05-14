@@ -69,11 +69,6 @@ struct Safe4SwapView: View {
                         Image("close")
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("button.cancel".localized) {
-                        isPresented = false
-                    }
-                }
             }
         }
     }

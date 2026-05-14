@@ -52,15 +52,6 @@ struct CrossPreSendView: View {
                     .toolbarRole(.editor)
                 }
             }
-            .toolbar {
-//                ToolbarItem(placement: .cancellationAction) {
-//                    Button(action: {
-//                        isPresented = false
-//                    }) {
-//                        Image("close")
-//                    }
-//                }
-            }
             .toolbarRole(.editor)
             .accentColor(.themeJacob)
         }

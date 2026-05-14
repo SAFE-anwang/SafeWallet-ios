@@ -52,6 +52,13 @@ class SuperNodeRegisterViewController: KeyboardAwareViewController {
         super.viewDidLoad()
         title = "safe_zone.safe4.SuperNodeRegister".localized
         
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(named: "close"),
+            style: .plain,
+            target: self,
+            action: #selector(dismissController)
+        )
+        
         view.addEndEditingTapGesture()
         
         view.addSubview(tableView)
@@ -145,6 +152,9 @@ class SuperNodeRegisterViewController: KeyboardAwareViewController {
 }
 
 private extension SuperNodeRegisterViewController {
+    @objc func dismissController() {
+        dismiss(animated: true)
+    }
     
     func didLoad() {
         tableView.buildSections()

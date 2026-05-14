@@ -898,7 +898,6 @@
 		67028D7C2FAF248D00AF6D75 /* RbfService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670286522FAF248D00AF6D75 /* RbfService.swift */; };
 		67028D7D2FAF248D00AF6D75 /* EvmSendData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670286902FAF248D00AF6D75 /* EvmSendData.swift */; };
 		67028D7E2FAF248D00AF6D75 /* LiquidityAddViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6702837B2FAF248D00AF6D75 /* LiquidityAddViewModel.swift */; };
-		67028D7F2FAF248D00AF6D75 /* LineLockRecoardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670285BF2FAF248D00AF6D75 /* LineLockRecoardViewController.swift */; };
 		67028D802FAF248D00AF6D75 /* TronReceiveAddressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670287C12FAF248D00AF6D75 /* TronReceiveAddressViewModel.swift */; };
 		67028D812FAF248D00AF6D75 /* EvmFeeEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6702868E2FAF248D00AF6D75 /* EvmFeeEstimator.swift */; };
 		67028D822FAF248D00AF6D75 /* MultiSwapSettingStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670284782FAF248D00AF6D75 /* MultiSwapSettingStorage.swift */; };
@@ -2874,7 +2873,6 @@
 		670295672FAF248D00AF6D75 /* RbfService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670286522FAF248D00AF6D75 /* RbfService.swift */; };
 		670295682FAF248D00AF6D75 /* EvmSendData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670286902FAF248D00AF6D75 /* EvmSendData.swift */; };
 		670295692FAF248D00AF6D75 /* LiquidityAddViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6702837B2FAF248D00AF6D75 /* LiquidityAddViewModel.swift */; };
-		6702956A2FAF248D00AF6D75 /* LineLockRecoardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670285BF2FAF248D00AF6D75 /* LineLockRecoardViewController.swift */; };
 		6702956B2FAF248D00AF6D75 /* TronReceiveAddressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670287C12FAF248D00AF6D75 /* TronReceiveAddressViewModel.swift */; };
 		6702956C2FAF248D00AF6D75 /* EvmFeeEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6702868E2FAF248D00AF6D75 /* EvmFeeEstimator.swift */; };
 		6702956D2FAF248D00AF6D75 /* MultiSwapSettingStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670284782FAF248D00AF6D75 /* MultiSwapSettingStorage.swift */; };
@@ -4017,6 +4015,8 @@
 		670E90772FB331F600392508 /* SolanaSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90752FB331F600392508 /* SolanaSendHandler.swift */; };
 		670E90782FB331F600392508 /* SolanaPreSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90742FB331F600392508 /* SolanaPreSendHandler.swift */; };
 		670E90792FB331F600392508 /* SolanaSendHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E90752FB331F600392508 /* SolanaSendHandler.swift */; };
+		670E90912FB55D7700392508 /* LineLockRecoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E908E2FB55D7700392508 /* LineLockRecoardView.swift */; };
+		670E90932FB55D7700392508 /* LineLockRecoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670E908E2FB55D7700392508 /* LineLockRecoardView.swift */; };
 		671AFDEB2F7F826B00FEA42B /* ReownAppKit in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC55722F63B67300CFAE73 /* ReownAppKit */; };
 		671AFDEC2F7F826B00FEA42B /* ReownAppKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC55742F63B67300CFAE73 /* ReownAppKitUI */; };
 		671AFDED2F7F826B00FEA42B /* ReownRouter in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC55762F63B67300CFAE73 /* ReownRouter */; };
@@ -5282,7 +5282,6 @@
 		670285BB2FAF248D00AF6D75 /* Safe4Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4Provider.swift; sourceTree = "<group>"; };
 		670285BC2FAF248D00AF6D75 /* Safe4Reward.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4Reward.swift; sourceTree = "<group>"; };
 		670285BE2FAF248D00AF6D75 /* LineLockRecoardModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineLockRecoardModule.swift; sourceTree = "<group>"; };
-		670285BF2FAF248D00AF6D75 /* LineLockRecoardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineLockRecoardViewController.swift; sourceTree = "<group>"; };
 		670285C02FAF248D00AF6D75 /* LineLockRecoardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineLockRecoardViewModel.swift; sourceTree = "<group>"; };
 		670285C22FAF248D00AF6D75 /* Safe4SwapModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4SwapModule.swift; sourceTree = "<group>"; };
 		670285C32FAF248D00AF6D75 /* Safe4SwapSendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Safe4SwapSendView.swift; sourceTree = "<group>"; };
@@ -6218,6 +6217,7 @@
 		670E906F2FB331D200392508 /* SolanaSwapFinalQuote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaSwapFinalQuote.swift; sourceTree = "<group>"; };
 		670E90742FB331F600392508 /* SolanaPreSendHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaPreSendHandler.swift; sourceTree = "<group>"; };
 		670E90752FB331F600392508 /* SolanaSendHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolanaSendHandler.swift; sourceTree = "<group>"; };
+		670E908E2FB55D7700392508 /* LineLockRecoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LineLockRecoardView.swift; sourceTree = "<group>"; };
 		D3373D9420BEC7B30082BC4A /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		D34A29B42BFB4AE200F63036 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/AppWidget.strings; sourceTree = "<group>"; };
 		D350DDAF2AE2526E00CF1989 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -9276,8 +9276,8 @@
 		670285C12FAF248D00AF6D75 /* Safe3LineLockRecoard */ = {
 			isa = PBXGroup;
 			children = (
+				670E908E2FB55D7700392508 /* LineLockRecoardView.swift */,
 				670285BE2FAF248D00AF6D75 /* LineLockRecoardModule.swift */,
-				670285BF2FAF248D00AF6D75 /* LineLockRecoardViewController.swift */,
 				670285C02FAF248D00AF6D75 /* LineLockRecoardViewModel.swift */,
 			);
 			path = Safe3LineLockRecoard;
@@ -11630,28 +11630,28 @@
 		670289F12FAF248D00AF6D75 /* UnstoppableWallet */ = {
 			isa = PBXGroup;
 			children = (
-				670280652FAF248D00AF6D75 /* BackCompatibility */,
-				6702806C2FAF248D00AF6D75 /* Configuration */,
-				670281692FAF248D00AF6D75 /* Core */,
-				670281802FAF248D00AF6D75 /* Extensions */,
-				670281842FAF248D00AF6D75 /* Fonts */,
-				6702821B2FAF248D00AF6D75 /* Models */,
-				670288592FAF248D00AF6D75 /* Modules */,
-				670289D02FAF248D00AF6D75 /* UserInterface */,
 				670289D12FAF248D00AF6D75 /* AppDelegate.swift */,
 				670289D22FAF248D00AF6D75 /* AppIcon.xcassets */,
 				670289D32FAF248D00AF6D75 /* AppIconAlternate.xcassets */,
 				670289D42FAF248D00AF6D75 /* AppIconDev.xcassets */,
 				670289D52FAF248D00AF6D75 /* AppSceneDelegate.swift */,
 				670289D62FAF248D00AF6D75 /* Assets.xcassets */,
+				670280652FAF248D00AF6D75 /* BackCompatibility */,
 				670289D72FAF248D00AF6D75 /* Colors.xcassets */,
+				6702806C2FAF248D00AF6D75 /* Configuration */,
+				670281692FAF248D00AF6D75 /* Core */,
+				670281802FAF248D00AF6D75 /* Extensions */,
+				670281842FAF248D00AF6D75 /* Fonts */,
 				670289D82FAF248D00AF6D75 /* Info.plist */,
 				670289E22FAF248D00AF6D75 /* InfoPlist.strings */,
 				670289E32FAF248D00AF6D75 /* LaunchScreen.xib */,
 				670289ED2FAF248D00AF6D75 /* Localizable.strings */,
+				6702821B2FAF248D00AF6D75 /* Models */,
+				670288592FAF248D00AF6D75 /* Modules */,
 				670289EE2FAF248D00AF6D75 /* translation_snapshot.json */,
 				670289EF2FAF248D00AF6D75 /* Unstoppable.storekit */,
 				670289F02FAF248D00AF6D75 /* UnstoppableApp.swift */,
+				670289D02FAF248D00AF6D75 /* UserInterface */,
 			);
 			path = UnstoppableWallet;
 			sourceTree = "<group>";
@@ -13056,7 +13056,6 @@
 				67028D7C2FAF248D00AF6D75 /* RbfService.swift in Sources */,
 				67028D7D2FAF248D00AF6D75 /* EvmSendData.swift in Sources */,
 				67028D7E2FAF248D00AF6D75 /* LiquidityAddViewModel.swift in Sources */,
-				67028D7F2FAF248D00AF6D75 /* LineLockRecoardViewController.swift in Sources */,
 				67028D802FAF248D00AF6D75 /* TronReceiveAddressViewModel.swift in Sources */,
 				67028D812FAF248D00AF6D75 /* EvmFeeEstimator.swift in Sources */,
 				67028D822FAF248D00AF6D75 /* MultiSwapSettingStorage.swift in Sources */,
@@ -13266,6 +13265,7 @@
 				67028E542FAF248D00AF6D75 /* WalletConnectRequestChain.swift in Sources */,
 				67028E552FAF248D00AF6D75 /* PageDescription.swift in Sources */,
 				67028E562FAF248D00AF6D75 /* DeterminiteSpinnerComponent.swift in Sources */,
+				670E90912FB55D7700392508 /* LineLockRecoardView.swift in Sources */,
 				67028E572FAF248D00AF6D75 /* SendEip721ViewController.swift in Sources */,
 				67028E582FAF248D00AF6D75 /* ContractCallTransactionRecord.swift in Sources */,
 				67028E592FAF248D00AF6D75 /* AddressViewModelNew.swift in Sources */,
@@ -15050,7 +15050,6 @@
 				670295672FAF248D00AF6D75 /* RbfService.swift in Sources */,
 				670295682FAF248D00AF6D75 /* EvmSendData.swift in Sources */,
 				670295692FAF248D00AF6D75 /* LiquidityAddViewModel.swift in Sources */,
-				6702956A2FAF248D00AF6D75 /* LineLockRecoardViewController.swift in Sources */,
 				6702956B2FAF248D00AF6D75 /* TronReceiveAddressViewModel.swift in Sources */,
 				6702956C2FAF248D00AF6D75 /* EvmFeeEstimator.swift in Sources */,
 				6702956D2FAF248D00AF6D75 /* MultiSwapSettingStorage.swift in Sources */,
@@ -15260,6 +15259,7 @@
 				6702963F2FAF248D00AF6D75 /* WalletConnectRequestChain.swift in Sources */,
 				670296402FAF248D00AF6D75 /* PageDescription.swift in Sources */,
 				670296412FAF248D00AF6D75 /* DeterminiteSpinnerComponent.swift in Sources */,
+				670E90932FB55D7700392508 /* LineLockRecoardView.swift in Sources */,
 				670296422FAF248D00AF6D75 /* SendEip721ViewController.swift in Sources */,
 				670296432FAF248D00AF6D75 /* ContractCallTransactionRecord.swift in Sources */,
 				670296442FAF248D00AF6D75 /* AddressViewModelNew.swift in Sources */,

@@ -51,6 +51,13 @@ class ProposalCreateViewController: KeyboardAwareViewController {
         super.viewDidLoad()
         title = "safe_zone.safe4.create.proposal".localized
         
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(named: "close"),
+            style: .plain,
+            target: self,
+            action: #selector(dismissController)
+        )
+        
         view.addEndEditingTapGesture()
         
         view.addSubview(tableView)
@@ -123,6 +130,10 @@ class ProposalCreateViewController: KeyboardAwareViewController {
     }
 }
 private extension ProposalCreateViewController {
+    @objc func dismissController() {
+        dismiss(animated: true)
+    }
+    
     func didLoad() {
         tableView.buildSections()
         isLoaded = true

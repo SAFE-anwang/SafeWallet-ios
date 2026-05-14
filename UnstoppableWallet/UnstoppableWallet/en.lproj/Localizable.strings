@@ -2605,6 +2605,7 @@
 
 "safe_lock.recoard.nav" = "Lock up record";
 "safe_lock.recoard.title" = "%@ SAFE locked in total";
+"safe_lock.recoard.empty" = "No lock records";
 
 "safe_withdraw.amount.locked" = "Locked Amount";
 "safe_withdraw.unlock.height" = "Unlock Height";

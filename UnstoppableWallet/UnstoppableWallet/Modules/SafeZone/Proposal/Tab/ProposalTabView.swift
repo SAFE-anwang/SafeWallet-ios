@@ -83,6 +83,8 @@ struct ProposalTabView: View {
                 }
             }) {
                 Image("safe4_add_2_24")
+                    .resizable()
+                    .frame(size: 24)
             }
         }
     }

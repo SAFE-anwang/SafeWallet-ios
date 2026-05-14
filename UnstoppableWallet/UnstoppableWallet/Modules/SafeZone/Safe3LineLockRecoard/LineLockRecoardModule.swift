@@ -20,21 +20,3 @@ struct LineLockRecoardModule {
         return viewModel
     }
 }
-
-struct LineLockRecoardView: UIViewControllerRepresentable {
-    typealias UIViewControllerType = UIViewController
-    let viewModel: LineLockRecoardViewModel
-    @Binding var isPresented: Bool
-    
-    func makeUIViewController(context _: Context) -> UIViewController {
-        let viewController = LineLockRecoardViewController(viewModel: viewModel)
-        let navigationController = ThemeNavigationController(rootViewController: viewController)
-        viewController.onDismiss = {
-            isPresented = false
-        }
-        return navigationController
-    }
-
-    func updateUIViewController(_: UIViewController, context _: Context) {}
-    
-}

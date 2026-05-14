@@ -65,6 +65,15 @@ struct AddLockDaysView: View {
             }
             .navigationBarTitle("safe_zone.safe4.node.locked.days.add.title".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Image("close")
+                    }
+                }
+            }
             .task(id: viewModel.state) {
                 if case let .success(message) = viewModel.state {
                     HudHelper.instance.show(banner: .success(string: message ?? ""))

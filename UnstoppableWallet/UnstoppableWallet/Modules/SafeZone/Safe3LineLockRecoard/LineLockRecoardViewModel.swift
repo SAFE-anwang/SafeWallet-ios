@@ -1,88 +1,106 @@
 import Foundation
-import RxSwift
-import RxCocoa
+import UIKit
+import Combine
 import MarketKit
 import SafeCoinKit
 import BitcoinCore
 import HsToolKit
 import HdWalletKit
 
-class LineLockRecoardViewModel {
-    private let disposeBag = DisposeBag()
+class LineLockRecoardViewModel: ObservableObject {
+    @Published var viewItems: [ViewItem] = []
+    @Published var lockedBalanceTitle: String = ""
+    @Published var isLoading: Bool = true
+    @Published var errorMessage: String?
+    
     private let coinRate: Decimal = pow(10, 8)
     
     private let wallet: Wallet
     private let adapter: SafeCoinAdapter
-
-    public var lockedBalanceTitle: String?
-    
-    private var viewItemsRelay = BehaviorRelay<[ViewItem]>(value: [])
-    
-    private var viewItems = [ViewItem]()
     
     init(wallet: Wallet, adapter: SafeCoinAdapter) {
         self.wallet = wallet
         self.adapter = adapter
         
-        guard wallet.coin.uid == safeCoinUid  && wallet.token.blockchain.type == .safe else { return }
-        guard let account = Core.shared.accountManager.activeAccount else { return }
-        if let state = WalletAdapterService(account: account, adapterManager: Core.shared.adapterManager).state(wallet: wallet), state == .synced {
-            let lockedBalanceData = adapter.balanceData
-            let lockUxto = adapter.safeCoinKit.getConfirmedUnspentOutputProvider().getLockUxto()
-            let lockedValue = syncLockedRecordItems(items: lockUxto)
-            let title = "safe_lock.recoard.title".localized("\(lockedBalanceData.locked + lockedValue)")
-            lockedBalanceTitle = title
+        Task {
+            await syncData()
         }
     }
     
-    private func syncLockedRecordItems(items: [UnspentOutput]) -> Decimal {
+    private func syncData() async {
+        guard wallet.coin.uid == safeCoinUid && wallet.token.blockchain.type == .safe else {
+            await MainActor.run { isLoading = false }
+            return
+        }
+        guard let account = Core.shared.accountManager.activeAccount else {
+            await MainActor.run { isLoading = false }
+            return
+        }
         
+        let service = WalletAdapterService(account: account, adapterManager: Core.shared.adapterManager)
+        let state = service.state(wallet: wallet)
+        
+        if state == .synced {
+            let lockedBalanceData = adapter.balanceData
+            let lockUxto = adapter.safeCoinKit.getConfirmedUnspentOutputProvider().getLockUxto()
+            let (items, lockedValue) = await Task.detached { [weak self] in
+                guard let self = self else { return ([ViewItem](), Decimal.zero) }
+                return self.syncLockedRecordItemsOnBackground(items: lockUxto)
+            }.value
+            
+            let title = "safe_lock.recoard.title".localized("\(lockedBalanceData.locked + lockedValue)")
+            
+            await MainActor.run {
+                self.viewItems = items
+                self.lockedBalanceTitle = title
+                self.isLoading = false
+            }
+        } else {
+            await MainActor.run { isLoading = false }
+        }
+    }
+    
+    private func syncLockedRecordItemsOnBackground(items: [UnspentOutput]) -> ([ViewItem], Decimal) {
         let lastHeight: Int = adapter.lastBlockInfo?.height ?? 0
         var totalLockedValue: Decimal = 0
+        var tempViewItems: [ViewItem] = []
         
         for item in items {
-            var height: Int = 0
-            if let h = item.blockHeight {
-                height = h
-            }else {
-                 height = lastHeight
-            }
+            let height: Int = item.blockHeight ?? lastHeight
             if let unlockedHeight = item.output.unlockedHeight {
                 let lockAmount = (Decimal(item.output.value) / coinRate)
                 totalLockedValue += lockAmount
                 let lockMonth = (unlockedHeight - height) / 86300
                 let isLocked = lastHeight <= unlockedHeight
-                let viewItem = ViewItem(height: height, lockAmount: lockAmount.formattedAmount, lockMonth: lockMonth, isLocked: isLocked, address: item.output.address ?? "")
-                viewItems.append(viewItem)
+                let viewItem = ViewItem(
+                    height: height,
+                    lockAmount: lockAmount.formattedAmount,
+                    lockMonth: lockMonth,
+                    isLocked: isLocked,
+                    address: item.output.address ?? ""
+                )
+                tempViewItems.append(viewItem)
             }
         }
-        viewItemsRelay.accept(viewItems.sorted(by: descending))
-        return totalLockedValue
+        
+        let sortedItems = tempViewItems.sorted(by: descending)
+        return (sortedItems, totalLockedValue)
     }
     
     private let descending: (ViewItem, ViewItem) -> Bool = { lhsItem, rhsItem in
-        let lhsHeight = lhsItem.height
-        let rhsHeight = rhsItem.height
-        let lhsLockMonth = lhsItem.lockMonth
-        let rhsLockMonth = rhsItem.lockMonth
-
-        if lhsHeight == rhsHeight {
-            return lhsLockMonth < rhsLockMonth
+        if lhsItem.height == rhsItem.height {
+            return lhsItem.lockMonth < rhsItem.lockMonth
         }
-
-        return lhsHeight > rhsHeight
-    }
-
-}
-
-extension LineLockRecoardViewModel {
-    
-    
-    var viewItemsDriver: Driver<[ViewItem]> {
-        viewItemsRelay.asDriver()
+        return lhsItem.height > rhsItem.height
     }
     
-    struct ViewItem {
+    func copyAddress(_ address: String) {
+        UIPasteboard.general.string = address
+        HudHelper.instance.show(banner: .copied)
+    }
+    
+    struct ViewItem: Identifiable, Equatable {
+        let id = UUID()
         let height: Int
         let lockAmount: String
         let lockMonth: Int
@@ -92,11 +110,15 @@ extension LineLockRecoardViewModel {
 }
 
 extension Decimal {
-    var formattedAmount: String {
+    private static let amountFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.usesSignificantDigits = true
         formatter.usesGroupingSeparator = false
-        return formatter.string(from: self as NSDecimalNumber)!
+        return formatter
+    }()
+    
+    var formattedAmount: String {
+        Self.amountFormatter.string(from: self as NSDecimalNumber) ?? "0"
     }
 }

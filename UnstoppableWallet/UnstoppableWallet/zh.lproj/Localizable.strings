@@ -2607,6 +2607,7 @@
 
 "safe_lock.recoard.nav" = "锁仓记录";
 "safe_lock.recoard.title" = "总锁定：%@ SAFE";
+"safe_lock.recoard.empty" = "暂无锁仓记录";
 
 "safe_withdraw.amount.locked" = "锁定金额";
 "safe_withdraw.unlock.height" = "解锁高度";
