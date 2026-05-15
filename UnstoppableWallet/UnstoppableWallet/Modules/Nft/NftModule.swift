@@ -1,4 +1,5 @@
 import UIKit
+import SwiftUI
 
 enum NftModule {
     static func viewController() -> UIViewController? {
@@ -24,5 +25,17 @@ enum NftModule {
         let headerViewModel = NftHeaderViewModel(service: service)
 
         return NftViewController(viewModel: viewModel, headerViewModel: headerViewModel)
+    }
+}
+
+extension NftModule {
+    struct View: UIViewControllerRepresentable {
+        typealias UIViewControllerType = UIViewController
+
+        func makeUIViewController(context _: Context) -> UIViewController {
+            ThemeNavigationController(rootViewController: NftModule.viewController() ?? UIViewController())
+        }
+
+        func updateUIViewController(_: UIViewController, context _: UIViewControllerRepresentableContext<View>) {}
     }
 }

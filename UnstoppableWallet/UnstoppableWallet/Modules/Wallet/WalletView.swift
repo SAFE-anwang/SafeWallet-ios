@@ -231,7 +231,13 @@ struct WalletView: View {
             }
 
             Spacer()
-            
+            IconButton(icon: "NFT", style: .secondary, size: .small) {
+                Coordinator.shared.present { _ in
+                    NftModule.View()
+                        .ignoresSafeArea()
+                }
+            }
+
             IconButton(icon: "arrow_swap_approval_2_24", style: .secondary, size: .small) {
                 Coordinator.shared.present { _ in
                     LiquidityRecordTabView(viewModel: LiquidityRecordTabViewModel())

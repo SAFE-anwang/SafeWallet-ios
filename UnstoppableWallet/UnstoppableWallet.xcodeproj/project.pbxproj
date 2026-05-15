@@ -1958,14 +1958,12 @@
 		670291BD2FAF248D00AF6D75 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 670289E22FAF248D00AF6D75 /* InfoPlist.strings */; };
 		670291BE2FAF248D00AF6D75 /* Manrope-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 670281832FAF248D00AF6D75 /* Manrope-SemiBold.ttf */; };
 		670291BF2FAF248D00AF6D75 /* Unstoppable.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 670289EF2FAF248D00AF6D75 /* Unstoppable.storekit */; };
-		670291C02FAF248D00AF6D75 /* Production.template.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 6702806B2FAF248D00AF6D75 /* Production.template.xcconfig */; };
 		670291C12FAF248D00AF6D75 /* translation_snapshot.json in Resources */ = {isa = PBXBuildFile; fileRef = 670289EE2FAF248D00AF6D75 /* translation_snapshot.json */; };
 		670291C22FAF248D00AF6D75 /* Development.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 670280672FAF248D00AF6D75 /* Development.xcconfig */; };
 		670291C32FAF248D00AF6D75 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 670289D72FAF248D00AF6D75 /* Colors.xcassets */; };
 		670291C42FAF248D00AF6D75 /* AppIconDev.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 670289D42FAF248D00AF6D75 /* AppIconDev.xcassets */; };
 		670291C52FAF248D00AF6D75 /* AppIconAlternate.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 670289D32FAF248D00AF6D75 /* AppIconAlternate.xcassets */; };
 		670291C62FAF248D00AF6D75 /* Production.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 6702806A2FAF248D00AF6D75 /* Production.xcconfig */; };
-		670291C72FAF248D00AF6D75 /* Development.template.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 670280682FAF248D00AF6D75 /* Development.template.xcconfig */; };
 		670291C82FAF248D00AF6D75 /* Manrope-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 670281812FAF248D00AF6D75 /* Manrope-Medium.ttf */; };
 		670291C92FAF248D00AF6D75 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 670289D62FAF248D00AF6D75 /* Assets.xcassets */; };
 		670291CA2FAF248D00AF6D75 /* Manrope-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 670281822FAF248D00AF6D75 /* Manrope-Regular.ttf */; };
@@ -1976,14 +1974,12 @@
 		670291D02FAF248D00AF6D75 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 670289E22FAF248D00AF6D75 /* InfoPlist.strings */; };
 		670291D12FAF248D00AF6D75 /* Manrope-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 670281832FAF248D00AF6D75 /* Manrope-SemiBold.ttf */; };
 		670291D22FAF248D00AF6D75 /* Unstoppable.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 670289EF2FAF248D00AF6D75 /* Unstoppable.storekit */; };
-		670291D32FAF248D00AF6D75 /* Production.template.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 6702806B2FAF248D00AF6D75 /* Production.template.xcconfig */; };
 		670291D42FAF248D00AF6D75 /* translation_snapshot.json in Resources */ = {isa = PBXBuildFile; fileRef = 670289EE2FAF248D00AF6D75 /* translation_snapshot.json */; };
 		670291D52FAF248D00AF6D75 /* Development.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 670280672FAF248D00AF6D75 /* Development.xcconfig */; };
 		670291D62FAF248D00AF6D75 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 670289D72FAF248D00AF6D75 /* Colors.xcassets */; };
 		670291D72FAF248D00AF6D75 /* AppIconDev.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 670289D42FAF248D00AF6D75 /* AppIconDev.xcassets */; };
 		670291D82FAF248D00AF6D75 /* AppIconAlternate.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 670289D32FAF248D00AF6D75 /* AppIconAlternate.xcassets */; };
 		670291D92FAF248D00AF6D75 /* Production.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 6702806A2FAF248D00AF6D75 /* Production.xcconfig */; };
-		670291DA2FAF248D00AF6D75 /* Development.template.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 670280682FAF248D00AF6D75 /* Development.template.xcconfig */; };
 		670291DB2FAF248D00AF6D75 /* Manrope-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 670281812FAF248D00AF6D75 /* Manrope-Medium.ttf */; };
 		670291DC2FAF248D00AF6D75 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 670289D62FAF248D00AF6D75 /* Assets.xcassets */; };
 		670291DD2FAF248D00AF6D75 /* HapticGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670289212FAF248D00AF6D75 /* HapticGenerator.swift */; };
@@ -4204,10 +4200,8 @@
 		670280642FAF248D00AF6D75 /* Publisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Publisher.swift; sourceTree = "<group>"; };
 		670280662FAF248D00AF6D75 /* Development.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Development.entitlements; sourceTree = "<group>"; };
 		670280672FAF248D00AF6D75 /* Development.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Development.xcconfig; sourceTree = "<group>"; };
-		670280682FAF248D00AF6D75 /* Development.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Development.template.xcconfig; sourceTree = "<group>"; };
 		670280692FAF248D00AF6D75 /* Production.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Production.entitlements; sourceTree = "<group>"; };
 		6702806A2FAF248D00AF6D75 /* Production.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Production.xcconfig; sourceTree = "<group>"; };
-		6702806B2FAF248D00AF6D75 /* Production.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Production.template.xcconfig; sourceTree = "<group>"; };
 		6702806D2FAF248D00AF6D75 /* BitcoinCore+Hodler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BitcoinCore+Hodler.swift"; sourceTree = "<group>"; };
 		6702806F2FAF248D00AF6D75 /* CancelTransactionJsonRpc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelTransactionJsonRpc.swift; sourceTree = "<group>"; };
 		670280702FAF248D00AF6D75 /* MerkleGetTransactionByHashJsonRpc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerkleGetTransactionByHashJsonRpc.swift; sourceTree = "<group>"; };
@@ -6430,10 +6424,8 @@
 			children = (
 				670280662FAF248D00AF6D75 /* Development.entitlements */,
 				670280672FAF248D00AF6D75 /* Development.xcconfig */,
-				670280682FAF248D00AF6D75 /* Development.template.xcconfig */,
 				670280692FAF248D00AF6D75 /* Production.entitlements */,
 				6702806A2FAF248D00AF6D75 /* Production.xcconfig */,
-				6702806B2FAF248D00AF6D75 /* Production.template.xcconfig */,
 			);
 			path = Configuration;
 			sourceTree = "<group>";
@@ -10052,13 +10044,6 @@
 			path = Security;
 			sourceTree = "<group>";
 		};
-		670287022FAF248D00AF6D75 /* Support */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Support;
-			sourceTree = "<group>";
-		};
 		670287052FAF248D00AF6D75 /* Terms */ = {
 			isa = PBXGroup;
 			children = (
@@ -10082,7 +10067,6 @@
 				670286FA2FAF248D00AF6D75 /* Main */,
 				670286FD2FAF248D00AF6D75 /* Privacy */,
 				670287012FAF248D00AF6D75 /* Security */,
-				670287022FAF248D00AF6D75 /* Support */,
 				670287052FAF248D00AF6D75 /* Terms */,
 			);
 			path = Settings;
@@ -12085,14 +12069,12 @@
 				670291BD2FAF248D00AF6D75 /* InfoPlist.strings in Resources */,
 				670291BE2FAF248D00AF6D75 /* Manrope-SemiBold.ttf in Resources */,
 				670291BF2FAF248D00AF6D75 /* Unstoppable.storekit in Resources */,
-				670291C02FAF248D00AF6D75 /* Production.template.xcconfig in Resources */,
 				670291C12FAF248D00AF6D75 /* translation_snapshot.json in Resources */,
 				670291C22FAF248D00AF6D75 /* Development.xcconfig in Resources */,
 				670291C32FAF248D00AF6D75 /* Colors.xcassets in Resources */,
 				670291C42FAF248D00AF6D75 /* AppIconDev.xcassets in Resources */,
 				670291C52FAF248D00AF6D75 /* AppIconAlternate.xcassets in Resources */,
 				670291C62FAF248D00AF6D75 /* Production.xcconfig in Resources */,
-				670291C72FAF248D00AF6D75 /* Development.template.xcconfig in Resources */,
 				670291C82FAF248D00AF6D75 /* Manrope-Medium.ttf in Resources */,
 				670291C92FAF248D00AF6D75 /* Assets.xcassets in Resources */,
 			);
@@ -12110,14 +12092,12 @@
 				670291D02FAF248D00AF6D75 /* InfoPlist.strings in Resources */,
 				670291D12FAF248D00AF6D75 /* Manrope-SemiBold.ttf in Resources */,
 				670291D22FAF248D00AF6D75 /* Unstoppable.storekit in Resources */,
-				670291D32FAF248D00AF6D75 /* Production.template.xcconfig in Resources */,
 				670291D42FAF248D00AF6D75 /* translation_snapshot.json in Resources */,
 				670291D52FAF248D00AF6D75 /* Development.xcconfig in Resources */,
 				670291D62FAF248D00AF6D75 /* Colors.xcassets in Resources */,
 				670291D72FAF248D00AF6D75 /* AppIconDev.xcassets in Resources */,
 				670291D82FAF248D00AF6D75 /* AppIconAlternate.xcassets in Resources */,
 				670291D92FAF248D00AF6D75 /* Production.xcconfig in Resources */,
-				670291DA2FAF248D00AF6D75 /* Development.template.xcconfig in Resources */,
 				670291DB2FAF248D00AF6D75 /* Manrope-Medium.ttf in Resources */,
 				670291DC2FAF248D00AF6D75 /* Assets.xcassets in Resources */,
 			);
