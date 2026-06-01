@@ -12,12 +12,14 @@ class TransactionAdapterManager {
     private let adaptersReadyRelay = PublishRelay<Void>()
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).transactions_adapter_manager", qos: .userInitiated)
+    private let queueKey = DispatchSpecificKey<Void>()
     private var _adapterMap = [TransactionSource: ITransactionsAdapter]()
 
     init(adapterManager: AdapterManager, evmBlockchainManager: EvmBlockchainManager, adapterFactory: AdapterFactory) {
         self.adapterManager = adapterManager
         self.evmBlockchainManager = evmBlockchainManager
         self.adapterFactory = adapterFactory
+        queue.setSpecific(key: queueKey, value: ())
 
         adapterManager.adapterDataReadyObservable
             .observeOn(SerialDispatchQueueScheduler(qos: .userInitiated))
@@ -67,7 +69,11 @@ class TransactionAdapterManager {
 
 extension TransactionAdapterManager {
     var adapterMap: [TransactionSource: ITransactionsAdapter] {
-        queue.sync { _adapterMap }
+        if DispatchQueue.getSpecific(key: queueKey) != nil {
+            return _adapterMap
+        }
+
+        return queue.sync { _adapterMap }
     }
 
     var adaptersReadyObservable: Observable<Void> {
@@ -75,6 +81,10 @@ extension TransactionAdapterManager {
     }
 
     func adapter(for source: TransactionSource) -> ITransactionsAdapter? {
-        queue.sync { _adapterMap[source] }
+        if DispatchQueue.getSpecific(key: queueKey) != nil {
+            return _adapterMap[source]
+        }
+
+        return queue.sync { _adapterMap[source] }
     }
 }

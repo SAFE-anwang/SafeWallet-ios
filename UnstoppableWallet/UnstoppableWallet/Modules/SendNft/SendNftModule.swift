@@ -3,6 +3,30 @@ import MarketKit
 import UIKit
 
 enum SendNftModule {
+    struct DisplayMetadata {
+        let name: String
+        let previewImageUrl: String?
+
+        var assetShortMetadata: NftAssetShortMetadata {
+            NftAssetShortMetadata(
+                nftUid: nftUid,
+                providerCollectionUid: "",
+                name: name,
+                previewImageUrl: previewImageUrl,
+                onSale: false,
+                lastSalePrice: nil
+            )
+        }
+
+        private let nftUid: NftUid
+
+        init(nftUid: NftUid, name: String, previewImageUrl: String?) {
+            self.nftUid = nftUid
+            self.name = name
+            self.previewImageUrl = previewImageUrl
+        }
+    }
+
     private static func addressService(blockchainType: BlockchainType) -> AddressService {
         let evmAddressParserItem = EvmAddressParser()
 
@@ -19,9 +43,15 @@ enum SendNftModule {
         return AddressService(mode: .parsers(addressUriParser, addressParserChain), marketKit: Core.shared.marketKit, contactBookManager: Core.shared.contactManager, blockchainType: blockchainType, filter: nil)
     }
 
-    private static func eip721ViewController(evmKitWrapper: EvmKitWrapper, nftUid: NftUid, adapter: INftAdapter) -> UIViewController {
+    private static func eip721ViewController(evmKitWrapper: EvmKitWrapper, nftUid: NftUid, adapter: INftAdapter, displayMetadata: DisplayMetadata?) -> UIViewController {
         let addressService = addressService(blockchainType: nftUid.blockchainType)
-        let service = SendEip721Service(nftUid: nftUid, adapter: adapter, addressService: addressService, nftMetadataManager: Core.shared.nftMetadataManager)
+        let service = SendEip721Service(
+            nftUid: nftUid,
+            adapter: adapter,
+            addressService: addressService,
+            nftMetadataManager: Core.shared.nftMetadataManager,
+            overrideAssetShortMetadata: displayMetadata?.assetShortMetadata
+        )
 
         let recipientAddressViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
         let viewModel = SendEip721ViewModel(service: service)
@@ -29,9 +59,16 @@ enum SendNftModule {
         return SendEip721ViewController(evmKitWrapper: evmKitWrapper, viewModel: viewModel, recipientViewModel: recipientAddressViewModel)
     }
 
-    private static func eip1155ViewController(evmKitWrapper: EvmKitWrapper, nftUid: NftUid, balance: Int, adapter: INftAdapter) -> UIViewController {
+    private static func eip1155ViewController(evmKitWrapper: EvmKitWrapper, nftUid: NftUid, balance: Int, adapter: INftAdapter, displayMetadata: DisplayMetadata?) -> UIViewController {
         let addressService = addressService(blockchainType: nftUid.blockchainType)
-        let service = SendEip1155Service(nftUid: nftUid, balance: balance, adapter: adapter, addressService: addressService, nftMetadataManager: Core.shared.nftMetadataManager)
+        let service = SendEip1155Service(
+            nftUid: nftUid,
+            balance: balance,
+            adapter: adapter,
+            addressService: addressService,
+            nftMetadataManager: Core.shared.nftMetadataManager,
+            overrideAssetShortMetadata: displayMetadata?.assetShortMetadata
+        )
 
         let viewModel = SendEip1155ViewModel(service: service)
         let availableBalanceViewModel = SendEip1155AvailableBalanceViewModel(service: service)
@@ -42,7 +79,7 @@ enum SendNftModule {
         return SendEip1155ViewController(evmKitWrapper: evmKitWrapper, viewModel: viewModel, availableBalanceViewModel: availableBalanceViewModel, amountViewModel: amountViewModel, recipientViewModel: recipientAddressViewModel)
     }
 
-    static func viewController(nftUid: NftUid) -> UIViewController? {
+    static func viewController(nftUid: NftUid, displayMetadata: DisplayMetadata? = nil) -> UIViewController? {
         guard let account = Core.shared.accountManager.activeAccount, !account.watchAccount else {
             return nil
         }
@@ -75,9 +112,9 @@ enum SendNftModule {
 
             switch evmNftRecord.type {
             case .eip721:
-                viewController = eip721ViewController(evmKitWrapper: evmKitWrapper, nftUid: nftUid, adapter: adapter)
+                viewController = eip721ViewController(evmKitWrapper: evmKitWrapper, nftUid: nftUid, adapter: adapter, displayMetadata: displayMetadata)
             case .eip1155:
-                viewController = eip1155ViewController(evmKitWrapper: evmKitWrapper, nftUid: nftUid, balance: nftRecord.balance, adapter: adapter)
+                viewController = eip1155ViewController(evmKitWrapper: evmKitWrapper, nftUid: nftUid, balance: nftRecord.balance, adapter: adapter, displayMetadata: displayMetadata)
             }
 
         default:

@@ -11,14 +11,17 @@ class SendEip1155ViewModel {
     private let proceedEnabledRelay = BehaviorRelay<Bool>(value: false)
     private let amountCautionRelay = BehaviorRelay<Caution?>(value: nil)
     private let proceedRelay = PublishRelay<SendEvmData>()
+    private let nftImageRelay = BehaviorRelay<NftImage?>(value: nil)
 
     init(service: SendEip1155Service) {
         self.service = service
 
         subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(state: $0) }
         subscribe(disposeBag, service.amountCautionObservable) { [weak self] in self?.sync(amountCaution: $0) }
+        subscribe(disposeBag, service.nftImageObservable) { [weak self] in self?.nftImageRelay.accept($0) }
 
         sync(state: service.state)
+        nftImageRelay.accept(service.nftImage)
     }
 
     private func sync(state: SendEip1155Service.State) {
@@ -58,7 +61,11 @@ extension SendEip1155ViewModel {
     }
 
     var nftImage: NftImage? {
-        service.nftImage
+        nftImageRelay.value
+    }
+
+    var nftImageDriver: Driver<NftImage?> {
+        nftImageRelay.asDriver()
     }
 
     var name: String {

@@ -14,6 +14,7 @@ class SendEip721Service {
     private let adapter: INftAdapter
     private let addressService: AddressService
     private let disposeBag = DisposeBag()
+    private let nftImageRelay = PublishRelay<NftImage?>()
 
     private let stateRelay = PublishRelay<State>()
     private(set) var state: State = .notReady {
@@ -24,13 +25,14 @@ class SendEip721Service {
 
     private var addressData: AddressData?
 
-    init(nftUid: NftUid, adapter: INftAdapter, addressService: AddressService, nftMetadataManager: NftMetadataManager) {
+    init(nftUid: NftUid, adapter: INftAdapter, addressService: AddressService, nftMetadataManager: NftMetadataManager, overrideAssetShortMetadata: NftAssetShortMetadata? = nil) {
         self.nftUid = nftUid
         self.adapter = adapter
         self.addressService = addressService
 
-        assetShortMetadata = nftMetadataManager.assetShortMetadata(nftUid: nftUid)
+        assetShortMetadata = overrideAssetShortMetadata ?? nftMetadataManager.assetShortMetadata(nftUid: nftUid)
         nftImage = resolveNftImage()
+        fetchNftImageIfNeeded()
 
         subscribe(disposeBag, addressService.stateObservable) { [weak self] in self?.sync(addressState: $0) }
     }
@@ -77,11 +79,49 @@ class SendEip721Service {
             return nil
         }
     }
+
+    private func fetchNftImageIfNeeded() {
+        guard nftImage == nil, let imageUrl = assetShortMetadata?.previewImageUrl, let url = URL(string: imageUrl) else {
+            return
+        }
+
+        if url.pathExtension == "svg" {
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self else {
+                    return
+                }
+
+                guard let data = try? Data(contentsOf: url), let svgString = String(data: data, encoding: .utf8) else {
+                    return
+                }
+
+                try? ImageCache.default.diskStorage.store(value: data, forKey: url.absoluteString)
+
+                DispatchQueue.main.async {
+                    self.nftImage = .svg(string: svgString)
+                    self.nftImageRelay.accept(self.nftImage)
+                }
+            }
+        } else {
+            KingfisherManager.shared.retrieveImage(with: url) { [weak self] result in
+                guard let self, case let .success(value) = result else {
+                    return
+                }
+
+                self.nftImage = .image(image: value.image)
+                self.nftImageRelay.accept(self.nftImage)
+            }
+        }
+    }
 }
 
 extension SendEip721Service {
     var stateObservable: Observable<State> {
         stateRelay.asObservable()
+    }
+
+    var nftImageObservable: Observable<NftImage?> {
+        nftImageRelay.asObservable()
     }
 }
 
