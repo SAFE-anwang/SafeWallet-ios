@@ -91,6 +91,7 @@ class Core {
     let nftMetadataManager: NftMetadataManager
     let nftAdapterManager: NftAdapterManager
     let nftMetadataSyncer: NftMetadataSyncer
+    let nftV2InventoryService: NftV2InventoryService
 
     let walletConnectRequestHandler: WalletConnectRequestChain
     let walletConnectManager: WalletConnectManager
@@ -278,10 +279,10 @@ class Core {
         nftMetadataManager = NftMetadataManager(networkManager: networkManager, marketKit: marketKit, storage: nftStorage)
         nftAdapterManager = NftAdapterManager(
             walletManager: walletManager,
+            accountManager: accountManager,
             evmBlockchainManager: evmBlockchainManager
         )
         nftMetadataSyncer = NftMetadataSyncer(nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, nftStorage: nftStorage)
-
         walletConnectRequestHandler = WalletConnectRequestChain.instance(evmBlockchainManager: evmBlockchainManager, stellarKitManager: stellarKitManager, accountManager: accountManager)
 
         let walletClientInfo = WalletConnectClientInfo(
@@ -348,6 +349,32 @@ class Core {
             adapterManager: adapterManager,
             evmBlockchainManager: evmBlockchainManager,
             adapterFactory: adapterFactory
+        )
+        let nftV2MarketProvider = NftV2MarketProvider()
+        let nftV2OnChainMetadataProvider = NftV2OnChainMetadataProvider(
+            evmBlockchainManager: evmBlockchainManager,
+            networkManager: networkManager
+        )
+        let nftV2Providers: [NftV2Chain: INftV2InventoryProvider] = [
+            .ethereum: NftV2WalletInventoryProvider(chain: .ethereum, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager),
+            .polygon: NftV2WalletInventoryProvider(chain: .polygon, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager),
+            .arbitrum: NftV2WalletInventoryProvider(chain: .arbitrum, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager),
+            .optimism: NftV2WalletInventoryProvider(chain: .optimism, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager),
+            .base: NftV2WalletInventoryProvider(chain: .base, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager),
+            .binanceSmartChain: NftV2WalletInventoryProvider(chain: .binanceSmartChain, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager)
+        ]
+        nftV2InventoryService = NftV2InventoryService(
+            accountManager: accountManager,
+            addressResolver: NftV2AddressResolver(evmBlockchainManager: evmBlockchainManager),
+            nftAdapterManager: nftAdapterManager,
+            nftMetadataManager: nftMetadataManager,
+            providers: nftV2Providers,
+            marketProvider: nftV2MarketProvider,
+            favoritesStore: NftV2FavoritesStore(accountManager: accountManager),
+            cacheStore: NftV2SnapshotCacheStore(),
+            walletManager: walletManager,
+            transactionAdapterManager: transactionAdapterManager,
+            pendingTransferStore: NftV2PendingTransferStore()
         )
 
         rateAppManager = RateAppManager(walletManager: walletManager, adapterManager: adapterManager, localStorage: localStorage)
@@ -461,6 +488,7 @@ class Core {
             balanceHiddenManager: balanceHiddenManager,
             statManager: statManager,
             nftMetadataSyncer: nftMetadataSyncer,
+            nftV2InventoryService: nftV2InventoryService,
             tonKitManager: tonKitManager,
             stellarKitManager: stellarKitManager,
             solanaKitManager: solanaKitManager

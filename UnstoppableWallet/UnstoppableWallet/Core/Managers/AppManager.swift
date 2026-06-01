@@ -21,6 +21,7 @@ class AppManager {
     private let balanceHiddenManager: BalanceHiddenManager
     private let statManager: StatManager
     private let nftMetadataSyncer: NftMetadataSyncer
+    private let nftV2InventoryService: NftV2InventoryService
     private let tonKitManager: TonKitManager
     private let stellarKitManager: StellarKitManager
     private let solanaKitManager: SolanaKitManager
@@ -39,7 +40,7 @@ class AppManager {
          appVersionManager: AppVersionManager, rateAppManager: RateAppManager,
          logRecordManager: LogRecordManager, deeplinkStorage: DeeplinkStorage,
          evmLabelManager: EvmLabelManager, balanceHiddenManager: BalanceHiddenManager, statManager: StatManager,
-         nftMetadataSyncer: NftMetadataSyncer, tonKitManager: TonKitManager,
+         nftMetadataSyncer: NftMetadataSyncer, nftV2InventoryService: NftV2InventoryService, tonKitManager: TonKitManager,
          stellarKitManager: StellarKitManager, solanaKitManager: SolanaKitManager)
     {
         self.accountManager = accountManager
@@ -58,6 +59,7 @@ class AppManager {
         self.balanceHiddenManager = balanceHiddenManager
         self.statManager = statManager
         self.nftMetadataSyncer = nftMetadataSyncer
+        self.nftV2InventoryService = nftV2InventoryService
         self.tonKitManager = tonKitManager
         self.stellarKitManager = stellarKitManager
         self.solanaKitManager = solanaKitManager
@@ -125,6 +127,7 @@ extension AppManager {
         statManager.sendStats()
 
         nftMetadataSyncer.sync()
+        nftV2InventoryService.refresh()
 
         tonKitManager.tonKit?.startListener()
         stellarKitManager.stellarKit?.startListener()
