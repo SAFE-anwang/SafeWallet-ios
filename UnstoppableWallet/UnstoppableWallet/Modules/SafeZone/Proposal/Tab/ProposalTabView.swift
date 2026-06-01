@@ -7,6 +7,7 @@ struct ProposalTabView: View {
     @State private var loadedTabs = [ProposalModule.Tab]()
     @Binding private var isPresented: Bool
 
+    @MainActor
     init(viewModel: ProposalTabViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
         _isPresented = isPresented
@@ -102,4 +103,3 @@ struct ProposalTabView: View {
         }
     }
 }
-

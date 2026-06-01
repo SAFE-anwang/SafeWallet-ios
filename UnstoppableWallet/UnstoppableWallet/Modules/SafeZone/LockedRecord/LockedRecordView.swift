@@ -72,13 +72,13 @@ struct LockedRecordView: View {
         ToolbarItem(placement: .navigationBarTrailing) {
             Button(action: {
                 Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                    confirmWithdrawView(ids: [], isAll: true, isPresented: isPresented)
+                    confirmWithdrawView(item: nil, isAll: true, isPresented: isPresented)
                 }
             }) {
                 Text("safe_zone.one_click_withdraw".localized)
-                    .themeSubhead1(color: viewModel.withdrawEnableIds.count > 0 ? .themeYellow : .themeGray)
+                    .themeSubhead1(color: viewModel.hasWithdrawableItems ? .themeYellow : .themeGray)
             }
-            .disabled(viewModel.withdrawEnableIds.count == 0)
+            .disabled(!viewModel.hasWithdrawableItems)
         }
     }
     
@@ -108,7 +108,7 @@ struct LockedRecordView: View {
                  isShowAddLock: item.addLockDayEnable)
         {
             Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                confirmWithdrawView(ids: [BigUInt(item.id)], isPresented: isPresented)
+                confirmWithdrawView(item: item, isPresented: isPresented)
             }
         } addLockAction: {
             guard let vm = AddLockDaysModule.viewModel(ids: [BigUInt(item.id)]) else { return }
@@ -118,7 +118,7 @@ struct LockedRecordView: View {
         }
     }
     
-    @ViewBuilder private func confirmWithdrawView(ids: [BigUInt], isAll: Bool = false, isPresented: Binding<Bool>) -> some View {
+    @ViewBuilder private func confirmWithdrawView(item: WithdrawItemRecord?, isAll: Bool = false, isPresented: Binding<Bool>) -> some View {
         BottomSheetView(
             items: [
                 .title(icon: nil, title: "safe_zone.safe4.withdraw".localized),
@@ -127,8 +127,8 @@ struct LockedRecordView: View {
                     .init(style: .yellow, title: "button.ok".localized) {
                         if isAll {
                             viewModel.allWithdraw()
-                        }else {
-                            viewModel.withdraw(ids: ids)
+                        } else if let item {
+                            viewModel.withdraw(item: item)
                         }
                         isPresented.wrappedValue = false
                     },

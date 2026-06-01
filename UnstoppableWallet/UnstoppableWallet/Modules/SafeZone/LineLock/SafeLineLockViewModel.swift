@@ -7,6 +7,7 @@ import EvmKit
 import BigInt
 
 class SafeLineLockViewModel: ObservableObject {
+    let securityCheckViewModel: AddressSecurityCheckViewModel
     
     @Published var availableBalance: Decimal?
     @Published var currency: Currency
@@ -40,11 +41,14 @@ class SafeLineLockViewModel: ObservableObject {
     private(set) var account: Account
     private var disposeBag = DisposeBag()
     private var cancellables = Set<AnyCancellable>()
+    @Published private(set) var checkedResolvedAddress: ResolvedAddress?
+    @Published private(set) var addressSecurityState: AddressSecurityCheckViewModel.State = .idle
 
     init(wallet: Wallet, account: Account, adapter: EvmAdapter) {
         self.wallet = wallet
         self.account = account
         self.adapter = adapter
+        self.securityCheckViewModel = AddressSecurityCheckViewModel(token: wallet.token)
         self.currency = currencyManager.baseCurrency
         self.availableBalance = adapter.balanceData.available
         self.parserChain = AddressParserFactory.parserChain(blockchainType: wallet.token.blockchainType)
@@ -67,10 +71,31 @@ class SafeLineLockViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] price in self?.rate = price.value }
             .store(in: &cancellables)
+
+        securityCheckViewModel.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.syncFromCheckState(state)
+            }
+            .store(in: &cancellables)
+
+        syncAddressSecurityState()
     }
     
     var token: Token {
         wallet.token
+    }
+
+    var addressIssueTypes: [AddressSecurityIssueType] {
+        checkedResolvedAddress?.issueTypes ?? []
+    }
+
+    var isAddressChecking: Bool {
+        if case .checking = addressSecurityState {
+            return true
+        }
+
+        return false
     }
     
     var amount: Decimal? {
@@ -221,6 +246,28 @@ extension SafeLineLockViewModel {
 
 // address
 extension SafeLineLockViewModel {
+    private func syncAddressSecurityState() {
+        switch addressResult {
+        case .idle, .loading, .invalid:
+            checkedResolvedAddress = nil
+            addressSecurityState = .idle
+            securityCheckViewModel.check(address: nil)
+        case let .valid(success):
+            securityCheckViewModel.check(address: success.address)
+        }
+    }
+
+    private func syncFromCheckState(_ checkState: AddressSecurityCheckViewModel.State) {
+        addressSecurityState = checkState
+
+        switch checkState {
+        case .idle, .checking:
+            checkedResolvedAddress = nil
+        case let .completed(address, detectedTypes):
+            checkedResolvedAddress = ResolvedAddress(address: address.raw, issueTypes: detectedTypes)
+        }
+    }
+
     private func validateAddress(address: String) {
         parserChain
             .handle(address: address)
@@ -236,17 +283,23 @@ extension SafeLineLockViewModel {
     private func sync(_ address: Address?, uri: AddressUri?) {
         guard let address else {
             addressResult = .idle
+            syncAddressSecurityState()
+            syncSendData()
             return
         }
 
         addressResult = .valid(.init(address: address, uri: uri))
         addressCautionState = .none
+        syncAddressSecurityState()
+        syncSendData()
     }
 
     private func sync(_ error: Error, text: String) {
         addressResult = .invalid(.init(text: text, error: error))
         let caution = Caution(text: "watch_address.error.not_supported".localized, type: .error)
         addressCautionState = .caution(caution)
+        syncAddressSecurityState()
+        syncSendData()
     }
 }
 
@@ -383,4 +436,3 @@ extension SafeLineLockViewModel {
         case ready(data: TransactionData)
     }
 }
-

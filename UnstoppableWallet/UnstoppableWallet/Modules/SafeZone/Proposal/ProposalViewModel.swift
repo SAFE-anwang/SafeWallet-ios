@@ -10,13 +10,22 @@ import web3swift
 import Web3Core
 import HsExtensions
 
+@MainActor
 class ProposalViewModel {
+    private static let pageSize = 20
+    private static let cacheMaxAge: TimeInterval = 120
     let service: ProposalService
     private var safe4Page = Safe4PageControl(pageSize: 20, isReverse: true)
     private var stateRelay = PublishRelay<ProposalViewModel.State>()
     private var viewItems = [ProposalViewModel.ViewItem]()
     private let searchCautionRelay = BehaviorRelay<Caution?>(value:nil)
     let proposalStorageManager: ProposalStorageManager
+    private var allRequestTask: Task<Void, Never>?
+    private var catchUpTask: Task<Void, Never>?
+    private var recoveryTask: Task<Void, Never>?
+    private var targetTotalNumForCatchUp: Int?
+    private var cachedInfoById = [String: ProposalInfo]()
+    private var pendingRecoveryIds = Set<String>()
     @Published var hasNewProposal: Bool = false
 
     private(set) var state: ProposalViewModel.State = .loading {
@@ -34,13 +43,18 @@ class ProposalViewModel {
 extension ProposalViewModel {
 
     private func requestInfos(loadMore: Bool, completed: (()-> Void)?) {
+        guard allRequestTask == nil else { return }
         state = .loading
-        Task(priority: .userInitiated) { [service] in
-            do{
-                if !loadMore {
-                   let totalNum = try await service.getTotalNum()
-                    safe4Page.set(totalNum: totalNum)
+        allRequestTask = Task(priority: .userInitiated) { [service] in
+            defer {
+                Task { @MainActor in
+                    self.allRequestTask = nil
+                    self.startBackgroundCatchUpIfNeeded()
                 }
+            }
+            do{
+                let totalNum = try await service.getTotalNum()
+                reconcileTotal(latestTotalNum: totalNum)
                 guard safe4Page.totalNum > 0 else {
                     state = .completed(datas: [])
                     return
@@ -52,29 +66,24 @@ extension ProposalViewModel {
                 
                 let ids = try await service.proposalIds(page: safe4Page)
                 var results: [ViewItem] = []
-                var errors: [Error] = []
-                await withTaskGroup(of: Result<ViewItem, Error>.self) { taskGroup in
-                    for id in ids {
-                        taskGroup.addTask {
-                            do {
-                                let info = try await service.getInfo(id: id)
-                                let item = ViewItem(info: info)
-                                return .success(item)
-                            }catch{
-                                return .failure(ProposalError.getInfo)
-                            }
-                        }
+                var failedIds = [BigUInt]()
+                for id in ids {
+                    if Task.isCancelled { break }
+                    let key = id.description
+                    if let cached = cachedInfoById[key] {
+                        results.append(ViewItem(info: cached))
+                        continue
                     }
-                    for await result in taskGroup {
-                        switch result {
-                        case let .success(value):
-                            results.append(value)
-                        case let .failure(error):
-                            errors.append(error)
-                        }
+                    do {
+                        let info = try await service.getInfo(id: id)
+                        cachedInfoById[key] = info
+                        results.append(ViewItem(info: info))
+                    } catch {
+                        failedIds.append(id)
                     }
                 }
                 results.sort{ Int($0.info.id) > Int($1.info.id) }
+                scheduleRecovery(for: failedIds)
                 if results.count > 0 { safe4Page.plusPage() }
                 self.proposalStorageManager.save(infos: results.map{ ProposalInfoRecord(info: $0.info)})
                 self.proposalStorageManager.savePageControl(safe4Page)
@@ -82,7 +91,11 @@ extension ProposalViewModel {
                 state = .completed(datas: viewItems)
                 completed?()
             }catch{
-                state = .failed(error: error.localizedDescription)
+                if viewItems.isEmpty {
+                    state = .failed(error: error.localizedDescription)
+                } else {
+                    state = .completed(datas: viewItems)
+                }
             }
         }
     }
@@ -92,12 +105,198 @@ extension ProposalViewModel {
         var caches = proposalStorageManager.loadCaches().map{ViewItem(info: $0.transform())}
         caches.sort{ Int($0.info.id) > Int($1.info.id) }
         viewItems = caches
+        cachedInfoById = Dictionary(uniqueKeysWithValues: caches.map { ($0.info.id.description, $0.info) })
         safe4Page = pageControl
         state = .completed(datas: viewItems)
     }
     
     func clearCaches() {
+        allRequestTask?.cancel()
+        allRequestTask = nil
+        catchUpTask?.cancel()
+        catchUpTask = nil
+        recoveryTask?.cancel()
+        recoveryTask = nil
+        targetTotalNumForCatchUp = nil
+        cachedInfoById.removeAll()
+        pendingRecoveryIds.removeAll()
         proposalStorageManager.clearCaches()
+        viewItems.removeAll()
+        safe4Page = Safe4PageControl(pageSize: Self.pageSize, isReverse: true)
+        refresh()
+    }
+
+    private func reconcileTotal(latestTotalNum: Int) {
+        let currentTotal = safe4Page.totalNum
+        let loadedCount = viewItems.count
+        if currentTotal == 0 {
+            safe4Page = buildPageControl(totalNum: latestTotalNum, loadedCount: loadedCount)
+            targetTotalNumForCatchUp = nil
+            return
+        }
+        if latestTotalNum == currentTotal {
+            return
+        }
+        if latestTotalNum < currentTotal {
+            // when chain shrinks, invalidate cache to keep pagination offsets valid
+            cachedInfoById.removeAll()
+            viewItems.removeAll()
+            proposalStorageManager.clearCaches()
+            safe4Page = Safe4PageControl(pageSize: Self.pageSize, isReverse: true)
+            safe4Page.set(totalNum: latestTotalNum)
+            targetTotalNumForCatchUp = nil
+            catchUpTask?.cancel()
+            catchUpTask = nil
+            recoveryTask?.cancel()
+            recoveryTask = nil
+            pendingRecoveryIds.removeAll()
+            return
+        }
+        safe4Page = buildPageControl(totalNum: latestTotalNum, loadedCount: loadedCount)
+        targetTotalNumForCatchUp = latestTotalNum
+    }
+
+    private func buildPageControl(totalNum: Int, loadedCount: Int) -> Safe4PageControl {
+        var control = Safe4PageControl(pageSize: Self.pageSize, isReverse: true)
+        control.set(totalNum: totalNum)
+        guard loadedCount > 0 else { return control }
+        let pagesLoaded = Int(ceil(Double(loadedCount) / Double(Self.pageSize)))
+        if pagesLoaded > 0 {
+            for _ in 0..<pagesLoaded {
+                control.plusPage()
+            }
+        }
+        return control
+    }
+
+    private func startBackgroundCatchUpIfNeeded() {
+        guard case .All = service.type else { return }
+        guard catchUpTask == nil else { return }
+        guard let targetTotal = targetTotalNumForCatchUp else { return }
+        guard viewItems.count < targetTotal else {
+            targetTotalNumForCatchUp = nil
+            return
+        }
+        guard allRequestTask == nil else { return }
+
+        catchUpTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                Task { @MainActor in
+                    self.catchUpTask = nil
+                    self.startBackgroundCatchUpIfNeeded()
+                }
+            }
+
+            while !Task.isCancelled {
+                guard let targetTotal = targetTotalNumForCatchUp else { break }
+                if viewItems.count >= targetTotal {
+                    targetTotalNumForCatchUp = nil
+                    break
+                }
+                if allRequestTask != nil { break }
+                guard safe4Page.isAbleLoadMore else { break }
+
+                do {
+                    let ids = try await service.proposalIds(page: safe4Page)
+                    guard !ids.isEmpty else { break }
+                    safe4Page.plusPage()
+
+                    var items = [ViewItem]()
+                    var failedIds = [BigUInt]()
+                    for id in ids {
+                        if Task.isCancelled { break }
+                        let key = id.description
+                        if let cached = cachedInfoById[key] {
+                            items.append(ViewItem(info: cached))
+                            continue
+                        }
+                        if let info = try? await service.getInfo(id: id) {
+                            cachedInfoById[key] = info
+                            items.append(ViewItem(info: info))
+                        } else {
+                            failedIds.append(id)
+                        }
+                    }
+
+                    scheduleRecovery(for: failedIds)
+                    mergeInOrder(items: items)
+                    proposalStorageManager.save(infos: items.map { ProposalInfoRecord(info: $0.info) })
+                    proposalStorageManager.savePageControl(safe4Page)
+                    state = .completed(datas: viewItems)
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                } catch {
+                    break
+                }
+            }
+        }
+    }
+
+    private func mergeInOrder(items: [ViewItem]) {
+        guard !items.isEmpty else { return }
+        var existingIds = Set(viewItems.map(\.id))
+        for item in items {
+            guard !existingIds.contains(item.id) else { continue }
+            existingIds.insert(item.id)
+            viewItems.append(item)
+            cachedInfoById[item.id] = item.info
+        }
+        viewItems.sort { Int($0.info.id) > Int($1.info.id) }
+    }
+
+    private func scheduleRecovery(for ids: [BigUInt]) {
+        guard !ids.isEmpty else { return }
+
+        for id in ids {
+            pendingRecoveryIds.insert(id.description)
+        }
+        guard recoveryTask == nil else { return }
+
+        recoveryTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                Task { @MainActor in
+                    self.recoveryTask = nil
+                    if !self.pendingRecoveryIds.isEmpty {
+                        let retryIds = self.pendingRecoveryIds.compactMap { BigUInt($0) }
+                        self.pendingRecoveryIds.removeAll()
+                        self.scheduleRecovery(for: retryIds)
+                    }
+                }
+            }
+
+            try? await Task.sleep(nanoseconds: 400_000_000)
+
+            let targets = pendingRecoveryIds.compactMap { BigUInt($0) }
+            pendingRecoveryIds.removeAll()
+            guard !targets.isEmpty else { return }
+
+            var updated = false
+            for id in targets {
+                if Task.isCancelled { break }
+                do {
+                    let info = try await service.getInfo(id: id)
+                    let key = id.description
+                    cachedInfoById[key] = info
+
+                    if let idx = viewItems.firstIndex(where: { $0.id == key }) {
+                        viewItems[idx] = ViewItem(info: info)
+                    } else {
+                        viewItems.append(ViewItem(info: info))
+                    }
+                    updated = true
+                } catch {
+                    pendingRecoveryIds.insert(id.description)
+                }
+            }
+
+            if updated {
+                viewItems.sort { Int($0.info.id) > Int($1.info.id) }
+                proposalStorageManager.save(infos: viewItems.map { ProposalInfoRecord(info: $0.info) })
+                proposalStorageManager.savePageControl(safe4Page)
+                state = .completed(datas: viewItems)
+            }
+        }
     }
 }
 // load new Proposal
@@ -105,10 +304,10 @@ extension ProposalViewModel {
     func loadNewProposals() {
         self.hasNewProposal = ProposalStorageManager.getNeedShowTips()
         if case .All = service.type {
-            Task {
-                let totalNum = try await service.getTotalNum()
-                if let pageControl = proposalStorageManager.getPageControl(), pageControl.totalNum < Int(totalNum) {
-                    safe4Page.set(totalNum: totalNum)
+            Task { @MainActor in
+                let totalNum = (try? await service.getTotalNum()) ?? 0
+                if let pageControl = proposalStorageManager.getPageControl(), pageControl.totalNum < totalNum {
+                    reconcileTotal(latestTotalNum: totalNum)
                     requestInfos(loadMore: false) {
                         self.hasNewProposal = true
                         self.proposalStorageManager.savePageControl(self.safe4Page)
@@ -165,12 +364,23 @@ extension ProposalViewModel {
 extension ProposalViewModel {
     
     func refresh() {
+        allRequestTask?.cancel()
+        allRequestTask = nil
+        catchUpTask?.cancel()
+        catchUpTask = nil
+        recoveryTask?.cancel()
+        recoveryTask = nil
+        targetTotalNumForCatchUp = nil
+        pendingRecoveryIds.removeAll()
         viewItems.removeAll()
         if case .All = service.type {
             if let pageControl = proposalStorageManager.getPageControl(), proposalStorageManager.totalCacheNum > 0 {
-                safe4Page.set(totalNum: pageControl.totalNum)
+                safe4Page.update(totalNum: pageControl.totalNum, page: pageControl.page, indexPath: pageControl.targetIndexPath)
                 loadCache()
-            }else {
+                if proposalStorageManager.isCacheExpired(maxAge: Self.cacheMaxAge) {
+                    requestInfos(loadMore: false, completed: nil)
+                }
+            } else {
                 requestInfos(loadMore: false, completed: nil)
             }
         }else {
@@ -183,6 +393,7 @@ extension ProposalViewModel {
         if case .loading = state {
            return
         }
+        guard allRequestTask == nil else { return }
         if safe4Page.isAbleLoadMore {
             requestInfos(loadMore: true, completed: nil)
         }

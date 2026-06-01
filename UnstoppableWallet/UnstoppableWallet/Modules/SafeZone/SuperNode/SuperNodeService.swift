@@ -49,7 +49,25 @@ class SuperNodeService {
     private func web3() async throws -> Web3 {
         let chain = Chain.safeFourChain()
         let url = RpcSource.safeFourRpcHttp().url
-        return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+        return try await Web3.new(url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+    }
+
+    private func withRetry<T>(
+        maxAttempts: Int = 2,
+        retryDelayNanoseconds: UInt64 = 200_000_000,
+        operation: @escaping () async throws -> T
+    ) async throws -> T {
+        var lastError: Error?
+        for attempt in 1...maxAttempts {
+            do {
+                return try await operation()
+            } catch {
+                lastError = error
+                guard attempt < maxAttempts else { break }
+                try? await Task.sleep(nanoseconds: retryDelayNanoseconds)
+            }
+        }
+        throw lastError ?? NSError(domain: "SuperNodeService", code: -1)
     }
 }
 
@@ -80,19 +98,19 @@ extension SuperNodeService {
 extension SuperNodeService {
     
     func getTotalNum() async throws -> BigUInt {
-        try await web3().safe4.supernode.getNum()
+        try await withRetry { try await self.web3().safe4.supernode.getNum() }
     }
     
     func superNodeAddressArray(page: Safe4PageControl) async throws -> [ Web3Core.EthereumAddress] {
-        try await web3().safe4.supernode.getAll(BigUInt(page.start), BigUInt(page.currentPageCount))
+        try await withRetry { try await self.web3().safe4.supernode.getAll(BigUInt(page.start), BigUInt(page.currentPageCount)) }
     }
     
     func getInfoByID(_ id: BigUInt) async throws -> SuperNodeInfo {
-        try await web3().safe4.supernode.getInfoByID(id)
+        try await withRetry { try await self.web3().safe4.supernode.getInfoByID(id) }
     }
     
     func getInfo(address: Web3Core.EthereumAddress) async throws -> SuperNodeInfo {
-        try await web3().safe4.supernode.getInfo(address)
+        try await withRetry { try await self.web3().safe4.supernode.getInfo(address) }
     }
     
     func getAllVoteNum() async throws -> BigUInt {

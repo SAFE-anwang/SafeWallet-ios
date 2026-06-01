@@ -17,6 +17,7 @@ struct SuperNodeModule {
         return viewModel
     }
 
+    @MainActor
     static func viewModel(type: SuperNodeType, evmKit: EvmKit.Kit, privateKey: Data) -> SuperNodeViewModel {
         let service = SuperNodeService(privateKey: privateKey, evmKit: evmKit)
         let viewModel = SuperNodeViewModel(service: service, type: type)

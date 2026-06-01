@@ -30,6 +30,10 @@ struct SafeLineLockView: View {
                         VStack(spacing: .margin8) {
                             balanceView()
                             addressInputView()
+                            AddressSecurityCheckView(
+                                viewModel: viewModel.securityCheckViewModel,
+                                sourceStatPage: .send
+                            )
                             inputView()
                             lockNumView()
                             startDateView()
@@ -48,24 +52,46 @@ struct SafeLineLockView: View {
                     }
                 } bottomContent: {
                     Button(action: {
-                        if case let .ready(data) = viewModel.sendState {
-                            do {
-                                let info = SendEvmData.SendInfo(domain: data.to.eip55)
-                                let sendData = SendEvmData(transactionData: data, additionalInfo: .send(info: info), warnings: [])
-                                let evmKitWrapper = try Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper(account: viewModel.account, blockchainType: .safe4)
-                                if let vc = SendEvmConfirmationModule.viewController(evmKitWrapper: evmKitWrapper, sendData: sendData) {
-                                    DispatchQueue.main.async { [self] in
-                                        presentDestination = .toConfirmation(vc: vc)
+                        let proceed = {
+                            if case let .ready(data) = viewModel.sendState {
+                                do {
+                                    let info = SendEvmData.SendInfo(domain: data.to.eip55)
+                                    let sendData = SendEvmData(transactionData: data, additionalInfo: .send(info: info), warnings: [])
+                                    let evmKitWrapper = try Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper(account: viewModel.account, blockchainType: .safe4)
+                                    if let vc = SendEvmConfirmationModule.viewController(evmKitWrapper: evmKitWrapper, sendData: sendData) {
+                                        DispatchQueue.main.async { [self] in
+                                            presentDestination = .toConfirmation(vc: vc)
+                                        }
                                     }
-                                }
-                            }catch{}
+                                } catch {}
+                            }
+                        }
+
+                        if viewModel.addressIssueTypes.isEmpty {
+                            proceed()
+                        } else {
+                            Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                                BottomSheetView(
+                                    items: [
+                                        .title(icon: nil, title: "send.address.risky.title".localized),
+                                        .warning(text: "send.address.risky.description".localized),
+                                        .buttonGroup(.init(buttons: [
+                                            .init(style: .red, title: "send.continue_anyway".localized) {
+                                                isPresented.wrappedValue = false
+                                                proceed()
+                                            },
+                                            .init(style: .transparent, title: "button.cancel".localized) { isPresented.wrappedValue = false },
+                                        ])),
+                                    ]
+                                )
+                            }
                         }
                     }) {
                         HStack(spacing: .margin8) {
                             Text("button.next".localized)
                         }
                     }
-                    .disabled(viewModel.sendDisabled)
+                    .disabled(viewModel.sendDisabled || viewModel.isAddressChecking)
                     .buttonStyle(PrimaryButtonStyle(style: .yellow))
                 }
             }

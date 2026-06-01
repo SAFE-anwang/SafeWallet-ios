@@ -15,6 +15,7 @@ struct MasterNodeModule {
         return viewModel
     }
     
+    @MainActor
     static func viewModel(type: MasterNodeType, evmKit: EvmKit.Kit) -> MasterNodeViewModel {
         let service = MasterNodeService(evmKit: evmKit)
         let viewModel = MasterNodeViewModel(service: service, type: type)

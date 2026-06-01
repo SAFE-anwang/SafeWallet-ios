@@ -5,11 +5,13 @@ import Web3Core
 import GRDB
 
 class Safe4LockedRecord: Record {
+    var lockedType: Int
     var lockId: String
     var record: Safe4AccountRecord
     var info: Safe4RecordUseInfo?
     
-    init(record: Safe4AccountRecord, info: Safe4RecordUseInfo?) {
+    init(type: LockedRecordSourceType, record: Safe4AccountRecord, info: Safe4RecordUseInfo?) {
+        self.lockedType = type.rawValue
         self.lockId = record.id.description
         self.record = record
         self.info = info
@@ -21,10 +23,11 @@ class Safe4LockedRecord: Record {
     }
 
     enum Columns: String, ColumnExpression {
-        case lockId, record, info
+        case lockedType, lockId, record, info
     }
 
     required init(row: Row) throws {
+        lockedType = row[Columns.lockedType]
         record = try Safe4AccountRecord(JSONString: row[Columns.record])
         lockId = row[Columns.lockId]
         if let infoStr: String = row[Columns.info] {
@@ -34,9 +37,14 @@ class Safe4LockedRecord: Record {
     }
 
     override func encode(to container: inout PersistenceContainer) {
+        container[Columns.lockedType] = lockedType
         container[Columns.lockId] = record.id.description
         container[Columns.record] = record.toJSONString()
         container[Columns.info] = info?.toJSONString()
+    }
+
+    var sourceType: LockedRecordSourceType {
+        LockedRecordSourceType(rawValue: lockedType) ?? .locked
     }
 }
 
@@ -86,4 +94,7 @@ enum LockedRecordSourceType: Int {
     case masterNode
     case voteLocked
     case proposal
+    case smallAmount01
+    case smallAmount02
+    case voted
 }

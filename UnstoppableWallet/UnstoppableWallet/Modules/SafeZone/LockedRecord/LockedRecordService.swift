@@ -9,6 +9,8 @@ import RxCocoa
 class LockedRecordService {
     private let privateKey: Data
     private let evmKit: EvmKit.Kit
+    private static let retryAttempts = 2
+    private static let retryDelayNanoseconds: UInt64 = 200_000_000
 
     init(privateKey: Data, evmKit: EvmKit.Kit) {
         self.privateKey = privateKey
@@ -28,12 +30,40 @@ class LockedRecordService {
         let url = RpcSource.safeFourRpcHttp().url
         return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
     }
+
+    private func withRetry<T>(
+        maxAttempts: Int,
+        retryDelayNanoseconds: UInt64,
+        operation: @escaping () async throws -> T
+    ) async throws -> T {
+        var lastError: Error?
+        for attempt in 1...maxAttempts {
+            do {
+                return try await operation()
+            } catch {
+                lastError = error
+                guard attempt < maxAttempts else { break }
+                try? await Task.sleep(nanoseconds: retryDelayNanoseconds)
+            }
+        }
+        throw lastError ?? NSError(domain: "LockedRecordService", code: -1)
+    }
+
+    private func withRetry<T>(operation: @escaping () async throws -> T) async throws -> T {
+        try await withRetry(
+            maxAttempts: LockedRecordService.retryAttempts,
+            retryDelayNanoseconds: LockedRecordService.retryDelayNanoseconds,
+            operation: operation
+        )
+    }
 }
 
 extension LockedRecordService {
     
     func withdrawByID(type: web3swift.AccountManager.ContractType, ids: [BigUInt]) async throws -> String {
-        try await web3().safe4.accountmanager(type: type).withdrawByID(privateKey: privateKey, ids: ids)
+        try await withRetry {
+            try await self.web3().safe4.accountmanager(type: type).withdrawByID(privateKey: self.privateKey, ids: ids)
+        }
     }
 }
 
@@ -41,31 +71,43 @@ extension LockedRecordService {
 extension LockedRecordService {
     
     func totalLockedNum(type: web3swift.AccountManager.ContractType) async throws -> BigUInt {
-        try await web3().safe4.accountmanager(type: type).getTotalAmount(userAddress).num
+        try await withRetry {
+            try await self.web3().safe4.accountmanager(type: type).getTotalAmount(self.userAddress).num
+        }
 //        try await web3().safe4.accountmanager(type: type).getLockedAmount(userAddress).num
     }
     
     func getLockedIDs(type: web3swift.AccountManager.ContractType, start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
-        try await web3().safe4.accountmanager(type: type).getTotalIDs(userAddress, start, count)
+        try await withRetry {
+            try await self.web3().safe4.accountmanager(type: type).getTotalIDs(self.userAddress, start, count)
+        }
 //        try await web3().safe4.accountmanager(type: type).getLockedIDs(userAddress, start, count)
     }
 }
 // proposal
 extension LockedRecordService {
     func mineProposalNum() async throws -> BigUInt {
-        return try await web3().safe4.proposal.getMineNum(userAddress)
+        return try await withRetry {
+            try await self.web3().safe4.proposal.getMineNum(self.userAddress)
+        }
     }
     
     func mineProposalIds(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
-        return try await web3().safe4.proposal.getMines(userAddress, start, count)
+        return try await withRetry {
+            try await self.web3().safe4.proposal.getMines(self.userAddress, start, count)
+        }
     }
     
     func getProposalRewardIDs(id: BigUInt) async throws -> [BigUInt] {
-        try await web3().safe4.proposal.getRewardIDs(id)
+        try await withRetry {
+            try await self.web3().safe4.proposal.getRewardIDs(id)
+        }
     }
     
     func getInfo(id: BigUInt) async throws -> ProposalInfo {
-        try await web3().safe4.proposal.getInfo(id)
+        try await withRetry {
+            try await self.web3().safe4.proposal.getInfo(id)
+        }
     }
 }
 
@@ -73,12 +115,16 @@ extension LockedRecordService {
 extension LockedRecordService {
     func getVotedIDNum4Voter() async throws -> BigUInt {
         let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
-        return try await web3().safe4.snvote.getVotedIDNum4Voter(address)
+        return try await withRetry {
+            try await self.web3().safe4.snvote.getVotedIDNum4Voter(address)
+        }
     }
     
     func getVotedIDs4Voter(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
         let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
-        return try await web3().safe4.snvote.getVotedIDs4Voter(address, start, count)
+        return try await withRetry {
+            try await self.web3().safe4.snvote.getVotedIDs4Voter(address, start, count)
+        }
     }
 }
 
@@ -86,10 +132,14 @@ extension LockedRecordService {
 extension LockedRecordService {
     
     func getRecordByID(type: web3swift.AccountManager.ContractType, id: BigUInt) async throws -> web3swift.AccountRecord {
-        try await web3().safe4.accountmanager(type: type).getRecordByID(id)
+        try await withRetry {
+            try await self.web3().safe4.accountmanager(type: type).getRecordByID(id)
+        }
     }
     
     func getRecordUseInfo(type: web3swift.AccountManager.ContractType, id: BigUInt) async throws -> RecordUseInfo {
-        try await web3().safe4.accountmanager(type: type).getRecordUseInfo(id)
+        try await withRetry {
+            try await self.web3().safe4.accountmanager(type: type).getRecordUseInfo(id)
+        }
     }
 }

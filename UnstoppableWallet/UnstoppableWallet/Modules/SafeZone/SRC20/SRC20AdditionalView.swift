@@ -26,19 +26,41 @@ struct SRC20AdditionalView: View {
                         VStack(spacing: .margin8) {
                             tokenInfoView(name: viewModel.token.name, symbol: viewModel.token.symbol, supply: viewModel.totalSupplyString)
                             addressInputView()
+                            AddressSecurityCheckView(
+                                viewModel: viewModel.securityCheckViewModel,
+                                sourceStatPage: .send
+                            )
                             numberInputView()
                         }
                         .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
                     }
                 } bottomContent: {
                     Button(action: {
-                        isShowAlert = true
+                        if viewModel.addressIssueTypes.isEmpty {
+                            isShowAlert = true
+                        } else {
+                            Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                                BottomSheetView(
+                                    items: [
+                                        .title(icon: nil, title: "send.address.risky.title".localized),
+                                        .warning(text: "send.address.risky.description".localized),
+                                        .buttonGroup(.init(buttons: [
+                                            .init(style: .red, title: "send.continue_anyway".localized) {
+                                                isPresented.wrappedValue = false
+                                                isShowAlert = true
+                                            },
+                                            .init(style: .transparent, title: "button.cancel".localized) { isPresented.wrappedValue = false },
+                                        ])),
+                                    ]
+                                )
+                            }
+                        }
                     }) {
                         HStack(spacing: .margin8) {
                             Text("button.next".localized)
                         }
                     }
-                    .disabled((viewModel.sendState == .notReady || viewModel.sendState == .sending))
+                    .disabled((viewModel.sendState == .notReady || viewModel.sendState == .sending || viewModel.isAddressChecking))
                     .buttonStyle(PrimaryButtonStyle(style: .yellow))
                 }
                 

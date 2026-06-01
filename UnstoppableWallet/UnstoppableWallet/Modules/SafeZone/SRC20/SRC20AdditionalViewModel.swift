@@ -10,9 +10,11 @@ import Web3Core
 
 class SRC20AdditionalViewModel: ObservableObject {
     let token: Safe4CustomTokenRecord
+    let securityCheckViewModel: AddressSecurityCheckViewModel
     private let type: DeployType
     private let service: SRC20Service
     private var disposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
     private let decimalParser = AmountDecimalParser()
     private let parserChain: AddressParserChain = AddressParserFactory.parserChain(blockchainType: .safe4)
     @Published private(set) var totalSupply: BigUInt?
@@ -20,12 +22,22 @@ class SRC20AdditionalViewModel: ObservableObject {
     @Published var addressResult: AddressInput.Result = .idle
     @Published var addressCautionState: CautionState = .none
     @Published var sendState: SendState = .notReady
+    @Published private(set) var checkedResolvedAddress: ResolvedAddress?
+    @Published private(set) var addressSecurityState: AddressSecurityCheckViewModel.State = .idle
 
     init(token: Safe4CustomTokenRecord, service: SRC20Service) {
         self.token = token
         self.type = token.deployType
         self.service = service
+        self.securityCheckViewModel = AddressSecurityCheckViewModel(token: Core.shared.evmBlockchainManager.baseToken(blockchainType: .safe4)!)
         self.address = token.creator
+
+        securityCheckViewModel.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.syncFromCheckState(state)
+            }
+            .store(in: &cancellables)
         
         Task {
             do {
@@ -36,6 +48,10 @@ class SRC20AdditionalViewModel: ObservableObject {
             }catch{
                 print("")
             }
+        }
+
+        if !address.isEmpty {
+            validateAddress(address: address)
         }
     }
     
@@ -65,6 +81,18 @@ class SRC20AdditionalViewModel: ObservableObject {
     }
     var totalSupplyString: String {
         (totalSupply?.safe4FomattedAmount ?? "null") + "  " + token.symbol
+    }
+
+    var addressIssueTypes: [AddressSecurityIssueType] {
+        checkedResolvedAddress?.issueTypes ?? []
+    }
+
+    var isAddressChecking: Bool {
+        if case .checking = addressSecurityState {
+            return true
+        }
+
+        return false
     }
     
     var number: Decimal? {
@@ -105,6 +133,28 @@ class SRC20AdditionalViewModel: ObservableObject {
 
 // address
 extension SRC20AdditionalViewModel {
+    private func syncAddressSecurityState() {
+        switch addressResult {
+        case .idle, .loading, .invalid:
+            checkedResolvedAddress = nil
+            addressSecurityState = .idle
+            securityCheckViewModel.check(address: nil)
+        case let .valid(success):
+            securityCheckViewModel.check(address: success.address)
+        }
+    }
+
+    private func syncFromCheckState(_ checkState: AddressSecurityCheckViewModel.State) {
+        addressSecurityState = checkState
+
+        switch checkState {
+        case .idle, .checking:
+            checkedResolvedAddress = nil
+        case let .completed(address, detectedTypes):
+            checkedResolvedAddress = ResolvedAddress(address: address.raw, issueTypes: detectedTypes)
+        }
+    }
+
     private func validateAddress(address: String) {
         parserChain
             .handle(address: address)
@@ -120,17 +170,23 @@ extension SRC20AdditionalViewModel {
     private func sync(_ address: Address?, uri: AddressUri?) {
         guard let address else {
             addressResult = .idle
+            syncAddressSecurityState()
+            syncSendData()
             return
         }
 
         addressResult = .valid(.init(address: address, uri: uri))
         addressCautionState = .none
+        syncAddressSecurityState()
+        syncSendData()
     }
 
     private func sync(_ error: Error, text: String) {
         addressResult = .invalid(.init(text: text, error: error))
         let caution = Caution(text: "watch_address.error.not_supported".localized, type: .error)
         addressCautionState = .caution(caution)
+        syncAddressSecurityState()
+        syncSendData()
     }
 }
 
@@ -168,4 +224,3 @@ extension SRC20AdditionalViewModel {
         }
     }
 }
-

@@ -18,12 +18,14 @@ struct ProposalModule {
         return viewModel
     }
     
+    @MainActor
     static func viewModel(type: ProposalType) -> ProposalViewModel {
         let service = ProposalService(type: type)
         let viewModel = ProposalViewModel(service: service)
         return viewModel
     }
     
+    @MainActor
     static func subViewController(type: ProposalType) -> ProposalViewController {
         let service = ProposalService(type: type)
         let viewModel = ProposalViewModel(service: service)

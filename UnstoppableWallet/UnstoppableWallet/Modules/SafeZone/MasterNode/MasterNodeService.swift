@@ -1,4 +1,5 @@
 import web3swift
+import Foundation
 import Web3Core
 import EvmKit
 import BigInt
@@ -33,7 +34,27 @@ class MasterNodeService {
     private func web3() async throws -> Web3 {
         let chain = Chain.safeFourChain()
         let url = RpcSource.safeFourRpcHttp().url
-        return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+        return try await Web3.new(url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+    }
+
+    private func withRetry<T>(
+        maxAttempts: Int = 2,
+        retryDelayNanoseconds: UInt64 = 200_000_000,
+        operation: @escaping () async throws -> T
+    ) async throws -> T {
+        var lastError: Error?
+
+        for attempt in 1...maxAttempts {
+            do {
+                return try await operation()
+            } catch {
+                lastError = error
+                guard attempt < maxAttempts else { break }
+                try? await Task.sleep(nanoseconds: retryDelayNanoseconds)
+            }
+        }
+
+        throw lastError ?? NSError(domain: "MasterNodeService", code: -1)
     }
 }
 
@@ -60,19 +81,27 @@ extension MasterNodeService {
 extension MasterNodeService {
     
     func getTotalNum() async throws -> BigUInt {
-        try await web3().safe4.masternode.getNum()
+        try await withRetry {
+            try await self.web3().safe4.masternode.getNum()
+        }
     }
     
     func masteNodeAddressArray(page: Safe4PageControl) async throws -> [Web3Core.EthereumAddress] {
-        try await web3().safe4.masternode.getAll(BigUInt(page.start), BigUInt(page.currentPageCount))
+        try await withRetry {
+            try await self.web3().safe4.masternode.getAll(BigUInt(page.start), BigUInt(page.currentPageCount))
+        }
     }
     
     func getInfoByID(_ id: BigUInt) async throws -> MasterNodeInfo {
-        try await web3().safe4.masternode.getInfoByID(id)
+        try await withRetry {
+            try await self.web3().safe4.masternode.getInfoByID(id)
+        }
     }
     
     func getInfo(address: Web3Core.EthereumAddress) async throws -> MasterNodeInfo {
-        try await web3().safe4.masternode.getInfo(address)
+        try await withRetry {
+            try await self.web3().safe4.masternode.getInfo(address)
+        }
     }
     
     func isSuperNode(address: Web3Core.EthereumAddress) async throws -> Bool {

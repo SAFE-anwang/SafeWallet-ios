@@ -19,6 +19,19 @@ class Safe4WithdrawLockedStorage {
                 t.primaryKey([Safe4WithdrawLockedRecord.Columns.lockId.name], onConflict: .replace)
             }
         }
+        migrator.registerMigration("recreate Safe4WithdrawLockedStorage with composite primary key") { db in
+            try db.drop(table: Safe4WithdrawLockedRecord.databaseTableName)
+            try db.create(table: Safe4WithdrawLockedRecord.databaseTableName) { t in
+                t.column(Safe4WithdrawLockedRecord.Columns.lockedType.name, .integer).notNull()
+                t.column(Safe4WithdrawLockedRecord.Columns.lockId.name, .text).notNull()
+                t.column(Safe4WithdrawLockedRecord.Columns.record.name, .text).notNull()
+                t.column(Safe4WithdrawLockedRecord.Columns.info.name, .text)
+                t.primaryKey([
+                    Safe4WithdrawLockedRecord.Columns.lockedType.name,
+                    Safe4WithdrawLockedRecord.Columns.lockId.name,
+                ], onConflict: .replace)
+            }
+        }
         return migrator
     }
 }
@@ -54,6 +67,8 @@ extension Safe4WithdrawLockedStorage {
                 try recoard.insert(db)
                 return
             }
+            item.record = recoard.record
+            item.info = recoard.info
             try item.update(db)
         }
     }
@@ -78,7 +93,7 @@ extension Safe4WithdrawLockedStorage {
    }
     
     func delete(type: LockedRecordSourceType, by id: Int) {
-        _ = try! dbPool.write { db in
+        _ = try? dbPool.write { db in
             try Safe4WithdrawLockedRecord
                 .filter(Safe4WithdrawLockedRecord.Columns.lockId == id.description && Safe4WithdrawLockedRecord.Columns.lockedType == type.rawValue)
                 .deleteAll(db)

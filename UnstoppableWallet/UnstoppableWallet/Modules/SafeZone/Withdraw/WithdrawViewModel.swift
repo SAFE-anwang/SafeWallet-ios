@@ -7,8 +7,12 @@ import BigInt
 
 private let WithdrawIdsKey: String = "safe4_WithdrawIds_key"
 private let RemoveVoteIdsKey: String = "safe4_RemoveVoteIds_key"
+private let WithdrawCacheTimestampKey: String = "safe4_withdraw_cache_timestamp_key"
 
 class WithdrawViewModel: ObservableObject {
+    private static let pageSize = 20
+    private static let cacheMaxAge: TimeInterval = 120
+    private static let withdrawBatchSize = 30
     private let nullAddress = "0x0000000000000000000000000000000000000000"
     private let service: WithdrawViewService
     private let withdrawLockedStorage: Safe4WithdrawLockedStorage
@@ -20,6 +24,9 @@ class WithdrawViewModel: ObservableObject {
     @Published private(set) var viewItems: [WithdrawItem] = []
     
     private var pageControl = Safe4PageControl(pageSize: 20)
+    private var withdrawTask: Task<Void, Never>?
+    private var listTask: Task<Void, Never>?
+    private var cacheItems = [WithdrawItem]()
     @Published var selectedItems: [WithdrawItem] = [] {
         didSet {
             withdrawEnabled = selectedItems.count > 0
@@ -35,7 +42,13 @@ class WithdrawViewModel: ObservableObject {
         self.withdrawLockedStorage = withdrawLockedStorage
         
         showCache()
-        withdrawItems(loadMore: false)
+        let shouldSync = viewItems.isEmpty || isCacheExpired(maxAge: Self.cacheMaxAge)
+        if shouldSync {
+            withdrawItems(loadMore: false)
+        } else {
+            dataState = .items
+            hasMoreItems = true
+        }
     }
 }
 
@@ -57,28 +70,54 @@ extension WithdrawViewModel {
     }
     
     func withdraw() {
+        guard withdrawTask == nil else { return }
+        guard !selectedItems.isEmpty else { return }
+
         sendState = .loading
         withdrawEnabled = false
+        let snapshot = selectedItems
        
-        Task {
+        withdrawTask = Task {
+            defer {
+                Task { @MainActor in
+                    self.withdrawTask = nil
+                }
+            }
             do{
                 if service.type == .voteLocked {
-                    let recordIDs = selectedItems.filter{$0.isRemoveVoteEnable}.map { $0.id }
+                    let recordIDs = snapshot.filter{$0.isRemoveVoteEnable}.map { $0.id }
                     if recordIDs.count > 0 {
-                        _ = try await service.removeVoteOrApproval(recordIDs: recordIDs)
+                        for chunk in recordIDs.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
+                            _ = try await service.removeVoteOrApproval(recordIDs: chunk)
+                        }
                         WithdrawViewModel.saveRemoveVoteIds(recordIDs.map{$0.description})
                     }
-                    let ids = selectedItems.filter{$0.isWithdrawEnable}.map { $0.id }
+                    let ids = snapshot.filter{$0.isWithdrawEnable}.map { $0.id }
                     if  ids.count > 0 {
-                        _ = try await service.withdrawByID(type: .native, ids: ids)
+                        for chunk in ids.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
+                            _ = try await service.withdrawByID(type: .native, ids: chunk)
+                        }
                         WithdrawViewModel.saveDidWithdrawIds(ids.map{$0.description})
                     }
                 }else {
-                    let ids = selectedItems.map { $0.id }
-                    _ = try await service.withdrawByID(type: .native, ids: ids)
+                    let ids = snapshot.map { $0.id }
+                    for chunk in ids.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
+                        _ = try await service.withdrawByID(type: .native, ids: chunk)
+                    }
                     WithdrawViewModel.saveDidWithdrawIds(ids.map{$0.description})
                 }
                 await MainActor.run {
+                    removeItems(ids: Set(snapshot.map(\.id)))
+                    selectedItems.removeAll()
+                    if case .voteLocked = service.type {
+                        if !snapshot.filter({ $0.isWithdrawEnable }).isEmpty {
+                            let withdrawIds = Set(snapshot.filter { $0.isWithdrawEnable }.map(\.id))
+                            cacheItems.removeAll { withdrawIds.contains($0.id) }
+                            viewItems = cacheItems
+                        } else {
+                            viewItems = cacheItems
+                        }
+                    }
                     sendState = .completed
                     withdrawEnabled = true
                     onSuccess?(sendState)
@@ -103,7 +142,7 @@ extension WithdrawViewModel {
     }
     
     func allWithdraw() {
-        selectedItems = viewItems
+        selectedItems = enableItems
         withdraw()
     }
     
@@ -166,6 +205,7 @@ extension WithdrawViewModel {
             }
             
             viewItems.sort(by:{ Int($0.id) < Int($1.id) })
+            cacheItems = viewItems
         }catch{}
 
     }
@@ -174,15 +214,35 @@ extension WithdrawViewModel {
 extension WithdrawViewModel {
     
     func loadMore() {
-        if case .loading = dataState {
-            return
-        }
+        if case .loading = dataState { return }
+        guard listTask == nil else { return }
         withdrawItems(loadMore: true)
     }
     
     func withdrawItems(loadMore: Bool) {
+        guard listTask == nil else { return }
         dataState = .loading
-        Task { [service] in
+
+        if !loadMore {
+            switch service.type {
+            case .masterNode:
+                try? withdrawLockedStorage.clear(type: .masterNode)
+            case .superNode:
+                try? withdrawLockedStorage.clear(type: .superNode)
+            case .voteLocked:
+                try? withdrawLockedStorage.clear(type: .voteLocked)
+            case .proposal:
+                try? withdrawLockedStorage.clear(type: .proposal)
+            }
+            cacheItems.removeAll()
+        }
+
+        listTask = Task {
+            defer {
+                Task { @MainActor in
+                    self.listTask = nil
+                }
+            }
             do{
                 let ids = try await ids(type: .native, isLoadMore: loadMore)
                 guard ids.count > 0 else{
@@ -243,8 +303,11 @@ extension WithdrawViewModel {
                 
                 await MainActor.run {
                     viewItems = uniqueItems
+                    cacheItems = uniqueItems
                     viewItems.sort(by:{ Int($0.id) < Int($1.id) })
                     dataState = .items
+                    hasMoreItems = infos.count > 0
+                    saveCacheTimestamp()
                 }
             }catch{
                 await MainActor.run {
@@ -258,16 +321,7 @@ extension WithdrawViewModel {
     
     private func ids(type: web3swift.AccountManager.ContractType, isLoadMore: Bool) async throws -> [BigUInt] {
         if !isLoadMore {
-            switch service.type {
-            case .masterNode:
-                try withdrawLockedStorage.clear(type: .masterNode)
-            case .superNode:
-                try withdrawLockedStorage.clear(type: .superNode)
-            case .voteLocked:
-                try withdrawLockedStorage.clear(type: .voteLocked)
-            case .proposal:
-                try withdrawLockedStorage.clear(type: .proposal)
-            }
+            pageControl = Safe4PageControl(pageSize: Self.pageSize)
             try await pageControl(type: type)
         }
         guard pageControl.isAbleLoadMore else {
@@ -278,29 +332,14 @@ extension WithdrawViewModel {
     }
     
     private func getRecordInfos(ids: [BigUInt]) async throws -> [(web3swift.AccountRecord, RecordUseInfo)] {
-        
         var results: [(web3swift.AccountRecord, RecordUseInfo)] = []
-        var errors: [Error] = []
-        await withTaskGroup(of: Result<(web3swift.AccountRecord, RecordUseInfo), Error>.self) { taskGroup in
-            for id in ids {
-                taskGroup.addTask { [self] in
-                    do {
-                        let useInfo = try await service.getRecordUseInfo(id: id)
-                        let info = try await service.getRecordByID(id: id)
-                        return .success((info, useInfo))
-                    }catch{
-                        return .failure(RequestError.getInfo)
-                    }
-                }
-            }
-
-            for await result in taskGroup {
-                switch result {
-                case let .success(value):
-                    results.append(value)
-                case let .failure(error):
-                    errors.append(error)
-                }
+        for id in ids {
+            if Task.isCancelled { break }
+            do {
+                let useInfo = try await service.getRecordUseInfo(id: id)
+                let info = try await service.getRecordByID(id: id)
+                results.append((info, useInfo))
+            } catch {
             }
         }
         return results
@@ -347,34 +386,22 @@ extension WithdrawViewModel {
     
     private func node(nodeType: WithdrawViewService.NodeType, records: [(web3swift.AccountRecord, RecordUseInfo)]) async -> [(web3swift.AccountRecord, RecordUseInfo)] {
         var results: [(web3swift.AccountRecord, RecordUseInfo)] = []
-        var errors: [Error] = []
-        await withTaskGroup(of: Result<(web3swift.AccountRecord, RecordUseInfo), Error>.self) { taskGroup in
-            for node in records {
-                taskGroup.addTask { [self] in
-                    do {
-                        switch nodeType {
-                        case .masterNode:
-                            let isMaster = try await service.isMasterNodeFounder(node.1.frozenAddr)
-                            return isMaster ? .success(node) : .failure(RequestError.getInfo)
-                
-                        case .superNode:
-                            let isSuper = try await service.isSuperNodeFounder(node.1.frozenAddr)
-                            return isSuper ? .success(node) : .failure(RequestError.getInfo)
-                        }
-                        
-                    }catch{
-                        return .failure(RequestError.getInfo)
+        for node in records {
+            if Task.isCancelled { break }
+            do {
+                switch nodeType {
+                case .masterNode:
+                    let isMaster = try await service.isMasterNodeFounder(node.1.frozenAddr)
+                    if isMaster {
+                        results.append(node)
+                    }
+                case .superNode:
+                    let isSuper = try await service.isSuperNodeFounder(node.1.frozenAddr)
+                    if isSuper {
+                        results.append(node)
                     }
                 }
-            }
-            
-            for await result in taskGroup {
-                switch result {
-                case let .success(value):
-                    results.append(value)
-                case let .failure(error):
-                    errors.append(error)
-                }
+            } catch {
             }
         }
         return results
@@ -387,18 +414,41 @@ extension WithdrawViewModel {
     static func saveDidWithdrawIds(_ ids: [String]) {
         var oldIds = WithdrawViewModel.getDidWithdrawIds()
         oldIds.append(contentsOf: ids)
+        oldIds = Array(Set(oldIds))
         Core.shared.userDefaultsStorage.set(value: oldIds, for: WithdrawIdsKey)
     }
     
     static func saveRemoveVoteIds(_ ids: [String]) {
         var oldIds = WithdrawViewModel.getRemoveVoteIds()
         oldIds.append(contentsOf: ids)
-        Core.shared.userDefaultsStorage.set(value: oldIds, for: WithdrawIdsKey)
+        oldIds = Array(Set(oldIds))
+        Core.shared.userDefaultsStorage.set(value: oldIds, for: RemoveVoteIdsKey)
     }
     
     static func getRemoveVoteIds() -> [String] {
         guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: RemoveVoteIdsKey) else{ return [] }
         return ids
+    }
+
+    private func removeItems(ids: Set<BigUInt>) {
+        guard !ids.isEmpty else { return }
+        viewItems.removeAll { ids.contains($0.id) }
+        cacheItems = viewItems
+    }
+
+    private func saveCacheTimestamp() {
+        userDefaultsStorage.set(value: Date().timeIntervalSince1970, for: cacheTimestampKey)
+    }
+
+    private func isCacheExpired(maxAge: TimeInterval) -> Bool {
+        guard let timestamp: TimeInterval = userDefaultsStorage.value(for: cacheTimestampKey) else {
+            return true
+        }
+        return Date().timeIntervalSince1970 - timestamp > maxAge
+    }
+
+    private var cacheTimestampKey: String {
+        "\(WithdrawCacheTimestampKey)_\(service.type.rawValue)"
     }
 }
 

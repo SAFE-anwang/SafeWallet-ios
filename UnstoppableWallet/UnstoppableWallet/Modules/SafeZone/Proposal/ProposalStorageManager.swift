@@ -6,6 +6,7 @@ class ProposalStorageManager: NSObject {
     private var proposalInfoStorage = Core.shared.safe4StorageManager.proposalInfoStorage
     private let userDefaultsStorage = Core.shared.userDefaultsStorage
     private let cachedPageControlKey: String = "safe4_proposal_info_key"
+    private let cacheTimestampKey: String = "safe4_proposal_info_timestamp_key"
 
     private(set) var pageControl: Safe4PageControl? = nil
     private(set) var totalCacheNum: Int = 0
@@ -24,11 +25,13 @@ class ProposalStorageManager: NSObject {
     func clearCaches() {
         savePageControl(Safe4PageControl(pageSize: 20, isReverse: true))
         proposalInfoStorage.deleteAll()
+        userDefaultsStorage.set(value: nil as String?, for: cacheTimestampKey)
         totalCacheNum = 0
     }
     
     func save(infos: [ProposalInfoRecord]) {
         proposalInfoStorage.save(records: infos)
+        userDefaultsStorage.set(value: Date().timeIntervalSince1970, for: cacheTimestampKey)
         totalCacheNum = proposalInfoStorage.countAll() ?? 0
     }
     
@@ -43,6 +46,13 @@ class ProposalStorageManager: NSObject {
         guard let pageControlData: String = userDefaultsStorage.value(for: cachedPageControlKey) else{ return nil}
         guard let pageControl = try? JSONDecoder().decode(Safe4PageControl.self, from: Data(pageControlData.utf8)) else{ return nil}
         return pageControl
+    }
+
+    func isCacheExpired(maxAge: TimeInterval) -> Bool {
+        guard let timestamp: TimeInterval = userDefaultsStorage.value(for: cacheTimestampKey) else {
+            return true
+        }
+        return Date().timeIntervalSince1970 - timestamp > maxAge
     }
     
     static func getNeedShowTips() -> Bool {

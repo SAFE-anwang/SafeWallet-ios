@@ -7,6 +7,7 @@ struct SuperNodeTabView: View {
     @State private var loadedTabs = [SuperNodeModule.Tab]()
     @Binding private var isPresented: Bool
 
+    @MainActor
     init(viewModel: SuperNodeTabViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
         _isPresented = isPresented

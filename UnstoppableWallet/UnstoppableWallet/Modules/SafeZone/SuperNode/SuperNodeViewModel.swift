@@ -10,14 +10,21 @@ import web3swift
 import Web3Core
 import HsExtensions
 
+@MainActor
 class SuperNodeViewModel: ObservableObject {
+    private static let cacheMaxAge: TimeInterval = 120
+    private static let pageSize = 10
     let type: SuperNodeModule.SuperNodeType
     private let service: SuperNodeService
     private let disposeBag = DisposeBag()
-    private var safe4Page = Safe4PageControl(pageSize: 10)
-    private var partnerSafe4Page = Safe4PageControl(pageSize: 10)
+    private var safe4Page: Safe4PageControl
+    private var partnerSafe4Page: Safe4PageControl
     private var partnerAddressArray = [EthereumAddress]()
     private var nodeStorageManager: NodeStorageManager
+    private var cachedInfoByAddress = [String: SuperNodeInfo]()
+    private var allRequestTask: Task<Void, Never>?
+    private var catchUpTask: Task<Void, Never>?
+    private var targetTotalNumForCatchUp: Int?
 
     private var stateRelay = PublishRelay<SuperNodeViewModel.State>()
     private var viewItems = [SuperNodeViewModel.ViewItem]()
@@ -37,23 +44,12 @@ class SuperNodeViewModel: ObservableObject {
     init(service: SuperNodeService, type: SuperNodeModule.SuperNodeType) {
         self.service = service
         self.type = type
-        self.nodeStorageManager = NodeStorageManager(nodeType: .superNode, pageControl: safe4Page)
+        let initialSafe4Page = Safe4PageControl(pageSize: Self.pageSize)
+        self.safe4Page = initialSafe4Page
+        self.partnerSafe4Page = Safe4PageControl(pageSize: Self.pageSize)
+        self.nodeStorageManager = NodeStorageManager(nodeType: .superNode, pageControl: initialSafe4Page)
 
         subscribe(disposeBag, service.syncRefreshObservable) { [weak self] _ in self?.refresh() }
-        
-//        if let (pageControl, caches) = nodeStorageManager.load() {
-//            let cacheItems = caches.map { ViewItem(info: $0.transformToSuper(),
-//                                                   totalVoteNum: 0,
-//                                                   totalAmount: 0,
-//                                                   allVoteNum: 0,
-//                                                   ownerType: ownerType(info: $0.transformToSuper()),
-//                                                   nodeType: nodeType,
-//                                                   isEnabledEdit: false)
-//                  }
-//            self.cacheItems = cacheItems
-//            self.viewItems.append(contentsOf: cacheItems)
-//            self.safe4Page = pageControl
-//        }
     }
 }
 
@@ -84,37 +80,7 @@ extension SuperNodeViewModel {
                 }
                 if creatorAddrs.count > 0 { safe4Page.plusPage() }
                 let addrs = partnerAddrs + creatorAddrs
-
-                var results: [ViewItem] = []
-                var errors: [Error] = []
-                await withTaskGroup(of: Result<ViewItem, Error>.self) { taskGroup in
-                    for address in addrs {
-                        taskGroup.addTask { [self] in
-                            do {
-                                let item = try await nodeInfoBy(address: address, isEnabledEdit: true)
-                                return .success(item)
-                            }catch{
-                                return .failure(SuperNodeError.getInfo)
-                            }
-                        }
-                    }
-                    for await result in taskGroup {
-                        switch result {
-                        case let .success(value):
-                            results.append(value)
-                        case let .failure(error):
-                            errors.append(error)
-                        }
-                    }
-                }
-                var sortedResults = [ViewItem]()
-                for address in addrs {
-                    for  result in results {
-                        if result.info.addr.address == address.address {
-                            sortedResults.append(result)
-                        }
-                    }
-                }
+                let sortedResults = await fetchNodeItems(addresses: addrs, isEnabledEdit: true)
                 viewItems.append(contentsOf: sortedResults)
                 state = .completed(datas: viewItems)
             }catch{
@@ -157,60 +123,57 @@ extension SuperNodeViewModel {
 
 // All
 extension SuperNodeViewModel {
-    private func requestInfos(loadMore: Bool) {
-        state = .loading
-        Task { [service] in
-            do{
-                if !loadMore {
-                   let totalNum = try await service.getTotalNum()
-                    safe4Page.set(totalNum: Int(totalNum))
-                    let _ = try await allPartnerAddrs()
+    private func requestInfos(loadMore: Bool, showLoading: Bool = true, resetBeforeLoad: Bool = false, refreshHeadIfNeeded: Bool = false) {
+        guard allRequestTask == nil else { return }
+        if showLoading { state = .loading }
+
+        if resetBeforeLoad {
+            safe4Page = Safe4PageControl(pageSize: Self.pageSize)
+            viewItems.removeAll()
+            cachedInfoByAddress.removeAll()
+            catchUpTask?.cancel()
+            catchUpTask = nil
+            targetTotalNumForCatchUp = nil
+        }
+
+        allRequestTask = Task { [service] in
+            defer {
+                Task { @MainActor in
+                    self.allRequestTask = nil
+                    self.startBackgroundCatchUpIfNeeded()
                 }
+            }
+            do{
+                if !loadMore { let _ = try await allPartnerAddrs() }
+                let latestTotalNum = try await Int(service.getTotalNum())
+                reconcileTotal(latestTotalNum: latestTotalNum)
+
                 guard safe4Page.totalNum > 0 else {
                     state = .completed(datas: [])
                     return
                 }
+
+                if refreshHeadIfNeeded, !loadMore {
+                    try await refreshHeadPage()
+                }
+
                 guard viewItems.count < safe4Page.totalNum else {
                     state = .completed(datas: viewItems)
                     return
                 }
                 let addrs = try await service.superNodeAddressArray(page: safe4Page)
                 if addrs.count > 0 { safe4Page.plusPage() }
-                
-                var results: [ViewItem] = []
-                var errors: [Error] = []
-                await withTaskGroup(of: Result<ViewItem, Error>.self) { taskGroup in
-                    for address in addrs {
-                        taskGroup.addTask { [self] in
-                            do {
-                                let item = try await nodeInfoBy(address: address, isEnabledEdit: false)
-                                return .success(item)
-                            }catch{
-                                return .failure(SuperNodeError.getInfo)
-                            }
-                        }
-                    }
-                    for await result in taskGroup {
-                        switch result {
-                        case let .success(value):
-                            results.append(value)
-                        case let .failure(error):
-                            errors.append(error)
-                        }
-                    }
-                }
-                var sortedResults = [ViewItem]()
-                for address in addrs {
-                    for  result in results {
-                        if result.info.addr.address == address.address {
-                            sortedResults.append(result)
-                        }
-                    }
-                }
+                let sortedResults = await fetchNodeItems(addresses: addrs, isEnabledEdit: false)
+                nodeStorageManager.save(pageControl: safe4Page, infos: sortedResults.map { Safe4NodeInfo(recordId: NodeStorageType.superNode.cacheId, $0.info) })
                 viewItems.append(contentsOf: sortedResults)
+                cacheItems = viewItems
                 state = .completed(datas: viewItems)
             }catch{
-                state = .failed(error: "")
+                if viewItems.isEmpty {
+                    state = .failed(error: "")
+                } else {
+                    state = .completed(datas: viewItems)
+                }
             }
         }
     }
@@ -275,7 +238,13 @@ extension SuperNodeViewModel {
         async let allVoteNum = try service.getAllVoteNum()
         async let totalVoteNum = try service.getTotalVoteNum(address: address)
         async let totalAmount = try service.getTotalAmount(address: address)
-        let info = try await service.getInfo(address: address)
+        let info: SuperNodeInfo
+        if let cached = cachedInfoByAddress[address.address.lowercased()] {
+            info = cached
+        } else {
+            info = try await service.getInfo(address: address)
+            cachedInfoByAddress[address.address.lowercased()] = info
+        }
 
         var ownerType: NodeOwnerType = .None
         
@@ -296,10 +265,21 @@ extension SuperNodeViewModel {
 
 extension SuperNodeViewModel {
     func refresh() {
+        allRequestTask?.cancel()
+        allRequestTask = nil
+        catchUpTask?.cancel()
+        catchUpTask = nil
+        targetTotalNumForCatchUp = nil
         viewItems.removeAll()
         switch type {
         case .All:
-            requestInfos(loadMore: false)
+            let hasCache = loadCache()
+            if hasCache {
+                // cache does not include live vote metrics, so always re-sync in background
+                requestInfos(loadMore: false, showLoading: false, resetBeforeLoad: false, refreshHeadIfNeeded: true)
+            } else {
+                requestInfos(loadMore: false, showLoading: true, resetBeforeLoad: true)
+            }
         case .Mine:
             requestMineNodeInfos(loadMore: false)
         }
@@ -307,10 +287,17 @@ extension SuperNodeViewModel {
     
     func clearCaches() {
         if case .All = type {
+            allRequestTask?.cancel()
+            allRequestTask = nil
+            catchUpTask?.cancel()
+            catchUpTask = nil
+            targetTotalNumForCatchUp = nil
             safe4Page.reset()
             nodeStorageManager.clearCaches()
             cacheItems.removeAll()
             viewItems.removeAll()
+            cachedInfoByAddress.removeAll()
+            refresh()
         }
     }
     
@@ -318,6 +305,7 @@ extension SuperNodeViewModel {
         if case .loading = state {
            return
         }
+        guard allRequestTask == nil else { return }
         switch type {
         case .All:
             if safe4Page.isAbleLoadMore {
@@ -331,6 +319,195 @@ extension SuperNodeViewModel {
     func getLockId(viewItem: ViewItem) -> BigUInt? {
         return viewItem.info.founders
             .filter{$0.addr.address.lowercased() == service.address.address.lowercased()}.first?.lockID
+    }
+
+    @discardableResult
+    private func loadCache() -> Bool {
+        guard let pageControl = nodeStorageManager.getPageControl(), let caches = nodeStorageManager.load(), !caches.isEmpty else {
+            return false
+        }
+
+        let cacheItems = caches.map {
+            ViewItem(
+                info: $0.transformToSuper(),
+                totalVoteNum: 0,
+                totalAmount: 0,
+                allVoteNum: 0,
+                ownerType: ownerType(info: $0.transformToSuper()),
+                nodeType: nodeType,
+                isEnabledEdit: false
+            )
+        }
+
+        self.cacheItems = cacheItems
+        self.viewItems = cacheItems
+        cachedInfoByAddress = Dictionary(uniqueKeysWithValues: cacheItems.map { ($0.info.addr.address.lowercased(), $0.info) })
+        safe4Page.update(totalNum: pageControl.totalNum, page: pageControl.page, indexPath: pageControl.targetIndexPath)
+        state = .completed(datas: viewItems)
+        return true
+    }
+
+    private func ownerType(info: SuperNodeInfo) -> NodeOwnerType {
+        var ownerType: NodeOwnerType = .None
+        if info.addr.address.lowercased() == service.address.address.lowercased() {
+            ownerType = .Owner
+        }
+        if info.creator.address.lowercased() == service.address.address.lowercased() {
+            ownerType = .Creator
+        }
+        if partnerAddressArray.contains(info.addr) {
+            ownerType = .Partner
+        }
+        return ownerType
+    }
+
+    private func reconcileTotal(latestTotalNum: Int) {
+        let currentTotal = safe4Page.totalNum
+        let loadedCount = viewItems.count
+        if currentTotal == 0 {
+            safe4Page = buildPageControl(totalNum: latestTotalNum, loadedCount: loadedCount)
+            targetTotalNumForCatchUp = nil
+            return
+        }
+        if latestTotalNum == currentTotal {
+            return
+        }
+        if latestTotalNum < currentTotal {
+            viewItems.removeAll()
+            cacheItems.removeAll()
+            cachedInfoByAddress.removeAll()
+            nodeStorageManager.clearCaches()
+            safe4Page = Safe4PageControl(pageSize: Self.pageSize)
+            safe4Page.set(totalNum: latestTotalNum)
+            targetTotalNumForCatchUp = nil
+            catchUpTask?.cancel()
+            catchUpTask = nil
+            return
+        }
+        safe4Page = buildPageControl(totalNum: latestTotalNum, loadedCount: loadedCount)
+        targetTotalNumForCatchUp = latestTotalNum
+    }
+
+    private func fetchNodeItems(addresses: [Web3Core.EthereumAddress], isEnabledEdit: Bool) async -> [ViewItem] {
+        var results = [ViewItem]()
+        for address in addresses {
+            if Task.isCancelled { break }
+            if let item = try? await nodeInfoBy(address: address, isEnabledEdit: isEnabledEdit) {
+                results.append(item)
+            }
+        }
+        return results
+    }
+
+    private func buildPageControl(totalNum: Int, loadedCount: Int) -> Safe4PageControl {
+        var control = Safe4PageControl(pageSize: Self.pageSize)
+        control.set(totalNum: totalNum)
+        guard loadedCount > 0 else { return control }
+        let pagesLoaded = Int(ceil(Double(loadedCount) / Double(Self.pageSize)))
+        if pagesLoaded > 0 {
+            for _ in 0..<pagesLoaded {
+                control.plusPage()
+            }
+        }
+        return control
+    }
+
+    private func startBackgroundCatchUpIfNeeded() {
+        guard case .All = type else { return }
+        guard catchUpTask == nil else { return }
+        guard let targetTotal = targetTotalNumForCatchUp else { return }
+        guard viewItems.count < targetTotal else {
+            targetTotalNumForCatchUp = nil
+            return
+        }
+        guard allRequestTask == nil else { return }
+
+        catchUpTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                Task { @MainActor in
+                    self.catchUpTask = nil
+                    self.startBackgroundCatchUpIfNeeded()
+                }
+            }
+
+            while !Task.isCancelled {
+                guard let targetTotal = targetTotalNumForCatchUp else { break }
+                if viewItems.count >= targetTotal {
+                    targetTotalNumForCatchUp = nil
+                    break
+                }
+                if allRequestTask != nil {
+                    break
+                }
+                guard safe4Page.isAbleLoadMore else { break }
+
+                do {
+                    let addrs = try await service.superNodeAddressArray(page: safe4Page)
+                    guard !addrs.isEmpty else { break }
+                    safe4Page.plusPage()
+
+                    let items = await fetchNodeItems(addresses: addrs, isEnabledEdit: false)
+                    mergeInOrder(items: items)
+                    nodeStorageManager.save(pageControl: safe4Page, infos: items.map { Safe4NodeInfo(recordId: NodeStorageType.superNode.cacheId, $0.info) })
+                    state = .completed(datas: viewItems)
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                } catch {
+                    break
+                }
+            }
+        }
+    }
+
+    private func refreshHeadPage() async throws {
+        var headPage = Safe4PageControl(pageSize: Self.pageSize)
+        headPage.set(totalNum: safe4Page.totalNum)
+        let addresses = try await service.superNodeAddressArray(page: headPage)
+        guard !addresses.isEmpty else { return }
+
+        let headItems = await fetchNodeItems(addresses: addresses, isEnabledEdit: false)
+        guard !headItems.isEmpty else { return }
+
+        var indexById = Dictionary(uniqueKeysWithValues: viewItems.enumerated().map { ($1.id, $0) })
+
+        for item in headItems {
+            cachedInfoByAddress[item.info.addr.address.lowercased()] = item.info
+            if let idx = indexById[item.id] {
+                viewItems[idx] = item
+            } else {
+                viewItems.insert(item, at: 0)
+                indexById = Dictionary(uniqueKeysWithValues: viewItems.enumerated().map { ($1.id, $0) })
+            }
+        }
+
+        // Keep server page order for the refreshed head window.
+        var replacement = [ViewItem]()
+        for item in headItems {
+            if let idx = viewItems.firstIndex(where: { $0.id == item.id }) {
+                replacement.append(viewItems[idx])
+            }
+        }
+
+        if !replacement.isEmpty {
+            let count = min(replacement.count, viewItems.count)
+            viewItems.replaceSubrange(0..<count, with: replacement)
+        }
+
+        cacheItems = viewItems
+        nodeStorageManager.save(pageControl: safe4Page, infos: headItems.map { Safe4NodeInfo(recordId: NodeStorageType.superNode.cacheId, $0.info) })
+        state = .completed(datas: viewItems)
+    }
+
+    private func mergeInOrder(items: [ViewItem]) {
+        guard !items.isEmpty else { return }
+        var existingIds = Set(viewItems.map(\.id))
+        for item in items {
+            guard !existingIds.contains(item.id) else { continue }
+            existingIds.insert(item.id)
+            viewItems.append(item)
+            cachedInfoByAddress[item.info.addr.address.lowercased()] = item.info
+        }
+        cacheItems = viewItems
     }
 }
 

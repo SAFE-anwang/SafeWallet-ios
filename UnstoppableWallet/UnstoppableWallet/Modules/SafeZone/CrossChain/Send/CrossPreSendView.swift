@@ -26,6 +26,11 @@ struct CrossPreSendView: View {
                         VStack(spacing: .margin8) {
                             addressInputView()
                         }
+
+                        AddressSecurityCheckView(
+                            viewModel: viewModel.securityCheckViewModel,
+                            sourceStatPage: .send
+                        )
                         
                         if viewModel.hasMemo {
                             memoView()
@@ -196,7 +201,7 @@ struct CrossPreSendView: View {
         let (title, disabled, showProgress) = buttonState()
 
         Button(action: {
-            if viewModel.resolvedAddress.issueTypes.isEmpty {
+            if viewModel.addressIssueTypes.isEmpty {
                 confirmPresented = true
             } else {
                 Coordinator.shared.present(type: .bottomSheet) { isPresented in
@@ -258,6 +263,9 @@ struct CrossPreSendView: View {
             showProgress = true
         } else if let adapterState = viewModel.adapterState, !adapterState.isSynced {
             title = "send.token_not_synced".localized
+        } else if viewModel.isAddressChecking {
+            title = "send.address.checking".localized
+            showProgress = true
         } else if viewModel.amount == nil {
             title = "send.enter_amount".localized
         } else if let amount = viewModel.amount, amount < viewModel.crossChainHandler.minAmount {

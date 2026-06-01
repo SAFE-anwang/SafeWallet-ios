@@ -8,6 +8,7 @@ import RxSwift
 class CrossPreSendViewModel: ObservableObject {
     private let wallet: Wallet
     let resolvedAddress: ResolvedAddress
+    let securityCheckViewModel: AddressSecurityCheckViewModel
     private let currencyManager = Core.shared.currencyManager
     private let marketKit = Core.shared.marketKit
     private let walletManager = Core.shared.walletManager
@@ -118,12 +119,15 @@ class CrossPreSendViewModel: ObservableObject {
     let crossChainHandler: ICrossChainHandler
     @Published var sendData: ExtendedSendData?
     @Published var cautions = [CautionNew]()
+    @Published private(set) var checkedResolvedAddress: ResolvedAddress?
+    @Published private(set) var addressSecurityState: AddressSecurityCheckViewModel.State = .idle
     
     init(handler: IPreSendHandler?, crossChainHandler: ICrossChainHandler, resolvedAddress: ResolvedAddress, amount: Decimal?, memo: String?) {
         self.wallet = crossChainHandler.wallet
         self.handler = handler
         self.crossChainHandler = crossChainHandler
         self.resolvedAddress = resolvedAddress
+        self.securityCheckViewModel = AddressSecurityCheckViewModel(token: crossChainHandler.wallet.token)
         self.parserChain = AddressParserFactory.parserChain(blockchainType: crossChainHandler.receiverBlockchainType)
         currency = currencyManager.baseCurrency
         address = Core.shared.adapterManager.depositAdapter(for: crossChainHandler.wallet)?.receiveAddress.address ?? ""
@@ -168,7 +172,18 @@ class CrossPreSendViewModel: ObservableObject {
                 .store(in: &cancellables)
         }
 
+        securityCheckViewModel.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.syncFromCheckState(state)
+            }
+            .store(in: &cancellables)
+
         syncFiatAmount()
+
+        if !address.isEmpty {
+            validateAddress(address: address)
+        }
     }
 
     private func syncAmount() {
@@ -216,6 +231,18 @@ extension CrossPreSendViewModel {
         crossChainHandler.navTitle
     }
 
+    var addressIssueTypes: [AddressSecurityIssueType] {
+        checkedResolvedAddress?.issueTypes ?? []
+    }
+
+    var isAddressChecking: Bool {
+        if case .checking = addressSecurityState {
+            return true
+        }
+
+        return false
+    }
+
     func syncSendData() {
         guard let amount, amount >= crossChainHandler.minAmount  else {
             sendData = nil
@@ -238,7 +265,7 @@ extension CrossPreSendViewModel {
 
         switch result {
         case let .valid(sendData):
-            self.sendData = ExtendedSendData(sendData: sendData, address: resolvedAddress.address)
+            self.sendData = ExtendedSendData(sendData: sendData, address: address.address.raw)
             cautions = []
         case let .invalid(cautions):
             sendData = nil
@@ -284,6 +311,28 @@ extension CrossPreSendViewModel {
 
 // validate address
 extension CrossPreSendViewModel {
+    private func syncAddressSecurityState() {
+        switch addressResult {
+        case .idle, .loading, .invalid:
+            checkedResolvedAddress = nil
+            addressSecurityState = .idle
+            securityCheckViewModel.check(address: nil)
+        case let .valid(success):
+            securityCheckViewModel.check(address: success.address)
+        }
+    }
+
+    private func syncFromCheckState(_ checkState: AddressSecurityCheckViewModel.State) {
+        addressSecurityState = checkState
+
+        switch checkState {
+        case .idle, .checking:
+            checkedResolvedAddress = nil
+        case let .completed(address, detectedTypes):
+            checkedResolvedAddress = ResolvedAddress(address: address.raw, issueTypes: detectedTypes)
+        }
+    }
+
     private func validateAddress(address: String) {
         parserChain
             .handle(address: address)
@@ -299,16 +348,22 @@ extension CrossPreSendViewModel {
     private func sync(_ address: Address?, uri: AddressUri?) {
         guard let address else {
             addressResult = .idle
+            syncAddressSecurityState()
+            syncSendData()
             return
         }
 
         addressResult = .valid(.init(address: address, uri: uri))
         addressCautionState = .none
+        syncAddressSecurityState()
+        syncSendData()
     }
 
     private func sync(_ error: Error, text: String) {
         addressResult = .invalid(.init(text: text, error: error))
         let caution = Caution(text: "watch_address.error.not_supported".localized, type: .error)
         addressCautionState = .caution(caution)
+        syncAddressSecurityState()
+        syncSendData()
     }
 }

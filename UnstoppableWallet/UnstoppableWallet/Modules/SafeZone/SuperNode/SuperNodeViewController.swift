@@ -122,7 +122,6 @@ class SuperNodeViewController: ThemeViewController {
 
     @objc private func onRefresh() {
         viewModel.clearCaches()
-        viewModel.refresh()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             self?.refreshControl.endRefreshing()
         }
