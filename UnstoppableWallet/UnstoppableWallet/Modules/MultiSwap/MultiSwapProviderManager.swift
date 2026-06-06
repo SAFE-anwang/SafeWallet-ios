@@ -28,7 +28,9 @@ class MultiSwapProviderManager {
     }
 
     private func syncProviders(uSwapProviders: [String]) {
-        providers = Array(Set([AllBridgeMultiSwapProvider.id/*, JupiterMultiSwapProvider.id*/] + uSwapProviders))
+        let disabledProviderIds: [String] = [USwapMultiSwapProvider.Provider.quickEx.rawValue, USwapMultiSwapProvider.Provider.letsExchange.rawValue, USwapMultiSwapProvider.Provider.stealthex.rawValue, USwapMultiSwapProvider.Provider.swapuz.rawValue]
+        let filtered = uSwapProviders.filter { !disabledProviderIds.contains($0) }
+        providers = Array(Set([AllBridgeMultiSwapProvider.id/*, JupiterMultiSwapProvider.id*/] + filtered))
     }
 
     func sync() {

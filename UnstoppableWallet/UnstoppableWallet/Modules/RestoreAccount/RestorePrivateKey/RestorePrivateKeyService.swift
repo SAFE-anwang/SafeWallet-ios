@@ -5,9 +5,11 @@ import Foundation
 import HdWalletKit
 import MarketKit
 import stellarsdk
+import TronKit
 
 enum PrivateKeyType: String, CaseIterable {
     case evm = "EVM Private Key"
+    case tronPrivateKey = "Tron Private Key"
     case hdExtendedKey = "HD Extended Key"
     case stellarSecretKey = "Stellar Secret Key"
     case bitcoinPrivateKey = "Bitcoin Private Key"
@@ -21,6 +23,8 @@ enum PrivateKeyType: String, CaseIterable {
         switch self {
         case .evm:
             return [.ethereum, .binanceSmartChain, .polygon, .avalanche, .gnosis, .fantom, .arbitrumOne, .optimism, .base, .zkSync, .safe4]
+        case .tronPrivateKey:
+            return [.tron]
         case .hdExtendedKey:
             return [.bitcoin, .litecoin, .bitcoinCash, .dash, .dogecoin]
         case .stellarSecretKey:
@@ -72,8 +76,13 @@ class RestorePrivateKeyService {
         } catch {}
 
         do {
-            let privateKey = try Signer.privateKey(string: normalizeHexPrefix(text))
+            let privateKey = try evmPrivateKeyData(text: text)
             accountTypes.append(.evmPrivateKey(data: privateKey))
+        } catch {}
+
+        do {
+            let privateKey = try tronPrivateKeyData(text: text)
+            accountTypes.append(.trcPrivateKey(data: privateKey))
         } catch {}
 
         do {
@@ -135,8 +144,13 @@ class RestorePrivateKeyService {
         } catch {}
 
         do {
-            let privateKey = try Signer.privateKey(string: normalizeHexPrefix(text))
+            let privateKey = try evmPrivateKeyData(text: text)
             return .evmPrivateKey(data: privateKey)
+        } catch {}
+
+        do {
+            let privateKey = try tronPrivateKeyData(text: text)
+            return .trcPrivateKey(data: privateKey)
         } catch {}
 
         do {
@@ -150,8 +164,12 @@ class RestorePrivateKeyService {
     private func parseWithForcedType(text: String, type: PrivateKeyType) throws -> AccountType {
         switch type {
         case .evm:
-            let privateKey = try Signer.privateKey(string: normalizeHexPrefix(text))
+            let privateKey = try evmPrivateKeyData(text: text)
             return .evmPrivateKey(data: privateKey)
+
+        case .tronPrivateKey:
+            let privateKey = try tronPrivateKeyData(text: text)
+            return .trcPrivateKey(data: privateKey)
 
         case .hdExtendedKey:
             let extendedKey = try HDExtendedKey(extendedKey: text)
@@ -332,8 +350,13 @@ class RestorePrivateKeyService {
         let normalizedForEvm = normalizeHexPrefix(trimmed)
         if normalizedForEvm.count == 64, normalizedForEvm.allSatisfy({ $0.isHexDigit }) {
             do {
-                _ = try Signer.privateKey(string: normalizedForEvm)
+                _ = try EvmKit.Signer.privateKey(string: normalizedForEvm)
                 return .evm
+            } catch {}
+
+            do {
+                _ = try tronPrivateKeyData(text: trimmed)
+                return .tronPrivateKey
             } catch {}
         }
 
@@ -385,6 +408,10 @@ class RestorePrivateKeyService {
                 TokenQuery(blockchainType: .fantom, tokenType: .native),
                 TokenQuery(blockchainType: .safe4, tokenType: .native),
             ]
+        case .tronPrivateKey:
+            return [
+                TokenQuery(blockchainType: .tron, tokenType: .native),
+            ]
         case .bitcoinPrivateKey, .bitcoinWif, .bitcoinMiniKey, .bitcoinBrainWallet, .bitcoinBip38:
             let blockchainTypes: [BlockchainType] = [
                 .bitcoin,
@@ -417,6 +444,42 @@ class RestorePrivateKeyService {
             return String(text.dropFirst(2))
         }
         return text
+    }
+
+    private func evmPrivateKeyData(text: String) throws -> Data {
+        try EvmKit.Signer.privateKey(string: normalizeHexPrefix(text))
+    }
+
+    private func tronPrivateKeyData(text: String) throws -> Data {
+        let privateKey = try hexData(text: text)
+        _ = try TronKit.Signer.address(privateKey: privateKey)
+        return privateKey
+    }
+
+    private func hexData(text: String) throws -> Data {
+        let normalized = normalizeHexPrefix(text)
+
+        guard normalized.count == 64, normalized.allSatisfy(\.isHexDigit) else {
+            throw RestoreError.invalidPrivateKey
+        }
+
+        var bytes = [UInt8]()
+        bytes.reserveCapacity(normalized.count / 2)
+
+        var index = normalized.startIndex
+        while index < normalized.endIndex {
+            let nextIndex = normalized.index(index, offsetBy: 2)
+            let byteString = normalized[index ..< nextIndex]
+
+            guard let byte = UInt8(byteString, radix: 16) else {
+                throw RestoreError.invalidPrivateKey
+            }
+
+            bytes.append(byte)
+            index = nextIndex
+        }
+
+        return Data(bytes)
     }
 }
 

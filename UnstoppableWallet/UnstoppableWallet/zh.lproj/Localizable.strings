@@ -597,7 +597,7 @@
 "send.address.recent" = "最近使用";
 "send.address.contacts" = "联系人";
 "send.address.checking" = "正在检查";
-"send.address.check.clear" = "清除";
+"send.address.check.clear" = "安全";
 "send.address.check.detected" = "已检测到";
 "send.address.check.disabled" = "已禁用";
 "send.address.risky.title" = "风险地址";

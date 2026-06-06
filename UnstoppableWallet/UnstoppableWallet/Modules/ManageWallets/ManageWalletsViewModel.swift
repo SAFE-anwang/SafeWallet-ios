@@ -44,7 +44,9 @@ class ManageWalletsViewModel: ObservableObject {
 
         let supported = (try? Core.shared.marketKit.blockchains(uids: BlockchainType.supported.map(\.uid))) ?? []
 
-        blockchains = supported.sorted(by: { $0.type.order < $1.type.order })
+        blockchains = supported
+            .filter { $0.type != .safe }
+            .sorted(by: { $0.type.order < $1.type.order })
         setupBindings()
         reloadTokens(initial: true)
     }

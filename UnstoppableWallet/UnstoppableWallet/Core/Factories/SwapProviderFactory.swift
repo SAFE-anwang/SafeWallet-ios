@@ -23,6 +23,10 @@ class SwapProviderFactory {
 //        }
 
         if let provider = USwapMultiSwapProvider.Provider(rawValue: id) {
+            let disabledProviders: [USwapMultiSwapProvider.Provider] = [.quickEx, .letsExchange, .stealthex, .swapuz]
+            guard !disabledProviders.contains(provider) else {
+                return nil
+            }
             return USwapMultiSwapProvider(provider: provider)
         }
 
@@ -31,6 +35,10 @@ class SwapProviderFactory {
 
     static func providerName(id: String) -> String? {
         if let provider = USwapMultiSwapProvider.Provider(rawValue: id) {
+            let disabledProviders: [USwapMultiSwapProvider.Provider] = [.quickEx, .letsExchange, .stealthex, .swapuz]
+            guard !disabledProviders.contains(provider) else {
+                return nil
+            }
             return provider.title
         }
 

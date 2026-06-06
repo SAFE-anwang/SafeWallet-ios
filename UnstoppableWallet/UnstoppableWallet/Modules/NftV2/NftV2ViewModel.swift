@@ -52,6 +52,7 @@ final class NftV2ViewModel: ObservableObject {
     @Published private(set) var collections = [NftV2Collection]()
     @Published private(set) var chainStates = [NftV2ChainState]()
     @Published private(set) var pendingTransfers = [NftV2PendingTransferItem]()
+    @Published private(set) var displayedPendingTransfers = [NftV2PendingTransferItem]()
     @Published private(set) var sendCapabilityByAssetKey = [String: NftV2SendCapability]()
     @Published private(set) var sendingAssetKeys = Set<String>()
 
@@ -64,6 +65,7 @@ final class NftV2ViewModel: ObservableObject {
     private var lastAccountId: String?
     private var isVisible = false
     private var rawCollections = [NftV2Collection]()
+    private var hiddenPendingTransferIds = Set<String>()
 
     init(inventoryService: NftV2InventoryService) {
         self.inventoryService = inventoryService
@@ -111,10 +113,14 @@ final class NftV2ViewModel: ObservableObject {
     private var visiblePendingTransfers: [NftV2PendingTransferItem] {
         switch filter {
         case .all:
-            return pendingTransfers
+            return displayedPendingTransfers
         case .favorites:
-            return pendingTransfers.filter { inventoryService.isFavorite(collectionId: $0.collectionId) }
+            return displayedPendingTransfers.filter { inventoryService.isFavorite(collectionId: $0.collectionId) }
         }
+    }
+
+    func collection(id: String) -> NftV2Collection? {
+        collections.first { $0.id == id }
     }
 
     func favoriteCount(chain: NftV2Chain) -> Int {
@@ -420,7 +426,9 @@ final class NftV2ViewModel: ObservableObject {
         sendFollowUpTask = nil
         sendCapabilityByAssetKey.removeAll()
         sendingAssetKeys.removeAll()
+        hiddenPendingTransferIds.removeAll()
         pendingTransfers = []
+        displayedPendingTransfers = []
         state = .idle
         inventoryService.syncFavorites()
         reloadPendingTransfers()
@@ -450,8 +458,8 @@ final class NftV2ViewModel: ObservableObject {
     private func bindTransactionChanges() {
         inventoryService.transactionRecordsObservable()
             .throttle(.milliseconds(400), scheduler: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] chain, records in
-                self?.reconcilePendingTransfers(chain: chain, records: records)
+            .subscribe(onNext: { [weak self] chain, records, lastBlockHeight in
+                self?.reconcilePendingTransfers(chain: chain, records: records, lastBlockHeight: lastBlockHeight)
             })
             .disposed(by: disposeBag)
     }
@@ -459,9 +467,11 @@ final class NftV2ViewModel: ObservableObject {
     private func reloadPendingTransfers() {
         pendingTransfers = inventoryService.pendingTransfers()
             .sorted { $0.submittedAt > $1.submittedAt }
+        hiddenPendingTransferIds = hiddenPendingTransferIds.intersection(Set(pendingTransfers.map(\.id)))
+        syncDisplayedPendingTransfers()
     }
 
-    private func reconcilePendingTransfers(chain: NftV2Chain, records: [TransactionRecord]) {
+    private func reconcilePendingTransfers(chain: NftV2Chain, records: [TransactionRecord], lastBlockHeight: Int?) {
         guard !pendingTransfers.isEmpty else {
             return
         }
@@ -482,11 +492,30 @@ final class NftV2ViewModel: ObservableObject {
                 return true
             }
 
-            guard record.blockHeight != nil else {
+            guard case .completed = record.status(lastBlockHeight: lastBlockHeight) else {
                 return false
             }
 
             return pendingTransferIsApplied(pending)
+        }
+
+        let completed = pendingTransfers.filter { pending in
+            guard pending.chain == chain,
+                  let record = transactionByHash[pending.transactionHash.lowercased()]
+            else {
+                return false
+            }
+
+            guard case .completed = record.status(lastBlockHeight: lastBlockHeight) else {
+                return false
+            }
+
+            return true
+        }
+
+        if !completed.isEmpty {
+            hiddenPendingTransferIds.formUnion(completed.map(\.id))
+            syncDisplayedPendingTransfers()
         }
 
         guard !matched.isEmpty else {
@@ -501,6 +530,7 @@ final class NftV2ViewModel: ObservableObject {
 
     private func refreshPresentation() {
         collections = applyPendingTransfers(to: rawCollections)
+        syncDisplayedPendingTransfers()
         refreshCapabilitiesForVisibleAssets()
     }
 
@@ -549,6 +579,12 @@ final class NftV2ViewModel: ObservableObject {
 
         let expectedBalance = max(pending.asset.balance - max(pending.amount, 1), 0)
         return rawAsset.balance <= expectedBalance
+    }
+
+    private func syncDisplayedPendingTransfers() {
+        displayedPendingTransfers = pendingTransfers.filter { pending in
+            !hiddenPendingTransferIds.contains(pending.id) && !pendingTransferIsApplied(pending)
+        }
     }
 
     private func applyPendingTransfers(to collections: [NftV2Collection]) -> [NftV2Collection] {

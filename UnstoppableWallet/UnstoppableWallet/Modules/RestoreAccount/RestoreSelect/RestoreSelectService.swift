@@ -110,6 +110,7 @@ class RestoreSelectService {
                 accountType.supports(token: token)
                     && supportsDerivationLimit(token: token)
                     && supportsBlockchainLimit(token: token)
+                    && token.blockchainType != .safe
             }
         } catch {
             // todo

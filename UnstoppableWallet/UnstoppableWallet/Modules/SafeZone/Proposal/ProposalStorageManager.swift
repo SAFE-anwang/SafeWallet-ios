@@ -54,15 +54,30 @@ class ProposalStorageManager: NSObject {
         }
         return Date().timeIntervalSince1970 - timestamp > maxAge
     }
+
+    private static func newProposalTipsKey() -> String {
+        "safe4_proposal_isShow_new_key_\(Core.shared.accountManager.activeAccount?.id ?? "")"
+    }
+
+    private static func proposalPopupReminderKey() -> String {
+        "safe4_proposal_popup_reminder_key_\(Core.shared.accountManager.activeAccount?.id ?? "")"
+    }
     
     static func getNeedShowTips() -> Bool {
-        let isShowNewProposalKey: String = "safe4_proposal_isShow_new_key_\(Core.shared.accountManager.activeAccount?.id ?? "")"
-        guard let isNeed: Bool = Core.shared.userDefaultsStorage.value(for: isShowNewProposalKey) else{ return true }
+        guard let isNeed: Bool = Core.shared.userDefaultsStorage.value(for: newProposalTipsKey()) else { return true }
         return isNeed
     }
     
     static func saveNeedShowTips(_ isNeed: Bool) {
-        let isShowNewProposalKey: String = "safe4_proposal_isShow_new_key_\(Core.shared.accountManager.activeAccount?.id ?? "")"
-        Core.shared.userDefaultsStorage.set(value: isNeed, for: isShowNewProposalKey)
+        Core.shared.userDefaultsStorage.set(value: isNeed, for: newProposalTipsKey())
+    }
+
+    static func shouldShowProposalPopupReminder() -> Bool {
+        guard let shouldShow: Bool = Core.shared.userDefaultsStorage.value(for: proposalPopupReminderKey()) else { return true }
+        return shouldShow
+    }
+
+    static func saveShouldShowProposalPopupReminder(_ shouldShow: Bool) {
+        Core.shared.userDefaultsStorage.set(value: shouldShow, for: proposalPopupReminderKey())
     }
 }

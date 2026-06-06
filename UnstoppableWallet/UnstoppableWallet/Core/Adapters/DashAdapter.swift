@@ -14,6 +14,7 @@ class DashAdapter: BitcoinBaseAdapter {
 
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
         let logger = Core.shared.logger.scoped(with: "DashKit")
+        Self.configureBlockchairSync()
 
         switch wallet.account.type {
         case .mnemonic:
@@ -77,6 +78,15 @@ class DashAdapter: BitcoinBaseAdapter {
 
     override func explorerUrl(address: String) -> String? {
         "https://blockchair.com/dash/address/" + address
+    }
+
+    private static func configureBlockchairSync() {
+        DashKitConfiguration.shared.configure(
+            blockchairEnabled: true,
+            apiKey: AppConfig.blockchairApiKey,
+            syncSourceStrategy: .hybridBlockchair,
+            useNativeBlockchairApi: true
+        )
     }
 }
 

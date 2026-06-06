@@ -113,7 +113,7 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
         detectedKeyType = privateKeyService.detectPrivateKeyType(trimmed)
 
         let fallbackTypes: [PrivateKeyType] = [
-            .evm, .hdExtendedKey, .stellarSecretKey,
+            .evm, .tronPrivateKey, .hdExtendedKey, .stellarSecretKey,
             .bitcoinPrivateKey, .bitcoinWif, .bitcoinMiniKey, .bitcoinBip38, .bitcoinBrainWallet,
         ]
 

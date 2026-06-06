@@ -33,6 +33,7 @@ struct MainSettingsView: View {
                         manageWallets()
                         blockchainSettings()
                         security()
+                        addressChecker()
 //                        privacy()
                         dAppConnection()
                         fallbackBlock()
@@ -50,40 +51,10 @@ struct MainSettingsView: View {
 
                     ListSection {
                         appSettings()
-//<<<<<<< HEAD
-//                        subscription()
-//                        backupManager()
-//                    }
-//
-//                    Spacer().frame(height: .margin24)
-//
-//                    VStack(spacing: 0) {
-//                        SectionHeader(image: Image.premiumIcon, text: ComponentText(text: "subscription.premium.label".localized, colorStyle: .yellow), horizontalInsets: .margin16)
-//
-//                        ListSection {
-//                            vipSupport()
-//                            addressChecker()
-//                        }
-//                        .modifier(ThemeListStyleModifier(themeListStyle: .borderedPremium, selected: true))
-//                    }
-//=======
 //                        subscription()
                         contacts()
 //                        backupManager()
                     }
-
-//                    Spacer().frame(height: .margin24)
-//
-//                    VStack(spacing: 0) {
-//                        premiumHeader()
-//
-//                        ListSection {
-//                            vipSupport()
-//                            addressChecker()
-//                        }
-//                        .modifier(ThemeListStyleModifier(themeListStyle: .borderedLawrence, selected: true))
-//                    }
-//>>>>>>> develop
 
                     Spacer().frame(height: .margin32)
 
@@ -167,23 +138,14 @@ struct MainSettingsView: View {
                 isFirstAppear = false
                 return
             }
-
-//<<<<<<< HEAD
-//            currentSlideIndex = (currentSlideIndex + 1) % viewModel.slides.count
-//=======
             currentSlideIndex = PremiumFactory.forceShowingPremium ? 0 : (currentSlideIndex + 1) % viewModel.slides.count
-//>>>>>>> master
         }
     }
 
     @ViewBuilder private func slide(slide: MainSettingsViewModel.Slide) -> some View {
         switch slide {
         case .premium:
-//<<<<<<< HEAD
-//            premiumSlide()
-//=======
             PremiumFactory.slide(offer: viewModel.introductoryOffer)
-//>>>>>>> master
                 .onTapGesture {
                     Coordinator.shared.presentPurchase(page: .settings, trigger: .banner)
                 }
@@ -308,14 +270,6 @@ struct MainSettingsView: View {
             }
 
             Image.disclosureIcon
-        }
-        .navigationDestination(isPresented: $walletConnectPresented) {
-            WalletConnectListView()
-                .navigationTitle("wallet_connect_list.title".localized)
-                .ignoresSafeArea()
-                .onFirstAppear {
-                    stat(page: .settings, event: .open(page: .walletConnect))
-                }
         }
     }
     
@@ -458,16 +412,14 @@ struct MainSettingsView: View {
 
     @ViewBuilder private func addressChecker() -> some View {
         ClickableRow(action: {
-            Coordinator.shared.performAfterPurchase(premiumFeature: .scamProtection, page: .settings, trigger: .vipSupport) {
-                Coordinator.shared.present { isPresented in
-                    CheckAddressView(isPresented: isPresented)
-                        .onFirstAppear {
-                            stat(page: .settings, event: .open(page: .addressChecker))
-                        }
-                }
+            Coordinator.shared.present { isPresented in
+                CheckAddressView(isPresented: isPresented)
+                    .onFirstAppear {
+                        stat(page: .settings, event: .open(page: .addressChecker))
+                    }
             }
         }) {
-            ThemeImage("radar", size: .iconSize24, colorStyle: .yellow)
+            ThemeImage("radar", size: .iconSize24)
             Text("address_checker.title".localized).themeBody()
             Image.disclosureIcon
         }

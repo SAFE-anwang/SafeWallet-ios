@@ -36,7 +36,7 @@ struct RewardsView: View {
                                         .themeSubhead1(alignment: .trailing)
                                 }
 
-                                ForEach(items, id: \.date) { item in
+                                ForEach(items) { item in
                                     ClickableRow(action: {}) {
                                         Text(item.date)
                                             .themeSubhead1(color: item.withdrawEnabled ? .blue : .themeLeah, alignment: .leading)

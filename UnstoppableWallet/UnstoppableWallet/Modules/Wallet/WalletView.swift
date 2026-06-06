@@ -232,8 +232,8 @@ struct WalletView: View {
 
             Spacer()
             IconButton(icon: "NFT", style: .secondary, size: .small) {
-                Coordinator.shared.present { _ in
-                    NftModule.View()
+                Coordinator.shared.present { isPresented in
+                    NftV2Module.RootView(isPresented: isPresented)
                         .ignoresSafeArea()
                 }
             }

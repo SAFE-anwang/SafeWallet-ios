@@ -10,7 +10,7 @@ class RecipientAddressCautionCell: FormCautionCell {
 
         super.init()
 
-        subscribe(disposeBag, viewModel.cautionDriver) { [weak self] in
+        subscribe(disposeBag, viewModel.combinedCautionDriver) { [weak self] in
             self?.set(caution: $0)
         }
     }

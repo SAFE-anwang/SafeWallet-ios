@@ -193,26 +193,27 @@ final class NftV2WalletInventoryProvider: INftV2InventoryProvider {
                 let immediateRecordsCount = immediatePayload.collections.reduce(0) { $0 + $1.items.count }
 
                 if immediateRecordsCount > 0 {
-                    let immediateRecords = adapter.nftRecords.filter { $0.balance > 0 }
-                    self.scheduleOnChainMetadataRefreshIfNeeded(
-                        records: immediateRecords,
-                        metadata: metadata,
-                        address: address,
-                        account: account,
-                        contextKey: contextKey
-                    )
+                    return self.recordsSingle(adapter: adapter, account: account, forceRefreshSupplement: true)
+                        .map { records in
+                            self.scheduleOnChainMetadataRefreshIfNeeded(
+                                records: records,
+                                metadata: metadata,
+                                address: address,
+                                account: account,
+                                contextKey: contextKey
+                            )
 
-                    let refreshedPayload = self.payload(
-                        records: immediateRecords,
-                        metadata: metadata,
-                        onChainMetadataMap: cachedOnChainMetadata,
-                        account: account
-                    )
-
-                    return .just(refreshedPayload)
+                            return self.payload(
+                                records: records,
+                                metadata: metadata,
+                                onChainMetadataMap: cachedOnChainMetadata,
+                                account: account
+                            )
+                        }
+                        .catchErrorJustReturn(immediatePayload)
                 }
 
-                return self.recordsSingle(adapter: adapter, account: account)
+                return self.recordsSingle(adapter: adapter, account: account, forceRefreshSupplement: true)
                     .flatMap { records -> Single<NftV2InventoryPayload> in
                         guard !records.isEmpty else {
                             return .just(immediatePayload)
@@ -249,10 +250,13 @@ final class NftV2WalletInventoryProvider: INftV2InventoryProvider {
             return nil
         }
 
-        let records = adapter.nftRecords.filter { $0.balance > 0 }
+        let baseRecords = adapter.nftRecords.filter { $0.balance > 0 }
+        let contextKey = metadataContextKey(address: adapter.userAddress, account: account)
+        let supplementedRecords = stateQueue.sync { contextStateByKey[contextKey]?.pancakeV3Records ?? [] }
+        let records = mergePancakeV3Records(baseRecords: baseRecords, supplemented: supplementedRecords)
         let metadata = cachedMetadata(account: account)
         let onChainMetadataMap = cachedOnChainMetadataMap(
-            contextKey: metadataContextKey(address: adapter.userAddress, account: account)
+            contextKey: contextKey
         )
         return payload(records: records, metadata: metadata, onChainMetadataMap: onChainMetadataMap, account: account)
     }
@@ -277,13 +281,16 @@ final class NftV2WalletInventoryProvider: INftV2InventoryProvider {
         return .just(payload)
     }
 
-    private func recordsSingle(adapter: INftAdapter, account: Account) -> Single<[NftRecord]> {
+    private func recordsSingle(adapter: INftAdapter, account: Account, forceRefreshSupplement: Bool = false) -> Single<[NftRecord]> {
         let initialRecords = adapter.nftRecords.filter { $0.balance > 0 }
-        let initialCombinedRecordsSingle = mergePancakeV3RecordsSingle(baseRecords: initialRecords, account: account)
         adapter.sync()
 
         if !initialRecords.isEmpty {
-            return initialCombinedRecordsSingle
+            return mergePancakeV3RecordsSingle(
+                baseRecords: initialRecords,
+                account: account,
+                forceRefresh: forceRefreshSupplement
+            )
         }
 
         let adapterRecordsSingle = adapter.nftRecordsObservable
@@ -296,9 +303,13 @@ final class NftV2WalletInventoryProvider: INftV2InventoryProvider {
             .asSingle()
             .catchErrorJustReturn(initialRecords)
 
-        return Single.zip(initialCombinedRecordsSingle, adapterRecordsSingle)
-            .flatMap { _, adapterRecords in
-                self.mergePancakeV3RecordsSingle(baseRecords: adapterRecords, account: account)
+        return adapterRecordsSingle
+            .flatMap { adapterRecords in
+                self.mergePancakeV3RecordsSingle(
+                    baseRecords: adapterRecords,
+                    account: account,
+                    forceRefresh: forceRefreshSupplement
+                )
             }
     }
 
@@ -314,14 +325,15 @@ final class NftV2WalletInventoryProvider: INftV2InventoryProvider {
         return Array(merged.values)
     }
 
-    private func mergePancakeV3RecordsSingle(baseRecords: [NftRecord], account: Account) -> Single<[NftRecord]> {
+    private func mergePancakeV3RecordsSingle(baseRecords: [NftRecord], account: Account, forceRefresh: Bool = false) -> Single<[NftRecord]> {
         guard chain == .binanceSmartChain else {
             return .just(baseRecords)
         }
 
         let contextKey = metadataContextKey(address: normalizedAddress(account: account), account: account)
         let now = Date().timeIntervalSince1970
-        if let cached = stateQueue.sync(execute: { contextStateByKey[contextKey] }),
+        if !forceRefresh,
+           let cached = stateQueue.sync(execute: { contextStateByKey[contextKey] }),
            now - cached.lastPancakeV3SyncAt < Self.pancakeV3SyncThrottleInterval
         {
             return .just(mergePancakeV3Records(baseRecords: baseRecords, supplemented: cached.pancakeV3Records))

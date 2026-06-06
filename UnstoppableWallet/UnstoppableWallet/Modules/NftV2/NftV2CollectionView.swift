@@ -17,6 +17,7 @@ private struct NftV2RemoteImage: View {
 
 struct NftV2CollectionView: View {
     let collection: NftV2Collection
+    let currentCollection: () -> NftV2Collection?
     let isFavorite: () -> Bool
     let sendCapability: (NftV2Asset) -> NftV2SendCapability
     let onRequestSendCapabilityRefresh: (NftV2Asset) -> Void
@@ -41,6 +42,19 @@ struct NftV2CollectionView: View {
         Array(displayedItems.prefix(visibleCount))
     }
 
+    private var effectiveCollection: NftV2Collection {
+        currentCollection() ?? NftV2Collection(
+            id: collection.id,
+            chain: collection.chain,
+            contractAddress: collection.contractAddress,
+            name: collection.name,
+            imageUrl: collection.imageUrl,
+            market: collection.market,
+            marketUrl: collection.marketUrl,
+            items: []
+        )
+    }
+
     private var hasMore: Bool {
         visibleCount < displayedItems.count
     }
@@ -57,16 +71,17 @@ struct NftV2CollectionView: View {
         }
         .refreshable {
             await onRefresh()
-            displayedItems = collection.items
-            visibleCount = min(Self.pageSize, displayedItems.count)
+            syncDisplayedItems()
         }
         .onAppear {
             if displayedItems.isEmpty {
-                displayedItems = collection.items
-                visibleCount = min(Self.pageSize, displayedItems.count)
+                syncDisplayedItems()
             }
 
             favoriteState = isFavorite()
+        }
+        .onChange(of: effectiveCollection) { _ in
+            syncDisplayedItems()
         }
         .background(Color.themeLawrence.ignoresSafeArea())
         .navigationTitle("nft_v2.asset_detail.title".localized)
@@ -98,9 +113,9 @@ struct NftV2CollectionView: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     HStack(spacing: 8) {
-                        BadgeViewNew(collection.items.first?.standard ?? "nft_v2.asset.standard".localized, mode: .transparent, colorStyle: .secondary)
+                        BadgeViewNew(effectiveCollection.items.first?.standard ?? "nft_v2.asset.standard".localized, mode: .transparent, colorStyle: .secondary)
 
-                        ThemeText(collection.contractAddress.shortened, style: .subhead, colorStyle: .secondary)
+                        ThemeText(effectiveCollection.contractAddress.shortened, style: .subhead, colorStyle: .secondary)
                             .lineLimit(1)
                     }
                 }
@@ -166,6 +181,14 @@ struct NftV2CollectionView: View {
                 }
             }
 
+            if displayedItems.isEmpty {
+                ThemeText("nft_v2.empty.title".localized, style: .captionSB, colorStyle: .secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(Color.themeTyler)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+
             if hasMore {
                 Button {
                     loadMore()
@@ -191,6 +214,11 @@ struct NftV2CollectionView: View {
             return
         }
         visibleCount = min(visibleCount + Self.pageSize, displayedItems.count)
+    }
+
+    private func syncDisplayedItems() {
+        displayedItems = effectiveCollection.items
+        visibleCount = min(max(visibleCount, Self.pageSize), displayedItems.count)
     }
 
     @ViewBuilder

@@ -17,10 +17,6 @@ class EvmCommonGasDataService {
     }
 
     func gasDataSingle(gasPrice: GasPrice, transactionData: TransactionData, stubAmount: BigUInt? = nil) -> Single<EvmFeeModule.GasData> {
-        if let predefinedGasLimit {
-            return .just(EvmFeeModule.GasData(limit: predefinedGasLimit, price: gasPrice))
-        }
-
         let surchargeRequired = !transactionData.input.isEmpty
         
         var adjustedTransactionData: TransactionData
@@ -35,13 +31,20 @@ class EvmCommonGasDataService {
         
         return evmKit.estimateGas(transactionData: adjustedTransactionData, gasPrice: gasPrice)
                 .map { estimatedGasLimit in
-                    
-                    let limit = surchargeRequired ? EvmFeeModule.surcharged(gasLimit: estimatedGasLimit) : estimatedGasLimit
+                    let estimatedWithSurcharge = surchargeRequired ? EvmFeeModule.surcharged(gasLimit: estimatedGasLimit) : estimatedGasLimit
+                    let limit = max(self.predefinedGasLimit ?? 0, estimatedWithSurcharge)
                     return EvmFeeModule.GasData(
                             limit: limit,
                             estimatedLimit: estimatedGasLimit,
                             price: gasPrice
                     )
+                }
+                .catchError { [weak self] error in
+                    guard let predefinedGasLimit = self?.predefinedGasLimit else {
+                        return .error(error)
+                    }
+
+                    return .just(EvmFeeModule.GasData(limit: predefinedGasLimit, price: gasPrice))
                 }
     }
 }

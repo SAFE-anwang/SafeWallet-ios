@@ -190,7 +190,6 @@ private enum NftV2SendEvmConfirmationModule {
         ) else {
             return nil
         }
-
         let predefinedGasLimit: Int? = [.ethereum, .polygon, .binanceSmartChain].contains(evmKitWrapper.blockchainType) ? 100000 : nil
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(

@@ -46,18 +46,11 @@ struct NftV2RootView: View {
                         Image("close")
                     }
                 }
-
-//                ToolbarItem(placement: .primaryAction) {
-//                    Button {
-//                        viewModel.reload()
-//                    } label: {
-//                        Image("reset")
-//                    }
-//                }
             }
             .navigationDestination(for: NftV2Collection.self) { collection in
                 NftV2CollectionView(
                     collection: collection,
+                    currentCollection: { viewModel.collection(id: collection.id) },
                     isFavorite: { viewModel.isFavorite(collection: collection) },
                     sendCapability: { asset in
                         viewModel.sendCapability(asset: asset)
@@ -179,9 +172,9 @@ struct NftV2RootView: View {
             ForEach(viewModel.chainSections) { section in
                 Section {
                     if !isCollapsed(section.chainState.chain) {
-                        ForEach(section.pendingTransfers) { pending in
-                            pendingRow(pending)
-                        }
+//                        ForEach(section.pendingTransfers) { pending in
+//                            pendingRow(pending)
+//                        }
 
                         ForEach(section.collections) { collection in
                             Button {

@@ -8,6 +8,9 @@ import Alamofire
 class ApiKeyProvider {
     
     private let baseUrl = "https://safewallet.anwang.com"
+    private let headers = HTTPHeaders([
+        HTTPHeader(name: "x-auth", value: "KLFD&*jk42klO)dskdak#@")
+    ])
     private let networkManager: NetworkManager
 
     init(networkManager: NetworkManager) {
@@ -15,15 +18,14 @@ class ApiKeyProvider {
     }
 
     func rpcEndpointSingle() -> Single<[RpcEndpoint]> {
-         let ur = URL(string: "\(baseUrl)/v1/evm/rpc/services")!
-        let request = networkManager.session.request(ur)
+        let ur = URL(string: "\(baseUrl)/v1/evm/rpc/endpoints")!
+        let request = networkManager.session.request(ur, headers: headers)
         return networkManager.single(request: request)
     }
     
     func apiKeysSingle() -> Single<[ApiKey]> {
-        let ur = URL(string: "\(baseUrl)/v1/apiKeys")!
-
-        let request = networkManager.session.request(ur)
+        let ur = URL(string: "\(baseUrl)/v1/api_keys")!
+        let request = networkManager.session.request(ur, headers: headers)
         return networkManager.single(request: request)
     }
 }

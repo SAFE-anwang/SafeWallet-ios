@@ -56,23 +56,40 @@ class RewardsViewModel: ObservableObject {
     private func sync(dataState: RewardsService.State) {
         switch dataState {
         case .loading:
-            state = .loading
+            DispatchQueue.main.async { [weak self] in
+                self?.state = .loading
+            }
             
         case let .completed(datas):
-            DispatchQueue.main.async { [self] in
-                let tempArr = datas.map {
-                    let timestamp = DateFormatter.cachedFormatter(format: "yyyy-MM-dd").date(from: $0.date)?.timeIntervalSince1970
-                    let isRewarded = isRewarded(timestamp: timestamp)
-                    return RewardsViewModel.ViewItem(date: $0.date,
-                                                     amount: $0.amount,
-                                                     withdrawEnabled: !isRewarded
+            let lastTimestamp = lastTimestamp
+            DispatchQueue.global(qos: .userInitiated).async {
+                let dateFormatter = DateFormatter.cachedFormatter(format: "yyyy-MM-dd")
+                let tempArr = datas.enumerated().map { index, reward in
+                    let timestamp = dateFormatter.date(from: reward.date)?.timeIntervalSince1970
+                    let isRewarded = timestamp.map { ts in
+                        guard let lastTimestamp else {
+                            return false
+                        }
+                        return ts <= lastTimestamp
+                    } ?? false
+
+                    return RewardsViewModel.ViewItem(
+                        id: "\(reward.date)-\(reward.amount)-\(index)",
+                        date: reward.date,
+                        amount: reward.amount,
+                        withdrawEnabled: !isRewarded
                     )
                 }
-                state = .completed(tempArr)
+
+                DispatchQueue.main.async { [weak self] in
+                    self?.state = .completed(tempArr)
+                }
             }
             
         case .failed:
-            state = .completed([])
+            DispatchQueue.main.async { [weak self] in
+                self?.state = .completed([])
+            }
         }
     }
 }
@@ -95,21 +112,18 @@ extension RewardsViewModel {
                     onSuccess?(sendState)
                 }
             }catch{
-                sendState = .failed(RequestError.withdrawError)
-                onSuccess?(sendState)
+                DispatchQueue.main.async { [weak self] in
+                    self?.sendState = .failed(RequestError.withdrawError)
+                    self?.onSuccess?(self?.sendState ?? .failed(RequestError.withdrawError))
+                }
             }
         }
     }
-
-    private func isRewarded(timestamp: TimeInterval?) -> Bool {
-        guard let timestamp, let lastTimestamp = lastTimestamp else { return false }
-        return timestamp <= lastTimestamp
-    }
-    
 }
 
 extension RewardsViewModel {
-    struct ViewItem {
+    struct ViewItem: Identifiable {
+        let id: String
         let date: String
         let amount: String
         let withdrawEnabled: Bool
@@ -131,4 +145,3 @@ extension RewardsViewModel {
         case withdrawError
     }
 }
-

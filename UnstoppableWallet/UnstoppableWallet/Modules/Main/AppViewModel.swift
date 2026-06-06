@@ -61,6 +61,7 @@ extension AppViewModel {
                 if Task.isCancelled { return }
                 if hasNew {
                     ProposalStorageManager.saveNeedShowTips(true)
+                    guard ProposalStorageManager.shouldShowProposalPopupReminder() else { return }
                     await MainActor.run {
                         self.showAlerView()
                     }
@@ -92,7 +93,7 @@ extension AppViewModel {
                             },
                             .init(style: .transparent, title: "safe_zone.proposal.dont_remind".localized) {
                                 DispatchQueue.main.async {
-                                    ProposalStorageManager.saveNeedShowTips(false)
+                                    ProposalStorageManager.saveShouldShowProposalPopupReminder(false)
                                     isPresented.wrappedValue = false
                                 }
                             }

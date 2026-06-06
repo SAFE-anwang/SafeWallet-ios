@@ -154,7 +154,12 @@ extension BlockchainType {
     // used for EVM blockchains only
     var supportedNftTypes: [NftType] {
         switch self {
-        // case .ethereum: return [.eip721, .eip1155]
+        case .ethereum: return [.eip721, .eip1155]
+        case .polygon: return [.eip721, .eip1155]
+        case .arbitrumOne: return [.eip721, .eip1155]
+        case .optimism: return [.eip721, .eip1155]
+        case .base: return [.eip721, .eip1155]
+        case .binanceSmartChain: return [.eip721, .eip1155]
         default: return []
         }
     }

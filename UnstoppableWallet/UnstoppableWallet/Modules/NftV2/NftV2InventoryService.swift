@@ -149,21 +149,30 @@ final class NftV2InventoryService {
         chainUpdateRelay.map { _ in () }
     }
 
-    func transactionRecordsObservable() -> Observable<(NftV2Chain, [TransactionRecord])> {
+    func transactionRecordsObservable() -> Observable<(NftV2Chain, [TransactionRecord], Int?)> {
         let updates = transactionAdapterManager.adaptersReadyObservable
             .startWith(())
-            .map { [weak self] _ -> Observable<(NftV2Chain, [TransactionRecord])> in
+            .map { [weak self] _ -> Observable<(NftV2Chain, [TransactionRecord], Int?)> in
                 guard let self, let account = self.accountManager.activeAccount else {
                     return .empty()
                 }
 
-                let observables: [Observable<(NftV2Chain, [TransactionRecord])>] = NftV2Chain.allCases.compactMap { chain in
+                let observables: [Observable<(NftV2Chain, [TransactionRecord], Int?)>] = NftV2Chain.allCases.compactMap { chain in
                     guard let adapter = self.transactionAdapter(chain: chain, account: account) else {
                         return nil
                     }
 
-                    return adapter.transactionsObservable(token: nil, filter: .all, address: nil)
-                        .map { (chain, $0) }
+                    let recordsObservable = adapter.transactionsObservable(token: nil, filter: .all, address: nil)
+                        .share(replay: 1, scope: .whileConnected)
+
+                    let transactionUpdates = recordsObservable
+                        .map { (chain, $0, adapter.lastBlockInfo?.height) }
+                    let blockUpdates = adapter.lastBlockUpdatedObservable
+                        .withLatestFrom(recordsObservable) { _, records in
+                            (chain, records, adapter.lastBlockInfo?.height)
+                        }
+
+                    return .merge(transactionUpdates, blockUpdates)
                 }
 
                 if observables.isEmpty {
@@ -908,30 +917,28 @@ final class NftV2InventoryService {
             return preferred
         }
 
-        var collectionMap = Dictionary(uniqueKeysWithValues: fallback.collections.map { ($0.id, $0) })
-
-        for collection in preferred.collections {
-            if let existing = collectionMap[collection.id] {
-                collectionMap[collection.id] = mergedCollection(preferred: collection, fallback: existing)
-            } else {
-                collectionMap[collection.id] = collection
+        let fallbackCollectionMap = Dictionary(uniqueKeysWithValues: fallback.collections.map { ($0.id, $0) })
+        let collections = preferred.collections.map { collection in
+            guard let existing = fallbackCollectionMap[collection.id] else {
+                return collection
             }
+
+            return mergedCollection(preferred: collection, fallback: existing)
         }
 
         return NftV2InventoryPayload(
-            collections: collectionMap.values.sorted(by: collectionSort)
+            collections: collections.sorted(by: collectionSort)
         )
     }
 
     private func mergedCollection(preferred: NftV2Collection, fallback: NftV2Collection) -> NftV2Collection {
-        var assetMap = Dictionary(uniqueKeysWithValues: fallback.items.map { ($0.id, $0) })
-
-        for asset in preferred.items {
-            if let existing = assetMap[asset.id] {
-                assetMap[asset.id] = mergedAsset(preferred: asset, fallback: existing)
-            } else {
-                assetMap[asset.id] = asset
+        let fallbackAssetMap = Dictionary(uniqueKeysWithValues: fallback.items.map { ($0.id, $0) })
+        let items = preferred.items.map { asset in
+            guard let existing = fallbackAssetMap[asset.id] else {
+                return asset
             }
+
+            return mergedAsset(preferred: asset, fallback: existing)
         }
 
         return NftV2Collection(
@@ -942,7 +949,7 @@ final class NftV2InventoryService {
             imageUrl: preferred.imageUrl ?? fallback.imageUrl,
             market: preferred.market ?? fallback.market,
             marketUrl: preferred.marketUrl ?? fallback.marketUrl,
-            items: assetMap.values.sorted(by: assetSort)
+            items: items.sorted(by: assetSort)
         )
     }
 

@@ -3,14 +3,11 @@ import Foundation
 import MarketKit
 
 class AddressSecurityCheckViewModel: ObservableObject {
-    private let purchaseManager = Core.shared.purchaseManager
     private let securityManager = Core.shared.securityManager
 
     let token: Token
     let issueTypes: [AddressSecurityIssueType]
     private var cancellables = Set<AnyCancellable>()
-
-    private var premiumEnabled: Bool
 
     @Published private(set) var checkStates = [AddressSecurityIssueType: CheckState]()
 
@@ -19,15 +16,6 @@ class AddressSecurityCheckViewModel: ObservableObject {
     init(token: Token) {
         self.token = token
         issueTypes = AddressSecurityIssueType.issueTypes(token: token)
-        premiumEnabled = purchaseManager.activated(.secureSend)
-
-        purchaseManager.$activeFeatures
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] features in
-                self?.premiumEnabled = features.contains(.secureSend)
-                self?.sync()
-            }
-            .store(in: &cancellables)
 
         securityManager.$securityChecks
             .receive(on: DispatchQueue.main)
@@ -42,32 +30,23 @@ class AddressSecurityCheckViewModel: ObservableObject {
             return
         }
 
-        if premiumEnabled {
-            var states = [AddressSecurityIssueType: CheckState]()
-            var hasEnabledChecks = false
+        var states = [AddressSecurityIssueType: CheckState]()
+        var hasEnabledChecks = false
 
-            for type in issueTypes {
-                if securityManager.isCheckEnabled(type) {
-                    hasEnabledChecks = true
-                    states[type] = .checking
-                } else {
-                    states[type] = .disabled
-                }
-            }
-
-            checkStates = states
-
-            if hasEnabledChecks {
-                check(address: address)
+        for type in issueTypes {
+            if securityManager.isCheckEnabled(type) {
+                hasEnabledChecks = true
+                states[type] = .checking
             } else {
-                state = .completed(address: address, detectedTypes: [])
+                states[type] = .disabled
             }
+        }
+
+        checkStates = states
+
+        if hasEnabledChecks {
+            check(address: address)
         } else {
-            var states = [AddressSecurityIssueType: CheckState]()
-            for type in issueTypes {
-                states[type] = .locked
-            }
-            checkStates = states
             state = .completed(address: address, detectedTypes: [])
         }
     }
