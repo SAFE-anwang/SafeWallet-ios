@@ -19,17 +19,21 @@ struct Safe4PageControl: Codable {
     mutating func set(totalNum: Int) {
         self.page = 0
         self.totalNum = totalNum
+        self.isExceed = false
         guard totalNum > 0 else { return }
         let row = isReverse ? 0 : (pageArray[page].count - 1)
         targetIndexPath = IndexPath(row: row, section: page)
     }
     
     mutating func update(totalNum: Int, page: Int, indexPath: IndexPath) {
-        self.page = 0
+        self.page = page
         self.totalNum = totalNum
+        self.isExceed = false
         guard totalNum > 0 else { return }
-        let row = isReverse ? 0 : (pageArray[page].count - 1)
-        targetIndexPath = IndexPath(row: row, section: page)
+        let safePage = min(max(page, 0), maxPageNum)
+        self.page = safePage
+        let row = isReverse ? 0 : (pageArray[safePage].count - 1)
+        targetIndexPath = IndexPath(row: row, section: safePage)
     }
     
     mutating func plusPage() {

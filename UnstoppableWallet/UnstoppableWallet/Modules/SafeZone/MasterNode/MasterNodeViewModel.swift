@@ -20,11 +20,14 @@ class MasterNodeViewModel {
     private var nodeStorageManager: NodeStorageManager
     private var cachedInfoByAddress = [String: Safe4NodeInfo]()
     private var allRequestTask: Task<Void, Never>?
+    private var mineRequestTask: Task<Void, Never>?
+    private var mineRequestId: UUID?
     private var recoveryTask: Task<Void, Never>?
     private var catchUpTask: Task<Void, Never>?
     private var pendingRecoveryAddresses = Set<String>()
 
-    private var stateRelay = PublishRelay<MasterNodeViewModel.State>()
+    private let stateRelay = BehaviorRelay<MasterNodeViewModel.State>(value: .loading)
+    private let isLoadingMoreRelay = BehaviorRelay<Bool>(value: false)
     private var viewItems = [MasterNodeViewModel.ViewItem]()
     private var cacheItems = [MasterNodeViewModel.ViewItem]()
     private var partnerAddressArray = [EthereumAddress]()
@@ -46,7 +49,11 @@ class MasterNodeViewModel {
     init(service: MasterNodeService, type: MasterNodeModule.MasterNodeType) {
         self.service = service
         self.type = type
-        self.nodeStorageManager = NodeStorageManager(nodeType: .masterNode, pageControl: safe4Page)
+        self.nodeStorageManager = NodeStorageManager(
+            nodeType: .masterNode,
+            pageControl: safe4Page,
+            scopeKey: type.cacheScopeKey(address: service.receiveAddress)
+        )
     }
 }
 
@@ -54,21 +61,39 @@ class MasterNodeViewModel {
 extension MasterNodeViewModel {
     
     private func requestMineNodeInfos(loadMore: Bool) {
-        state = .loading
-        Task { [self, service] in
+        guard mineRequestTask == nil else { return }
+        if viewItems.isEmpty {
+            state = .loading
+        }
+        if loadMore {
+            isLoadingMoreRelay.accept(true)
+        }
+        let requestId = UUID()
+        mineRequestId = requestId
+        let task = Task { [self, service] in
+            defer {
+                if loadMore {
+                    self.isLoadingMoreRelay.accept(false)
+                }
+                if self.mineRequestId == requestId {
+                    self.mineRequestTask = nil
+                    self.mineRequestId = nil
+                }
+            }
             do {
                 var partnerAddrs = [Web3Core.EthereumAddress]()
                 if !loadMore {
                     let totalNum = try await service.getAddrNum4Creator()
+                    guard self.mineRequestId == requestId, !Task.isCancelled else { return }
                     safe4Page.set(totalNum: Int(totalNum))
                     partnerAddrs = try await allPartnerAddrs()
                 }
-                
+                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
                 guard safe4Page.totalNum > 0 || partnerAddressArray.count > 0 else {
                     state = .completed(datas: [])
                     return
                 }
-                guard viewItems.count < safe4Page.totalNum + partnerAddressArray.count else {
+                guard loadMore || viewItems.count < safe4Page.totalNum + partnerAddressArray.count else {
                     state = .completed(datas: viewItems)
                     return
                 }
@@ -77,7 +102,7 @@ extension MasterNodeViewModel {
                 if safe4Page.totalNum > 0 {
                     creatorAddrs = try await service.getAddrs4Creator(page: safe4Page)
                 }
-                
+                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
                 let addrs = partnerAddrs + creatorAddrs
                 var results: [ViewItem] = []
                 var errors: [Error] = []
@@ -102,13 +127,23 @@ extension MasterNodeViewModel {
                     }
                 }
                 results.sort{ Int($0.info.id) > Int($1.info.id) }
+                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
                 if results.count > 0 { safe4Page.plusPage() }
+                if !loadMore {
+                    viewItems.removeAll()
+                }
                 viewItems.append(contentsOf: results)
+                nodeStorageManager.save(
+                    pageControl: safe4Page,
+                    infos: viewItems.map { Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, $0.info) }
+                )
                 state = .completed(datas: viewItems)
             }catch{
+                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
                 state = .failed(error: "")
             }
         }
+        mineRequestTask = task
     }
     
     private func allPartnerAddrs() async throws -> [Web3Core.EthereumAddress] {
@@ -146,11 +181,14 @@ extension MasterNodeViewModel {
 // All
 extension MasterNodeViewModel {
 
-    private func requestInfos(loadMore: Bool, showLoading: Bool = true, resetBeforeLoad: Bool = false) {
+    private func requestInfos(loadMore: Bool, showLoading: Bool = true, resetBeforeLoad: Bool = false, refreshHeadIfNeeded: Bool = false) {
         guard allRequestTask == nil else { return }
 
         if showLoading {
             state = .loading
+        }
+        if loadMore {
+            isLoadingMoreRelay.accept(true)
         }
 
         if resetBeforeLoad {
@@ -163,7 +201,12 @@ extension MasterNodeViewModel {
         }
 
         allRequestTask = Task { [service] in
-            defer { Task { @MainActor in self.allRequestTask = nil } }
+            defer {
+                if loadMore {
+                    self.isLoadingMoreRelay.accept(false)
+                }
+                Task { @MainActor in self.allRequestTask = nil }
+            }
 
             do{
                 async let _ = try allPartnerAddrs()
@@ -172,6 +215,11 @@ extension MasterNodeViewModel {
                 
                 guard safe4Page.totalNum > 0 else {
                     state = .completed(datas: [])
+                    return
+                }
+                if refreshHeadIfNeeded, !loadMore {
+                    try await refreshHeadPage(totalNum: latestTotalNum)
+                    state = .completed(datas: viewItems)
                     return
                 }
                 guard viewItems.count < safe4Page.totalNum else {
@@ -185,12 +233,15 @@ extension MasterNodeViewModel {
                     safe4Page.plusPage()
                 }
 
-                nodeStorageManager.save(pageControl: safe4Page, infos: results.map { Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, $0.info) })
                 for item in results {
                     cachedInfoByAddress[item.info.addr.address.lowercased()] = Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, item.info)
                 }
                 viewItems.append(contentsOf: results)
                 cacheItems = viewItems
+                nodeStorageManager.save(
+                    pageControl: safe4Page,
+                    infos: viewItems.map { Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, $0.info) }
+                )
                 state = .completed(datas: viewItems)
             }catch{
                 if viewItems.isEmpty {
@@ -281,6 +332,9 @@ extension MasterNodeViewModel {
     func refresh() {
         allRequestTask?.cancel()
         allRequestTask = nil
+        mineRequestTask?.cancel()
+        mineRequestTask = nil
+        mineRequestId = nil
         recoveryTask?.cancel()
         recoveryTask = nil
         catchUpTask?.cancel()
@@ -290,16 +344,38 @@ extension MasterNodeViewModel {
 
         switch type {
         case .All:
-            viewItems.removeAll()
             let hasCache = loadCache()
             let shouldRefreshInBackground = !hasCache || nodeStorageManager.isCacheExpired(maxAge: Self.cacheMaxAge)
+            print("[MasterNodeVM] refresh all hasCache=\(hasCache) shouldRefresh=\(shouldRefreshInBackground) viewItems=\(viewItems.count)")
             if shouldRefreshInBackground {
-                requestInfos(loadMore: false, showLoading: !hasCache, resetBeforeLoad: true)
+                requestInfos(loadMore: false, showLoading: !hasCache, resetBeforeLoad: !hasCache, refreshHeadIfNeeded: hasCache)
             }else {
                 state = .completed(datas: viewItems)
             }
         case .Mine:
-            viewItems.removeAll()
+            let hasCache = loadCache()
+            print("[MasterNodeVM] refresh mine hasCache=\(hasCache) viewItems=\(viewItems.count)")
+            requestMineNodeInfos(loadMore: false)
+        }
+    }
+
+    func softRefresh() {
+        allRequestTask?.cancel()
+        allRequestTask = nil
+        mineRequestTask?.cancel()
+        mineRequestTask = nil
+        mineRequestId = nil
+        recoveryTask?.cancel()
+        recoveryTask = nil
+        catchUpTask?.cancel()
+        catchUpTask = nil
+        targetTotalNumForCatchUp = nil
+        pendingRecoveryAddresses.removeAll()
+
+        switch type {
+        case .All:
+            requestInfos(loadMore: false, showLoading: viewItems.isEmpty, resetBeforeLoad: false, refreshHeadIfNeeded: true)
+        case .Mine:
             requestMineNodeInfos(loadMore: false)
         }
     }
@@ -308,6 +384,9 @@ extension MasterNodeViewModel {
         if case .All = type {
             allRequestTask?.cancel()
             allRequestTask = nil
+            mineRequestTask?.cancel()
+            mineRequestTask = nil
+            mineRequestId = nil
             recoveryTask?.cancel()
             recoveryTask = nil
             catchUpTask?.cancel()
@@ -330,11 +409,12 @@ extension MasterNodeViewModel {
         guard allRequestTask == nil else { return }
         switch type {
         case .All:
-            if safe4Page.isAbleLoadMore {
+            if safe4Page.isAbleLoadMore && viewItems.count < safe4Page.totalNum {
                 requestInfos(loadMore: true)
             }
     
         case .Mine:
+            guard mineRequestTask == nil else { return }
             requestMineNodeInfos(loadMore: true)
         }
     }
@@ -346,9 +426,12 @@ extension MasterNodeViewModel {
     
     @discardableResult
     func loadCache() -> Bool {
-        guard let pageControl = nodeStorageManager.getPageControl(), let caches = nodeStorageManager.load(), !caches.isEmpty else {
+        guard let snapshot = cacheSnapshot() else {
+            print("[MasterNodeVM] loadCache miss type=\(type)")
             return false
         }
+        let pageControl = snapshot.pageControl
+        let caches = snapshot.caches
 
         let cacheItems = caches.map {
             ViewItem(
@@ -363,8 +446,48 @@ extension MasterNodeViewModel {
         self.viewItems = cacheItems
         cachedInfoByAddress = Dictionary(uniqueKeysWithValues: caches.map { ($0.addr.lowercased(), $0) })
         safe4Page.update(totalNum: pageControl.totalNum, page: pageControl.page, indexPath: pageControl.targetIndexPath)
+        print("[MasterNodeVM] loadCache hit type=\(type) count=\(cacheItems.count) total=\(pageControl.totalNum) page=\(pageControl.page)")
         state = .completed(datas: viewItems)
         return true
+    }
+
+    private func cacheSnapshot() -> (pageControl: Safe4PageControl, caches: [Safe4NodeInfo])? {
+        if let snapshot = cacheSnapshot(storageManager: nodeStorageManager) {
+            print("[MasterNodeVM] cacheSnapshot primary hit type=\(type) count=\(snapshot.caches.count)")
+            return snapshot
+        }
+
+        for fallbackStorageManager in fallbackStorageManagers() {
+            if let snapshot = cacheSnapshot(storageManager: fallbackStorageManager) {
+                print("[MasterNodeVM] cacheSnapshot fallback hit type=\(type) count=\(snapshot.caches.count)")
+                nodeStorageManager.save(pageControl: snapshot.pageControl, infos: snapshot.caches)
+                return snapshot
+            }
+        }
+
+        print("[MasterNodeVM] cacheSnapshot miss type=\(type)")
+        return nil
+    }
+
+    private func cacheSnapshot(storageManager: NodeStorageManager) -> (pageControl: Safe4PageControl, caches: [Safe4NodeInfo])? {
+        guard let caches = storageManager.load(), !caches.isEmpty else {
+            return nil
+        }
+        let pageControl = storageManager.getPageControl() ?? buildPageControl(totalNum: caches.count, loadedCount: caches.count)
+        return (pageControl, caches)
+    }
+
+    private func fallbackStorageManagers() -> [NodeStorageManager] {
+        switch type {
+        case .All:
+            return [
+                NodeStorageManager(nodeType: .masterNode, pageControl: Safe4PageControl(pageSize: Self.pageSize, isReverse: true), scopeKey: "all")
+            ]
+        case .Mine:
+            return [
+                NodeStorageManager(nodeType: .masterNode, pageControl: Safe4PageControl(pageSize: Self.pageSize, isReverse: true), scopeKey: nil)
+            ]
+        }
     }
 
     private func reconcileTotalAndCache(latestTotalNum: Int, loadMore: Bool) async throws {
@@ -393,75 +516,7 @@ extension MasterNodeViewModel {
             return
         }
 
-        // latestTotalNum > currentTotal: prepend head delta so newest nodes are visible.
-        let delta = latestTotalNum - currentTotal
-        var headPage = Safe4PageControl(pageSize: Self.pageSize, isReverse: true)
-        headPage.set(totalNum: latestTotalNum)
-        let fetchCount = min(max(delta, 0), headPage.currentPageCount)
-        guard fetchCount > 0 else {
-            safe4Page = buildPageControl(totalNum: latestTotalNum, loadedCount: viewItems.count)
-            return
-        }
-
-        let newAddresses = try await service.masteNodeAddressArray(
-            page: Safe4PageControl(totalNum: latestTotalNum, page: 0, pageSize: fetchCount, isReverse: true)
-        )
-        let (newItems, failed) = await fetchNodeItems(addresses: newAddresses, isEnabledEdit: false)
-        scheduleRecovery(for: failed)
-        let updatedPageControl = buildPageControl(totalNum: latestTotalNum, loadedCount: viewItems.count + newItems.count)
-        mergeHeadItems(newItems, pageControl: updatedPageControl)
-        safe4Page = updatedPageControl
-        targetTotalNumForCatchUp = latestTotalNum
-        startBackgroundCatchUpIfNeeded()
-
-        if loadMore == false {
-            state = .completed(datas: viewItems)
-        }
-    }
-
-    private func startBackgroundCatchUpIfNeeded() {
-        guard catchUpTask == nil else { return }
-        guard let targetTotal = targetTotalNumForCatchUp else { return }
-        guard viewItems.count < targetTotal else { return }
-
-        catchUpTask = Task { [weak self] in
-            guard let self else { return }
-            defer {
-                Task { @MainActor in
-                    self.catchUpTask = nil
-                    if let target = self.targetTotalNumForCatchUp, self.viewItems.count < target {
-                        self.startBackgroundCatchUpIfNeeded()
-                    }
-                }
-            }
-
-            while !Task.isCancelled {
-                guard let targetTotal = targetTotalNumForCatchUp else { break }
-                if viewItems.count >= targetTotal { break }
-                if allRequestTask != nil { break }
-                if case .loading = state { break }
-                guard safe4Page.isAbleLoadMore else { break }
-
-                do {
-                    let results = try await fetchPageItems(pageControl: safe4Page)
-                    guard !results.isEmpty else { break }
-
-                    safe4Page.plusPage()
-                    for item in results {
-                        cachedInfoByAddress[item.info.addr.address.lowercased()] = Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, item.info)
-                    }
-                    viewItems.append(contentsOf: results)
-                    viewItems = deduplicatedAndSorted(viewItems)
-                    cacheItems = viewItems
-                    nodeStorageManager.save(pageControl: safe4Page, infos: viewItems.map { Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, $0.info) })
-                    state = .completed(datas: viewItems)
-
-                    try? await Task.sleep(nanoseconds: 250_000_000)
-                } catch {
-                    break
-                }
-            }
-        }
+        safe4Page = buildPageControl(totalNum: latestTotalNum, loadedCount: viewItems.count)
     }
 
     private func deduplicatedAndSorted(_ items: [ViewItem]) -> [ViewItem] {
@@ -473,14 +528,36 @@ extension MasterNodeViewModel {
         var control = Safe4PageControl(pageSize: Self.pageSize, isReverse: true)
         control.set(totalNum: totalNum)
         guard loadedCount > 0 else { return control }
-
-        let pagesLoaded = Int(ceil(Double(loadedCount) / Double(Self.pageSize)))
-        if pagesLoaded > 0 {
-            for _ in 0..<pagesLoaded {
-                control.plusPage()
-            }
-        }
+        let lastLoadedIndex = loadedCount - 1
+        let nextPage = min((lastLoadedIndex / Self.pageSize) + 1, control.maxPageNum)
+        control.update(totalNum: totalNum, page: nextPage, indexPath: IndexPath(row: 0, section: 0))
         return control
+    }
+
+    private func refreshHeadPage(totalNum: Int) async throws {
+        let desiredLoadedCount = min(Self.pageSize, totalNum)
+        guard desiredLoadedCount > 0 else {
+            viewItems.removeAll()
+            cacheItems.removeAll()
+            cachedInfoByAddress.removeAll()
+            safe4Page = buildPageControl(totalNum: totalNum, loadedCount: 0)
+            nodeStorageManager.save(pageControl: safe4Page, infos: [])
+            return
+        }
+
+        let pageControl = Safe4PageControl(totalNum: totalNum, page: 0, pageSize: desiredLoadedCount, isReverse: true)
+        let results = try await fetchPageItems(pageControl: pageControl)
+
+        viewItems = deduplicatedAndSorted(Array(results.prefix(desiredLoadedCount)))
+        cacheItems = viewItems
+        cachedInfoByAddress = Dictionary(uniqueKeysWithValues: viewItems.map {
+            ($0.info.addr.address.lowercased(), Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, $0.info))
+        })
+        safe4Page = buildPageControl(totalNum: totalNum, loadedCount: viewItems.count)
+        nodeStorageManager.save(
+            pageControl: safe4Page,
+            infos: viewItems.map { Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, $0.info) }
+        )
     }
 
     private func mergeHeadItems(_ items: [ViewItem], pageControl: Safe4PageControl) {
@@ -615,6 +692,17 @@ extension MasterNodeViewModel {
     }
 }
 
+private extension MasterNodeModule.MasterNodeType {
+    func cacheScopeKey(address: String) -> String? {
+        switch self {
+        case .All:
+            "all"
+        case .Mine:
+            "mine_\(address.lowercased())"
+        }
+    }
+}
+
 extension MasterNodeViewModel {
     var nodeType: Safe4NodeType {
         service.nodeType
@@ -622,6 +710,10 @@ extension MasterNodeViewModel {
     
     var stateDriver: Observable<MasterNodeViewModel.State> {
         stateRelay.asObservable()
+    }
+
+    var isLoadingMoreDriver: Driver<Bool> {
+        isLoadingMoreRelay.asDriver()
     }
     
     var searchCautionDriver: Driver<Caution?> {

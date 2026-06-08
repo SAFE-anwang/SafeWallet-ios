@@ -13,6 +13,8 @@ class SuperNodeViewController: ThemeViewController {
     private var viewItems = [SuperNodeViewModel.ViewItem]()
     private let refreshControl = UIRefreshControl()
     private let spinner = HUDActivityView.create(with: .medium24)
+    private let loadMoreContainer = UIView()
+    private let loadMoreSpinner = HUDActivityView.create(with: .medium24)
     private let emptyView = PlaceholderView()
     private let tipsCell = Safe4WarningCell()
     private let warningCell = Safe4WarningCell()
@@ -21,6 +23,7 @@ class SuperNodeViewController: ThemeViewController {
 
     private var isLoaded = false
     private var isSearch = false
+    private var searchText: String?
     
     weak var parentNavigationController: UINavigationController?
 
@@ -59,12 +62,25 @@ class SuperNodeViewController: ThemeViewController {
             maker.center.equalToSuperview()
         }
         spinner.startAnimating()
-        
-        viewModel.refresh()
+
+        loadMoreContainer.backgroundColor = .clear
+        loadMoreContainer.isHidden = true
+        view.addSubview(loadMoreContainer)
+        loadMoreContainer.snp.makeConstraints { maker in
+            maker.leading.trailing.bottom.equalToSuperview()
+            maker.height.equalTo(44)
+        }
+        loadMoreContainer.addSubview(loadMoreSpinner)
+        loadMoreSpinner.snp.makeConstraints { maker in
+            maker.centerX.equalToSuperview()
+            maker.top.equalToSuperview().offset(12)
+        }
+        loadMoreSpinner.startAnimating()
         tipsCell.bind(text: "safe_zone.safe4.vote.type.locked.recoard.tips".localized, type: .normal)
         
 
         subscribe(disposeBag, viewModel.stateDriver) { [weak self] in self?.sync(state: $0) }
+        subscribe(disposeBag, viewModel.isLoadingMoreDriver) { [weak self] in self?.syncLoadingMore($0) }
 
         nodeSearchCell.setInput(keyboardType: .default, placeholder: "safe_zone.safe4.node.super.search.tips".localized)
         nodeSearchCell.onChangeHeight = { [weak self] in self?.reloadTable()}
@@ -72,6 +88,7 @@ class SuperNodeViewController: ThemeViewController {
 
         nodeSearchCell.onSearch = { [weak self] text in
             self?.isSearch = (text?.count ?? 0) > 0
+            self?.searchText = text
             self?.view.endEditing(true)
             self?.viewModel.search(text: text)
         }
@@ -80,6 +97,9 @@ class SuperNodeViewController: ThemeViewController {
             self?.nodeSearchCautionCell.set(caution: $0)
             self?.reloadTable()
         }
+
+        sync(state: viewModel.state)
+        viewModel.refresh()
     }
     
     private func sync(state: SuperNodeViewModel.State) {
@@ -91,7 +111,12 @@ class SuperNodeViewController: ThemeViewController {
 
                 
             case let .completed(datas):
-                guard self?.isSearch == false else{ return }
+                if self?.isSearch == true {
+                    self?.viewModel.search(text: self?.searchText)
+                    self?.refreshControl.endRefreshing()
+                    self?.didLoad()
+                    return
+                }
                 self?.spinner.isHidden = true
                 self?.hiddenEmptyView(isHidden: datas.count > 0)
                 self?.viewItems = datas
@@ -111,6 +136,7 @@ class SuperNodeViewController: ThemeViewController {
                 }
                 
             }
+            self?.refreshControl.endRefreshing()
             self?.didLoad()
         }
     }
@@ -121,10 +147,7 @@ class SuperNodeViewController: ThemeViewController {
     }
 
     @objc private func onRefresh() {
-        viewModel.clearCaches()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.refreshControl.endRefreshing()
-        }
+        viewModel.softRefresh()
     }
     
 //    @objc private func add() {
@@ -154,6 +177,18 @@ class SuperNodeViewController: ThemeViewController {
     
     private func hiddenEmptyView(isHidden: Bool) {
         tableView.tableFooterView = isHidden ? nil : emptyView
+    }
+
+    private func syncLoadingMore(_ isLoading: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if !isLoading || self.viewItems.isEmpty {
+                self.loadMoreContainer.isHidden = true
+                return
+            }
+
+            self.loadMoreContainer.isHidden = false
+        }
     }
 }
 extension SuperNodeViewController {

@@ -584,4 +584,3 @@ struct MainSafeZoneView: View {
         }
     }
 }
-

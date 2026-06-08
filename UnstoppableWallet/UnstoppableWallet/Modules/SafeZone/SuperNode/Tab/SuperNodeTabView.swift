@@ -1,18 +1,19 @@
 import SwiftUI
 
 struct SuperNodeTabView: View {
-    @StateObject private var viewModel: SuperNodeTabViewModel
-    private var allViewModel: SuperNodeViewModel
-    private var mineViewModel: SuperNodeViewModel
-    @State private var loadedTabs = [SuperNodeModule.Tab]()
+    @StateObject var viewModel: SuperNodeTabViewModel
+    var allViewController: SuperNodeViewController
+    var mineViewController: SuperNodeViewController
     @Binding private var isPresented: Bool
 
     @MainActor
     init(viewModel: SuperNodeTabViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
         _isPresented = isPresented
-        self.allViewModel = SuperNodeModule.viewModel(type: .All, evmKit: viewModel.evmKit, privateKey: viewModel.privateKey)
-        self.mineViewModel = SuperNodeModule.viewModel(type: .Mine, evmKit: viewModel.evmKit, privateKey: viewModel.privateKey)
+        let allViewModel = SuperNodeModule.viewModel(type: .All, evmKit: viewModel.evmKit, privateKey: viewModel.privateKey)
+        let mineViewModel = SuperNodeModule.viewModel(type: .Mine, evmKit: viewModel.evmKit, privateKey: viewModel.privateKey)
+        allViewController = SuperNodeViewController(viewModel: allViewModel)
+        mineViewController = SuperNodeViewController(viewModel: mineViewModel)
     }
 
     var body: some View {
@@ -35,26 +36,28 @@ struct SuperNodeTabView: View {
                     ),
                     isAequilate: true
                 )
-                ZStack {
-                    SuperNodeView(viewModel: allViewModel)
-                        .ignoresSafeArea()
-                        .opacity(viewModel.currentTab == .all ? 1 : 0)
-                        .onChange(of: viewModel.currentTab) { tab in
-                            load(tab: tab)
+                TabView(selection: Binding(
+                    get: {
+                        SuperNodeModule.Tab.allCases.firstIndex(of: viewModel.currentTab) ?? 0
+                    },
+                    set: { index in
+                        viewModel.currentTab = SuperNodeModule.Tab.allCases[index]
+                    }
+                )) {
+                    ForEach(SuperNodeModule.Tab.allCases, id: \.self) { tab in
+                        switch tab {
+                        case .all:
+                            SuperNodeView(viewController: allViewController)
+                                .ignoresSafeArea()
+                                .tag(tab.rawValue)
+                        case .mine:
+                            SuperNodeView(viewController: mineViewController)
+                                .ignoresSafeArea()
+                                .tag(tab.rawValue)
                         }
-                        .onFirstAppear {
-                            load(tab: viewModel.currentTab)
-                        }
-                    SuperNodeView(viewModel: mineViewModel)
-                        .ignoresSafeArea()
-                        .opacity(viewModel.currentTab == .mine ? 1 : 0)
-                        .onChange(of: viewModel.currentTab) { tab in
-                            load(tab: tab)
-                        }
-                        .onFirstAppear {
-                            load(tab: viewModel.currentTab)
-                        }
+                    }
                 }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
             .tint(.themeJacob)
             .navigationTitle("safe_zone.safe4.node.super.title".localized)
@@ -63,6 +66,7 @@ struct SuperNodeTabView: View {
         }
 
     }
+
     @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             Button(action: {
@@ -91,19 +95,6 @@ struct SuperNodeTabView: View {
                     .resizable()
                     .frame(size: 24)
             }
-        }
-    }
-            
-    private func load(tab: SuperNodeModule.Tab) {
-        guard !loadedTabs.contains(tab) else {
-            return
-        }
-
-        loadedTabs.append(tab)
-
-        switch tab {
-        case .all: allViewModel.refresh()
-        case .mine: mineViewModel.refresh()
         }
     }
 }
