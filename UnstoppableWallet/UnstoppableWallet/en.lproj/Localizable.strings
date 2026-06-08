@@ -3128,5 +3128,6 @@
 "nft_v2.asset.standard_label" = "NFT Standard";
 "nft_v2.asset.network" = "Network";
 "nft_v2.send.unavailable" = "This NFT can't be sent right now.";
+"nft_v2.send.invalid_asset" = "This is not a valid asset and cannot be sent.";
 "nft_v2.send.syncing" = "Sync in progress. Sending will be available soon.";
 "nft_v2.collection.description.pancake_bunnies" = "Pancake Bunnies are PancakeSwap's official, home-raised NFT.";

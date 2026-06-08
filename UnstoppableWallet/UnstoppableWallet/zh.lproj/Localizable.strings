@@ -3125,5 +3125,6 @@
 "nft_v2.asset.standard_label" = "NFT 标准";
 "nft_v2.asset.network" = "网络";
 "nft_v2.send.unavailable" = "当前暂时无法发送该 NFT。";
+"nft_v2.send.invalid_asset" = "非有效资产，不能发送交易";
 "nft_v2.send.syncing" = "同步进行中，完成后可发送。";
 "nft_v2.collection.description.pancake_bunnies" = "Pancake Bunnies 是 PancakeSwap 官方推出并孵化的 NFT。";
