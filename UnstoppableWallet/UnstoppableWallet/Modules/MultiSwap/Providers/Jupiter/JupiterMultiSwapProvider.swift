@@ -134,8 +134,7 @@ class JupiterMultiSwapProvider: IMultiSwapProvider {
     }
 
     func track(swap: Swap) async throws -> Swap {
-        // TODO: Jupiter doesn't expose a swap-tracking API; return swap unchanged for now
-        swap
+        try await localTrackedSwap(swap: swap, token: swap.tokenIn) ?? swap
     }
 }
 

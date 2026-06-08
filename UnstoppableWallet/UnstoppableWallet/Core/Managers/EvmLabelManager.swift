@@ -103,6 +103,7 @@ extension EvmLabelManager {
     enum ExSafe4Methods: CaseIterable {
         case addLiquidity
         case addEthLiquidity
+        case dereaseLiquidity
         case removeLiquidity
         case removeLiquidityPermit
         case lineLock
@@ -124,6 +125,7 @@ extension EvmLabelManager {
             switch self {
             case .addLiquidity: "0xe8e33700"
             case .addEthLiquidity: "0xf305d719"
+            case .dereaseLiquidity: "0x0c49ccbe"
             case .removeLiquidity: "0xbaa2abde"
             case .removeLiquidityPermit: "0x2195995c"
             case .lineLock: "0x9c4ee6bf"
@@ -146,7 +148,7 @@ extension EvmLabelManager {
         var title: String {
             switch self {
             case .addLiquidity, .addEthLiquidity: "liquidity.title.add".localized
-            case .removeLiquidity, .removeLiquidityPermit: "liquidity.remove".localized
+            case .removeLiquidity, .removeLiquidityPermit, .dereaseLiquidity: "liquidity.remove".localized
             case .lineLock: "safe_zone.row.linear".localized
             case .promotion: "SRC20_Info_Promotion".localized
             case .deploy_0, .deploy_1: "SRC20_Deploy_Title".localized

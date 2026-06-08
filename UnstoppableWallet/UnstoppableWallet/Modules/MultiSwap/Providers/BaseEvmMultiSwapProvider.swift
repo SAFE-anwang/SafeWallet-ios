@@ -35,8 +35,8 @@ class BaseEvmMultiSwapProvider: IMultiSwapProvider {
         allowanceHelper.preSwapView(step: step, tokenIn: tokenIn, amount: amount, isPresented: isPresented, onSuccess: onSuccess)
     }
 
-    func track(swap _: Swap) async throws -> Swap {
-        fatalError("Must be implemented in subclass")
+    func track(swap: Swap) async throws -> Swap {
+        try await localTrackedSwap(swap: swap, token: swap.tokenIn) ?? swap
     }
 
     func spenderAddress(chain _: Chain) throws -> EvmKit.Address {

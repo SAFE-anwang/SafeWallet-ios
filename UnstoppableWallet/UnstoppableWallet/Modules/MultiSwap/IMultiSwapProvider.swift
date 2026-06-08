@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import MarketKit
+import RxSwift
 import SwiftUI
 
 protocol IMultiSwapProvider {
@@ -37,6 +38,61 @@ extension IMultiSwapProvider {
             return result == .dirty ? false : nil
         }
         return true
+    }
+
+    func localTrackedSwap(swap: Swap, token: Token) async throws -> Swap? {
+        guard let txHash = swap.txHash,
+              let account = Core.shared.accountManager.account(id: swap.accountId)
+        else {
+            return nil
+        }
+
+        let wallet = Wallet(token: token, account: account)
+
+        guard let adapter = Core.shared.transactionAdapterManager.adapter(for: wallet.transactionSource) else {
+            return nil
+        }
+
+        let records = try await transactionRecords(adapter: adapter, token: token, limit: 100)
+
+        guard let record = records.first(where: { $0.transactionHash.caseInsensitiveCompare(txHash) == .orderedSame }) else {
+            return nil
+        }
+
+        var updatedSwap = swap
+        updatedSwap.status = swapStatus(from: record.status(lastBlockHeight: adapter.lastBlockInfo?.height))
+        return updatedSwap
+    }
+
+    private func transactionRecords(adapter: ITransactionsAdapter, token: Token, limit: Int) async throws -> [TransactionRecord] {
+        try await withCheckedThrowingContinuation { continuation in
+            let disposable = adapter.transactionsSingle(
+                paginationData: nil,
+                token: token,
+                filter: .all,
+                address: nil,
+                limit: limit
+            )
+            .subscribe(
+                onSuccess: { records in
+                    continuation.resume(returning: records)
+                },
+                onError: { error in
+                    continuation.resume(throwing: error)
+                }
+            )
+
+            _ = disposable
+        }
+    }
+
+    private func swapStatus(from transactionStatus: TransactionStatus) -> Swap.Status {
+        switch transactionStatus {
+        case .failed: return .failed
+        case .pending: return .pending
+        case .processing: return .swapping
+        case .completed: return .completed
+        }
     }
 }
 

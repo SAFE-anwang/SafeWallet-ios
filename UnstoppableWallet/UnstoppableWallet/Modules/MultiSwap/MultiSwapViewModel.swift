@@ -253,6 +253,7 @@ class MultiSwapViewModel: ObservableObject {
             nextQuoteTime = nil
 
             if !quotes.isEmpty {
+                lastSuccessfulQuotesTimestamp = Date().timeIntervalSince1970
                 nextQuoteTime = Date().timeIntervalSince1970 + autoRefreshDuration
 
                 timer = Timer.scheduledTimer(withTimeInterval: autoRefreshDuration, repeats: false) { [weak self] _ in
@@ -275,6 +276,7 @@ class MultiSwapViewModel: ObservableObject {
     @Published var quoting = false
     @Published var validatingProvider = false
     private var nextQuoteTime: Double?
+    private var lastSuccessfulQuotesTimestamp: Double?
 
     @Published var priceImpact: Decimal?
 
@@ -464,6 +466,7 @@ class MultiSwapViewModel: ObservableObject {
     }
 
     func syncQuotes(silent: Bool = false) {
+        quotesTask?.cancel()
         quotesTask = nil
 
         if !silent {
@@ -533,8 +536,28 @@ class MultiSwapViewModel: ObservableObject {
 
             if !Task.isCancelled {
                 await MainActor.run { [weak self, quotes] in
-                    self?.quoting = false
-                    self?.quotes = quotes
+                    guard let self else {
+                        return
+                    }
+
+                    self.quoting = false
+
+                    if silent, quotes.isEmpty, !self.quotes.isEmpty {
+                        let quoteAge = self.lastSuccessfulQuotesTimestamp.map { Date().timeIntervalSince1970 - $0 } ?? .infinity
+                        guard quoteAge < self.autoRefreshDuration else {
+                            self.quotes = []
+                            return
+                        }
+
+                        self.timer?.invalidate()
+                        self.nextQuoteTime = Date().timeIntervalSince1970 + self.autoRefreshDuration
+                        self.timer = Timer.scheduledTimer(withTimeInterval: self.autoRefreshDuration, repeats: false) { [weak self] _ in
+                            self?.syncQuotes(silent: true)
+                        }
+                        return
+                    }
+
+                    self.quotes = quotes
                 }
             }
         }
