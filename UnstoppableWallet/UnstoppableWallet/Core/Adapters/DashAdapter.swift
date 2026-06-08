@@ -13,8 +13,8 @@ class DashAdapter: BitcoinBaseAdapter {
     private let dashKit: DashKit.Kit
 
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
+        let effectiveSyncMode: BitcoinCore.SyncMode = syncMode == .full ? .full : .blockchair
         let logger = Core.shared.logger.scoped(with: "DashKit")
-        Self.configureBlockchairSync()
 
         switch wallet.account.type {
         case .mnemonic:
@@ -25,7 +25,7 @@ class DashAdapter: BitcoinBaseAdapter {
             dashKit = try DashKit.Kit(
                 seed: seed,
                 walletId: wallet.account.id,
-                syncMode: syncMode,
+                syncMode: effectiveSyncMode,
                 networkType: Self.networkType,
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
@@ -34,7 +34,7 @@ class DashAdapter: BitcoinBaseAdapter {
             dashKit = try DashKit.Kit(
                 extendedKey: key,
                 walletId: wallet.account.id,
-                syncMode: syncMode,
+                syncMode: effectiveSyncMode,
                 networkType: Self.networkType,
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
@@ -43,7 +43,7 @@ class DashAdapter: BitcoinBaseAdapter {
             dashKit = try DashKit.Kit(
                 watchAddress: address,
                 walletId: wallet.account.id,
-                syncMode: syncMode,
+                syncMode: effectiveSyncMode,
                 networkType: Self.networkType,
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
@@ -54,7 +54,7 @@ class DashAdapter: BitcoinBaseAdapter {
             dashKit = try DashKit.Kit(
                 watchAddress: address,
                 walletId: wallet.account.id,
-                syncMode: syncMode,
+                syncMode: effectiveSyncMode,
                 networkType: Self.networkType,
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
@@ -63,7 +63,7 @@ class DashAdapter: BitcoinBaseAdapter {
             throw AdapterError.unsupportedAccount
         }
 
-        super.init(abstractKit: dashKit, wallet: wallet, syncMode: syncMode)
+        super.init(abstractKit: dashKit, wallet: wallet, syncMode: effectiveSyncMode)
 
         dashKit.delegate = self
     }
@@ -78,15 +78,6 @@ class DashAdapter: BitcoinBaseAdapter {
 
     override func explorerUrl(address: String) -> String? {
         "https://blockchair.com/dash/address/" + address
-    }
-
-    private static func configureBlockchairSync() {
-        DashKitConfiguration.shared.configure(
-            blockchairEnabled: true,
-            apiKey: AppConfig.blockchairApiKey,
-            syncSourceStrategy: .hybridBlockchair,
-            useNativeBlockchairApi: true
-        )
     }
 }
 
