@@ -2,7 +2,6 @@ import UIKit
 import RxSwift
 import SectionsTableView
 import SwiftUI
-import MarketKit
 
 class MarketDappListViewController: ThemeViewController {
     private let viewModel: MarketDappListViewModel
@@ -105,50 +104,7 @@ class MarketDappListViewController: ThemeViewController {
     }
 
     private func open(url: String) {
-        guard let url = URL(string: url) else {
-            print("[DAppList] ERROR: Invalid URL: \(url)")
-            return
-        }
-        
-        print("[DAppList] INFO: Opening DApp URL: \(url.absoluteString)")
-
-        let connectInfo: MarketDappBrowserConnectInfo?
-
-        if let account = Core.shared.accountManager.activeAccount {
-            print("[DAppList] INFO: Active account found: \(account.name)")
-            let blockchainType: BlockchainType
-
-            switch _tab {
-            case .ALL, .ETH: 
-                blockchainType = .ethereum
-                print("[DAppList] INFO: Using Ethereum chain")
-            case .BSC: 
-                blockchainType = .binanceSmartChain
-                print("[DAppList] INFO: Using BSC chain")
-            case .SAFE: 
-                blockchainType = .safe4
-                print("[DAppList] INFO: Using SAFE chain")
-            }
-
-            if let chain = try? Core.shared.evmBlockchainManager.chain(blockchainType: blockchainType),
-               let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper(account: account, blockchainType: blockchainType) {
-                let address = evmKitWrapper.evmKit.receiveAddress.eip55
-                connectInfo = MarketDappBrowserConnectInfo(chainId: chain.id, address: address)
-                print("[DAppList] INFO: ConnectInfo created - chainId: \(chain.id), address: \(address)")
-            } else {
-                connectInfo = nil
-                print("[DAppList] WARNING: Failed to create evmKitWrapper, connectInfo will be nil")
-            }
-        } else {
-            connectInfo = nil
-            print("[DAppList] WARNING: No active account, connectInfo will be nil")
-        }
-
-        Coordinator.shared.present(type: .alert) { isPresented in
-            MarketDappBrowserView(url: url, connectInfo: connectInfo, onClose: {
-                isPresented.wrappedValue = false
-            })
-        }
+        MarketDappModule.open(rawUrl: url, tab: _tab)
     }
     
 }

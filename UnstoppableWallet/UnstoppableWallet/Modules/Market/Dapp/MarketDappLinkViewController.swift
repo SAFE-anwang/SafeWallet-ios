@@ -54,6 +54,11 @@ class MarketDappLinkViewController: ThemeViewController {
         webView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        tapGesture.delegate = self
+        view.addGestureRecognizer(tapGesture)
     }
     
 
@@ -65,6 +70,11 @@ class MarketDappLinkViewController: ThemeViewController {
     @objc
     private func reloadSearch(_ sender: UIBarButtonItem) {
         loadWeb(url: textInput.text ?? "")
+    }
+
+    @objc
+    private func dismissKeyboard() {
+        view.endEditing(true)
     }
     
     private func loadWeb(url: String) {
@@ -84,5 +94,15 @@ extension MarketDappLinkViewController: UITextFieldDelegate {
         loadWeb(url: textInput.text ?? "")
         textField.resignFirstResponder()
         return true
+    }
+}
+
+extension MarketDappLinkViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard let touchedView = touch.view else {
+            return true
+        }
+
+        return !touchedView.isDescendant(of: textInput)
     }
 }

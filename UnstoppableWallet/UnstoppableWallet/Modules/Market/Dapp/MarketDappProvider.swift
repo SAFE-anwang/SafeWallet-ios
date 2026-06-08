@@ -8,6 +8,9 @@ import Alamofire
 class MarketDappProvider {
     
     private let baseUrl = "https://safewallet.anwang.com/api"
+    private let headers = HTTPHeaders([
+        HTTPHeader(name: "x-auth", value: "KLFD&*jk42klO)dskdak#@")
+    ])
     private let networkManager: NetworkManager
 
     init(networkManager: NetworkManager) {
@@ -17,7 +20,7 @@ class MarketDappProvider {
 
     func dappAllRequestSingle() -> Single<[MarktDapp]> {
          let ur = URL(string: "\(baseUrl)/walletcontent/getAll")!
-        let request = networkManager.session.request(ur)
+        let request = networkManager.session.request(ur, headers: headers)
         return networkManager.single(request: request)
     }
     
