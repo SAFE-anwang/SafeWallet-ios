@@ -51,16 +51,8 @@ struct ThemeImage: View {
                 Image(name)
             }
         case let .remote(url, placeholder):
-            KFImage.url(URL(string: url))
-                .resizable()
-                .placeholder {
-                    if let placeholder {
-                        Image(placeholder)
-                    } else {
-                        RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous)
-                            .fill(Color.themeBlade)
-                    }
-                }
+            ThemeRemoteImage(url: url, placeholder: placeholder)
+                .id(url)
                 .applyFrame(size: size)
         }
     }
@@ -82,4 +74,122 @@ extension ThemeImage {
     static let trash = ComponentImage("trash_filled", size: .iconSize72, colorStyle: .red)
     static let shieldOff = ComponentImage("shield_off", size: .iconSize72)
     static let key = ComponentImage("key", size: .iconSize72)
+}
+
+private struct ThemeRemoteImage: View {
+    let url: String
+    let placeholder: String?
+
+    @State private var nftImage: NftImage?
+    @State private var shouldTrySvgLoader = false
+
+    private var imageUrl: URL? {
+        URL(string: url)
+    }
+
+    private var usesSvgLoader: Bool {
+        shouldTrySvgLoader || nftImage != nil
+    }
+
+    var body: some View {
+        Group {
+            if usesSvgLoader {
+                if let nftImage {
+                    ThemeNftImageRepresentable(nftImage: nftImage)
+                } else {
+                    placeholderView
+                        .task(id: url) {
+                            await loadSvgIfNeeded()
+                        }
+                }
+            } else if let imageUrl {
+                KFImage.url(imageUrl)
+                    .resizable()
+                    .placeholder {
+                        placeholderView
+                    }
+                    .onFailure { _ in
+                        Task {
+                            await loadSvgIfNeeded()
+                        }
+                    }
+            } else {
+                placeholderView
+            }
+        }
+        .task(id: url) {
+            prepareForCurrentUrl()
+        }
+    }
+
+    @ViewBuilder
+    private var placeholderView: some View {
+        if let placeholder {
+            Image(placeholder)
+        } else {
+            RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous)
+                .fill(Color.themeBlade)
+        }
+    }
+
+    private func prepareForCurrentUrl() {
+        nftImage = nil
+        shouldTrySvgLoader = false
+
+        guard let imageUrl else {
+            return
+        }
+
+        if NftImageUrlHelper.isLikelySvg(url: imageUrl) {
+            shouldTrySvgLoader = true
+        }
+
+        guard let cachedSvgImage = NftImageUrlHelper.cachedSvgImage(url: imageUrl) else {
+            return
+        }
+
+        nftImage = cachedSvgImage
+        shouldTrySvgLoader = true
+    }
+
+    private func loadSvgIfNeeded() async {
+        guard let imageUrl else {
+            return
+        }
+
+        if let cachedImage = NftImageUrlHelper.cachedSvgImage(url: imageUrl) {
+            await MainActor.run {
+                nftImage = cachedImage
+                shouldTrySvgLoader = true
+            }
+            return
+        }
+
+        let svgImage = await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: NftImageUrlHelper.loadSvgImage(url: imageUrl))
+            }
+        }
+
+        guard let svgImage else {
+            return
+        }
+
+        await MainActor.run {
+            nftImage = svgImage
+            shouldTrySvgLoader = true
+        }
+    }
+}
+
+private struct ThemeNftImageRepresentable: UIViewRepresentable {
+    let nftImage: NftImage
+
+    func makeUIView(context: Context) -> NftImageView {
+        NftImageView()
+    }
+
+    func updateUIView(_ uiView: NftImageView, context: Context) {
+        uiView.set(nftImage: nftImage)
+    }
 }

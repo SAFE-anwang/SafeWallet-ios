@@ -179,23 +179,46 @@ final class NftV2OnChainMetadataProvider {
     }
 
     private static func imageUrl(json: [String: Any], tokenId: BigUInt, uniqueKey: String) -> String? {
-        if let image = string(json["image"]) {
-            if let inlineImageUrl = inlineImageFileUrl(rawImage: image, tokenId: tokenId, uniqueKey: uniqueKey) {
+        let rawImageValues: [Any?] = [
+            json["image"],
+            json["image_url"],
+            json["imageUrl"],
+            json["image_data"],
+            (json["properties"] as? [String: Any]).flatMap { $0["image"] },
+            (json["properties"] as? [String: Any]).flatMap { $0["image_url"] },
+            (json["properties"] as? [String: Any]).flatMap { $0["imageUrl"] },
+            (json["properties"] as? [String: Any]).flatMap { $0["image_data"] }
+        ]
+
+        for rawImageValue in rawImageValues {
+            guard let rawImage = string(rawImageValue) else {
+                continue
+            }
+
+            if looksLikeInlineSvg(rawImage),
+               let data = rawImage.data(using: .utf8),
+               let inlineSvgImageUrl = inlineImageFileUrl(data: data, fileExtension: "svg", tokenId: tokenId, uniqueKey: uniqueKey) {
+                return inlineSvgImageUrl
+            }
+
+            if let inlineImageUrl = inlineImageFileUrl(rawImage: rawImage, tokenId: tokenId, uniqueKey: uniqueKey) {
                 return inlineImageUrl
             }
 
-            return normalizedResourceUrl(rawUrl: image, tokenId: tokenId)
-        }
-
-        if let imageUrl = string(json["image_url"]) {
-            if let inlineImageUrl = inlineImageFileUrl(rawImage: imageUrl, tokenId: tokenId, uniqueKey: uniqueKey) {
-                return inlineImageUrl
+            if rawImage.lowercased().hasPrefix("data:image/svg+xml"),
+               let inlineSvgImageUrl = inlineSvgFileUrl(rawImage: rawImage, tokenId: tokenId, uniqueKey: uniqueKey) {
+                return inlineSvgImageUrl
             }
 
-            return normalizedResourceUrl(rawUrl: imageUrl, tokenId: tokenId)
+            return normalizedResourceUrl(rawUrl: rawImage, tokenId: tokenId)
         }
 
         return nil
+    }
+
+    private static func looksLikeInlineSvg(_ rawValue: String) -> Bool {
+        let trimmedValue = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return trimmedValue.hasPrefix("<svg") || trimmedValue.hasPrefix("<?xml")
     }
 
     private static func collectionName(json: [String: Any]) -> String? {
@@ -250,6 +273,52 @@ final class NftV2OnChainMetadataProvider {
             return nil
         }
 
+        let safeKey = safeInlineImageKey(uniqueKey)
+        let fileName = "\(safeKey)-\(tokenIdHex(tokenId: tokenId)).\(fileExtension)"
+        let fileUrl = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("nft-v2-inline-images", isDirectory: true)
+            .appendingPathComponent(fileName)
+
+        do {
+            try FileManager.default.createDirectory(
+                at: fileUrl.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(to: fileUrl, options: .atomic)
+            return fileUrl.absoluteString
+        } catch {
+            return nil
+        }
+    }
+
+    private static func inlineSvgFileUrl(rawImage: String, tokenId: BigUInt, uniqueKey: String) -> String? {
+        guard rawImage.lowercased().hasPrefix("data:image/svg+xml"),
+              let separatorIndex = rawImage.firstIndex(of: ",")
+        else {
+            return nil
+        }
+
+        let header = String(rawImage[..<separatorIndex]).lowercased()
+        let payloadStartIndex = rawImage.index(after: separatorIndex)
+        let payload = String(rawImage[payloadStartIndex...])
+
+        let svgString: String?
+        if header.contains(";base64") {
+            svgString = Data(base64Encoded: payload).flatMap { String(data: $0, encoding: .utf8) }
+        } else {
+            svgString = payload.removingPercentEncoding ?? payload
+        }
+
+        guard let svgString,
+              let data = svgString.data(using: .utf8)
+        else {
+            return nil
+        }
+
+        return inlineImageFileUrl(data: data, fileExtension: "svg", tokenId: tokenId, uniqueKey: uniqueKey)
+    }
+
+    private static func inlineImageFileUrl(data: Data, fileExtension: String, tokenId: BigUInt, uniqueKey: String) -> String? {
         let safeKey = safeInlineImageKey(uniqueKey)
         let fileName = "\(safeKey)-\(tokenIdHex(tokenId: tokenId)).\(fileExtension)"
         let fileUrl = URL(fileURLWithPath: NSTemporaryDirectory())

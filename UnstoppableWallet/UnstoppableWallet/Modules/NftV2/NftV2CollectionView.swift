@@ -224,21 +224,26 @@ struct NftV2CollectionView: View {
     @ViewBuilder
     private func assetCard(asset: NftV2Asset) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            NftV2RemoteImage(url: asset.imageUrl, placeholder: "placeholder_nft_32")
-            .aspectRatio(1, contentMode: .fill)
-            .frame(maxWidth: .infinity)
-            .background(Color.themeTyler)
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .overlay(alignment: .bottomTrailing) {
-                if asset.balance > 1 {
-                    ThemeText("nft_v2.asset.balance".localized(asset.balance), style: .captionSB)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(Color.black.opacity(0.55))
-                        .clipShape(Capsule(style: .continuous))
-                        .padding(10)
+            Rectangle()
+                .fill(Color.themeBlade)
+                .aspectRatio(1, contentMode: .fit)
+                .overlay {
+                    NftV2RemoteImage(url: asset.imageUrl, placeholder: "placeholder_nft_32")
+                        .aspectRatio(1, contentMode: .fill)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
                 }
-            }
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay(alignment: .bottomTrailing) {
+                    if asset.balance > 1 {
+                        ThemeText("nft_v2.asset.balance".localized(asset.balance), style: .captionSB)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color.black.opacity(0.55))
+                            .clipShape(Capsule(style: .continuous))
+                            .padding(10)
+                    }
+                }
 
             VStack(alignment: .leading, spacing: 4) {
                 ThemeText(asset.name, style: .headline2)

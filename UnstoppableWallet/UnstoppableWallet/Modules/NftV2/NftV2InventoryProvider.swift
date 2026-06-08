@@ -318,11 +318,16 @@ final class NftV2WalletInventoryProvider: INftV2InventoryProvider {
             return baseRecords
         }
 
-        var merged = Dictionary(uniqueKeysWithValues: baseRecords.map { ($0.nftUid, $0) })
-        for record in supplemented where merged[record.nftUid] == nil {
-            merged[record.nftUid] = record
+        var merged = Dictionary(uniqueKeysWithValues: baseRecords.map { (normalizedRecordKey(record: $0), $0) })
+        for record in supplemented where merged[normalizedRecordKey(record: record)] == nil {
+            merged[normalizedRecordKey(record: record)] = record
         }
         return Array(merged.values)
+    }
+
+    private func normalizedRecordKey(record: NftRecord) -> String {
+        let nftUid = record.nftUid
+        return "\(nftUid.blockchainType.uid)|\(nftUid.contractAddress.lowercased())|\(nftUid.tokenId)"
     }
 
     private func mergePancakeV3RecordsSingle(baseRecords: [NftRecord], account: Account, forceRefresh: Bool = false) -> Single<[NftRecord]> {
