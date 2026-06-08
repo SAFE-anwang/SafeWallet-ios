@@ -98,6 +98,15 @@ struct RestoreView: View {
                 )
                 .ignoresSafeArea()
                 .navigationBarHidden(true)
+            case let .selectAccountType(accountName, accountTypes):
+                AccountTypeSelectWrapper(
+                    accountName: accountName,
+                    accountTypes: accountTypes,
+                    statPage: .importWalletFromKey,
+                    onRestore: handleRestore
+                )
+                .ignoresSafeArea()
+                .navigationBarHidden(true)
             }
         }
         .onAppear {

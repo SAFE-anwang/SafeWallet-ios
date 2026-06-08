@@ -6,6 +6,8 @@ struct LargeTextField: View {
     let statPage: StatPage
     let statEntity: StatEntity
     var onButtonTap: (() -> Void)?
+    var onPaste: ((String) -> Void)? = nil
+    var onScan: ((String) -> Void)? = nil
 
     var body: some View {
         VStack(spacing: .margin8) {
@@ -26,7 +28,11 @@ struct LargeTextField: View {
                     IconButton(icon: "scan", style: .secondary, size: .small) {
                         Coordinator.shared.present { isPresented in
                             ScanQrViewNew(options: [.picker], isPresented: isPresented) { text in
-                                self.text = text
+                                if let onScan {
+                                    onScan(text)
+                                } else {
+                                    self.text = text
+                                }
                                 onButtonTap?()
                                 stat(page: statPage, event: .scanQr(entity: statEntity))
                             }
@@ -36,7 +42,11 @@ struct LargeTextField: View {
 
                     ThemeButton(text: "button.paste".localized, style: .secondary, size: .small) {
                         if let string = UIPasteboard.general.string {
-                            text = string
+                            if let onPaste {
+                                onPaste(string)
+                            } else {
+                                text = string
+                            }
                             onButtonTap?()
                             stat(page: statPage, event: .paste(entity: statEntity))
                         }

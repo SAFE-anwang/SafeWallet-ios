@@ -13,13 +13,19 @@ class RestoreViewModel {
     private let mnemonicViewModel: IRestoreSubViewModel
     private let privateKeyViewModel: IRestoreSubViewModel
 
-    private let restoreTypeRelay = BehaviorRelay<RestoreType>(value: .mnemonic)
+    private let restoreTypeRelay: BehaviorRelay<RestoreType>
     private let proceedRelay = PublishRelay<(String, [AccountType])>()
 
-    init(service: RestoreService, mnemonicViewModel: IRestoreSubViewModel, privateKeyViewModel: IRestoreSubViewModel) {
+    init(
+        service: RestoreService,
+        mnemonicViewModel: IRestoreSubViewModel,
+        privateKeyViewModel: IRestoreSubViewModel,
+        initialRestoreType: RestoreType = .mnemonic
+    ) {
         self.service = service
         self.mnemonicViewModel = mnemonicViewModel
         self.privateKeyViewModel = privateKeyViewModel
+        restoreTypeRelay = BehaviorRelay<RestoreType>(value: initialRestoreType)
     }
 
     private var subViewModel: IRestoreSubViewModel {
@@ -33,6 +39,10 @@ class RestoreViewModel {
 extension RestoreViewModel {
     var restoreTypeDriver: Driver<RestoreType> {
         restoreTypeRelay.asDriver()
+    }
+
+    var restoreType: RestoreType {
+        restoreTypeRelay.value
     }
 
     var proceedSignal: Signal<(String, [AccountType])> {

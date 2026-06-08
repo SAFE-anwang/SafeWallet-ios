@@ -55,23 +55,11 @@ class AccountTypeSelectViewController: ThemeViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.onSuccessPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.onSuccess()
-            }
-            .store(in: &cancellables)
-
         tableView.buildSections()
     }
 
     @objc private func onTapClose() {
         dismiss(animated: true)
-    }
-
-    private func onSuccess() {
-        HudHelper.instance.show(banner: .imported)
-        onRestore()
     }
 
     private func openSelectCoins(accountType: AccountType) {

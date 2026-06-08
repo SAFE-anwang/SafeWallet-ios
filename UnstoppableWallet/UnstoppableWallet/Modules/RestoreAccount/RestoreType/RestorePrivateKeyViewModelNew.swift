@@ -13,7 +13,7 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
 
     private let cautionRelay = BehaviorRelay<Caution?>(value: nil)
     private let nameCautionRelay = BehaviorRelay<Caution?>(value: nil)
-    private let proceedRelay = PublishRelay<(String, AccountType, RestoreSelectOptions?)>()
+    private let proceedRelay = PublishRelay<(String, [AccountType], RestoreSelectOptions?)>()
 
     let defaultAccountName: String
     @Published var name: String = ""
@@ -46,7 +46,7 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
         case scan
     }
 
-    let proceedSubject = PassthroughSubject<(String, AccountType, RestoreSelectOptions?), Never>()
+    let proceedSubject = PassthroughSubject<(String, [AccountType], RestoreSelectOptions?), Never>()
     let errorSubject = PassthroughSubject<String, Never>()
 
     private var cancellables = Set<AnyCancellable>()
@@ -109,31 +109,23 @@ class RestorePrivateKeyViewModelNew: ObservableObject {
             return
         }
 
-        let previousRequiresPassword = requiresPassword
         detectedKeyType = privateKeyService.detectPrivateKeyType(trimmed)
+        var types = privateKeyService.availableKeyTypes(text: trimmed)
 
-        let fallbackTypes: [PrivateKeyType] = [
-            .evm, .tronPrivateKey, .hdExtendedKey, .stellarSecretKey,
-            .bitcoinPrivateKey, .bitcoinWif, .bitcoinMiniKey, .bitcoinBip38, .bitcoinBrainWallet,
-        ]
-
-        var types = [PrivateKeyType]()
-        if detectedKeyType != .unsupported {
-            types.append(detectedKeyType)
-        }
-
-        for type in fallbackTypes where !types.contains(type) {
-            types.append(type)
+        if types.isEmpty, detectedKeyType != .unsupported {
+            types = [detectedKeyType]
+        } else if detectedKeyType != .unsupported, !types.contains(detectedKeyType) {
+            types.insert(detectedKeyType, at: 0)
         }
 
         availableKeyTypes = types
 
         if let selectedKeyType, availableKeyTypes.contains(selectedKeyType) {
             self.selectedKeyType = selectedKeyType
-        } else if detectedKeyType != .unsupported {
-            selectedKeyType = detectedKeyType
-        } else {
+        } else if availableKeyTypes.count == 1 {
             selectedKeyType = availableKeyTypes.first
+        } else {
+            selectedKeyType = nil
         }
 
         // Handle password field visibility and state
@@ -163,7 +155,7 @@ extension RestorePrivateKeyViewModelNew {
         cautionRelay.asDriver()
     }
 
-    var proceedSignal: Signal<(String, AccountType, RestoreSelectOptions?)> {
+    var proceedSignal: Signal<(String, [AccountType], RestoreSelectOptions?)> {
         proceedRelay.asSignal()
     }
 
@@ -360,15 +352,15 @@ extension RestorePrivateKeyViewModelNew {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
 
-            let accountType = self.resolveAccountTypes()?.first
+            let accountTypes = self.resolveAccountTypes()
             let accountName = self.resolveAccountName()
             let restoreSelectOptions = self.restoreSelectOptions
 
             DispatchQueue.main.async {
                 self.isLoading = false
-                if let accountType = accountType {
-                    self.proceedSubject.send((accountName, accountType, restoreSelectOptions))
-                    self.proceedRelay.accept((accountName, accountType, restoreSelectOptions))
+                if let accountTypes, !accountTypes.isEmpty {
+                    self.proceedSubject.send((accountName, accountTypes, restoreSelectOptions))
+                    self.proceedRelay.accept((accountName, accountTypes, restoreSelectOptions))
                 }
             }
         }
@@ -413,6 +405,13 @@ extension RestorePrivateKeyViewModelNew {
             return false
         }
 
+        if requiresKeyTypeSelection && !canDeferKeyTypeSelection {
+            let caution = Caution(text: "restore.private_key.select_format".localized, type: .error)
+            textCaution = .caution(caution)
+            cautionRelay.accept(caution)
+            return false
+        }
+
         return true
     }
 }
@@ -429,15 +428,45 @@ extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
         }
 
         do {
+            if selectedKeyType == nil, canDeferKeyTypeSelection {
+                let accountTypes = try privateKeyService.accountType(text: trimmedText).filter { accountType in
+                    switch accountType {
+                    case .evmPrivateKey, .trcPrivateKey:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+
+                guard !accountTypes.isEmpty else {
+                    throw RestorePrivateKeyService.RestoreError.invalidPrivateKey
+                }
+
+                restoreSelectOptions = nil
+                cautionRelay.accept(nil)
+                textCaution = .none
+                return accountTypes
+            }
+
             let forceType = selectedKeyType
             let accountType = try privateKeyService.accountType(text: trimmedText, forceType: forceType)
-            restoreSelectOptions = privateKeyService.wifRoutingContext.map { context in
-                RestoreSelectOptions(
+            if let context = privateKeyService.wifRoutingContext {
+                restoreSelectOptions = RestoreSelectOptions(
                     allowedBlockchainTypes: Set([context.blockchainType]),
                     allowedBitcoinDerivations: context.allowedBitcoinDerivations,
                     autoEnableDefaultTokens: context.skipCoinSelection && !context.requireManualDerivationSelection,
                     blockchainsRequireManualTokenSelection: context.requireManualDerivationSelection ? Set([context.blockchainType]) : nil
                 )
+            } else if let forceType {
+                let isTronPrivateKey = forceType == .tronPrivateKey
+                restoreSelectOptions = RestoreSelectOptions(
+                    allowedBlockchainTypes: Set(forceType.blockchainTypes),
+                    allowedBitcoinDerivations: nil,
+                    autoEnableDefaultTokens: isTronPrivateKey ? false : forceType.blockchainTypes.count == 1,
+                    blockchainsRequireManualTokenSelection: nil
+                )
+            } else {
+                restoreSelectOptions = nil
             }
             cautionRelay.accept(nil)
             textCaution = .none
@@ -590,26 +619,81 @@ extension RestorePrivateKeyViewModelNew {
     var isValid: Bool {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let passwordValid = !requiresPassword || !password.isEmpty
-        return !trimmedText.isEmpty && validateName() && passwordValid
+        return !trimmedText.isEmpty && validateName() && passwordValid && (!requiresKeyTypeSelection || canDeferKeyTypeSelection)
     }
 
     var proceedEnabled: AnyPublisher<Bool, Never> {
         Publishers.CombineLatest4($text, $name, $isLoading, $password)
-            .map { [weak self] text, name, loading, password in
+            .combineLatest($selectedKeyType)
+            .map { [weak self] combined, _ in
                 guard let self = self else { return false }
+                let (text, name, loading, password) = combined
                 let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
                 let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
                 let passwordValid = !self.requiresPassword || !password.isEmpty
-                return !trimmedText.isEmpty && !trimmedName.isEmpty && !loading && passwordValid
+                return !trimmedText.isEmpty && !trimmedName.isEmpty && !loading && passwordValid && (!self.requiresKeyTypeSelection || self.canDeferKeyTypeSelection)
             }
             .eraseToAnyPublisher()
     }
 
     var detectedKeyTypeName: String {
-        detectedKeyType.rawValue
+        title(for: detectedKeyType)
+    }
+
+    var shouldShowDetectedKeyType: Bool {
+        detectedKeyType != .unsupported && availableKeyTypes.count == 1
+    }
+
+    var selectedKeyTypeName: String {
+        guard let selectedKeyType else {
+            return "button.select".localized
+        }
+
+        return title(for: selectedKeyType)
+    }
+
+    var shouldShowKeyTypeSelector: Bool {
+        availableKeyTypes.count > 1
+    }
+
+    var requiresKeyTypeSelection: Bool {
+        shouldShowKeyTypeSelector && selectedKeyType == nil
+    }
+
+    var canDeferKeyTypeSelection: Bool {
+        Set(availableKeyTypes) == Set([.evm, .tronPrivateKey])
+    }
+
+    var selectedKeyTypeColorStyle: ColorStyle {
+        requiresKeyTypeSelection ? .secondary : .primary
     }
 
     var keyTypeDescriptions: [String] {
-        availableKeyTypes.map { $0.rawValue }
+        availableKeyTypes.map(title(for:))
+    }
+
+    func title(for type: PrivateKeyType) -> String {
+        switch type {
+        case .evm:
+            return "restore.select_key_type.evm".localized
+        case .tronPrivateKey:
+            return "restore.select_key_type.trc".localized
+        case .hdExtendedKey:
+            return "extended_key.bip32_root_key".localized
+        case .stellarSecretKey:
+            return "stellar_secret_key.title".localized
+        case .bitcoinPrivateKey:
+            return "Bitcoin Private Key"
+        case .bitcoinWif:
+            return "Bitcoin WIF"
+        case .bitcoinMiniKey:
+            return "Bitcoin Mini Key"
+        case .bitcoinBrainWallet:
+            return "Bitcoin Brain Wallet"
+        case .bitcoinBip38:
+            return "Bitcoin BIP38"
+        case .unsupported:
+            return "restore.private_key.invalid_key".localized
+        }
     }
 }

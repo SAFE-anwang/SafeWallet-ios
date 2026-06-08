@@ -2,17 +2,14 @@ import Combine
 import MarketKit
 
 class AccountTypeSelectViewModel {
-    private let accountName: String
     let items: [ViewItem]
 
     private let openSelectCoinsSubject = PassthroughSubject<AccountType, Never>()
-    private let onSuccessSubject = PassthroughSubject<AccountType, Never>()
 
     init(accountName: String, accountTypes: [AccountType]) {
         items = accountTypes.compactMap { type in
             Self.viewItem(accountType: type)
         }
-        self.accountName = accountName
     }
 
     private static func viewItem(accountType: AccountType) -> ViewItem? {
@@ -29,30 +26,15 @@ class AccountTypeSelectViewModel {
         guard let item = items.at(index: index) else { return }
 
         switch item.accountType {
-        case .evmPrivateKey: openSelectCoinsSubject.send(item.accountType)
-        case .trcPrivateKey: restore(item.accountType)
+        case .evmPrivateKey, .trcPrivateKey: openSelectCoinsSubject.send(item.accountType)
         default: ()
         }
-    }
-
-    private func restore(_ accountType: AccountType) {
-        let supportedTokens = RestoreSelectModule.supportedTokens(accountType: accountType)
-
-        if let token = supportedTokens.first {
-            RestoreSelectModule.restoreSingleBlockchain(accountName: accountName, accountType: accountType, token: token)
-        }
-
-        onSuccessSubject.send(accountType)
     }
 }
 
 extension AccountTypeSelectViewModel {
     var openSelectCoinsPublisher: AnyPublisher<AccountType, Never> {
         openSelectCoinsSubject.eraseToAnyPublisher()
-    }
-
-    var onSuccessPublisher: AnyPublisher<AccountType, Never> {
-        onSuccessSubject.eraseToAnyPublisher()
     }
 }
 

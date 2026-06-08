@@ -78,10 +78,6 @@ class RestorePrivateKeyService {
         do {
             let privateKey = try evmPrivateKeyData(text: text)
             accountTypes.append(.evmPrivateKey(data: privateKey))
-        } catch {}
-
-        do {
-            let privateKey = try tronPrivateKeyData(text: text)
             accountTypes.append(.trcPrivateKey(data: privateKey))
         } catch {}
 
@@ -108,6 +104,59 @@ class RestorePrivateKeyService {
         }
 
         throw RestoreError.noValidKey
+    }
+
+    func availableKeyTypes(text: String) -> [PrivateKeyType] {
+        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !text.isEmpty else {
+            return []
+        }
+
+        var keyTypes = [PrivateKeyType]()
+
+        do {
+            let extendedKey = try HDExtendedKey(extendedKey: text)
+
+            if case .private = extendedKey, [.master, .account].contains(extendedKey.derivedType) {
+                keyTypes.append(.hdExtendedKey)
+            }
+        } catch {}
+
+        do {
+            _ = try evmPrivateKeyData(text: text)
+            keyTypes.append(.evm)
+            keyTypes.append(.tronPrivateKey)
+        } catch {}
+
+        do {
+            _ = try KeyPair(secretSeed: text)
+            keyTypes.append(.stellarSecretKey)
+        } catch {}
+
+        if let format = BitcoinPrivateKeyParser.detectFormat(text) {
+            switch format {
+            case .hex:
+                keyTypes.append(.bitcoinPrivateKey)
+            case .wifMainNet, .wifCompressedMainNet, .wifTestNet, .wifCompressedTestNet:
+                keyTypes.append(.bitcoinWif)
+            case .miniKey:
+                keyTypes.append(.bitcoinMiniKey)
+            case .bip38Encrypted:
+                keyTypes.append(.bitcoinBip38)
+            case .brainWalletSingle, .brainWalletDouble:
+                keyTypes.append(.bitcoinBrainWallet)
+            }
+        } else if BitcoinPrivateKeyParser.isBrainWalletCandidate(text) {
+            keyTypes.append(.bitcoinBrainWallet)
+        }
+
+        return keyTypes.reduce(into: []) { result, type in
+            guard !result.contains(type) else {
+                return
+            }
+            result.append(type)
+        }
     }
 
     func accountType(text: String, forceType: PrivateKeyType?) throws -> AccountType {
@@ -149,11 +198,6 @@ class RestorePrivateKeyService {
         } catch {}
 
         do {
-            let privateKey = try tronPrivateKeyData(text: text)
-            return .trcPrivateKey(data: privateKey)
-        } catch {}
-
-        do {
             _ = try KeyPair(secretSeed: text)
             return .stellarSecretKey(secretSeed: text)
         } catch {}
@@ -168,7 +212,7 @@ class RestorePrivateKeyService {
             return .evmPrivateKey(data: privateKey)
 
         case .tronPrivateKey:
-            let privateKey = try tronPrivateKeyData(text: text)
+            let privateKey = try evmPrivateKeyData(text: text)
             return .trcPrivateKey(data: privateKey)
 
         case .hdExtendedKey:
@@ -352,11 +396,6 @@ class RestorePrivateKeyService {
             do {
                 _ = try EvmKit.Signer.privateKey(string: normalizedForEvm)
                 return .evm
-            } catch {}
-
-            do {
-                _ = try tronPrivateKeyData(text: trimmed)
-                return .tronPrivateKey
             } catch {}
         }
 

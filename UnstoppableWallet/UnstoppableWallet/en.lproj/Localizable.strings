@@ -144,9 +144,10 @@
 "restore.restore_type.mnemonic" = "Recovery Phrase";
 "restore.restore_type.private_key" = "Private Key";
 "restore.mnemonic.placeholder" = "Enter Recovery Phrase";
-"restore.private_key.placeholder" = "Enter EVM Private Key, Stellar Secret Key, BIP32 Root Key, Bitcoin WIF, Mini Key, BIP38 key, or Brain Wallet";
+"restore.private_key.placeholder" = "Enter EVM Private Key, TRON Private Key, Stellar Secret Key, BIP32 Root Key, Bitcoin WIF, Mini Key, BIP38 key, or Brain Wallet";
 "restore.private_key.invalid_key" = "Invalid Key";
 "restore.private_key.empty_text" = "Please enter a private key";
+"restore.private_key.select_format" = "Please select a key format";
 "restore.private_key.no_valid_key" = "No valid key found. Please check your input.";
 "restore.private_key.not_supported_derived_type" = "This derived key type is not supported";
 "restore.private_key.non_private_key" = "This is not a valid private key";

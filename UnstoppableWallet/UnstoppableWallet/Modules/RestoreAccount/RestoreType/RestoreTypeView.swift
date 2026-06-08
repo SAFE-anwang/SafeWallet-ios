@@ -69,7 +69,7 @@ struct RestoreTypeView: View {
 //                        path.append(Route.recoveryOrPrivateKey)
 //                    })
                     // import passphrase or private key form
-                    RestoreViewWrapper(advanced: false, onRestore: handleRestore)
+                    RestoreViewWrapper(advanced: false, initialRestoreType: .mnemonic, onRestore: handleRestore)
                         .ignoresSafeArea()
                         .navigationTitle("restore.title".localized)
                     
@@ -216,10 +216,11 @@ struct RestoreTypeView: View {
 
 private struct RestoreViewWrapper: UIViewControllerRepresentable {
     let advanced: Bool
+    let initialRestoreType: RestoreViewModel.RestoreType
     let onRestore: () -> Void
 
     func makeUIViewController(context _: Context) -> UIViewController {
-        RestoreModule.viewController(advanced: advanced, onRestore: onRestore)
+        RestoreModule.viewController(advanced: advanced, initialRestoreType: initialRestoreType, onRestore: onRestore)
     }
 
     func updateUIViewController(_: UIViewController, context _: Context) {}
