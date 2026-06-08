@@ -2,6 +2,8 @@ import Foundation
 import SwiftUI
 
 enum BackupModule {
+    static let cloudBackupEnabled = false
+
     enum BackupType {
         case wallet(String) // single account id
         case app(Set<String>) // selected account ids + settings
@@ -98,6 +100,12 @@ extension BackupModule {
             destination: nil,
             isPresented: isPresented
         )
+    }
+}
+
+extension BackupModule.Destination {
+    static var availableCases: [Self] {
+        BackupModule.cloudBackupEnabled ? allCases : allCases.filter { $0 != .cloud }
     }
 }
 

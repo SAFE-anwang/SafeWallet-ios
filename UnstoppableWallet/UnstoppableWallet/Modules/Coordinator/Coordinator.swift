@@ -160,6 +160,10 @@ extension Coordinator {
     }
 
     func presentWalletBackup(account: Account, statPage: StatPage) {
+        guard BackupModule.cloudBackupEnabled else {
+            return
+        }
+
         let cloudBackupManager = Core.shared.cloudBackupManager
 
         guard cloudBackupManager.iCloudUrl != nil else {

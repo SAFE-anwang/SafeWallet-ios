@@ -101,7 +101,7 @@ struct ManageAccountView: View {
                             }
                         }
 
-                        if !viewModel.account.watchAccount {
+                        if BackupModule.cloudBackupEnabled, !viewModel.account.watchAccount {
                             if viewModel.isCloudBackedUp {
                                 ClickableRow {
                                     if viewModel.account.backedUp {

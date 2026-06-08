@@ -10,25 +10,36 @@ struct BackupRequiredView: View {
     @Binding var isPresented: Bool
 
     var body: some View {
-        BottomSheetView(
-            items: [
-                .title(icon: ThemeImage.warning, title: title),
-                .text(text: description),
-                .buttonGroup(.init(buttons: [
-                    .init(style: .gray, title: "backup_prompt.backup_manual".localized, icon: "edit_24") {
-                        isPresented = false
+        let buttons: [ButtonGroupViewModel.ButtonItem] = {
+            var result: [ButtonGroupViewModel.ButtonItem] = [
+                .init(style: .gray, title: "backup_prompt.backup_manual".localized, icon: "edit_24") {
+                    isPresented = false
 
-                        Coordinator.shared.present { _ in
-                            BackupManualView(account: account).ignoresSafeArea()
-                        }
-                        stat(page: statPage, event: .open(page: .manualBackup))
-                    },
+                    Coordinator.shared.present { _ in
+                        BackupManualView(account: account).ignoresSafeArea()
+                    }
+                    stat(page: statPage, event: .open(page: .manualBackup))
+                },
+            ]
+
+            if BackupModule.cloudBackupEnabled {
+                result.append(
                     .init(style: .transparent, title: "backup_prompt.backup_cloud".localized, icon: "icloud_24") {
                         isPresented = false
 
                         Coordinator.shared.presentWalletBackup(account: account, statPage: statPage)
-                    },
-                ])),
+                    }
+                )
+            }
+
+            return result
+        }()
+
+        BottomSheetView(
+            items: [
+                .title(icon: ThemeImage.warning, title: title),
+                .text(text: description),
+                .buttonGroup(.init(buttons: buttons)),
             ],
         )
     }

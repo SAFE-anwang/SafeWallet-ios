@@ -8,7 +8,7 @@ struct BackupSelectDestinationView: View {
         ScrollableThemeView {
             VStack(spacing: .margin12) {
                 ListSection {
-                    ForEach(BackupModule.Destination.allCases) { destination in
+                    ForEach(BackupModule.Destination.availableCases) { destination in
                         row(destination: destination)
                     }
                 }
