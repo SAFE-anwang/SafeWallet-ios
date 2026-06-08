@@ -89,7 +89,11 @@ class ProposalViewController: ThemeViewController {
                 self?.hiddenEmptyView(isHidden: true)
 
             case let .completed(datas):
-                guard self?.isSearch == false else{ return }
+                guard self?.isSearch == false else {
+                    self?.refreshControl.endRefreshing()
+                    self?.didLoad()
+                    return
+                }
                 self?.spinner.isHidden = true
                 self?.viewItems = datas
                 self?.hiddenEmptyView(isHidden: datas.count > 0)
@@ -105,9 +109,11 @@ class ProposalViewController: ThemeViewController {
                 self?.spinner.isHidden = true
                 guard let count = self?.viewItems.count, count > 0 else {
                     self?.hiddenEmptyView(isHidden: false)
+                    self?.refreshControl.endRefreshing()
                     return
                 }
             }
+            self?.refreshControl.endRefreshing()
             self?.didLoad()
         }
     }
@@ -118,10 +124,7 @@ class ProposalViewController: ThemeViewController {
     }
 
     @objc private func onRefresh() {
-        viewModel.clearCaches()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.refreshControl.endRefreshing()
-        }
+        viewModel.softRefresh()
     }
     
     func didLoad() {
