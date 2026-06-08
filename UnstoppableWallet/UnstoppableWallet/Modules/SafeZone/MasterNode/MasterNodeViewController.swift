@@ -11,6 +11,8 @@ class MasterNodeViewController: ThemeViewController {
     private let viewModel: MasterNodeViewModel
     private let tableView = SectionsTableView(style: .grouped)
     private let spinner = HUDActivityView.create(with: .medium24)
+    private let loadMoreContainer = UIView()
+    private let loadMoreSpinner = HUDActivityView.create(with: .medium24)
     private var viewItems = [MasterNodeViewModel.ViewItem]()
     private let refreshControl = UIRefreshControl()
     private let emptyView = PlaceholderView()
@@ -62,10 +64,25 @@ class MasterNodeViewController: ThemeViewController {
             maker.center.equalToSuperview()
         }
         spinner.startAnimating()
+
+        loadMoreContainer.backgroundColor = .clear
+        loadMoreContainer.isHidden = true
+        view.addSubview(loadMoreContainer)
+        loadMoreContainer.snp.makeConstraints { maker in
+            maker.leading.trailing.bottom.equalToSuperview()
+            maker.height.equalTo(44)
+        }
+        loadMoreContainer.addSubview(loadMoreSpinner)
+        loadMoreSpinner.snp.makeConstraints { maker in
+            maker.centerX.equalToSuperview()
+            maker.top.equalToSuperview().offset(12)
+        }
+        loadMoreSpinner.startAnimating()
         
         tipsCell.bind(text: "safe_zone.safe4.node.register.tips".localized, type: .normal)
         
         subscribe(disposeBag, viewModel.stateDriver) { [weak self] in self?.sync(state: $0) }
+        subscribe(disposeBag, viewModel.isLoadingMoreDriver) { [weak self] in self?.syncLoadingMore($0) }
         
         nodeSearchCell.setInput(keyboardType: .default, placeholder: "safe_zone.safe4.search.input.master.tips".localized)
         nodeSearchCell.onChangeHeight = { [weak self] in self?.reloadTable()}
@@ -81,7 +98,8 @@ class MasterNodeViewController: ThemeViewController {
             self?.nodeSearchCautionCell.set(caution: $0)
             self?.reloadTable()
         }
-        
+
+        sync(state: viewModel.state)
         viewModel.refresh()
     }
     
@@ -93,7 +111,11 @@ class MasterNodeViewController: ThemeViewController {
                 self?.hiddenEmptyView(isHidden: true)
                 
             case let .completed(datas):
-                guard self?.isSearch == false else{ return }
+                guard self?.isSearch == false else {
+                    self?.refreshControl.endRefreshing()
+                    self?.didLoad()
+                    return
+                }
                 self?.spinner.isHidden = true
                 self?.hiddenEmptyView(isHidden: datas.count > 0)
                 self?.viewItems = datas
@@ -109,10 +131,11 @@ class MasterNodeViewController: ThemeViewController {
                 self?.spinner.isHidden = true
                 guard let count = self?.viewItems.count, count > 0 else {
                     self?.hiddenEmptyView(isHidden: false)
+                    self?.refreshControl.endRefreshing()
                     return
                 }
             }
-            
+            self?.refreshControl.endRefreshing()
             self?.didLoad()
 
         }
@@ -125,10 +148,7 @@ class MasterNodeViewController: ThemeViewController {
 
     @objc 
     private func onRefresh() {
-        viewModel.clearCaches()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.refreshControl.endRefreshing()
-        }
+        viewModel.softRefresh()
     }
     
     @objc 
@@ -161,6 +181,18 @@ class MasterNodeViewController: ThemeViewController {
     
     private func hiddenEmptyView(isHidden: Bool) {
         tableView.tableFooterView = isHidden ? nil : emptyView
+    }
+
+    private func syncLoadingMore(_ isLoading: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if !isLoading || self.viewItems.isEmpty {
+                self.loadMoreContainer.isHidden = true
+                return
+            }
+
+            self.loadMoreContainer.isHidden = false
+        }
     }
 }
 extension MasterNodeViewController {

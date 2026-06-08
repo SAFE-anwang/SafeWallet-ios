@@ -47,6 +47,13 @@ class SuperNodeDetailViewController: ThemeViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "safe_zone.safe4.detail".localized
+
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(named: "close"),
+            style: .plain,
+            target: self,
+            action: #selector(dismissController)
+        )
                 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { maker in
@@ -153,6 +160,10 @@ class SuperNodeDetailViewController: ThemeViewController {
     
     private func show(message: String) {
         HudHelper.instance.show(banner: .success(string: message))
+    }
+
+    @objc func dismissController() {
+        dismiss(animated: true)
     }
 }
 extension SuperNodeDetailViewController {

@@ -9,6 +9,7 @@ import RxCocoa
 class SuperNodeRegisterViewController: KeyboardAwareViewController {
     private let disposeBag = DisposeBag()
     private let enodeTips = "safe_zone.safe4.node.enode.tips".localized
+    private let enodeRiskChecker = UrlRiskChecker()
     private let viewModel: SuperNodeRegisterViewModel
     private let tableView = SectionsTableView(style: .plain)
     private var isLoaded = false
@@ -136,22 +137,51 @@ class SuperNodeRegisterViewController: KeyboardAwareViewController {
     }
 
     func toSendVc() {
-        Task { [viewModel] in
+        Task { [weak self] in
             do {
-               let isValid = try await viewModel.isValidInputParams()
+                guard let self else { return }
+                let isValid = try await self.viewModel.isValidInputParams()
                 guard isValid else { return }
-                guard let sendData = viewModel.sendData else { return }
-                if navigationController?.viewControllers.last is SuperNodeSendViewController {
-                    return
+                guard let sendData = self.viewModel.sendData else { return }
+                switch self.enodeRiskChecker.check(enode: sendData.ENODE) {
+                case .secure, .disabled:
+                    self.openSendViewController(sendData: sendData)
+                case .risky:
+                    self.presentEnodeRiskAlert(
+                        title: "wallet_connect.main.premium_alert.title.risky".localized,
+                        message: "wallet_connect.main.premium_alert.subtitle.risky".localized,
+                        sendData: sendData
+                    )
+                case .notAvailable:
+                    self.presentEnodeRiskAlert(
+                        title: "wallet_connect.scam_protection".localized,
+                        message: "wallet_connect.main.premium_alert.subtitle.not_available".localized,
+                        sendData: sendData
+                    )
                 }
-                let vc = SuperNodeSendViewController(viewModel: viewModel, sendData: sendData)
-                navigationController?.pushViewController(vc, animated: true)
             }catch{}
         }
     }
 }
 
 private extension SuperNodeRegisterViewController {
+    func openSendViewController(sendData: SuperNodeSendData) {
+        if navigationController?.viewControllers.last is SuperNodeSendViewController {
+            return
+        }
+        let vc = SuperNodeSendViewController(viewModel: viewModel, sendData: sendData)
+        navigationController?.pushViewController(vc, animated: true)
+    }
+
+    func presentEnodeRiskAlert(title: String, message: String, sendData: SuperNodeSendData) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "button.cancel".localized, style: .cancel))
+        alert.addAction(UIAlertAction(title: "button.continue".localized, style: .default) { [weak self] _ in
+            self?.openSendViewController(sendData: sendData)
+        })
+        present(alert, animated: true)
+    }
+
     @objc func dismissController() {
         dismiss(animated: true)
     }
@@ -374,4 +404,3 @@ extension SuperNodeRegisterViewController: SectionsDataSource {
         ]
     }
 }
-

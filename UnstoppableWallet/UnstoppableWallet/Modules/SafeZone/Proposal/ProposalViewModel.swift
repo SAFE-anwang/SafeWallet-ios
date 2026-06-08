@@ -63,8 +63,8 @@ extension ProposalViewModel {
                     state = .completed(datas: viewItems)
                     return
                 }
-                
-                let ids = try await service.proposalIds(page: safe4Page)
+
+                let ids = try await service.proposalIds(offset: proposalOffset(pageControl: safe4Page), count: proposalCount(pageControl: safe4Page))
                 var results: [ViewItem] = []
                 var failedIds = [BigUInt]()
                 for id in ids {
@@ -85,9 +85,9 @@ extension ProposalViewModel {
                 results.sort{ Int($0.info.id) > Int($1.info.id) }
                 scheduleRecovery(for: failedIds)
                 if results.count > 0 { safe4Page.plusPage() }
-                self.proposalStorageManager.save(infos: results.map{ ProposalInfoRecord(info: $0.info)})
+                mergeInOrder(items: results)
+                self.proposalStorageManager.save(infos: viewItems.map { ProposalInfoRecord(info: $0.info) })
                 self.proposalStorageManager.savePageControl(safe4Page)
-                viewItems.append(contentsOf: results)
                 state = .completed(datas: viewItems)
                 completed?()
             }catch{
@@ -198,7 +198,7 @@ extension ProposalViewModel {
                 guard safe4Page.isAbleLoadMore else { break }
 
                 do {
-                    let ids = try await service.proposalIds(page: safe4Page)
+                    let ids = try await service.proposalIds(offset: proposalOffset(pageControl: safe4Page), count: proposalCount(pageControl: safe4Page))
                     guard !ids.isEmpty else { break }
                     safe4Page.plusPage()
 
@@ -221,7 +221,7 @@ extension ProposalViewModel {
 
                     scheduleRecovery(for: failedIds)
                     mergeInOrder(items: items)
-                    proposalStorageManager.save(infos: items.map { ProposalInfoRecord(info: $0.info) })
+                    proposalStorageManager.save(infos: viewItems.map { ProposalInfoRecord(info: $0.info) })
                     proposalStorageManager.savePageControl(safe4Page)
                     state = .completed(datas: viewItems)
                     try? await Task.sleep(nanoseconds: 250_000_000)
@@ -242,6 +242,15 @@ extension ProposalViewModel {
             cachedInfoById[item.id] = item.info
         }
         viewItems.sort { Int($0.info.id) > Int($1.info.id) }
+    }
+
+    private func proposalOffset(pageControl: Safe4PageControl) -> Int {
+        pageControl.page * Self.pageSize
+    }
+
+    private func proposalCount(pageControl: Safe4PageControl) -> Int {
+        let remaining = max(pageControl.totalNum - proposalOffset(pageControl: pageControl), 0)
+        return min(Self.pageSize, remaining)
     }
 
     private func scheduleRecovery(for ids: [BigUInt]) {

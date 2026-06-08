@@ -17340,3 +17340,9 @@
 	};
 	rootObject = D3285F3A20BD158E00644076 /* Project object */;
 }
+		C8CF72C62FD5D3CE00DED7C9 /* SuperNodeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CF72C52FD5D3CE00DED7C9 /* SuperNodeListView.swift */; };
+		C8CF72C72FD5D3CE00DED7C9 /* SuperNodeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CF72C52FD5D3CE00DED7C9 /* SuperNodeListView.swift */; };
+		C8CF72C52FD5D3CE00DED7C9 /* SuperNodeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperNodeListView.swift; sourceTree = "<group>"; };
+				C8CF72C52FD5D3CE00DED7C9 /* SuperNodeListView.swift */,
+				C8CF72C72FD5D3CE00DED7C9 /* SuperNodeListView.swift in Sources */,
+				C8CF72C62FD5D3CE00DED7C9 /* SuperNodeListView.swift in Sources */,

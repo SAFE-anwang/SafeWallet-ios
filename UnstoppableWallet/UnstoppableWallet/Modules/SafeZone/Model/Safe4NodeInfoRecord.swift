@@ -29,6 +29,7 @@ import BigInt
 
 class Safe4NodeInfo: Record, Codable {
     var recordId: Int64
+    var displayOrder: Int?
     var id: String // BigUInt
     var name: String
     var addr: String// EthereumAddress
@@ -43,6 +44,9 @@ class Safe4NodeInfo: Record, Codable {
     var lastRewardHeight: String // BigUInt
     var createHeight: String // BigUInt
     var updateHeight: String // BigUInt
+    var totalVoteNum: String?
+    var totalAmount: String?
+    var allVoteNum: String?
         
     override class var databaseTableName: String {
         "Safe4_Safe4NodeInfo"
@@ -50,11 +54,12 @@ class Safe4NodeInfo: Record, Codable {
 //    static let superNodeRecord = hasOne(Safe4SuperNodeRecord.self)
     
     enum Columns: String, ColumnExpression {
-        case recordId, id, name, addr, creator, enode, description, isOfficial, state, founders, incentivePlan, isUnion, lastRewardHeight, createHeight, updateHeight
+        case recordId, displayOrder, id, name, addr, creator, enode, description, isOfficial, state, founders, incentivePlan, isUnion, lastRewardHeight, createHeight, updateHeight, totalVoteNum, totalAmount, allVoteNum
     }
     
     required init(row: Row) throws {
         recordId = row[Columns.recordId]
+        displayOrder = row[Columns.displayOrder]
         id = row[Columns.id]
         name = row[Columns.name]
         addr = row[Columns.addr]
@@ -78,12 +83,16 @@ class Safe4NodeInfo: Record, Codable {
         lastRewardHeight = row[Columns.lastRewardHeight]
         createHeight = row[Columns.createHeight]
         updateHeight = row[Columns.updateHeight]
+        totalVoteNum = row[Columns.totalVoteNum]
+        totalAmount = row[Columns.totalAmount]
+        allVoteNum = row[Columns.allVoteNum]
 
         try super.init(row: row)
     }
 
     override func encode(to container: inout PersistenceContainer) {
         container[Columns.recordId] = recordId
+        container[Columns.displayOrder] = displayOrder
         container[Columns.id] = id.description
         container[Columns.name] = name
         container[Columns.addr] = addr
@@ -105,10 +114,14 @@ class Safe4NodeInfo: Record, Codable {
         container[Columns.lastRewardHeight] = lastRewardHeight
         container[Columns.createHeight] = createHeight
         container[Columns.updateHeight] = updateHeight
+        container[Columns.totalVoteNum] = totalVoteNum
+        container[Columns.totalAmount] = totalAmount
+        container[Columns.allVoteNum] = allVoteNum
     }
         
-    init(recordId: Int64, _ record: web3swift.SuperNodeInfo) {
+    init(recordId: Int64, _ record: web3swift.SuperNodeInfo, totalVoteNum: BigUInt? = nil, totalAmount: BigUInt? = nil, allVoteNum: BigUInt? = nil) {
         self.recordId = recordId
+        self.displayOrder = nil
         self.id = record.id.description
         self.name = record.name
         self.addr = record.addr.address
@@ -133,11 +146,15 @@ class Safe4NodeInfo: Record, Codable {
         self.lastRewardHeight = record.lastRewardHeight.description
         self.createHeight = record.createHeight.description
         self.updateHeight = record.updateHeight.description
+        self.totalVoteNum = totalVoteNum?.description
+        self.totalAmount = totalAmount?.description
+        self.allVoteNum = allVoteNum?.description
         super.init()
     }
     
     init(recordId: Int64, _ record: web3swift.MasterNodeInfo) {
         self.recordId = recordId
+        self.displayOrder = nil
         self.id = record.id.description
         self.name = ""
         self.addr = record.addr.address
@@ -162,6 +179,9 @@ class Safe4NodeInfo: Record, Codable {
         self.lastRewardHeight = record.lastRewardHeight.description
         self.createHeight = record.createHeight.description
         self.updateHeight = record.updateHeight.description
+        self.totalVoteNum = nil
+        self.totalAmount = nil
+        self.allVoteNum = nil
         super.init()
     }
 

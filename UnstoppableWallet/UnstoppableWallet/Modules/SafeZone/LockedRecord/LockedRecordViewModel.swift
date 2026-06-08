@@ -86,8 +86,8 @@ extension LockedRecordViewModel {
                 }
                 
                 await MainActor.run {
-                    let withdrawnKeys = Set(snapshotItems.map(\.cacheKey))
-                    viewItems.removeAll { withdrawnKeys.contains($0.cacheKey) }
+                    let withdrawnKeys = Set(snapshotItems.map(\.recordKey))
+                    viewItems.removeAll { withdrawnKeys.contains($0.recordKey) }
                     snapshotItems.forEach { item in
                         lockedRecoardStorage.delete(type: item.sourceType, by: item.id)
                     }
@@ -226,7 +226,7 @@ extension LockedRecordViewModel {
         var result = [WithdrawItemRecord]()
         result.reserveCapacity(items.count)
         for item in items {
-            if seen.insert(item.cacheKey).inserted {
+            if seen.insert(item.recordKey).inserted {
                 result.append(item)
             }
         }
@@ -352,7 +352,13 @@ extension LockedRecordViewModel {
                 let lastBlockHeight = BigUInt(service.lastBlockHeight ?? 0)
                 return WithdrawItemRecord(lastBlockHeight: lastBlockHeight, sourceType: item.sourceType, record: item.record, info: item.info)
             }
-            viewItems = items
+            let uniqueItems = dedupById(items: items)
+            if uniqueItems.count != items.count {
+                try? lockedRecoardStorage.clear()
+                let records = uniqueItems.map { $0.asLockedRecord() }
+                lockedRecoardStorage.save(recoards: records)
+            }
+            viewItems = uniqueItems
             sortItems()
             cacheItems = viewItems
         } catch {}
@@ -458,6 +464,21 @@ class WithdrawItemRecord: Identifiable, Hashable {
     var cacheKey: String {
         "\(sourceType.rawValue)_\(id)"
     }
+
+    var recordKey: String {
+        "\(recordNamespace.rawValue)_\(id)"
+    }
+
+    private var recordNamespace: RecordNamespace {
+        switch sourceType {
+        case .smallAmount01:
+            return .smallAmount01
+        case .smallAmount02:
+            return .smallAmount02
+        default:
+            return .native
+        }
+    }
     
     init(lastBlockHeight: BigUInt, sourceType: LockedRecordSourceType, record: Safe4AccountRecord, info: Safe4RecordUseInfo?) {
         let releaseHeight = BigUInt(info?.releaseHeight ?? "0") ?? BigUInt.zero
@@ -496,7 +517,7 @@ class WithdrawItemRecord: Identifiable, Hashable {
     
     static func == (lhs: WithdrawItemRecord, rhs: WithdrawItemRecord) -> Bool {
         lhs.id == rhs.id &&
-        lhs.sourceType == rhs.sourceType &&
+        lhs.recordNamespace == rhs.recordNamespace &&
         lhs.amount == rhs.amount &&
         lhs.unlockHeight == rhs.unlockHeight &&
         lhs.releaseHeight == rhs.releaseHeight &&
@@ -505,7 +526,7 @@ class WithdrawItemRecord: Identifiable, Hashable {
     
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
-        hasher.combine(sourceType.rawValue)
+        hasher.combine(recordNamespace.rawValue)
         hasher.combine(amount)
         hasher.combine(unlockHeight)
         hasher.combine(releaseHeight)
@@ -515,4 +536,10 @@ class WithdrawItemRecord: Identifiable, Hashable {
     func asLockedRecord() -> Safe4LockedRecord {
         Safe4LockedRecord(type: sourceType, record: record, info: info)
     }
+}
+
+private enum RecordNamespace: Int {
+    case native
+    case smallAmount01
+    case smallAmount02
 }

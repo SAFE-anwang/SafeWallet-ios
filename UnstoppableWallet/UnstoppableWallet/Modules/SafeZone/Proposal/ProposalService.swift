@@ -58,12 +58,12 @@ extension ProposalService {
         return cachedTotal < currentTotal
     }
     
-    func proposalIds(page: Safe4PageControl) async throws -> [BigUInt] {
+    func proposalIds(offset: Int, count: Int) async throws -> [BigUInt] {
         switch type {
         case .All:
-            return try await allProposalIds(page: page)
+            return try await allProposalIds(offset: offset, count: count)
         case let .Mine(address):
-            return try await mineProposalIds(address: address, page: page)
+            return try await mineProposalIds(address: address, offset: offset, count: count)
         }
     }
     
@@ -83,8 +83,8 @@ extension ProposalService {
         try await withRetry { try await self.web3().safe4.proposal.getNum() }
     }
     
-    func allProposalIds(page: Safe4PageControl) async throws -> [BigUInt] {
-        try await withRetry { try await self.web3().safe4.proposal.getAll(BigUInt(page.start), BigUInt(page.currentPageCount)) }
+    func allProposalIds(offset: Int, count: Int) async throws -> [BigUInt] {
+        try await withRetry { try await self.web3().safe4.proposal.getAll(BigUInt(offset), BigUInt(count)) }
     }
 }
 
@@ -96,9 +96,9 @@ private extension ProposalService {
         return try await withRetry { try await self.web3().safe4.proposal.getMineNum(creator) }
     }
     
-    func mineProposalIds(address: String, page: Safe4PageControl) async throws -> [BigUInt] {
+    func mineProposalIds(address: String, offset: Int, count: Int) async throws -> [BigUInt] {
         let creator = Web3Core.EthereumAddress(address)!
-        return try await withRetry { try await self.web3().safe4.proposal.getMines(creator, BigUInt(page.start), BigUInt(page.currentPageCount)) }
+        return try await withRetry { try await self.web3().safe4.proposal.getMines(creator, BigUInt(offset), BigUInt(count)) }
     }
 
 }

@@ -43,13 +43,12 @@ struct SuperNodeModule {
 }
 
 struct SuperNodeView: UIViewControllerRepresentable {
-    typealias UIViewControllerType = UIViewController
-    let viewModel: SuperNodeViewModel
-    
-    func makeUIViewController(context _: Context) -> UIViewController {
-        // TODO: must provide any VC
-        return SuperNodeViewController(viewModel: viewModel)
+    typealias UIViewControllerType = SuperNodeViewController
+    let viewController: SuperNodeViewController
+
+    func makeUIViewController(context _: Context) -> SuperNodeViewController {
+        viewController
     }
 
-    func updateUIViewController(_: UIViewController, context _: Context) {}
+    func updateUIViewController(_: SuperNodeViewController, context _: Context) {}
 }
