@@ -47,10 +47,6 @@ class MoneroNodeManager {
         case .monero:
             return [
                 MoneroNode(
-                    name: "sethforprivacy.com",
-                    node: .init(url: URL(string: "node.sethforprivacy.com:18089")!, isTrusted: false)
-                ),
-                MoneroNode(
                     name: "boldsuck.org",
                     node: .init(url: URL(string: "xmr-de.boldsuck.org:18081")!, isTrusted: false)
                 ),
@@ -63,24 +59,12 @@ class MoneroNodeManager {
                     node: .init(url: URL(string: "node.monerodevs.org:18089")!, isTrusted: false)
                 ),
                 MoneroNode(
-                    name: "monerujo.io",
-                    node: .init(url: URL(string: "nodex.monerujo.io:18081")!, isTrusted: false)
-                ),
-                MoneroNode(
-                    name: "cakewallet.com",
-                    node: .init(url: URL(string: "xmr-node.cakewallet.com:18081")!, isTrusted: false)
-                ),
-                MoneroNode(
                     name: "stackwallet.com",
                     node: .init(url: URL(string: "monero.stackwallet.com:18081")!, isTrusted: false)
                 ),
                 MoneroNode(
                     name: "hashvault.pro",
                     node: .init(url: URL(string: "nodes.hashvault.pro:18081")!, isTrusted: false)
-                ),
-                MoneroNode(
-                    name: "xmr-tw.org",
-                    node: .init(url: URL(string: "opennode.xmr-tw.org:18089/mainnet/xmr-tw.org")!, isTrusted: false)
                 ),
             ]
         default:
