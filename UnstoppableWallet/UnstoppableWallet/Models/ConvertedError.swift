@@ -104,8 +104,19 @@ extension EvmKit.JsonRpcResponse.ResponseError: ConvertibleError {
     var convertedError: Error {
         switch self {
         case let .rpcError(rpcError):
+            let message = rpcError.message.lowercased()
+
             if rpcError.message == "insufficient funds for transfer" || rpcError.message.starts(with: "gas required exceeds allowance") {
                 return AppError.ethereum(reason: .insufficientBalanceWithFee)
+            }
+
+            if message.contains("erc1155: insufficient balance for transfer") ||
+               message.contains("erc721: caller is not token owner or approved") ||
+               message.contains("erc721: invalid token id") ||
+               message.contains("owner query for nonexistent token") ||
+               message.contains("operator query for nonexistent token")
+            {
+                return AppError.ethereum(reason: .invalidNftAsset)
             }
 
             if rpcError.message.starts(with: "execution reverted") {

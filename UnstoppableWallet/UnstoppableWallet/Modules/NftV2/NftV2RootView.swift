@@ -75,6 +75,9 @@ struct NftV2RootView: View {
                             collection: collection,
                             onSendSuccess: { asset, collection, transactionHash, amount in
                                 viewModel.handleSendSuccess(asset: asset, collection: collection, transactionHash: transactionHash, amount: amount)
+                                Task { @MainActor in
+                                    presentedSendController = nil
+                                }
                             },
                             onSendFailed: { _ in }
                         )

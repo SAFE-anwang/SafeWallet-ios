@@ -211,6 +211,13 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
     
     private func categorizeError(_ error: Error) -> Error {
         let errorDescription = error.localizedDescription.lowercased()
+
+        if case let AppError.ethereum(reason) = error.convertedError,
+           case .invalidNftAsset = reason
+        {
+            print("[SendEvmTransaction] Categorized as: invalidNftAsset")
+            return error.convertedError
+        }
         
         // Gas-related errors
         if errorDescription.contains("insufficient funds") || 

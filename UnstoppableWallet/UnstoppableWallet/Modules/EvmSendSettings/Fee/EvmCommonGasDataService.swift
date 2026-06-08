@@ -44,7 +44,12 @@ class EvmCommonGasDataService {
                         return .error(error)
                     }
 
-                    return .just(EvmFeeModule.GasData(limit: predefinedGasLimit, price: gasPrice))
+                    if case let AppError.ethereum(reason) = error.convertedError,
+                       case .lowerThanBaseGasLimit = reason {
+                        return .just(EvmFeeModule.GasData(limit: predefinedGasLimit, price: gasPrice))
+                    }
+
+                    return .error(error)
                 }
     }
 }

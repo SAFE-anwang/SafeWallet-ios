@@ -30,6 +30,7 @@ enum AppError: Error {
 
     enum EthereumError: Error {
         case insufficientBalanceWithFee
+        case invalidNftAsset
         case executionReverted(message: String)
         case lowerThanBaseGasLimit
         case nonceAlreadyInBlock
@@ -67,6 +68,7 @@ extension AppError: LocalizedError {
         case let .ethereum(reason):
             switch reason {
             case .insufficientBalanceWithFee: return "" // localized in modules
+            case .invalidNftAsset: return "nft_v2.send.invalid_asset".localized
             case let .executionReverted(message): return "ethereum_transaction.error.reverted".localized(message)
             case .lowerThanBaseGasLimit: return "ethereum_transaction.error.lower_than_base_gas_limit".localized
             case .nonceAlreadyInBlock: return "ethereum_transaction.error.nonce_already_in_block".localized

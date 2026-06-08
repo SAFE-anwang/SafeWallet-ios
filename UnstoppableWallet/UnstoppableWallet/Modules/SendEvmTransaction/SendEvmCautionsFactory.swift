@@ -67,6 +67,9 @@ class SendEvmCautionsFactory {
             case .insufficientBalanceWithFee:
                 title = "fee_settings.errors.insufficient_balance".localized
                 text = "ethereum_transaction.error.insufficient_balance_with_fee".localized(baseCoinService.token.coin.code)
+            case .invalidNftAsset:
+                title = "fee_settings.errors.unexpected_error".localized
+                text = "nft_v2.send.invalid_asset".localized
             case let .executionReverted(message):
                 title = "fee_settings.errors.unexpected_error".localized
                 text = message

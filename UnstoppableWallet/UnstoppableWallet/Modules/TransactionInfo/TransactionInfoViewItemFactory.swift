@@ -290,6 +290,34 @@ class TransactionInfoViewItemFactory {
         return viewItems
     }
 
+    private func deduplicated(transferEvents: [TransferEvent]) -> [TransferEvent] {
+        var result = [TransferEvent]()
+
+        for transferEvent in transferEvents {
+            if result.contains(where: { $0.address.lowercased() == transferEvent.address.lowercased() && $0.value == transferEvent.value }) {
+                continue
+            }
+
+            result.append(transferEvent)
+        }
+
+        return result
+    }
+
+    private func deduplicated(transfers: [SolanaTransactionRecord.Transfer]) -> [SolanaTransactionRecord.Transfer] {
+        var result = [SolanaTransactionRecord.Transfer]()
+
+        for transfer in transfers {
+            if result.contains(where: { ($0.address?.lowercased() == transfer.address?.lowercased()) && $0.value == transfer.value }) {
+                continue
+            }
+
+            result.append(transfer)
+        }
+
+        return result
+    }
+
     private func bitcoinViewItems(record: BitcoinTransactionRecord, lastBlockInfo: LastBlockInfo?) -> [TransactionInfoModule.ViewItem] {
         var viewItems = [TransactionInfoModule.ViewItem]()
 
@@ -440,20 +468,20 @@ class TransactionInfoViewItemFactory {
                 .actionTitle(iconName: record.source.blockchainType.iconPlain32, iconDimmed: false, title: record.method ?? "transactions.contract_call".localized, subTitle: evmLabelManager.mapped(address: record.contractAddress)),
             ]))
 
-            for event in record.outgoingEvents {
+            for event in deduplicated(transferEvents: record.outgoingEvents) {
                 sections.append(.init(sendSection(source: record.source, appValue: event.value, to: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
-            for event in record.incomingEvents {
+            for event in deduplicated(transferEvents: record.incomingEvents) {
                 sections.append(.init(receiveSection(source: record.source, appValue: event.value, from: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
         case let record as ExternalContractCallTransactionRecord:
-            for event in record.outgoingEvents {
+            for event in deduplicated(transferEvents: record.outgoingEvents) {
                 sections.append(.init(sendSection(source: record.source, appValue: event.value, to: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
-            for event in record.incomingEvents {
+            for event in deduplicated(transferEvents: record.incomingEvents) {
                 sections.append(.init(receiveSection(source: record.source, appValue: event.value, from: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
@@ -491,20 +519,20 @@ class TransactionInfoViewItemFactory {
                 .actionTitle(iconName: record.source.blockchainType.iconPlain32, iconDimmed: false, title: record.method ?? "transactions.contract_call".localized, subTitle: evmLabelManager.mapped(address: record.contractAddress)),
             ]))
 
-            for event in record.outgoingEvents {
+            for event in deduplicated(transferEvents: record.outgoingEvents) {
                 sections.append(.init(sendSection(source: record.source, appValue: event.value, to: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
-            for event in record.incomingEvents {
+            for event in deduplicated(transferEvents: record.incomingEvents) {
                 sections.append(.init(receiveSection(source: record.source, appValue: event.value, from: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
         case let record as TronExternalContractCallTransactionRecord:
-            for event in record.outgoingEvents {
+            for event in deduplicated(transferEvents: record.outgoingEvents) {
                 sections.append(.init(sendSection(source: record.source, appValue: event.value, to: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
-            for event in record.incomingEvents {
+            for event in deduplicated(transferEvents: record.incomingEvents) {
                 sections.append(.init(receiveSection(source: record.source, appValue: event.value, from: event.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
@@ -770,11 +798,11 @@ class TransactionInfoViewItemFactory {
             }
 
         case let record as SolanaUnknownTransactionRecord:
-            for transfer in record.outgoingTransfers {
+            for transfer in deduplicated(transfers: record.outgoingTransfers) {
                 sections.append(.init(sendSection(source: record.source, appValue: transfer.value, to: transfer.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
-            for transfer in record.incomingTransfers {
+            for transfer in deduplicated(transfers: record.incomingTransfers) {
                 sections.append(.init(receiveSection(source: record.source, appValue: transfer.value, from: transfer.address, rates: item.rates, nftMetadata: item.nftMetadata, balanceHidden: balanceHidden)))
             }
 
