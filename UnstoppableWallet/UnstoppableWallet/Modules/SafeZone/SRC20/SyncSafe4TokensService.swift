@@ -8,6 +8,8 @@ import EvmKit
 
 class SyncSafe4TokensService {
     private let userDefaultsStorage = Core.shared.userDefaultsStorage
+    private let accountManager = Core.shared.accountManager
+    private let walletManager = Core.shared.walletManager
     private var disposeBag = DisposeBag()
     private let storage: Safe4CustomTokenStorage
     private let provider: SyncSafe4TokensProvider
@@ -16,6 +18,8 @@ class SyncSafe4TokensService {
     private let marketKit: MarketKit.Kit
     private var dataRelay = PublishRelay<[Safe4CustomTokenRecord]>()
     private var isSyncing = false
+    private let ownerAccountId: String?
+    private let ownerAddress: String
     
     lazy var cachedRecords: [Safe4CustomTokenRecord] = {
         let records = storage.allTokens().filter{$0.creator.lowercased() == evmKit.receiveAddress.eip55.lowercased()}
@@ -28,6 +32,8 @@ class SyncSafe4TokensService {
         self.evmKit = evmKit
         self.storage = storage
         self.marketKit = marketKit
+        ownerAccountId = Core.shared.accountManager.activeAccount?.id
+        ownerAddress = evmKit.receiveAddress.eip55.lowercased()
     }
     
     func requestTokens() {
@@ -143,13 +149,27 @@ class SyncSafe4TokensService {
                 storage.save(token: tokenInfo)
             }
             
-            if  let _ = Core.shared.accountManager.activeAccount {
-                let uids = Core.shared.walletManager.activeWallets.map{$0.token.coin.uid.lowercased()}
+            if canReloadActiveWallets() {
+                let uids = walletManager.activeWallets.map { $0.token.coin.uid.lowercased() }
                 if !uids.contains(tokenQuery.customCoinUid.lowercased()) {
-                    Core.shared.walletManager.preloadWallets()
+                    walletManager.preloadWallets()
                 }
             }
         }catch{}
+    }
+
+    private func canReloadActiveWallets() -> Bool {
+        guard let activeAccount = accountManager.activeAccount else {
+            return false
+        }
+
+        guard activeAccount.id == ownerAccountId else {
+            return false
+        }
+
+        return walletManager.activeWallets.contains { wallet in
+            wallet.account.id == ownerAccountId && wallet.token.isSafe4Native
+        }
     }
     
     private func saveLogo(tokenInfo: Safe4CustomTokenRecord) {

@@ -35,7 +35,10 @@ class WalletAdapterService {
             })
             .disposed(by: disposeBag)
 
-        adapterMap = adapterManager.adapterData.adapterMap.compactMapValues { $0 as? IBalanceAdapter }
+        let adapterData = adapterManager.adapterData
+        if adapterData.account == account {
+            adapterMap = adapterData.adapterMap.compactMapValues { $0 as? IBalanceAdapter }
+        }
         subscribeToAdapters()
     }
 

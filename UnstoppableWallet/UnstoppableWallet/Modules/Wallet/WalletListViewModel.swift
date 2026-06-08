@@ -96,9 +96,13 @@ class WalletListViewModel: ObservableObject {
     }
 
     private func handleUpdated(activeAccount: Account?) {
+        let accountChanged = account?.id != activeAccount?.id
         account = activeAccount
 
         queue.async {
+            if accountChanged {
+                self._clearItemsForAccountSwitch()
+            }
             self._syncWalletService()
         }
     }
@@ -144,6 +148,14 @@ class WalletListViewModel: ObservableObject {
             __items = []
             _reportItems()
         }
+    }
+
+    private func _clearItemsForAccountSwitch() {
+        walletService?.delegate = nil
+        walletService = nil
+        __items = []
+        _reportItems()
+        _syncTotalItem()
     }
 
     private func _sync(wallets: [Wallet], walletService: WalletService) {
@@ -204,6 +216,10 @@ class WalletListViewModel: ObservableObject {
 extension WalletListViewModel: IWalletServiceDelegate {
     func didUpdateWallets(walletService: WalletService) {
         queue.async {
+            guard self.walletService === walletService, self.account?.id == walletService.accountId else {
+                return
+            }
+
             var balanceDataMap = [Wallet: BalanceData]()
 
             for index in self.__items.indices {
@@ -231,6 +247,10 @@ extension WalletListViewModel: IWalletServiceDelegate {
 
     func didUpdate(wallets: [Wallet], walletService: WalletService) {
         queue.async {
+            guard self.walletService === walletService, self.account?.id == walletService.accountId else {
+                return
+            }
+
             self._sync(wallets: wallets, walletService: walletService)
         }
     }

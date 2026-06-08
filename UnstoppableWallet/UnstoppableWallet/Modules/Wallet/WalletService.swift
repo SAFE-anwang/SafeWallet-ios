@@ -57,8 +57,12 @@ class WalletService {
 }
 
 extension WalletService {
+    var accountId: String {
+        account.id
+    }
+
     var wallets: [Wallet] {
-        filtered(walletManager.activeWallets)
+        filtered(walletManager.wallets(account: account))
     }
 
     func isMainNet(wallet: Wallet) -> Bool? {
