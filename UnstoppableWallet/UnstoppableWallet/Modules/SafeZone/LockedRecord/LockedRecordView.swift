@@ -22,10 +22,10 @@ struct LockedRecordView: View {
                 ZStack {
                     VStack{
                         list()
-                        if case .loading = viewModel.dataState, !viewModel.viewItems.isEmpty {
+                        if viewModel.isLoadingNextPage {
                             ProgressView()
                         }
-                        if !viewModel.hasMoreItems {
+                        if !viewModel.hasMoreItems && !viewModel.isRefreshing && !viewModel.isLoadingNextPage {
                             Text("loadData.nomore".localized)
                                 .themeSubhead1(color: .themeLeah, alignment: .center)
                         }
@@ -87,13 +87,16 @@ struct LockedRecordView: View {
         ThemeList {
             ListForEach(viewModel.viewItems) { item in
                 view(for: item)
-                    .padding(.horizontal, .margin16)
+                    .padding(.horizontal, 12)
                     .onAppear {
                         if item.id == viewModel.viewItems.last?.id {
                             loadNextItems()
                         }
                     }
             }
+        }
+        .refreshable {
+            await viewModel.refresh()
         }
     }
     
@@ -142,7 +145,11 @@ struct LockedRecordView: View {
     }
     
     private func loadNextItems() {
-        guard viewModel.hasMoreItems, viewModel.viewItems.count > 0, viewModel.dataState != .loading else { return }
+        guard viewModel.hasMoreItems,
+              !viewModel.isRefreshing,
+              !viewModel.isLoadingNextPage,
+              viewModel.viewItems.count > 0
+        else { return }
         viewModel.loadMore()
     }
     
@@ -166,22 +173,24 @@ struct LockedRecordView: View {
         let addLockAction: () -> Void
         
         var body: some View {
-            VStack(spacing: 4) {
-                Text("safe_zone.safe4.vote.record.id".localized + ": "  + id)
-                    .themeSubhead1(color: .themeLeah)
-                Text("safe_withdraw.amount.locked".localized + ": " + amount)
-                    .themeSubhead1(color: .themeLeah)
-                Text("safe_withdraw.unlock.height".localized + ": " + unlockHeight)
-                    .themeSubhead1(color: .themeLeah)
-                if let releaseHeight {
-                    Text("safe_withdraw.release.height".localized + ": " + releaseHeight)
+            VStack(alignment: .leading, spacing: .margin12) {
+                VStack(alignment: .leading, spacing: .margin8) {
+                    Text("safe_zone.safe4.vote.record.id".localized + ": "  + id)
                         .themeSubhead1(color: .themeLeah)
-                }
-                if let address {
-                    Text("safe_zone.safe4.vote.record.address".localized + ": " + address)
+                    Text("safe_withdraw.amount.locked".localized + ": " + amount)
                         .themeSubhead1(color: .themeLeah)
-                        .truncationMode(.middle)
-                        .lineLimit(1)
+                    Text("safe_withdraw.unlock.height".localized + ": " + unlockHeight)
+                        .themeSubhead1(color: .themeLeah)
+                    if let releaseHeight {
+                        Text("safe_withdraw.release.height".localized + ": " + releaseHeight)
+                            .themeSubhead1(color: .themeLeah)
+                    }
+                    if let address {
+                        Text("safe_zone.safe4.vote.record.address".localized + ": " + address)
+                            .themeSubhead1(color: .themeLeah)
+                            .truncationMode(.middle)
+                            .lineLimit(1)
+                    }
                 }
 
                 HStack(spacing: .margin16) {
@@ -205,6 +214,10 @@ struct LockedRecordView: View {
                     }
                 }
             }
+            .padding(.horizontal, .margin16)
+            .padding(.vertical, 14)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
 }

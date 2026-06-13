@@ -65,6 +65,15 @@ extension Safe4LockedRecordStorage {
             try item.update(db)
         }
     }
+
+    func replaceAll(records: [Safe4LockedRecord]) throws {
+        try dbPool.write { db in
+            try Safe4LockedRecord.deleteAll(db)
+            for record in records {
+                try record.insert(db)
+            }
+        }
+    }
     
     func asset(type: LockedRecordSourceType, id: Int) throws -> Safe4LockedRecord? {
         try dbPool.read { db in

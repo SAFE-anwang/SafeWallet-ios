@@ -227,17 +227,22 @@ extension LiquidityRecordService {
     func removeLiquidity(viewItem: LiquidityRecordViewModel.RecordItem, ratio: BigUInt) {
         state = .loading
         self.ratio = ratio
+        debugLog("remove start ratio=\(ratio)% tokenA=\(viewItem.tokenA.coin.code) tokenB=\(viewItem.tokenB.coin.code) pair=\(viewItem.pair.pairAddress.eip55) lpBalance=\(viewItem.poolInfo.balanceOfAccount) token0Amount=\(viewItem.poolInfo.userToken0Amount) token1Amount=\(viewItem.poolInfo.userToken1Amount)")
         Task {
             do {
                 guard let receiveAddress = getReceiveAddress() else {
+                    debugLog("remove failed before send: missing receive address")
                     throw LiquidityRecordError.invalidAddress
                 }
                 guard let evmKitWrapper = evmKitWrapper else {
+                    debugLog("remove failed before send: missing evmKitWrapper")
                     throw LiquidityRecordError.evmKitWrapperError
                 }
                 
                 let pairAddress = viewItem.pair.pairAddress
                 let poolInfo = viewItem.poolInfo
+                debugLog("remove context chain=\(evmKitWrapper.evmKit.chain) account=\(receiveAddress.eip55) pair=\(pairAddress.eip55)")
+                await logPairDiagnostics(pairAddress: pairAddress, viewItem: viewItem, poolInfo: poolInfo)
                 
 //                // 首先尝试使用 Permit 方式（无需预先 approve）
 //                do {
@@ -254,6 +259,7 @@ extension LiquidityRecordService {
                     try await checkAllowanceAndRemove(eip20Kit: eip20Kit, viewItem: viewItem, pairAddress: pairAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
 //                }
             } catch {
+                debugLog("remove failed before subscription error=\(describe(error))")
                 state = .failed(error: error.localizedDescription)
             }
         }
@@ -329,17 +335,20 @@ extension LiquidityRecordService {
         )
 
         let transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        debugLog("permit remove tx prepared router=\(routerAddress.eip55) tokenA=\(addressA.eip55) tokenB=\(addressB.eip55) liquidity=\(liquidity) amountAMin=\(amountAMin) amountBMin=\(amountBMin) deadline=\(deadline) input=\(shortInput(transactionData.input))")
 
-        try await send(transactionData: transactionData)
+        try await send(transactionData: transactionData, context: "removeWithPermit")
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-            .subscribe(onSuccess: { [weak self] _ in
+            .subscribe(onSuccess: { [weak self] tx in
                 guard let self else { return }
+                self.debugLog("permit remove send success tx=\(String(describing: tx))")
                 if let index = self.viewItems.firstIndex(where: { $0.pair.pairAddress == viewItem.pair.pairAddress }) {
                     self.viewItems.remove(at: index)
                     self.state = .removeSuccess
                 }
             }, onError: { [weak self] error in
                 guard let self else { return }
+                self.debugLog("permit remove send error=\(self.describe(error))")
                 let message = self.errorMessage(error: error, item: viewItem)
                 self.state = .removeFailed(error: message)
             })
@@ -355,21 +364,26 @@ extension LiquidityRecordService {
         let routerAddress = try EvmKit.Address(hex: routerAddressString)
         
         let liquidity = poolInfo.balanceOfAccount
+        debugLog("allowance check router=\(routerAddress.eip55) pair=\(pairAddress.eip55) requiredLP=\(liquidity)")
         
         // 查询当前 allowance
         let allowanceResult: BigUInt
         do {
             let allowanceString = try await eip20Kit.allowance(spenderAddress: routerAddress, defaultBlockParameter: .latest)
             allowanceResult = BigUInt(allowanceString) ?? 0
+            debugLog("allowance result raw=\(allowanceString) parsed=\(allowanceResult) required=\(liquidity)")
         } catch {
+            debugLog("allowance check error=\(describe(error))")
             throw LiquidityRecordError.allowanceCheckFailed
         }
         
         // 如果 allowance 足够，直接移除流动性
         if allowanceResult >= liquidity {
+            debugLog("allowance enough, remove directly")
             try await removeLiquidityDirectly(viewItem: viewItem, routerAddress: routerAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
         } else {
             // 需要 approve
+            debugLog("allowance not enough, approve first allowance=\(allowanceResult) required=\(liquidity)")
             try await approveAndRemove(eip20Kit: eip20Kit, viewItem: viewItem, routerAddress: routerAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
         }
     }
@@ -378,19 +392,23 @@ extension LiquidityRecordService {
     private func approveAndRemove(eip20Kit: Eip20Kit.Kit, viewItem: LiquidityRecordViewModel.RecordItem, routerAddress: EvmKit.Address, receiveAddress: EvmKit.Address, poolInfo: PoolInfo) async throws {
         let maxValue = BigUInt(Data(hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
         let transactionData = eip20Kit.approveTransactionData(spenderAddress: routerAddress, amount: maxValue)
+        debugLog("approve tx prepared router=\(routerAddress.eip55) amount=max input=\(shortInput(transactionData.input))")
         
-        try await send(transactionData: transactionData)
+        try await send(transactionData: transactionData, context: "approveLP")
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-            .subscribe(onSuccess: { [weak self] _ in
+            .subscribe(onSuccess: { [weak self] tx in
                 guard let self = self else { return }
+                self.debugLog("approve send success tx=\(String(describing: tx)); starting remove immediately")
                 Task {
                     do {
                         try await self.removeLiquidityDirectly(viewItem: viewItem, routerAddress: routerAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
                     } catch {
+                        self.debugLog("remove after approve threw before subscription error=\(self.describe(error))")
                         self.state = .removeFailed(error: error.localizedDescription)
                     }
                 }
             }, onError: { [weak self] error in
+                self?.debugLog("approve send error=\(self?.describe(error) ?? String(describing: error))")
                 self?.state = .approveFailed
             })
             .disposed(by: disposeBag)
@@ -418,28 +436,47 @@ extension LiquidityRecordService {
         )
         
         let transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        debugLog("remove tx prepared router=\(routerAddress.eip55) tokenA=\(addressA.eip55) tokenB=\(addressB.eip55) liquidity=\(liquidity) amountAMin=\(amountAMin) amountBMin=\(amountBMin) deadline=\(deadline) input=\(shortInput(transactionData.input))")
         
-        try await send(transactionData: transactionData)
+        try await send(transactionData: transactionData, context: "removeLiquidity")
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-            .subscribe(onSuccess: { [weak self] _ in
+            .subscribe(onSuccess: { [weak self] tx in
                 guard let self else { return }
+                self.debugLog("remove send success tx=\(String(describing: tx))")
                 if let index = self.viewItems.firstIndex(where: { $0.pair.pairAddress == viewItem.pair.pairAddress }) {
                     self.viewItems.remove(at: index)
                     self.state = .removeSuccess
                 }
             }, onError: { [weak self] error in
                 guard let self else { return }
+                self.debugLog("remove send error=\(self.describe(error))")
                 let message = self.errorMessage(error: error, item: viewItem)
                 self.state = .removeFailed(error: message)
             })
             .disposed(by: disposeBag)
     }
 
-    private func send(transactionData: TransactionData) async throws -> Single<FullTransaction> {
-        guard let evmKitWrapper = evmKitWrapper else { return Single.error( LiquidityRecordError.evmKitWrapperError) }
+    private func send(transactionData: TransactionData, context: String) async throws -> Single<FullTransaction> {
+        guard let evmKitWrapper = evmKitWrapper else {
+            debugLog("send[\(context)] missing evmKitWrapper")
+            return Single.error(LiquidityRecordError.evmKitWrapperError)
+        }
+        debugLog("send[\(context)] preparing to=\(transactionData.to.eip55) value=\(transactionData.value) input=\(shortInput(transactionData.input))")
         let nonce = try await evmKitWrapper.evmKit.nonce(defaultBlockParameter: .pending)
-        guard let gasPrice = legacyGasPrice else { return Single.error( LiquidityRecordError.noGasPrice) }
-        let gasLimit = try await evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
+        debugLog("send[\(context)] nonce=\(nonce)")
+        guard let gasPrice = legacyGasPrice else {
+            debugLog("send[\(context)] missing gasPrice")
+            return Single.error(LiquidityRecordError.noGasPrice)
+        }
+        debugLog("send[\(context)] gasPrice=\(String(describing: gasPrice))")
+        let gasLimit: Int
+        do {
+            gasLimit = try await evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
+        } catch {
+            debugLog("send[\(context)] estimateGas error=\(describe(error))")
+            throw error
+        }
+        debugLog("send[\(context)] estimatedGasLimit=\(gasLimit)")
 
         return evmKitWrapper.sendSingle(
                         transactionData: transactionData,
@@ -456,8 +493,10 @@ extension LiquidityRecordService {
             .subscribe(
                 onSuccess: { [weak self] gasPrice in
                     self?.legacyGasPrice =  gasPrice
+                    self?.debugLog("gas price synced gasPrice=\(String(describing: gasPrice))")
                 },
                 onError: { [weak self] error in
+                    self?.debugLog("gas price sync error=\(self?.describe(error) ?? String(describing: error))")
                     self?.state = .gasPriceFailed
                 }
             )
@@ -465,6 +504,14 @@ extension LiquidityRecordService {
     }
 
     func errorMessage(error: Error, item: LiquidityRecordViewModel.RecordItem) -> String {
+        if let revertReason = revertReason(from: error) {
+            if revertReason.contains("TRANSFER_FAILED") {
+                return "liquidity.remove.error.transfer_failed".localized(item.tokenA.coin.code, item.tokenB.coin.code)
+            }
+
+            return "liquidity.remove.error.execution_reverted".localized(revertReason)
+        }
+
         if case JsonRpcResponse.ResponseError.rpcError(_) = error {
             let feeType: String
             switch item.tokenA.blockchainType {
@@ -480,6 +527,108 @@ extension LiquidityRecordService {
             return "liquidity.remove.error.insufficient".localized(feeType)
         }
         return error.localizedDescription
+    }
+
+    private func debugLog(_ message: String) {
+        print("[LiquidityRemove][SAFE] \(message)")
+    }
+
+    private func describe(_ error: Error) -> String {
+        if let revertReason = revertReason(from: error) {
+            return "\(type(of: error)): \(error.localizedDescription) | revertReason=\(revertReason) | \(String(describing: error))"
+        }
+        return "\(type(of: error)): \(error.localizedDescription) | \(String(describing: error))"
+    }
+
+    private func shortInput(_ input: Data) -> String {
+        let hex = input.hs.hexString
+        guard hex.count > 20 else {
+            return "0x\(hex)"
+        }
+        return "0x\(hex.prefix(20))...(\(input.count) bytes)"
+    }
+
+    private func revertReason(from error: Error) -> String? {
+        guard case let JsonRpcResponse.ResponseError.rpcError(rpcError) = error else {
+            return nil
+        }
+
+        if let data = rpcError.data {
+            let dataHex = String(describing: data)
+            if let reason = decodeRevertReason(dataHex: dataHex) {
+                return reason
+            }
+        }
+
+        if rpcError.message.contains("execution reverted") {
+            return rpcError.message
+        }
+
+        return nil
+    }
+
+    private func decodeRevertReason(dataHex: String) -> String? {
+        let unwrapped: String
+        if dataHex.hasPrefix("Optional("), dataHex.hasSuffix(")") {
+            unwrapped = String(dataHex.dropFirst("Optional(".count).dropLast())
+        } else {
+            unwrapped = dataHex
+        }
+
+        let cleaned = unwrapped.hasPrefix("0x") ? String(unwrapped.dropFirst(2)) : unwrapped
+        guard cleaned.count >= 8 else {
+            return nil
+        }
+        let selector = String(cleaned.prefix(8))
+        guard selector == "08c379a0" else {
+            return nil
+        }
+        guard let data = Data(hex: cleaned), data.count >= 4 + 32 + 32 else {
+            return nil
+        }
+
+        let payload = data.dropFirst(4)
+        guard payload.count >= 64 else {
+            return nil
+        }
+
+        let lengthStart = payload.startIndex + 32
+        let lengthEnd = lengthStart + 32
+        let lengthData = payload[lengthStart..<lengthEnd]
+        let length = Int(BigUInt(lengthData))
+        let stringStart = lengthEnd
+        let stringEnd = stringStart + length
+
+        guard payload.count >= stringEnd else {
+            return nil
+        }
+
+        return String(data: payload[stringStart..<stringEnd], encoding: .utf8)
+    }
+
+    private func logPairDiagnostics(pairAddress: EvmKit.Address, viewItem: LiquidityRecordViewModel.RecordItem, poolInfo: PoolInfo) async {
+        guard let evmKit = evmKitWrapper?.evmKit else {
+            return
+        }
+
+        do {
+            async let token0 = getPairToken0(evmKit: evmKit, contractAddress: pairAddress)
+            async let token1 = getPairToken1(evmKit: evmKit, contractAddress: pairAddress)
+            async let reserves = getReserves(evmKit: evmKit, contractAddress: pairAddress)
+            async let totalSupply = getTotalSupply(evmKit: evmKit, contractAddress: pairAddress)
+
+            let (pairToken0, pairToken1, pairReserves, pairTotalSupply) = try await (token0, token1, reserves, totalSupply)
+            debugLog(
+                """
+                pair diagnostics token0=\(pairToken0.eip55) token1=\(pairToken1.eip55) \
+                reserve0=\(pairReserves.0) reserve1=\(pairReserves.1) totalSupply=\(pairTotalSupply) \
+                uiTokenA=\(viewItem.pair.item0.address.eip55) uiTokenB=\(viewItem.pair.item1.address.eip55) \
+                userShareToken0=\(poolInfo.userToken0Amount) userShareToken1=\(poolInfo.userToken1Amount)
+                """
+            )
+        } catch {
+            debugLog("pair diagnostics error pair=\(pairAddress.eip55) error=\(describe(error))")
+        }
     }
 
 }
@@ -614,6 +763,22 @@ extension LiquidityRecordService {
             rawReserve1 = BigUInt(data[32...63])
         }
         return (rawReserve0,rawReserve1)
+    }
+
+    private func getPairToken0(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address) async throws -> EvmKit.Address {
+        let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: GetToken0Method().encodedABI())
+        guard data.count >= 32 else {
+            throw LiquidityRecordError.dataError
+        }
+        return EvmKit.Address(raw: data.suffix(20))
+    }
+
+    private func getPairToken1(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address) async throws -> EvmKit.Address {
+        let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: GetToken1Method().encodedABI())
+        guard data.count >= 32 else {
+            throw LiquidityRecordError.dataError
+        }
+        return EvmKit.Address(raw: data.suffix(20))
     }
 
     private func getBalanceOf(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address, walletAddress: EvmKit.Address) async throws -> BigUInt {

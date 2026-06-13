@@ -72,6 +72,18 @@ extension Safe4WithdrawLockedStorage {
             try item.update(db)
         }
     }
+
+    func replaceAll(type: LockedRecordSourceType, records: [Safe4WithdrawLockedRecord]) throws {
+        try dbPool.write { db in
+            try Safe4WithdrawLockedRecord
+                .filter(Safe4WithdrawLockedRecord.Columns.lockedType == type.rawValue)
+                .deleteAll(db)
+
+            for record in records {
+                try record.insert(db)
+            }
+        }
+    }
     
     func asset(type: LockedRecordSourceType, id: Int) throws -> Safe4WithdrawLockedRecord? {
         try dbPool.read { db in

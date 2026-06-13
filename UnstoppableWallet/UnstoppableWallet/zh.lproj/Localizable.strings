@@ -2662,6 +2662,8 @@
 "liquidity.remove" = "移除流动性";
 "liquidity.remove.succ" = "移除流动性成功";
 "liquidity.remove.error.insufficient" = "手续费%@余额不足";
+"liquidity.remove.error.transfer_failed" = "无法移除 %@ / %@ 流动性。链上返回转账失败，通常是代币合约限制或转账规则导致。";
+"liquidity.remove.error.execution_reverted" = "无法移除流动性。链上返回：%@";
 "liquidity.empty.description" = "你还没有添加流动性";
 "liquidity.remove.description" = "确定移除流动性吗？";
 "liquidity.tick.price.min" = "最低价格";
@@ -2849,11 +2851,11 @@
 
 // Address Checker
 
-"address_checker.title" = "地址檢查工具";
-"address_checker.recipient_check" = "收款人檢查";
-"address_checker.recipient_check.description" = "在發送前檢查收款地址是否存在風險。";
-"address_checker.check_address" = "地址檢查";
-"address_checker.check_address.description" = "允許您檢查地址是否列入制裁與黑名單資料庫。";
+"address_checker.title" = "地址检查工具";
+"address_checker.recipient_check" = "收款人检查";
+"address_checker.recipient_check.description" = "在发送前检查收款地址是否存在风险。";
+"address_checker.check_address" = "地址检查";
+"address_checker.check_address.description" = "允许您检查地址是否列入制裁与黑名单资料库。";
 
 // Check Address
 

@@ -9,35 +9,40 @@ import BigInt
 class LockedRecordViewModel: ObservableObject {
     private static let cacheMaxAge: TimeInterval = 120
     private static let withdrawBatchSize = 30
+    private static let pageSize = 20
+    private static let activeSourceTypes: [LockedRecordSourceType] = [
+        .locked,
+        .smallAmount01,
+        .smallAmount02,
+        .voted,
+        .proposal,
+    ]
+
     private let nullAddress = "0x0000000000000000000000000000000000000000"
     private let userDefaultsStorage = Core.shared.userDefaultsStorage
     private let service: LockedRecordService
     private let lockedRecoardStorage: Safe4LockedRecordStorage
-    private var votedPageControl = Safe4PageControl(pageSize: 20)
-    private var lockedPageControl = Safe4PageControl(pageSize: 20)
-    private var lockedPageControl_01 = Safe4PageControl(pageSize: 20)
-    private var lockedPageControl_02 = Safe4PageControl(pageSize: 20)
-    private var proposalPageControl = Safe4PageControl(pageSize: 20)
+
+    private var sourceStatesByType: [LockedRecordSourceType: SourceState]
     private var listTask: Task<Void, Never>?
     private var withdrawTask: Task<Void, Never>?
-    private var cacheItems: [WithdrawItemRecord] = []
-    
+    private var requestContextId = UUID()
+    private var pendingWithdrawRecordKeys = Set<String>()
+    private var isLoadingMore = false
+
     @Published private(set) var dataState: ListState = .items
     @Published private(set) var sendState: WithdrawStatus = .normal
     @Published private(set) var hasMoreItems = true
     @Published private(set) var viewItems: [WithdrawItemRecord] = []
+    @Published private(set) var isRefreshing = false
+    @Published private(set) var isLoadingNextPage = false
 
     init(service: LockedRecordService, lockedStorage: Safe4LockedRecordStorage) {
         self.service = service
         self.lockedRecoardStorage = lockedStorage
-        showCache()
-        let shouldSync = viewItems.isEmpty || isCacheExpired(maxAge: Self.cacheMaxAge)
-        if shouldSync {
-            requestItems(loadMore: false)
-        } else {
-            dataState = .items
-            hasMoreItems = true
-        }
+        self.sourceStatesByType = Self.makeInitialSourceStates()
+        restoreCache()
+        initialLoad()
     }
 }
 
@@ -51,53 +56,645 @@ extension LockedRecordViewModel {
         withdraw(items: [item])
     }
 
+    @MainActor
+    func refresh() async {
+        await withCheckedContinuation { continuation in
+            if !startRequest(kind: .refresh, onComplete: { continuation.resume() }) {
+                continuation.resume()
+            }
+        }
+    }
+
+    func loadMore() {
+        _ = startRequest(kind: .loadMore)
+    }
+
+    var withdrawEnableIds: [BigUInt] {
+        viewItems.filter { $0.withdrawEnable }.map { BigUInt($0.id) }
+    }
+
+    var hasWithdrawableItems: Bool {
+        viewItems.contains { $0.withdrawEnable }
+    }
+
+    func allWithdraw() {
+        let items = viewItems.filter { $0.withdrawEnable }
+        guard !items.isEmpty else { return }
+        guard case .items = dataState else { return }
+        withdraw(items: items)
+    }
+}
+
+private extension LockedRecordViewModel {
+    enum RequestKind {
+        case initial
+        case refresh
+        case loadMore
+    }
+
+    struct SourceState {
+        let sourceType: LockedRecordSourceType
+        var items: [WithdrawItemRecord]
+        var pageControl: Safe4PageControl
+        var cachedTotal: Int
+        var latestTotal: Int?
+        var requestedCount: Int
+        var needsReconcile: Bool
+        var isInvalidated: Bool
+
+        var loadedCount: Int {
+            items.count
+        }
+    }
+
+    struct SourcePageSnapshot: Codable {
+        let sourceTypeRaw: Int
+        let totalNum: Int
+        let requestedCount: Int
+    }
+
+    struct LockedRecordCacheSnapshot: Codable {
+        let sources: [SourcePageSnapshot]
+    }
+
+    static func makeInitialSourceStates() -> [LockedRecordSourceType: SourceState] {
+        Dictionary(uniqueKeysWithValues: activeSourceTypes.map { sourceType in
+            (
+                sourceType,
+                SourceState(
+                    sourceType: sourceType,
+                    items: [],
+                    pageControl: Safe4PageControl(pageSize: pageSize),
+                    cachedTotal: 0,
+                    latestTotal: nil,
+                    requestedCount: 0,
+                    needsReconcile: false,
+                    isInvalidated: false
+                )
+            )
+        })
+    }
+
+    @discardableResult
+    func startRequest(kind: RequestKind, onComplete: (() -> Void)? = nil) -> Bool {
+        switch kind {
+        case .initial:
+            guard listTask == nil else {
+                onComplete?()
+                return false
+            }
+        case .refresh:
+            listTask?.cancel()
+            listTask = nil
+        case .loadMore:
+            guard listTask == nil, !isRefreshing, !isLoadingMore, hasMoreItems else {
+                onComplete?()
+                return false
+            }
+        }
+
+        let requestId = UUID()
+        requestContextId = requestId
+        isRefreshing = kind == .refresh
+        isLoadingMore = kind == .loadMore
+        isLoadingNextPage = kind == .loadMore
+        dataState = .loading
+
+        let stateSnapshot = sourceStatesByType
+        let cacheExpired = isCacheExpired(maxAge: Self.cacheMaxAge)
+
+        listTask = Task { [weak self] in
+            guard let self else { return }
+
+            defer {
+                Task { @MainActor in
+                    self.finishRequest(requestId: requestId)
+                    onComplete?()
+                }
+            }
+
+            do {
+                let latestTotals = try await fetchLatestTotals()
+                let nextStates: [LockedRecordSourceType: SourceState]
+
+                switch kind {
+                case .initial:
+                    nextStates = try await prepareInitialStates(
+                        from: stateSnapshot,
+                        latestTotals: latestTotals,
+                        cacheExpired: cacheExpired
+                    )
+                case .refresh:
+                    nextStates = try await rebuildStates(
+                        from: stateSnapshot,
+                        latestTotals: latestTotals
+                    )
+                case .loadMore:
+                    nextStates = try await loadMoreStates(
+                        from: stateSnapshot,
+                        latestTotals: latestTotals
+                    )
+                }
+
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    guard self.requestContextId == requestId else { return }
+                    self.apply(states: nextStates)
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    guard self.requestContextId == requestId else { return }
+                    if self.viewItems.isEmpty {
+                        self.dataState = .error(RequestError.getInfo as NSError)
+                    } else {
+                        self.dataState = .items
+                    }
+                }
+            }
+        }
+
+        return true
+    }
+
+    func finishRequest(requestId: UUID) {
+        guard requestContextId == requestId else { return }
+        listTask = nil
+        isRefreshing = false
+        isLoadingMore = false
+        isLoadingNextPage = false
+    }
+
+    func initialLoad() {
+        _ = startRequest(kind: .initial)
+    }
+
+    func fetchLatestTotals() async throws -> [LockedRecordSourceType: Int] {
+        async let nativeTotal = service.totalLockedNum(type: .native)
+        async let smallAmount01Total = service.totalLockedNum(type: .smallAmount_01)
+        async let smallAmount02Total = service.totalLockedNum(type: .smallAmount_02)
+        async let votedTotal = service.getVotedIDNum4Voter()
+        async let proposalTotal = service.mineProposalNum()
+
+        return [
+            .locked: try await Int(nativeTotal),
+            .smallAmount01: try await Int(smallAmount01Total),
+            .smallAmount02: try await Int(smallAmount02Total),
+            .voted: try await Int(votedTotal),
+            .proposal: try await Int(proposalTotal),
+        ]
+    }
+
+    func prepareInitialStates(
+        from currentStates: [LockedRecordSourceType: SourceState],
+        latestTotals: [LockedRecordSourceType: Int],
+        cacheExpired: Bool
+    ) async throws -> [LockedRecordSourceType: SourceState] {
+        var nextStates = currentStates
+
+        for sourceType in Self.activeSourceTypes {
+            var state = currentStates[sourceType] ?? Self.makeInitialSourceStates()[sourceType]!
+            let latestTotal = latestTotals[sourceType] ?? 0
+            state.latestTotal = latestTotal
+
+            if latestTotal == 0 {
+                state.items = []
+                state.cachedTotal = 0
+                state.latestTotal = 0
+                state.requestedCount = 0
+                state.needsReconcile = false
+                state.isInvalidated = false
+                state.pageControl = buildPageControl(totalNum: 0, requestedCount: 0)
+                nextStates[sourceType] = state
+                continue
+            }
+
+            let shouldReload =
+                state.items.isEmpty ||
+                cacheExpired ||
+                latestTotal != state.cachedTotal ||
+                state.needsReconcile ||
+                state.isInvalidated
+
+            if shouldReload {
+                state = try await rebuildState(state: state, latestTotal: latestTotal)
+            } else {
+                state.cachedTotal = latestTotal
+                state.latestTotal = latestTotal
+                state.requestedCount = min(state.requestedCount, latestTotal)
+                state.pageControl = buildPageControl(totalNum: latestTotal, requestedCount: state.requestedCount)
+                state.needsReconcile = false
+                state.isInvalidated = false
+            }
+
+            nextStates[sourceType] = state
+        }
+
+        return nextStates
+    }
+
+    func rebuildStates(
+        from currentStates: [LockedRecordSourceType: SourceState],
+        latestTotals: [LockedRecordSourceType: Int]
+    ) async throws -> [LockedRecordSourceType: SourceState] {
+        var nextStates = currentStates
+
+        for sourceType in Self.activeSourceTypes {
+            let currentState = currentStates[sourceType] ?? Self.makeInitialSourceStates()[sourceType]!
+            let latestTotal = latestTotals[sourceType] ?? 0
+            nextStates[sourceType] = try await rebuildState(state: currentState, latestTotal: latestTotal)
+        }
+
+        return nextStates
+    }
+
+    func loadMoreStates(
+        from currentStates: [LockedRecordSourceType: SourceState],
+        latestTotals: [LockedRecordSourceType: Int]
+    ) async throws -> [LockedRecordSourceType: SourceState] {
+        var nextStates = currentStates
+
+        for sourceType in Self.activeSourceTypes {
+            var state = currentStates[sourceType] ?? Self.makeInitialSourceStates()[sourceType]!
+            let latestTotal = latestTotals[sourceType] ?? 0
+            state.latestTotal = latestTotal
+
+            if latestTotal == 0 {
+                state.items = []
+                state.cachedTotal = 0
+                state.requestedCount = 0
+                state.needsReconcile = false
+                state.isInvalidated = false
+                state.pageControl = buildPageControl(totalNum: 0, requestedCount: 0)
+                nextStates[sourceType] = state
+                continue
+            }
+
+            let shouldRebuild = latestTotal != state.cachedTotal || state.needsReconcile || state.isInvalidated
+            if shouldRebuild {
+                state = try await rebuildState(state: state, latestTotal: latestTotal)
+            } else {
+                state.cachedTotal = latestTotal
+                state.requestedCount = min(state.requestedCount, latestTotal)
+                state.pageControl = buildPageControl(totalNum: latestTotal, requestedCount: state.requestedCount)
+            }
+
+            if state.pageControl.isAbleLoadMore {
+                let pageResult = try await fetchPage(sourceType: sourceType, pageControl: &state.pageControl)
+                let pageItems = pageResult.items
+                if !pageItems.isEmpty {
+                    state.items.append(contentsOf: pageItems)
+                    state.items = dedupByCacheKey(items: state.items)
+                }
+                state.requestedCount = min(state.cachedTotal, state.requestedCount + pageResult.requestedCount)
+                state.pageControl = buildPageControl(totalNum: state.cachedTotal, requestedCount: state.requestedCount)
+            }
+
+            nextStates[sourceType] = state
+        }
+
+        return nextStates
+    }
+
+    func rebuildState(state: SourceState, latestTotal: Int) async throws -> SourceState {
+        var nextState = state
+        nextState.cachedTotal = latestTotal
+        nextState.latestTotal = latestTotal
+        nextState.needsReconcile = false
+        nextState.isInvalidated = false
+
+        guard latestTotal > 0 else {
+            nextState.items = []
+            nextState.requestedCount = 0
+            nextState.pageControl = buildPageControl(totalNum: 0, requestedCount: 0)
+            return nextState
+        }
+
+        let targetRequestedCount = min(max(state.requestedCount, min(Self.pageSize, latestTotal)), latestTotal)
+        var pageControl = Safe4PageControl(pageSize: Self.pageSize)
+        pageControl.set(totalNum: latestTotal)
+        var fetchedItems = [WithdrawItemRecord]()
+        var requestedCount = 0
+
+        while requestedCount < targetRequestedCount, pageControl.isAbleLoadMore {
+            let pageResult = try await fetchPage(sourceType: state.sourceType, pageControl: &pageControl)
+            let pageItems = pageResult.items
+            requestedCount += pageResult.requestedCount
+            if pageItems.isEmpty, pageResult.requestedCount == 0, !pageControl.isAbleLoadMore {
+                break
+            }
+            fetchedItems.append(contentsOf: pageItems)
+        }
+
+        nextState.items = dedupByCacheKey(items: fetchedItems)
+        nextState.requestedCount = min(requestedCount, latestTotal)
+        nextState.pageControl = buildPageControl(totalNum: latestTotal, requestedCount: nextState.requestedCount)
+        return nextState
+    }
+
+    func fetchPage(
+        sourceType: LockedRecordSourceType,
+        pageControl: inout Safe4PageControl
+    ) async throws -> (items: [WithdrawItemRecord], requestedCount: Int) {
+        guard pageControl.isAbleLoadMore else { return ([], 0) }
+
+        switch sourceType {
+        case .locked:
+            let ids = try await service.getLockedIDs(
+                type: .native,
+                start: BigUInt(pageControl.start),
+                count: BigUInt(pageControl.currentPageCount)
+            )
+            let results = try await getRecordInfos(type: .native, ids: ids)
+            if !ids.isEmpty {
+                pageControl.plusPage()
+            }
+            return (buildViewItems(results: results, sourceType: .locked), ids.count)
+        case .smallAmount01:
+            let ids = try await service.getLockedIDs(
+                type: .smallAmount_01,
+                start: BigUInt(pageControl.start),
+                count: BigUInt(pageControl.currentPageCount)
+            )
+            let results = try await getRecordInfos(type: .smallAmount_01, ids: ids)
+            if !ids.isEmpty {
+                pageControl.plusPage()
+            }
+            return (buildViewItems(results: results, sourceType: .smallAmount01), ids.count)
+        case .smallAmount02:
+            let ids = try await service.getLockedIDs(
+                type: .smallAmount_02,
+                start: BigUInt(pageControl.start),
+                count: BigUInt(pageControl.currentPageCount)
+            )
+            let results = try await getRecordInfos(type: .smallAmount_02, ids: ids)
+            if !ids.isEmpty {
+                pageControl.plusPage()
+            }
+            return (buildViewItems(results: results, sourceType: .smallAmount02), ids.count)
+        case .voted:
+            let ids = try await service.getVotedIDs4Voter(
+                start: BigUInt(pageControl.start),
+                count: BigUInt(pageControl.currentPageCount)
+            )
+            let results = try await getRecordInfos(type: .native, ids: ids)
+            if !ids.isEmpty {
+                pageControl.plusPage()
+            }
+            return (buildViewItems(results: results, sourceType: .voted), ids.count)
+        case .proposal:
+            let proposalIds = try await service.mineProposalIds(
+                start: BigUInt(pageControl.start),
+                count: BigUInt(pageControl.currentPageCount)
+            )
+            let lockIds = try await mineProposalLockIds(ids: proposalIds)
+            let results = try await getRecordInfos(type: .native, ids: lockIds)
+            if !proposalIds.isEmpty {
+                pageControl.plusPage()
+            }
+            return (
+                buildViewItems(
+                    results: results.filter { $0.1?.frozenAddr.address != nullAddress },
+                    sourceType: .proposal
+                ),
+                proposalIds.count
+            )
+        default:
+            return ([], 0)
+        }
+    }
+
+    func apply(states: [LockedRecordSourceType: SourceState]) {
+        sourceStatesByType = states
+        pendingWithdrawRecordKeys = pendingWithdrawRecordKeys.intersection(allRecordKeys(from: states))
+        rebuildViewItems()
+        hasMoreItems = canLoadMore(states: states)
+        persistCache(states: states)
+        dataState = .items
+    }
+
+    func persistCache(states: [LockedRecordSourceType: SourceState]) {
+        let allRecords = Self.activeSourceTypes
+            .compactMap { states[$0] }
+            .flatMap(\.items)
+            .map { $0.asLockedRecord() }
+
+        do {
+            try lockedRecoardStorage.replaceAll(records: allRecords)
+        } catch {}
+
+        let snapshots = Self.activeSourceTypes.compactMap { sourceType -> SourcePageSnapshot? in
+            guard let state = states[sourceType] else { return nil }
+            return SourcePageSnapshot(
+                sourceTypeRaw: sourceType.rawValue,
+                totalNum: state.cachedTotal,
+                requestedCount: state.requestedCount
+            )
+        }
+
+        if let data = try? JSONEncoder().encode(LockedRecordCacheSnapshot(sources: snapshots)),
+           let json = String(data: data, encoding: .utf8)
+        {
+            userDefaultsStorage.set(value: json, for: cacheSnapshotKey)
+        }
+
+        persistCacheTimestamp()
+    }
+
+    func restoreCache() {
+        var restoredStates = Self.makeInitialSourceStates()
+        let pageSnapshotByType = restoreCacheSnapshot()
+
+        do {
+            let groupedItems = Dictionary(
+                grouping: try lockedRecoardStorage.allRecords().map { item in
+                    let lastBlockHeight = BigUInt(service.lastBlockHeight ?? 0)
+                    return WithdrawItemRecord(
+                        lastBlockHeight: lastBlockHeight,
+                        sourceType: item.sourceType,
+                        record: item.record,
+                        info: item.info
+                    )
+                },
+                by: \.sourceType
+            )
+
+            for sourceType in Self.activeSourceTypes {
+                guard var state = restoredStates[sourceType] else { continue }
+                state.items = dedupByCacheKey(items: groupedItems[sourceType] ?? [])
+
+                let snapshot = pageSnapshotByType[sourceType]
+                let totalNum = max(snapshot?.totalNum ?? state.items.count, state.items.count)
+                let fallbackRequestedCount = min(max(state.items.count, min(Self.pageSize, totalNum)), totalNum)
+                let requestedCount = min(snapshot?.requestedCount ?? fallbackRequestedCount, totalNum)
+                state.cachedTotal = totalNum
+                state.requestedCount = requestedCount
+                state.pageControl = buildPageControl(totalNum: totalNum, requestedCount: state.requestedCount)
+                restoredStates[sourceType] = state
+            }
+        } catch {}
+
+        sourceStatesByType = restoredStates
+        rebuildViewItems()
+        hasMoreItems = canLoadMore(states: restoredStates)
+        dataState = .items
+    }
+
+    func restoreCacheSnapshot() -> [LockedRecordSourceType: SourcePageSnapshot] {
+        guard let json: String = userDefaultsStorage.value(for: cacheSnapshotKey),
+              let data = json.data(using: .utf8),
+              let snapshot = try? JSONDecoder().decode(LockedRecordCacheSnapshot.self, from: data)
+        else {
+            return [:]
+        }
+
+        return Dictionary(uniqueKeysWithValues: snapshot.sources.compactMap { sourceSnapshot in
+            guard let sourceType = LockedRecordSourceType(rawValue: sourceSnapshot.sourceTypeRaw) else {
+                return nil
+            }
+            return (sourceType, sourceSnapshot)
+        })
+    }
+
+    func rebuildViewItems() {
+        let mergedItems = Self.activeSourceTypes
+            .compactMap { sourceStatesByType[$0] }
+            .flatMap(\.items)
+
+        let filteredItems = mergedItems.filter { !pendingWithdrawRecordKeys.contains($0.recordKey) }
+        viewItems = dedupByRecordKey(items: filteredItems)
+        sortItems()
+    }
+
+    func allRecordKeys(from states: [LockedRecordSourceType: SourceState]) -> Set<String> {
+        Set(
+            Self.activeSourceTypes
+                .compactMap { states[$0] }
+                .flatMap(\.items)
+                .map(\.recordKey)
+        )
+    }
+
+    func canLoadMore(states: [LockedRecordSourceType: SourceState]) -> Bool {
+        Self.activeSourceTypes.contains { sourceType in
+            guard let state = states[sourceType] else { return false }
+            return state.pageControl.isAbleLoadMore || state.needsReconcile
+        }
+    }
+
+    func buildPageControl(totalNum: Int, requestedCount: Int) -> Safe4PageControl {
+        var pageControl = Safe4PageControl(pageSize: Self.pageSize)
+        pageControl.set(totalNum: totalNum)
+
+        guard totalNum > 0, requestedCount > 0 else {
+            return pageControl
+        }
+
+        let normalizedRequestedCount = min(requestedCount, totalNum)
+        let fullPagesLoaded = normalizedRequestedCount / Self.pageSize
+        let hasPartialPage = normalizedRequestedCount % Self.pageSize != 0
+        let pagesFetched = fullPagesLoaded + (hasPartialPage ? 1 : 0)
+
+        for _ in 0 ..< pagesFetched {
+            pageControl.plusPage()
+        }
+
+        return pageControl
+    }
+
+    func sortItems() {
+        viewItems.sort {
+            switch ($0.withdrawEnable, $1.withdrawEnable) {
+            case (false, false): return Int($0.id) < Int($1.id)
+            case (false, true): return false
+            case (true, false): return true
+            case (true, true): return Int($0.id) < Int($1.id)
+            }
+        }
+    }
+
+    func dedupByRecordKey(items: [WithdrawItemRecord]) -> [WithdrawItemRecord] {
+        var seen = Set<String>()
+        var result = [WithdrawItemRecord]()
+        result.reserveCapacity(items.count)
+
+        for item in items {
+            if seen.insert(item.recordKey).inserted {
+                result.append(item)
+            }
+        }
+
+        return result
+    }
+
+    func dedupByCacheKey(items: [WithdrawItemRecord]) -> [WithdrawItemRecord] {
+        var seen = Set<String>()
+        var result = [WithdrawItemRecord]()
+        result.reserveCapacity(items.count)
+
+        for item in items {
+            if seen.insert(item.cacheKey).inserted {
+                result.append(item)
+            }
+        }
+
+        return result
+    }
+
     private func withdraw(items: [WithdrawItemRecord]) {
         guard withdrawTask == nil else { return }
         guard !items.isEmpty else { return }
+
         sendState = .loading
         let snapshotItems = items
-        withdrawTask = Task {
+
+        withdrawTask = Task { [weak self] in
+            guard let self else { return }
+
             defer {
                 Task { @MainActor in
                     self.withdrawTask = nil
                 }
             }
-            do{
-                let smallAmount_01 = snapshotItems.filter { $0.sourceType == .smallAmount01 }.map { BigUInt($0.id) }
-                let smallAmount_02 = snapshotItems.filter { $0.sourceType == .smallAmount02 }.map { BigUInt($0.id) }
-                let native = snapshotItems.filter {
-                    switch $0.sourceType {
-                    case .smallAmount01, .smallAmount02:
-                        return false
-                    default:
-                        return true
+
+            do {
+                let smallAmount01Ids = snapshotItems
+                    .filter { $0.sourceType == .smallAmount01 }
+                    .map { BigUInt($0.id) }
+                let smallAmount02Ids = snapshotItems
+                    .filter { $0.sourceType == .smallAmount02 }
+                    .map { BigUInt($0.id) }
+                let nativeIds = snapshotItems
+                    .filter {
+                        switch $0.sourceType {
+                        case .smallAmount01, .smallAmount02:
+                            return false
+                        default:
+                            return true
+                        }
                     }
-                }.map { BigUInt($0.id) }
-                
-                for chunk in smallAmount_01.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
+                    .map { BigUInt($0.id) }
+
+                for chunk in smallAmount01Ids.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
                     _ = try await service.withdrawByID(type: .smallAmount_01, ids: chunk)
                 }
-                for chunk in smallAmount_02.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
+
+                for chunk in smallAmount02Ids.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
                     _ = try await service.withdrawByID(type: .smallAmount_02, ids: chunk)
                 }
-                
-                for chunk in native.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
+
+                for chunk in nativeIds.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
                     _ = try await service.withdrawByID(type: .native, ids: chunk)
                 }
-                
+
                 await MainActor.run {
-                    let withdrawnKeys = Set(snapshotItems.map(\.recordKey))
-                    viewItems.removeAll { withdrawnKeys.contains($0.recordKey) }
-                    snapshotItems.forEach { item in
-                        lockedRecoardStorage.delete(type: item.sourceType, by: item.id)
-                    }
-                    cacheItems = viewItems
-                    hasMoreItems = canLoadMore
-                    persistCacheTimestamp()
+                    applyLocalWithdrawSuccess(items: snapshotItems)
                     LockedRecordViewModel.saveDidWithdrawIds(snapshotItems.map { $0.id.description })
                     sendState = .success(message: "safe_zone.safe4.withdraw".localized + "transactions.types.outgoing".localized)
                 }
-            }catch{
+            } catch {
                 await MainActor.run {
                     sendState = .failed(error: "settings.personal_support.failed".localized)
                 }
@@ -105,316 +702,149 @@ extension LockedRecordViewModel {
         }
     }
 
-    func loadMore() {
-        if case .loading = dataState {
-            return
+    func applyLocalWithdrawSuccess(items: [WithdrawItemRecord]) {
+        let withdrawnKeys = Set(items.map(\.recordKey))
+        pendingWithdrawRecordKeys.formUnion(withdrawnKeys)
+
+        for sourceType in Self.activeSourceTypes {
+            guard var state = sourceStatesByType[sourceType] else { continue }
+            let beforeCount = state.items.count
+            state.items.removeAll { withdrawnKeys.contains($0.recordKey) }
+            let removedCount = beforeCount - state.items.count
+
+            guard removedCount > 0 else { continue }
+
+            state.latestTotal = nil
+            state.needsReconcile = true
+            state.requestedCount = min(state.requestedCount, max(state.items.count, min(Self.pageSize, state.cachedTotal)))
+            state.pageControl = buildPageControl(totalNum: state.cachedTotal, requestedCount: state.requestedCount)
+            sourceStatesByType[sourceType] = state
         }
-        requestItems(loadMore: true)
-    }
-    
-    var withdrawEnableIds: [BigUInt] {
-        viewItems.filter{$0.withdrawEnable}.map{BigUInt($0.id)}
+
+        rebuildViewItems()
+        hasMoreItems = canLoadMore(states: sourceStatesByType)
+        persistCache(states: sourceStatesByType)
     }
 
-    var hasWithdrawableItems: Bool {
-        viewItems.contains { $0.withdrawEnable }
-    }
-    
-    func allWithdraw() {
-        let items = viewItems.filter { $0.withdrawEnable }
-        guard !items.isEmpty else{ return }
-        guard case .items = dataState else{ return }
-        withdraw(items: items)
-    }
-}
+    func buildViewItems(
+        results: [(web3swift.AccountRecord, RecordUseInfo?)],
+        sourceType: LockedRecordSourceType
+    ) -> [WithdrawItemRecord] {
+        results
+            .filter { $0.0.id != 0 }
+            .map { recordItem, userInfo in
+                let lastBlockHeight = BigUInt(service.lastBlockHeight ?? 0)
+                let record = Safe4AccountRecord(record: recordItem)
+                let info = userInfo.map { Safe4RecordUseInfo(info: $0) }
 
-extension LockedRecordViewModel {
-    func requestItems(loadMore: Bool) {
-        guard listTask == nil else { return }
-        dataState = .loading
-        listTask = Task {
-            defer {
-                Task { @MainActor in
-                    self.listTask = nil
-                }
+                return WithdrawItemRecord(
+                    lastBlockHeight: lastBlockHeight,
+                    sourceType: sourceType,
+                    record: record,
+                    info: info
+                )
             }
-            do{
-                if !loadMore {
-                    async let lockedTotalNum = service.totalLockedNum(type: .native)
-                    async let lockedTotalNum_01 = service.totalLockedNum(type: .smallAmount_01)
-                    async let lockedTotalNum_02 = service.totalLockedNum(type: .smallAmount_02)
-                    async let votedTotalNum = service.getVotedIDNum4Voter()
-                    async let proposalTotalNum = service.mineProposalNum()
-                    
-                    let nativeTotal = try await Int(lockedTotalNum)
-                    let smallAmount01Total = try await Int(lockedTotalNum_01)
-                    let smallAmount02Total = try await Int(lockedTotalNum_02)
-                    let votedTotal = try await Int(votedTotalNum)
-                    let proposalTotal = try await Int(proposalTotalNum)
-                    
-                    lockedPageControl.set(totalNum: nativeTotal)
-                    lockedPageControl_01.set(totalNum: smallAmount01Total)
-                    lockedPageControl_02.set(totalNum: smallAmount02Total)
-                    votedPageControl.set(totalNum: votedTotal)
-                    proposalPageControl.set(totalNum: proposalTotal)
-                }
-                
-                guard lockedPageControl.isAbleLoadMore || lockedPageControl_01.isAbleLoadMore || lockedPageControl_02.isAbleLoadMore || votedPageControl.isAbleLoadMore || proposalPageControl.isAbleLoadMore else {
-                    await MainActor.run {
-                        hasMoreItems = false
-                        dataState = .items
-                    }
-                    return
-                }
-                var tempItems = [WithdrawItemRecord]()
-                
-                async let items_0 = Locked_native()
-                async let items_1 = Locked_01()
-                async let items_2 = Locked_02()
-                async let items_3 = voted()
-                async let items_4 = proposal()
-                
-                tempItems = try await (items_0 + items_1 + items_2 + items_3 + items_4)
-                tempItems.append(contentsOf: viewItems)
-                let uniqueItems = dedupById(items: tempItems)
-                
-                await MainActor.run {
-                    viewItems = uniqueItems
-                    sortItems()
-                    cacheItems = viewItems
-                    hasMoreItems = canLoadMore
-                    if !loadMore {
-                        try? lockedRecoardStorage.clear()
-                        let records = viewItems.map { $0.asLockedRecord() }
-                        lockedRecoardStorage.save(recoards: records)
-                    }
-                    persistCacheTimestamp()
-                    dataState = .items
-                }
-            }catch{
-                await MainActor.run {
-                    if viewItems.isEmpty {
-                        dataState = .error(RequestError.getInfo as NSError)
-                    } else {
-                        dataState = .items
-                    }
-                }
-            }
-        }
-    }
-    private func sortItems() {
-        viewItems.sort {
-            switch ($0.withdrawEnable, $1.withdrawEnable) {
-               case (false, false): return Int($0.id) < Int($1.id)
-               case (false, true): return false
-               case (true, false): return true
-               case (true, true): return Int($0.id) < Int($1.id)
-            }
-        }
     }
 
-    private var canLoadMore: Bool {
-        lockedPageControl.isAbleLoadMore ||
-        lockedPageControl_01.isAbleLoadMore ||
-        lockedPageControl_02.isAbleLoadMore ||
-        votedPageControl.isAbleLoadMore ||
-        proposalPageControl.isAbleLoadMore
-    }
+    func getRecordInfos(
+        type: web3swift.AccountManager.ContractType,
+        ids: [BigUInt]
+    ) async throws -> [(web3swift.AccountRecord, RecordUseInfo?)] {
+        var results = [(web3swift.AccountRecord, RecordUseInfo?)]()
 
-    private func dedupById(items: [WithdrawItemRecord]) -> [WithdrawItemRecord] {
-        var seen = Set<String>()
-        var result = [WithdrawItemRecord]()
-        result.reserveCapacity(items.count)
-        for item in items {
-            if seen.insert(item.recordKey).inserted {
-                result.append(item)
-            }
-        }
-        return result
-    }
-    
-    private func Locked_native() async throws -> [WithdrawItemRecord] {
-        if lockedPageControl.isAbleLoadMore {
-            let lockedIds = try await service.getLockedIDs(type: .native, start: BigUInt(lockedPageControl.start), count: BigUInt(lockedPageControl.currentPageCount))
-            let results = try await getRecordInfos(type: .native, ids: lockedIds)
-            let items = buildViewItems(results: results, sourceType: .locked)
-            if results.count > 0 {
-                lockedPageControl.plusPage()
-            }
-            return items
-        }
-        return []
-    }
-    
-    private func Locked_01() async throws -> [WithdrawItemRecord] {
-        if lockedPageControl_01.isAbleLoadMore {
-            let lockedIds = try await service.getLockedIDs(type: .smallAmount_01, start: BigUInt(lockedPageControl_01.start), count: BigUInt(lockedPageControl_01.currentPageCount))
-            let results = try await getRecordInfos(type: .smallAmount_01, ids: lockedIds)
-            let items = buildViewItems(results: results, sourceType: .smallAmount01)
-            if results.count > 0 {
-                lockedPageControl_01.plusPage()
-            }
-            return items
-        }
-        return []
-    }
-    
-    private func Locked_02() async throws -> [WithdrawItemRecord] {
-        if lockedPageControl_02.isAbleLoadMore {
-            let lockedIds = try await service.getLockedIDs(type: .smallAmount_02, start: BigUInt(lockedPageControl_02.start), count: BigUInt(lockedPageControl_02.currentPageCount))
-            let results = try await getRecordInfos(type: .smallAmount_02, ids: lockedIds)
-            let items = buildViewItems(results: results, sourceType: .smallAmount02)
-            if results.count > 0 {
-                lockedPageControl_02.plusPage()
-            }
-            return items
-        }
-        return []
-    }
-    
-    private func voted() async throws -> [WithdrawItemRecord] {
-        if votedPageControl.isAbleLoadMore {
-            let votedIds = try await service.getVotedIDs4Voter(start: BigUInt(votedPageControl.start), count: BigUInt(votedPageControl.currentPageCount))
-            let results = try await getRecordInfos(type: .native, ids: votedIds)
-            let items = buildViewItems(results: results, sourceType: .voted)
-            if results.count > 0 {
-                votedPageControl.plusPage()
-            }
-            return items
-        }
-        return []
-    }
-    
-    private func proposal() async throws -> [WithdrawItemRecord] {
-        if proposalPageControl.isAbleLoadMore {
-            let proposalIds = try await service.mineProposalIds(start: BigUInt(proposalPageControl.start), count: BigUInt(proposalPageControl.currentPageCount))
-            let lockIds = try await mineProposalLockIds(ids: proposalIds)
-            let results = try await getRecordInfos(type: .native, ids: lockIds)
-            let items = buildViewItems(results: results.filter{$0.1?.frozenAddr.address != nullAddress}, sourceType: .proposal)
-            if results.count > 0 {
-                proposalPageControl.plusPage()
-            }
-            return items
-        }
-        return []
-    }
-    
-    private func buildViewItems(results: [(web3swift.AccountRecord, RecordUseInfo?)], sourceType: LockedRecordSourceType) -> [WithdrawItemRecord] {
-        let datas = results.filter{$0.0.id != 0}.map { (recordItem, userInfo) in
-            let lastBlockHeight = BigUInt(service.lastBlockHeight ?? 0)
-            let record = Safe4AccountRecord(record: recordItem)
-            var info: Safe4RecordUseInfo? = nil
-            if userInfo != nil {
-                info = Safe4RecordUseInfo(info: userInfo!)
-            }
-            return WithdrawItemRecord(lastBlockHeight: lastBlockHeight,
-                                      sourceType: sourceType,
-                                      record: record,
-                                      info: info
-            )
-        }
-        return datas
-    }
-    
-    private func getRecordInfos(type: web3swift.AccountManager.ContractType, ids: [BigUInt]) async throws -> [(web3swift.AccountRecord, RecordUseInfo?)] {
-        var results: [(web3swift.AccountRecord, RecordUseInfo?)] = []
         for id in ids {
             do {
                 let info = try await service.getRecordByID(type: type, id: id)
-                var useInfo: RecordUseInfo? = nil
+                var useInfo: RecordUseInfo?
+
                 if case .native = type {
                     useInfo = try await service.getRecordUseInfo(type: type, id: id)
                 }
+
                 results.append((info, useInfo))
             } catch {
                 continue
             }
         }
+
         return results
     }
-    
-    private func mineProposalLockIds(ids: [BigUInt]) async throws -> [BigUInt] {
+
+    func mineProposalLockIds(ids: [BigUInt]) async throws -> [BigUInt] {
         var lockIds = [BigUInt]()
+
         for id in ids {
-            let rewardIDs =  try await service.getProposalRewardIDs(id: id)
-            lockIds.append(contentsOf: rewardIDs)
+            let rewardIds = try await service.getProposalRewardIDs(id: id)
+            lockIds.append(contentsOf: rewardIds)
         }
+
         return lockIds
     }
 
-    private var cacheTimestampKey: String {
+    var cacheTimestampKey: String {
         "\(LockedRecordCacheTimestampKey)_\(service.userAddress.address.lowercased())"
     }
 
-    private func showCache() {
-        do {
-            let items = try lockedRecoardStorage.allRecords().map { item in
-                let lastBlockHeight = BigUInt(service.lastBlockHeight ?? 0)
-                return WithdrawItemRecord(lastBlockHeight: lastBlockHeight, sourceType: item.sourceType, record: item.record, info: item.info)
-            }
-            let uniqueItems = dedupById(items: items)
-            if uniqueItems.count != items.count {
-                try? lockedRecoardStorage.clear()
-                let records = uniqueItems.map { $0.asLockedRecord() }
-                lockedRecoardStorage.save(recoards: records)
-            }
-            viewItems = uniqueItems
-            sortItems()
-            cacheItems = viewItems
-        } catch {}
+    var cacheSnapshotKey: String {
+        "\(LockedRecordCacheSnapshotKey)_\(service.userAddress.address.lowercased())"
     }
 
-    private func persistCacheTimestamp(_ timestamp: TimeInterval = Date().timeIntervalSince1970) {
+    func persistCacheTimestamp(_ timestamp: TimeInterval = Date().timeIntervalSince1970) {
         userDefaultsStorage.set(value: timestamp, for: cacheTimestampKey)
     }
 
-    private func isCacheExpired(maxAge: TimeInterval) -> Bool {
+    func isCacheExpired(maxAge: TimeInterval) -> Bool {
         guard let timestamp: TimeInterval = userDefaultsStorage.value(for: cacheTimestampKey) else {
             return true
         }
+
         return Date().timeIntervalSince1970 - timestamp > maxAge
     }
 }
+
 extension LockedRecordViewModel {
     enum RequestError: Error {
         case pageError
         case getInfo
         case withdrawError
     }
-    
+
     enum WithdrawStatus: Equatable {
         case normal
         case loading
         case success(message: String?)
         case failed(error: String?)
-        
+
         static func == (lhs: WithdrawStatus, rhs: WithdrawStatus) -> Bool {
             switch (lhs, rhs) {
             case (.normal, .normal): return true
             case (.loading, .loading): return true
-            case (.success(let lhsMsg), .success(let rhsMsg)):
+            case let (.success(lhsMsg), .success(rhsMsg)):
                 return lhsMsg == rhsMsg
-            case (.failed(let lhsError), .failed(let rhsError)):
+            case let (.failed(lhsError), .failed(rhsError)):
                 return lhsError == rhsError
             default:
                 return false
             }
         }
     }
-    
+
     enum LockedRecordItemAction: Hashable, Identifiable {
         case withdraw(id: BigUInt)
-        
+
         var id: Self {
             self
         }
     }
-    
+
     static func getDidWithdrawIds() -> [String] {
-        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: LockedRecordWithdrawIdsKey) else{ return [] }
+        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: LockedRecordWithdrawIdsKey) else {
+            return []
+        }
+
         return ids
     }
-    
+
     static func saveDidWithdrawIds(_ ids: [String]) {
         var oldIds = LockedRecordViewModel.getDidWithdrawIds()
         oldIds.append(contentsOf: ids)
@@ -422,25 +852,25 @@ extension LockedRecordViewModel {
         Core.shared.userDefaultsStorage.set(value: oldIds, for: LockedRecordWithdrawIdsKey)
     }
 }
-private let LockedRecordWithdrawIdsKey: String = "safe4_LockedRecord_WithdrawIds_key"
-private let LockedRecordCacheTimestampKey: String = "safe4_locked_record_cache_timestamp_key"
 
+private let LockedRecordWithdrawIdsKey = "safe4_LockedRecord_WithdrawIds_key"
+private let LockedRecordCacheTimestampKey = "safe4_locked_record_cache_timestamp_key"
+private let LockedRecordCacheSnapshotKey = "safe4_locked_record_cache_snapshot_key"
 
 extension Sequence {
     func sorted(by first: (Element, Element) -> Bool, _ others: ((Element, Element) -> Bool)...) -> [Element] {
-        return sorted { a, b in
+        sorted { a, b in
             if first(a, b) { return true }
             if first(b, a) { return false }
-            
+
             for order in others {
                 if order(a, b) { return true }
                 if order(b, a) { return false }
             }
-            
+
             return false
         }
     }
-    
 }
 
 class WithdrawItemRecord: Identifiable, Hashable {
@@ -456,7 +886,7 @@ class WithdrawItemRecord: Identifiable, Hashable {
     let addLockDayEnable: Bool
     let record: Safe4AccountRecord
     let info: Safe4RecordUseInfo?
-    
+
     var idStr: String {
         id.description
     }
@@ -479,30 +909,44 @@ class WithdrawItemRecord: Identifiable, Hashable {
             return .native
         }
     }
-    
+
     init(lastBlockHeight: BigUInt, sourceType: LockedRecordSourceType, record: Safe4AccountRecord, info: Safe4RecordUseInfo?) {
-        let releaseHeight = BigUInt(info?.releaseHeight ?? "0") ?? BigUInt.zero
-        let unlockHeight = BigUInt(record.unlockHeight) ?? BigUInt.zero
-        let votedddress = info?.votedAddr ?? nullAddress
-        let withdrawEnable = (releaseHeight.isZero && (unlockHeight < lastBlockHeight)) || (unlockHeight.isZero && (releaseHeight < lastBlockHeight))
-        let addLockDayEnable = (record.type != 0 || votedddress == nullAddress) ? false : unlockHeight > 0
-        let amount = (BigUInt(record.amount) ?? BigUInt.zero).safe4FomattedAmount + " SAFE"
-        
+        let releaseHeight = BigUInt(info?.releaseHeight ?? "0") ?? .zero
+        let unlockHeight = BigUInt(record.unlockHeight) ?? .zero
+        let votedAddress = info?.votedAddr ?? nullAddress
+        let withdrawEnable =
+            (releaseHeight.isZero && (unlockHeight < lastBlockHeight)) ||
+            (unlockHeight.isZero && (releaseHeight < lastBlockHeight))
+        let addLockDayEnable = (record.type != 0 || votedAddress == nullAddress) ? false : unlockHeight > 0
+        let amount = (BigUInt(record.amount) ?? .zero).safe4FomattedAmount + " SAFE"
+
         let didWithdrawIds = LockedRecordViewModel.getDidWithdrawIds()
         let isWithdraw = didWithdrawIds.contains(record.id.description)
+
         self.id = record.id
         self.sourceType = sourceType
         self.amount = amount
         self.unlockHeight = Int(unlockHeight)
         self.releaseHeight = releaseHeight.isZero ? nil : Int(releaseHeight)
-        self.address = votedddress == nullAddress ? nil : votedddress
+        self.address = votedAddress == nullAddress ? nil : votedAddress
         self.withdrawEnable = withdrawEnable && !isWithdraw
         self.addLockDayEnable = addLockDayEnable
         self.record = record
         self.info = info
     }
-    
-    init(id: Int, sourceType: LockedRecordSourceType, amount: String, unlockHeight: Int, releaseHeight: Int?, address: String?, withdrawEnable: Bool, addLockDayEnable: Bool, record: Safe4AccountRecord, info: Safe4RecordUseInfo?) {
+
+    init(
+        id: Int,
+        sourceType: LockedRecordSourceType,
+        amount: String,
+        unlockHeight: Int,
+        releaseHeight: Int?,
+        address: String?,
+        withdrawEnable: Bool,
+        addLockDayEnable: Bool,
+        record: Safe4AccountRecord,
+        info: Safe4RecordUseInfo?
+    ) {
         self.id = id
         self.sourceType = sourceType
         self.amount = amount
@@ -514,17 +958,17 @@ class WithdrawItemRecord: Identifiable, Hashable {
         self.record = record
         self.info = info
     }
-    
+
     static func == (lhs: WithdrawItemRecord, rhs: WithdrawItemRecord) -> Bool {
         lhs.id == rhs.id &&
-        lhs.recordNamespace == rhs.recordNamespace &&
-        lhs.amount == rhs.amount &&
-        lhs.unlockHeight == rhs.unlockHeight &&
-        lhs.releaseHeight == rhs.releaseHeight &&
-        lhs.address == rhs.address
+            lhs.recordNamespace == rhs.recordNamespace &&
+            lhs.amount == rhs.amount &&
+            lhs.unlockHeight == rhs.unlockHeight &&
+            lhs.releaseHeight == rhs.releaseHeight &&
+            lhs.address == rhs.address
     }
-    
-    public func hash(into hasher: inout Hasher) {
+
+    func hash(into hasher: inout Hasher) {
         hasher.combine(id)
         hasher.combine(recordNamespace.rawValue)
         hasher.combine(amount)

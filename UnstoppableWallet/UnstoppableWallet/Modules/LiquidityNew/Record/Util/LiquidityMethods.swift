@@ -26,6 +26,16 @@ class GetReservesMethod: ContractMethod {
     override var arguments: [Any] { [] }
 }
 
+class GetToken0Method: ContractMethod {
+    override var methodSignature: String { "token0()" }
+    override var arguments: [Any] { [] }
+}
+
+class GetToken1Method: ContractMethod {
+    override var methodSignature: String { "token1()" }
+    override var arguments: [Any] { [] }
+}
+
 class GetBalanceOfMethod: ContractMethod {
     override var methodSignature: String { "balanceOf(address)" }
     let address: EvmKit.Address

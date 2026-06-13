@@ -21,10 +21,10 @@ struct WithdrawView: View {
                 ZStack {
                     VStack{
                         list(items: viewModel.viewItems)
-                        if case .loading = viewModel.dataState, !viewModel.viewItems.isEmpty {
+                        if viewModel.isLoadingNextPage {
                             ProgressView()
                         }
-                        if !viewModel.hasMoreItems, viewModel.viewItems.count > 0 {
+                        if !viewModel.hasMoreItems, !viewModel.isRefreshing, !viewModel.isLoadingNextPage, viewModel.viewItems.count > 0 {
                             Text("loadData.nomore".localized)
                                 .themeSubhead1(color: .themeLeah, alignment: .center)
                         }
@@ -70,6 +70,9 @@ struct WithdrawView: View {
                         loadingHud()
                     }
                 }
+            }
+            .refreshable {
+                await viewModel.refresh()
             }
             .navigationBarTitle(viewModel.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -150,7 +153,7 @@ struct WithdrawView: View {
                         if item.isSelEnable {
                             viewModel.choose(item: item)
                         } else {
-                            HudHelper.instance.show(banner: .error(string: "safe_withdraw.votelocked.error".localized))
+//                            HudHelper.instance.show(banner: .error(string: "safe_withdraw.votelocked.error".localized))
                         }
                     }) {
                         ItemView(
@@ -164,7 +167,7 @@ struct WithdrawView: View {
                             isVoteLock: viewModel.withdrawType == .voteLocked
                         )
                     }
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .padding(.horizontal, 12)
                     .onAppear {
                         if item.id == items.last?.id {
                             loadNextItems()
@@ -176,7 +179,11 @@ struct WithdrawView: View {
     }
     
     private func loadNextItems() {
-        guard viewModel.hasMoreItems, viewModel.viewItems.count > 0, viewModel.dataState != .loading else { return }
+        guard viewModel.hasMoreItems,
+              !viewModel.isRefreshing,
+              !viewModel.isLoadingNextPage,
+              viewModel.viewItems.count > 0
+        else { return }
         viewModel.loadMore()
     }
     
@@ -191,30 +198,37 @@ struct WithdrawView: View {
         let isVoteLock: Bool
         
         var body: some View {
-            VStack(spacing: 1) {
-                Text("safe_zone.safe4.vote.record.id".localized + ": "  + id)
-                    .themeSubhead1(color: .themeLeah)
-                Text("safe_withdraw.amount.locked".localized + ": " + amount)
-                    .themeSubhead1(color: .themeLeah)
-                Text("safe_withdraw.unlock.height".localized + ": " + unlockHeight)
-                    .themeSubhead1(color: .themeLeah)
-                if isVoteLock {
-                    Text("safe_withdraw.release.height".localized + ": " + releaseHeight)
+            HStack(spacing: .margin12) {
+                VStack(alignment: .leading, spacing: .margin8) {
+                    Text("safe_zone.safe4.vote.record.id".localized + ": "  + id)
                         .themeSubhead1(color: .themeLeah)
-                    Text("safe_zone.safe4.vote.record.address".localized + ": " + address)
+                    Text("safe_withdraw.amount.locked".localized + ": " + amount)
                         .themeSubhead1(color: .themeLeah)
-                        .truncationMode(.middle)
-                        .lineLimit(1)
+                    Text("safe_withdraw.unlock.height".localized + ": " + unlockHeight)
+                        .themeSubhead1(color: .themeLeah)
+                    if isVoteLock {
+                        Text("safe_withdraw.release.height".localized + ": " + releaseHeight)
+                            .themeSubhead1(color: .themeLeah)
+                        Text("safe_zone.safe4.vote.record.address".localized + ": " + address)
+                            .themeSubhead1(color: .themeLeah)
+                            .truncationMode(.middle)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer(minLength: 0)
+
+                if isEnable {
+                    isSelected ? Image("checkbox_active_24") : Image("checkbox_diactive_24")
+                } else {
+                    Color.clear
+                        .frame(width: 24, height: 24)
                 }
             }
-            
-            if isEnable {
-                isSelected ? Image("checkbox_active_24") : Image("checkbox_diactive_24")
-            }else {
-                Image("")
-                    .resizable()
-                    .frame(width: 24, height: 24)
-            }
+            .padding(.horizontal, .margin16)
+            .padding(.vertical, 14)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
 

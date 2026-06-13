@@ -7883,13 +7883,6 @@
 			path = Main;
 			sourceTree = "<group>";
 		};
-		670283622FAF248D00AF6D75 /* MultiChain */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = MultiChain;
-			sourceTree = "<group>";
-		};
 		670283652FAF248D00AF6D75 /* Services */ = {
 			isa = PBXGroup;
 			children = (
@@ -7925,7 +7918,6 @@
 				6702835B2FAF248D00AF6D75 /* Confirm */,
 				6702835D2FAF248D00AF6D75 /* Fee */,
 				670283602FAF248D00AF6D75 /* Main */,
-				670283622FAF248D00AF6D75 /* MultiChain */,
 				670283652FAF248D00AF6D75 /* Services */,
 				670283692FAF248D00AF6D75 /* Util */,
 				6702836E2FAF248D00AF6D75 /* V3 */,
@@ -16344,7 +16336,7 @@
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Development.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6.8.1;
+				CURRENT_PROJECT_VERSION = 6.9.1;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MARKETING_VERSION = 0.48.202606;
@@ -16367,7 +16359,7 @@
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Development.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6.8.1;
+				CURRENT_PROJECT_VERSION = 6.9.1;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MARKETING_VERSION = 0.48.202606;
