@@ -5,6 +5,7 @@ import RxSwift
 class Pool {
     private let provider: IPoolProvider
     private let disposeBag = DisposeBag()
+    private let safeRefreshInterval: TimeInterval = 3.5
 
     private let invalidatedRelay = PublishRelay<Void>()
     private let itemsUpdatedRelay = PublishRelay<[TransactionItem]>()
@@ -12,6 +13,11 @@ class Pool {
     private(set) var items = [TransactionItem]()
     private var invalidated = false
     private var allLoaded = false
+    private var safeInvalidationScheduled = false
+    private var safeItemsUpdateScheduled = false
+    private var safeSyncSettling = false
+    private var safeSyncSettlementToken = 0
+    private var pendingSafeUpdatedItems = [String: TransactionItem]()
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).pool", qos: .userInitiated)
 
@@ -31,53 +37,135 @@ class Pool {
                 self?.handleUpdatedLastBlock()
             })
             .disposed(by: disposeBag)
+
+        provider.syncingObservable
+            .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+            .subscribe(onNext: { [weak self] _ in
+                self?.handleSyncingChanged()
+            })
+            .disposed(by: disposeBag)
     }
-/*
-    private func handleUpdated(records: [TransactionRecord]) {
-        queue.async {
-            guard !records.isEmpty else {
+
+    private var shouldCoalesceSafeInvalidation: Bool {
+        provider.blockchainType == .safe && (provider.syncing || safeSyncSettling)
+    }
+
+    private var shouldCoalesceSafeItemUpdates: Bool {
+        provider.blockchainType == .safe && (provider.syncing || safeSyncSettling)
+    }
+
+    private func emitInvalidation() {
+        if shouldCoalesceSafeInvalidation {
+            scheduleSafeInvalidation()
+        } else {
+            invalidatedRelay.accept(())
+        }
+    }
+
+    private func scheduleSafeInvalidation() {
+        guard !safeInvalidationScheduled else {
+            return
+        }
+
+        safeInvalidationScheduled = true
+
+        queue.asyncAfter(deadline: .now() + safeRefreshInterval) {
+            self.safeInvalidationScheduled = false
+
+            guard self.invalidated else {
                 return
             }
 
-            var updatesOnly = true
-            var updatedItems = [TransactionItem]()
-            let lastBlockInfo = self.provider.lastBlockInfo
-
-            for record in records {
-                guard let index = self.items.firstIndex(where: { $0.record == record }) else {
-                    updatesOnly = false
-                    break
-                }
-
-                self.items[index].record = record
-                if self.items[index].status.isPendingOrProcessing {
-                    let newStatus = record.status(lastBlockHeight: lastBlockInfo?.height)
-                    if self.items[index].status != newStatus {
-                        self.items[index].status = newStatus
-                    }
-                }
-
-                updatedItems.append(self.items[index])
-            }
-
-            if updatesOnly {
-                self.itemsUpdatedRelay.accept(updatedItems)
-                return
-            }
-
-            guard let mostRecentRecord = records.min() else {
-                return
-            }
-
-            if let lastRecord = self.items.last?.record, mostRecentRecord > lastRecord {
-                return
-            }
-
-            self.invalidated = true
             self.invalidatedRelay.accept(())
         }
     }
-*/
+
+    private func emitItemsUpdated(_ items: [TransactionItem]) {
+        guard !items.isEmpty else {
+            return
+        }
+
+        if shouldCoalesceSafeItemUpdates {
+            for item in items {
+                pendingSafeUpdatedItems[item.record.uid] = item
+            }
+
+            scheduleSafeItemsUpdate()
+        } else {
+            flushPendingSafeItemsUpdatesIfNeeded()
+            itemsUpdatedRelay.accept(items)
+        }
+    }
+
+    private func scheduleSafeItemsUpdate() {
+        guard !safeItemsUpdateScheduled else {
+            return
+        }
+
+        safeItemsUpdateScheduled = true
+
+        queue.asyncAfter(deadline: .now() + safeRefreshInterval) {
+            self.flushPendingSafeItemsUpdatesIfNeeded()
+        }
+    }
+
+    private func flushPendingSafeItemsUpdatesIfNeeded() {
+        safeItemsUpdateScheduled = false
+
+        guard !pendingSafeUpdatedItems.isEmpty else {
+            return
+        }
+
+        let items = pendingSafeUpdatedItems.values.sorted()
+        pendingSafeUpdatedItems.removeAll(keepingCapacity: true)
+        itemsUpdatedRelay.accept(items)
+    }
+
+    private func handleSyncingChanged() {
+        queue.async {
+            guard self.provider.blockchainType == .safe else {
+                guard !self.provider.syncing else {
+                    return
+                }
+
+                self.flushPendingSafeItemsUpdatesIfNeeded()
+
+                if self.invalidated {
+                    self.invalidatedRelay.accept(())
+                }
+                return
+            }
+
+            self.safeSyncSettlementToken += 1
+            let token = self.safeSyncSettlementToken
+
+            guard !self.provider.syncing else {
+                self.safeSyncSettling = false
+                return
+            }
+
+            self.safeSyncSettling = true
+
+            self.queue.asyncAfter(deadline: .now() + self.safeRefreshInterval) {
+                guard token == self.safeSyncSettlementToken else {
+                    return
+                }
+
+                self.safeSyncSettling = false
+
+                guard !self.provider.syncing else {
+                    return
+                }
+
+                self.flushPendingSafeItemsUpdatesIfNeeded()
+
+                if self.invalidated {
+                    self.invalidatedRelay.accept(())
+                }
+            }
+        }
+    }
+
     // new
     private func handleUpdated(records: [TransactionRecord]) {
         queue.async {
@@ -104,13 +192,11 @@ class Pool {
                 }
             }
 
-            if !updatedItems.isEmpty {
-                self.itemsUpdatedRelay.accept(updatedItems)
-            }
+            self.emitItemsUpdated(updatedItems)
 
             if !newRecords.isEmpty {
                 self.invalidated = true
-                self.invalidatedRelay.accept(())
+                self.emitInvalidation()
             }
         }
     }
@@ -145,9 +231,7 @@ class Pool {
                 }
             }
 
-            if !updatedItems.isEmpty {
-                self.itemsUpdatedRelay.accept(updatedItems)
-            }
+            self.emitItemsUpdated(updatedItems)
         }
     }
 

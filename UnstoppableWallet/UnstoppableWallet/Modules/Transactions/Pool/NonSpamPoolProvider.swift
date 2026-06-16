@@ -1,4 +1,5 @@
 import Foundation
+import MarketKit
 import RxRelay
 import RxSwift
 
@@ -28,6 +29,10 @@ class NonSpamPoolProvider {
 }
 
 extension NonSpamPoolProvider: IPoolProvider {
+    var blockchainType: BlockchainType {
+        poolProvider.blockchainType
+    }
+
     var syncing: Bool {
         poolProvider.syncing
     }

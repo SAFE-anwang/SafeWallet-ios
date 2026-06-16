@@ -4,6 +4,7 @@ import RxRelay
 import RxSwift
 
 protocol IPoolProvider {
+    var blockchainType: BlockchainType { get }
     var syncing: Bool { get }
     var syncingObservable: Observable<Bool> { get }
     var lastBlockInfo: LastBlockInfo? { get }
@@ -16,6 +17,7 @@ class PoolProvider {
     private let adapter: ITransactionsAdapter
     private let source: PoolSource
     private let disposeBag = DisposeBag()
+    private let safeSyncScheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "\(AppConfig.label).pool-provider.safe-sync")
 
     private let syncingRelay = PublishRelay<Bool>()
     private(set) var syncing = false {
@@ -39,9 +41,23 @@ class PoolProvider {
 
         syncing = adapter.syncing
     }
+
+    private var shouldThrottleSafeSyncEvents: Bool {
+        source.blockchainType == .safe
+    }
+
+    private var safeSyncStateObservable: Observable<Bool> {
+        syncingRelay.asObservable()
+            .startWith(syncing)
+            .distinctUntilChanged()
+    }
 }
 
 extension PoolProvider: IPoolProvider {
+    var blockchainType: BlockchainType {
+        source.blockchainType
+    }
+
     var syncingObservable: Observable<Bool> {
         syncingRelay.asObservable()
     }
@@ -55,10 +71,40 @@ extension PoolProvider: IPoolProvider {
     }
 
     func recordsObservable() -> Observable<[TransactionRecord]> {
-        adapter.transactionsObservable(token: source.token, filter: source.filter, address: source.address)
+        guard shouldThrottleSafeSyncEvents else {
+            return adapter.transactionsObservable(token: source.token, filter: source.filter, address: source.address)
+        }
+
+        return safeSyncStateObservable
+            .flatMapLatest { [weak self] syncing -> Observable<[TransactionRecord]> in
+                guard let self else {
+                    return .empty()
+                }
+
+                let observable = self.adapter.transactionsObservable(token: self.source.token, filter: self.source.filter, address: self.source.address)
+                if syncing {
+                    return observable.throttle(.seconds(3), latest: true, scheduler: self.safeSyncScheduler)
+                }
+                return observable
+            }
     }
 
     func lastBlockUpdatedObservable() -> Observable<Void> {
-        adapter.lastBlockUpdatedObservable
+        guard shouldThrottleSafeSyncEvents else {
+            return adapter.lastBlockUpdatedObservable
+        }
+
+        return safeSyncStateObservable
+            .flatMapLatest { [weak self] syncing -> Observable<Void> in
+                guard let self else {
+                    return .empty()
+                }
+
+                let observable = self.adapter.lastBlockUpdatedObservable
+                if syncing {
+                    return observable.throttle(.seconds(4), latest: true, scheduler: self.safeSyncScheduler)
+                }
+                return observable
+            }
     }
 }
