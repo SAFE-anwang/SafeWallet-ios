@@ -5,8 +5,8 @@ import RxSwift
 
 class BtcBlockchainManager {
     static let blockchainTypes: [BlockchainType] = [
-        .safe,
-        .safe4,
+//        .safe,
+//        .safe4,
         .bitcoin,
         .bitcoinCash,
         .ecash,

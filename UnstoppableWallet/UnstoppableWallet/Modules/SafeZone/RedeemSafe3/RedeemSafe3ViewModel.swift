@@ -284,10 +284,10 @@ extension RedeemSafe3ViewModel {
 
                     self.step = .check
                     let unspentOutputs = safe3Adapter.bitcoinCore.unspentOutputs(filters: UtxoFilters())
-                    let availableAmount = BigUInt(unspentOutputs.map{$0.output.value}.reduce(0, +))
+                    let availableAmount = BigUInt((safe3Adapter.balanceData.available * safe3Adapter.coinRate).hs.roundedString(decimal: 0)) ?? 0
                     
                     let spendableTimeLockUtxo = safe3Adapter.bitcoinCore.unspendableTimeLockedUtxo
-                    let lockedAmount = BigUInt(spendableTimeLockUtxo.map{$0.output.value}.reduce(0, +))
+                    let lockedAmount = BigUInt(spendableTimeLockUtxo.map { $0.output.value }.reduce(0, +))
                     
                     let infos = try await redeemAddressInfo(hdWallet: hdWallet,
                                                         safe3Adapter: safe3Adapter,

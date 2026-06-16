@@ -4,15 +4,17 @@ struct AccountWarningView: View {
     @ObservedObject var viewModel: AccountWarningViewModel
 
     var body: some View {
-        if let item = viewModel.item {
-            Button(action: {
-                if let url = item.url {
-                    Coordinator.shared.present { _ in
-                        MarkdownView(url: url, navigation: true).ignoresSafeArea()
+        Group {
+            if let item = viewModel.item {
+                Button(action: {
+                    if let url = item.url {
+                        Coordinator.shared.present { _ in
+                            MarkdownView(url: url, navigation: true).ignoresSafeArea()
+                        }
                     }
+                }) {
+                    AlertCardView(item.alertItem)
                 }
-            }) {
-                AlertCardView(item.alertItem)
             }
         }
     }

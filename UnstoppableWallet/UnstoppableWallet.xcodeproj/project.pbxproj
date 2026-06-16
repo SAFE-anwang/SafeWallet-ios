@@ -4030,6 +4030,8 @@
 		671AFDF92F7F826B00FEA42B /* ZcashLightClientKit in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC5BD92F63EE5300CFAE73 /* ZcashLightClientKit */; };
 		672B0EE22FAB142600787AA4 /* ZanoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 672B0EE12FAB142600787AA4 /* ZanoKit */; };
 		672B0EE42FAB143300787AA4 /* ZanoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 672B0EE32FAB143300787AA4 /* ZanoKit */; };
+		674842E32FE2A26800D13F15 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = 674842E22FE2A26800D13F15 /* SafeCoinKit */; };
+		674842E52FE2A28200D13F15 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = 674842E42FE2A28200D13F15 /* SafeCoinKit */; };
 		67DC55732F63B67300CFAE73 /* ReownAppKit in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC55722F63B67300CFAE73 /* ReownAppKit */; };
 		67DC55752F63B67300CFAE73 /* ReownAppKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC55742F63B67300CFAE73 /* ReownAppKitUI */; };
 		67DC55772F63B67300CFAE73 /* ReownRouter in Frameworks */ = {isa = PBXBuildFile; productRef = 67DC55762F63B67300CFAE73 /* ReownRouter */; };
@@ -4100,10 +4102,8 @@
 		C86A1C032E993F3A00C0769E /* UniswapKit in Frameworks */ = {isa = PBXBuildFile; productRef = C86A1C022E993F3A00C0769E /* UniswapKit */; };
 		C86A1C052E993F6400C0769E /* MarketKit in Frameworks */ = {isa = PBXBuildFile; productRef = C86A1C042E993F6400C0769E /* MarketKit */; };
 		C89BE9612E9A47CD00039AD8 /* BitcoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE9602E9A47CD00039AD8 /* BitcoinKit */; };
-		C89BE9642E9A5DAC00039AD8 /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C89BE9632E9A5DAC00039AD8 /* SafeCoinKit */; };
 		C8B86DCC2E9F4A9C008BB1A5 /* NftKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8B86DCB2E9F4A9C008BB1A5 /* NftKit */; };
 		C8B86DCE2E9F4B0E008BB1A5 /* DogecoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8B86DCD2E9F4B0E008BB1A5 /* DogecoinKit */; };
-		C8C5589B2EA337350062F13E /* SafeCoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C5589A2EA337350062F13E /* SafeCoinKit */; };
 		C8C5589F2EA337FA0062F13E /* LitecoinKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C5589E2EA337FA0062F13E /* LitecoinKit */; };
 		C8C558A12EA338870062F13E /* BitcoinCashKit in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558A02EA338870062F13E /* BitcoinCashKit */; };
 		C8C558A32EA338950062F13E /* BitcoinCore in Frameworks */ = {isa = PBXBuildFile; productRef = C8C558A22EA338950062F13E /* BitcoinCore */; };
@@ -6303,6 +6303,7 @@
 				C8C558A92EA339390062F13E /* DogecoinKit in Frameworks */,
 				67DC558D2F63B67300CFAE73 /* YttriumWrapper in Frameworks */,
 				D3AEB8752DB8FAA200E385C8 /* StellarKit in Frameworks */,
+				674842E32FE2A26800D13F15 /* SafeCoinKit in Frameworks */,
 				C8C558BB2EA33E230062F13E /* UniswapKit in Frameworks */,
 				D36287C82CA3DF7A00ADAF3B /* TonConnectAPI in Frameworks */,
 				D092D63D2E3116780039BDB4 /* MoneroKit in Frameworks */,
@@ -6333,7 +6334,6 @@
 				672B0EE22FAB142600787AA4 /* ZanoKit in Frameworks */,
 				D3C187B52907A63600FE1900 /* HdWalletKit in Frameworks */,
 				D3BF1E65274CBBE400229A00 /* DeepDiff in Frameworks */,
-				C8C5589B2EA337350062F13E /* SafeCoinKit in Frameworks */,
 				C8C558B32EA339BA0062F13E /* NftKit in Frameworks */,
 				C8C558B12EA339A70062F13E /* MarketKit in Frameworks */,
 				67DC55732F63B67300CFAE73 /* ReownAppKit in Frameworks */,
@@ -6388,6 +6388,7 @@
 				C86A1C032E993F3A00C0769E /* UniswapKit in Frameworks */,
 				C86A1BC32E98B19D00C0769E /* Checkpoints in Frameworks */,
 				D3AF5A8929FFD85800C1399E /* RxCocoa in Frameworks */,
+				674842E52FE2A28200D13F15 /* SafeCoinKit in Frameworks */,
 				500F1D1127AA87BC002AA419 /* AlignedCollectionViewFlowLayout in Frameworks */,
 				D3AEB8772DB8FAB600E385C8 /* StellarKit in Frameworks */,
 				C86A1BCE2E98BB1100C0769E /* Eip20Kit in Frameworks */,
@@ -6412,7 +6413,6 @@
 				672B0EE42FAB143300787AA4 /* ZanoKit in Frameworks */,
 				D023D2632A249E59004F65B0 /* TronKit in Frameworks */,
 				D3C187D5290FCF7D00FE1900 /* (null) in Frameworks */,
-				C89BE9642E9A5DAC00039AD8 /* SafeCoinKit in Frameworks */,
 				D3604E8228F03C6B0066C366 /* FeeRateKit in Frameworks */,
 				C86A1BC62E98B2C800C0769E /* BitcoinCore in Frameworks */,
 				C8B86DCE2E9F4B0E008BB1A5 /* DogecoinKit in Frameworks */,
@@ -11850,7 +11850,6 @@
 				6B6D3F2C2DED72BF00AB2915 /* SkeletonView */,
 				6B6E14252DEDB57B007F4A39 /* Kingfisher */,
 				D092D63C2E3116780039BDB4 /* MoneroKit */,
-				C8C5589A2EA337350062F13E /* SafeCoinKit */,
 				C8C5589E2EA337FA0062F13E /* LitecoinKit */,
 				C8C558A02EA338870062F13E /* BitcoinCashKit */,
 				C8C558A22EA338950062F13E /* BitcoinCore */,
@@ -11883,6 +11882,7 @@
 				672B0EE12FAB142600787AA4 /* ZanoKit */,
 				67FBE9522FB3253400717AA7 /* SolanaKit */,
 				67E50BFB2FD3F9A2001036B3 /* DashKit */,
+				674842E22FE2A26800D13F15 /* SafeCoinKit */,
 			);
 			productName = Wallet;
 			productReference = D38405CE218317DF007D50AD /* SafeWallet D.app */;
@@ -11937,7 +11937,6 @@
 				C86A1C022E993F3A00C0769E /* UniswapKit */,
 				C86A1C042E993F6400C0769E /* MarketKit */,
 				C89BE9602E9A47CD00039AD8 /* BitcoinKit */,
-				C89BE9632E9A5DAC00039AD8 /* SafeCoinKit */,
 				C8B86DCB2E9F4A9C008BB1A5 /* NftKit */,
 				C8B86DCD2E9F4B0E008BB1A5 /* DogecoinKit */,
 				C80FEB2A2F27C023002DA812 /* SwiftKLine */,
@@ -11959,6 +11958,7 @@
 				672B0EE32FAB143300787AA4 /* ZanoKit */,
 				67FBE9542FB3254C00717AA7 /* SolanaKit */,
 				67E50BF92FD3F994001036B3 /* DashKit */,
+				674842E42FE2A28200D13F15 /* SafeCoinKit */,
 			);
 			productName = Wallet;
 			productReference = D38406BE21831B3D007D50AD /* SafeWallet.app */;
@@ -12036,7 +12036,6 @@
 				C86A1BD72E98C3F900C0769E /* XCRemoteSwiftPackageReference "UniswapKit.Swift" */,
 				C86A1BEB2E98FC5900C0769E /* XCRemoteSwiftPackageReference "ECashKit.Swift" */,
 				C86A1BEC2E991C6A00C0769E /* XCRemoteSwiftPackageReference "DogecoinKit.Swift" */,
-				C89BE95B2E99F15000039AD8 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */,
 				C89BE95F2E9A47CC00039AD8 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */,
 				C8B86DCA2E9F4A9B008BB1A5 /* XCRemoteSwiftPackageReference "NftKit.Swift" */,
 				C80FEB272F27BFBA002DA812 /* XCRemoteSwiftPackageReference "SwiftKLine" */,
@@ -12044,6 +12043,7 @@
 				67DC5BD82F63EE5300CFAE73 /* XCRemoteSwiftPackageReference "ZcashLightClientKit" */,
 				67FBE9512FB3253400717AA7 /* XCRemoteSwiftPackageReference "solana-kit-ios" */,
 				67E50BF82FD3F723001036B3 /* XCRemoteSwiftPackageReference "DashKit.Swift" */,
+				674842E12FE2A26800D13F15 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D3285F4320BD158E00644076 /* Products */;
@@ -13898,6 +13898,7 @@
 				670290DC2FAF248D00AF6D75 /* WalletConnectRequestHandler.swift in Sources */,
 				670290DD2FAF248D00AF6D75 /* Eip1559EvmFeeDataSource.swift in Sources */,
 				670290DE2FAF248D00AF6D75 /* BitcoinWalletTokenView.swift in Sources */,
+				670290E92FAF248D00AF6D75 /* ReleaseNotesViewController.swift in Sources */,
 				670290DF2FAF248D00AF6D75 /* LiquidityV3RecordService.swift in Sources */,
 				670290E02FAF248D00AF6D75 /* SendFeeViewModel.swift in Sources */,
 				670290E12FAF248D00AF6D75 /* FeeSliderValueView.swift in Sources */,
@@ -15893,6 +15894,7 @@
 				670298C72FAF248D00AF6D75 /* WalletConnectRequestHandler.swift in Sources */,
 				670298C82FAF248D00AF6D75 /* Eip1559EvmFeeDataSource.swift in Sources */,
 				670298C92FAF248D00AF6D75 /* BitcoinWalletTokenView.swift in Sources */,
+				670298D42FAF248D00AF6D75 /* ReleaseNotesViewController.swift in Sources */,
 				670298CA2FAF248D00AF6D75 /* LiquidityV3RecordService.swift in Sources */,
 				670298CB2FAF248D00AF6D75 /* SendFeeViewModel.swift in Sources */,
 				670298CC2FAF248D00AF6D75 /* FeeSliderValueView.swift in Sources */,
@@ -16336,7 +16338,7 @@
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Development.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6.9.1;
+				CURRENT_PROJECT_VERSION = 6.17.1;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MARKETING_VERSION = 0.48.202606;
@@ -16359,7 +16361,7 @@
 				CODE_SIGN_ENTITLEMENTS = UnstoppableWallet/Configuration/Development.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6.9.1;
+				CURRENT_PROJECT_VERSION = 6.17.1;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MARKETING_VERSION = 0.48.202606;
@@ -16383,11 +16385,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4.13.1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.47.202604;
+				MARKETING_VERSION = v0.48.1.202606;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwang4.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = SafeWallet;
@@ -16408,16 +16410,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4.13.1;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.47.202604;
+				MARKETING_VERSION = v0.48.1.202606;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anwang4.safewallet;
 				PRODUCT_MODULE_NAME = SafeWallet;
 				PRODUCT_NAME = SafeWallet;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = prod_adHoc_Profile_Sa;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = prod_Profile_Sa;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -16463,6 +16465,14 @@
 			requirement = {
 				branch = master;
 				kind = branch;
+			};
+		};
+		674842E12FE2A26800D13F15 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SAFE-anwang/SafeCoinKit.Swift.git";
+			requirement = {
+				kind = exactVersion;
+				version = 3.1.9;
 			};
 		};
 		67DC55712F63B67300CFAE73 /* XCRemoteSwiftPackageReference "reown-swift" */ = {
@@ -16582,7 +16592,7 @@
 			repositoryURL = "https://github.com/SAFE-anwang/BitcoinCore.Swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.1.7;
+				version = 3.1.11;
 			};
 		};
 		C86A1BC72E98B3FC00C0769E /* XCRemoteSwiftPackageReference "BitcoinCashKit.Swift" */ = {
@@ -16655,14 +16665,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 3.0.1;
-			};
-		};
-		C89BE95B2E99F15000039AD8 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SAFE-anwang/SafeCoinKit.Swift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.1.6;
 			};
 		};
 		C89BE95F2E9A47CC00039AD8 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */ = {
@@ -16831,6 +16833,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D092D63B2E3116780039BDB4 /* XCRemoteSwiftPackageReference "MoneroKit.Swift" */;
 			productName = ZanoKit;
+		};
+		674842E22FE2A26800D13F15 /* SafeCoinKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 674842E12FE2A26800D13F15 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */;
+			productName = SafeCoinKit;
+		};
+		674842E42FE2A28200D13F15 /* SafeCoinKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 674842E12FE2A26800D13F15 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */;
+			productName = SafeCoinKit;
 		};
 		67DC55722F63B67300CFAE73 /* ReownAppKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -17030,11 +17042,6 @@
 			package = C89BE95F2E9A47CC00039AD8 /* XCRemoteSwiftPackageReference "BitcoinKit.Swift" */;
 			productName = BitcoinKit;
 		};
-		C89BE9632E9A5DAC00039AD8 /* SafeCoinKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C89BE95B2E99F15000039AD8 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */;
-			productName = SafeCoinKit;
-		};
 		C8B86DCB2E9F4A9C008BB1A5 /* NftKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C8B86DCA2E9F4A9B008BB1A5 /* XCRemoteSwiftPackageReference "NftKit.Swift" */;
@@ -17044,11 +17051,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C86A1BEC2E991C6A00C0769E /* XCRemoteSwiftPackageReference "DogecoinKit.Swift" */;
 			productName = DogecoinKit;
-		};
-		C8C5589A2EA337350062F13E /* SafeCoinKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C89BE95B2E99F15000039AD8 /* XCRemoteSwiftPackageReference "SafeCoinKit.Swift" */;
-			productName = SafeCoinKit;
 		};
 		C8C5589E2EA337FA0062F13E /* LitecoinKit */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -56,7 +56,7 @@ extension RpcSource {
     }
     
     static func safePolygonRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .polygon) ?? "https://polygon-mainnet.core.chainstack.com/e9c77e1e564c041e111132211eb0df0f")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .polygon) ?? "https://polygon-mainnet.core.chainstack.com/789b8e5d616e6aa747001d3aeaef307d")!], auth: nil)
     }
     
     static func safeAvaxNetworkHttp() -> RpcSource {
@@ -68,7 +68,7 @@ extension RpcSource {
     }
     
     static func safeArbitrumOneRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .arbitrum) ?? "https://arbitrum-mainnet.core.chainstack.com/43d06a32450091e3da629e17f3d53a5e")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .arbitrum) ?? "https://arbitrum-mainnet.core.chainstack.com/e60e242b446b1d6b703530d219df1cdc")!], auth: nil)
     }
     
     static func safeGnosisRpcHttp() -> RpcSource {
