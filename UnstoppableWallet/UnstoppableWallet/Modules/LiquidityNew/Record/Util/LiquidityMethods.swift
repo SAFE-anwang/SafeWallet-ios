@@ -162,12 +162,12 @@ class RemoveLiquidityWithPermitMethod: ContractMethod {
     let amountBMin: BigUInt
     let to: EvmKit.Address
     let deadline: BigUInt
-    let approveMax: Bool
-    let v: UInt8
-    let r: Data
-    let s: Data
+    let approveMax: BigUInt
+    let v: BigUInt
+    let r: BigUInt
+    let s: BigUInt
     
-    init(tokenA: EvmKit.Address, tokenB: EvmKit.Address, liquidity: BigUInt, amountAMin: BigUInt, amountBMin: BigUInt, to: EvmKit.Address, deadline: BigUInt, approveMax: Bool, v: UInt8, r: Data, s: Data) {
+    init(tokenA: EvmKit.Address, tokenB: EvmKit.Address, liquidity: BigUInt, amountAMin: BigUInt, amountBMin: BigUInt, to: EvmKit.Address, deadline: BigUInt, approveMax: Bool, v: BigUInt, r: Data, s: Data) {
         self.tokenA = tokenA
         self.tokenB = tokenB
         self.liquidity = liquidity
@@ -175,10 +175,10 @@ class RemoveLiquidityWithPermitMethod: ContractMethod {
         self.amountBMin = amountBMin
         self.to = to
         self.deadline = deadline
-        self.approveMax = approveMax
+        self.approveMax = approveMax ? 1 : 0
         self.v = v
-        self.r = r
-        self.s = s
+        self.r = BigUInt(r)
+        self.s = BigUInt(s)
         super.init()
     }
 
@@ -186,6 +186,68 @@ class RemoveLiquidityWithPermitMethod: ContractMethod {
 
     override var arguments: [Any] {
         [tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline, approveMax, v, r, s]
+    }
+}
+
+class RemoveLiquidityEthMethod: ContractMethod {
+    static let methodSignature = "removeLiquidityETH(address,uint256,uint256,uint256,address,uint256)"
+
+    let token: EvmKit.Address
+    let liquidity: BigUInt
+    let amountTokenMin: BigUInt
+    let amountEthMin: BigUInt
+    let to: EvmKit.Address
+    let deadline: BigUInt
+
+    init(token: EvmKit.Address, liquidity: BigUInt, amountTokenMin: BigUInt, amountEthMin: BigUInt, to: EvmKit.Address, deadline: BigUInt) {
+        self.token = token
+        self.liquidity = liquidity
+        self.amountTokenMin = amountTokenMin
+        self.amountEthMin = amountEthMin
+        self.to = to
+        self.deadline = deadline
+        super.init()
+    }
+
+    override var methodSignature: String { RemoveLiquidityEthMethod.methodSignature }
+
+    override var arguments: [Any] {
+        [token, liquidity, amountTokenMin, amountEthMin, to, deadline]
+    }
+}
+
+class RemoveLiquidityEthWithPermitMethod: ContractMethod {
+    static let methodSignature = "removeLiquidityETHWithPermit(address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32)"
+
+    let token: EvmKit.Address
+    let liquidity: BigUInt
+    let amountTokenMin: BigUInt
+    let amountEthMin: BigUInt
+    let to: EvmKit.Address
+    let deadline: BigUInt
+    let approveMax: BigUInt
+    let v: BigUInt
+    let r: BigUInt
+    let s: BigUInt
+
+    init(token: EvmKit.Address, liquidity: BigUInt, amountTokenMin: BigUInt, amountEthMin: BigUInt, to: EvmKit.Address, deadline: BigUInt, approveMax: Bool, v: BigUInt, r: Data, s: Data) {
+        self.token = token
+        self.liquidity = liquidity
+        self.amountTokenMin = amountTokenMin
+        self.amountEthMin = amountEthMin
+        self.to = to
+        self.deadline = deadline
+        self.approveMax = approveMax ? 1 : 0
+        self.v = v
+        self.r = BigUInt(r)
+        self.s = BigUInt(s)
+        super.init()
+    }
+
+    override var methodSignature: String { RemoveLiquidityEthWithPermitMethod.methodSignature }
+
+    override var arguments: [Any] {
+        [token, liquidity, amountTokenMin, amountEthMin, to, deadline, approveMax, v, r, s]
     }
 }
 
@@ -224,11 +286,11 @@ class GetApprovedMethod: ContractMethod {
 
 class ApprovalForAllMethod: ContractMethod {
     let `operator`: EvmKit.Address
-    let approved: Bool
+    let approved: BigUInt
     
     init(operator: EvmKit.Address, approved: Bool) {
         self.operator = `operator`
-        self.approved = approved
+        self.approved = approved ? 1 : 0
     }
 
     override var methodSignature: String {

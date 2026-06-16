@@ -16,7 +16,7 @@ struct LiquidityPair {
         do {
             let factoryAddressString = try Constants.factoryAddressString(chain: evmKit.chain)
             let initCodeHashString = try Constants.initCodeHashString(chain: evmKit.chain)
-            let pairAddress = generatePairAddress(address0: item0.address, address1: item1.address, factoryAddressString: factoryAddressString, initCodeHashString: initCodeHashString)
+            let pairAddress = generatePairAddress(address0: item0.routerAddress, address1: item1.routerAddress, factoryAddressString: factoryAddressString, initCodeHashString: initCodeHashString)
             return LiquidityPair(pairAddress: pairAddress, item0: item0, item1: item1)
         }catch {
             return nil
@@ -36,8 +36,9 @@ struct LiquidityPair {
 struct LiquidityPairItem {
     let token: MarketKit.Token
     let address: EvmKit.Address
+    let routerAddress: EvmKit.Address
     
     func sortsBefore(item: LiquidityPairItem) -> Bool {
-        self.address.raw.hs.hexString.lowercased() < item.address.raw.hs.hexString.lowercased()
+        self.routerAddress.raw.hs.hexString.lowercased() < item.routerAddress.raw.hs.hexString.lowercased()
     }
 }

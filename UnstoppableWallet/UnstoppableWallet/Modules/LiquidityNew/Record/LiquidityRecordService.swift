@@ -137,9 +137,11 @@ class LiquidityRecordService {
 
         let token0Address = try address(token: token0)
         let token1Address = try address(token: token1)
+        let token0RouterAddress = try routerAddress(token: token0)
+        let token1RouterAddress = try routerAddress(token: token1)
 
-        let pairItem0 = LiquidityPairItem(token: token0, address: token0Address)
-        let pairItem1 = LiquidityPairItem(token: token1, address: token1Address)
+        let pairItem0 = LiquidityPairItem(token: token0, address: token0Address, routerAddress: token0RouterAddress)
+        let pairItem1 = LiquidityPairItem(token: token1, address: token1Address, routerAddress: token1RouterAddress)
 
         guard let evmKit = evmKitWrapper?.evmKit else { return nil }
         guard let liquidityPair = LiquidityPair.getPairAddress(
@@ -200,6 +202,14 @@ extension LiquidityRecordService {
         }
     }
 
+    private func routerAddress(token: MarketKit.Token) throws -> EvmKit.Address {
+        switch token.type {
+        case .native: return try EvmKit.Address(hex: wethAddressString(chain: currentBlockchainType))
+        case let .eip20(address): return try EvmKit.Address(hex: address)
+        default: throw LiquidityRecordError.invalidAddress
+        }
+    }
+
     private func wethAddressString(chain: BlockchainType) throws -> String {
         switch chain {
         case .ethereum: return "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
@@ -244,20 +254,21 @@ extension LiquidityRecordService {
                 debugLog("remove context chain=\(evmKitWrapper.evmKit.chain) account=\(receiveAddress.eip55) pair=\(pairAddress.eip55)")
                 await logPairDiagnostics(pairAddress: pairAddress, viewItem: viewItem, poolInfo: poolInfo)
                 
-//                // 首先尝试使用 Permit 方式（无需预先 approve）
-//                do {
-//                    try await removeWithPermit(
-//                        viewItem: viewItem,
-//                        pairAddress: pairAddress,
-//                        receiveAddress: receiveAddress,
-//                        poolInfo: poolInfo
-//                    )
-//                    return
-//                } catch let error as PermitError {
+                // 首先尝试使用 Permit 方式（无需预先 approve）
+                do {
+                    try await removeWithPermit(
+                        viewItem: viewItem,
+                        pairAddress: pairAddress,
+                        receiveAddress: receiveAddress,
+                        poolInfo: poolInfo
+                    )
+                    return
+                } catch let error as PermitError {
+                    debugLog("permit path unavailable, fallback to approve/remove error=\(error.localizedDescription)")
                     // Permit 失败，回退到传统 approve + remove 方式
                     let eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: pairAddress)
                     try await checkAllowanceAndRemove(eip20Kit: eip20Kit, viewItem: viewItem, pairAddress: pairAddress, receiveAddress: receiveAddress, poolInfo: poolInfo)
-//                }
+                }
             } catch {
                 debugLog("remove failed before subscription error=\(describe(error))")
                 state = .failed(error: error.localizedDescription)
@@ -278,11 +289,13 @@ extension LiquidityRecordService {
         let routerAddressString = try Constants.routerAddressString(chain: evmKit.chain)
         let routerAddress = try EvmKit.Address(hex: routerAddressString)
 
-        let addressA = viewItem.pair.item0.address
-        let addressB = viewItem.pair.item1.address
+        let addressA = viewItem.pair.item0.routerAddress
+        let addressB = viewItem.pair.item1.routerAddress
         let slippage: (BigUInt, BigUInt) = (5, 1000)
-        let amountAMin = (viewItem.poolInfo.userToken0Amount * slippage.0 / slippage.1) * ratio / 100
-        let amountBMin = (viewItem.poolInfo.userToken1Amount * slippage.0 / slippage.1) * ratio / 100
+        let amountAExpected = viewItem.poolInfo.userToken0Amount * ratio / 100
+        let amountBExpected = viewItem.poolInfo.userToken1Amount * ratio / 100
+        let amountAMin = amountAExpected * (slippage.1 - slippage.0) / slippage.1
+        let amountBMin = amountBExpected * (slippage.1 - slippage.0) / slippage.1
 
         let deadline = Constants.getDeadLine()
         let liquidity = poolInfo.balanceOfAccount * ratio / 100
@@ -293,6 +306,7 @@ extension LiquidityRecordService {
         do {
             nonce = try await getNonces(evmKit: evmKit, contractAddress: pairAddress, receiveAddress: receiveAddress)
             name = try await getName(evmKit: evmKit, contractAddress: pairAddress)
+            try await validatePermitMetadata(evmKit: evmKit, contractAddress: pairAddress, name: name)
         } catch {
             throw PermitError.permitNotSupported
         }
@@ -320,21 +334,52 @@ extension LiquidityRecordService {
         let (v, r, s) = try parseSignatureComponents(signature: signature)
 
         // 构建 RemoveLiquidityWithPermit 交易
-        let method = RemoveLiquidityWithPermitMethod(
-            tokenA: addressA,
-            tokenB: addressB,
-            liquidity: liquidity,
-            amountAMin: amountAMin,
-            amountBMin: amountBMin,
-            to: receiveAddress,
-            deadline: deadline,
-            approveMax: false,
-            v: v,
-            r: r,
-            s: s
-        )
+        let transactionData: EvmKit.TransactionData
+        if case .native = viewItem.pair.item0.token.type {
+            let method = RemoveLiquidityEthWithPermitMethod(
+                token: addressB,
+                liquidity: liquidity,
+                amountTokenMin: amountBMin,
+                amountEthMin: amountAMin,
+                to: receiveAddress,
+                deadline: deadline,
+                approveMax: false,
+                v: BigUInt(v),
+                r: r,
+                s: s
+            )
+            transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        } else if case .native = viewItem.pair.item1.token.type {
+            let method = RemoveLiquidityEthWithPermitMethod(
+                token: addressA,
+                liquidity: liquidity,
+                amountTokenMin: amountAMin,
+                amountEthMin: amountBMin,
+                to: receiveAddress,
+                deadline: deadline,
+                approveMax: false,
+                v: BigUInt(v),
+                r: r,
+                s: s
+            )
+            transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        } else {
+            let method = RemoveLiquidityWithPermitMethod(
+                tokenA: addressA,
+                tokenB: addressB,
+                liquidity: liquidity,
+                amountAMin: amountAMin,
+                amountBMin: amountBMin,
+                to: receiveAddress,
+                deadline: deadline,
+                approveMax: false,
+                v: BigUInt(v),
+                r: r,
+                s: s
+            )
+            transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        }
 
-        let transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
         debugLog("permit remove tx prepared router=\(routerAddress.eip55) tokenA=\(addressA.eip55) tokenB=\(addressB.eip55) liquidity=\(liquidity) amountAMin=\(amountAMin) amountBMin=\(amountBMin) deadline=\(deadline) input=\(shortInput(transactionData.input))")
 
         try await send(transactionData: transactionData, context: "removeWithPermit")
@@ -363,7 +408,7 @@ extension LiquidityRecordService {
         let routerAddressString = try Constants.routerAddressString(chain: evmKit.chain)
         let routerAddress = try EvmKit.Address(hex: routerAddressString)
         
-        let liquidity = poolInfo.balanceOfAccount
+        let liquidity = poolInfo.balanceOfAccount * ratio / 100
         debugLog("allowance check router=\(routerAddress.eip55) pair=\(pairAddress.eip55) requiredLP=\(liquidity)")
         
         // 查询当前 allowance
@@ -416,26 +461,50 @@ extension LiquidityRecordService {
 
     /// 直接移除流动性（已授权）
     private func removeLiquidityDirectly(viewItem: LiquidityRecordViewModel.RecordItem, routerAddress: EvmKit.Address, receiveAddress: EvmKit.Address, poolInfo: PoolInfo) async throws {
-        let addressA = viewItem.pair.item0.address
-        let addressB = viewItem.pair.item1.address
+        let addressA = viewItem.pair.item0.routerAddress
+        let addressB = viewItem.pair.item1.routerAddress
         let slippage: (BigUInt, BigUInt) = (5, 1000)
-        let amountAMin = (viewItem.poolInfo.userToken0Amount * slippage.0 / slippage.1) * ratio / 100
-        let amountBMin = (viewItem.poolInfo.userToken1Amount * slippage.0 / slippage.1) * ratio / 100
+        let amountAExpected = viewItem.poolInfo.userToken0Amount * ratio / 100
+        let amountBExpected = viewItem.poolInfo.userToken1Amount * ratio / 100
+        let amountAMin = amountAExpected * (slippage.1 - slippage.0) / slippage.1
+        let amountBMin = amountBExpected * (slippage.1 - slippage.0) / slippage.1
 
         let deadline = Constants.getDeadLine()
         let liquidity = poolInfo.balanceOfAccount * ratio / 100
 
-        let method = RemoveLiquidityMethod(
-            tokenA: addressA,
-            tokenB: addressB,
-            liquidity: liquidity,
-            amountAMin: amountAMin,
-            amountBMin: amountBMin,
-            to: receiveAddress,
-            deadline: deadline
-        )
-        
-        let transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        let transactionData: EvmKit.TransactionData
+        if case .native = viewItem.pair.item0.token.type {
+            let method = RemoveLiquidityEthMethod(
+                token: addressB,
+                liquidity: liquidity,
+                amountTokenMin: amountBMin,
+                amountEthMin: amountAMin,
+                to: receiveAddress,
+                deadline: deadline
+            )
+            transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        } else if case .native = viewItem.pair.item1.token.type {
+            let method = RemoveLiquidityEthMethod(
+                token: addressA,
+                liquidity: liquidity,
+                amountTokenMin: amountAMin,
+                amountEthMin: amountBMin,
+                to: receiveAddress,
+                deadline: deadline
+            )
+            transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        } else {
+            let method = RemoveLiquidityMethod(
+                tokenA: addressA,
+                tokenB: addressB,
+                liquidity: liquidity,
+                amountAMin: amountAMin,
+                amountBMin: amountBMin,
+                to: receiveAddress,
+                deadline: deadline
+            )
+            transactionData = EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        }
         debugLog("remove tx prepared router=\(routerAddress.eip55) tokenA=\(addressA.eip55) tokenB=\(addressB.eip55) liquidity=\(liquidity) amountAMin=\(amountAMin) amountBMin=\(amountBMin) deadline=\(deadline) input=\(shortInput(transactionData.input))")
         
         try await send(transactionData: transactionData, context: "removeLiquidity")
@@ -745,6 +814,70 @@ extension LiquidityRecordService {
         return (v, Data(r), Data(s))
     }
 
+    private func validatePermitMetadata(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address, name: String) async throws {
+        let onChainDomainSeparator = try await getDomainSeparator(evmKit: evmKit, contractAddress: contractAddress)
+        let onChainPermitTypeHash = try await getPermitTypeHash(evmKit: evmKit, contractAddress: contractAddress)
+
+        let expectedDomainSeparator = try expectedDomainSeparator(
+            name: name,
+            chainId: evmKit.chain.id,
+            verifyingContract: contractAddress
+        )
+        let expectedPermitTypeHash = expectedPermitTypeHash()
+
+        debugLog(
+            """
+            permit metadata domainSeparator.onChain=0x\(onChainDomainSeparator.hs.hexString) \
+            domainSeparator.expected=0x\(expectedDomainSeparator.hs.hexString) \
+            permitTypeHash.onChain=0x\(onChainPermitTypeHash.hs.hexString) \
+            permitTypeHash.expected=0x\(expectedPermitTypeHash.hs.hexString)
+            """
+        )
+
+        guard onChainDomainSeparator == expectedDomainSeparator,
+              onChainPermitTypeHash == expectedPermitTypeHash else {
+            throw PermitError.permitNotSupported
+        }
+    }
+
+    private func expectedDomainSeparator(name: String, chainId: Int, verifyingContract: EvmKit.Address) throws -> Data {
+        let domainTypeHash = Crypto.sha3("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)".data(using: .utf8) ?? Data())
+        let nameHash = Crypto.sha3(name.data(using: .utf8) ?? Data())
+        let versionHash = Crypto.sha3("1".data(using: .utf8) ?? Data())
+        let encoded =
+            abiEncodeBytes32(domainTypeHash) +
+            abiEncodeBytes32(nameHash) +
+            abiEncodeBytes32(versionHash) +
+            abiEncodeUint256(BigUInt(chainId)) +
+            abiEncodeAddress(verifyingContract)
+        return Crypto.sha3(encoded)
+    }
+
+    private func expectedPermitTypeHash() -> Data {
+        Crypto.sha3("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)".data(using: .utf8) ?? Data())
+    }
+
+    private func abiEncodeUint256(_ value: BigUInt) -> Data {
+        let raw = value.serialize()
+        return Data(repeating: 0, count: max(0, 32 - raw.count)) + raw
+    }
+
+    private func abiEncodeAddress(_ address: EvmKit.Address) -> Data {
+        Data(repeating: 0, count: 12) + address.raw
+    }
+
+    private func abiEncodeBytes32(_ data: Data) -> Data {
+        if data.count == 32 {
+            return data
+        }
+
+        if data.count > 32 {
+            return Data(data.suffix(32))
+        }
+
+        return data + Data(repeating: 0, count: 32 - data.count)
+    }
+
     private func getTotalSupply(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address) async throws -> BigUInt {
         let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: GetTotalSupplyMethod().encodedABI())
         var rawReserve: BigUInt = 0
@@ -779,6 +912,22 @@ extension LiquidityRecordService {
             throw LiquidityRecordError.dataError
         }
         return EvmKit.Address(raw: data.suffix(20))
+    }
+
+    private func getDomainSeparator(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address) async throws -> Data {
+        let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: DomainSeparatorMethod().encodedABI())
+        guard data.count >= 32 else {
+            throw LiquidityRecordError.dataError
+        }
+        return Data(data.prefix(32))
+    }
+
+    private func getPermitTypeHash(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address) async throws -> Data {
+        let data = try await evmKit.fetchCall(contractAddress: contractAddress, data: PermitTypeHashMethod().encodedABI())
+        guard data.count >= 32 else {
+            throw LiquidityRecordError.dataError
+        }
+        return Data(data.prefix(32))
     }
 
     private func getBalanceOf(evmKit: EvmKit.Kit, contractAddress: EvmKit.Address, walletAddress: EvmKit.Address) async throws -> BigUInt {
