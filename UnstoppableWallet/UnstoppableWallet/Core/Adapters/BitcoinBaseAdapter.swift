@@ -15,10 +15,54 @@ class BitcoinBaseAdapter {
 
     private let bitcoinBalanceDataSubject = PublishSubject<BitcoinBalanceData>()
 
+    // Cache the latest BitcoinBalanceData on the main thread so that the
+    // IBalanceAdapter.balanceData getter (read by SwiftUI on every render)
+    // never has to call `abstractKit.balance` — that getter iterates every
+    // UTXO in UnspentOutputProvider and costs several seconds on a Safe3
+    // wallet with thousands of UTXOs. Updates land here in balanceUpdated,
+    // which is already debounced via `throttleSyncEvents`.
+    private var cachedBitcoinBalanceData = BitcoinBalanceData(
+        available: 0,
+        locked: 0,
+        notRelayed: 0
+    )
+
     private let lastBlockUpdatedSubject = PublishSubject<Void>()
     private let balanceStateSubject = PublishSubject<AdapterState>()
     private let syncMode: BitcoinCore.SyncMode
     let transactionRecordsSubject = PublishSubject<[BitcoinTransactionRecord]>()
+    private let syncEventsQueue = DispatchQueue(label: "\(AppConfig.label).bitcoin-base-adapter.sync-events", qos: .utility)
+    private let transactionsConversionQueue = DispatchQueue(label: "\(AppConfig.label).bitcoin-base-adapter.transactions", qos: .userInitiated)
+
+    // Throttle sync events to reduce main-thread pressure (opt-in for Safe3).
+    // Instead of dropping events that arrive inside the throttle window, we keep
+    // the latest event and flush it on a debounce timer. Terminal kit states
+    // (.synced / .notSynced) bypass the throttle entirely.
+    var throttleSyncEvents: Bool = false
+    var syncEventThrottleInterval: TimeInterval {
+        throttleSyncEvents ? 1.0 : 0
+    }
+    var transactionUpdateThrottleInterval: TimeInterval {
+        throttleSyncEvents ? 1.0 : 0.2
+    }
+
+    private var pendingBalance: BalanceInfo?
+    private var balanceFlushScheduled = false
+
+    private var pendingLastBlockInfo: BlockInfo?
+    private var lastBlockInfoFlushScheduled = false
+
+    private var pendingKitState: BitcoinCore.KitState?
+    private var kitStateFlushScheduled = false
+
+    // transactionsUpdated is the heaviest of the delegate callbacks — it
+    // converts every TransactionInfo to a BitcoinTransactionRecord on the
+    // calling thread, which for a 1k-tx batch is ~10s of main-thread work.
+    // Always throttle/merge this one, independent of `throttleSyncEvents`
+    // (which is just for balance/lastBlock/kitState).
+    private var pendingTxInserted: [TransactionInfo] = []
+    private var pendingTxUpdated: [TransactionInfo] = []
+    private var txFlushScheduled = false
 
     private(set) var balanceState: AdapterState {
         didSet {
@@ -39,6 +83,7 @@ class BitcoinBaseAdapter {
         self.syncMode = syncMode
 
         balanceState = .notSynced(error: AppError.unknownError.localizedDescription)
+        cachedBitcoinBalanceData = bitcoinBalanceData(balanceInfo: abstractKit.balance)
     }
 
     func transactionRecord(fromTransaction transaction: TransactionInfo) -> BitcoinTransactionRecord {
@@ -212,29 +257,144 @@ extension BitcoinBaseAdapter: IAdapter {
 
 extension BitcoinBaseAdapter: BitcoinCoreDelegate {
     func transactionsUpdated(inserted: [TransactionInfo], updated: [TransactionInfo]) {
-        var records = [BitcoinTransactionRecord]()
+        // Use a dedicated serial queue instead of the main queue so block sync
+        // bursts do not pile up thousands of main-thread append/timer tasks.
+        syncEventsQueue.async { [weak self] in
+            guard let self else { return }
+            self.pendingTxInserted.append(contentsOf: inserted)
+            self.pendingTxUpdated.append(contentsOf: updated)
+            guard !self.txFlushScheduled else { return }
+            self.txFlushScheduled = true
 
-        for info in inserted {
-            records.append(transactionRecord(fromTransaction: info))
-        }
-        for info in updated {
-            records.append(transactionRecord(fromTransaction: info))
-        }
+            self.syncEventsQueue.asyncAfter(deadline: .now() + self.transactionUpdateThrottleInterval) { [weak self] in
+                guard let self else { return }
+                self.txFlushScheduled = false
+                let batchInserted = self.pendingTxInserted
+                let batchUpdated = self.pendingTxUpdated
+                self.pendingTxInserted.removeAll(keepingCapacity: true)
+                self.pendingTxUpdated.removeAll(keepingCapacity: true)
 
-        transactionRecordsSubject.onNext(records)
+                // 2) CPU work (transactionRecord is the hot path) on background.
+                self.transactionsConversionQueue.async { [weak self] in
+                    guard let self else { return }
+                    var records = [BitcoinTransactionRecord]()
+                    for info in batchInserted {
+                        records.append(self.transactionRecord(fromTransaction: info))
+                    }
+                    for info in batchUpdated {
+                        records.append(self.transactionRecord(fromTransaction: info))
+                    }
+                    guard !records.isEmpty else { return }
+                    self.transactionRecordsSubject.onNext(records)
+                }
+            }
+        }
     }
 
     func transactionsDeleted(hashes _: [String]) {}
 
     func balanceUpdated(balance: BalanceInfo) {
-        bitcoinBalanceDataSubject.onNext(bitcoinBalanceData(balanceInfo: balance))
+        // Always refresh the main-thread cache so that IBalanceAdapter.balanceData
+        // can return it in O(1). `abstractKit.balance` (the only other way to get
+        // this data) iterates every UTXO and blocks the main thread for several
+        // seconds on Safe3 wallets, which is what was causing the Severe Hang.
+        let newData = bitcoinBalanceData(balanceInfo: balance)
+        if Thread.isMainThread {
+            cachedBitcoinBalanceData = newData
+        } else {
+            DispatchQueue.main.async { [weak self] in
+                self?.cachedBitcoinBalanceData = newData
+            }
+        }
+
+        if throttleSyncEvents {
+            pendingBalance = balance
+            guard !balanceFlushScheduled else { return }
+            balanceFlushScheduled = true
+            syncEventsQueue.asyncAfter(deadline: .now() + syncEventThrottleInterval) { [weak self] in
+                guard let self else { return }
+                self.balanceFlushScheduled = false
+                guard let pending = self.pendingBalance else { return }
+                self.pendingBalance = nil
+                self.bitcoinBalanceDataSubject.onNext(self.bitcoinBalanceData(balanceInfo: pending))
+            }
+            return
+        }
+        bitcoinBalanceDataSubject.onNext(newData)
     }
 
-    func lastBlockInfoUpdated(lastBlockInfo _: BlockInfo) {
+    func lastBlockInfoUpdated(lastBlockInfo info: BlockInfo) {
+        if throttleSyncEvents {
+            pendingLastBlockInfo = info
+            guard !lastBlockInfoFlushScheduled else { return }
+            lastBlockInfoFlushScheduled = true
+            syncEventsQueue.asyncAfter(deadline: .now() + syncEventThrottleInterval) { [weak self] in
+                guard let self else { return }
+                self.lastBlockInfoFlushScheduled = false
+                guard self.pendingLastBlockInfo != nil else { return }
+                self.pendingLastBlockInfo = nil
+                self.lastBlockUpdatedSubject.onNext(())
+            }
+            return
+        }
         lastBlockUpdatedSubject.onNext(())
     }
 
     func kitStateUpdated(state: BitcoinCore.KitState) {
+        // Terminal states (.synced / .notSynced) bypass the throttle — they
+        // must always reach the UI so the spinner can settle. Only the
+        // intermediate progress events (.syncing / .apiSyncing) are debounced.
+        let shouldThrottle: Bool
+        if throttleSyncEvents {
+            switch state {
+            case .synced, .notSynced:
+                shouldThrottle = false
+            case .syncing, .apiSyncing:
+                shouldThrottle = true
+            }
+        } else {
+            shouldThrottle = false
+        }
+
+        if shouldThrottle {
+            pendingKitState = state
+            guard !kitStateFlushScheduled else { return }
+            kitStateFlushScheduled = true
+            syncEventsQueue.asyncAfter(deadline: .now() + syncEventThrottleInterval) { [weak self] in
+                guard let self else { return }
+                self.kitStateFlushScheduled = false
+                guard let pending = self.pendingKitState else { return }
+                self.pendingKitState = nil
+                self.applyKitState(pending)
+            }
+            return
+        }
+        clearPendingKitState()
+        flushPendingSyncEvents()
+        applyKitState(state)
+    }
+
+    private func clearPendingKitState() {
+        pendingKitState = nil
+        kitStateFlushScheduled = false
+    }
+
+    private func flushPendingSyncEvents() {
+        balanceFlushScheduled = false
+        lastBlockInfoFlushScheduled = false
+
+        if let pendingBalance {
+            self.pendingBalance = nil
+            bitcoinBalanceDataSubject.onNext(bitcoinBalanceData(balanceInfo: pendingBalance))
+        }
+
+        if pendingLastBlockInfo != nil {
+            pendingLastBlockInfo = nil
+            lastBlockUpdatedSubject.onNext(())
+        }
+    }
+
+    private func applyKitState(_ state: BitcoinCore.KitState) {
         switch state {
         case .synced:
             if case .synced = balanceState {
@@ -250,21 +410,8 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
             }
 
             balanceState = .notSynced(error: converted.localizedDescription)
-//<<<<<<< HEAD
         case let .syncing(progress):
             let newProgress = Int(progress * 100)
-//=======
-//        case .syncingStarted:
-//            if case let .syncing(progress, remaining, date) = balanceState,
-//               progress == nil, remaining == nil, date == nil
-//            {
-//                return
-//            }
-//            balanceState = .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
-//        case let .syncing(all, downloaded):
-//            let newProgress = min(Int(Double(downloaded) / Double(all) * 100), 99)
-//            let newRemaining = max(1, all - downloaded)
-//>>>>>>> master
             let newDate = showSyncedUntil
                 ? abstractKit.lastBlockInfo?.timestamp.map { Date(timeIntervalSince1970: Double($0)) }
                 : nil
@@ -274,7 +421,8 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
                     return
                 }
             }
-//            balanceState = .syncing(progress: newProgress, remaining: newRemaining, lastBlockDate: newDate)
+
+            balanceState = .syncing(progress: newProgress, remaining: nil, lastBlockDate: newDate)
         case let .apiSyncing(newCount):
             let newCountDescription = "balance.searching.count".localized("\(newCount)")
             if case let .customSyncing(_, secondary, _) = balanceState, newCountDescription == secondary {
@@ -287,10 +435,6 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
 }
 
 extension BitcoinBaseAdapter: IBalanceAdapter {
-    var balanceStateUpdatedObservable: Observable<AdapterState> {
-        balanceStateSubject.asObservable()
-    }
-
     var balanceData: BalanceData {
         bitcoinBalanceData.balanceData
     }
@@ -298,11 +442,18 @@ extension BitcoinBaseAdapter: IBalanceAdapter {
     var balanceDataUpdatedObservable: Observable<BalanceData> {
         bitcoinBalanceDataSubject.map(\.balanceData).asObservable()
     }
+
+    var balanceStateUpdatedObservable: Observable<AdapterState> {
+        balanceStateSubject.asObservable()
+    }
 }
 
 extension BitcoinBaseAdapter {
     var bitcoinBalanceData: BitcoinBalanceData {
-        bitcoinBalanceData(balanceInfo: abstractKit.balance)
+        // Return the cache instead of recomputing. Calling `abstractKit.balance`
+        // here triggers UnspentOutputProvider.balanceInfo, which iterates every
+        // UTXO and blocks the main thread for several seconds on Safe3.
+        cachedBitcoinBalanceData
     }
 
     var bitcoinBalanceDataObservable: Observable<BitcoinBalanceData> {
@@ -399,24 +550,29 @@ extension BitcoinBaseAdapter: ITransactionsAdapter {
         lastBlockUpdatedSubject.asObservable()
     }
 
-    var additionalTokenQueries: [TokenQuery] {
-        []
-    }
-
     func transactionsObservable(token _: Token?, filter: TransactionTypeFilter, address _: String?) -> Observable<[TransactionRecord]> {
         transactionRecordsSubject.asObservable()
             .map { transactions in
                 transactions.compactMap { transaction -> TransactionRecord? in
                     switch (transaction, filter) {
-                    case (_, .all): return transaction
-                    case (is BitcoinIncomingTransactionRecord, .incoming): return transaction
-                    case (is BitcoinOutgoingTransactionRecord, .outgoing): return transaction
-                    case let (tx as BitcoinOutgoingTransactionRecord, .incoming): return tx.sentToSelf ? transaction : nil
-                    default: return nil
+                    case (_, .all):
+                        return transaction
+                    case (is BitcoinIncomingTransactionRecord, .incoming):
+                        return transaction
+                    case (is BitcoinOutgoingTransactionRecord, .outgoing):
+                        return transaction
+                    case let (tx as BitcoinOutgoingTransactionRecord, .incoming):
+                        return tx.sentToSelf ? transaction : nil
+                    default:
+                        return nil
                     }
                 }
             }
             .filter { !$0.isEmpty }
+    }
+
+    var additionalTokenQueries: [TokenQuery] {
+        []
     }
 
     func transactionsSingle(paginationData: String?, token _: Token?, filter: TransactionTypeFilter, address _: String?, limit: Int) -> Single<[TransactionRecord]> {
@@ -428,21 +584,55 @@ extension BitcoinBaseAdapter: ITransactionsAdapter {
         default: return Single.just([])
         }
 
-        let transactions = abstractKit.transactions(fromUid: paginationData, type: bitcoinFilter, descending: true, limit: limit)
-            .map {
-                transactionRecord(fromTransaction: $0)
+        return Single.create { [weak self] observer in
+            guard let self else {
+                observer(.success([]))
+                return Disposables.create()
             }
 
-        return Single.just(transactions)
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else {
+                    observer(.success([]))
+                    return
+                }
+
+                let transactions = self.abstractKit.transactions(fromUid: paginationData, type: bitcoinFilter, descending: true, limit: limit)
+                    .map { self.transactionRecord(fromTransaction: $0) }
+
+                observer(.success(transactions))
+            }
+
+            self.transactionsConversionQueue.async(execute: workItem)
+            return Disposables.create {
+                workItem.cancel()
+            }
+        }
     }
 
     func allTransactionsAfter(paginationData: String?) -> Single<[TransactionRecord]> {
-        let transactions = abstractKit.transactions(fromUid: paginationData, type: nil, descending: false, limit: nil)
-            .map {
-                transactionRecord(fromTransaction: $0)
+        return Single.create { [weak self] observer in
+            guard let self else {
+                observer(.success([]))
+                return Disposables.create()
             }
 
-        return Single.just(transactions)
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else {
+                    observer(.success([]))
+                    return
+                }
+
+                let transactions = self.abstractKit.transactions(fromUid: paginationData, type: nil, descending: false, limit: nil)
+                    .map { self.transactionRecord(fromTransaction: $0) }
+
+                observer(.success(transactions))
+            }
+
+            self.transactionsConversionQueue.async(execute: workItem)
+            return Disposables.create {
+                workItem.cancel()
+            }
+        }
     }
 
     func rawTransaction(hash: String) -> String? {

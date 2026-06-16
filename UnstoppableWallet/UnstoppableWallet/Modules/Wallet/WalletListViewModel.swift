@@ -40,6 +40,11 @@ class WalletListViewModel: ObservableObject {
 
     var __items: [Item] = []
     let queue = DispatchQueue(label: "\(AppConfig.label).wallet-list-view-model", qos: .userInitiated)
+    private let safeWalletRefreshInterval: TimeInterval = 3.5
+    private var safeWalletRefreshScheduled = false
+    private var pendingSafeWalletNeedsSort = false
+    private var pendingSafeWalletNeedsTotalSync = false
+    private var safeWalletSettling = Set<Wallet>()
 
     init() {
         if let rawValue: String = userDefaultsStorage.value(for: keySortType), let sortType = WalletSorter.SortType(rawValue: rawValue) {
@@ -125,13 +130,66 @@ class WalletListViewModel: ObservableObject {
     }
 
     private func _reportItems() {
-        DispatchQueue.main.async { [__items] in
-            self.items = __items
+        DispatchQueue.main.async { [weak self, __items] in
+            self?.items = __items
         }
     }
 
     private func _itemIndex(wallet: Wallet) -> Int? {
         __items.firstIndex { $0.wallet == wallet }
+    }
+
+    private func _shouldThrottleSafeWalletUpdate(wallet: Wallet) -> Bool {
+        guard wallet.token.blockchainType == .safe, let index = _itemIndex(wallet: wallet) else {
+            return false
+        }
+
+        return __items[index].state.syncing || safeWalletSettling.contains(wallet)
+    }
+
+    private func _markSafeWalletSettling(wallet: Wallet) {
+        guard wallet.token.blockchainType == .safe else {
+            return
+        }
+
+        safeWalletSettling.insert(wallet)
+
+        queue.asyncAfter(deadline: .now() + safeWalletRefreshInterval) {
+            self.safeWalletSettling.remove(wallet)
+        }
+    }
+
+    private func _scheduleSafeWalletRefresh(needsSort: Bool, needsTotalSync: Bool) {
+        pendingSafeWalletNeedsSort = pendingSafeWalletNeedsSort || needsSort
+        pendingSafeWalletNeedsTotalSync = pendingSafeWalletNeedsTotalSync || needsTotalSync
+
+        guard !safeWalletRefreshScheduled else {
+            return
+        }
+
+        safeWalletRefreshScheduled = true
+
+        queue.asyncAfter(deadline: .now() + safeWalletRefreshInterval) {
+            self.safeWalletRefreshScheduled = false
+
+            guard self.pendingSafeWalletNeedsSort || self.pendingSafeWalletNeedsTotalSync else {
+                return
+            }
+
+            if self.pendingSafeWalletNeedsSort {
+                self._sortItems()
+            }
+
+            let needsTotalSync = self.pendingSafeWalletNeedsTotalSync
+            self.pendingSafeWalletNeedsSort = false
+            self.pendingSafeWalletNeedsTotalSync = false
+
+            self._reportItems()
+
+            if needsTotalSync {
+                self._syncTotalItem()
+            }
+        }
     }
 
     private func _syncWalletService() {
@@ -273,15 +331,21 @@ extension WalletListViewModel: IWalletServiceDelegate {
             }
 
             self.__items[index].balanceData = balanceData
+            let needsSort = self.sortType == .balance && self.__items.allSatisfy(\.state.isSynced)
 
-            if self.sortType == .balance, self.__items.allSatisfy(\.state.isSynced) {
+            self.cacheManager.set(balanceData: balanceData, wallet: wallet)
+
+            if self._shouldThrottleSafeWalletUpdate(wallet: wallet) {
+                self._scheduleSafeWalletRefresh(needsSort: needsSort, needsTotalSync: true)
+                return
+            }
+
+            if needsSort {
                 self._sortItems()
             }
 
             self._reportItems()
             self._syncTotalItem()
-
-            self.cacheManager.set(balanceData: balanceData, wallet: wallet)
         }
     }
 
@@ -293,14 +357,25 @@ extension WalletListViewModel: IWalletServiceDelegate {
 
             let oldState = self.__items[index].state
             self.__items[index].state = state
+            let needsSort = self.sortType == .balance && self.__items.allSatisfy(\.state.isSynced)
+            let needsTotalSync = oldState.isSynced != state.isSynced
 
-            if self.sortType == .balance, self.__items.allSatisfy(\.state.isSynced) {
+            if oldState.syncing && !state.syncing {
+                self._markSafeWalletSettling(wallet: wallet)
+            }
+
+            if self._shouldThrottleSafeWalletUpdate(wallet: wallet) {
+                self._scheduleSafeWalletRefresh(needsSort: needsSort, needsTotalSync: needsTotalSync)
+                return
+            }
+
+            if needsSort {
                 self._sortItems()
             }
 
             self._reportItems()
 
-            if oldState.isSynced != state.isSynced {
+            if needsTotalSync {
                 self._syncTotalItem()
             }
         }

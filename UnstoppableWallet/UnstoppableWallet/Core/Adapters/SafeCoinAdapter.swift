@@ -12,10 +12,30 @@ import BigInt
 class SafeCoinAdapter: BitcoinBaseAdapter {
     private let feeRate = 10
     public  let safeCoinKit: SafeCoinKit.Kit
+    private let transactionsUpdateQueue = DispatchQueue(label: "\(AppConfig.label).safe-coin-adapter.transactions", qos: .utility)
+    private let walletTransactionSource: TransactionSource
+    private let transactionScanCacheLock = NSLock()
+    private var transactionScanCache = [String: TransactionScanSnapshot]()
+    
+    // Merge incoming Safe3 transaction events on a dedicated serial queue and
+    // flush them in batches, so sync bursts do not schedule work on the main
+    // runloop before the throttle window decides whether to process the batch.
+    private var pendingInserted: [DashTransactionInfo] = []
+    private var pendingUpdated: [DashTransactionInfo] = []
+    private var transactionsFlushScheduled = false
+
+    override var transactionUpdateThrottleInterval: TimeInterval {
+        balanceState.syncing ? 2.5 : 0.35
+    }
+
+    override var syncEventThrottleInterval: TimeInterval {
+        balanceState.syncing ? 4.0 : 1.0
+    }
         
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
         let networkType: SafeCoinKit.Kit.NetworkType = .mainNet
         let logger = Core.shared.logger.scoped(with: "SafeCoinKit")
+        walletTransactionSource = wallet.transactionSource
 
         switch wallet.account.type {
         case .mnemonic:
@@ -47,6 +67,8 @@ class SafeCoinAdapter: BitcoinBaseAdapter {
         super.init(abstractKit: safeCoinKit, wallet: wallet, syncMode: syncMode)
 
         safeCoinKit.delegate = self
+        // Enable sync event throttling to reduce main-thread pressure during Safe3 sync
+        self.throttleSyncEvents = true
     }
 
     override var explorerTitle: String {
@@ -77,26 +99,300 @@ class SafeCoinAdapter: BitcoinBaseAdapter {
         let hdWallet = HDWallet(masterKey: masterPrivateKey, coinType: 5, purpose: Purpose.bip44)
         return hdWallet
     }
-    
+
+    override func transactionRecord(fromTransaction transaction: TransactionInfo) -> BitcoinTransactionRecord {
+        let snapshot = scanSnapshot(for: transaction)
+        let lockInfo = lockInfo(from: snapshot.lockSource)
+        let date = Date(timeIntervalSince1970: Double(transaction.timestamp))
+        let fee = transaction.fee.map { Decimal($0) / coinRate }
+        let failed = transaction.status == .invalid
+        let showRawTransaction = transaction.status == .new || transaction.status == .invalid
+        let amount = Decimal(transaction.amount) / coinRate
+
+        switch transaction.type {
+        case .incoming:
+            return BitcoinIncomingTransactionRecord(
+                token: token,
+                source: walletTransactionSource,
+                uid: transaction.uid,
+                transactionHash: transaction.transactionHash,
+                transactionIndex: transaction.transactionIndex,
+                blockHeight: transaction.blockHeight,
+                confirmationsThreshold: BitcoinBaseAdapter.txStatusConfirmationsThreshold,
+                date: date,
+                fee: fee,
+                failed: failed,
+                lockInfo: lockInfo,
+                conflictingHash: transaction.conflictingHash,
+                showRawTransaction: showRawTransaction,
+                amount: amount,
+                from: snapshot.fromAddress,
+                memo: snapshot.memo
+            )
+        case .outgoing:
+            return BitcoinOutgoingTransactionRecord(
+                token: token,
+                source: walletTransactionSource,
+                uid: transaction.uid,
+                transactionHash: transaction.transactionHash,
+                transactionIndex: transaction.transactionIndex,
+                blockHeight: transaction.blockHeight,
+                confirmationsThreshold: BitcoinBaseAdapter.txStatusConfirmationsThreshold,
+                date: date,
+                fee: fee,
+                failed: failed,
+                lockInfo: lockInfo,
+                conflictingHash: transaction.conflictingHash,
+                showRawTransaction: showRawTransaction,
+                amount: amount,
+                to: snapshot.toAddress,
+                sentToSelf: false,
+                memo: snapshot.memo,
+                replaceable: transaction.replaceable && transaction.status != .invalid
+            )
+        case .sentToSelf:
+            return BitcoinOutgoingTransactionRecord(
+                token: token,
+                source: walletTransactionSource,
+                uid: transaction.uid,
+                transactionHash: transaction.transactionHash,
+                transactionIndex: transaction.transactionIndex,
+                blockHeight: transaction.blockHeight,
+                confirmationsThreshold: BitcoinBaseAdapter.txStatusConfirmationsThreshold,
+                date: date,
+                fee: fee,
+                failed: failed,
+                lockInfo: lockInfo,
+                conflictingHash: transaction.conflictingHash,
+                showRawTransaction: showRawTransaction,
+                amount: amount,
+                to: snapshot.sentToSelfAddress,
+                sentToSelf: true,
+                memo: snapshot.memo,
+                replaceable: transaction.replaceable && transaction.status != .invalid
+            )
+        }
+    }
+
 }
 
-extension SafeCoinAdapter: DashKitDelegate {
+private extension SafeCoinAdapter {
+    struct TransactionScanSnapshot {
+        let transactionHash: String
+        let transactionIndex: Int
+        let inputCount: Int
+        let outputCount: Int
+        let amount: Int
+        let type: TransactionType
+        let fromAddress: String?
+        let toAddress: String?
+        let sentToSelfAddress: String?
+        let memo: String?
+        let lockSource: LockSource?
 
+        func matches(_ transaction: TransactionInfo) -> Bool {
+            transactionHash == transaction.transactionHash &&
+                transactionIndex == transaction.transactionIndex &&
+                inputCount == transaction.inputs.count &&
+                outputCount == transaction.outputs.count &&
+                amount == transaction.amount &&
+                type == transaction.type
+        }
+    }
+
+    enum LockSource {
+        case unlockedHeight(originalAddress: String, lockTimeInterval: HodlerPlugin.LockTimeInterval, unlockedHeight: Int)
+        case approximateUnlockTime(originalAddress: String, lockTimeInterval: HodlerPlugin.LockTimeInterval, approximateUnlockTime: Int)
+    }
+}
+
+extension SafeCoinAdapter: SafeCoinKitDelegate {
     public func transactionsUpdated(inserted: [DashTransactionInfo], updated: [DashTransactionInfo]) {
-        DispatchQueue.global(qos: .userInitiated).async {
-            var records = [BitcoinTransactionRecord]()
+        transactionsUpdateQueue.async { [weak self] in
+            guard let self else { return }
+            self.enqueueTransactions(inserted: inserted, updated: updated)
+        }
+    }
+}
 
-            for info in inserted {
-                records.append(self.transactionRecord(fromTransaction: info))
-            }
-            for info in updated {
-                records.append(self.transactionRecord(fromTransaction: info))
+private extension SafeCoinAdapter {
+    func enqueueTransactions(inserted: [DashTransactionInfo], updated: [DashTransactionInfo]) {
+        pendingInserted.append(contentsOf: inserted)
+        pendingUpdated.append(contentsOf: updated)
+
+        guard !transactionsFlushScheduled else {
+            return
+        }
+
+        transactionsFlushScheduled = true
+        let interval = transactionUpdateThrottleInterval
+
+        transactionsUpdateQueue.asyncAfter(deadline: .now() + interval) { [weak self] in
+            self?.flushPendingTransactions()
+        }
+    }
+
+    func flushPendingTransactions() {
+        transactionsFlushScheduled = false
+
+        let batchInserted = pendingInserted
+        let batchUpdated = pendingUpdated
+        pendingInserted.removeAll(keepingCapacity: true)
+        pendingUpdated.removeAll(keepingCapacity: true)
+
+        transactionsUpdateQueue.async { [weak self] in
+            self?.publishMergedTransactions(inserted: batchInserted, updated: batchUpdated)
+        }
+    }
+
+    func publishMergedTransactions(inserted: [DashTransactionInfo], updated: [DashTransactionInfo]) {
+        guard transactionRecordsSubject.hasObservers else {
+            return
+        }
+
+        let uniqueInfos = mergedUniqueTransactions(inserted: inserted, updated: updated)
+        guard !uniqueInfos.isEmpty else {
+            return
+        }
+
+        var records = [BitcoinTransactionRecord]()
+        records.reserveCapacity(uniqueInfos.count)
+
+        for info in uniqueInfos {
+            records.append(transactionRecord(fromTransaction: info))
+        }
+
+        guard !records.isEmpty else {
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.transactionRecordsSubject.onNext(records)
+        }
+    }
+
+    func scanSnapshot(for transaction: TransactionInfo) -> TransactionScanSnapshot {
+        transactionScanCacheLock.lock()
+        if let cached = transactionScanCache[transaction.uid], cached.matches(transaction) {
+            transactionScanCacheLock.unlock()
+            return cached
+        }
+        transactionScanCacheLock.unlock()
+
+        var lockSource: LockSource?
+        var fromAddress: String?
+        var toAddress: String?
+        var sentToSelfAddress: String?
+        var memo: String?
+
+        for input in transaction.inputs where fromAddress == nil {
+            fromAddress = input.address
+        }
+
+        for output in transaction.outputs {
+            if output.memo != nil {
+                memo = output.memo
             }
 
-            DispatchQueue.main.async {
-                self.transactionRecordsSubject.onNext(records)
+            if sentToSelfAddress == nil, !output.changeOutput {
+                sentToSelfAddress = output.address
+            }
+
+            guard output.value > 0 else {
+                continue
+            }
+
+            if let unlockedHeight = output.unlockedHeight,
+               unlockedHeight > 0,
+               let hodlerOutputData = output.pluginData as? HodlerOutputData {
+                lockSource = .unlockedHeight(
+                    originalAddress: output.address ?? "__",
+                    lockTimeInterval: hodlerOutputData.lockTimeInterval,
+                    unlockedHeight: unlockedHeight
+                )
+            } else if let pluginId = output.pluginId,
+                      pluginId == HodlerPlugin.id,
+                      let hodlerOutputData = output.pluginData as? HodlerOutputData,
+                      let approximateUnlockTime = hodlerOutputData.approximateUnlockTime {
+                lockSource = .approximateUnlockTime(
+                    originalAddress: hodlerOutputData.addressString,
+                    lockTimeInterval: hodlerOutputData.lockTimeInterval,
+                    approximateUnlockTime: approximateUnlockTime
+                )
+            }
+
+            if toAddress == nil, let address = output.address, !output.mine {
+                toAddress = address
             }
         }
+
+        let snapshot = TransactionScanSnapshot(
+            transactionHash: transaction.transactionHash,
+            transactionIndex: transaction.transactionIndex,
+            inputCount: transaction.inputs.count,
+            outputCount: transaction.outputs.count,
+            amount: transaction.amount,
+            type: transaction.type,
+            fromAddress: fromAddress,
+            toAddress: toAddress,
+            sentToSelfAddress: sentToSelfAddress ?? transaction.outputs.first?.address,
+            memo: memo,
+            lockSource: lockSource
+        )
+
+        transactionScanCacheLock.lock()
+        transactionScanCache[transaction.uid] = snapshot
+        transactionScanCacheLock.unlock()
+        return snapshot
+    }
+
+    func lockInfo(from source: LockSource?) -> TransactionLockInfo? {
+        guard let source else {
+            return nil
+        }
+
+        switch source {
+        case let .unlockedHeight(originalAddress, lockTimeInterval, unlockedHeight):
+            let approxUnlockTime = (safeCoinKit.lastBlockInfo?.timestamp ?? 0) + ((unlockedHeight - (safeCoinKit.lastBlockInfo?.height ?? 0)) * 30)
+            return TransactionLockInfo(
+                lockedUntil: Date(timeIntervalSince1970: Double(approxUnlockTime)),
+                originalAddress: originalAddress,
+                lockTimeInterval: lockTimeInterval,
+                unlockedHeight: unlockedHeight
+            )
+        case let .approximateUnlockTime(originalAddress, lockTimeInterval, approximateUnlockTime):
+            return TransactionLockInfo(
+                lockedUntil: Date(timeIntervalSince1970: Double(approximateUnlockTime)),
+                originalAddress: originalAddress,
+                lockTimeInterval: lockTimeInterval,
+                unlockedHeight: nil
+            )
+        }
+    }
+
+    func mergedUniqueTransactions(inserted: [DashTransactionInfo], updated: [DashTransactionInfo]) -> [DashTransactionInfo] {
+        var orderedInfos = [DashTransactionInfo]()
+        var indexByUid = [String: Int]()
+
+        for info in inserted {
+            if indexByUid[info.uid] == nil {
+                indexByUid[info.uid] = orderedInfos.count
+                orderedInfos.append(info)
+            } else if let index = indexByUid[info.uid] {
+                orderedInfos[index] = info
+            }
+        }
+
+        for info in updated {
+            if let index = indexByUid[info.uid] {
+                orderedInfos[index] = info
+            } else {
+                indexByUid[info.uid] = orderedInfos.count
+                orderedInfos.append(info)
+            }
+        }
+
+        return orderedInfos
     }
 }
 
@@ -233,10 +529,5 @@ extension SafeCoinAdapter {
     func coinValue(value: Decimal) -> AppValue {
         AppValue(kind: .token(token: token), value: value)
     }
-    
-}
-public struct BlockInfo {
-    public let headerHash: String
-    public let height: Int
-    public let timestamp: Int?
+
 }
