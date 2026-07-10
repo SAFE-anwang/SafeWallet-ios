@@ -91,6 +91,9 @@ class SendEip1155ViewController: KeyboardAwareViewController {
             self?.nextButton.isEnabled = $0
             self?.navigationItem.rightBarButtonItem?.isEnabled = $0
         }
+        subscribe(disposeBag, viewModel.nftImageDriver) { [weak self] _ in
+            self?.tableView.buildSections()
+        }
         subscribe(disposeBag, viewModel.amountCautionDriver) { [weak self] caution in
             self?.amountCell.set(cautionType: caution?.type)
             self?.amountCautionCell.set(caution: caution)
