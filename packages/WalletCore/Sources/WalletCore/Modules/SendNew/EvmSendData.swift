@@ -10,11 +10,15 @@ class EvmSendData: ISendData {
     let gasPrice: GasPrice?
     let evmFeeData: EvmFeeData?
     let nonce: Int?
+    let timeLock: TimeLock?
+    let feeToken: Token?
 
-    init(decoration: EvmDecoration, transactionData: TransactionData?, transactionError: Error?, gasPrice: GasPrice?, evmFeeData: EvmFeeData?, nonce: Int?) {
+    init(decoration: EvmDecoration, transactionData: TransactionData?, transactionError: Error?, gasPrice: GasPrice?, evmFeeData: EvmFeeData?, nonce: Int?, timeLock: TimeLock?, feeToken: Token?) {
         self.decoration = decoration
         self.transactionData = transactionData
         self.transactionError = transactionError
+        self.timeLock = timeLock
+        self.feeToken = feeToken
         self.gasPrice = gasPrice
         self.evmFeeData = evmFeeData
         self.nonce = nonce

@@ -41,6 +41,9 @@ class EvmSendHelper {
             case .tipsHigherThanMaxFee:
                 title = "fee_settings.errors.tips_higher_than_max_fee".localized
                 text = "ethereum_transaction.error.tips_higher_than_max_fee".localized
+            case .invalidNftAsset:
+                title = "fee_settings.errors.unexpected_error".localized
+                text = "nft_v2.send.invalid_asset".localized
             }
         } else {
             title = "ethereum_transaction.error.title".localized

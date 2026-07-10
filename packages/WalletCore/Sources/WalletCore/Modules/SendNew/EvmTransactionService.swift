@@ -143,7 +143,7 @@ extension EvmTransactionService {
 
         switch (recommended, current) {
         case (let .eip1559(recommendedMaxFee, recommendedTips), let .eip1559(maxFee, tips)):
-            let recommendedBaseFee = (recommendedMaxFee - recommendedTips) * 100 / GasPrice.eip1559SurchargeBasis
+            let recommendedBaseFee = (recommendedMaxFee - recommendedTips) * 100 / 125//GasPrice.eip1559SurchargeBasis
             let actualTips = min(maxFee - recommendedBaseFee, tips)
             let tipsSafeRange = Self.tipsSafeRangeBounds.range(around: recommendedTips)
 

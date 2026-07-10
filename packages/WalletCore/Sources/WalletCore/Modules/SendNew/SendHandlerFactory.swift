@@ -36,12 +36,18 @@ public enum SendHandlerFactory {
             return ZanoSendHandler.instance(token: token, feeToken: baseToken, amount: amount, address: address, memo: memo)
         case let .swap(tokenIn, tokenOut, amountIn, provider, multiSwapQuote):
             return MultiSwapSendHandler.instance(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, provider: provider, multiSwapQuote: multiSwapQuote)
+        case let .liquidityAdd(token0, token1, amount0, amount1, provider, v3TickType, manualAmountOutMode):
+            return LiquidityAddSendHandler.instance(token0: token0, token1: token1, amount0: amount0, amount1: amount1, provider: provider, v3TickType: v3TickType, manualAmountOutMode: manualAmountOutMode)
         case let .walletConnect(request):
             return WalletConnectSendHandler.instance(request: request)
         case let .tonConnect(request):
             return try? TonConnectSendHandler.instance(request: request)
         case let .openCryptoPay(payment, entry, inner):
             return OpenCryptoPaySendHandlerFactory.handler(payment: payment, entry: entry, inner: inner)
+        case let .evmSafe4TimeLock(blockchainType, transactionData, timeLock):
+            return EvmSendHandler.instance(blockchainType: blockchainType, transactionData: transactionData, timeLock: timeLock)
+        case let .crossChain(baseWallet, transactionData):
+            return CrossChainSendHandler.instance(baseWallet: baseWallet, transactionData: transactionData)
         }
     }
 

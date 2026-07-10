@@ -16,7 +16,20 @@ struct EvmFeeEstimator {
             do {
                 gasLimit = try await evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
             } catch {
-                gasLimit = try await evmKit.fetchEstimateGas(transactionData: transactionData)
+                do {
+                    gasLimit = try await evmKit.fetchEstimateGas(transactionData: transactionData)
+                } catch {
+                    let tempTransactionData = TransactionData(
+                        to: transactionData.to,
+                        value: 0,
+                        input: transactionData.input
+                    )
+                    do {
+                        gasLimit = try await evmKit.fetchEstimateGas(transactionData: tempTransactionData, gasPrice: gasPrice)
+                    } catch {
+                        gasLimit = try await evmKit.fetchEstimateGas(transactionData: tempTransactionData)
+                    }
+                }
             }
         }
 

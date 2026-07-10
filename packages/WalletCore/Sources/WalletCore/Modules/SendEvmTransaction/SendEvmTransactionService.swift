@@ -7,6 +7,8 @@ import OneInchKit
 import RxCocoa
 import RxSwift
 import UniswapKit
+import web3swift
+import Combine
 
 protocol ISendEvmTransactionService {
     var state: SendEvmTransactionService.State { get }
@@ -129,6 +131,9 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
 
     func send() {
         guard case .ready = state, case let .completed(fallibleTransaction) = settingsService.status else {
+            let error = TransactionError.notReady
+            print("[SendEvmTransaction] ERROR: Transaction not ready, state=\(state)")
+            sendState = .failed(error: error)
             return
         }
         let transaction = fallibleTransaction.data
@@ -137,34 +142,108 @@ extension SendEvmTransactionService: ISendEvmTransactionService {
 
         switch privateSendMode {
         case .none, .protected:
-            evmKitWrapper.sendSingle(
-                transactionData: transaction.transactionData,
-                gasPrice: transaction.gasData.price,
-                gasLimit: transaction.gasData.limit,
-                privateSend: privateSendMode.privateSend,
-                nonce: transaction.nonce
-            )
-            .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-            .subscribe(onSuccess: { [weak self] fullTransaction in
-                self?.sendState = .sent(transactionHash: fullTransaction.transaction.hash)
-            }, onError: { error in
-                self.sendState = .failed(error: error)
-            })
-            .disposed(by: disposeBag)
+            if transaction.transactionData.times != -1 {
+                guard let value = (transaction.transactionData.value / BigUInt(transaction.transactionData.times)).safe4ToDecimal(),
+                      let type = web3swift.AccountManager.ContractType.contractType(value: value) else {
+                    sendState = .failed(error: TransactionError.invalidParameters)
+                    return
+                }
+
+                evmKitWrapper.sendSafe4LineLockSingle(type: type, transactionData: transaction.transactionData)
+                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .subscribe(onSuccess: { [weak self] hashStr in
+                        self?.sendState = .sent(transactionHash: hashStr.hs.data)
+                    }, onError: { [weak self] error in
+                        let categorizedError = self?.categorizeError(error) ?? error
+                        self?.sendState = .failed(error: categorizedError)
+                    })
+                    .disposed(by: disposeBag)
+            }else {
+                evmKitWrapper.sendSingle(
+                    transactionData: transaction.transactionData,
+                    gasPrice: transaction.gasData.price,
+                    gasLimit: transaction.gasData.limit,
+                    privateSend: privateSendMode.privateSend,
+                    nonce: transaction.nonce
+                )
+                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                .subscribe(onSuccess: { [weak self] fullTransaction in
+                    let txHash = fullTransaction.transaction.hash.hs.hexString
+                    print("[SendEvmTransaction] SUCCESS: Transaction sent, hash=\(txHash)")
+                    self?.sendState = .sent(transactionHash: fullTransaction.transaction.hash)
+                }, onError: { [weak self] error in
+                    print("[SendEvmTransaction] ERROR: Transaction failed: \(error.localizedDescription)")
+                    print("  - underlying error: \(error)")
+                    let categorizedError = self?.categorizeError(error) ?? error
+                    self?.sendState = .failed(error: categorizedError)
+                })
+                .disposed(by: disposeBag)
+
+            }
         case let .cancelPrevious(hash):
             Task { [weak self] in
                 do {
                     let successful = try await self?.evmKitWrapper.sendCancel(hash: hash)
                     if successful ?? false {
+                        print("[SendEvmTransaction] SUCCESS: Cancel transaction sent")
                         self?.sendState = .sent(transactionHash: hash)
                     } else {
+                        print("[SendEvmTransaction] ERROR: Cancel transaction failed")
                         self?.sendState = .failed(error: SendEvmTransactionService.TransactionError.unexpectedError)
                     }
                 } catch {
-                    self?.sendState = .failed(error: error)
+                    print("[SendEvmTransaction] ERROR: Cancel transaction exception: \(error.localizedDescription)")
+                    let categorizedError = self?.categorizeError(error) ?? error
+                    self?.sendState = .failed(error: categorizedError)
                 }
             }
         }
+    }
+
+    // MARK: - Error Categorization
+
+    private func categorizeError(_ error: Error) -> Error {
+        let errorDescription = error.localizedDescription.lowercased()
+
+        if case let AppError.ethereum(reason) = error.convertedError,
+           case .invalidNftAsset = reason
+        {
+            print("[SendEvmTransaction] Categorized as: invalidNftAsset")
+            return error.convertedError
+        }
+
+        // Gas-related errors
+        if errorDescription.contains("insufficient funds") ||
+           errorDescription.contains("gas") ||
+           errorDescription.contains("out of gas") {
+            print("[SendEvmTransaction] Categorized as: insufficientBalance")
+            return TransactionError.insufficientBalance(requiredBalance: 0)
+        }
+
+        // Nonce errors
+        if errorDescription.contains("nonce") ||
+           errorDescription.contains("replacement transaction") {
+            print("[SendEvmTransaction] Categorized as: nonceError")
+            return TransactionError.nonceError
+        }
+
+        // Network errors
+        if errorDescription.contains("network") ||
+           errorDescription.contains("timeout") ||
+           errorDescription.contains("connection") {
+            print("[SendEvmTransaction] Categorized as: networkError")
+            return TransactionError.networkError
+        }
+
+        // Contract execution errors
+        if errorDescription.contains("revert") ||
+           errorDescription.contains("execution failed") {
+            print("[SendEvmTransaction] Categorized as: contractError")
+            return TransactionError.contractError(reason: error.localizedDescription)
+        }
+
+        print("[SendEvmTransaction] Error not categorized, returning original")
+        return error
     }
 }
 
@@ -205,5 +284,10 @@ extension SendEvmTransactionService {
         case unexpectedError
         case noTransactionData
         case insufficientBalance(requiredBalance: BigUInt)
+        case notReady
+        case invalidParameters
+        case nonceError
+        case networkError
+        case contractError(reason: String)
     }
 }

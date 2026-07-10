@@ -67,6 +67,9 @@ class SendEvmCautionsFactory {
             case .insufficientBalanceWithFee:
                 title = "fee_settings.errors.insufficient_balance".localized
                 text = "ethereum_transaction.error.insufficient_balance_with_fee".localized(baseCoinService.token.coin.code)
+            case .invalidNftAsset:
+                title = "fee_settings.errors.unexpected_error".localized
+                text = "nft_v2.send.invalid_asset".localized
             case let .executionReverted(message):
                 title = "fee_settings.errors.unexpected_error".localized
                 text = message
@@ -97,8 +100,11 @@ class SendEvmCautionsFactory {
                 title = "swap.one_inch.error.cannot_estimate".localized
                 text = "swap.one_inch.error.cannot_estimate.info".localized(baseCoinService.token.coin.code)
             case .insufficientLiquidity:
-                text = "swap.one_inch.error.insufficient_liquidity".localized()
+                title = "swap.one_inch.error.insufficient_liquidity".localized()
                 text = "swap.one_inch.error.insufficient_liquidity.info".localized()
+            case .cannotSwap:
+                title = "swap.one_inch.error.cannotSwap".localized
+                text = "swap.one_inch.error.cannotSwap".localized
             }
         }
 

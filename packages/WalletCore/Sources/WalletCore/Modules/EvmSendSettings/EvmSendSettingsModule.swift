@@ -7,14 +7,14 @@ import UIKit
 enum EvmSendSettingsModule {
     static func instance(evmKit: EvmKit.Kit, blockchainType: BlockchainType, sendData: SendEvmData, coinServiceFactory: EvmCoinServiceFactory,
                          gasPrice: GasPrice? = nil, previousTransaction: EvmKit.Transaction? = nil,
-                         predefinedGasLimit: Int? = nil, predefinedNonce: Int? = nil) -> (EvmSendSettingsService, EvmSendSettingsViewModel)?
-    {
+                         predefinedGasLimit: Int? = nil, predefinedNonce: Int? = nil, gasLimitType: GasLimitType = .common) -> (EvmSendSettingsService, EvmSendSettingsViewModel)? {
         let gasPriceService = EvmFeeModule.gasPriceService(evmKit: evmKit, gasPrice: gasPrice, previousTransaction: previousTransaction)
 
         let gasDataService = EvmCommonGasDataService.instance(
-            evmKit: evmKit,
-            blockchainType: blockchainType,
-            predefinedGasLimit: predefinedGasLimit
+                evmKit: evmKit,
+                blockchainType: blockchainType,
+                predefinedGasLimit: predefinedGasLimit,
+                gasLimitType: gasLimitType
         )
 
         let coinService = coinServiceFactory.baseCoinService

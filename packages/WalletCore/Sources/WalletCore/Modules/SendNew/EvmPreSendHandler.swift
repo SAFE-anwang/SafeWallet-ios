@@ -11,8 +11,8 @@ class EvmPreSendHandler {
 
     private let stateSubject = PassthroughSubject<AdapterState, Never>()
     private let balanceSubject = PassthroughSubject<Decimal, Never>()
-
     private let disposeBag = DisposeBag()
+    var timeLock: TimeLock?
 
     init(token: Token, adapter: ISendEthereumAdapter & IBalanceAdapter) {
         self.token = token
@@ -59,9 +59,12 @@ extension EvmPreSendHandler: IPreSendHandler {
         guard let evmAddress = try? EvmKit.Address(hex: address) else {
             return .invalid(cautions: [])
         }
-
-        let transactionData = adapter.transactionData(amount: evmAmount, address: evmAddress)
-
-        return .valid(sendData: .evm(blockchainType: token.blockchainType, transactionData: transactionData, token: token))
+        if let timeLock {
+            let transactionData = TransactionData(to: evmAddress, value: .zero, input: Data())
+            return .valid(sendData: .evmSafe4TimeLock(blockchainType: token.blockchainType, transactionData: transactionData, timeLock: timeLock))
+        }else {
+            let transactionData = adapter.transactionData(amount: evmAmount, address: evmAddress)
+            return .valid(sendData: .evm(blockchainType: token.blockchainType, transactionData: transactionData, token: token))
+        }
     }
 }

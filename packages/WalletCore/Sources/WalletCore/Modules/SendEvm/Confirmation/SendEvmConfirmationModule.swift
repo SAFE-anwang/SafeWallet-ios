@@ -2,11 +2,14 @@ import EvmKit
 import Foundation
 import HsExtensions
 import MarketKit
-
 import UIKit
+import BigInt
+import web3swift
+import Web3Core
+import SwiftUI
 
 struct SendEvmData {
-    let transactionData: TransactionData
+    var transactionData: TransactionData
     let additionalInfo: AdditionInfo?
     let warnings: [Warning]
     let errors: [Error]
@@ -23,6 +26,9 @@ struct SendEvmData {
         case send(info: SendInfo)
         case uniswap(info: SwapInfo)
         case oneInchSwap(info: OneInchSwapInfo)
+        case safeSwap(info: SwapInfo)
+        case liquidity(info: LiquidityInfo)
+        case v3Liquidity(info: LiquidityInfo)
 
         var dAppInfo: DAppInfo? {
             if case let .otherDApp(info) = self { return info } else { return nil }
@@ -38,6 +44,18 @@ struct SendEvmData {
 
         var oneInchSwapInfo: OneInchSwapInfo? {
             if case let .oneInchSwap(info) = self { return info } else { return nil }
+        }
+
+        var safeSwapInfo: SwapInfo? {
+            if case .safeSwap(let info) = self { return info } else { return nil }
+        }
+
+        var liquidityInfo: LiquidityInfo? {
+            if case .liquidity(let info) = self { return info } else { return nil }
+        }
+
+        var liquidityV3Info: LiquidityInfo? {
+            if case .v3Liquidity(let info) = self { return info } else { return nil }
         }
     }
 
@@ -75,12 +93,58 @@ struct SendEvmData {
         let slippage: Decimal
         let recipient: Address?
     }
+
+    struct LiquidityInfo {
+        let token0: Token
+        let token1: Token
+        let estimated0: Decimal
+        let estimated1: Decimal
+        let slippage: String?
+        let deadline: String?
+        let recipientDomain: String?
+        let price: String?
+        let priceImpact: PriceImpactViewItem?
+        let gasPrice: Decimal?
+    }
+
+    struct PriceImpactViewItem {
+        let value: String
+        let level: PriceImpactLevel
+    }
+
+    enum PriceImpactLevel {
+        case negligible
+        case normal
+        case warning
+        case forbidden
+
+        private static let normalPriceImpact: Decimal = 1
+        private static let warningPriceImpact: Decimal = 5
+        private static let forbiddenPriceImpact: Decimal = 20
+
+        init(priceImpact: Decimal) {
+            switch priceImpact {
+            case 0 ..< Self.normalPriceImpact: self = .negligible
+            case Self.normalPriceImpact ..< Self.warningPriceImpact: self = .normal
+            case Self.warningPriceImpact ..< Self.forbiddenPriceImpact: self = .warning
+            default: self = .forbidden
+            }
+        }
+
+        var valueLevel: ValueLevel {
+            switch self {
+            case .warning: return .warning
+            case .forbidden: return .error
+            default: return .regular
+            }
+        }
+    }
 }
 
 enum SendEvmConfirmationModule {
     private static let forceMultiplier: Double = 1.2
 
-    static func viewController(evmKitWrapper: EvmKitWrapper, sendData: SendEvmData) -> UIViewController? {
+    static func viewController(evmKitWrapper: EvmKitWrapper, sendData: SendEvmData, gasLimitType: GasLimitType = .common) -> UIViewController? {
         let evmKit = evmKitWrapper.evmKit
 
         guard let coinServiceFactory = EvmCoinServiceFactory(
@@ -91,9 +155,12 @@ enum SendEvmConfirmationModule {
         ) else {
             return nil
         }
+        let predefinedGasLimit: Int? = [.ethereum, .polygon, .binanceSmartChain].contains(evmKitWrapper.blockchainType) ? 100000 : nil
 
         guard let (settingsService, settingsViewModel) = EvmSendSettingsModule.instance(
-            evmKit: evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory
+            evmKit: evmKit, blockchainType: evmKitWrapper.blockchainType, sendData: sendData, coinServiceFactory: coinServiceFactory,
+            predefinedGasLimit: predefinedGasLimit,
+            gasLimitType: gasLimitType
         ) else {
             return nil
         }
@@ -189,4 +256,16 @@ extension SendEvmConfirmationModule {
 enum ResendTransactionType: String {
     case speedUp = "speed_up"
     case cancel
+}
+
+struct SendEvmConfirmationView: UIViewControllerRepresentable {
+    typealias UIViewControllerType = UIViewController
+    var viewController: UIViewController?
+
+    func makeUIViewController(context _: Context) -> UIViewController {
+        // TODO: must provide any VC
+        ThemeNavigationController(rootViewController: viewController ?? UIViewController())
+    }
+
+    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

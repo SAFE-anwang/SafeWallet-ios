@@ -106,7 +106,13 @@ open class AmountInputViewModel {
 
     private func sync(token: Token?) {
         queue.async { [weak self] in
-            self?.coinDecimals = token?.decimals ?? AmountInputViewModel.fallbackCoinDecimals
+            /// safe
+            if token?.blockchain.type == .safe {
+                self?.coinDecimals = AmountInputViewModel.fallbackCoinDecimals
+            }else {
+                self?.coinDecimals = token?.decimals ?? AmountInputViewModel.fallbackCoinDecimals
+            }
+//            self?.coinDecimals = token?.decimals ?? AmountInputViewModel.fallbackCoinDecimals
 
             self?.fiatService.set(token: token)
             self?.updateMaxEnabled()

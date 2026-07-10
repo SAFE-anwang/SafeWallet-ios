@@ -37,6 +37,12 @@ struct PreSendView: View {
                             availableBalanceView(value: balanceValue())
                         }
 
+                        if viewModel.isSupportedTimeLockToken {
+                            VStack(spacing: .margin8) {
+                                lockTimeView()
+                            }
+                        }
+
                         if viewModel.hasMemo {
                             memoView()
                         }
@@ -181,6 +187,29 @@ struct PreSendView: View {
         let (title, disabled, showProgress) = buttonState()
 
         Button(action: {
+            if let allowanceState = viewModel.allowanceHandler.allowanceState {
+                switch allowanceState {
+                case .notEnough(_, let spenderAddress, _):
+                    Coordinator.shared.present { isPresented in
+                        viewModel.allowanceHandler.preSwapView(
+                            step: allowanceState.customButtonState!.preSwapStep!,
+                            amount: viewModel.amount ?? 0,
+                            isPresented: isPresented,
+                            onSuccess: {
+                                viewModel.syncSendData()
+                            }
+                        )
+                    }
+                    return
+                case .allowed, .notRequired:
+                    break
+                case .pendingAllowance, .pendingRevoke, .unknown:
+                    return
+                default:
+                    return
+                }
+            }
+
             guard let sendData = viewModel.sendData else { return }
             let proceedToSend = {
                 if #available(iOS 17.0, *) {
@@ -249,6 +278,42 @@ struct PreSendView: View {
         }
     }
 
+    @ViewBuilder private func lockTimeView() -> some View {
+        VStack(spacing: .margin8) {
+            HStack(spacing: .margin4) {
+                Button(action: {
+                    Coordinator.shared.present(type: .alert) { isPresented in
+                        OptionAlertView(
+                            title: "send.hodler_locktime".localized,
+                            viewItems: viewModel.timeLockItems.map{AlertViewItem(text: $0.title, selected: $0.days == viewModel.selectedTimeLock.days) },
+                            onSelect: { index in
+                                viewModel.selectedTimeLock = viewModel.timeLockItems[index]
+                            },
+                            isPresented: isPresented
+                        )
+                    }
+                }){
+                    HStack(spacing: .margin8) {
+                        Text("send.hodler_locktime".localized).themeSubhead2()
+                        Spacer()
+                        HStack(spacing: .margin8) {
+                            Text(viewModel.selectedTimeLock.title).themeSubhead2()
+                            Image("arrow_small_down_20").themeIcon()
+                        }
+                        .fixedSize()
+                    }
+                }
+            }
+            .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin12, trailing: .margin16))
+            .background(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous).fill(Color.themeLawrence))
+
+            Text("send.time_lock_tip".localized)
+                .themeCaption(alignment: .leading)
+                .multilineTextAlignment(.trailing)
+        }
+
+    }
+
     private func balanceValue() -> String? {
         guard let availableBalance = viewModel.availableBalance else {
             return nil
@@ -273,6 +338,18 @@ struct PreSendView: View {
             title = "send.enter_amount".localized
         } else if let availableBalance = viewModel.availableBalance, let amount = viewModel.amount, amount > availableBalance {
             title = "send.insufficient_balance".localized
+        } else if let amount = viewModel.amount, viewModel.selectedTimeLock != .none, amount < viewModel.minTimeLockCoinValue {
+            title = "send.min_lock_amount".localized("\(viewModel.minTimeLockCoinValue)")
+        } else if let state = viewModel.allowanceHandler.allowanceState, let buttonState = state.customButtonState {
+            switch state {
+            case .allowed:
+                title = "send.next_button".localized
+                disabled = viewModel.sendData == nil
+            default:
+                title = buttonState.title
+                disabled = buttonState.disabled
+                showProgress = buttonState.showProgress
+            }
         } else {
             title = "send.next_button".localized
             disabled = viewModel.sendData == nil
