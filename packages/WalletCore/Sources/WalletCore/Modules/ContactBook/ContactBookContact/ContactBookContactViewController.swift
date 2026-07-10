@@ -173,7 +173,7 @@ class ContactBookContactViewController: KeyboardAwareViewController {
     private func onTapUpdateAddress(address: ContactAddress? = nil) {
         let onSaveAddress: (ContactAddress?) -> Void = { [weak self] updatedAddress in
             if let updatedAddress {
-                self?.viewModel.updateContact(address: updatedAddress)
+                self?.viewModel.updateContact(address: updatedAddress, replacing: address)
             } else {
                 self?.viewModel.removeContact(address: address)
             }
@@ -222,6 +222,7 @@ extension ContactBookContactViewController: SectionsDataSource {
                             rowInfo: RowInfo(index: index, count: addressViewItems.count),
                             imageUrl: viewItem.blockchainImageUrl,
                             title: viewItem.blockchainName,
+                            code: viewItem.blockchainCode,
                             value: viewItem.address,
                             editType: viewItem.edited ? .edited : .original
                         ) { [weak self] in

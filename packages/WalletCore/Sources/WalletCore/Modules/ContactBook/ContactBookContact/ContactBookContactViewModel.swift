@@ -62,6 +62,7 @@ class ContactBookContactViewModel {
             blockchainUid: item.blockchain.uid,
             blockchainImageUrl: item.blockchain.type.imageUrl,
             blockchainName: item.blockchain.name,
+            blockchainCode: item.blockchainCode,
             address: item.address,
             edited: item.edited
         )
@@ -113,8 +114,8 @@ extension ContactBookContactViewModel {
         service.contactName = name ?? ""
     }
 
-    func updateContact(address: ContactAddress) {
-        service.updateContact(address: address)
+    func updateContact(address: ContactAddress, replacing currentAddress: ContactAddress? = nil) {
+        service.updateContact(address: address, replacing: currentAddress)
     }
 
     func removeContact(address: ContactAddress?) {
@@ -135,6 +136,7 @@ extension ContactBookContactViewModel {
         let blockchainUid: String
         let blockchainImageUrl: String
         let blockchainName: String
+        let blockchainCode: String
         let address: String
         let edited: Bool
     }

@@ -4,6 +4,8 @@ import RxRelay
 import RxSwift
 
 class ContactBookContactService {
+    static let maxAddressesPerBlockchain = 5
+
     private let disposeBag = DisposeBag()
 
     private let marketKit: MarketKit.Kit
@@ -65,9 +67,9 @@ class ContactBookContactService {
             var edited = true
             // check if old address same with new - set edited false
             if let oldAddresses = oldContact?.addresses,
-               let oldAddress = oldAddresses.first(where: { $0.blockchainUid == address.blockchainUid })
+               oldAddresses.contains(where: { self.sameAddress($0, address) })
             {
-                edited = oldAddress.address != address.address
+                edited = false
             }
             return blockchain(by: address).map { AddressItem(blockchain: $0, address: address.address, edited: edited) }
         }.sorted { item, item2 in item.blockchain.type.order < item2.blockchain.type.order }
@@ -76,19 +78,23 @@ class ContactBookContactService {
     }
 
     private func syncAllUsedBlockchains() {
-        let usedBlockchainTypes = addresses.compactMap { blockchain(by: $0)?.type }
-        guard !usedBlockchainTypes.isEmpty else {
+        guard !addresses.isEmpty else {
+            allBlockchainsUsedRelay.accept(false)
             return
         }
 
-        // check if all blockchains has addresses
+        // check if all blockchains reached the per-chain address limit
         allBlockchainsUsedRelay.accept(
             BlockchainType
                 .supported
                 .filter { type in
-                    !usedBlockchainTypes.contains(type)
+                    addresses.filter { $0.blockchainUid == type.uid }.count < Self.maxAddressesPerBlockchain
                 }.count == 0
         )
+    }
+
+    private func sameAddress(_ lhs: ContactAddress, _ rhs: ContactAddress) -> Bool {
+        lhs.blockchainUid == rhs.blockchainUid && lhs.address.lowercased() == rhs.address.lowercased()
     }
 
     private func sync() {
@@ -131,16 +137,27 @@ extension ContactBookContactService {
         allBlockchainsUsedRelay.asObservable()
     }
 
-    func updateContact(address: ContactAddress) {
-        if let index = addresses.firstIndex(where: { $0.blockchainUid == address.blockchainUid }) {
+    func updateContact(address: ContactAddress, replacing currentAddress: ContactAddress? = nil) {
+        if let currentAddress, let index = addresses.firstIndex(where: { sameAddress($0, currentAddress) }) {
             addresses[index] = address
-        } else {
+            return
+        }
+
+        if let index = addresses.firstIndex(where: { sameAddress($0, address) }) {
+            addresses[index] = address
+            return
+        }
+
+        let addressesCount = addresses.filter { $0.blockchainUid == address.blockchainUid }.count
+        if addressesCount < Self.maxAddressesPerBlockchain {
             addresses.append(address)
+        } else {
+            HudHelper.instance.show(banner: .error(string: "contact_book.address_limit_exceeded".localized))
         }
     }
 
     func removeContact(address: ContactAddress?) {
-        if let address, let index = addresses.firstIndex(where: { $0.blockchainUid == address.blockchainUid }) {
+        if let address, let index = addresses.firstIndex(where: { sameAddress($0, address) }) {
             addresses.remove(at: index)
         }
     }
@@ -169,6 +186,10 @@ extension ContactBookContactService {
         let blockchain: Blockchain
         let address: String
         let edited: Bool
+
+        var blockchainCode: String {
+            blockchain.type == .safe ? "SAFE3" : ""
+        }
     }
 
     struct Item {

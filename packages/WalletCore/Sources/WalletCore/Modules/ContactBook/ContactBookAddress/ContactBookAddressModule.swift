@@ -13,11 +13,16 @@ enum ContactBookAddressModule {
             addressService = AddressService(mode: .blockchainType, marketKit: Core.shared.marketKit, contactBookManager: nil, blockchainType: blockchain.type)
             service = ContactBookAddressService(marketKit: Core.shared.marketKit, addressService: addressService, contactBookManager: Core.shared.contactManager, currentContactUid: contactUid, mode: .edit(currentAddress), blockchain: blockchain)
         } else {
+
             let blockchainUids = BlockchainType
                 .supported
                 .map(\.uid)
                 .filter { uid in
-                    !existAddresses.contains(where: { address in address.blockchainUid == uid })
+                    if existAddresses.contains(where: { address in address.blockchainUid == uid }) {
+                        return existAddresses.filter { $0.blockchainUid == uid }.count < ContactBookContactService.maxAddressesPerBlockchain
+                    } else {
+                        return true
+                    }
                 }
 
             let allBlockchains = ((try? Core.shared.marketKit.blockchains(uids: blockchainUids)) ?? [])

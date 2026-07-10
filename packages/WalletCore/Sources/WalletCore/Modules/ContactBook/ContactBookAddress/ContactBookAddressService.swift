@@ -51,7 +51,13 @@ class ContactBookAddressService {
         switch mode {
         case let .create(addresses):
             let usedBlockchains = addresses.compactMap { try? marketKit.blockchain(uid: $0.blockchainUid) }
-            unusedBlockchains = allBlockchains.filter { !usedBlockchains.contains($0) }
+            unusedBlockchains = allBlockchains.filter { blockchain in
+                if usedBlockchains.contains(blockchain) {
+                    return usedBlockchains.filter { $0 == blockchain }.count < ContactBookContactService.maxAddressesPerBlockchain
+                } else {
+                    return true
+                }
+            }
             initialAddress = nil
         case let .edit(address):
             unusedBlockchains = allBlockchains

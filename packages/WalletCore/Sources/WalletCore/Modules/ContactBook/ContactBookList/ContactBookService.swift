@@ -38,11 +38,10 @@ class ContactBookService {
         // append readonly filter by blockchain (for select one of contact address)
         let items: [Item]
         if let blockchainType {
-            items = contacts.compactMap { contact -> Item? in
-                if let address = contact.addresses.first(where: { $0.blockchainUid == blockchainType.uid }) {
-                    return ReadOnlyItem(uid: contact.uid, name: contact.name, address: address.address)
+            items = contacts.flatMap { contact -> [Item] in
+                contact.addresses.filter { $0.blockchainUid == blockchainType.uid }.map { address in
+                    ReadOnlyItem(uid: contact.uid, name: contact.name, address: address.address)
                 }
-                return nil
             }
         } else {
             items = contacts.map { contact -> Item in

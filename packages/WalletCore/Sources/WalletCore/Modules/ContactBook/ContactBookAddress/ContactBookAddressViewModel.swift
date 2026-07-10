@@ -44,7 +44,8 @@ class ContactBookAddressViewModel {
     }
 
     private func sync(blockchain: Blockchain) {
-        blockchainNameRelay.accept(blockchain.name)
+        let name = blockchain.uid == safeCoinUid ? "SAFE3" : blockchain.name
+        blockchainNameRelay.accept(name)
     }
 
     private func viewItem(item: ContactAddress) -> String {
@@ -83,6 +84,7 @@ extension ContactBookAddressViewModel {
             SelectorModule.ViewItem(
                 image: .url(blockchain.type.imageUrl, placeholder: "placeholder_rectangle_32"),
                 title: blockchain.name,
+                badge: blockchain.uid == safeCoinUid ? "SAFE3" : nil,
                 selected: service.selectedBlockchain == blockchain
             )
         }
