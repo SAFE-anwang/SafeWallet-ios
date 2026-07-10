@@ -1,0 +1,219 @@
+import Foundation
+import WebKit
+import EvmKit
+
+enum Web3Method {
+    case transactionHandler
+    case ethRequestAccounts
+    case ethAccounts
+    case ethChainId
+    case personalSign
+    case ethSendTransaction
+    case walletSwitchChain
+    case walletAddChain
+    case unsupported(method: String)
+
+    init(method: String) {
+        switch method {
+        case "transactionHandler": self = .transactionHandler
+        case "eth_requestAccounts": self = .ethRequestAccounts
+        case "eth_accounts": self = .ethAccounts
+        case "eth_chainId": self = .ethChainId
+        case "personal_sign": self = .personalSign
+        case "eth_sendTransaction": self = .ethSendTransaction
+        case "wallet_switchEthereumChain": self = .walletSwitchChain
+        case "wallet_addEthereumChain": self = .walletAddChain
+        default: self = .unsupported(method: method)
+        }
+    }
+
+    var name: String {
+        switch self {
+        case .transactionHandler: return "transactionHandler"
+        case .ethRequestAccounts: return "eth_requestAccounts"
+        case .ethAccounts: return "eth_accounts"
+        case .ethChainId: return "eth_chainId"
+        case .personalSign: return "personal_sign"
+        case .ethSendTransaction: return "eth_sendTransaction"
+        case .walletSwitchChain: return "wallet_switchEthereumChain"
+        case .walletAddChain: return "wallet_addEthereumChain"
+        case .unsupported(let method): return method
+        }
+    }
+}
+
+extension Web3Method: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(name)
+    }
+}
+
+extension Web3Method: Equatable {
+    public static func == (lhs: Web3Method, rhs: Web3Method) -> Bool {
+        lhs.name == rhs.name
+    }
+}
+
+extension WKWebViewConfiguration {
+
+    /// 禁用自动钱包注入的域名列表
+    private static let disabledInjectionHosts: [String] = [
+//        "safecoreswap.com",
+//        "www.safecoreswap.com"
+    ]
+
+    static func make(forChainId chainId: Int, address: String, messageHandler: WKScriptMessageHandler, host: String? = nil) -> WKWebViewConfiguration {
+        let webViewConfig = WKWebViewConfiguration()
+
+        // 检查是否需要禁用注入
+        let shouldDisableInjection: Bool = {
+            guard let host = host?.lowercased() else { return false }
+            return disabledInjectionHosts.contains { host.hasSuffix($0) || host == $0 }
+        }()
+
+        if shouldDisableInjection {
+            print("[Web3Injection] Disabled for host: \(host ?? "unknown")")
+            return webViewConfig
+        }
+
+        let js = """
+        class CustomEthereumProvider {
+            constructor() {
+                this.chainId = "0x\(String(chainId, radix: 16))";
+                this.selectedAddress = "";
+                this.isConnected = false;
+                this.isMetaMask = false;
+                this.isSafeWallet = true;
+                this._listeners = {};
+                this._nextId = 1;
+                this._pendingRequests = {};
+                this._address = "\(address)";
+            }
+            enable() {
+                return this.request({ method: 'eth_requestAccounts' });
+            }
+            isConnected() {
+                return this.selectedAddress !== "";
+            }
+            request(request) {
+                return new Promise((resolve, reject) => {
+                    const id = this._nextId++;
+                    this._pendingRequests[id] = { resolve, reject };
+
+                    const finalizeResolve = (value) => {
+                        resolve(value);
+                        delete this._pendingRequests[id];
+                    };
+
+                    const finalizeReject = (error) => {
+                        reject(error);
+                        delete this._pendingRequests[id];
+                    };
+
+                    if (
+                        request.method === '\(Web3Method.ethSendTransaction.name)' ||
+                        request.method === '\(Web3Method.personalSign.name)' ||
+                        request.method === 'eth_sign' ||
+                        request.method === 'eth_signTypedData' ||
+                        request.method === 'eth_signTypedData_v4'
+                    ) {
+
+                        window.webkit.messageHandlers.transactionHandler.postMessage({
+                            type: 'transaction',
+                            id: id,
+                            method: request.method,
+                            params: request.params
+                        });
+                        return;
+                    }
+
+                    switch(request.method) {
+                        case 'eth_requestAccounts':
+                            if (!this.selectedAddress) {
+                                this.selectedAddress = this._address;
+                                this.isConnected = true;
+                                this.emit('accountsChanged', [this.selectedAddress]);
+                                this.emit('connect', { chainId: this.chainId });
+                            }
+                            finalizeResolve([this.selectedAddress]);
+                            break;
+                        case 'eth_accounts':
+                            finalizeResolve(this.selectedAddress ? [this.selectedAddress] : []);
+                            break;
+                        case 'eth_chainId':
+                            finalizeResolve(this.chainId);
+                            break;
+                        case 'wallet_addEthereumChain':
+                            finalizeResolve();
+                            break;
+                        case 'wallet_switchEthereumChain':
+                            this.chainId = request.params[0].chainId;
+                            this.emit('chainChanged', this.chainId);
+                            finalizeResolve();
+                            break;
+                        default:
+                            console.log('[CustomProvider] Unhandled request:', request);
+                            finalizeReject(new Error('Method not implemented'));
+                    }
+                });
+            }
+            // 实现事件系统
+            on(event, listener) {
+                if (!this._listeners[event]) this._listeners[event] = [];
+                this._listeners[event].push(listener);
+            }
+            removeListener(event, listener) {
+                const idx = this._listeners[event]?.indexOf(listener);
+                if (idx >= 0) this._listeners[event].splice(idx, 1);
+            }
+            emit(event, ...args) {
+                this._listeners[event]?.forEach(fn => fn(...args));
+            }
+
+            handleResponse(id, result, error) {
+                const request = this._pendingRequests[id];
+                if (request) {
+                    if (error) {
+                        request.reject(new Error(error));
+                    } else {
+                        request.resolve(result);
+                    }
+                    delete this._pendingRequests[id];
+                }
+            }
+
+            approveConnection() {
+                this.selectedAddress = this._address;
+                this.isConnected = true;
+                this.emit('accountsChanged', [this.selectedAddress]);
+                this.emit('connect', { chainId: this.chainId });
+            }
+
+            rejectConnection() {
+                this.emit('accountsChanged', []);
+            }
+        }
+
+        window.ethereum = new CustomEthereumProvider();
+        window.ethereum.providers = [window.ethereum];
+
+        window.dispatchEvent(new Event('ethereum#initialized'));
+
+        window.handleProviderResponse = function(id, result, error) {
+            window.ethereum.handleResponse(id, result, error);
+        };
+        """
+
+        let userScript = WKUserScript(source: js, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        webViewConfig.userContentController.addUserScript(userScript)
+        webViewConfig.userContentController.add(messageHandler, name: Web3Method.transactionHandler.name)
+        webViewConfig.userContentController.add(messageHandler, name: Web3Method.walletSwitchChain.name)
+        webViewConfig.userContentController.add(messageHandler, name: Web3Method.ethSendTransaction.name)
+        webViewConfig.userContentController.add(messageHandler, name: Web3Method.ethChainId.name)
+        return webViewConfig
+    }
+
+    public static func base() -> WKWebViewConfiguration {
+        WKWebViewConfiguration()
+    }
+}

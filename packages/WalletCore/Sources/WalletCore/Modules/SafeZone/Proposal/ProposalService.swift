@@ -1,0 +1,104 @@
+import web3swift
+import Web3Core
+import EvmKit
+import BigInt
+import Foundation
+
+class ProposalService {
+    let type: ProposalModule.ProposalType
+    private let proposalStorageManager = ProposalStorageManager()
+
+    init(type: ProposalModule.ProposalType) {
+        self.type = type
+    }
+
+    private func web3() async throws -> Web3 {
+        let chain = Chain.safeFourChain()
+        let url = RpcSource.safeFourRpcHttp() .url
+        return try await Web3.new(url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+    }
+
+    private func withRetry<T>(
+        maxAttempts: Int = 2,
+        retryDelayNanoseconds: UInt64 = 200_000_000,
+        operation: @escaping () async throws -> T
+    ) async throws -> T {
+        var lastError: Error?
+        for attempt in 1...maxAttempts {
+            do {
+                return try await operation()
+            } catch {
+                lastError = error
+                guard attempt < maxAttempts else { break }
+                try? await Task.sleep(nanoseconds: retryDelayNanoseconds)
+            }
+        }
+        throw lastError ?? NSError(domain: "ProposalService", code: -1)
+    }
+}
+
+extension ProposalService {
+    func getTotalNum() async throws -> Int {
+        switch type {
+        case .All:
+            let num = try await getNum()
+            return Int(num)
+
+        case let .Mine(address):
+            let num = try await mineProposalNum(address: address)
+            return Int(num)
+        }
+    }
+
+    func hasNewProposals() async throws -> Bool {
+        let currentTotal = try await getTotalNum()
+        guard let cachedTotal = proposalStorageManager.getPageControl()?.totalNum else {
+            return true
+        }
+        return cachedTotal < currentTotal
+    }
+
+    func proposalIds(offset: Int, count: Int) async throws -> [BigUInt] {
+        switch type {
+        case .All:
+            return try await allProposalIds(offset: offset, count: count)
+        case let .Mine(address):
+            return try await mineProposalIds(address: address, offset: offset, count: count)
+        }
+    }
+
+    func getInfo(id: BigUInt) async throws -> ProposalInfo {
+        try await withRetry { try await self.web3().safe4.proposal.getInfo(id) }
+    }
+
+    func exist(_ id: BigUInt) async throws -> Bool {
+        try await withRetry { try await self.web3().safe4.proposal.exist(id) }
+    }
+
+}
+
+// all Proposal
+extension ProposalService {
+    func getNum() async throws -> BigUInt {
+        try await withRetry { try await self.web3().safe4.proposal.getNum() }
+    }
+
+    func allProposalIds(offset: Int, count: Int) async throws -> [BigUInt] {
+        try await withRetry { try await self.web3().safe4.proposal.getAll(BigUInt(offset), BigUInt(count)) }
+    }
+}
+
+// mine Proposal
+private extension ProposalService {
+
+    func mineProposalNum(address: String) async throws -> BigUInt {
+        let creator = Web3Core.EthereumAddress(address)!
+        return try await withRetry { try await self.web3().safe4.proposal.getMineNum(creator) }
+    }
+
+    func mineProposalIds(address: String, offset: Int, count: Int) async throws -> [BigUInt] {
+        let creator = Web3Core.EthereumAddress(address)!
+        return try await withRetry { try await self.web3().safe4.proposal.getMines(creator, BigUInt(offset), BigUInt(count)) }
+    }
+
+}

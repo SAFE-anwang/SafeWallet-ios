@@ -1,0 +1,223 @@
+import Foundation
+import EvmKit
+import Kingfisher
+import MarketKit
+import SwiftUI
+import UIKit
+import BigInt
+
+struct LockedRecordView: View {
+    @StateObject private var viewModel: LockedRecordViewModel
+    @Environment(\.presentationMode) private var presentationMode
+    @Binding private var isPresented: Bool
+
+    init(viewModel: LockedRecordViewModel, isPresented: Binding<Bool>) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+        _isPresented = isPresented
+    }
+
+    var body: some View {
+        ThemeNavigationStack{
+            ThemeView {
+                ZStack {
+                    VStack{
+                        list()
+                        if viewModel.isLoadingNextPage {
+                            ProgressView()
+                        }
+                        if !viewModel.hasMoreItems && !viewModel.isRefreshing && !viewModel.isLoadingNextPage {
+                            Text("loadData.nomore".localized)
+                                .themeSubhead1(color: .themeLeah, alignment: .center)
+                        }
+                    }
+
+                    if case .loading = viewModel.dataState, viewModel.viewItems.isEmpty {
+                        ProgressView()
+                    }
+
+                    if case .items = viewModel.dataState, viewModel.viewItems.isEmpty {
+                        PlaceholderViewNew(icon: "no_data_48", title: "coin_markets.empty".localized)
+                    }
+
+                    if case .loading = viewModel.sendState {
+                        loadingHud()
+                    }
+                }
+            }
+            .navigationBarTitle("safe_zone.safe4.account.lock".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbar() }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
+            }
+            .task(id: viewModel.sendState) {
+                if case let .success(message) = viewModel.sendState {
+                    HudHelper.instance.show(banner: .success(string: message ?? ""))
+                    presentationMode.wrappedValue.dismiss()
+                }
+
+                if case let .failed(error) = viewModel.sendState {
+                    HudHelper.instance.show(banner: .error(string: error ?? ""))
+                }
+            }
+        }
+    }
+    @ToolbarContentBuilder func toolbar() -> some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button(action: {
+                Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                    confirmWithdrawView(item: nil, isAll: true, isPresented: isPresented)
+                }
+            }) {
+                Text("safe_zone.one_click_withdraw".localized)
+                    .themeSubhead1(color: viewModel.hasWithdrawableItems ? .themeYellow : .themeGray)
+            }
+            .disabled(!viewModel.hasWithdrawableItems)
+        }
+    }
+
+    @ViewBuilder
+    private func list() -> some View {
+        ThemeList {
+            ListForEach(viewModel.viewItems) { item in
+                view(for: item)
+                    .padding(.horizontal, 12)
+                    .onAppear {
+                        if item.id == viewModel.viewItems.last?.id {
+                            loadNextItems()
+                        }
+                    }
+            }
+        }
+        .refreshable {
+            await viewModel.refresh()
+        }
+    }
+
+    @ViewBuilder
+    private func view(for item: WithdrawItemRecord) -> some View {
+        ItemView(id: item.idStr,
+                 amount: item.amount,
+                 unlockHeight: item.unlockHeight.description,
+                 releaseHeight: item.releaseHeight?.description,
+                 address: item.address,
+                 isEnableWithdraw: item.withdrawEnable,
+                 isShowAddLock: item.addLockDayEnable)
+        {
+            Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                confirmWithdrawView(item: item, isPresented: isPresented)
+            }
+        } addLockAction: {
+            guard let vm = AddLockDaysModule.viewModel(ids: [BigUInt(item.id)]) else { return }
+            Coordinator.shared.present { _ in
+                AddLockDaysView(viewModel: vm)
+            }
+        }
+    }
+
+    @ViewBuilder private func confirmWithdrawView(item: WithdrawItemRecord?, isAll: Bool = false, isPresented: Binding<Bool>) -> some View {
+        BottomSheetView(
+            items: [
+                .title(icon: nil, title: "safe_zone.safe4.withdraw".localized),
+                .highlightedDescription(text: "safe_zone.withdraw_no_more_yield".localized, type: .caution, style: .structured),
+                .buttonGroup(.init(buttons: [
+                    .init(style: .yellow, title: "button.ok".localized) {
+                        if isAll {
+                            viewModel.allWithdraw()
+                        } else if let item {
+                            viewModel.withdraw(item: item)
+                        }
+                        isPresented.wrappedValue = false
+                    },
+                    .init(style: .transparent, title: "button.cancel".localized) {
+                        isPresented.wrappedValue = false
+                    }
+                ],
+                alignment: .horizontal)),
+            ],
+        )
+    }
+
+    private func loadNextItems() {
+        guard viewModel.hasMoreItems,
+              !viewModel.isRefreshing,
+              !viewModel.isLoadingNextPage,
+              viewModel.viewItems.count > 0
+        else { return }
+        viewModel.loadMore()
+    }
+
+    @ViewBuilder
+    private func loadingHud() ->  some View {
+        Color.white.opacity(0.01)
+            .edgesIgnoringSafeArea(.all)
+            .onTapGesture {}
+        ProgressView()
+    }
+
+    struct ItemView: View {
+        let id: String
+        let amount: String
+        let unlockHeight: String
+        let releaseHeight: String?
+        let address: String?
+        let isEnableWithdraw: Bool
+        let isShowAddLock: Bool
+        let withdrawAction: () -> Void
+        let addLockAction: () -> Void
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: .margin12) {
+                VStack(alignment: .leading, spacing: .margin8) {
+                    Text("safe_zone.safe4.vote.record.id".localized + ": "  + id)
+                        .themeSubhead1(color: .themeLeah)
+                    Text("safe_withdraw.amount.locked".localized + ": " + amount)
+                        .themeSubhead1(color: .themeLeah)
+                    Text("safe_withdraw.unlock.height".localized + ": " + unlockHeight)
+                        .themeSubhead1(color: .themeLeah)
+                    if let releaseHeight {
+                        Text("safe_withdraw.release.height".localized + ": " + releaseHeight)
+                            .themeSubhead1(color: .themeLeah)
+                    }
+                    if let address {
+                        Text("safe_zone.safe4.vote.record.address".localized + ": " + address)
+                            .themeSubhead1(color: .themeLeah)
+                            .truncationMode(.middle)
+                            .lineLimit(1)
+                    }
+                }
+
+                HStack(spacing: .margin16) {
+                    Button(action: {
+                        if isEnableWithdraw {
+                            withdrawAction()
+                        }
+                    }) {
+                        Text("safe_zone.safe4.withdraw".localized)
+                    }
+                    .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                    .disabled(!isEnableWithdraw)
+
+                    if isShowAddLock {
+                        Button(action: {
+                            addLockAction()
+                        }) {
+                            Text("safe_zone.safe4.contract.addlockday".localized)
+                        }
+                        .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                    }
+                }
+            }
+            .padding(.horizontal, .margin16)
+            .padding(.vertical, 14)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+}

@@ -1,0 +1,165 @@
+import Foundation
+import web3swift
+import Web3Core
+import EvmKit
+import BigInt
+import EvmKit
+import RxSwift
+import RxCocoa
+import HsExtensions
+
+class SuperNodeDetailService {
+    private let privateKey: Data
+    private let evmKit: EvmKit.Kit
+
+    var balance: Decimal? {
+        didSet {
+            if balance != oldValue {
+                balanceRelay.accept(balance)
+            }
+        }
+    }
+
+    private var balanceRelay = BehaviorRelay<Decimal?>(value: nil)
+
+    init(privateKey: Data, evmKit: EvmKit.Kit) {
+        self.privateKey = privateKey
+        self.evmKit = evmKit
+        sync()
+    }
+
+    private func sync() {
+        Task {
+            do {
+                balance = try await availableBlance()
+            }catch{}
+        }
+    }
+
+    private func web3() async throws -> Web3 {
+        let chain = Chain.safeFourChain()
+        let url = RpcSource.safeFourRpcHttp().url
+        return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+    }
+}
+
+extension SuperNodeDetailService {
+
+    var address: String {
+        evmKit.receiveAddress.hex
+    }
+
+    var balanceDriver: Driver<Decimal?> {
+        balanceRelay.asDriver()
+    }
+}
+
+extension SuperNodeDetailService {
+
+    func lastBlockHeight() -> Int? {
+        evmKit.lastBlockHeight
+    }
+
+    func availableBlance() async throws -> Decimal? {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        let blance = try await web3().eth.getBalance(for: address)
+        return blance.toDecimal(decimals: 18)
+    }
+
+    func getVoters(address: Web3Core.EthereumAddress, page: Safe4PageControl) async throws -> SNVoteRetInfo {
+        try await web3().safe4.snvote.getVoters(address, BigUInt(page.start), BigUInt(page.currentPageCount))
+    }
+
+    func getTotalVoteNum(address: Web3Core.EthereumAddress) async throws -> BigUInt {
+        try await web3().safe4.snvote.getTotalVoteNum(address)
+    }
+
+    func getVoterNum(address: Web3Core.EthereumAddress) async throws -> BigUInt {
+        try await web3().safe4.snvote.getVoterNum(address)
+    }
+
+    func voteOrApproval(dstAddr: Web3Core.EthereumAddress, recordIDs: [BigUInt]) async throws -> String {
+        try await web3().safe4.snvote.voteOrApproval(privateKey: privateKey, isVote: true, dstAddr: dstAddr, recordIDs: recordIDs)
+    }
+
+    func voteOrApprovalWithAmount(dstAddr: Web3Core.EthereumAddress, value: BigUInt) async throws -> String {
+        return try await web3().safe4.snvote.voteOrApprovalWithAmount(privateKey: privateKey, value: value, isVote: true, dstAddr: dstAddr)
+    }
+
+    func getVotedIDNum4Voter() async throws -> BigUInt {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.snvote.getVotedIDNum4Voter(address)
+    }
+
+    func getVotedIDs4Voter(page: Safe4PageControl) async throws -> [BigUInt] {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.snvote.getVotedIDs4Voter(address, BigUInt(page.start), BigUInt(page.currentPageCount))
+    }
+
+    func getVotedIDs4Voter(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.snvote.getVotedIDs4Voter(address, start, count)
+    }
+
+    func getTotalIDs(type: web3swift.AccountManager.ContractType, page: Safe4PageControl) async throws -> [BigUInt] {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.accountmanager(type: type).getTotalIDs(address, BigUInt(page.start), BigUInt(page.currentPageCount))
+    }
+
+    func getRecordByID(id: BigUInt) async throws -> web3swift.AccountRecord {
+        try await web3().safe4.accountmanager.getRecordByID(id)
+    }
+
+    func appendRegister(value: BigUInt, dstAddr: Web3Core.EthereumAddress) async throws -> String {
+        try await web3().safe4.supernode.appendRegister(privateKey: privateKey, value: value, addr: dstAddr, lockDay: 720)
+    }
+
+    func getRecordUseInfo(id: BigUInt) async throws -> RecordUseInfo {
+        try await web3().safe4.accountmanager.getRecordUseInfo(id)
+    }
+
+    func exist(address: Web3Core.EthereumAddress) async throws -> Bool {
+        try await web3().safe4.supernode.exist(address)
+    }
+}
+
+extension SuperNodeDetailService {
+
+    func totalLockedNum(type: web3swift.AccountManager.ContractType) async throws -> BigUInt {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.accountmanager(type: type).getLockedAmount(address).num
+    }
+
+    func getLockedIDs(type: web3swift.AccountManager.ContractType, start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        let address = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.accountmanager(type: type).getLockedIDs(address, start, count)
+    }
+}
+
+// proposal
+extension SuperNodeDetailService {
+    func mineProposalNum() async throws -> BigUInt {
+        let userAddress = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.proposal.getMineNum(userAddress)
+    }
+
+    func mineProposalIds(start: BigUInt, count: BigUInt) async throws -> [BigUInt] {
+        let userAddress = Web3Core.EthereumAddress(evmKit.receiveAddress.hex)!
+        return try await web3().safe4.proposal.getMines(userAddress, start, count)
+    }
+
+    func getProposalRewardIDs(id: BigUInt) async throws -> [BigUInt] {
+        try await web3().safe4.proposal.getRewardIDs(id)
+    }
+
+//    func getInfo(id: BigUInt) async throws -> ProposalInfo {
+//        try await web3().safe4.proposal.getInfo(id)
+//    }
+}
+
+extension SuperNodeDetailService {
+    enum CreateMode {
+        case Independent
+        case crowdFunding
+    }
+}
