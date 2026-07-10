@@ -6,6 +6,8 @@ import HdWalletKit
 import LitecoinKit
 import RxRelay
 import RxSwift
+import DogecoinKit
+import SafeCoinKit
 
 class ExtendedKeyService {
     let mode: ExtendedKeyModule.Mode
@@ -197,7 +199,7 @@ extension ExtendedKeyService {
             if coinTypesDerivableFromKey.count == 1, coinTypesDerivableFromKey[0] == .litecoin {
                 return [.litecoin]
             } else {
-                return [.bitcoin, .bitcoinCash, .litecoin, .dash]
+                return [.bitcoin, .bitcoinCash, .litecoin, .dogecoin, .dash]
             }
         default:
             if coinTypesDerivableFromKey.count == 1, coinTypesDerivableFromKey[0] == .litecoin {
@@ -245,21 +247,27 @@ extension ExtendedKeyService {
         case bitcoin
         case bitcoinCash
         case litecoin
+        case dogecoin
         case dash
+        case safe
+        case safe4
 
         var title: String {
             switch self {
             case .bitcoin: return "Bitcoin"
             case .bitcoinCash: return "Bitcoin Cash"
             case .litecoin: return "Litecoin"
+            case .dogecoin: return "Doge"
             case .dash: return "Dash"
+            case .safe: return "Safe3"
+            case .safe4: return "Safe"
             }
         }
 
         var extendedKeyCoinType: HDExtendedKeyVersion.ExtendedKeyCoinType {
             switch self {
-            case .bitcoin, .bitcoinCash, .dash: return .bitcoin
-            case .litecoin: return .litecoin
+            case .bitcoin, .bitcoinCash, .dash, .safe, .safe4: return .bitcoin
+            case .dogecoin, .litecoin: return .litecoin
             }
         }
 
@@ -268,8 +276,12 @@ extension ExtendedKeyService {
             case .bitcoin: return BitcoinKit.MainNet().coinType
             case .bitcoinCash: return BitcoinCashKit.MainNet().coinType
             case .litecoin: return LitecoinKit.MainNet().coinType
+            case .dogecoin: return DogecoinKit.MainNet().coinType
             case .dash: return DashKit.MainNet().coinType
+            case .safe: return SafeCoinKit.MainNet().coinType
+            case .safe4: return 60
             }
         }
     }
+
 }

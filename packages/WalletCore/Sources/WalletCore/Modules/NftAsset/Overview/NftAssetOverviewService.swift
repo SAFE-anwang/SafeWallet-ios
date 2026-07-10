@@ -35,9 +35,10 @@ class NftAssetOverviewService {
         self.coinPriceService = coinPriceService
 
         if let account = accountManager.activeAccount, !account.watchAccount {
+            nftAdapterManager.ensureAdapters(for: account)
             let nftKey = NftKey(account: account, blockchainType: nftUid.blockchainType)
 
-            if let adapter = nftAdapterManager.adapter(nftKey: nftKey) {
+            if let adapter = nftAdapterManager.ensuredAdapter(nftKey: nftKey) {
                 self.adapter = adapter
 
                 subscribe(disposeBag, adapter.nftRecordsObservable) { [weak self] _ in self?.handleUpdatedRecords() }
