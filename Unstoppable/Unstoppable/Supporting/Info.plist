@@ -10,6 +10,8 @@
         <string>${PRIVATE_CLOUD_CONTAINER_ID}</string>
         <key>BasescanApiKeys</key>
         <string>${BASESCAN_API_KEYS}</string>
+        <key>BlockchairApiKey</key>
+        <string>${BLOCKCHAIR_API_KEY}</string>
         <key>BscscanApiKeys</key>
         <string>${BSCSCAN_API_KEYS}</string>
         <key>CFBundleDevelopmentRegion</key>
@@ -90,6 +92,8 @@
         <string>${DEFAULT_WORDS}</string>
         <key>DefiYieldApiKey</key>
         <string>$(DEFIYIELD_API_KEY)</string>
+        <key>DonateEnabled</key>
+        <string>${DONATE_ENABLED}</string>
         <key>EraZkSyncApiKeys</key>
         <string>${ERA_ZKSYNC_API_KEYS}</string>
         <key>EtherscanApiKeys</key>
@@ -112,6 +116,8 @@
         <string>${MAYA_AFFILIATE}</string>
         <key>MayaAffiliateBps</key>
         <string>${MAYA_AFFILIATE_BPS}</string>
+        <key>MarketApiUrl</key>
+        <string>${MARKET_API_URL}</string>
         <key>LSApplicationQueriesSchemes</key>
         <array>
             <string>googlechrome</string>
@@ -129,6 +135,8 @@
         <string>We need access to local network to discover blockchain nodes</string>
         <key>NSPhotoLibraryAddUsageDescription</key>
         <string>We need access to photo library to save NFT images</string>
+        <key>NSPhotoLibraryUsageDescription</key>
+        <string>We need access to photo library to select images</string>
         <key>NSUbiquitousContainers</key>
         <dict>
             <key>iCloud.io.horizontalsystems.bank-wallet.shared</key>
@@ -150,11 +158,6 @@
                 <string>Any</string>
             </dict>
         </dict>
-        <key>NSUserActivityTypes</key>
-        <array>
-            <string>CoinPriceListIntent</string>
-            <string>SingleCoinPriceIntent</string>
-        </array>
         <key>OneInchApiKey</key>
         <string>${ONE_INCH_API_KEY}</string>
         <key>OneInchCommission</key>
@@ -171,8 +174,12 @@
         <string>$(PIMLICO_SPONSORSHIP_POLICY_ID)</string>
         <key>PolygonscanApiKeys</key>
         <string>${POLYGONSCAN_API_KEYS}</string>
+        <key>ReferralAppServerUrl</key>
+        <string>${REFERRAL_APP_SERVER_URL}</string>
         <key>SnowtraceApiKeys</key>
         <string>${SNOWTRACE_API_KEYS}</string>
+        <key>SwapApiUrl</key>
+        <string>${SWAP_API_URL}</string>
         <key>ThorchainAffiliate</key>
         <string>${THORCHAIN_AFFILIATE}</string>
         <key>ThorchainAffiliateBps</key>

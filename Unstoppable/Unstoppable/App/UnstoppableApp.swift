@@ -1,6 +1,5 @@
 import SwiftUI
 import WalletCore
-import WidgetKit
 
 @main
 struct UnstoppableApp: App {
@@ -16,7 +15,7 @@ struct UnstoppableApp: App {
         Theme.updateNavigationBarTheme() // TODO: get rid of this
 
         do {
-            try Core.initApp(widgetRefresher: WidgetRefresher())
+            try Core.initApp()
 
             Core.shared.appManager.didFinishLaunching()
 
@@ -35,15 +34,5 @@ struct UnstoppableApp: App {
                 LaunchErrorView(error: error)
             }
         }
-    }
-}
-
-struct WidgetRefresher: IWidgetRefresher {
-    func refreshAll() {
-        AppWidgetConstants.allKinds.forEach { WidgetCenter.shared.reloadTimelines(ofKind: $0) }
-    }
-
-    func refreshWatchlist() {
-        WidgetCenter.shared.reloadTimelines(ofKind: AppWidgetConstants.watchlistWidgetKind)
     }
 }

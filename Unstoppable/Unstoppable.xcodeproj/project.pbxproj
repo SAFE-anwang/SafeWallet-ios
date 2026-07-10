@@ -7,35 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D33D63932F98DD5D00E16ADA /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3948EF32ADA846400FAE566 /* SwiftUI.framework */; };
-		D33D63952F98DD5D00E16ADA /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3948EF12ADA846400FAE566 /* WidgetKit.framework */; };
-		D33D63AE2F98DD6A00E16ADA /* Intents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3948F092ADA887300FAE566 /* Intents.framework */; };
 		D33D6AED2F98F2CF00E16ADA /* LocalAuthentication.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50AB06AD2158E2EE00A01E4A /* LocalAuthentication.framework */; };
 		D33D6AFD2F98F2CF00E16ADA /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3373D9420BEC7B30082BC4A /* AVFoundation.framework */; };
-		D33D6B1F2F98F5BF00E16ADA /* WidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D33D63A22F98DD5D00E16ADA /* WidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		D33D6B222F98F5C900E16ADA /* IntentExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D33D63B32F98DD6A00E16ADA /* IntentExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D368E5BD2FC991E500487B08 /* WalletCore in Frameworks */ = {isa = PBXBuildFile; productRef = D368E5BC2FC991E500487B08 /* WalletCore */; };
-		D368E5C02FC9966B00487B08 /* HsToolKit in Frameworks */ = {isa = PBXBuildFile; productRef = D368E5BF2FC9966B00487B08 /* HsToolKit */; };
-		D368E5C22FC9967500487B08 /* HsToolKit in Frameworks */ = {isa = PBXBuildFile; productRef = D368E5C12FC9967500487B08 /* HsToolKit */; };
-		D3C9F7482FADF57B00C7916F /* AppWidget.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = D3E161E02FADAB4E006A73DD /* AppWidget.intentdefinition */; };
-		D3E161E12FADAB4E006A73DD /* AppWidget.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = D3E161E02FADAB4E006A73DD /* AppWidget.intentdefinition */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		D33D6B202F98F5BF00E16ADA /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D3285F3A20BD158E00644076 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D33D633B2F98DD5D00E16ADA;
-			remoteInfo = WidgetExtension;
-		};
-		D33D6B232F98F5C900E16ADA /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D3285F3A20BD158E00644076 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D33D63A42F98DD6A00E16ADA;
-			remoteInfo = IntentExtension;
-		};
 		D39BA7EF2F9B3D48005461CB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D3285F3A20BD158E00644076 /* Project object */;
@@ -52,8 +29,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				D33D6B222F98F5C900E16ADA /* IntentExtension.appex in Embed Foundation Extensions */,
-				D33D6B1F2F98F5BF00E16ADA /* WidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -73,79 +48,23 @@
 /* Begin PBXFileReference section */
 		50AB06AD2158E2EE00A01E4A /* LocalAuthentication.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LocalAuthentication.framework; path = System/Library/Frameworks/LocalAuthentication.framework; sourceTree = SDKROOT; };
 		D3373D9420BEC7B30082BC4A /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
-		D33D63A22F98DD5D00E16ADA /* WidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		D33D63B32F98DD6A00E16ADA /* IntentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = IntentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D33D6B1D2F98F2CF00E16ADA /* Unstoppable.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Unstoppable.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D3948EF12ADA846400FAE566 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		D3948EF32ADA846400FAE566 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		D3948F092ADA887300FAE566 /* Intents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Intents.framework; path = System/Library/Frameworks/Intents.framework; sourceTree = SDKROOT; };
 		D39BA7EB2F9B3D48005461CB /* AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D3E161DF2FADAB4E006A73DD /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.intentdefinition; name = Base; path = Base.lproj/AppWidget.intentdefinition; sourceTree = "<group>"; };
-		D3E161E32FADAB50006A73DD /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/AppWidget.strings; sourceTree = "<group>"; };
-		D3E161E52FADAB51006A73DD /* zh */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh; path = zh.lproj/AppWidget.strings; sourceTree = "<group>"; };
-		D3E161E72FADAB51006A73DD /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/AppWidget.strings; sourceTree = "<group>"; };
-		D3E161E92FADAB52006A73DD /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/AppWidget.strings; sourceTree = "<group>"; };
-		D3E161EB2FADAB53006A73DD /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/AppWidget.strings; sourceTree = "<group>"; };
-		D3E161ED2FADAB54006A73DD /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/AppWidget.strings"; sourceTree = "<group>"; };
-		D3E161EF2FADAB55006A73DD /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/AppWidget.strings; sourceTree = "<group>"; };
-		D3E161F12FADAB55006A73DD /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/AppWidget.strings; sourceTree = "<group>"; };
-		D3E161F32FADAB56006A73DD /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/AppWidget.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D352520F2FAC9B590013335E /* Exceptions for "Unstoppable" folder in "WidgetExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Resources/Colors.xcassets,
-			);
-			target = D33D633B2F98DD5D00E16ADA /* WidgetExtension */;
-		};
 		D352624C2FAC9C560013335E /* Exceptions for "Unstoppable" folder in "App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Configuration/App/App-Dev.xcconfig",
 				"Configuration/App/App-Prod.xcconfig",
-				"Configuration/App/Intent-Dev.xcconfig",
-				"Configuration/App/Intent-Prod.xcconfig",
-				"Configuration/App/Widget-Dev.xcconfig",
-				"Configuration/App/Widget-Prod.xcconfig",
-				Configuration/Config.template.xcconfig,
 				Configuration/Config.xcconfig,
 				Resources/Strings/translation_snapshot.json,
 				Supporting/Info.plist,
 				Supporting/Unstoppable.storekit,
 			);
 			target = D33D63F12F98F2CF00E16ADA /* App */;
-		};
-		D39BCAB42FAC7039005461CB /* Exceptions for "Widget" folder in "WidgetExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = D33D633B2F98DD5D00E16ADA /* WidgetExtension */;
-		};
-		D39BCAB62FAC7039005461CB /* Exceptions for "Widget" folder in "IntentExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Misc/ApiProvider.swift,
-				Misc/AppEnvironment.swift,
-				Misc/WidgetConfig.swift,
-			);
-			target = D33D63A42F98DD6A00E16ADA /* IntentExtension */;
-		};
-		D39BCABE2FAC710D005461CB /* Exceptions for "Widget" folder in "App" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				AppWidgetConstants.swift,
-			);
-			target = D33D63F12F98F2CF00E16ADA /* App */;
-		};
-		D3C9F7472FADF52500C7916F /* Exceptions for "Intents" folder in "IntentExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = D33D63A42F98DD6A00E16ADA /* IntentExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -159,51 +78,13 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				D352624C2FAC9C560013335E /* Exceptions for "Unstoppable" folder in "App" target */,
-				D352520F2FAC9B590013335E /* Exceptions for "Unstoppable" folder in "WidgetExtension" target */,
 			);
 			path = Unstoppable;
-			sourceTree = "<group>";
-		};
-		D39BCA952FAC7039005461CB /* Widget */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				D39BCABE2FAC710D005461CB /* Exceptions for "Widget" folder in "App" target */,
-				D39BCAB42FAC7039005461CB /* Exceptions for "Widget" folder in "WidgetExtension" target */,
-				D39BCAB62FAC7039005461CB /* Exceptions for "Widget" folder in "IntentExtension" target */,
-			);
-			path = Widget;
-			sourceTree = "<group>";
-		};
-		D39BCABA2FAC703F005461CB /* Intents */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				D3C9F7472FADF52500C7916F /* Exceptions for "Intents" folder in "IntentExtension" target */,
-			);
-			path = Intents;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		D33D63902F98DD5D00E16ADA /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D33D63932F98DD5D00E16ADA /* SwiftUI.framework in Frameworks */,
-				D33D63952F98DD5D00E16ADA /* WidgetKit.framework in Frameworks */,
-				D368E5C02FC9966B00487B08 /* HsToolKit in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D33D63AC2F98DD6A00E16ADA /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D368E5C22FC9967500487B08 /* HsToolKit in Frameworks */,
-				D33D63AE2F98DD6A00E16ADA /* Intents.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D33D6ADD2F98F2CF00E16ADA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -229,9 +110,7 @@
 			children = (
 				50AB06AD2158E2EE00A01E4A /* LocalAuthentication.framework */,
 				D3373D9420BEC7B30082BC4A /* AVFoundation.framework */,
-				D3948EF12ADA846400FAE566 /* WidgetKit.framework */,
 				D3948EF32ADA846400FAE566 /* SwiftUI.framework */,
-				D3948F092ADA887300FAE566 /* Intents.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -240,9 +119,6 @@
 			isa = PBXGroup;
 			children = (
 				D39BC3322FAC6F5C005461CB /* Unstoppable */,
-				D39BCA952FAC7039005461CB /* Widget */,
-				D3E161DC2FADAB07006A73DD /* WidgetIntents */,
-				D39BCABA2FAC703F005461CB /* Intents */,
 				D39BA7EC2F9B3D48005461CB /* Tests */,
 				D3285F4320BD158E00644076 /* Products */,
 				95AD93BB0A2D5F5C4A435252 /* Frameworks */,
@@ -252,71 +128,15 @@
 		D3285F4320BD158E00644076 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D33D63A22F98DD5D00E16ADA /* WidgetExtension.appex */,
-				D33D63B32F98DD6A00E16ADA /* IntentExtension.appex */,
 				D33D6B1D2F98F2CF00E16ADA /* Unstoppable.app */,
 				D39BA7EB2F9B3D48005461CB /* AppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		D3E161DC2FADAB07006A73DD /* WidgetIntents */ = {
-			isa = PBXGroup;
-			children = (
-				D3E161E02FADAB4E006A73DD /* AppWidget.intentdefinition */,
-			);
-			path = WidgetIntents;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D33D633B2F98DD5D00E16ADA /* WidgetExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D33D639F2F98DD5D00E16ADA /* Build configuration list for PBXNativeTarget "WidgetExtension" */;
-			buildPhases = (
-				D33D63462F98DD5D00E16ADA /* Sources */,
-				D33D63902F98DD5D00E16ADA /* Frameworks */,
-				D33D63982F98DD5D00E16ADA /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				D39BCA952FAC7039005461CB /* Widget */,
-			);
-			name = WidgetExtension;
-			packageProductDependencies = (
-				D368E5BF2FC9966B00487B08 /* HsToolKit */,
-			);
-			productName = WidgetExtension;
-			productReference = D33D63A22F98DD5D00E16ADA /* WidgetExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
-		D33D63A42F98DD6A00E16ADA /* IntentExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D33D63B02F98DD6A00E16ADA /* Build configuration list for PBXNativeTarget "IntentExtension" */;
-			buildPhases = (
-				D33D63A72F98DD6A00E16ADA /* Sources */,
-				D33D63AC2F98DD6A00E16ADA /* Frameworks */,
-				D33D63AF2F98DD6A00E16ADA /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				D39BCABA2FAC703F005461CB /* Intents */,
-			);
-			name = IntentExtension;
-			packageProductDependencies = (
-				D368E5C12FC9967500487B08 /* HsToolKit */,
-			);
-			productName = IntentExtension;
-			productReference = D33D63B32F98DD6A00E16ADA /* IntentExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 		D33D63F12F98F2CF00E16ADA /* App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D33D6B182F98F2CF00E16ADA /* Build configuration list for PBXNativeTarget "App" */;
@@ -330,8 +150,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				D33D6B212F98F5BF00E16ADA /* PBXTargetDependency */,
-				D33D6B242F98F5C900E16ADA /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				D39BC3322FAC6F5C005461CB /* Unstoppable */,
@@ -409,28 +227,12 @@
 			projectRoot = "";
 			targets = (
 				D33D63F12F98F2CF00E16ADA /* App */,
-				D33D633B2F98DD5D00E16ADA /* WidgetExtension */,
-				D33D63A42F98DD6A00E16ADA /* IntentExtension */,
 				D39BA7EA2F9B3D48005461CB /* AppTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		D33D63982F98DD5D00E16ADA /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D33D63AF2F98DD6A00E16ADA /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D33D6B082F98F2CF00E16ADA /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -448,22 +250,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		D33D63462F98DD5D00E16ADA /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D3E161E12FADAB4E006A73DD /* AppWidget.intentdefinition in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D33D63A72F98DD6A00E16ADA /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D3C9F7482FADF57B00C7916F /* AppWidget.intentdefinition in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D33D643E2F98F2CF00E16ADA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -481,42 +267,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		D33D6B212F98F5BF00E16ADA /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D33D633B2F98DD5D00E16ADA /* WidgetExtension */;
-			targetProxy = D33D6B202F98F5BF00E16ADA /* PBXContainerItemProxy */;
-		};
-		D33D6B242F98F5C900E16ADA /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D33D63A42F98DD6A00E16ADA /* IntentExtension */;
-			targetProxy = D33D6B232F98F5C900E16ADA /* PBXContainerItemProxy */;
-		};
 		D39BA7F02F9B3D48005461CB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D33D63F12F98F2CF00E16ADA /* App */;
 			targetProxy = D39BA7EF2F9B3D48005461CB /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin PBXVariantGroup section */
-		D3E161E02FADAB4E006A73DD /* AppWidget.intentdefinition */ = {
-			isa = PBXVariantGroup;
-			children = (
-				D3E161DF2FADAB4E006A73DD /* Base */,
-				D3E161E32FADAB50006A73DD /* en */,
-				D3E161E52FADAB51006A73DD /* zh */,
-				D3E161E72FADAB51006A73DD /* fr */,
-				D3E161E92FADAB52006A73DD /* de */,
-				D3E161EB2FADAB53006A73DD /* ko */,
-				D3E161ED2FADAB54006A73DD /* pt-BR */,
-				D3E161EF2FADAB55006A73DD /* ru */,
-				D3E161F12FADAB55006A73DD /* es */,
-				D3E161F32FADAB56006A73DD /* tr */,
-			);
-			name = AppWidget.intentdefinition;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		D33D63B52F98DE0800E16ADA /* Debug-Dev */ = {
@@ -593,61 +349,6 @@
 			};
 			name = "Debug-Dev";
 		};
-		D33D63BD2F98DE0800E16ADA /* Debug-Dev */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
-			baseConfigurationReferenceRelativePath = "Configuration/App/Widget-Dev.xcconfig";
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Widget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Widget;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-			};
-			name = "Debug-Dev";
-		};
-		D33D63BE2F98DE0800E16ADA /* Debug-Dev */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
-			baseConfigurationReferenceRelativePath = "Configuration/App/Intent-Dev.xcconfig";
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Intents/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = IntentExtension;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_MODULE_NAME = IntentExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-			};
-			name = "Debug-Dev";
-		};
 		D33D63BF2F98DE1200E16ADA /* Release-Dev */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -714,59 +415,6 @@
 				Sandbox = false;
 				VALIDATE_PRODUCT = YES;
 				VERSIONING_SYSTEM = "apple-generic";
-			};
-			name = "Release-Dev";
-		};
-		D33D63C72F98DE1200E16ADA /* Release-Dev */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
-			baseConfigurationReferenceRelativePath = "Configuration/App/Widget-Dev.xcconfig";
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Widget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Widget;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_FAST_MATH = YES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-			};
-			name = "Release-Dev";
-		};
-		D33D63C82F98DE1200E16ADA /* Release-Dev */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
-			baseConfigurationReferenceRelativePath = "Configuration/App/Intent-Dev.xcconfig";
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Intents/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = IntentExtension;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_FAST_MATH = YES;
-				PRODUCT_MODULE_NAME = IntentExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = "Release-Dev";
 		};
@@ -844,61 +492,6 @@
 			};
 			name = "Debug-Prod";
 		};
-		D33D63E52F98DE6800E16ADA /* Debug-Prod */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
-			baseConfigurationReferenceRelativePath = "Configuration/App/Widget-Prod.xcconfig";
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Widget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Widget;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-			};
-			name = "Debug-Prod";
-		};
-		D33D63E62F98DE6800E16ADA /* Debug-Prod */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
-			baseConfigurationReferenceRelativePath = "Configuration/App/Intent-Prod.xcconfig";
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Intents/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = IntentExtension;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_MODULE_NAME = IntentExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-			};
-			name = "Debug-Prod";
-		};
 		D33D63E72F98DE6E00E16ADA /* Release-Prod */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -968,66 +561,17 @@
 			};
 			name = "Release-Prod";
 		};
-		D33D63EF2F98DE6E00E16ADA /* Release-Prod */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
-			baseConfigurationReferenceRelativePath = "Configuration/App/Widget-Prod.xcconfig";
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Widget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Widget;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_FAST_MATH = YES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-			};
-			name = "Release-Prod";
-		};
-		D33D63F02F98DE6E00E16ADA /* Release-Prod */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
-			baseConfigurationReferenceRelativePath = "Configuration/App/Intent-Prod.xcconfig";
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Intents/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = IntentExtension;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_FAST_MATH = YES;
-				PRODUCT_MODULE_NAME = IntentExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-			};
-			name = "Release-Prod";
-		};
 		D33D6B192F98F2CF00E16ADA /* Debug-Dev */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
 			baseConfigurationReferenceRelativePath = "Configuration/App/App-Dev.xcconfig";
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
 				PRODUCT_NAME = Unstoppable;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = "Debug-Dev";
 		};
@@ -1036,8 +580,12 @@
 			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
 			baseConfigurationReferenceRelativePath = "Configuration/App/App-Prod.xcconfig";
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
 				PRODUCT_NAME = Unstoppable;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = "Debug-Prod";
 		};
@@ -1046,8 +594,12 @@
 			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
 			baseConfigurationReferenceRelativePath = "Configuration/App/App-Dev.xcconfig";
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
 				PRODUCT_NAME = Unstoppable;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = "Release-Dev";
 		};
@@ -1056,8 +608,12 @@
 			baseConfigurationReferenceAnchor = D39BC3322FAC6F5C005461CB /* Unstoppable */;
 			baseConfigurationReferenceRelativePath = "Configuration/App/App-Prod.xcconfig";
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
 				PRODUCT_NAME = Unstoppable;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = "Release-Prod";
 		};
@@ -1099,7 +655,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = HC4MCAXJ66;
+				DEVELOPMENT_TEAM = 3B669F6LS9;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1123,7 +679,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = io.horizontalsystems.AppTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.anwang4.safewallet.AppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1173,7 +729,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = HC4MCAXJ66;
+				DEVELOPMENT_TEAM = 3B669F6LS9;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1197,7 +753,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = io.horizontalsystems.AppTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.anwang4.safewallet.AppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1243,11 +799,12 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = HC4MCAXJ66;
+				DEVELOPMENT_TEAM = 3B669F6LS9;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1265,6 +822,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = io.horizontalsystems.AppTests;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.anwang4.safewallet.AppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1311,11 +869,12 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = HC4MCAXJ66;
+				DEVELOPMENT_TEAM = 3B669F6LS9;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1333,6 +892,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = io.horizontalsystems.AppTests;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.anwang4.safewallet.AppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1355,28 +915,6 @@
 				D33D63DD2F98DE6800E16ADA /* Debug-Prod */,
 				D33D63BF2F98DE1200E16ADA /* Release-Dev */,
 				D33D63E72F98DE6E00E16ADA /* Release-Prod */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = "Debug-Dev";
-		};
-		D33D639F2F98DD5D00E16ADA /* Build configuration list for PBXNativeTarget "WidgetExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D33D63BD2F98DE0800E16ADA /* Debug-Dev */,
-				D33D63E52F98DE6800E16ADA /* Debug-Prod */,
-				D33D63C72F98DE1200E16ADA /* Release-Dev */,
-				D33D63EF2F98DE6E00E16ADA /* Release-Prod */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = "Debug-Dev";
-		};
-		D33D63B02F98DD6A00E16ADA /* Build configuration list for PBXNativeTarget "IntentExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D33D63BE2F98DE0800E16ADA /* Debug-Dev */,
-				D33D63E62F98DE6800E16ADA /* Debug-Prod */,
-				D33D63C82F98DE1200E16ADA /* Release-Dev */,
-				D33D63F02F98DE6E00E16ADA /* Release-Prod */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = "Debug-Dev";
@@ -1420,16 +958,6 @@
 		D368E5BC2FC991E500487B08 /* WalletCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WalletCore;
-		};
-		D368E5BF2FC9966B00487B08 /* HsToolKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D368E5BE2FC9966B00487B08 /* XCRemoteSwiftPackageReference "HsToolKit.Swift" */;
-			productName = HsToolKit;
-		};
-		D368E5C12FC9967500487B08 /* HsToolKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D368E5BE2FC9966B00487B08 /* XCRemoteSwiftPackageReference "HsToolKit.Swift" */;
-			productName = HsToolKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
