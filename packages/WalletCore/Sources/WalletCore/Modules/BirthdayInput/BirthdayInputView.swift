@@ -26,7 +26,7 @@ struct BirthdayInputView: View {
 
                             VStack(spacing: 8) {
                                 InputTextRow {
-                                    PrimarySizedHStack {
+                                    HStack(spacing: .margin8) {
                                         InputTextView(
                                             placeholder: viewModel.placeholder,
                                             text: $viewModel.heightString
@@ -34,7 +34,7 @@ struct BirthdayInputView: View {
                                         .keyboardType(.numberPad)
                                         .autocorrectionDisabled()
                                         .focused($inputFocused)
-                                    } trailing: {
+
                                         ShortcutButtonsView(
                                             showDelete: .init(get: { !viewModel.heightString.isEmpty }, set: { _ in }),
                                             items: [.icon("date"), .text("button.paste".localized)],
@@ -56,7 +56,8 @@ struct BirthdayInputView: View {
                                                     }
                                                 default: ()
                                                 }
-                                            }, onTapDelete: {
+                                            },
+                                            onTapDelete: {
                                                 viewModel.heightString = ""
                                             }
                                         )

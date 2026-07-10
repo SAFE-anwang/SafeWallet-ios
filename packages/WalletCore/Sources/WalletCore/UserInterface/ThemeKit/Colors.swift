@@ -140,8 +140,9 @@ public extension UIColor {
 public extension UIColor {
     static var themeBackgroundFromGradient: UIColor { .themeTyler }
     static var themeBackgroundToGradient: UIColor { .themeHelsing }
-
     static var themeInputFieldTintColor: UIColor { .themeLeah }
     static var themeNavigationBarBackground: UIColor { UIColor.themeTyler96 }
     static var themeTabBarBackground: UIColor { UIColor.themeBlade }
+    static var themeBlackAndWhite: UIColor { color(dark: .themeWhite, light: .themeBlack) }
+    static var themeBlue: UIColor { color(dark: .themeIssykBlue.withAlphaComponent(0.5), light: .themeIssykBlue) }
 }

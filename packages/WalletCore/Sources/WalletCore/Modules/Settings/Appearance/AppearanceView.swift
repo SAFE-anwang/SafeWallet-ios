@@ -72,7 +72,7 @@ struct AppearanceView: View {
                 }
 
                 VStack(spacing: 0) {
-                    ListSectionHeader(text: "appearance.markets_tab".localized, uppercased: false)
+                    ListSectionHeader(text: "appearance.markets_tab".localized)
                     ListSection {
                         Cell(
                             middle: {
@@ -132,7 +132,7 @@ struct AppearanceView: View {
                 }
 
                 VStack(spacing: 0) {
-                    ListSectionHeader(text: "appearance.balance_tab".localized, uppercased: false)
+                    ListSectionHeader(text: "appearance.balance_tab".localized)
 
                     ListSection {
                         Cell(
@@ -151,6 +151,7 @@ struct AppearanceView: View {
                                 ThemeToggle(isOn: $viewModel.useAmountRounding.animation(), style: .yellow)
                             }
                         )
+
                         Cell(
                             middle: {
                                 MultiText(title: "appearance.balance_value".localized, subtitle: "appearance.balance_value.description".localized)
@@ -175,7 +176,7 @@ struct AppearanceView: View {
                 }
 
                 VStack(spacing: 0) {
-                    ListSectionHeader(text: "appearance.send_screen".localized, uppercased: false)
+                    ListSectionHeader(text: "appearance.send_screen".localized)
                     ListSection {
                         Cell(
                             middle: {
@@ -188,29 +189,29 @@ struct AppearanceView: View {
                     }
                 }
 
-                VStack(spacing: 0) {
-                    ListSectionHeader(text: "appearance.app_icon".localized, uppercased: false)
-                    ListSection {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: .margin16) {
-                            ForEach(AppIconManager.allAppIcons, id: \.self) { appIcon in
-                                Button(action: {
-                                    viewModel.appIcon = appIcon
-                                }) {
-                                    VStack(spacing: .margin12) {
-                                        Image(appIcon.imageName)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .clipShape(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous))
-                                            .frame(width: 60, height: 60)
-                                        ThemeText(appIcon.title, style: .subhead, colorStyle: viewModel.appIcon == appIcon ? .yellow : .primary)
-                                            .frame(maxWidth: .infinity, alignment: .center)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.margin16)
-                    }
-                }
+//                VStack(spacing: 0) {
+//                    ListSectionHeader(text: "appearance.app_icon".localized)
+//                    ListSection {
+//                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: .margin16) {
+//                            ForEach(AppIconManager.allAppIcons, id: \.self) { appIcon in
+//                                Button(action: {
+//                                    viewModel.appIcon = appIcon
+//                                }) {
+//                                    VStack(spacing: .margin12) {
+//                                        Image(appIcon.imageName)
+//                                            .resizable()
+//                                            .scaledToFit()
+//                                            .clipShape(RoundedRectangle(cornerRadius: .cornerRadius12, style: .continuous))
+//                                            .frame(width: 60, height: 60)
+//                                        ThemeText(appIcon.title, style: .subhead, colorStyle: viewModel.appIcon == appIcon ? .yellow : .primary)
+//                                            .frame(maxWidth: .infinity, alignment: .center)
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        .padding(.margin16)
+//                    }
+//                }
             }
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
         }

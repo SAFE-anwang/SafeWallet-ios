@@ -10,7 +10,11 @@ enum CellComponent {
                 .image24 { component in
                     if let iconName {
                         component.isHidden = false
-                        component.imageView.image = UIImage(named: iconName)?.withTintColor(iconDimmed ? .themeGray : .themeLeah)
+                        if iconName.contains("safe") {
+                            component.imageView.image = UIImage(named: iconName)
+                        } else {
+                            component.imageView.image = UIImage(named: iconName)?.withTintColor(iconDimmed ? .themeGray : .themeLeah)
+                        }
                     } else {
                         component.isHidden = true
                     }
@@ -272,7 +276,7 @@ enum CellComponent {
         )
     }
 
-    static func blockchainAddress(tableView: UITableView, rowInfo: RowInfo, imageUrl: String, title: String, value: String, editType: EditType, action: (() -> Void)? = nil) -> RowProtocol {
+    static func blockchainAddress(tableView: UITableView, rowInfo: RowInfo, imageUrl: String, title: String, code: String? = nil, value: String, editType: EditType, action: (() -> Void)? = nil) -> RowProtocol {
         let backgroundStyle: BaseThemeCell.BackgroundStyle = .lawrence
         let titleFont: UIFont = .subhead1
         let valueFont: UIFont = .subhead2
@@ -284,7 +288,18 @@ enum CellComponent {
             rootElement: .hStack([
                 .imageElement(image: .url(imageUrl, placeholder: "placeholder_rectangle_32"), size: .image32),
                 .vStackCentered([
-                    .textElement(text: .subhead1(title), parameters: .allCompression),
+                    .hStack([
+                        .textElement(text: .subhead1(title), parameters: .highHugging),
+                        .margin8,
+                        .badge { component in
+                            component.isHidden = code?.count == 0
+                            component.badgeView.set(style: .small)
+                            component.badgeView.text = code
+                        },
+                        .margin0,
+                        .text { _ in
+                        },
+                    ]),
                     .margin(titleValueMargin),
                     .textElement(text: .subhead2(value), parameters: .multiline),
                 ]),

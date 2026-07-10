@@ -57,6 +57,10 @@ class WalletService {
 }
 
 extension WalletService {
+    var accountId: String {
+        account.id
+    }
+
     var wallets: [Wallet] {
         filtered(walletManager.activeWallets)
     }

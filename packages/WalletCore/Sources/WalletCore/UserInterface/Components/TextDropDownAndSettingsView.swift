@@ -16,6 +16,26 @@ class TextDropDownAndSettingsView: UIView {
     var onTapSettings: (() -> Void)?
     var onTapSelector: ((Int) -> Void)?
 
+    private let transactionsButton = SecondaryCircleButton()
+    private let liquidityRecordButton = SecondaryCircleButton()
+
+    var onTapTransactions: (() -> Void)?
+    var onTapLiquidityRecord: (() -> Void)?
+
+    var isEnabledTransactions: Bool = true {
+        didSet {
+            transactionsButton.isHidden = !isEnabledTransactions
+            transactionsButton.isEnabled = isEnabledTransactions
+        }
+    }
+
+    var isEnabledLiquidity: Bool = true {
+        didSet {
+            liquidityRecordButton.isHidden = !isEnabledLiquidity
+            liquidityRecordButton.isEnabled = isEnabledLiquidity
+        }
+    }
+
     init() {
         super.init(frame: .zero)
 
@@ -38,13 +58,23 @@ class TextDropDownAndSettingsView: UIView {
         stackView.spacing = .margin16
 
         stackView.addArrangedSubview(selectorButton)
+
+        stackView.addArrangedSubview(liquidityRecordButton)
+        stackView.addArrangedSubview(transactionsButton)
         stackView.addArrangedSubview(settingsButton)
 
         selectorButton.isHidden = true
         selectorButton.onSelect = { [weak self] in self?.onTapSelector?($0) }
 
+        liquidityRecordButton.set(image: UIImage(named: "arrow_swap_approval_2_24"))
+        liquidityRecordButton.addTarget(self, action: #selector(onTapLiquidityRecordButton), for: .touchUpInside)
+
+        transactionsButton.set(image: UIImage(named: "filled_transaction_2n_24"))
+        transactionsButton.addTarget(self, action: #selector(onTapTransactionsButton), for: .touchUpInside)
+
         settingsButton.set(image: UIImage(named: "manage_2_20"))
         settingsButton.addTarget(self, action: #selector(onTapSettingsButton), for: .touchUpInside)
+
     }
 
     @available(*, unavailable)
@@ -58,6 +88,14 @@ class TextDropDownAndSettingsView: UIView {
 
     @objc private func onTapSettingsButton() {
         onTapSettings?()
+    }
+
+    @objc private func onTapTransactionsButton() {
+        onTapTransactions?()
+    }
+
+    @objc private func onTapLiquidityRecordButton() {
+        onTapLiquidityRecord?()
     }
 
     func set(dropdownTitle: String?) {

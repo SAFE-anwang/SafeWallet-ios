@@ -101,7 +101,8 @@ extension SelectorModule {
         let footer: String?
     }
 
-    struct ViewItem {
+    struct ViewItem: Equatable, Identifiable, Hashable {
+
         let image: CellBuilderNew.CellElement.Image?
         let title: String
         let titleColor: UIColor
@@ -116,6 +117,27 @@ extension SelectorModule {
             self.subtitle = subtitle
             self.badge = badge
             self.selected = selected
+        }
+
+
+        static func == (lhs: SelectorModule.ViewItem, rhs: SelectorModule.ViewItem) -> Bool {
+            lhs.title == rhs.title &&
+            lhs.titleColor == rhs.titleColor &&
+            lhs.subtitle == rhs.subtitle &&
+            lhs.badge == rhs.badge &&
+            lhs.selected == rhs.selected
+        }
+
+        public var id: String {
+            title
+        }
+
+        public func hash(into hasher: inout Hasher) {
+            hasher.combine(title)
+            hasher.combine(titleColor)
+            hasher.combine(subtitle)
+            hasher.combine(badge)
+            hasher.combine(selected)
         }
     }
 }

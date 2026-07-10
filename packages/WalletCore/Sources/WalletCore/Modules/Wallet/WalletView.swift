@@ -5,6 +5,8 @@ struct WalletView: View {
     @StateObject var accountWarningViewModel = AccountWarningViewModel(ignoreType: .always)
 
     @Binding var selectedWallet: Wallet?
+    @StateObject var transactionsViewModel = TransactionsViewModel()
+    @State private var transactionsPresented = false
 
     var body: some View {
         Group {
@@ -38,7 +40,7 @@ struct WalletView: View {
                                 onWatchWallet: {
                                     Coordinator.shared.presentAfterAcceptTerms { isPresented in
                                         ThemeNavigationStack {
-                                            WatchView(isPresented: isPresented, showClose: true)
+                                            WatchView(isPresented: isPresented)
                                         }
                                     }
                                     stat(page: .addWallet, event: .open(page: .watchWallet))
@@ -55,6 +57,9 @@ struct WalletView: View {
         }
         .onDisappear {
             viewModel.onDisappear()
+        }
+        .navigationDestination(isPresented: $transactionsPresented) {
+            MainTransactionsView(transactionsViewModel: transactionsViewModel)
         }
     }
 
@@ -136,7 +141,7 @@ struct WalletView: View {
                         RightButtonText(text: address.shortened, icon: "copy_filled") {
                             CopyHelper.copyAndNotify(value: address)
                         }
-                    }
+                    },
                 )
             } else if !viewModel.buttonHidden {
                 let buttons = viewModel.buttons
@@ -242,6 +247,10 @@ struct WalletView: View {
     }
 
     private func copyAddressIfBackedUp(address: String) {
+        guard viewModel.verifyBackedUp() else {
+            return
+        }
+
         CopyHelper.copyAndNotify(value: address)
     }
 
@@ -260,11 +269,29 @@ struct WalletView: View {
                 }
             }
 
+            Spacer()
+
+            IconButton(icon: "NFT", style: .secondary, size: .small) {
+                Coordinator.shared.present { isPresented in
+                    NftV2Module.RootView(isPresented: isPresented)
+                        .ignoresSafeArea()
+                }
+            }
+
+            IconButton(icon: "arrow_swap_approval_2_24", style: .secondary, size: .small) {
+                Coordinator.shared.present { _ in
+                    LiquidityRecordTabView(viewModel: LiquidityRecordTabViewModel())
+                        .ignoresSafeArea()
+                }
+            }
+
+            IconButton(icon: "transaction_filled", style: .secondary, size: .small) {
+                transactionsPresented = true
+            }
+
             IconButton(icon: "manage", style: .secondary, size: .small) {
                 onTapManage()
             }
-
-            Spacer()
 
             if !viewModel.isReachable {
                 ThemeText("alert.no_internet".localized, style: .subheadSB, colorStyle: .red)
@@ -334,8 +361,7 @@ struct WalletView: View {
             case .expired:
                 colorStyle = .secondary
             case .syncing:
-                ()
-//                dimmed = true     // remove dimmed state for now
+                dimmed = true
             }
         }
 
@@ -350,15 +376,15 @@ struct WalletView: View {
         if viewModel.balanceHidden {
             return " "
         }
-//
-//        var dimmed = false
-//        if viewModel.totalItem.state == .syncing {
-//            dimmed = true
-//        }
+
+        var dimmed = false
+        if viewModel.totalItem.state == .syncing {
+            dimmed = true
+        }
 
         return ComponentText(
             text: viewModel.totalItem.convertedValue.flatMap { $0.formattedWith(rounding: viewModel.amountRounding) }.map { "≈ \($0)" } ?? String.placeholder,
-            dimmed: false
+            dimmed: dimmed
         )
     }
 }

@@ -5,10 +5,8 @@ struct MainView: View {
     @StateObject var badgeViewModel = MainBadgeViewModel()
     @StateObject var walletViewModel = WalletViewModel()
     @StateObject var transactionsViewModel = TransactionsViewModel()
-    @StateObject var multiSwapViewModel = MultiSwapViewModel()
 
     @State private var selectedWallet: Wallet?
-    @State private var swapSendPresented = false
     @State private var walletConnectPresented = false
 
     @State private var backupAccount: Account?
@@ -29,12 +27,19 @@ struct MainView: View {
                         .tag(MainViewModel.Tab.wallet)
                         .tint(.themeLeah)
 
-                    if viewModel.showSwap {
-                        MultiSwapView(viewModel: multiSwapViewModel, sendPresented: $swapSendPresented)
-                            .tabItem { Label("", image: "swap_filled") }
-                            .tag(MainViewModel.Tab.swap)
-                            .tint(.themeLeah)
-                    }
+                    MainSafeZoneView()
+                        .tabItem {
+                            Label {
+                                Text("")
+                            } icon: {
+                                Image("safe_logo_24")
+                                    .resizable()
+                                    .renderingMode(viewModel.selectedTab == .safe ? .original : .template)
+                                    .frame(width: .iconSize24, height: .iconSize24)
+                            }
+                        }
+                        .tag(MainViewModel.Tab.safe)
+                        .tint(.themeLeah)
 
                     MainSettingsView(walletConnectPresented: $walletConnectPresented)
                         .tabItem { Label("", image: "settings_filled") }
@@ -46,12 +51,6 @@ struct MainView: View {
             }
             .navigationDestination(item: $selectedWallet) { wallet in
                 WalletTokenModule.view(wallet: wallet)
-            }
-            .navigationDestination(isPresented: $swapSendPresented) {
-                MultiSwapSendDestinationView(viewModel: multiSwapViewModel) {
-                    multiSwapViewModel.reset()
-                    swapSendPresented = false
-                }
             }
             .navigationDestination(isPresented: $walletConnectPresented) {
                 WalletConnectListView()
@@ -109,37 +108,8 @@ struct MainView: View {
                     }
                 }
             }
-        case .swap:
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: {
-                    Coordinator.shared.present { isPresented in
-                        SwapHistoryView(isPresented: isPresented)
-                    }
-                }) {
-                    Image("clock")
-                }
-            }
-        case .transactions:
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: {
-                    Coordinator.shared.present { isPresented in
-                        TransactionFilterView(transactionsViewModel: transactionsViewModel, isPresented: isPresented)
-                    }
-                    stat(page: .transactions, event: .open(page: .transactionFilter))
-                }) {
-                    Image("manage_2_24")
-                        .modifier(ToolbarBadgeModifier(visible: transactionsViewModel.filterChanged))
-                }
-            }
-
-            ToolbarItem(placement: .navigationBarLeading) {
-                if transactionsViewModel.syncing {
-                    ProgressView(value: 0.55)
-                        .progressViewStyle(DeterminiteSpinnerStyle())
-                        .frame(size: 24)
-                        .spinning()
-                }
-            }
+        case .safe:
+            ToolbarItem {}
         case .settings:
             ToolbarItem {}
         }
@@ -168,10 +138,8 @@ struct MainView: View {
             return "market.title".localized
         case .wallet:
             return walletViewModel.account?.name ?? "balance.title".localized
-        case .swap:
-            return "swap.title".localized
-        case .transactions:
-            return "transactions.title".localized
+        case .safe:
+            return "safe_zone.nav.title".localized
         case .settings:
             return "settings.title".localized
         }

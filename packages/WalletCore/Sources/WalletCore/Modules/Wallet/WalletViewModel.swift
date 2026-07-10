@@ -7,6 +7,8 @@ public class WalletViewModel: WalletListViewModel {
     private let balanceConversionManager = Core.shared.balanceConversionManager
     private let walletButtonHiddenManager = Core.shared.walletButtonHiddenManager
     private let appManager = Core.shared.appManager
+    private let adapterManager = Core.shared.adapterManager
+    private let cloudBackupManager = Core.shared.cloudBackupManager
     private let eventHandler = Core.shared.appEventHandler
     private let rateAppManager = Core.shared.rateAppManager
     private let appStateManager = AppStateManager.instance
@@ -111,6 +113,8 @@ extension WalletViewModel {
     }
 
     func onAppear() {
+        adapterManager.src20SyncManager?.updateSRC20Tokens()
+
         rateAppManager.onBalancePageAppear()
     }
 
@@ -141,10 +145,24 @@ extension WalletViewModel {
         walletService?.disable(wallet: wallet)
     }
 
+    func verifyBackedUp() -> Bool {
+        guard let account, !account.watchAccount else {
+            return true
+        }
+
+        if account.backedUp || cloudBackupManager.backedUp(uniqueId: account.type.uniqueId()) {
+            return true
+        }
+
+        Coordinator.shared.presentWalletBackup(account: account, statPage: .balance)
+        return false
+    }
+
     func refresh() async {
         walletService?.refresh()
         coinPriceService.refresh()
 
+        adapterManager.src20SyncManager?.updateSRC20Tokens()
         try? await Task.sleep(seconds: 1)
     }
 

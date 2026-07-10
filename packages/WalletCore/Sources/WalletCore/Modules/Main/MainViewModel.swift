@@ -86,8 +86,7 @@ extension MainViewModel {
     enum Tab: String, Hashable, CaseIterable, Identifiable {
         case markets
         case wallet
-        case swap
-        case transactions
+        case safe
         case settings
 
         var id: String {

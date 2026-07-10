@@ -20,9 +20,7 @@ struct BackupManagerView: View {
                         },
                         action: {
                             Coordinator.shared.presentAfterAcceptTerms { isPresented in
-                                ThemeNavigationStack {
-                                    RestoreBackupListView(isParentPresented: isPresented, showClose: true)
-                                }
+                                RestoreTypeView(type: .full, isPresented: isPresented)
                             } onPresent: {
                                 stat(page: .backupManager, event: .open(page: .importWallet))
                             }

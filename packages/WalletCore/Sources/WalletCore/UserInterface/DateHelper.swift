@@ -1,4 +1,4 @@
-import Foundation
+import UIKit
 
 class DateHelper {
     static let instance = DateHelper()
@@ -83,5 +83,9 @@ class DateHelper {
             return DateFormatter.cachedFormatter(format: short ? "d MMM" : "MMMM d")
         }
         return DateFormatter.cachedFormatter(format: short ? "MM/dd/yy" : "MMMM d, yyyy")
+    }
+
+    func safe4Format(date: Date) -> String {
+        DateFormatter.cachedFormatter(format: "MM-dd-yy, HH:mm:ss").string(from: date)
     }
 }

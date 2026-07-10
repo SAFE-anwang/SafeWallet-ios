@@ -140,7 +140,7 @@ extension WalletTokenViewModel {
         if wallet.account.watchAccount {
             return []
         } else {
-            return [.chart, .receive, .send, .swap]
+            return [.chart, .receive, .send] + (wallet.token.swappable ? [.swap] : []) + [.liquidity]
         }
     }
 

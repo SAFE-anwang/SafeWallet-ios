@@ -62,7 +62,7 @@ struct WalletListItemView: View, Equatable {
             if let priceItem = item.priceItem {
                 return ComponentText(text: ValueFormatter.instance.formatFull(currencyValue: priceItem.price) ?? String.placeholder, dimmed: priceItem.expired)
             } else {
-                return "n/a".localized
+                return ""//"n/a".localized
             }
         case .coinName:
             return item.wallet.coin.name

@@ -19,6 +19,8 @@ class TextDropDownAndSettingsHeaderView: UITableViewHeaderFooterView {
     }
 
     private func commonInit() {
+        view.isEnabledTransactions = false
+        view.isEnabledLiquidity = false
         contentView.addSubview(view)
         view.snp.makeConstraints { maker in
             maker.edges.equalToSuperview()
