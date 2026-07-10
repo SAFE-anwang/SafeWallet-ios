@@ -4,8 +4,8 @@ import RxCocoa
 import RxRelay
 import RxSwift
 
-class RestoreMnemonicViewModel {
-    private let service: RestoreMnemonicService
+class RestoreMnemonicNonStandardViewModel {
+    private let service: RestoreMnemonicNonStandardService
     private let disposeBag = DisposeBag()
 
     private let possibleWordsRelay = BehaviorRelay<[String]>(value: [])
@@ -19,7 +19,7 @@ class RestoreMnemonicViewModel {
 
     private var cursorOffset = 0
 
-    init(service: RestoreMnemonicService) {
+    init(service: RestoreMnemonicNonStandardService) {
         self.service = service
 
         subscribe(disposeBag, service.wordListLanguageObservable) { [weak self] in self?.sync(wordListLanguage: $0) }
@@ -43,16 +43,16 @@ class RestoreMnemonicViewModel {
         }
     }
 
-    private func hasCursor(item: RestoreMnemonicService.WordItem) -> Bool {
+    private func hasCursor(item: RestoreMnemonicNonStandardService.WordItem) -> Bool {
         cursorOffset >= item.range.lowerBound && cursorOffset <= item.range.upperBound
     }
 
-    private var cursorItem: RestoreMnemonicService.WordItem? {
+    private var cursorItem: RestoreMnemonicNonStandardService.WordItem? {
         service.items.first { hasCursor(item: $0) }
     }
 }
 
-extension RestoreMnemonicViewModel {
+extension RestoreMnemonicNonStandardViewModel {
     var possibleWordsDriver: Driver<[String]> {
         possibleWordsRelay.asDriver()
     }
@@ -136,10 +136,8 @@ extension RestoreMnemonicViewModel {
         service.passphrase = passphrase
         clearCautions()
     }
-}
 
-extension RestoreMnemonicViewModel: IRestoreSubViewModel {
-    func resolveAccountTypes() -> [AccountType]? {
+    func resolveAccountType() -> AccountType? {
         mnemonicCautionRelay.accept(nil)
         passphraseCautionRelay.accept(nil)
 
@@ -149,11 +147,10 @@ extension RestoreMnemonicViewModel: IRestoreSubViewModel {
         }
 
         do {
-            let accountType = try service.accountType(words: service.items.map(\.word))
-            return [accountType]
-        } catch let RestoreMnemonicService.ErrorList.errors(errors) {
+            return try service.accountType(words: service.items.map(\.word))
+        } catch let RestoreMnemonicNonStandardService.ErrorList.errors(errors) {
             for error in errors {
-                if case RestoreMnemonicService.RestoreError.emptyPassphrase = error {
+                if case RestoreMnemonicNonStandardService.RestoreError.emptyPassphrase = error {
                     passphraseCautionRelay.accept(Caution(text: "restore.error.empty_passphrase".localized, type: .error))
                 } else {
                     mnemonicCautionRelay.accept(Caution(text: error.convertedError.smartDescription, type: .error))

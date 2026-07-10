@@ -19,6 +19,8 @@ class WatchViewModel: ObservableObject {
     private let addressParserChain = AddressParserChain()
     private var disposeBag = DisposeBag()
 
+    let defaultAccountName: String
+
     @Published var state = State.notReady {
         didSet {
             switch state {
@@ -99,6 +101,7 @@ class WatchViewModel: ObservableObject {
 
     init() {
         name = accountFactory.generatedAccountName
+        defaultAccountName = accountFactory.nextWatchAccountName
 
         addressParserChain.append(handlers:
             AddressParserFactory.parserChainHandlers(blockchainType: .ethereum, withEns: true)
@@ -235,7 +238,7 @@ class WatchViewModel: ObservableObject {
         let tokenQueries: [TokenQuery]
 
         switch accountType {
-        case .mnemonic, .passkeyOwned, .evmPrivateKey, .trcPrivateKey, .stellarSecretKey:
+        case .mnemonic, .passkeyOwned, .evmPrivateKey, .trcPrivateKey, .stellarSecretKey, .btcPrivateKey:
             return nil
 
         case .evmAddress:
@@ -349,6 +352,8 @@ extension WatchViewModel {
         }
 
         let account = accountFactory.watchAccount(type: accountType, name: resolvedName)
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let accountName = trimmedName.isEmpty ? defaultAccountName : trimmedName
 
         accountManager.save(account: account)
 

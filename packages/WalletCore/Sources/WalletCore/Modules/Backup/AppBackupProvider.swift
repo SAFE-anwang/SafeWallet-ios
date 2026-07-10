@@ -405,4 +405,15 @@ extension AppBackupProvider {
         case invalidPassword
         case emptyParameters
     }
+
+    enum Field {
+        static func all(ids: [String]) -> [Self] {
+            [.accounts(ids: ids), .watchlist, .contacts, .settings]
+        }
+
+        case accounts(ids: [String])
+        case watchlist
+        case contacts
+        case settings
+    }
 }

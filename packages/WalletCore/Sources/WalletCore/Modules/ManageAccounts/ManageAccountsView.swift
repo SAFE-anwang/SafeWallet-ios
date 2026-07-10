@@ -4,6 +4,14 @@ struct ManageAccountsView: View {
     @StateObject private var viewModel = ManageAccountsViewModel()
     var parentPresented: Binding<Bool>?
 
+    init(parentPresented: Binding<Bool>? = nil) {
+        self.parentPresented = parentPresented
+    }
+
+    init(isPresented: Binding<Bool>) {
+        parentPresented = isPresented
+    }
+
     var body: some View {
         ThemeNavigationStack {
             Group {
@@ -138,8 +146,11 @@ extension ManageAccountsView {
         @ViewBuilder private func destination(isPresented: Binding<Bool>, parentPresented: Binding<Bool>?) -> some View {
             switch self {
             case .newWallet: NewWalletTypeView(isPresented: isPresented, parentPresented: parentPresented, showClose: true)
-            case .existingWallet: RestoreTypeView(isPresented: isPresented, parentPresented: parentPresented, showClose: true)
-            case .watchWallet: WatchView(isPresented: isPresented, parentPresented: parentPresented, showClose: true)
+            case .existingWallet: RestoreTypeView(type: .wallet, isPresented: isPresented, parentPresented: parentPresented, showClose: true)
+            case .watchWallet: WatchView(isPresented: isPresented) {
+                isPresented.wrappedValue = false
+                parentPresented?.wrappedValue = false
+            }
             }
         }
     }

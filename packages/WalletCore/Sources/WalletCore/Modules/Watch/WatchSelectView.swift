@@ -89,5 +89,13 @@ struct WatchSelectView: View {
             }
         }
         .navigationTitle(items.title)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("watch_address.watch".localized) {
+                    onSelect(Array(enabledUids))
+                }
+                .disabled(enabledUids.isEmpty)
+            }
+        }
     }
 }

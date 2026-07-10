@@ -1,0 +1,70 @@
+import HdWalletKit
+import MarketKit
+import RxSwift
+import UIKit
+
+enum RestoreSelectModule {
+    static func supportedTokens(accountType: AccountType) -> [Token] {
+        let tokenQueries = BlockchainType.supported.map(\.nativeTokenQueries).flatMap { $0 }
+        let allTokens = (try? Core.shared.marketKit.tokens(queries: tokenQueries)) ?? []
+        return allTokens.filter { accountType.supports(token: $0) }
+    }
+
+    static func restoreSingleBlockchain(accountName: String, accountType: AccountType, token: Token, backedUp: Bool = true, fileBackedUp: Bool = false) {
+        let account = Core.shared.accountFactory.account(
+            type: accountType,
+            origin: .restored,
+            backedUp: backedUp,
+            fileBackedUp: fileBackedUp,
+            name: accountName
+        )
+        Core.shared.accountManager.save(account: account, makeActive: false)
+        Core.shared.restoreStateManager.setShouldRestore(account: account, blockchainType: token.blockchainType)
+        Core.shared.walletManager.save(wallets: [Wallet(token: token, account: account)])
+        Core.shared.accountManager.set(activeAccountId: account.id)
+    }
+
+    static func viewController(
+        accountName: String,
+        accountType: AccountType,
+        statPage: StatPage,
+        isManualBackedUp: Bool = true,
+        isFileBackedUp: Bool = false,
+        allowedBitcoinDerivations: Set<MnemonicDerivation>? = nil,
+        allowedBlockchainTypes: Set<BlockchainType>? = nil,
+        autoEnableDefaultTokensForAllowedBlockchains: Bool = false,
+        blockchainsRequireManualTokenSelection: Set<BlockchainType>? = nil,
+        onRestore: @escaping () -> Void
+    ) -> UIViewController {
+        let (blockchainTokensService, blockchainTokensView) = BlockchainTokensModule.module()
+        let (restoreSettingsService, restoreSettingsView) = RestoreSettingsModule.module(statPage: .restoreSelect)
+
+        let service = RestoreSelectService(
+            accountName: accountName,
+            accountType: accountType,
+            statPage: statPage,
+            isManualBackedUp: isManualBackedUp,
+            isFileBackedUp: isFileBackedUp,
+            accountFactory: Core.shared.accountFactory,
+            accountManager: Core.shared.accountManager,
+            walletManager: Core.shared.walletManager,
+            restoreStateManager: Core.shared.restoreStateManager,
+            marketKit: Core.shared.marketKit,
+            blockchainTokensService: blockchainTokensService,
+            restoreSettingsService: restoreSettingsService,
+            allowedBitcoinDerivations: allowedBitcoinDerivations,
+            allowedBlockchainTypes: allowedBlockchainTypes,
+            autoEnableDefaultTokensForAllowedBlockchains: autoEnableDefaultTokensForAllowedBlockchains,
+            blockchainsRequireManualTokenSelection: blockchainsRequireManualTokenSelection
+        )
+
+        let viewModel = RestoreSelectViewModel(service: service)
+
+        return RestoreSelectViewController(
+            viewModel: viewModel,
+            blockchainTokensView: blockchainTokensView,
+            restoreSettingsView: restoreSettingsView,
+            onRestore: onRestore
+        )
+    }
+}

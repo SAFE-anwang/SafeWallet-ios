@@ -29,10 +29,9 @@ class ManageAccountsViewModel: ObservableObject {
 
     private func sync() {
         let activeAccount = accountManager.activeAccount
-        let allAccounts = accountManager.accounts
-
         let trimmed = filter.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let mapped = allAccounts
+
+        let mapped = accountManager.accounts
             .filter { trimmed.isEmpty || $0.name.lowercased().contains(trimmed) }
             .map { account in
                 let cloudBackedUp = cloudBackupManager.backedUp(uniqueId: account.type.uniqueId())

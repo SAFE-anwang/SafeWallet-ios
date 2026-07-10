@@ -28,12 +28,14 @@ class CreateAccountViewModel: ObservableObject {
 
     @Published var name: String {
         didSet {
-            createEnabled = !resolvedName.isEmpty
+            createEnabled = true
         }
     }
+    let defaultAccountName: String
 
     @Published var advanced = false
     @Published var wordCount: Mnemonic.WordCount = CreateAccountViewModel.defaultWordCount
+    @Published var passphraseEnabled = false
 
     @Published var passphrase = ""
     @Published var passphraseConfirmation = ""
@@ -43,12 +45,18 @@ class CreateAccountViewModel: ObservableObject {
     init(walletType: WalletType) {
         self.walletType = walletType
         name = accountFactory.generatedAccountName
+        defaultAccountName = accountFactory.nextAccountName
     }
 
     private func activateDefaultWallets(account: Account) throws {
         let tokenQueries = [
             TokenQuery(blockchainType: .bitcoin, tokenType: .derived(derivation: .bip84)), // TODO: make derivation supports accountType
             TokenQuery(blockchainType: .ethereum, tokenType: .native),
+            TokenQuery(blockchainType: .monero, tokenType: .native),
+            TokenQuery(blockchainType: .tron, tokenType: .native),
+            TokenQuery(blockchainType: .binanceSmartChain, tokenType: .native),
+            TokenQuery(blockchainType: .ethereum, tokenType: .eip20(address: "0xdac17f958d2ee523a2206206994597c13d831ec7")), // USDT
+            TokenQuery(blockchainType: .tron, tokenType: .eip20(address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")), // USDT
         ]
 
         var wallets = [Wallet]()
@@ -62,16 +70,21 @@ class CreateAccountViewModel: ObservableObject {
     }
 
     private var resolvedName: String {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedName.isEmpty ? defaultAccountName : trimmedName
     }
 
     private func createAccount(words: [String], salt: String, isPasskey: Bool, statPage: StatPage) -> Account {
         let accountType: AccountType = .mnemonic(words: words, salt: salt, bip39Compliant: true)
 
+        return saveAccount(type: accountType, backedUp: isPasskey, statPage: statPage)
+    }
+
+    private func saveAccount(type accountType: AccountType, backedUp: Bool, statPage: StatPage) -> Account {
         let account = accountFactory.account(
             type: accountType,
             origin: .created,
-            backedUp: isPasskey,
+            backedUp: backedUp,
             fileBackedUp: false,
             name: resolvedName
         )
@@ -95,7 +108,7 @@ extension CreateAccountViewModel {
 
     func createAccount() throws -> Account {
         let salt: String
-        if advanced, !passphrase.isEmpty || !passphraseConfirmation.isEmpty {
+        if advanced, passphraseEnabled {
             guard !passphrase.isEmpty else {
                 throw CreateError.emptyPassphrase
             }
@@ -110,6 +123,7 @@ extension CreateAccountViewModel {
         }
 
         let wordCount = advanced ? wordCount : Self.defaultWordCount
+
         let words = try Mnemonic.generate(wordCount: wordCount, language: .english)
 
         return createAccount(words: words, salt: salt, isPasskey: false, statPage: advanced ? .newWalletAdvanced : .newWallet)

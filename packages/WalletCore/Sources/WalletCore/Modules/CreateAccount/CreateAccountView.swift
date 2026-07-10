@@ -13,7 +13,7 @@ struct CreateAccountView: View {
 
     @FocusState private var focusedField: Field?
 
-    init(walletType: CreateAccountViewModel.WalletType, isPresented: Binding<Bool>, onCreate: (() -> Void)? = nil) {
+    init(walletType: CreateAccountViewModel.WalletType = .regular, isPresented: Binding<Bool>, onCreate: (() -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: CreateAccountViewModel(walletType: walletType))
         _isPresented = isPresented
         self.onCreate = onCreate
@@ -23,26 +23,18 @@ struct CreateAccountView: View {
         ThemeView {
             BottomGradientWrapper {
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: .margin24) {
                         VStack(spacing: 0) {
                             ListSectionHeader(text: "create_wallet.name".localized, uppercased: false)
 
                             InputTextRow {
-                                PrimarySizedHStack {
-                                    InputTextView(text: $viewModel.name)
-                                        .autocapitalization(.words)
-                                        .autocorrectionDisabled()
-                                        .focused($focusedField, equals: .name)
-                                } trailing: {
-                                    ShortcutButtonsView(
-                                        showDelete: .constant(false),
-                                        items: [.icon("swap_e")],
-                                        onTap: { _ in
-                                            viewModel.refreshName()
-                                        },
-                                        onTapDelete: {}
-                                    )
-                                }
+                                InputTextView(
+                                    placeholder: viewModel.defaultAccountName,
+                                    text: $viewModel.name
+                                )
+                                .autocapitalization(.words)
+                                .autocorrectionDisabled()
+                                .focused($focusedField, equals: .name)
                             }
                         }
 
@@ -50,8 +42,9 @@ struct CreateAccountView: View {
                         case .regular:
                             ListSection {
                                 ListRow {
+                                    Image("settings_2_24").themeIcon()
                                     Toggle(isOn: $viewModel.advanced) {
-                                        Text("create_wallet.advanced_options".localized).themeBody()
+                                        Text("create_wallet.advanced".localized).themeBody()
                                     }
                                     .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
                                 }
@@ -59,87 +52,100 @@ struct CreateAccountView: View {
 
                             if viewModel.advanced {
                                 ListSection {
-                                    Cell(
-                                        middle: {
-                                            MultiText(subtitle: "create_wallet.phrase_count".localized)
-                                        },
-                                        right: {
-                                            ThemeText(
-                                                "create_wallet.n_words".localized("\(viewModel.wordCount.rawValue)"),
-                                                style: .subheadSB
-                                            ).arrow(style: .dropdown)
-                                        },
-                                        action: {
-                                            Coordinator.shared.present(type: .alert) { isPresented in
-                                                OptionAlertView(
-                                                    title: "create_wallet.phrase_count".localized,
-                                                    viewItems: Mnemonic.WordCount.allCases.map {
-                                                        .init(text: title(wordCount: $0), selected: $0 == viewModel.wordCount)
-                                                    },
-                                                    onSelect: { index in
-                                                        viewModel.wordCount = Mnemonic.WordCount.allCases[index]
-                                                    },
-                                                    isPresented: isPresented
-                                                )
-                                            }
+                                    ClickableRow(spacing: .margin8, action: {
+                                        Coordinator.shared.present(type: .alert) { isPresented in
+                                            OptionAlertView(
+                                                title: "create_wallet.phrase_count".localized,
+                                                viewItems: Mnemonic.WordCount.allCases.map {
+                                                    .init(text: title(wordCount: $0), selected: $0 == viewModel.wordCount)
+                                                },
+                                                onSelect: { index in
+                                                    viewModel.wordCount = Mnemonic.WordCount.allCases[index]
+                                                },
+                                                isPresented: isPresented
+                                            )
                                         }
-                                    )
+                                    }) {
+                                        HStack(spacing: .margin16) {
+                                            Image("key_24")
+                                            Text("create_wallet.phrase_count".localized).textBody()
+                                        }
+
+                                        Spacer()
+
+                                        Text("create_wallet.n_words".localized("\(viewModel.wordCount.rawValue)")).textSubhead1()
+                                        Image("arrow_small_down_20").themeIcon()
+                                    }
                                 }
 
-                                VStack(spacing: 0) {
-                                    ListSectionHeader(text: "create_wallet.passphrase_optional".localized, uppercased: false)
-
-                                    VStack(spacing: 16) {
-                                        InputTextRow {
-                                            InputTextView(
-                                                placeholder: "create_wallet.input.passphrase".localized,
-                                                text: $viewModel.passphrase,
-                                                isValidText: { text in PassphraseValidator.validate(text: text) }
-                                            )
-                                            .secure($secureLock)
-                                            .autocapitalization(.none)
-                                            .autocorrectionDisabled()
-                                            .focused($focusedField, equals: .passphrase)
+                                ListSection {
+                                    ListRow {
+                                        Image("key_phrase_24").themeIcon()
+                                        Toggle(isOn: $viewModel.passphraseEnabled) {
+                                            Text("create_wallet.passphrase".localized).themeBody()
                                         }
-                                        .modifier(CautionBorder(cautionState: $passphraseCaution))
-                                        .modifier(CautionPrompt(cautionState: $passphraseCaution))
-
-                                        InputTextRow {
-                                            InputTextView(
-                                                placeholder: "create_wallet.input.confirm".localized,
-                                                text: $viewModel.passphraseConfirmation,
-                                                isValidText: { text in PassphraseValidator.validate(text: text) }
-                                            )
-                                            .secure($secureLock)
-                                            .autocapitalization(.none)
-                                            .autocorrectionDisabled()
-                                            .focused($focusedField, equals: .passphraseConfirmation)
-                                        }
-                                        .modifier(CautionBorder(cautionState: $passphraseConfirmationCaution))
-                                        .modifier(CautionPrompt(cautionState: $passphraseConfirmationCaution))
+                                        .toggleStyle(SwitchToggleStyle(tint: .themeYellow))
                                     }
-                                    .animation(.default, value: secureLock)
+                                }
 
-                                    ListSectionFooter(text: "create_wallet.passphrase_description".localized)
+                                if viewModel.passphraseEnabled {
+                                    VStack(spacing: 0) {
+                                        VStack(spacing: .margin16) {
+                                            InputTextRow {
+                                                InputTextView(
+                                                    placeholder: "create_wallet.input.passphrase".localized,
+                                                    text: $viewModel.passphrase,
+                                                    isValidText: { text in PassphraseValidator.validate(text: text) }
+                                                )
+                                                .secure($secureLock)
+                                                .autocapitalization(.none)
+                                                .autocorrectionDisabled()
+                                                .focused($focusedField, equals: .passphrase)
+                                            }
+                                            .modifier(CautionBorder(cautionState: $passphraseCaution))
+                                            .modifier(CautionPrompt(cautionState: $passphraseCaution))
+
+                                            InputTextRow {
+                                                InputTextView(
+                                                    placeholder: "create_wallet.input.confirm".localized,
+                                                    text: $viewModel.passphraseConfirmation,
+                                                    isValidText: { text in PassphraseValidator.validate(text: text) }
+                                                )
+                                                .secure($secureLock)
+                                                .autocapitalization(.none)
+                                                .autocorrectionDisabled()
+                                                .focused($focusedField, equals: .passphraseConfirmation)
+                                            }
+                                            .modifier(CautionBorder(cautionState: $passphraseConfirmationCaution))
+                                            .modifier(CautionPrompt(cautionState: $passphraseConfirmationCaution))
+                                        }
+                                        .animation(.default, value: secureLock)
+
+                                        ListSectionFooter(text: "create_wallet.passphrase_description".localized)
+                                    }
                                 }
                             }
                         case .passkey, .smartAccount: EmptyView()
                         }
                     }
-                    .animation(.default, value: viewModel.advanced)
-                    .animation(.default, value: viewModel.wordCount)
-                    .animation(.default, value: passphraseCaution)
-                    .animation(.default, value: passphraseConfirmationCaution)
-                    .padding(EdgeInsets(top: 24, leading: 16, bottom: 32, trailing: 16))
                 }
-                .onTapGesture {
-                    focusedField = nil
-                }
+                .animation(.default, value: viewModel.advanced)
+                .animation(.default, value: viewModel.passphraseEnabled)
+                .animation(.default, value: viewModel.wordCount)
+                .animation(.default, value: passphraseCaution)
+                .animation(.default, value: passphraseConfirmationCaution)
+                .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
             } bottomContent: {
-                ThemeButton(text: "create_wallet.create".localized) {
+                Button(action: {
                     createAccount()
+                }) {
+                    Text("create_wallet.create".localized)
                 }
+                .buttonStyle(PrimaryButtonStyle(style: .yellow))
                 .disabled(!viewModel.createEnabled)
+            }
+            .onTapGesture {
+                focusedField = nil
             }
         }
         .onChange(of: viewModel.passphrase) { _ in clearCautions() }
@@ -201,8 +207,10 @@ struct CreateAccountView: View {
         }
 
         if case .regular = viewModel.walletType {
-            Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                BackupRequiredView.afterCreate(account: account, isPresented: isPresented)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                    BackupRequiredView.afterCreate(account: account, isPresented: isPresented)
+                }
             }
         }
     }
