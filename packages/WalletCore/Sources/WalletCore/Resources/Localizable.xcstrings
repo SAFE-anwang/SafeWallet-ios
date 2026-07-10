@@ -10,7 +10,16 @@
     "----" : {
 
     },
+    "(%@)" : {
+
+    },
+    "(%@%%)" : {
+
+    },
     "#%lld" : {
+
+    },
+    "%@" : {
 
     },
     "%@ - %@" : {
@@ -33,6 +42,38 @@
         }
       }
     },
+    "%@ %%" : {
+
+    },
+    "%@ SAFE" : {
+
+    },
+    "%@/%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@/%2$@"
+          }
+        }
+      }
+    },
+    "%@/USDT" : {
+
+    },
+    "%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@"
+          }
+        }
+      }
+    },
+    "%@0" : {
+
+    },
     "%lld" : {
 
     },
@@ -46,7 +87,13 @@
         }
       }
     },
+    "%lld%%" : {
+
+    },
     "•" : {
+
+    },
+    "$%@" : {
 
     },
     "0" : {
@@ -67,22 +114,16 @@
     "coin_overview.performance.assets" : {
 
     },
-    "Emulate Purchase" : {
-
-    },
-    "Force Enable Swap" : {
-
-    },
     "GitHub" : {
 
     },
     "Hashdit.io" : {
 
     },
-    "Invalid Pre Swap Step" : {
+    "Input" : {
 
     },
-    "Maya Stagenet Enabled" : {
+    "Invalid Pre Swap Step" : {
 
     },
     "No Handler" : {
@@ -95,9 +136,6 @@
 
     },
     "Telegram" : {
-
-    },
-    "TestNet Enabled" : {
 
     },
     "TON Connect" : {
