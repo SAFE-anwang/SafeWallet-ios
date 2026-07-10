@@ -9,15 +9,8 @@ struct SwapInfoView: View {
 
     var body: some View {
         ThemeView {
-            if viewModel.swap.status == .actionRequired {
-                BottomGradientWrapper {
-                    content
-                } bottomContent: {
-                    requestRefundButton
-                }
-            } else {
-                content
-            }
+            // Temporarily disable the refund request entry while keeping the warning visible.
+            content
         }
         .navigationTitle("swap_info.title".localized)
     }
@@ -128,23 +121,4 @@ struct SwapInfoView: View {
         }
     }
 
-    private var requestRefundButton: some View {
-        ThemeButton(text: "swap_info.request_refund".localized, spinner: viewModel.requestRefundLoading) {
-            showRequestRefund()
-        }
-        .disabled(viewModel.requestRefundLoading)
-    }
-
-    private func showRequestRefund() {
-        guard !viewModel.requestRefundLoading else {
-            return
-        }
-
-        Task {
-            await viewModel.preloadRefundContacts()
-            Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                SwapRequestRefundBottomSheetView(swap: viewModel.swap, isPresented: isPresented)
-            }
-        }
-    }
 }

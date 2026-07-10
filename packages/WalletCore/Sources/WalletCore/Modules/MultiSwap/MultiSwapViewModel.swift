@@ -7,6 +7,9 @@ import RxSwift
 public class MultiSwapViewModel: ObservableObject {
     private let autoRefreshDuration: Double = 20
 
+    private let pendingAllowanceRefreshDuration: Double = 3
+    private var pendingAllowanceTimer: Timer?
+    private var isPendingAllowanceRefreshEnabled = false
     private var cancellables = Set<AnyCancellable>()
     private var disposeBag = DisposeBag()
     private var providerCancellables = Set<AnyCancellable>()
@@ -17,6 +20,7 @@ public class MultiSwapViewModel: ObservableObject {
     private var timer: Timer?
 
     private var balanceDisposeBag = DisposeBag()
+    private var transactionsDisposeBag = DisposeBag()
 
     private var providers: [IMultiSwapProvider]
     private let swapProviderManager = Core.shared.swapProviderManager
@@ -35,6 +39,8 @@ public class MultiSwapViewModel: ObservableObject {
     private var enteringFiat = false
 
     @Published public var validProviders = [IMultiSwapProvider]()
+
+    var USDT_src20: Token?
 
     private var internalTokenIn: Token? {
         didSet {
@@ -250,6 +256,7 @@ public class MultiSwapViewModel: ObservableObject {
             nextQuoteTime = nil
 
             if !quotes.isEmpty {
+                lastSuccessfulQuotesTimestamp = Date().timeIntervalSince1970
                 nextQuoteTime = Date().timeIntervalSince1970 + autoRefreshDuration
 
                 timer = Timer.scheduledTimer(withTimeInterval: autoRefreshDuration, repeats: false) { [weak self] _ in
@@ -272,10 +279,18 @@ public class MultiSwapViewModel: ObservableObject {
     @Published public var quoting = false
     @Published public var validatingProvider = false
     private var nextQuoteTime: Double?
+    private var lastSuccessfulQuotesTimestamp: Double?
 
     @Published var priceImpact: Decimal?
 
     @Published var quoteSortType: QuoteSortType = .bestRate
+
+    var shouldShowKlineButton: Bool {
+        guard let tokenIn, let tokenOut else {
+            return false
+        }
+        return tokenIn.blockchainType == .safe4 && tokenOut.blockchainType == .safe4
+    }
 
     public init(token: Token? = nil, autoResolveTokenOut: Bool = true, customDecimals: Int? = nil) {
         providers = swapProviderManager.providers.compactMap { SwapProviderFactory.provider(id: $0) }
@@ -366,12 +381,22 @@ public class MultiSwapViewModel: ObservableObject {
                     self?.availableBalance = balanceData.available
                 }
                 .disposed(by: balanceDisposeBag)
-        } else {
-            DispatchQueue.main.async { [weak self] in
-                self?.adapterState = nil
-                self?.availableBalance = nil
-                self?.spendMode = .fromBalanceState
+
+            transactionsDisposeBag = .init()
+            if let adapter = adapterManager.adapter(for: wallet) as? Eip20Adapter {
+                adapter.lastBlockUpdatedObservable
+                    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+                    .observeOn(MainScheduler.instance)
+                    .subscribe { [weak self] _ in
+                        guard self?.isPendingAllowanceRefreshEnabled == true else { return }
+                        self?.syncQuotes(silent: true)
+                    }
+                    .disposed(by: transactionsDisposeBag)
             }
+        } else {
+            adapterState = nil
+            availableBalance = nil
+            spendMode = .fromBalanceState
         }
     }
 
@@ -452,6 +477,7 @@ public class MultiSwapViewModel: ObservableObject {
     }
 
     func syncQuotes(silent: Bool = false) {
+        quotesTask?.cancel()
         quotesTask = nil
 
         if !silent {
@@ -521,9 +547,29 @@ public class MultiSwapViewModel: ObservableObject {
             let decorated = Self.decorated(quotes: quotes)
 
             if !Task.isCancelled {
-                await MainActor.run { [weak self, decorated] in
-                    self?.quoting = false
-                    self?.quotes = decorated
+                await MainActor.run { [weak self, quotes, decorated] in
+                    guard let self else {
+                        return
+                    }
+
+                    self.quoting = false
+
+                    if silent, quotes.isEmpty, !self.quotes.isEmpty {
+                        let quoteAge = self.lastSuccessfulQuotesTimestamp.map { Date().timeIntervalSince1970 - $0 } ?? .infinity
+                        guard quoteAge < self.autoRefreshDuration else {
+                            self.quotes = []
+                            return
+                        }
+
+                        self.timer?.invalidate()
+                        self.nextQuoteTime = Date().timeIntervalSince1970 + self.autoRefreshDuration
+                        self.timer = Timer.scheduledTimer(withTimeInterval: self.autoRefreshDuration, repeats: false) { [weak self] _ in
+                            self?.syncQuotes(silent: true)
+                        }
+                        return
+                    }
+
+                    self.quotes = decorated
                 }
             }
         }
@@ -618,6 +664,22 @@ public extension MultiSwapViewModel {
                 self?.syncQuotes(silent: true)
             }
         }
+    }
+
+    func startPendingAllowanceRefresh() {
+        isPendingAllowanceRefreshEnabled = true
+        pendingAllowanceTimer?.invalidate()
+        syncQuotes(silent: true)
+        pendingAllowanceTimer = Timer.scheduledTimer(withTimeInterval: pendingAllowanceRefreshDuration, repeats: true) { [weak self] _ in
+            guard self?.isPendingAllowanceRefreshEnabled == true else { return }
+            self?.syncQuotes(silent: true)
+        }
+    }
+
+    func stopPendingAllowanceRefresh() {
+        isPendingAllowanceRefreshEnabled = false
+        pendingAllowanceTimer?.invalidate()
+        pendingAllowanceTimer = nil
     }
 
     func reset() {

@@ -18,15 +18,19 @@ open class RecipientAddressViewModel {
     private let disposeBag = DisposeBag()
     private let service: AddressService
     private let handlerDelegate: IRecipientAddressService? // for legacy handlers
+    private let chainalysisValidator = ChainalysisAddressValidator()
+    private let hashDitValidator = HashDitAddressValidator()
 
     private let isSuccessRelay = BehaviorRelay<Bool>(value: false)
     private let isLoadingRelay = BehaviorRelay<Bool>(value: false)
     let cautionRelay = BehaviorRelay<Caution?>(value: nil)
+    private let securityCautionRelay = BehaviorRelay<Caution?>(value: nil)
     private let setTextRelay = BehaviorRelay<String?>(value: nil)
     private let showContactsRelay = BehaviorRelay<Bool>(value: false)
     private let showUriErrorRelay = PublishRelay<String>()
 
     private var editing = false
+    private var securityCheckId = 0
 
     init(service: AddressService, handlerDelegate: IRecipientAddressService?) {
         self.service = service
@@ -67,12 +71,16 @@ open class RecipientAddressViewModel {
         switch state {
         case .empty:
             cautionRelay.accept(nil)
+            securityCheckId += 1
+            securityCautionRelay.accept(nil)
             isSuccessRelay.accept(false)
             isLoadingRelay.accept(false)
 
             handlerDelegate?.set(address: nil)
         case .loading:
             cautionRelay.accept(nil)
+            securityCheckId += 1
+            securityCautionRelay.accept(nil)
             isSuccessRelay.accept(false)
             isLoadingRelay.accept(true)
 
@@ -83,12 +91,16 @@ open class RecipientAddressViewModel {
                 type: .error
             )
             )
+            securityCheckId += 1
+            securityCautionRelay.accept(nil)
             isSuccessRelay.accept(false)
             isLoadingRelay.accept(false)
 
             handlerDelegate?.set(address: nil)
         case let .fetchError(error):
             cautionRelay.accept(Caution(text: error.convertedError.smartDescription, type: .error))
+            securityCheckId += 1
+            securityCautionRelay.accept(nil)
             isSuccessRelay.accept(false)
             isLoadingRelay.accept(false)
 
@@ -96,10 +108,49 @@ open class RecipientAddressViewModel {
         case let .success(address):
             setTextRelay.accept(address.title)
             cautionRelay.accept(nil)
+            securityCautionRelay.accept(nil)
             isSuccessRelay.accept(true)
             isLoadingRelay.accept(false)
 
             handlerDelegate?.set(address: address)
+            checkSecurity(address: address)
+        }
+    }
+
+    private func checkSecurity(address: Address) {
+        securityCheckId += 1
+        let currentId = securityCheckId
+
+        guard let blockchainType = address.blockchainType else {
+            securityCautionRelay.accept(nil)
+            return
+        }
+
+        Task { [weak self] in
+            guard let self else { return }
+
+            var detectedTypes = [AddressSecurityIssueType]()
+
+            if let isClear = try? await self.chainalysisValidator.isClear(address: address), !isClear {
+                detectedTypes.append(.sanctioned)
+            }
+
+            if EvmBlockchainManager.blockchainTypes.contains(blockchainType),
+               let isClear = try? await self.hashDitValidator.isClear(address: address, blockchainType: blockchainType),
+               !isClear {
+                detectedTypes.append(.blacklisted)
+            }
+
+            await MainActor.run {
+                guard self.securityCheckId == currentId else { return }
+
+                if detectedTypes.isEmpty {
+                    self.securityCautionRelay.accept(nil)
+                } else {
+                    let text = detectedTypes.map(\.checkTitle).joined(separator: " · ")
+                    self.securityCautionRelay.accept(Caution(text: text, type: .warning))
+                }
+            }
         }
     }
 }
@@ -115,6 +166,12 @@ extension RecipientAddressViewModel {
 
     var cautionDriver: Driver<Caution?> {
         cautionRelay.asDriver()
+    }
+
+    var combinedCautionDriver: Driver<Caution?> {
+        Driver.combineLatest(cautionRelay.asDriver(), securityCautionRelay.asDriver()) { caution, securityCaution in
+            caution ?? securityCaution
+        }
     }
 
     var setTextDriver: Driver<String?> {

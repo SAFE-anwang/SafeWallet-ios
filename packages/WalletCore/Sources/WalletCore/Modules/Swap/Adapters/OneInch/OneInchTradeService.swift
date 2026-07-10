@@ -132,6 +132,10 @@ class OneInchTradeService {
             }, onError: { [weak self] error in
                 var identifiedError = error.convertedError
 
+                if identifiedError.smartDescription.contains("insufficient liquidity"){
+                    identifiedError = AppError.oneInch(reason: .insufficientLiquidity)
+                }
+
                 if let error = identifiedError as? AppError,
                    case let .invalidResponse(reason) = error
                 {

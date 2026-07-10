@@ -56,12 +56,20 @@ class SwapProviderManager {
 
         switch dex.provider {
         case .uniswap, .pancake, .quickSwap:
-            return UniswapModule(dex: dex, dataSourceState: state)
+            return UniswapModule(dex: dex, dataSourceState: state, isSafeSwap: false)
         case .uniswapV3, .pancakeV3:
             return UniswapV3Module(dex: dex, dataSourceState: state)
         case .oneInch:
             return OneInchModule(dex: dex, dataSourceState: state)
+        case .safeSwap:
+            return UniswapModule(dex: dex, dataSourceState: state, isSafeSwap: true)
         }
+    }
+
+    func switchToOneInch() {
+        guard let id = dex?.provider.id, id == SwapModule.Dex.Provider.safeSwap.id else { return }
+        guard let provider = dex?.blockchainType.allowedProviders.first(where: { $0 == .oneInch}) else { return }
+        set(provider: provider)
     }
 }
 
