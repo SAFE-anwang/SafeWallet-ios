@@ -4,6 +4,7 @@ import RxSwift
 
 public class TransactionsViewModel: ObservableObject {
     private static let pageLimit = 20
+//    private static let safeItemUpdateInterval: TimeInterval = 3.5
 
     private let walletManager = Core.shared.walletManager
     private let adapterManager = Core.shared.transactionAdapterManager
@@ -51,6 +52,16 @@ public class TransactionsViewModel: ObservableObject {
         didSet {
             DispatchQueue.main.async { [__sections] in
                 self.sections = __sections
+//            DispatchQueue.main.async { [self, __sections] in
+//                if let blockchain = transactionFilter.blockchain, blockchain.type == .dogecoin {
+//                    self.sections = __sections.map{ section in
+//                        var _section = section
+//                        _section.viewItems = section.viewItems.removeDuplicates()
+//                        return _section
+//                    }
+//                }else {
+//                    self.sections = __sections
+//                }
             }
         }
     }
@@ -67,11 +78,15 @@ public class TransactionsViewModel: ObservableObject {
         }
     }
 
-    private var __items = [Item]()
+    private(set) var __items = [Item]()
     private var __poolGroup = PoolGroup(pools: [])
     private var __lastRequestedCount = TransactionsViewModel.pageLimit
     private var __loadMoreRequested = false
     private var __poolUpdateRequested = false
+//    private var __safeItemsUpdateScheduled = false
+//    private var __safePostSyncSettling = false
+//    private var __safePostSyncSettlementToken = 0
+//    private var __pendingSafeTransactionItems = [String: TransactionItem]()
 
     private var __loading = false {
         didSet {
@@ -138,6 +153,8 @@ public class TransactionsViewModel: ObservableObject {
         __loading = false
         __loadMoreRequested = true
         __poolUpdateRequested = false
+//        __safeItemsUpdateScheduled = false
+//        __pendingSafeTransactionItems.removeAll(keepingCapacity: false)
 
         __load()
 
@@ -257,6 +274,84 @@ public class TransactionsViewModel: ObservableObject {
         }
     }
 
+//    private func shouldCoalesceSafeItemUpdates(transactionItems: [TransactionItem]) -> Bool {
+//        (__poolGroup.syncing || __safePostSyncSettling) &&
+//            !transactionItems.isEmpty &&
+//            transactionItems.allSatisfy { $0.record.source.blockchainType == .safe }
+//    }
+//
+//    private func scheduleSafeItemUpdatesFlush() {
+//        guard !__safeItemsUpdateScheduled else {
+//            return
+//        }
+//
+//        __safeItemsUpdateScheduled = true
+//
+//        queue.asyncAfter(deadline: .now() + Self.safeItemUpdateInterval) {
+//            self.__flushPendingSafeItemUpdates()
+//        }
+//    }
+//
+//    private func __flushPendingSafeItemUpdates() {
+//        __safeItemsUpdateScheduled = false
+//
+//        guard !__pendingSafeTransactionItems.isEmpty else {
+//            return
+//        }
+//
+//        let transactionItems = __pendingSafeTransactionItems.values.sorted()
+//        __pendingSafeTransactionItems.removeAll(keepingCapacity: true)
+//        __applyUpdated(transactionItems: transactionItems)
+//    }
+//
+//    private func __applyUpdated(transactionItems: [TransactionItem]) {
+//        guard !transactionItems.isEmpty else {
+//            return
+//        }
+//
+//        var updatedIds = Set<String>()
+//
+//        for transactionItem in transactionItems {
+//            for item in __items {
+//                if item.record == transactionItem.record {
+//                    item.transactionItem = transactionItem
+//                    item.currencyValue = currencyValue(record: transactionItem.record, rate: rate(record: transactionItem.record))
+//                    updatedIds.insert(transactionItem.record.uid)
+//                    break
+//                }
+//            }
+//        }
+//
+//        guard !updatedIds.isEmpty else {
+//            return
+//        }
+//
+//        let viewItemsMap = Dictionary(
+//            uniqueKeysWithValues: __items
+//                .filter { updatedIds.contains($0.record.uid) }
+//                .map { item in
+//                    (item.record.uid, viewItemFactory.viewItem(item: item, balanceHidden: balanceHiddenManager.balanceHidden))
+//                }
+//        )
+//
+//        guard !viewItemsMap.isEmpty else {
+//            return
+//        }
+//
+//        var updatedSections = __sections
+//
+//        for sectionIndex in updatedSections.indices {
+//            for rowIndex in updatedSections[sectionIndex].viewItems.indices {
+//                let rowId = updatedSections[sectionIndex].viewItems[rowIndex].id
+//                if let viewItem = viewItemsMap[rowId] {
+//                    updatedSections[sectionIndex].viewItems[rowIndex] = viewItem
+//                }
+//            }
+//        }
+//
+//        __sections = updatedSections
+//    }
+
     private func handle(transactionItems: [TransactionItem], loadedMore: Bool) {
         queue.async {
             let nftUids = transactionItems.map(\.record).nftUids
@@ -296,7 +391,14 @@ public class TransactionsViewModel: ObservableObject {
                         self.__reportItem(item: item)
                         break
                     }
+//            if self.shouldCoalesceSafeItemUpdates(transactionItems: transactionItems) {
+//                for item in transactionItems {
+//                    self.__pendingSafeTransactionItems[item.record.uid] = item
                 }
+//                self.scheduleSafeItemUpdatesFlush()
+//            } else {
+//                self.__flushPendingSafeItemUpdates()
+//                self.__applyUpdated(transactionItems: transactionItems)
             }
         }
     }
@@ -304,6 +406,42 @@ public class TransactionsViewModel: ObservableObject {
     private func handleUpdated(poolGroupSyncing: Bool) {
         queue.async {
             self.__poolGroupSyncing = poolGroupSyncing
+//
+//            self.__safePostSyncSettlementToken += 1
+//            let token = self.__safePostSyncSettlementToken
+//
+//            guard !poolGroupSyncing else {
+//                self.__safePostSyncSettling = false
+//                return
+//            }
+//
+//            let shouldDelaySafeFlush: Bool
+//            if !self.__pendingSafeTransactionItems.isEmpty {
+//                shouldDelaySafeFlush = self.__pendingSafeTransactionItems.values.allSatisfy { $0.record.source.blockchainType == .safe }
+//            } else {
+//                shouldDelaySafeFlush = !self.__items.isEmpty && self.__items.allSatisfy { $0.record.source.blockchainType == .safe }
+//            }
+//
+//            guard shouldDelaySafeFlush else {
+//                self.__flushPendingSafeItemUpdates()
+//                return
+//            }
+//
+//            self.__safePostSyncSettling = true
+//
+//            self.queue.asyncAfter(deadline: .now() + Self.safeItemUpdateInterval) {
+//                guard token == self.__safePostSyncSettlementToken else {
+//                    return
+//                }
+//
+//                self.__safePostSyncSettling = false
+//
+//                guard !self.__poolGroupSyncing else {
+//                    return
+//                }
+//
+//                self.__flushPendingSafeItemUpdates()
+//            }
         }
     }
 
