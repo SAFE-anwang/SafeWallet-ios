@@ -21,10 +21,10 @@ public class AdapterFactory {
     private let spamWrapper: SpamWrapper
     private let evmLabelManager: EvmLabelManager
 
-    public init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, moneroNodeManager: MoneroNodeManager, zcashNodeManager: ZcashNodeManager,
-                btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager,
-                zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager,
-                spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager)
+    init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, moneroNodeManager: MoneroNodeManager, zcashNodeManager: ZcashNodeManager,
+         btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager,
+         zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager,
+         spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager)
     {
         self.evmBlockchainManager = evmBlockchainManager
         self.evmSyncSourceManager = evmSyncSourceManager
@@ -187,6 +187,10 @@ extension AdapterFactory {
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .litecoin, accountOrigin: wallet.account.origin)
             return try? LitecoinAdapter(wallet: wallet, syncMode: syncMode)
 
+        case (.native, .dogecoin):
+            let syncMode = btcBlockchainManager.syncMode(blockchainType: .dogecoin, accountOrigin: wallet.account.origin)
+            return try? DogecoinAdapter(wallet: wallet, syncMode: syncMode)
+
         case (.native, .dash):
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .dash, accountOrigin: wallet.account.origin)
             return try? DashAdapter(wallet: wallet, syncMode: syncMode)
@@ -225,6 +229,17 @@ extension AdapterFactory {
 
         case let (.eip20(address), .ethereum), let (.eip20(address), .binanceSmartChain), let (.eip20(address), .polygon), let (.eip20(address), .avalanche), let (.eip20(address), .optimism), let (.eip20(address), .arbitrumOne), let (.eip20(address), .gnosis), let (.eip20(address), .fantom), let (.eip20(address), .base), let (.eip20(address), .zkSync):
             return eip20Adapter(address: address, wallet: wallet, coinManager: coinManager)
+
+        case let (.eip20(address), .safe4):
+            return eip20Adapter(address: address, wallet: wallet, coinManager: coinManager)
+
+        case (.native, .safe):
+            let syncMode = btcBlockchainManager.syncMode(blockchainType: .safe, accountOrigin: wallet.account.origin)
+            return try? SafeCoinAdapter(wallet: wallet, syncMode: syncMode)
+
+        case (.native, .safe4):
+            return evmAdapter(wallet: wallet)
+
 
         case (.native, .tron):
             return tronAdapter(wallet: wallet)

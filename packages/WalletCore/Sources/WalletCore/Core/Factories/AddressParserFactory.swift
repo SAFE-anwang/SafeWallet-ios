@@ -6,6 +6,8 @@ import ECashKit
 import LitecoinKit
 import MarketKit
 import ZcashLightClientKit
+import SafeCoinKit
+import DogecoinKit
 
 enum AddressParserFactory {
     static func parser(blockchainType: BlockchainType?, tokenType: TokenType?) -> AddressUriParser {
@@ -14,7 +16,7 @@ enum AddressParserFactory {
 
     static func parserChainHandlers(blockchainType: BlockchainType, filter: ParserFilter? = nil, withEns: Bool = true) -> [IAddressParserItem] {
         switch blockchainType {
-        case .bitcoin, .dash, .litecoin, .bitcoinCash, .ecash:
+        case .bitcoin, .dash, .litecoin, .bitcoinCash, .ecash, .dogecoin, .safe:
             let scriptConverter = ScriptConverter()
 
             let specificAddressConverter: IAddressConverter?
@@ -32,6 +34,12 @@ enum AddressParserFactory {
             case .ecash:
                 network = ECashKit.MainNet()
                 specificAddressConverter = CashBech32AddressConverter(prefix: network.bech32PrefixPattern)
+            case .dogecoin:
+                network = DogecoinKit.MainNet()
+                specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
+            case .safe:
+                network = SafeCoinKit.MainNet()
+                specificAddressConverter = nil
             default:
                 network = BitcoinKit.MainNet()
                 specificAddressConverter = SegWitBech32AddressConverter(prefix: network.bech32PrefixPattern, scriptConverter: scriptConverter)
@@ -57,7 +65,7 @@ enum AddressParserFactory {
             }
 
             return handlers
-        case .ethereum, .gnosis, .fantom, .polygon, .arbitrumOne, .avalanche, .optimism, .binanceSmartChain, .base, .zkSync:
+        case .ethereum, .gnosis, .fantom, .polygon, .arbitrumOne, .avalanche, .optimism, .binanceSmartChain, .base, .zkSync, .safe4:
             let evmAddressParserItem = EvmAddressParser(blockchainType: blockchainType)
 
             var handlers = [IAddressParserItem]()

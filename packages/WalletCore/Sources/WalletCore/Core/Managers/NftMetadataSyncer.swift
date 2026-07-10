@@ -11,6 +11,8 @@ class NftMetadataSyncer {
     private let nftStorage: NftStorage
     private let disposeBag = DisposeBag()
     private var adapterDisposeBag = DisposeBag()
+    private let stateQueue = DispatchQueue(label: "\(AppConfig.label).nft_metadata_syncer_state")
+    private var syncingKeys = Set<NftKey>()
 
     init(nftAdapterManager: NftAdapterManager, nftMetadataManager: NftMetadataManager, nftStorage: NftStorage) {
         self.nftAdapterManager = nftAdapterManager
@@ -25,6 +27,7 @@ class NftMetadataSyncer {
             })
             .disposed(by: disposeBag)
 
+        sync(adapterMap: nftAdapterManager.adapterMap)
         subscribeToAdapterRecords(adapterMap: nftAdapterManager.adapterMap)
     }
 
@@ -56,12 +59,25 @@ class NftMetadataSyncer {
             return
         }
 
+        let shouldStart = stateQueue.sync { () -> Bool in
+            if syncingKeys.contains(nftKey) {
+                return false
+            }
+
+            syncingKeys.insert(nftKey)
+            return true
+        }
+
+        guard shouldStart else {
+            return
+        }
+
         nftMetadataManager.addressMetadataSingle(blockchainType: nftKey.blockchainType, address: adapter.userAddress)
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
             .subscribe(onSuccess: { [weak self] addressMetadata in
                 self?.handle(addressMetadata: addressMetadata, nftKey: nftKey)
             }, onError: { _ in
-                // todo
+                self.finishSync(nftKey: nftKey)
             })
             .disposed(by: disposeBag)
     }
@@ -71,6 +87,13 @@ class NftMetadataSyncer {
 
         nftStorage.save(lastSyncTimestamp: Date().timeIntervalSince1970, nftKey: nftKey)
         nftMetadataManager.handle(addressMetadata: addressMetadata, nftKey: nftKey)
+        finishSync(nftKey: nftKey)
+    }
+
+    private func finishSync(nftKey: NftKey) {
+        stateQueue.async {
+            self.syncingKeys.remove(nftKey)
+        }
     }
 }
 

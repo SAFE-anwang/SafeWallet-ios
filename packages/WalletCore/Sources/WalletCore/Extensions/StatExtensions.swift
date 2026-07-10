@@ -43,6 +43,7 @@ extension MarketModule.Tab {
         switch self {
         case .coins: return .coins
         case .watchlist: return .watchlist
+        case .dapp: return .dapp
         }
     }
 }
@@ -53,6 +54,8 @@ extension TransactionTypeFilter {
         case .all: return .all
         case .incoming: return .incoming
         case .outgoing: return .outgoing
+        case .swap: return .swap
+        case .approve: return .approve
         }
     }
 }

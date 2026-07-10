@@ -18,6 +18,7 @@ public enum AccountType: Identifiable {
     case stellarAccount(accountId: String)
     case hdExtendedKey(key: HDExtendedKey)
     case btcAddress(address: String, blockchainType: BlockchainType, tokenType: TokenType)
+    case btcPrivateKey(data: Data, compressed: Bool, blockchainType: BlockchainType)
     case moneroWatchAccount(address: String, viewKey: String)
 
     public var id: Self {
@@ -68,6 +69,8 @@ public enum AccountType: Identifiable {
             privateData = key.serialized
         case let .btcAddress(address, blockchainType, tokenType):
             privateData = "\(address)&\(blockchainType.uid)|\(tokenType.id)".data(using: .utf8) ?? Data()
+        case let .btcPrivateKey(data, compressed, blockchainType):
+            privateData = "\(data.hexString)|\(compressed)|\(blockchainType.uid)".data(using: .utf8) ?? Data()
         case let .moneroWatchAccount(address, viewKey):
             privateData = "\(address)|\(viewKey)".data(using: .utf8) ?? Data()
         }
@@ -87,11 +90,12 @@ public enum AccountType: Identifiable {
             case (.bitcoinCash, .addressType): return true
             case (.ecash, .native): return true
             case (.litecoin, .derived): return true
+            case (.dogecoin, .native): return true
             case (.dash, .native): return true
             case (.zcash, .native): return true
-            case (.monero, .native): return true
             case (.zano, .native): return true
             case (.zano, .zanoAsset): return true
+            case (.monero, .native), (.monero, .unsupported(type: "native", reference: nil)): return true
             case (.ethereum, .native), (.ethereum, .eip20): return true
             case (.binanceSmartChain, .native), (.binanceSmartChain, .eip20): return true
             case (.polygon, .native), (.polygon, .eip20): return true
@@ -103,8 +107,10 @@ public enum AccountType: Identifiable {
             case (.base, .native), (.base, .eip20): return true
             case (.zkSync, .native), (.zkSync, .eip20): return true
             case (.tron, .native), (.tron, .eip20): return true
+            case (.safe, .native), (.safe, .eip20): return true
+            case (.safe4, .native), (.safe4, .eip20): return true
             case (.ton, .native), (.ton, .jetton): return true
-            case (.stellar, .native), (.stellar, .stellar): return true
+            case (.stellar, .native), (.stellar, .stellar), (.stellar, .unsupported(type: "native", reference: nil)): return true
             case (.solana, .native), (.solana, .spl): return true
             default: return false
             }
@@ -120,7 +126,7 @@ public enum AccountType: Identifiable {
                 }
 
                 return key.coinTypes.contains(where: { $0 == .litecoin })
-            case .bitcoinCash, .ecash, .dash:
+            case .bitcoinCash, .ecash, .dash, .dogecoin:
                 return key.purposes.contains(where: { $0 == .bip44 })
             default:
                 return false
@@ -133,7 +139,7 @@ public enum AccountType: Identifiable {
             return StablecoinRegistry.supports(blockchainType: token.blockchainType, tokenAddress: address)
         case .evmPrivateKey, .evmAddress:
             switch (token.blockchainType, token.type) {
-            case (.ethereum, .native), (.ethereum, .eip20): return true
+            case (.ethereum, .native), (.ethereum, .eip20), (.safe4, .native): return true
             case (.binanceSmartChain, .native), (.binanceSmartChain, .eip20): return true
             case (.polygon, .native), (.polygon, .eip20): return true
             case (.avalanche, .native), (.avalanche, .eip20): return true
@@ -162,6 +168,13 @@ public enum AccountType: Identifiable {
             }
         case let .btcAddress(_, blockchainType, tokenType):
             return token.blockchainType == blockchainType && token.type == tokenType
+        case let .btcPrivateKey(_, _, blockchainType):
+            switch blockchainType {
+            case .bitcoin, .litecoin:
+                return [.bitcoin, .litecoin, .bitcoinCash, .dash, .dogecoin].contains(token.blockchainType)
+            default:
+                return token.blockchainType == blockchainType
+            }
         case .moneroWatchAccount:
             return token.blockchainType == .monero
         }
@@ -169,7 +182,7 @@ public enum AccountType: Identifiable {
 
     var canAddTokens: Bool {
         switch self {
-        case .mnemonic, .evmPrivateKey, .trcPrivateKey: return true
+        case .mnemonic, .evmPrivateKey, .trcPrivateKey, .btcPrivateKey: return true
         default: return false
         }
     }
@@ -225,6 +238,8 @@ public enum AccountType: Identifiable {
             }
         case .btcAddress:
             return "BTC Address"
+        case .btcPrivateKey:
+            return "Bitcoin Private Key"
         case .moneroWatchAccount:
             return "Monero Watch Account"
         }
@@ -267,6 +282,8 @@ public enum AccountType: Identifiable {
             }
         case .btcAddress:
             return "btc_address"
+        case .btcPrivateKey:
+            return "btc_private_key"
         case .moneroWatchAccount:
             return "monero_watch_account"
         }
@@ -295,6 +312,8 @@ public enum AccountType: Identifiable {
             }
         case let .btcAddress(address, _, _):
             return address
+        case let .btcPrivateKey(data, compressed, blockchainType):
+            return try? BitcoinPrivateKeyParser.generateAddress(from: data, compressed: compressed, blockchainType: blockchainType)
         case let .moneroWatchAccount(address, _):
             return address
         default: return nil
@@ -306,6 +325,21 @@ public enum AccountType: Identifiable {
             return "balance.watch_wallet.typed".localized(watchTypeName)
         }
         return description
+    }
+
+    func evmAddress(chain: Chain) -> EvmKit.Address? {
+        switch self {
+        case .mnemonic:
+            guard let mnemonicSeed else {
+                return nil
+            }
+
+            return try? EvmKit.Signer.address(seed: mnemonicSeed, chain: chain)
+        case let .evmPrivateKey(data):
+            return EvmKit.Signer.address(privateKey: data)
+        default:
+            return nil
+        }
     }
 
     private var watchTypeName: String? {
@@ -322,6 +356,21 @@ public enum AccountType: Identifiable {
         case .btcAddress: return "BTC"
         case .moneroWatchAccount: return "Monero"
         default: return nil
+        }
+    }
+
+    var tronAddress: TronKit.Address? {
+        switch self {
+        case .mnemonic:
+            guard let mnemonicSeed else {
+                return nil
+            }
+
+            return try? TronKit.Signer.address(seed: mnemonicSeed)
+        case let .trcPrivateKey(data):
+            return try? TronKit.Signer.address(privateKey: data)
+        default:
+            return nil
         }
     }
 
@@ -391,6 +440,20 @@ extension AccountType {
             }
 
             return AccountType.btcAddress(address: address, blockchainType: BlockchainType(uid: blockchainTypeUid), tokenType: tokenType)
+        case .btcPrivateKey:
+            let components = string.components(separatedBy: "|")
+            guard components.count >= 3 else {
+                return nil
+            }
+            let hexString = components[0]
+            let compressedString = components[1]
+            let blockchainTypeUid = components[2]
+
+            guard let data = Data(hexString: hexString) else {
+                return nil
+            }
+            let compressed = (compressedString == "true")
+            return AccountType.btcPrivateKey(data: data, compressed: compressed, blockchainType: BlockchainType(uid: blockchainTypeUid))
         case .evmAddress:
             return (try? EvmKit.Address(hex: string)).map { AccountType.evmAddress(address: $0) }
         case .tronAddress:
@@ -433,6 +496,7 @@ extension AccountType {
         case stellarAccount = "stellar_account"
         case hdExtendedKey = "hd_extended_key"
         case btcAddress = "btc_address_key"
+        case btcPrivateKey = "btc_private_key"
         case moneroWatchAccount = "monero_watch_account"
 
         init(_ type: AccountType) {
@@ -449,6 +513,7 @@ extension AccountType {
             case .stellarAccount: self = .stellarAccount
             case .hdExtendedKey: self = .hdExtendedKey
             case .btcAddress: self = .btcAddress
+            case .btcPrivateKey: self = .btcPrivateKey
             case .moneroWatchAccount: self = .moneroWatchAccount
             }
         }
@@ -480,6 +545,8 @@ extension AccountType: Hashable {
             return lhsKey == rhsKey
         case let (.btcAddress(lhsAddress, lhsBlockchainType, lhsTokenType), .btcAddress(rhsAddress, rhsBlockchainType, rhsTokenType)):
             return lhsAddress == rhsAddress && lhsBlockchainType == rhsBlockchainType && lhsTokenType == rhsTokenType
+        case let (.btcPrivateKey(lhsData, lhsCompressed, lhsBlockchainType), .btcPrivateKey(rhsData, rhsCompressed, rhsBlockchainType)):
+            return lhsData == rhsData && lhsCompressed == rhsCompressed && lhsBlockchainType == rhsBlockchainType
         case let (.moneroWatchAccount(lhsAddress, lhsViewKey), .moneroWatchAccount(rhsAddress, rhsViewKey)):
             return lhsAddress == rhsAddress && lhsViewKey == rhsViewKey
         default: return false
@@ -525,6 +592,11 @@ extension AccountType: Hashable {
             hasher.combine(address)
             hasher.combine(blockchainType)
             hasher.combine(tokenType)
+        case let .btcPrivateKey(data, compressed, blockchainType):
+            hasher.combine("btcPrivateKey")
+            hasher.combine(data)
+            hasher.combine(compressed)
+            hasher.combine(blockchainType)
         case let .moneroWatchAccount(address, viewKey):
             hasher.combine("moneroWatchWallet")
             hasher.combine(address)

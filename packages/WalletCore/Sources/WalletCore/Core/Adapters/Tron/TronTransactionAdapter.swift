@@ -55,6 +55,7 @@ class TronTransactionsAdapter: BaseTronAdapter {
         case .all: ()
         case .incoming: type = .incoming
         case .outgoing: type = .outgoing
+        case .swap, .approve: ()
         }
 
         return TransactionTagQuery(type: type, protocol: `protocol`, contractAddress: contractAddress, address: address)
@@ -118,6 +119,10 @@ extension TronTransactionsAdapter: ITransactionsAdapter {
     }
 
     func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {
+        guard Self.supports(filter: filter) else {
+            return .just([])
+        }
+
         let address = address.flatMap { try? TronKit.Address(address: $0) }?.hex
 
         return tronKit.transactionsPublisher(tagQueries: [tagQuery(token: token, filter: filter, address: address)]).asObservable()
@@ -128,6 +133,10 @@ extension TronTransactionsAdapter: ITransactionsAdapter {
     }
 
     func transactionsSingle(paginationData: String?, token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?, limit: Int) -> Single<[TransactionRecord]> {
+        guard Self.supports(filter: filter) else {
+            return .just([])
+        }
+
         let address = address.flatMap { try? TronKit.Address(address: $0) }?.hex
         let transactions = tronKit.transactions(tagQueries: [tagQuery(token: token, filter: filter, address: address)], hash: paginationData?.hs.hexData, descending: true, limit: limit)
 
@@ -146,6 +155,13 @@ extension TronTransactionsAdapter: ITransactionsAdapter {
 
     func rawTransaction(hash _: String) -> String? {
         nil
+    }
+
+    private static func supports(filter: TransactionTypeFilter) -> Bool {
+        switch filter {
+        case .all, .incoming, .outgoing: return true
+        case .swap, .approve: return false
+        }
     }
 }
 

@@ -63,6 +63,7 @@ class StellarTransactionAdapter {
         case .all: ()
         case .incoming: type = .incoming
         case .outgoing: type = .outgoing
+        case .swap, .approve: ()
         }
 
         if let address {
@@ -137,7 +138,11 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
     }
 
     func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {
-        stellarKit.operationPublisher(tagQuery: tagQuery(token: token, filter: filter, address: address))
+        guard Self.supports(filter: filter) else {
+            return .just([])
+        }
+
+        return stellarKit.operationPublisher(tagQuery: tagQuery(token: token, filter: filter, address: address))
             .asObservable()
             .map { [weak self] in
                 self?.handleTransactions($0.operations) ?? []
@@ -145,6 +150,10 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
     }
 
     func transactionsSingle(paginationData: String?, token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?, limit: Int) -> Single<[TransactionRecord]> {
+        guard Self.supports(filter: filter) else {
+            return .just([])
+        }
+
         let tagQuery = tagQuery(token: token, filter: filter, address: address)
         let pagingToken = paginationData
 
@@ -179,5 +188,12 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
 
     func rawTransaction(hash _: String) -> String? {
         nil
+    }
+
+    private static func supports(filter: TransactionTypeFilter) -> Bool {
+        switch filter {
+        case .all, .incoming, .outgoing: return true
+        case .swap, .approve: return false
+        }
     }
 }

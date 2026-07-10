@@ -17,8 +17,8 @@ class BitcoinHexBroadcaster: IOpenCryptoPayBroadcaster {
         guard let adapter = Core.shared.adapterManager.adapter(for: token) as? BitcoinBaseAdapter else {
             throw OpenCryptoPayBroadcastError.noAdapter
         }
-        let fullTransaction = try adapter.signedTransaction(params: btcData.params)
-        let raw = TransactionSerializer.serialize(transaction: fullTransaction)
+        let raw = try adapter.rawTransaction(params: btcData.params)
+        let fullTransaction = TransactionSerializer.deserialize(data: raw)
         let transactionHash = fullTransaction.header.dataHash.hs.reversedHex
         return .init(proof: .hex(raw.hs.hexString), transactionHash: transactionHash)
     }

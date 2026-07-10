@@ -19,6 +19,13 @@ class BitcoinBaseAdapter {
     private let balanceStateSubject = PublishSubject<AdapterState>()
     private let syncMode: BitcoinCore.SyncMode
     let transactionRecordsSubject = PublishSubject<[BitcoinTransactionRecord]>()
+    private let syncEventQueue = DispatchQueue(label: "\(AppConfig.label).bitcoin-base-adapter.sync-events", qos: .utility)
+    private var pendingKitState: BitcoinCore.KitState?
+    private var syncEventFlushScheduled = false
+    var throttleSyncEvents = false
+
+    var transactionUpdateThrottleInterval: TimeInterval { 0 }
+    var syncEventThrottleInterval: TimeInterval { 0 }
 
     private(set) var balanceState: AdapterState {
         didSet {
@@ -63,14 +70,24 @@ class BitcoinBaseAdapter {
                 continue
             }
 
-            if let pluginId = output.pluginId, pluginId == HodlerPlugin.id,
+            if let unlockedHeight = output.unlockedHeight, unlockedHeight > 0, let hodlerOutputData = output.pluginData as? HodlerOutputData {
+                let approxUnlockTime = (abstractKit.lastBlockInfo?.timestamp ?? 0) + ((unlockedHeight - (abstractKit.lastBlockInfo?.height ?? 0))  * 30 )
+                lockInfo = TransactionLockInfo(
+                        lockedUntil: Date(timeIntervalSince1970: Double(approxUnlockTime)),
+                        originalAddress: output.address ?? "__",
+                        lockTimeInterval: hodlerOutputData.lockTimeInterval,
+                        unlockedHeight: unlockedHeight
+                        )
+
+            }else if let pluginId = output.pluginId, pluginId == HodlerPlugin.id,
                let hodlerOutputData = output.pluginData as? HodlerOutputData,
-               let approximateUnlockTime = hodlerOutputData.approximateUnlockTime
-            {
+               let approximateUnlockTime = hodlerOutputData.approximateUnlockTime {
+
                 lockInfo = TransactionLockInfo(
                     lockedUntil: Date(timeIntervalSince1970: Double(approximateUnlockTime)),
                     originalAddress: hodlerOutputData.addressString,
-                    lockTimeInterval: hodlerOutputData.lockTimeInterval
+                    lockTimeInterval: hodlerOutputData.lockTimeInterval,
+                    unlockedHeight: nil
                 )
             }
 
@@ -225,6 +242,41 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
     }
 
     func kitStateUpdated(state: BitcoinCore.KitState) {
+        guard throttleSyncEvents else {
+            handleKitStateUpdated(state: state)
+            return
+        }
+
+        syncEventQueue.async { [weak self] in
+            self?.enqueueKitState(state)
+        }
+    }
+
+    private func enqueueKitState(_ state: BitcoinCore.KitState) {
+        pendingKitState = state
+
+        guard !syncEventFlushScheduled else {
+            return
+        }
+
+        syncEventFlushScheduled = true
+        syncEventQueue.asyncAfter(deadline: .now() + syncEventThrottleInterval) { [weak self] in
+            self?.flushPendingKitState()
+        }
+    }
+
+    private func flushPendingKitState() {
+        syncEventFlushScheduled = false
+
+        guard let state = pendingKitState else {
+            return
+        }
+
+        pendingKitState = nil
+        handleKitStateUpdated(state: state)
+    }
+
+    private func handleKitStateUpdated(state: BitcoinCore.KitState) {
         switch state {
         case .synced:
             if case .synced = balanceState {
@@ -240,16 +292,8 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
             }
 
             balanceState = .notSynced(error: converted.localizedDescription)
-        case .syncingStarted:
-            if case let .syncing(progress, remaining, date) = balanceState,
-               progress == nil, remaining == nil, date == nil
-            {
-                return
-            }
-            balanceState = .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
-        case let .syncing(all, downloaded):
-            let newProgress = min(Int(Double(downloaded) / Double(all) * 100), 99)
-            let newRemaining = max(1, all - downloaded)
+        case let .syncing(progress):
+            let newProgress = min(Int(progress * 100), 99)
             let newDate = showSyncedUntil
                 ? abstractKit.lastBlockInfo?.timestamp.map { Date(timeIntervalSince1970: Double($0)) }
                 : nil
@@ -260,7 +304,7 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
                 }
             }
 
-            balanceState = .syncing(progress: newProgress, remaining: newRemaining, lastBlockDate: newDate)
+            balanceState = .syncing(progress: newProgress, remaining: nil, lastBlockDate: newDate)
         case let .apiSyncing(newCount):
             let newCountDescription = "balance.searching.count".localized("\(newCount)")
             if case let .customSyncing(_, secondary, _) = balanceState, newCountDescription == secondary {
@@ -330,6 +374,10 @@ extension BitcoinBaseAdapter {
         )
     }
 
+    var bitcoinCore: BitcoinCore {
+        abstractKit.bitcoinCore
+    }
+
     func unspentOutputs(filters: UtxoFilters) -> [UnspentOutputInfo] {
         abstractKit.unspentOutputs(filters: filters)
     }
@@ -338,8 +386,8 @@ extension BitcoinBaseAdapter {
         try abstractKit.send(params: params)
     }
 
-    func signedTransaction(params: SendParameters) throws -> FullTransaction {
-        try abstractKit.signedTransaction(params: params)
+    func rawTransaction(params: SendParameters) throws -> Data {
+        try abstractKit.createRawTransaction(params: params)
     }
 
     func sendSingle(params: SendParameters, logger: Logger) -> Single<Void> {

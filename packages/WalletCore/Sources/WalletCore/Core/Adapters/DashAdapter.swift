@@ -13,6 +13,7 @@ class DashAdapter: BitcoinBaseAdapter {
     private let dashKit: DashKit.Kit
 
     init(wallet: Wallet, syncMode: BitcoinCore.SyncMode) throws {
+        let effectiveSyncMode: BitcoinCore.SyncMode = syncMode == .full ? .full : .blockchair
         let logger = Core.shared.logger.scoped(with: "DashKit")
 
         switch wallet.account.type {
@@ -24,7 +25,7 @@ class DashAdapter: BitcoinBaseAdapter {
             dashKit = try DashKit.Kit(
                 seed: seed,
                 walletId: wallet.account.id,
-                syncMode: syncMode,
+                syncMode: effectiveSyncMode,
                 networkType: Self.networkType,
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
@@ -33,7 +34,7 @@ class DashAdapter: BitcoinBaseAdapter {
             dashKit = try DashKit.Kit(
                 extendedKey: key,
                 walletId: wallet.account.id,
-                syncMode: syncMode,
+                syncMode: effectiveSyncMode,
                 networkType: Self.networkType,
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
@@ -42,7 +43,23 @@ class DashAdapter: BitcoinBaseAdapter {
             dashKit = try DashKit.Kit(
                 watchAddress: address,
                 walletId: wallet.account.id,
-                syncMode: syncMode,
+                syncMode: effectiveSyncMode,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
+                logger: logger
+            )
+        case let .btcPrivateKey(data, compressed, _):
+            let address = try BitcoinPrivateKeyParser.generateAddress(
+                from: data,
+                compressed: compressed,
+                blockchainType: .dash,
+                testNet: Self.networkType != .mainNet
+            )
+
+            dashKit = try DashKit.Kit(
+                watchAddress: address,
+                walletId: wallet.account.id,
+                syncMode: effectiveSyncMode,
                 networkType: Self.networkType,
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
@@ -51,7 +68,7 @@ class DashAdapter: BitcoinBaseAdapter {
             throw AdapterError.unsupportedAccount
         }
 
-        super.init(abstractKit: dashKit, wallet: wallet, syncMode: syncMode)
+        super.init(abstractKit: dashKit, wallet: wallet, syncMode: effectiveSyncMode)
 
         dashKit.delegate = self
     }
@@ -117,6 +134,13 @@ extension DashAdapter {
             return address.stringValue
         case let .btcAddress(address, _, _):
             return address
+        case let .btcPrivateKey(data, compressed, _):
+            return try BitcoinPrivateKeyParser.generateAddress(
+                from: data,
+                compressed: compressed,
+                blockchainType: .dash,
+                testNet: networkType != .mainNet
+            )
         default:
             throw AdapterError.unsupportedAccount
         }

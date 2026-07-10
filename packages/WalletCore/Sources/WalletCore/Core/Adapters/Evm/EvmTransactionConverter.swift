@@ -9,14 +9,16 @@ import UniswapKit
 
 class EvmTransactionConverter {
     private let coinManager: CoinManager
+    private let evmKitWrapper: EvmKitWrapper
     private let blockchainType: BlockchainType
     private let userAddress: EvmKit.Address
     private let evmLabelManager: EvmLabelManager
     private let source: TransactionSource
     private let baseToken: MarketKit.Token
 
-    init(source: TransactionSource, baseToken: MarketKit.Token, coinManager: CoinManager, blockchainType: BlockchainType, userAddress: EvmKit.Address, evmLabelManager: EvmLabelManager) {
+    init(source: TransactionSource, baseToken: MarketKit.Token, coinManager: CoinManager, evmKitWrapper: EvmKitWrapper, blockchainType: BlockchainType, userAddress: EvmKit.Address, evmLabelManager: EvmLabelManager) {
         self.coinManager = coinManager
+        self.evmKitWrapper = evmKitWrapper
         self.blockchainType = blockchainType
         self.userAddress = userAddress
         self.evmLabelManager = evmLabelManager
@@ -24,6 +26,9 @@ class EvmTransactionConverter {
         self.baseToken = baseToken
     }
 
+    private var evmKit: EvmKit.Kit {
+        evmKitWrapper.evmKit
+    }
     private func convertAmount(amount: BigUInt, decimals: Int, sign: FloatingPointSign) -> Decimal {
         guard let significand = Decimal(string: amount.description), significand != 0 else {
             return 0
@@ -73,6 +78,40 @@ class EvmTransactionConverter {
     }
 
     private func convertToAppValue(token: OneInchDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> AppValue {
+        switch token {
+        case .evmCoin: return baseAppValue(value: value, sign: sign)
+        case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
+        }
+    }
+
+    private func convertToAmount(token: LiquidityDecoration.Token, amount: LiquidityDecoration.Amount, sign: FloatingPointSign) -> SwapTransactionRecord.Amount {
+        switch amount {
+        case let .exact(value): return .exact(value: convertToAppValue(token: token, value: value, sign: sign))
+        case let .extremum(value): return .extremum(value: convertToAppValue(token: token, value: value, sign: sign))
+        }
+    }
+
+//    private func convertToAmount(token: LiquidityDecoration.Token, amount: LiquidityDecoration.Amount, sign: FloatingPointSign) -> SwapTransactionRecord.Amount {
+//        switch amount {
+//        case let .exact(value): return .exact(value: convertToAppValue(token: token, value: value, sign: sign))
+//        case let .extremum(value): return .extremum(value: convertToAppValue(token: token, value: value, sign: sign))
+//        }
+//    }
+    private func convertToAppValue(token: LiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> AppValue {
+        switch token {
+        case .evmCoin: return baseAppValue(value: value, sign: sign)
+        case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
+        }
+    }
+
+    private func convertToAmount(token: RemoveLiquidityDecoration.Token, amount: RemoveLiquidityDecoration.Amount, sign: FloatingPointSign) -> SwapTransactionRecord.Amount {
+        switch amount {
+        case let .exact(value): return .exact(value: convertToAppValue(token: token, value: value, sign: sign))
+        case let .extremum(value): return .extremum(value: convertToAppValue(token: token, value: value, sign: sign))
+        }
+    }
+
+    private func convertToAppValue(token: RemoveLiquidityDecoration.Token, value: BigUInt, sign: FloatingPointSign) -> AppValue {
         switch token {
         case .evmCoin: return baseAppValue(value: value, sign: sign)
         case let .eip20Coin(tokenAddress, tokenInfo): return eip20Value(tokenAddress: tokenAddress, value: value, sign: sign, tokenInfo: tokenInfo)
@@ -212,6 +251,27 @@ extension EvmTransactionConverter {
                 protected: protected
             )
 
+        case let decoration as Safe4DepositIncomingDecoration:
+            return Safe4DepositEvmIncomingTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                from: decoration.from.eip55,
+                value: baseAppValue(value: decoration.value, sign: .plus),
+                protected: protected
+            )
+
+        case let decoration as Safe4DepositOutgoingDecoration:
+            return Safe4DepositEvmOutgoingTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                to: decoration.to.eip55,
+                value: baseAppValue(value: decoration.value, sign: .minus),
+                sentToSelf: decoration.sentToSelf,
+                protected: protected
+            )
+
         case let decoration as OutgoingEip20Decoration:
             return EvmOutgoingTransactionRecord(
                 source: source,
@@ -309,6 +369,159 @@ extension EvmTransactionConverter {
                     value: convertAmount(amount: decoration.value, decimals: 0, sign: .minus)
                 ),
                 sentToSelf: decoration.sentToSelf,
+                protected: protected
+            )
+
+        case let decoration as Safe4WithdrawDecoration:
+            return Safe4WithdrawTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                from: decoration.from.eip55,
+                value: baseAppValue(value: decoration.value, sign: .plus),
+                protected: protected
+            )
+
+        case let decoration as Safe4RedeemDecoration:
+            let value = baseAppValue(value: decoration.value, sign: .plus)
+            return Safe4RedeemTransactionRecoard(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                from: decoration.from?.eip55 ?? "",
+                to: decoration.to?.eip55 ?? "",
+                value: value,
+                protected: protected
+            )
+
+        case let decoration as Safe4NodeVoteDecoration:
+            let value = baseAppValue(value: decoration.value, sign: .minus)
+            return Safe4VoteTransactionRecoard(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                from: decoration.from?.eip55 ?? "",
+                to: decoration.to?.eip55 ?? "",
+                value: value,
+                protected: protected
+            )
+
+        case let decoration as Safe4NodeRegisterDecoration:
+            let value = baseAppValue(value: decoration.value, sign: .minus)
+            let method = transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) }
+            return Safe4NodeRegisterTransactionRecoard(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                method: method,
+                from: decoration.from?.eip55 ?? "",
+                to: decoration.to?.eip55 ?? "",
+                value: value,
+                contractAddress: decoration.contract?.eip55 ?? "",
+                protected: protected
+            )
+
+        case let decoration as Safe4AddLockDayDecoration:
+            return ContractCallTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                contractAddress: decoration.to?.eip55 ?? "",
+                method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                incomingEvents: [],
+                outgoingEvents: [],
+                protected: protected
+            )
+
+        case let decoration as Safe4BatchRedeemDecoration:
+            return Safe4RedeemTransactionRecoard(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                from: decoration.from?.eip55 ?? "",
+                to: decoration.to?.eip55 ?? "",
+                value: AppValue(value: 0),
+                protected: protected
+            )
+
+        case let decoration as Safe4CrossChainIncomingDecoration:
+            let value = baseAppValue(value: decoration.value, sign: .plus)
+            return Safe4CrossChainIncomingRecoard(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                from: decoration.from.eip55,
+                to: decoration.to.eip55,
+                value: value,
+                protected: protected
+            )
+
+        case let decoration as Safe4CrossChainOutgoingDecoration:
+            let value = baseAppValue(value: decoration.value, sign: .minus)
+            return Safe4CrossChainOutgoingRecoard(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                from: decoration.from.eip55,
+                to: decoration.to.eip55,
+                value: value,
+                protected: protected
+            )
+
+        case let decoration as RemoveLiquidityDecoration:
+            let address = evmKit.address
+            let amountA = convertToAmount(token: decoration.tokenA, amount: decoration.amountAMin, sign: .plus)
+            let amountB = convertToAmount(token: decoration.tokenB, amount: decoration.amountBMin, sign: .plus)
+
+            if let contractAddress = transaction.to {
+                return ContractCallTransactionRecord(
+                    source: source,
+                    transaction: transaction,
+                    baseToken: baseToken,
+                    contractAddress: contractAddress.eip55,
+                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                    incomingEvents: [
+                        TransferEvent(address: address.eip55, value: amountA.value),
+                        TransferEvent(address: address.eip55, value: amountB.value)
+                    ],
+                    outgoingEvents: [],
+                    protected: protected
+                )
+            }
+
+        case let decoration as LiquidityDecoration:
+            let address = evmKit.address
+            let amountA = convertToAmount(token: decoration.tokenInA, amount: decoration.amountInA, sign: .minus)
+            let amountB = convertToAmount(token: decoration.tokenInB, amount: decoration.amountInB, sign: .minus)
+
+            if let contractAddress = transaction.to {
+                let transactionValue = AppValue.init(tokenName: "safeswap-V2", tokenCode: "", tokenDecimals: baseToken.decimals, value: 0)
+                let incomingEvents: [TransferEvent] = []//[TransferEvent(address: contractAddress.eip55, value: transactionValue)]
+
+                let outgoingEvents = [TransferEvent(address: address.eip55, value: amountA.value),
+                                      TransferEvent(address: address.eip55, value: amountB.value)
+                                    ]
+                return ContractCallTransactionRecord(
+                    source: source,
+                    transaction: transaction,
+                    baseToken: baseToken,
+                    contractAddress: contractAddress.eip55,
+                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                    incomingEvents: incomingEvents,
+                    outgoingEvents: outgoingEvents,
+                    protected: protected
+                )
+            }
+
+        case let decoration as LiquidityV3Decoration:
+            return ContractCallTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                contractAddress: decoration.contractAddress.eip55,
+                method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                incomingEvents: [],
+                outgoingEvents: [],
                 protected: protected
             )
 

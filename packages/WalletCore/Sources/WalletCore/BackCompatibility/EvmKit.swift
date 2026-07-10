@@ -4,6 +4,8 @@ import EvmKit
 import Foundation
 import HsToolKit
 import RxSwift
+import web3swift
+import Web3Core
 
 public extension Kit {
     internal struct DisposedError: Error {}
@@ -102,7 +104,7 @@ public extension Kit {
         }
     }
 
-    func sendSingle(rawTransaction: RawTransaction, signature: Signature) -> Single<FullTransaction> {
+    func sendSingle(rawTransaction: RawTransaction, signature: Signature, privateKey: Data) -> Single<FullTransaction> {
         Single<FullTransaction>.create { [weak self] observer in
             guard let strongSelf = self else {
                 observer(.error(DisposedError()))
@@ -111,7 +113,29 @@ public extension Kit {
 
             let task = Task {
                 do {
-                    let result = try await strongSelf.send(rawTransaction: rawTransaction, signature: signature)
+                    let result = try await strongSelf.send(rawTransaction: rawTransaction, signature: signature, privateKey: privateKey)
+                    observer(.success(result))
+                } catch {
+                    observer(.error(error))
+                }
+            }
+
+            return Disposables.create {
+                task.cancel()
+            }
+        }
+    }
+
+    func sendSafe4LinLockSingle(type: web3swift.AccountManager.ContractType, privateKey: Data, transactionData: TransactionData) -> Single<String> {
+        Single<String>.create { [weak self] observer in
+            guard let strongSelf = self else {
+                observer(.error(DisposedError()))
+                return Disposables.create()
+            }
+
+            let task = Task {
+                do {
+                    let result = try await strongSelf.sendSafe4LineLock(type: type, privateKey: privateKey, transactionData: transactionData)
                     observer(.success(result))
                 } catch {
                     observer(.error(error))

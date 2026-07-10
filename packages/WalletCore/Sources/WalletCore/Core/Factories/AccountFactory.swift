@@ -15,6 +15,16 @@ public extension AccountFactory {
         return NSLocalizedString("wallet_name.\(index)", bundle: .module, comment: "")
     }
 
+    var nextAccountName: String {
+        let nonWatchAccounts = accountManager.accounts.filter { !$0.watchAccount }
+        return "Wallet \(nonWatchAccounts.count + 1)"
+    }
+
+    var nextWatchAccountName: String {
+        let watchAccounts = accountManager.accounts.filter(\.watchAccount)
+        return "Watch Wallet \(watchAccounts.count + 1)"
+    }
+
     func account(type: AccountType, origin: AccountOrigin, backedUp: Bool, fileBackedUp: Bool, name: String) -> Account {
         Account(
             id: UUID().uuidString,
@@ -38,4 +48,5 @@ public extension AccountFactory {
             fileBackedUp: false
         )
     }
+
 }

@@ -10,6 +10,7 @@ extension BlockchainType {
         .bitcoinCash,
         .ecash,
         .litecoin,
+        .dogecoin,
         .dash,
         .zcash,
         .monero,
@@ -26,21 +27,66 @@ extension BlockchainType {
         .binanceSmartChain,
         .tron,
         .ton,
+        .safe,
+        .safe4,
         .stellar,
         .solana,
     ]
 
+    static let swappable: [BlockchainType] = [
+        .arbitrumOne,
+        .avalanche,
+        .base,
+        .binanceSmartChain,
+        .bitcoin,
+        .bitcoinCash,
+        .dash,
+        .ethereum,
+        .fantom,
+        .gnosis,
+        .litecoin,
+        .optimism,
+        .polygon,
+        .stellar,
+        .tron,
+        .zkSync,
+        .safe4,
+        // .zcash,
+    ]
+
     func placeholderImageName(tokenProtocol: TokenProtocol?) -> String {
-        tokenProtocol.map { "\(uid)_\($0)_32" } ?? "placeholder_circle_32"
+        if isSafeChainUid {
+            return "safe-anwang_trx_32"
+        }else {
+            return tokenProtocol.map { "\(uid)_\($0)_32" } ?? "placeholder_circle_32"
+        }
+    }
+
+    var isSafeChainUid: Bool {
+        uid.contains("custom-safe4-anwang") || uid.contains("custom-safe-anwang") || uid.isSafeCoin
     }
 
     var iconPlain32: String {
-        "\(uid)_trx_32"
+        if isSafeChainUid {
+            return "safe-anwang_trx_32"
+        }else {
+            return "\(uid)_trx_32"
+        }
     }
 
     var imageUrl: String {
-        let scale = Int(UIScreen.main.scale)
-        return "https://cdn.blocksdecoded.com/blockchain-icons/32px/\(uid)@\(scale)x.png"
+        if isSafeChainUid {
+            if let logoUrl = SRC20SyncManager.logo(coinUid: uid.lowercased()) {
+                return logoUrl
+            }
+            return "https://anwang.com/img/logos/safe.png"
+        }else if uid == dogeCoinUid {
+            let scale = Int(UIScreen.main.scale)
+            return "https://cdn.blocksdecoded.com/coin-icons/32px/\(uid)@\(scale)x.png"
+        }else {
+            let scale = Int(UIScreen.main.scale)
+            return "https://cdn.blocksdecoded.com/blockchain-icons/32px/\(uid)@\(scale)x.png"
+        }
     }
 
     var restoreSettingTypes: [RestoreSettingType] {
@@ -52,6 +98,8 @@ extension BlockchainType {
 
     var order: Int {
         let blockchainTypes: [BlockchainType] = [
+            .safe4,
+            .safe,
             .bitcoin,
             .ethereum,
             .monero,
@@ -106,7 +154,12 @@ extension BlockchainType {
     // used for EVM blockchains only
     var supportedNftTypes: [NftType] {
         switch self {
-        // case .ethereum: return [.eip721, .eip1155]
+        case .ethereum: return [.eip721, .eip1155]
+        case .polygon: return [.eip721, .eip1155]
+        case .arbitrumOne: return [.eip721, .eip1155]
+        case .optimism: return [.eip721, .eip1155]
+        case .base: return [.eip721, .eip1155]
+        case .binanceSmartChain: return [.eip721, .eip1155]
         default: return []
         }
     }
@@ -154,6 +207,8 @@ extension BlockchainType {
             return self == blockchainType
         case .moneroWatchAccount:
             return self == .monero
+        case let .btcPrivateKey(_, _, accountBlockchainType):
+            return self == accountBlockchainType
         }
     }
 
@@ -191,6 +246,7 @@ extension BlockchainType {
         case .litecoin: return "LTC (BIP44, BIP49, BIP84, BIP86)"
         case .tron: return "TRX, TRC20 tokens"
         case .ton: return "TON"
+        case .dogecoin: return "Dogecoin"
         case .stellar: return "Stellar"
         case .solana: return "SOL, SPL tokens"
         default: return ""
@@ -263,7 +319,7 @@ extension BlockchainType {
         }
 
         switch self {
-        case .bitcoin, .bitcoinCash, .litecoin: return true
+        case .bitcoin, .bitcoinCash, .litecoin, .dogecoin, .dash: return true
         default: return false
         }
     }
@@ -281,6 +337,9 @@ extension BlockchainType {
         case .zano: return 60
         case .arbitrumOne: return 1
         case .solana, .unsupported: return nil
+        case .dogecoin: return 60
+        case .safe: return 5
+        case .safe4: return 3
         }
     }
 }

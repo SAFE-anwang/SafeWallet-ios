@@ -83,7 +83,9 @@ extension AccountManager {
         guard storage.activeAccount?.id != activeAccountId else {
             return
         }
-
+        do {
+            try Core.shared.safe4StorageManager.superNodeLockRecordStorage.clear()
+        }catch{}
         storage.set(activeAccountId: activeAccountId)
         activeAccountSubject.send(storage.activeAccount)
     }
@@ -113,6 +115,16 @@ extension AccountManager {
         accountsSubject.send(storage.accounts)
 
         set(activeAccountId: account.id)
+    }
+
+    func save(account: Account, makeActive: Bool) {
+        storage.save(account: account)
+
+        accountsSubject.send(storage.accounts)
+
+        if makeActive {
+            set(activeAccountId: account.id)
+        }
     }
 
     func save(accounts: [Account]) {

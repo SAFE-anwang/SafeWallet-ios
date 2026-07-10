@@ -1,0 +1,291 @@
+import Foundation
+import MarketKit
+import UIKit
+
+enum AppConfig {
+    static let label = "io.SAFE-anwang.com"
+    static let backupSalt = "SafeWallet"
+
+    static let companyName = "anwang"
+    static let reportEmail = ""
+    static let companyWebPageLink = "https://www.anwang.com"
+    static let appWebPageLink = "https://www.anwang.com/#safewallet"
+    static let analyticsLink = "https://unstoppable.money/analytics"
+    static let privacyPolicyLink = ""
+    static let appleTermsOfServiceLink = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula"
+    static let nymVpnLink = "https://nymtechnologies.pxf.io/N9vnr1"
+    static let appGitHubAccount = "SAFE-anwang"
+    static let appGitHubRepository = ""
+    static let appTwitterAccount = "safeanwang"
+    static let appTelegramAccount = ""
+    static let appTelegramSupportSlug = ""
+    static let appTokenTelegramAccount = ""
+    static let mempoolSpaceUrl = "https://mempool.space"
+    static let guidesIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/blockchain-crypto-guides/v1.2/index.json")!
+    static let faqIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/unstoppable-wallet-website/master/src/faq.json")!
+    static let eduIndexUrl = URL(string: "")!
+    static let donationAddresses: [BlockchainType: String] = [:
+//        .bitcoin: "bc1qxt5u5swx3sk6y2923whr4tvjreza43g37czv67",
+//        .bitcoinCash: "bitcoincash:qz6sy9fq66yvfl5mvpfv3v2nqw5pervvkc425nj9g0\n",
+//        .ecash: "ecash:qp6t4rqd4qdlq0vlucjhucjxygn5969j3cdan6ykzr\n",
+//        .litecoin: "ltc1q05f90wt464h8dft9t7q9sp9n0qeprlv30070at\n",
+//        .dash: "Xp24AqFUP9nF3ycLCmTDvgezxSt3RAKP2r",
+//        .zcash: "zs1jpd8u7zghtq5eg48l384y6fpy7cr0xmqehnw5mujpm8v2u7jr9a3j7luftqpthf6a8f720vdfyn",
+//        .ethereum: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .binanceSmartChain: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .polygon: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .avalanche: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .optimism: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .base: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .zkSync: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .arbitrumOne: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .gnosis: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .fantom: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .ton: "UQAYLATDlfKgn3cKZAgznvowhXzpqgxrIicesxJfo9f6PN3k",
+//        .tron: "TQzANCd363w5CjRWDtswm8Y5nFPAdnwekF",
+//        .solana: "5gattKnvu5f1NDHBuZ6VfDXjRrJa9UcAArkZ3ys3e82F",
+    ]
+    static var spamCoinValueLimits: [String: Decimal] = [
+        "XLM": 0.01,
+        "USDT": 0.01,
+        "USDC": 0.01,
+        "USDD": 0.01,
+        "DAI": 0.01,
+        "BUSD": 0.01,
+        "EURS": 0.01,
+        "BSC-USD": 0.01,
+    ]
+
+    static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
+    }
+
+    static var appBuild: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
+    }
+
+    static var appId: String? {
+        UIDevice.current.identifierForVendor?.uuidString
+    }
+
+    static var appName: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String) ?? ""
+    }
+
+    static var showBuildNumber: Bool {
+        AppEnvironment.config.showBuildNumber
+    }
+
+    static var showTestSwitchers: Bool {
+        AppEnvironment.config.showTestSwitchers
+    }
+
+    static var marketApiUrl: String {
+        (Bundle.main.object(forInfoDictionaryKey: "MarketApiUrl") as? String) ?? ""
+    }
+
+    static var swapApiUrl: String {
+        (Bundle.main.object(forInfoDictionaryKey: "SwapApiUrl") as? String) ?? ""
+    }
+
+    static var etherscanKeys: [String] {
+        apiKeys(.etherscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var arbiscanKeys: [String] {
+        apiKeys(.arbiscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "ArbiscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var gnosisscanKeys: [String] {
+        apiKeys(.gnosisscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "GnosisscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var blockchairApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "BlockchairApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var ftmscanKeys: [String] {
+        apiKeys(.ftmscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "FtmscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var optimismEtherscanKeys: [String] {
+        apiKeys(.optimisticEtherscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "OptimismEtherscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var basescanKeys: [String] {
+         ((Bundle.main.object(forInfoDictionaryKey: "BasescanApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var eraZkSyncKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "EraZkSyncApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var bscscanKeys: [String] {
+        apiKeys(.bscscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "BscscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var polygonscanKeys: [String] {
+        apiKeys(.polygonscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "PolygonscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var snowtraceKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "SnowtraceApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var twitterBearerToken: String? {
+        apiKey(.twitterBearerToken) ?? (Bundle.main.object(forInfoDictionaryKey: "TwitterBearerToken") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var hsProviderApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "HsProviderApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var tronGridApiKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "TronGridApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var solanaAlchemyApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "SolanaAlchemyApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var solanaAlchemyApiKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "SolanaAlchemyApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var walletConnectV2ProjectKey: String? {
+        apiKey(.walletConnectV2) ?? (Bundle.main.object(forInfoDictionaryKey: "WallectConnectV2ProjectKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var unstoppableDomainsApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "UnstoppableDomainsApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var oneInchApiKey: String? {
+        apiKey(.oneInch) ?? (Bundle.main.object(forInfoDictionaryKey: "OneInchApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var pimlicoApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "PimlicoApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var pimlicoSponsorshipPolicyId: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "PimlicoSponsorshipPolicyId") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var gasFreeApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "GasFreeApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var gasFreeApiSecret: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "GasFreeApiSecret") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var oneInchCommissionAddress: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "OneInchCommissionAddress") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var oneInchCommission: Decimal? {
+        (Bundle.main.object(forInfoDictionaryKey: "OneInchCommission") as? String).flatMap {
+            $0.isEmpty ? nil : Decimal(string: $0, locale: Locale(identifier: "en_US_POSIX"))
+        }
+    }
+
+    static var thorchainAffiliate: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "ThorchainAffiliate") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var thorchainAffiliateBps: Int? {
+        (Bundle.main.object(forInfoDictionaryKey: "ThorchainAffiliateBps") as? String).flatMap { $0.isEmpty ? nil : Int($0) }
+    }
+
+    static var mayaAffiliate: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "MayaAffiliate") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var mayaAffiliateBps: Int? {
+        (Bundle.main.object(forInfoDictionaryKey: "MayaAffiliateBps") as? String).flatMap { $0.isEmpty ? nil : Int($0) }
+    }
+
+    static var uswapApiKey: String? {
+        "44fc76602e17e0c8259b6ce3bae3ca90804c6fd8f42ca00e6943a6b1ba7fe242"
+//        (Bundle.main.object(forInfoDictionaryKey: "USwapApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var jupiterApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "JupiterApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static var referralAppServerUrl: String {
+        (Bundle.main.object(forInfoDictionaryKey: "ReferralAppServerUrl") as? String) ?? ""
+    }
+
+    static var defaultWords: String {
+        Bundle.main.object(forInfoDictionaryKey: "DefaultWords") as? String ?? ""
+    }
+
+    static var defaultPassphrase: String {
+        Bundle.main.object(forInfoDictionaryKey: "DefaultPassphrase") as? String ?? ""
+    }
+
+    static var defaultWatchAddress: String? {
+        Bundle.main.object(forInfoDictionaryKey: "DefaultWatchAddress") as? String
+    }
+
+    static var sharedCloudContainer: String? {
+        Bundle.main.object(forInfoDictionaryKey: "SharedCloudContainerId") as? String
+    }
+
+    static var privateCloudContainer: String? {
+        Bundle.main.object(forInfoDictionaryKey: "PrivateCloudContainerId") as? String
+    }
+
+    static var openSeaApiKey: String {
+        (Bundle.main.object(forInfoDictionaryKey: "OpenSeaApiKey") as? String) ?? ""
+    }
+
+    static var chainalysisApiKey: String {
+        (Bundle.main.object(forInfoDictionaryKey: "ChainalysisApiKey") as? String) ?? ""
+    }
+
+    static var merkleApiPath: String {
+        (Bundle.main.object(forInfoDictionaryKey: "MerkleApiPath") as? String) ?? ""
+    }
+
+    static var hashDitApiKey: String {
+        (Bundle.main.object(forInfoDictionaryKey: "HashDitApiKey") as? String) ?? ""
+    }
+
+    static var isSafe4TestNet: Bool {
+#if DEBUG
+        return false
+#else
+        return false
+#endif
+    }
+
+    static func apiKeys(_ name: ApiKeyName) -> [String]? {
+        ApiKeyManager.apiKeys(name: name)
+    }
+
+    static func apiKey(_ name: ApiKeyName) -> String? {
+        let list = ApiKeyManager.apiKeys(name: name)
+        guard let keys = list else { return nil }
+        let randomNumber = Int.random(in: 0..<keys.count)
+        return keys[randomNumber]
+    }
+
+    static var safe4ApiUrl: String {
+        isSafe4TestNet == true ? "https://safe4testnet.anwang.com/api" : "https://safe4.anwang.com/api"
+    }
+}
+
+import EvmKit
+extension Chain {
+    static func safeFourChain() -> Chain {
+        if AppConfig.isSafe4TestNet {
+            return Chain.SafeFourTestNet
+        }else {
+            return Chain.SafeFour
+        }
+    }
+}

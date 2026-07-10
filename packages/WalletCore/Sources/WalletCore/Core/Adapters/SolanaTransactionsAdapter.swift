@@ -45,11 +45,7 @@ class SolanaTransactionsAdapter {
         switch kitSyncState {
         case .syncing: return .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
         case .synced: return .synced
-        case let .notSynced(error):
-            if let syncError = error as? SolanaKit.SyncError, case .notStarted = syncError {
-                return .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
-            }
-            return .notSynced(error: error.localizedDescription)
+        case let .notSynced(error): return .notSynced(error: error.localizedDescription)
         }
     }
 }
@@ -92,6 +88,14 @@ extension SolanaTransactionsAdapter: ITransactionsAdapter {
         }
 
         let incoming = incomingFilter(filter: filter)
+
+        // For unsupported filter types (.swap, .approve), return empty
+        if case .swap = filter {
+            return Observable.just([])
+        }
+        if case .approve = filter {
+            return Observable.just([])
+        }
 
         let publisher: AnyPublisher<[FullTransaction], Never>
 

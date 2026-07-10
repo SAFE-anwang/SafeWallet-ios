@@ -3,12 +3,19 @@ import MarketKit
 import RxRelay
 import RxSwift
 
-public class AdapterManager {
-    private enum ZcashEndpointValidationError: Error {
-        case noActiveAdapter
-        case unavailable
-    }
+enum ZcashEndpointValidationError: LocalizedError {
+    case noActiveAdapter
+    case unavailable
 
+    var errorDescription: String? {
+        switch self {
+        case .noActiveAdapter: return "No active Zcash adapter"
+        case .unavailable: return "Zcash endpoint is unavailable"
+        }
+    }
+}
+
+class AdapterManager {
     private let disposeBag = DisposeBag()
 
     private let adapterFactory: AdapterFactory
@@ -28,6 +35,7 @@ public class AdapterManager {
     private let queue = DispatchQueue(label: "\(AppConfig.label).adapter_manager", qos: .userInitiated)
     private let initAdaptersQueue = DispatchQueue(label: "\(AppConfig.label).adapter_manager.init_adapters", qos: .userInitiated)
     private var _adapterData = AdapterData(adapterMap: [:], account: nil)
+    private(set) var src20SyncManager: SRC20SyncManager?
 
     public init(adapterFactory: AdapterFactory, walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager,
                 tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager, zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager,
@@ -79,6 +87,9 @@ public class AdapterManager {
                 continue
             }
             if let adapter = adapterFactory.adapter(wallet: wallet) {
+                if wallet.token.blockchain.type == .safe4, wallet.token.type == .native {
+                    src20SyncManager = SRC20SyncManager(wallet: wallet, adapter: adapter)
+                }
                 newAdapterMap[wallet] = adapter
                 adapter.start()
             }
@@ -144,6 +155,13 @@ public class AdapterManager {
                 }
             }
         }
+    }
+    private func handleUpdatedMoneroNode(blockchainType: BlockchainType) {
+        let wallets = queue.sync { _adapterData.adapterMap.keys }
+
+        refreshAdapters(wallets: wallets.filter {
+            $0.token.blockchain.type == blockchainType
+        })
     }
 
     private func revertZcashSelection(to adapter: ZcashAdapter) {
@@ -274,6 +292,11 @@ extension AdapterManager {
                 self._adapterData.adapterMap[wallet]?.refresh()
             }
         }
+    }
+
+    func preloadAdapters() {
+        let activeWalletData = walletManager.activeWalletData
+        initAdapters(wallets: activeWalletData.wallets, account: activeWalletData.account)
     }
 }
 

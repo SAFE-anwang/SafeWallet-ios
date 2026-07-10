@@ -28,6 +28,10 @@ class FeeRateProvider {
         feeRateKit.litecoin
     }
 
+    fileprivate var dogecoinFeeRate: Int {
+        4000
+    }
+
     fileprivate var bitcoinCashFeeRate: Int {
         feeRateKit.bitcoinCash
     }
@@ -100,6 +104,34 @@ class DashFeeRateProvider: IFeeRateProvider {
 
     func feeRates() async throws -> FeeRateProvider.FeeRates {
         .init(recommended: feeRateProvider.dashFeeRate, minimum: 0)
+    }
+}
+
+class SafeFeeRateProvider: IFeeRateProvider {
+
+
+    private let feeRateProvider: FeeRateProvider
+
+    init(feeRateProvider: FeeRateProvider) {
+        self.feeRateProvider = feeRateProvider
+    }
+
+    func feeRates() async throws -> FeeRateProvider.FeeRates {
+        .init(recommended: 10, minimum: 0)
+    }
+}
+
+class DogecoinFeeRateProvider: IFeeRateProvider {
+
+
+    private let feeRateProvider: FeeRateProvider
+
+    init(feeRateProvider: FeeRateProvider) {
+        self.feeRateProvider = feeRateProvider
+    }
+
+    func feeRates() async throws -> FeeRateProvider.FeeRates {
+        .init(recommended: feeRateProvider.dogecoinFeeRate, minimum: 0)
     }
 }
 

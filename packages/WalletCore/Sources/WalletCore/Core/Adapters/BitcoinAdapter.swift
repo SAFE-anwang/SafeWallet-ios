@@ -58,6 +58,29 @@ class BitcoinAdapter: BitcoinBaseAdapter {
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: logger
             )
+        case let .btcPrivateKey(data, compressed, _):
+            guard let derivation = wallet.token.type.derivation else {
+                throw AdapterError.wrongParameters
+            }
+
+            let scriptType = Self.scriptType(for: derivation)
+            let address = try BitcoinPrivateKeyParser.generateAddress(
+                from: data,
+                compressed: compressed,
+                blockchainType: .bitcoin,
+                testNet: Self.networkType != .mainNet,
+                scriptType: scriptType
+            )
+
+            bitcoinKit = try BitcoinKit.Kit(
+                watchAddress: address,
+                purpose: derivation.purpose,
+                walletId: wallet.account.id,
+                syncMode: syncMode,
+                networkType: Self.networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
+                logger: logger
+            )
         default:
             throw AdapterError.unsupportedAccount
         }
@@ -123,8 +146,29 @@ extension BitcoinAdapter {
             return address.stringValue
         case let .btcAddress(address, _, _):
             return address
+        case let .btcPrivateKey(data, compressed, _):
+            guard let derivation = tokenType.derivation else {
+                throw AdapterError.wrongParameters
+            }
+
+            return try BitcoinPrivateKeyParser.generateAddress(
+                from: data,
+                compressed: compressed,
+                blockchainType: .bitcoin,
+                testNet: networkType != .mainNet,
+                scriptType: scriptType(for: derivation)
+            )
         default:
             throw AdapterError.unsupportedAccount
+        }
+    }
+
+    private static func scriptType(for derivation: MnemonicDerivation) -> ScriptType {
+        switch derivation {
+        case .bip44: return .p2pkh
+        case .bip49: return .p2wpkhSh
+        case .bip84: return .p2wpkh
+        case .bip86: return .p2tr
         }
     }
 }

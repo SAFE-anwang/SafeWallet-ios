@@ -3,7 +3,7 @@ import MarketKit
 import RxSwift
 import UIKit
 
-enum AmountInfo {
+public enum AmountInfo {
     case appValue(appValue: AppValue)
     case currencyValue(currencyValue: CurrencyValue)
 
@@ -62,4 +62,9 @@ public struct AmountData {
 
         return result
     }
+}
+
+public struct LiquidityAmountData {
+    public let primary: AmountInfo
+    public let secondary: AmountInfo?
 }

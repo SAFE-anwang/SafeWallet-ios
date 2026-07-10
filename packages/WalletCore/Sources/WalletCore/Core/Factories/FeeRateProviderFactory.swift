@@ -7,9 +7,11 @@ class FeeRateProviderFactory {
         switch blockchainType {
         case .bitcoin: return BitcoinFeeRateProvider(feeRateProvider: feeRateProvider)
         case .litecoin: return LitecoinFeeRateProvider(feeRateProvider: feeRateProvider)
+        case .dogecoin: return DogecoinFeeRateProvider(feeRateProvider: feeRateProvider)
         case .bitcoinCash: return BitcoinCashFeeRateProvider(feeRateProvider: feeRateProvider)
         case .ecash: return ECashFeeRateProvider()
         case .dash: return DashFeeRateProvider(feeRateProvider: feeRateProvider)
+        case .safe, .safe4: return SafeFeeRateProvider(feeRateProvider: feeRateProvider)
         default: return nil
         }
     }

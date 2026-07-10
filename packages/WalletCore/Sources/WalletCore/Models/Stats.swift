@@ -137,6 +137,7 @@ enum StatPage: String {
     case stellarSecretKey = "stellar_secret_key"
     case subscription
     case swap
+    case addLiquidity
     case switchWallet = "switch_wallet"
     case tellFriends = "tell_friends"
     case terms
@@ -160,6 +161,7 @@ enum StatPage: String {
     case watchWallet = "watch_wallet"
     case whatsNews = "whats_news"
     case widget
+    case safeZone
 }
 
 enum StatSection: String {
@@ -559,7 +561,7 @@ enum StatPremiumTrigger: String {
 
 enum StatTab: String {
     case markets, balance, transactions, settings
-    case coins, overview, news, pairs, platforms, watchlist, sectors, vaults
+    case coins, overview, news, pairs, platforms, watchlist, sectors, vaults, dapp, twiitter
     case analytics
     case all, incoming, outgoing, swap, approve
 }

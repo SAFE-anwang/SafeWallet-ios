@@ -53,6 +53,22 @@ class BitcoinCashAdapter: BitcoinBaseAdapter {
                 confirmationsThreshold: Self.confirmationsThreshold,
                 logger: nil
             )
+        case let .btcPrivateKey(data, compressed, _):
+            let address = try BitcoinPrivateKeyParser.generateAddress(
+                from: data,
+                compressed: compressed,
+                blockchainType: .bitcoinCash,
+                testNet: false
+            )
+
+            bitcoinCashKit = try BitcoinCashKit.Kit(
+                watchAddress: address,
+                walletId: wallet.account.id,
+                syncMode: syncMode,
+                networkType: networkType,
+                confirmationsThreshold: Self.confirmationsThreshold,
+                logger: nil
+            )
         default:
             throw AdapterError.unsupportedAccount
         }
@@ -121,6 +137,13 @@ extension BitcoinCashAdapter {
             return address.stringValue
         case let .btcAddress(address, _, _):
             return address
+        case let .btcPrivateKey(data, compressed, _):
+            return try BitcoinPrivateKeyParser.generateAddress(
+                from: data,
+                compressed: compressed,
+                blockchainType: .bitcoinCash,
+                testNet: false
+            )
         default:
             throw AdapterError.unsupportedAccount
         }

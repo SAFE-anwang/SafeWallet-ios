@@ -2,7 +2,7 @@ import Foundation
 import MarketKit
 import TronKit
 
-class TronContractCallTransactionRecord: TronTransactionRecord {
+class TronContractCallTransactionRecord: TronTransactionRecord, TransferEventsProvider {
     let contractAddress: String
     let method: String?
     let incomingEvents: [TransferEvent]
@@ -33,5 +33,9 @@ class TronContractCallTransactionRecord: TronTransactionRecord {
         } else {
             return nil
         }
+    }
+
+    var transferEvents: TransferEvents {
+        .init(incoming: incomingEvents, outgoing: outgoingEvents)
     }
 }

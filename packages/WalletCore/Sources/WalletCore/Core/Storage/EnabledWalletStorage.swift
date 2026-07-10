@@ -30,10 +30,11 @@ extension EnabledWalletStorage {
     func handle(newEnabledWallets: [EnabledWallet], deletedEnabledWallets: [EnabledWallet]) throws {
         _ = try dbPool.write { db in
             for enabledWallet in newEnabledWallets {
+                _ = try EnabledWallet.filter(EnabledWallet.Columns.tokenQueryId.lowercased == enabledWallet.tokenQueryId.lowercased() && EnabledWallet.Columns.accountId == enabledWallet.accountId).deleteAll(db)
                 try enabledWallet.insert(db)
             }
             for enabledWallet in deletedEnabledWallets {
-                try EnabledWallet.filter(EnabledWallet.Columns.tokenQueryId == enabledWallet.tokenQueryId && EnabledWallet.Columns.accountId == enabledWallet.accountId).deleteAll(db)
+                try EnabledWallet.filter(EnabledWallet.Columns.tokenQueryId.lowercased == enabledWallet.tokenQueryId.lowercased() && EnabledWallet.Columns.accountId == enabledWallet.accountId).deleteAll(db)
             }
         }
     }

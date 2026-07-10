@@ -30,6 +30,7 @@ enum AppError: Error {
 
     enum EthereumError: Error {
         case insufficientBalanceWithFee
+        case invalidNftAsset
         case executionReverted(message: String)
         case lowerThanBaseGasLimit
         case nonceAlreadyInBlock
@@ -42,6 +43,7 @@ enum AppError: Error {
         case insufficientBalanceWithFee
         case cannotEstimate
         case insufficientLiquidity
+        case cannotSwap
     }
 }
 
@@ -66,6 +68,7 @@ extension AppError: LocalizedError {
         case let .ethereum(reason):
             switch reason {
             case .insufficientBalanceWithFee: return "" // localized in modules
+            case .invalidNftAsset: return "nft_v2.send.invalid_asset".localized
             case let .executionReverted(message): return "ethereum_transaction.error.reverted".localized(message)
             case .lowerThanBaseGasLimit: return "ethereum_transaction.error.lower_than_base_gas_limit".localized
             case .nonceAlreadyInBlock: return "ethereum_transaction.error.nonce_already_in_block".localized
@@ -78,6 +81,7 @@ extension AppError: LocalizedError {
             case .insufficientBalanceWithFee: return "" // localized in modules
             case .cannotEstimate: return "" // localized in modules
             case .insufficientLiquidity: return "swap.one_inch.error.insufficient_liquidity.info".localized
+            case .cannotSwap: return "swap.one_inch.error.cannotSwap".localized
             }
         case let .invalidWords(count):
             return "restore_error.mnemonic_word_count".localized("\(count)")

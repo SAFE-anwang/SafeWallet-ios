@@ -51,6 +51,7 @@ class TonTransactionAdapter {
         case .all: ()
         case .incoming: type = .incoming
         case .outgoing: type = .outgoing
+        case .swap, .approve: ()
         }
 
         let address = address.flatMap { try? TonSwift.Address.parse($0) }
@@ -114,7 +115,11 @@ extension TonTransactionAdapter: ITransactionsAdapter {
     }
 
     func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {
-        tonKit.eventPublisher(tagQuery: tagQuery(token: token, filter: filter, address: address))
+        guard Self.supports(filter: filter) else {
+            return .just([])
+        }
+
+        return tonKit.eventPublisher(tagQuery: tagQuery(token: token, filter: filter, address: address))
             .asObservable()
             .map { [converter] in
                 $0.events.map { converter.transactionRecord(event: $0) }
@@ -122,6 +127,10 @@ extension TonTransactionAdapter: ITransactionsAdapter {
     }
 
     func transactionsSingle(paginationData: String?, token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?, limit: Int) -> Single<[TransactionRecord]> {
+        guard Self.supports(filter: filter) else {
+            return .just([])
+        }
+
         let tagQuery = tagQuery(token: token, filter: filter, address: address)
 
         return Single.create { [tonKit, converter] observer in
@@ -144,5 +153,12 @@ extension TonTransactionAdapter: ITransactionsAdapter {
 
     func rawTransaction(hash _: String) -> String? {
         nil
+    }
+
+    private static func supports(filter: TransactionTypeFilter) -> Bool {
+        switch filter {
+        case .all, .incoming, .outgoing: return true
+        case .swap, .approve: return false
+        }
     }
 }

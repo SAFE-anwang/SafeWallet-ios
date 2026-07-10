@@ -2,7 +2,10 @@ public enum CoinType: Decodable {
     case bitcoin
     case bitcoinCash
     case litecoin
+    case dogecoin
     case dash
+    case safe
+    case safe4
     case zcash
     case monero
     case zano
@@ -43,7 +46,10 @@ public enum CoinType: Decodable {
         case "bitcoin": self = .bitcoin
         case "bitcoin-cash": self = .bitcoinCash
         case "litecoin": self = .litecoin
+        case "dogecoin": self = .dogecoin
         case "dash": self = .dash
+        case "safe": self = .safe
+        case "safe4": self = .safe4
         case "zcash": self = .zcash
         case "monero": self = .monero
         case "zano": self = .zano
@@ -79,7 +85,10 @@ public enum CoinType: Decodable {
         case .bitcoin: return (type: "bitcoin", address: nil, symbol: nil)
         case .bitcoinCash: return (type: "bitcoin-cash", address: nil, symbol: nil)
         case .litecoin: return (type: "litecoin", address: nil, symbol: nil)
+        case .dogecoin: return (type: "dogecoin", address: nil, symbol: nil)
         case .dash: return (type: "dash", address: nil, symbol: nil)
+        case .safe: return (type: "safe", address: nil, symbol: nil)
+        case .safe4: return (type: "safe4", address: nil, symbol: nil)
         case .zcash: return (type: "zcash", address: nil, symbol: nil)
         case .monero: return (type: "monero", address: nil, symbol: nil)
         case .zano: return (type: "zano", address: nil, symbol: nil)
@@ -117,7 +126,10 @@ extension CoinType: Equatable {
         case (.bitcoin, .bitcoin): return true
         case (.bitcoinCash, .bitcoinCash): return true
         case (.litecoin, .litecoin): return true
+        case (.dogecoin, .dogecoin): return true
         case (.dash, .dash): return true
+        case (.safe, .safe): return true
+        case (.safe4, .safe4): return true
         case (.zcash, .zcash): return true
         case (.monero, .monero): return true
         case (.zano, .zano): return true
@@ -167,7 +179,10 @@ extension CoinType: Identifiable {
             case "bitcoin": self = .bitcoin
             case "bitcoinCash": self = .bitcoinCash
             case "litecoin": self = .litecoin
+            case "dogecoin": self = .dogecoin
             case "dash": self = .dash
+            case "safe-anwang": self = .safe
+            case "safe4-anwang": self = .safe4
             case "zcash": self = .zcash
             case "monero": self = .monero
             case "zano": self = .zano
@@ -209,7 +224,10 @@ extension CoinType: Identifiable {
         case .bitcoin: return "bitcoin"
         case .bitcoinCash: return "bitcoinCash"
         case .litecoin: return "litecoin"
+        case .dogecoin: return "dogecoin"
         case .dash: return "dash"
+        case .safe: return "safe-anwang"
+        case .safe4: return "safe4-anwang"
         case .zcash: return "zcash"
         case .monero: return "monero"
         case .zano: return "zano"
@@ -247,7 +265,10 @@ extension CoinType: CustomStringConvertible {
         case .bitcoin: return "bitcoin"
         case .bitcoinCash: return "bitcoinCash"
         case .litecoin: return "litecoin"
+        case .dogecoin: return "dogecoin"
         case .dash: return "dash"
+        case .safe: return "safe-anwang"
+        case .safe4: return "safe4-anwang"
         case .zcash: return "zcash"
         case .monero: return "monero"
         case .zano: return "zano"

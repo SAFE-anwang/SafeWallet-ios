@@ -5,10 +5,13 @@ import RxSwift
 
 public class BtcBlockchainManager {
     static let blockchainTypes: [BlockchainType] = [
+//        .safe,
+//        .safe4,
         .bitcoin,
         .bitcoinCash,
         .ecash,
         .litecoin,
+        .dogecoin,
         .dash,
     ]
 
@@ -62,12 +65,19 @@ extension BtcBlockchainManager {
         let _restoreMode = accountOrigin == .created
             ? fastestSyncMode(blockchainType: blockchainType)
             : restoreMode(blockchainType: blockchainType)
-
-        switch _restoreMode {
-        case .blockchair: return .blockchair
-        case .hybrid: return .api
-        case .blockchain: return .full
+        if blockchainType == .dogecoin {
+            switch _restoreMode {
+            case .hybrid, .blockchair: return .blockchair
+            case .blockchain: return .full
+            }
+        }else {
+            switch _restoreMode {
+            case .blockchair: return .blockchair
+            case .hybrid: return .api
+            case .blockchain: return .full
+            }
         }
+
     }
 
     func save(restoreMode: BtcRestoreMode, blockchainType: BlockchainType) {

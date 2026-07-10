@@ -1,6 +1,5 @@
 import Combine
 import HsExtensions
-import WidgetKit
 
 class CurrencyManager {
     static let supportedCurrencies = [
@@ -38,7 +37,6 @@ class CurrencyManager {
     @PostPublished var baseCurrency: Currency {
         didSet {
             storage.set(value: baseCurrency.code, for: keyBaseCurrencyCode)
-            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 

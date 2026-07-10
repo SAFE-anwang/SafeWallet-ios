@@ -22,6 +22,7 @@ class EvmTransactionsAdapter: BaseEvmAdapter {
             source: source,
             baseToken: baseToken,
             coinManager: coinManager,
+            evmKitWrapper: evmKitWrapper,
             blockchainType: evmKitWrapper.blockchainType,
             userAddress: evmKitWrapper.evmKit.address,
             evmLabelManager: evmLabelManager
@@ -58,6 +59,8 @@ class EvmTransactionsAdapter: BaseEvmAdapter {
         case .all: ()
         case .incoming: type = .incoming
         case .outgoing: type = .outgoing
+        case .swap: type = .swap
+        case .approve: type = .approve
         }
 
         return TransactionTagQuery(type: type, protocol: `protocol`, contractAddress: contractAddress, address: address)
@@ -74,7 +77,18 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
     }
 
     var explorerTitle: String {
-        evmTransactionSource.name
+        switch evmKitWrapper.blockchainType {
+        case .binanceSmartChain:
+            return "bscscan.com"
+        case .polygon:
+            return "polygonscan.com"
+        case .optimism:
+            return "optimistic.etherscan.io"
+        case .arbitrumOne:
+            return "arbiscan.io"
+        default:
+            return evmTransactionSource.name
+        }
     }
 
     var additionalTokenQueries: [TokenQuery] {
@@ -101,7 +115,21 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
     }
 
     func explorerUrl(transactionHash: String) -> String? {
-        evmTransactionSource.transactionUrl(hash: transactionHash)
+        let txBaseUrl: String
+        switch evmKitWrapper.blockchainType {
+        case .binanceSmartChain:
+            txBaseUrl = "https://bscscan.com"
+        case .polygon:
+            txBaseUrl = "https://polygonscan.com"
+        case .optimism:
+            txBaseUrl = "https://optimistic.etherscan.io"
+        case .arbitrumOne:
+            txBaseUrl = "https://arbiscan.io"
+        default:
+            return evmTransactionSource.transactionUrl(hash: transactionHash)
+        }
+        return "\(txBaseUrl)/tx/\(transactionHash)"
+
     }
 
     private func handleTransactions(_ transactions: [FullTransaction]) -> [TransactionRecord] {

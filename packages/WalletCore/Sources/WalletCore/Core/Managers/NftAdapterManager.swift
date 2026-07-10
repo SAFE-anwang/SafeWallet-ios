@@ -1,34 +1,63 @@
 import Foundation
 import MarketKit
+import Combine
 import RxRelay
 import RxSwift
 
 class NftAdapterManager {
     private let walletManager: WalletManager
+    private let accountManager: AccountManager
     private let evmBlockchainManager: EvmBlockchainManager
     private let disposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
 
     private let adaptersUpdatedRelay = PublishRelay<[NftKey: INftAdapter]>()
     private var _adapterMap = [NftKey: INftAdapter]()
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).nft-adapter_manager", qos: .userInitiated)
 
-    init(walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager) {
+    init(walletManager: WalletManager, accountManager: AccountManager, evmBlockchainManager: EvmBlockchainManager) {
         self.walletManager = walletManager
+        self.accountManager = accountManager
         self.evmBlockchainManager = evmBlockchainManager
+
+        accountManager.activeAccountPublisher
+            .sink { [weak self] account in
+                self?.handleActiveAccountChanged(account: account)
+            }
+            .store(in: &cancellables)
 
         walletManager.activeWalletDataUpdatedObservable
             .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
             .subscribe(onNext: { [weak self] walletData in
-                self?.handleAdaptersReady(wallets: walletData.wallets)
+                self?.handleAdaptersReady(wallets: walletData.wallets, account: walletData.account)
             })
             .disposed(by: disposeBag)
 
-        _initAdapters(wallets: walletManager.activeWallets)
+        for blockchain in evmBlockchainManager.allBlockchains {
+            if let manager = try? evmBlockchainManager.evmKitManager(blockchainType: blockchain.type) {
+                subscribe(disposeBag, manager.evmKitUpdatedObservable) { [weak self] in
+                    self?.handleUpdatedEvmKit(blockchainType: blockchain.type)
+                }
+            }
+        }
+
+        _initAdapters(wallets: walletManager.activeWallets, account: accountManager.activeAccount)
     }
 
-    private func _initAdapters(wallets: [Wallet]) {
-        let nftKeys = Array(Set(wallets.map { NftKey(account: $0.account, blockchainType: $0.token.blockchainType) }))
+    private func _initAdapters(wallets: [Wallet], account: Account?) {
+        guard let account else {
+            _adapterMap = [:]
+            adaptersUpdatedRelay.accept(_adapterMap)
+            return
+        }
+
+        var blockchainTypes = Set(wallets.map { $0.token.blockchainType })
+        for blockchainType in EvmBlockchainManager.blockchainTypes where !blockchainType.supportedNftTypes.isEmpty {
+            blockchainTypes.insert(blockchainType)
+        }
+
+        let nftKeys = Array(Set(blockchainTypes.map { NftKey(account: account, blockchainType: $0) }))
 
         var newAdapterMap = [NftKey: INftAdapter]()
 
@@ -54,19 +83,63 @@ class NftAdapterManager {
         }
 
 //        print("NEW ADAPTERS: \(newAdapterMap.keys)")
-
         _adapterMap = newAdapterMap
         adaptersUpdatedRelay.accept(newAdapterMap)
     }
 
-    private func handleAdaptersReady(wallets: [Wallet]) {
+    private func handleAdaptersReady(wallets: [Wallet], account: Account?) {
         queue.async {
-            self._initAdapters(wallets: wallets)
+            self._initAdapters(wallets: wallets, account: account)
+        }
+    }
+
+    private func handleActiveAccountChanged(account: Account?) {
+        queue.async {
+            guard self._adapterMap.keys.contains(where: { $0.account != account }) else {
+                return
+            }
+
+            self._adapterMap = [:]
+            self.adaptersUpdatedRelay.accept([:])
+        }
+    }
+
+    private func handleUpdatedEvmKit(blockchainType: BlockchainType) {
+        queue.async {
+            guard let account = self.accountManager.activeAccount else {
+                return
+            }
+
+            self._adapterMap = self._adapterMap.filter { key, _ in
+                !(key.account == account && key.blockchainType == blockchainType)
+            }
+            self._initAdapters(wallets: self.walletManager.activeWallets, account: account)
         }
     }
 }
 
 extension NftAdapterManager {
+    func initAdaptersIfNeeded() {
+        queue.async {
+            guard self._adapterMap.isEmpty else {
+                return
+            }
+
+            self._initAdapters(wallets: self.walletManager.activeWallets, account: self.accountManager.activeAccount)
+        }
+    }
+
+    func ensureAdapters(for account: Account?) {
+        queue.async {
+            let hasOnlyCurrentAccountAdapters = self._adapterMap.keys.allSatisfy { $0.account == account }
+            guard self._adapterMap.isEmpty || !hasOnlyCurrentAccountAdapters else {
+                return
+            }
+
+            self._initAdapters(wallets: self.walletManager.activeWallets, account: account)
+        }
+    }
+
     var adapterMap: [NftKey: INftAdapter] {
         queue.sync { _adapterMap }
     }
@@ -77,6 +150,30 @@ extension NftAdapterManager {
 
     func adapter(nftKey: NftKey) -> INftAdapter? {
         queue.sync { _adapterMap[nftKey] }
+    }
+
+    func ensuredAdapter(nftKey: NftKey) -> INftAdapter? {
+        queue.sync {
+            let hasOnlyCurrentAccountAdapters = _adapterMap.keys.allSatisfy { $0.account == nftKey.account }
+            if _adapterMap.isEmpty || !hasOnlyCurrentAccountAdapters {
+                _initAdapters(wallets: walletManager.activeWallets, account: nftKey.account)
+            }
+
+            return _adapterMap[nftKey]
+        }
+    }
+
+    func ensuredAdapterAsync(nftKey: NftKey) async -> INftAdapter? {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                let hasOnlyCurrentAccountAdapters = self._adapterMap.keys.allSatisfy { $0.account == nftKey.account }
+                if self._adapterMap.isEmpty || !hasOnlyCurrentAccountAdapters {
+                    self._initAdapters(wallets: self.walletManager.activeWallets, account: nftKey.account)
+                }
+
+                continuation.resume(returning: self._adapterMap[nftKey])
+            }
+        }
     }
 
     func refresh() {
