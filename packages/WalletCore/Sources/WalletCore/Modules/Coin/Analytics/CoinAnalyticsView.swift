@@ -18,8 +18,12 @@ struct CoinAnalyticsView: View {
             case let .loaded(analytics):
                 content(viewItem: viewModel.viewItem(analytics))
             case .failed:
-                SyncErrorView {
-                    viewModel.load()
+                if viewModel.coin.isSafeCoin {
+                    PlaceholderViewNew(icon: "sync_error_48", subtitle: "coin_analytics.no_data".localized)
+                }else {
+                    SyncErrorView {
+                        viewModel.load()
+                    }
                 }
             }
         }

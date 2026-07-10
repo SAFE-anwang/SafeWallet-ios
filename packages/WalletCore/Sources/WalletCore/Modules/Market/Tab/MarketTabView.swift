@@ -6,7 +6,7 @@ struct MarketTabView: View {
     @StateObject var watchlistViewModel = WatchlistViewModel(page: .markets, section: .coins)
     @StateObject var coinsViewModel = MarketCoinsViewModel()
     @StateObject var marketWatchlistViewModel = MarketWatchlistViewModel()
-
+    @StateObject var dappViewModel = MarketDappViewModel()
     @State private var loadedTabs = [MarketModule.Tab]()
 
     var body: some View {
@@ -27,6 +27,7 @@ struct MarketTabView: View {
                 switch viewModel.currentTab {
                 case .coins: MarketCoinsView(viewModel: coinsViewModel, watchlistViewModel: watchlistViewModel)
                 case .watchlist: MarketWatchlistView(viewModel: marketWatchlistViewModel)
+                case .dapp: MarketDappView(viewModel: dappViewModel)
                 }
             }
             .frame(maxHeight: .infinity)
@@ -50,6 +51,7 @@ struct MarketTabView: View {
         switch tab {
         case .coins: coinsViewModel.load()
         case .watchlist: marketWatchlistViewModel.load()
+        case .dapp: dappViewModel.load()
         }
     }
 }
