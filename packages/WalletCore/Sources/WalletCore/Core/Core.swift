@@ -158,6 +158,9 @@ public class Core {
 
         userDefaultsStorage = UserDefaultsStorage()
         localStorage = LocalStorage(userDefaultsStorage: userDefaultsStorage)
+        AppConfig.isSafe4TestNet = localStorage.isSafe4TestNet
+        MarketKit.isSafe4TestNet = localStorage.isSafe4TestNet
+        Safe4Network.restoreDeployContractsCache(userDefaultsStorage: userDefaultsStorage)
         keychainStorage = KeychainStorage(service: "io.horizontalsystems.bank.dev", logger: logger)
         let sharedLocalStorage = SharedLocalStorage()
 

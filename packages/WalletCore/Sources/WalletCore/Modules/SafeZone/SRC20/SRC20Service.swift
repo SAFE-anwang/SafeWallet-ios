@@ -9,6 +9,7 @@ class SRC20Service {
     let contract: String
     private let privateKey: Data
     private let lockAddress: String
+    private let chainId: Int
 
     private func src20() async throws -> SRC20 {
         return try await SRC20(web3: web3(), contractAddr: contract)
@@ -26,15 +27,19 @@ class SRC20Service {
         return try await SRC20LockFactory(web3: web3(), contractAddr: scr20TimeLockAddress)
     }
 
-    init(token: Safe4CustomTokenRecord? = nil, privateKey: Data, lockAddress: String) {
+    init(token: Safe4CustomTokenRecord? = nil, privateKey: Data, lockAddress: String, chainId: Int = Safe4Network.currentChainId) {
         self.contract = token?.address ?? ""
         self.privateKey = privateKey
         self.lockAddress = lockAddress
+        self.chainId = chainId
     }
 
     private func web3() async throws -> Web3 {
-        let chain = Chain.safeFourChain()
-        let url = RpcSource.safeFourRpcHttp().url
+        let chain = chainId == Chain.SafeFourTestNet.id ? Chain.SafeFourTestNet : Chain.SafeFour
+        let urlString = chainId == Chain.SafeFourTestNet.id
+            ? ApiKeyManager.rpcEndpoint(network: .safe4_testnet) ?? "https://safe4testnet.anwang.com/rpc"
+            : ApiKeyManager.rpcEndpoint(network: .safe4) ?? "https://safe4.anwang.com/rpc"
+        let url = URL(string: urlString)!
         return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
     }
 

@@ -255,13 +255,7 @@ enum AppConfig {
         (Bundle.main.object(forInfoDictionaryKey: "HashDitApiKey") as? String) ?? ""
     }
 
-    static var isSafe4TestNet: Bool {
-#if DEBUG
-        return false
-#else
-        return false
-#endif
-    }
+    static var isSafe4TestNet = false
 
     static func apiKeys(_ name: ApiKeyName) -> [String]? {
         ApiKeyManager.apiKeys(name: name)

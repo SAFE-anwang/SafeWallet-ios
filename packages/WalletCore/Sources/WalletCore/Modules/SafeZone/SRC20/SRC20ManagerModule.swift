@@ -14,8 +14,9 @@ class SRC20ManagerModule {
         guard let privateKey = evmKitWrapper.signer?.privateKey else {
             return nil
         }
-        let provider = SyncSafe4TokensProvider(networkManager: Core.shared.networkManager)
-        let tokensService = SyncSafe4TokensService(provider: provider, srC20Service: SRC20Service(privateKey: privateKey, lockAddress: evmKitWrapper.evmKit.receiveAddress.eip55), evmKit: evmKitWrapper.evmKit, storage: Core.shared.safe4CustomTokenStorage, marketKit: Core.shared.marketKit)
+        let chainId = evmKitWrapper.evmKit.chain.id
+        let provider = SyncSafe4TokensProvider(networkManager: Core.shared.networkManager, chainId: chainId)
+        let tokensService = SyncSafe4TokensService(provider: provider, srC20Service: SRC20Service(privateKey: privateKey, lockAddress: evmKitWrapper.evmKit.receiveAddress.eip55, chainId: chainId), evmKit: evmKitWrapper.evmKit, storage: Core.shared.safe4CustomTokenStorage, marketKit: Core.shared.marketKit, chainId: chainId)
         let viewModel = SRC20ManagerViewModel(tokensService: tokensService)
         return viewModel
     }
@@ -28,7 +29,7 @@ class SRC20ManagerModule {
         guard let privateKey = evmKitWrapper.signer?.privateKey else {
             return nil
         }
-        let service = SRC20Service(token: token, privateKey: privateKey, lockAddress: evmKitWrapper.evmKit.receiveAddress.eip55)
+        let service = SRC20Service(token: token, privateKey: privateKey, lockAddress: evmKitWrapper.evmKit.receiveAddress.eip55, chainId: token.chainId)
 
         switch type {
         case .edit:

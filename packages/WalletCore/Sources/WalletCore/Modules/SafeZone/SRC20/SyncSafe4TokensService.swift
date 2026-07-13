@@ -18,33 +18,42 @@ class SyncSafe4TokensService {
     private let marketKit: MarketKit.Kit
     private var dataRelay = PublishRelay<[Safe4CustomTokenRecord]>()
     private var isSyncing = false
+    private var requestTask: Task<Void, Never>?
+    private var versionTask: Task<Void, Never>?
     private let ownerAccountId: String?
     private let ownerAddress: String
+    private let chainId: Int
 
     lazy var cachedRecords: [Safe4CustomTokenRecord] = {
-        let records = storage.allTokens().filter{$0.creator.lowercased() == evmKit.receiveAddress.eip55.lowercased()}
+        let records = storage.allTokens(chainId: chainId).filter{$0.creator.lowercased() == evmKit.receiveAddress.eip55.lowercased()}
         return records
     }()
 
-    init(provider: SyncSafe4TokensProvider, srC20Service: SRC20Service, evmKit: EvmKit.Kit, storage: Safe4CustomTokenStorage, marketKit: MarketKit.Kit) {
+    init(provider: SyncSafe4TokensProvider, srC20Service: SRC20Service, evmKit: EvmKit.Kit, storage: Safe4CustomTokenStorage, marketKit: MarketKit.Kit, chainId: Int = Safe4Network.currentChainId) {
         self.provider = provider
         self.srC20Service = srC20Service
         self.evmKit = evmKit
         self.storage = storage
         self.marketKit = marketKit
+        self.chainId = chainId
         ownerAccountId = Core.shared.accountManager.activeAccount?.id
         ownerAddress = evmKit.receiveAddress.eip55.lowercased()
     }
 
     func requestTokens() {
         guard !isSyncing else { return }
+        requestTask?.cancel()
 
-        Task {
+        requestTask = Task {
             isSyncing = true
-            defer { isSyncing = false }
+            defer {
+                isSyncing = false
+                requestTask = nil
+            }
 
             do{
                 let data = try await provider.requestTokens()
+                try Task.checkCancellation()
                 process(data: data)
             }catch{
                 // 处理错误
@@ -68,25 +77,31 @@ class SyncSafe4TokensService {
 
         let userTokens = data.tokens.filter{$0.creator.lowercased() == evmKit.receiveAddress.eip55.lowercased()}
 
-        userDefaultsStorage.set(value: userTokens.map{$0.address.lowercased()}, for: Safe4CustomTokenManager.safe4DeployContractsKey)
+        let deployContracts = userTokens.map{$0.address.lowercased()}
+        userDefaultsStorage.set(value: deployContracts, for: Safe4Network.deployContractsKey(chainId: chainId))
+        if Safe4Network.isCurrent(chainId: chainId) {
+            userDefaultsStorage.set(value: deployContracts, for: Safe4CustomTokenManager.safe4DeployContractsKey)
+        }
 
         let userTokenAddresses = Set(userTokens.map{$0.address.lowercased()})
         cachedRecords.forEach { record in
             if !userTokenAddresses.contains(record.address.lowercased()) {
-                storage.delete(by: record.address)
+                storage.delete(by: record.address, chainId: chainId)
             }
         }
 
         userTokens.forEach { token in
             addToken(tokenInfo: token)
             if let url = token.logoURI, !url.isEmpty {
-                storage.update(logo: url, address: token.address)
+                storage.update(logo: url, address: token.address, chainId: chainId)
             }
         }
 
-        Task {
+        versionTask?.cancel()
+        versionTask = Task {
             do {
                 let results = try await requestVersion(tokens: userTokens)
+                try Task.checkCancellation()
                 dataRelay.accept(results.sorted { lhsItem, rhsItem in
                     lhsItem.name.caseInsensitiveCompare(rhsItem.name) == .orderedAscending
                 })
@@ -104,7 +119,7 @@ class SyncSafe4TokensService {
             for token in tokens {
                 taskGroup.addTask { [weak self] in
                     do {
-                        let record = try self?.storage.asset(address: token.address)
+                        let record = try self?.storage.asset(address: token.address, chainId: self?.chainId ?? token.chainId)
                         if record == nil || record?.version?.count == 0 {
                             if let version = try await self?.srC20Service.version(chainId: token.chainId, contract: token.address) {
                                 token.version = version
@@ -141,7 +156,7 @@ class SyncSafe4TokensService {
                 try marketKit.insertToken(coinUid: tokenQuery.customCoinUid, blockchainUid: BlockchainType.safe4.uid, type: "eip20", decimals: tokenInfo.decimals, reference: tokenInfo.address)
             }
 
-            if let existingAsset = try storage.asset(address: tokenInfo.address) {
+            if let existingAsset = try storage.asset(address: tokenInfo.address, chainId: chainId) {
                 if existingAsset != tokenInfo {
                     storage.update(token: tokenInfo)
                 }
@@ -159,6 +174,10 @@ class SyncSafe4TokensService {
     }
 
     private func canReloadActiveWallets() -> Bool {
+        guard Safe4Network.isCurrent(chainId: chainId) else {
+            return false
+        }
+
         guard let activeAccount = accountManager.activeAccount else {
             return false
         }
@@ -175,12 +194,23 @@ class SyncSafe4TokensService {
     private func saveLogo(tokenInfo: Safe4CustomTokenRecord) {
         let tokenQuery = TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: tokenInfo.address))
         if let url = tokenInfo.logoURI {
-            userDefaultsStorage.set(value: url, for: tokenQuery.customCoinUid.lowercased())
+            userDefaultsStorage.set(value: url, for: Safe4Network.logoKey(coinUid: tokenQuery.customCoinUid, chainId: chainId))
+            if Safe4Network.isCurrent(chainId: chainId) {
+                userDefaultsStorage.set(value: url, for: tokenQuery.customCoinUid.lowercased())
+            }
         }
     }
 
     func logo(coinUid: String) -> String? {
-        userDefaultsStorage.value(for: coinUid.lowercased())
+        userDefaultsStorage.value(for: Safe4Network.logoKey(coinUid: coinUid, chainId: chainId)) ?? userDefaultsStorage.value(for: coinUid.lowercased())
+    }
+
+    func cancel() {
+        requestTask?.cancel()
+        versionTask?.cancel()
+        requestTask = nil
+        versionTask = nil
+        isSyncing = false
     }
 
     var dataDriver: Observable<[Safe4CustomTokenRecord]> {

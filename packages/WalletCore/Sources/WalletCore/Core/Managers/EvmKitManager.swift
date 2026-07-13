@@ -162,6 +162,14 @@ extension EvmKitManager {
         }
     }
 
+    func stop() {
+        queue.sync {
+            _evmKitWrapper?.evmKit.stop()
+            _evmKitWrapper = nil
+            currentAccount = nil
+        }
+    }
+
     func evmKitWrapper(account: Account, blockchainType: BlockchainType) throws -> EvmKitWrapper {
         try queue.sync {
             try _evmKitWrapper(account: account, blockchainType: blockchainType)

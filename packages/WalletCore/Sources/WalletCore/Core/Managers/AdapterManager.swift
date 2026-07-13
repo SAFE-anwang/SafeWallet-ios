@@ -88,6 +88,7 @@ class AdapterManager {
             }
             if let adapter = adapterFactory.adapter(wallet: wallet) {
                 if wallet.token.blockchain.type == .safe4, wallet.token.type == .native {
+                    src20SyncManager?.cancel()
                     src20SyncManager = SRC20SyncManager(wallet: wallet, adapter: adapter)
                 }
                 newAdapterMap[wallet] = adapter
@@ -179,6 +180,10 @@ class AdapterManager {
             return
         }
 
+        if wallets.contains(where: { $0.token.blockchain.type == .safe4 }) {
+            cancelSafe4SyncManager()
+        }
+
         queue.sync {
             for wallet in wallets {
                 _adapterData.adapterMap[wallet]?.stop()
@@ -234,6 +239,11 @@ extension AdapterManager {
                 $0.token.blockchain.type == blockchainType
             })
         }
+    }
+
+    func cancelSafe4SyncManager() {
+        src20SyncManager?.cancel()
+        src20SyncManager = nil
     }
 
     func validateZcashEndpoint(_ url: URL) async throws {

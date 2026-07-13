@@ -9,6 +9,10 @@ struct BlockchainSettingsView: View {
         ScrollableThemeView {
             VStack(spacing: .margin32) {
                 ListSection {
+                    Safe4NetworkToggleRow()
+                }
+
+                ListSection {
                     ForEach(viewModel.btcItems, id: \.blockchain.uid) { item in
                         ItemView(item: item)
                     }

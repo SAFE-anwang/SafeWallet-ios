@@ -6,11 +6,13 @@ import GRDB
 
 class SyncSafe4TokensProvider {
 
-    private let baseUrl = AppConfig.isSafe4TestNet == true ? "https://safe4testnet.anwang.com" : "https://safe4.anwang.com"
+    private let chainId: Int
+    private var baseUrl: String { chainId == Safe4Network.chainId(testNet: true) ? "https://safe4testnet.anwang.com" : "https://safe4.anwang.com" }
     private let networkManager: NetworkManager
 
-    init(networkManager: NetworkManager) {
+    init(networkManager: NetworkManager, chainId: Int = Safe4Network.currentChainId) {
         self.networkManager = networkManager
+        self.chainId = chainId
     }
 
     func requestTokens() async throws -> Safe4TokensResponse {

@@ -134,6 +134,16 @@ extension EvmBlockchainManager {
 
         return try? evmKitManager(blockchainType: blockchainType).evmKitWrapper(account: account, blockchainType: blockchainType)
     }
+
+    func resyncSafe4() {
+        queue.sync {
+            evmKitManagerMap[.safe4]?.stop()
+            evmKitManagerMap.removeValue(forKey: .safe4)
+            evmAccountManagerMap.removeValue(forKey: .safe4)
+        }
+
+        syncSourceManager.resync(blockchainType: .safe4)
+    }
 }
 
 extension EvmBlockchainManager {

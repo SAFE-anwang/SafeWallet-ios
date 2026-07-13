@@ -134,8 +134,8 @@ extension Eip20Adapter {
             }
         }else {
             let lockedRecordStorage = Core.shared.safe4CustomTokenStorage
-            if let token = try? lockedRecordStorage.asset(address: contractAddress.eip55), let privateKey = evmKitWrapper.signer?.privateKey  {
-                let service = SRC20Service(token: token, privateKey: privateKey, lockAddress: receiveAddress.address)
+            if let token = try? lockedRecordStorage.asset(address: contractAddress.eip55, chainId: evmKitWrapper.evmKit.chain.id), let privateKey = evmKitWrapper.signer?.privateKey  {
+                let service = SRC20Service(token: token, privateKey: privateKey, lockAddress: receiveAddress.address, chainId: token.chainId)
                 let storage = Core.shared.safe4StorageManager.src20AllTokenLockedsRecordStorage
                 let lockedService = SRC20LockedService(service: service, lockedRecordStorage: storage)
                 self.lockedService = lockedService

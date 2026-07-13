@@ -349,6 +349,10 @@ extension EvmSyncSourceManager {
     }
 
     func syncSource(blockchainType: BlockchainType) -> EvmSyncSource {
+        if blockchainType == .safe4, AppConfig.isSafe4TestNet {
+            return defaultSyncSources(blockchainType: blockchainType)[0]
+        }
+
         let syncSources = allSyncSources(blockchainType: blockchainType)
 
         if let urlString = blockchainSettingsStorage.evmSyncSourceUrl(blockchainType: blockchainType),
@@ -361,6 +365,10 @@ extension EvmSyncSourceManager {
     }
 
     func httpSyncSource(blockchainType: BlockchainType) -> EvmSyncSource? {
+        if blockchainType == .safe4, AppConfig.isSafe4TestNet {
+            return defaultSyncSources(blockchainType: blockchainType).first { $0.isHttp }
+        }
+
         let syncSources = allSyncSources(blockchainType: blockchainType)
 
         if let urlString = blockchainSettingsStorage.evmSyncSourceUrl(blockchainType: blockchainType),
@@ -398,6 +406,11 @@ extension EvmSyncSourceManager {
             syncSourceRelay.accept(blockchainType)
         }
 
+        syncSourcesUpdatedRelay.accept(blockchainType)
+    }
+
+    func resync(blockchainType: BlockchainType) {
+        syncSourceRelay.accept(blockchainType)
         syncSourcesUpdatedRelay.accept(blockchainType)
     }
 }
