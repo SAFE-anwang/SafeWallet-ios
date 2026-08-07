@@ -73,7 +73,12 @@ final class Safe4NetworkSwitchService: ObservableObject {
         localStorage.isSafe4TestNet = enabled
         AppConfig.isSafe4TestNet = enabled
         MarketKit.isSafe4TestNet = enabled
-        Safe4Network.restoreDeployContractsCache(userDefaultsStorage: userDefaultsStorage, chainId: Safe4Network.chainId(testNet: enabled))
+        let chainId = Safe4Network.chainId(testNet: enabled)
+        DAppChainIdStorage.storeSafe4ChainId(
+            chainId,
+            userDefaultsStorage: userDefaultsStorage
+        )
+        Safe4Network.restoreDeployContractsCache(userDefaultsStorage: userDefaultsStorage, chainId: chainId)
         isTestNet = enabled
 
         marketKit.sync()
@@ -82,7 +87,7 @@ final class Safe4NetworkSwitchService: ObservableObject {
         NotificationCenter.default.post(
             name: .safe4NetworkDidSwitch,
             object: nil,
-            userInfo: ["chainId": Safe4Network.chainId(testNet: enabled)]
+            userInfo: ["chainId": chainId]
         )
     }
 }

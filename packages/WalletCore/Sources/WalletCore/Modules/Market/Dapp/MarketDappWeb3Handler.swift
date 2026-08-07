@@ -11,6 +11,8 @@ final class MarketDappWeb3Handler: NSObject, ObservableObject {
     private let address: String
     private let dAppName: String
 
+    var onChainIdChanged: ((Int) -> Void)?
+
     @Published var destination: Destination?
 
     private var activeRequestId: Int?
@@ -24,10 +26,19 @@ final class MarketDappWeb3Handler: NSObject, ObservableObject {
     private var completedRequestIds: Set<Int> = []  // 已完成（已发送响应）的请求
 
     init(chainId: Int, address: String, dAppName: String) {
-        self.chainId = chainId
+        let resolvedChainId = DAppChainIdStorage.resolvedChainId(
+            fallback: chainId,
+            userDefaultsStorage: Core.shared.userDefaultsStorage
+        )
+        self.chainId = resolvedChainId
         self.address = address
         self.dAppName = dAppName
         super.init()
+
+        DAppChainIdStorage.storeSafe4ChainId(
+            resolvedChainId,
+            userDefaultsStorage: Core.shared.userDefaultsStorage
+        )
 
         safe4NetworkObserver = NotificationCenter.default.addObserver(
             forName: .safe4NetworkDidSwitch,
@@ -505,12 +516,18 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
 
     private func handleSafe4NetworkSwitch(_ notification: Notification) {
         guard Safe4Network.context(chainId: chainId) != nil,
-              let newChainId = notification.userInfo?["chainId"] as? Int
+              let newChainId = notification.userInfo?["chainId"] as? Int,
+              Safe4Network.context(chainId: newChainId) != nil
         else {
             return
         }
 
         chainId = newChainId
+        DAppChainIdStorage.storeSafe4ChainId(
+            newChainId,
+            userDefaultsStorage: Core.shared.userDefaultsStorage
+        )
+        onChainIdChanged?(newChainId)
         notifyChainChanged(chainId: newChainId)
     }
 
@@ -522,6 +539,10 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
         (function() {
             if (window.ethereum && window.ethereum._isSafeWallet) {
                 window.ethereum.chainId = '\(hexChainId)';
+                window.ethereum.networkVersion = '\(chainId)';
+                if (window.ethereum._internalState) {
+                    window.ethereum._internalState.chainId = '\(hexChainId)';
+                }
                 if (window.ethereum._eventHandlers && window.ethereum._eventHandlers.chainChanged) {
                     window.ethereum._eventHandlers.chainChanged.forEach(function(handler) {
                         handler('\(hexChainId)');
@@ -758,6 +779,13 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
         // ✅ 同步更新 Swift 层的 chainId
         let oldChainId = self.chainId
         self.chainId = newChain
+        if Safe4Network.context(chainId: newChain) != nil {
+            DAppChainIdStorage.storeSafe4ChainId(
+                newChain,
+                userDefaultsStorage: Core.shared.userDefaultsStorage
+            )
+        }
+        onChainIdChanged?(newChain)
 
         print("[Dapp] Chain switched: \(oldChainId) -> \(newChain)")
 

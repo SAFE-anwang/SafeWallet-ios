@@ -154,7 +154,7 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
     public weak var messageHandler: WKScriptMessageHandler?
 
     // MARK: - 私有属性
-    private let chainId: Int
+    private var chainId: Int
     private let address: String
     private var currentDApp: DAppType?
     private var retryCount = 0
@@ -162,13 +162,30 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
     private var currentWorkItem: DispatchWorkItem?
     private lazy var encodedAddress: String = encodeForJavaScript(address)
     private var isConnectedFlag: Bool = false
-    private lazy var fixedUUID: String = "safe-wallet-\(address.lowercased())-\(chainId)"
+    private var fixedUUID: String {
+        "safe-wallet-\(address.lowercased())-\(resolvedChainId)"
+    }
     private var resolvedChainId: Int {
-        DAppChainIdStorage.resolvedChainId(fallback: chainId)
+        DAppChainIdStorage.resolvedChainId(
+            fallback: chainId,
+            userDefaultsStorage: Core.shared.userDefaultsStorage
+        )
     }
 
     private var chainIdHex: String {
         String(resolvedChainId, radix: 16)
+    }
+
+    func synchronizeChainId(_ chainId: Int) {
+        guard chainId > 0 else {
+            return
+        }
+
+        self.chainId = chainId
+        DAppChainIdStorage.storeSafe4ChainId(
+            chainId,
+            userDefaultsStorage: Core.shared.userDefaultsStorage
+        )
     }
 
     // MARK: - 初始化
@@ -761,22 +778,30 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
         """
         (function() {
             try {
+                var chainId = "0x\(chainIdHex)";
+                var chainIdDecimal = "\(resolvedChainId)";
+                var address = \(encodedAddress);
+
                 if (window.ethereum && window.ethereum._isSafeWallet) {
+                    var chainChanged = window.ethereum.chainId !== chainId;
+                    window.ethereum.chainId = chainId;
+                    window.ethereum.networkVersion = chainIdDecimal;
                     window.ethereum._internalState = window.ethereum._internalState || {};
                     window.ethereum._internalState.isConnected = 'true';
                     window.ethereum._internalState.accounts = [\(encodedAddress)];
+                    window.ethereum._internalState.chainId = chainId;
                     window.ethereum.selectedAddress = \(encodedAddress);
 
-                    window.ethereum.emit('connect', { chainId: window.ethereum.chainId });
+                    if (chainChanged) {
+                        window.ethereum.emit('chainChanged', chainId);
+                    }
+                    window.ethereum.emit('connect', { chainId: chainId });
                     window.ethereum.emit('accountsChanged', [\(encodedAddress)]);
 
                     notifyDAppOfConnection();
 
                     return { success: true, action: 'reset' };
                 }
-
-                var chainId = "0x\(chainIdHex)";
-                var address = \(encodedAddress);
 
                 // 工具函数：安全的 UUID 生成
                 function generateUUID() {

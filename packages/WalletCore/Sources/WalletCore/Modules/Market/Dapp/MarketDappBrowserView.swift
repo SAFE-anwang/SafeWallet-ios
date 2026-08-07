@@ -173,6 +173,9 @@ struct MarketDappWebView: UIViewRepresentable {
             // 设置消息处理器
             print("[DAppBrowser] INFO: Setting messageHandler on dAppManager")
             dAppManager.messageHandler = web3Handler
+            web3Handler.onChainIdChanged = { [weak dAppManager] chainId in
+                dAppManager?.synchronizeChainId(chainId)
+            }
 
             // 配置 DApp 集成
             print("[DAppBrowser] INFO: Calling dAppManager.configure() for host: \(url.host ?? "unknown")")
