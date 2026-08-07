@@ -133,12 +133,18 @@ final class NftV2InventoryService {
     }
 
     var activeAccountId: String? {
-        accountManager.activeAccount?.id
+        accountManager.activeAccount.map { contextAccountId(account: $0) }
     }
 
     var activeAccountIdPublisher: AnyPublisher<String?, Never> {
-        accountManager.activeAccountPublisher
-            .map { $0?.id }
+        let accountChanges = accountManager.activeAccountPublisher
+            .map { [weak self] account in account.map { self?.contextAccountId(account: $0) ?? $0.id } }
+
+        let childWalletChanges = ChildWalletBridge.shared.activeChildWalletChangedPublisher
+            .map { [weak self] _ in self?.activeAccountId }
+
+        return accountChanges
+            .merge(with: childWalletChanges)
             .eraseToAnyPublisher()
     }
 
@@ -148,6 +154,10 @@ final class NftV2InventoryService {
 
     func addressContext(account: Account, chain: NftV2Chain) -> NftV2AddressContext? {
         addressResolver.addressContexts(account: account)[chain]
+    }
+
+    private func contextAccountId(account: Account) -> String {
+        ChildWalletBridge.shared.contextAccountId(account: account)
     }
 
     func nftRecordsUpdatedObservable() -> Observable<Void> {
@@ -197,7 +207,7 @@ final class NftV2InventoryService {
     ) async -> (records: [TransactionRecord], lastBlockHeight: Int?)? {
         guard !transactionHashes.isEmpty,
               let account = accountManager.activeAccount,
-              account.id == accountId,
+              contextAccountId(account: account) == accountId,
               let adapter = transactionAdapter(chain: chain, account: account)
         else {
             return nil
@@ -235,7 +245,7 @@ final class NftV2InventoryService {
         }
 
         guard let currentAccount = accountManager.activeAccount,
-              currentAccount.id == accountId
+              contextAccountId(account: currentAccount) == accountId
         else {
             return nil
         }
@@ -251,7 +261,7 @@ final class NftV2InventoryService {
     ) async -> (records: [TransactionRecord], lastBlockHeight: Int?)? {
         guard !transactionHashes.isEmpty,
               let account = accountManager.activeAccount,
-              account.id == accountId,
+              contextAccountId(account: account) == accountId,
               let adapter = transactionAdapter(chain: chain, account: account)
         else {
             return nil
@@ -261,7 +271,7 @@ final class NftV2InventoryService {
         let records = await allTransactionRecords(adapter: adapter)
 
         guard let currentAccount = accountManager.activeAccount,
-              currentAccount.id == accountId
+              contextAccountId(account: currentAccount) == accountId
         else {
             return nil
         }
@@ -322,6 +332,18 @@ final class NftV2InventoryService {
                 }
             }
             .store(in: &cancellables)
+
+        ChildWalletBridge.shared.activeChildWalletChangedPublisher
+            .sink { [weak self] change in
+                self?.queue.async {
+                    guard self?.accountManager.activeAccount?.id == change.parentAccountId else {
+                        return
+                    }
+
+                    self?.handleActiveAccountChanged(account: self?.accountManager.activeAccount)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func bindAdapterChanges() {
@@ -355,7 +377,7 @@ final class NftV2InventoryService {
 
     private func handleActiveAccountChanged(account: Account?) {
         syncGeneration += 1
-        currentAccountIdValue = account?.id
+        currentAccountIdValue = account.map { contextAccountId(account: $0) }
         adapterDisposeBag = DisposeBag()
         chainSyncDisposableMap.values.forEach { $0.dispose() }
         chainSyncDisposableMap.removeAll()
@@ -373,7 +395,7 @@ final class NftV2InventoryService {
             return
         }
 
-        subscribeToAdapterRecords(adapterMap: nftAdapterManager.adapterMap, accountId: account.id)
+        subscribeToAdapterRecords(adapterMap: nftAdapterManager.adapterMap, accountId: account.id, contextAccountId: contextAccountId(account: account))
         applyLocalPayloads(account: account)
         enqueueInitialDiscoverySyncs(account: account)
     }
@@ -381,21 +403,21 @@ final class NftV2InventoryService {
     private func handleAdaptersUpdated(adapterMap: [NftKey: INftAdapter]) {
         queue.async {
             guard let account = self.accountManager.activeAccount,
-                  account.id == self.currentAccountIdValue
+                  self.contextAccountId(account: account) == self.currentAccountIdValue
             else {
                 return
             }
 
-            self.subscribeToAdapterRecords(adapterMap: adapterMap, accountId: account.id)
+            self.subscribeToAdapterRecords(adapterMap: adapterMap, accountId: account.id, contextAccountId: self.contextAccountId(account: account))
             self.applyLocalPayloads(account: account)
             self.enqueueInitialDiscoverySyncs(account: account)
         }
     }
 
-    private func subscribeToAdapterRecords(adapterMap: [NftKey: INftAdapter], accountId: String) {
+    private func subscribeToAdapterRecords(adapterMap: [NftKey: INftAdapter], accountId: String, contextAccountId: String) {
         adapterDisposeBag = DisposeBag()
 
-        for (nftKey, adapter) in adapterMap where nftKey.account.id == accountId {
+        for (nftKey, adapter) in adapterMap where nftKey.account.id == accountId && nftKey.storageAccountId == contextAccountId {
             adapter.nftRecordsObservable
                 .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
                 .subscribe(onNext: { [weak self] _ in
@@ -407,7 +429,7 @@ final class NftV2InventoryService {
 
     private func handleAdapterRecordsUpdated(nftKey: NftKey) {
         queue.async {
-            guard nftKey.account.id == self.currentAccountIdValue,
+            guard nftKey.storageAccountId == self.currentAccountIdValue,
                   let account = self.accountManager.activeAccount,
                   account.id == nftKey.account.id,
                   let chain = self.chain(blockchainType: nftKey.blockchainType)
@@ -422,7 +444,7 @@ final class NftV2InventoryService {
 
     private func handleMetadataUpdated(nftKey: NftKey) {
         queue.async {
-            guard nftKey.account.id == self.currentAccountIdValue,
+            guard nftKey.storageAccountId == self.currentAccountIdValue,
                   let account = self.accountManager.activeAccount,
                   account.id == nftKey.account.id,
                   let chain = self.chain(blockchainType: nftKey.blockchainType)
@@ -437,8 +459,8 @@ final class NftV2InventoryService {
     private func handleProviderUpdated(update: NftV2ProviderUpdate) {
         queue.async {
             guard let account = self.accountManager.activeAccount,
-                  account.id == self.currentAccountIdValue,
-                  account.id == update.accountId,
+                  self.contextAccountId(account: account) == self.currentAccountIdValue,
+                  self.contextAccountId(account: account) == update.accountId,
                   let context = self.addressResolver.addressContexts(account: account)[update.chain],
                   context.address.lowercased() == update.address
             else {
@@ -451,7 +473,7 @@ final class NftV2InventoryService {
 
     private func performRefresh(force: Bool) {
         guard let account = accountManager.activeAccount,
-              account.id == currentAccountIdValue
+              contextAccountId(account: account) == currentAccountIdValue
         else {
             return
         }
@@ -461,7 +483,7 @@ final class NftV2InventoryService {
     }
 
     private func enqueueInitialDiscoverySyncs(account: Account) {
-        let cachedPayloads = cacheStore.load(accountId: account.id)
+        let cachedPayloads = cacheStore.load(accountId: contextAccountId(account: account))
         let undiscoveredChains = NftV2Chain.allCases.filter { chain in
             guard let provider = providers[chain] else {
                 return false
@@ -495,7 +517,7 @@ final class NftV2InventoryService {
     }
 
     private func enqueueBackgroundReconcileIfNeeded(chain: NftV2Chain, account: Account) {
-        let throttleKey = "\(account.id)|\(chain.rawValue)"
+        let throttleKey = "\(contextAccountId(account: account))|\(chain.rawValue)"
         let now = Date().timeIntervalSince1970
 
         if let timestamp = lastBackgroundReconcileTimestampByKey[throttleKey],
@@ -514,7 +536,7 @@ final class NftV2InventoryService {
         }
 
         let contexts = addressResolver.addressContexts(account: account)
-        let cachedPayloads = cacheStore.load(accountId: account.id)
+        let cachedPayloads = cacheStore.load(accountId: contextAccountId(account: account))
         let chainStates = NftV2Chain.allCases.map { chain in
             initialChainState(account: account, chain: chain, context: contexts[chain], cachedPayload: cachedPayloads[chain])
         }
@@ -583,7 +605,7 @@ final class NftV2InventoryService {
     }
 
     private func drainFullSyncQueue(account: Account) {
-        guard account.id == currentAccountIdValue else {
+        guard contextAccountId(account: account) == currentAccountIdValue else {
             return
         }
 
@@ -610,7 +632,8 @@ final class NftV2InventoryService {
     }
 
     private func startFullSync(chain: NftV2Chain, account: Account, context: NftV2AddressContext, force: Bool) {
-        let throttleKey = "\(account.id)|\(chain.rawValue)"
+        let contextId = contextAccountId(account: account)
+        let throttleKey = "\(contextId)|\(chain.rawValue)"
         let now = Date().timeIntervalSince1970
 
         if !force,
@@ -624,7 +647,7 @@ final class NftV2InventoryService {
         syncingChains.insert(chain)
         emitRefreshingState(chain: chain, context: context)
 
-        let cachedPayloads = cacheStore.load(accountId: account.id)
+        let cachedPayloads = cacheStore.load(accountId: contextId)
         let generation = syncGeneration
 
         chainSyncDisposableMap[chain]?.dispose()
@@ -637,11 +660,11 @@ final class NftV2InventoryService {
         .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
         .subscribe(onSuccess: { [weak self] state in
             self?.queue.async {
-                self?.handleFullSyncCompleted(state: state, chain: chain, accountId: account.id, generation: generation)
+                self?.handleFullSyncCompleted(state: state, chain: chain, accountId: contextId, generation: generation)
             }
         }, onError: { [weak self] _ in
             self?.queue.async {
-                self?.handleFullSyncFailed(chain: chain, accountId: account.id, generation: generation)
+                self?.handleFullSyncFailed(chain: chain, accountId: contextId, generation: generation)
             }
         })
     }
@@ -670,7 +693,7 @@ final class NftV2InventoryService {
         chainSyncDisposableMap[chain] = nil
         updateChainState(state)
 
-        if let account = accountManager.activeAccount, account.id == accountId {
+        if let account = accountManager.activeAccount, contextAccountId(account: account) == accountId {
             drainFullSyncQueue(account: account)
         }
     }
@@ -683,7 +706,7 @@ final class NftV2InventoryService {
         syncingChains.remove(chain)
         chainSyncDisposableMap[chain] = nil
 
-        if let account = accountManager.activeAccount, account.id == accountId {
+        if let account = accountManager.activeAccount, contextAccountId(account: account) == accountId {
             drainFullSyncQueue(account: account)
         }
     }
@@ -724,14 +747,14 @@ final class NftV2InventoryService {
             return []
         }
 
-        guard account.id == accountId else {
+        guard contextAccountId(account: account) == accountId else {
             return []
         }
 
-        let items = await pendingTransferStore.items(accountId: account.id)
+        let items = await pendingTransferStore.items(accountId: accountId)
 
         guard let currentAccount = accountManager.activeAccount,
-              currentAccount.id == accountId
+              contextAccountId(account: currentAccount) == accountId
         else {
             return []
         }
@@ -784,7 +807,7 @@ final class NftV2InventoryService {
         submittedAt: Date = Date()
     ) -> NftV2PendingTransferItem? {
         guard let account = accountManager.activeAccount,
-              account.id == accountId
+              contextAccountId(account: account) == accountId
         else {
             return nil
         }
@@ -1019,7 +1042,7 @@ final class NftV2InventoryService {
                     let effectivePayload = self.mergedPayload(preferred: payload, fallback: cachedPayload?.payload)
                     self.cacheStore.save(
                         payload: effectivePayload,
-                        accountId: account.id,
+                        accountId: self.contextAccountId(account: account),
                         chain: chain,
                         address: context.address,
                         market: market

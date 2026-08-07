@@ -4,7 +4,9 @@ import UIKit
 
 enum ReceiveModule {
     @ViewBuilder static func view(account: Account, fullCoin: FullCoin, path: Binding<NavigationPath>, onDismiss: (() -> Void)?) -> some View {
-        let eligibleTokens = fullCoin.tokens.filter { account.type.supports(token: $0) }
+        let eligibleTokens = fullCoin.tokens.filter {
+            account.type.supports(token: $0) && ChildWalletBridge.shared.supports(account: account, token: $0)
+        }
 
         // For alone token check exists and show address
         if eligibleTokens.count == 1 {
@@ -57,8 +59,12 @@ enum ReceiveModule {
     }
 
     @ViewBuilder static func view(token: Token, account: Account, path: Binding<NavigationPath>, onDismiss: (() -> Void)?) -> some View {
-        let wallet = wallet(account: account, token: token)
-        ReceiveAddressModule.instance(wallet: wallet, path: path, onDismiss: onDismiss)
+        if ChildWalletBridge.shared.supports(account: account, token: token) {
+            let wallet = wallet(account: account, token: token)
+            ReceiveAddressModule.instance(wallet: wallet, path: path, onDismiss: onDismiss)
+        } else {
+            EmptyView()
+        }
     }
 
     private static func hasSettings(_ tokens: [Token]) -> Bool {
@@ -78,7 +84,9 @@ enum ReceiveModule {
 
     private static func createWallet(account: Account, token: Token) -> Wallet {
         let wallet = Wallet(token: token, account: account)
-        Core.shared.walletManager.save(wallets: [wallet])
+        if ChildWalletBridge.shared.supports(account: account, token: token) {
+            Core.shared.walletManager.save(wallets: [wallet])
+        }
 
         return wallet
     }

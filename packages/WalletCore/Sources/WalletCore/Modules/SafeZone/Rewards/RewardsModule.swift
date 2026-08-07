@@ -5,7 +5,7 @@ import SwiftUI
 struct RewardsModule {
 
     static func viewModel() -> RewardsViewModel? {
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeSafe4EvmKitWrapper() else {
             return nil
         }
         guard let privateKey = evmKitWrapper.signer?.privateKey else { return nil }

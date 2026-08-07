@@ -4,7 +4,7 @@ import MarketKit
 
 class ReceiveCoinListService {
     private let provider: CoinProvider
-    private let accountType: AccountType
+    private let account: Account
     private let settingsService = RestoreSettingsService(manager: Core.shared.restoreSettingsManager)
 
     private var filter: String = "" {
@@ -15,9 +15,9 @@ class ReceiveCoinListService {
 
     @PostPublished private(set) var coins = [FullCoin]()
 
-    init(provider: CoinProvider, accountType: AccountType) {
+    init(provider: CoinProvider, account: Account) {
         self.provider = provider
-        self.accountType = accountType
+        self.account = account
 
         sync()
     }
@@ -31,7 +31,7 @@ class ReceiveCoinListService {
                 coins: coins,
                 balances: balances,
                 coinPrices: coinPrices,
-                accountType: accountType
+                accountType: account.type
             )
             let sorted = coins.sorted(
                 by: SortCriterion.receiveCoin,
@@ -48,7 +48,9 @@ class ReceiveCoinListService {
     }
 
     private func collectActiveBalancesAndPrices(for coins: [FullCoin]) -> (balances: [Token: Decimal], coinPrices: [String: Decimal]) {
-        let eligibleTokens = coins.flatMap { $0.tokens.filter { accountType.supports(token: $0) } }
+        let eligibleTokens = coins.flatMap {
+            $0.tokens.filter { account.type.supports(token: $0) && ChildWalletBridge.shared.supports(account: account, token: $0) }
+        }
         let coinUids = Array(Set(eligibleTokens.map(\.coin.uid)))
 
         let currency = Core.shared.currencyManager.baseCurrency
@@ -85,7 +87,9 @@ extension ReceiveCoinListService {
     }
 
     func prepareEnable(fullCoin: FullCoin, account: Account) {
-        let eligibleTokens = fullCoin.tokens.filter { account.type.supports(token: $0) }
+        let eligibleTokens = fullCoin.tokens.filter {
+            account.type.supports(token: $0) && ChildWalletBridge.shared.supports(account: account, token: $0)
+        }
 
         guard let token = eligibleTokens.first else {
             return

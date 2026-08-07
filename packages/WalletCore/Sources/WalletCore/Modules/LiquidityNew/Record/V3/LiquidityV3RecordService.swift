@@ -36,7 +36,7 @@ class LiquidityV3RecordService {
 
     init?(dexType: DexType, marketKit: MarketKit.Kit, walletManager _: WalletManager, adapterManager _: AdapterManager, blockchainType: BlockchainType) {
 
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else { return nil }
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: blockchainType) else { return nil }
 
         guard let rpcSource = Core.shared.evmSyncSourceManager.httpSyncSource(blockchainType: blockchainType)?.rpcSource else { return nil }
 

@@ -669,7 +669,7 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
         var evmFeeData: EvmFeeData?
         var transactionError: Error?
 
-        if let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper, let gasPriceData {
+        if let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: blockchainType), let gasPriceData {
             do {
                 let _evmFeeData = try await evmFeeEstimator.estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData, predefinedGasLimit: gasLimitData)
                 evmFeeData = _evmFeeData
@@ -942,7 +942,7 @@ class USwapMultiSwapProvider: IMultiSwapProvider {
         var fees: [TronKit.Fee] = []
         var transactionError: Error?
 
-        if let tronKitWrapper = Core.shared.tronAccountManager.tronKitManager.tronKitWrapper {
+        if let tronKitWrapper = ChildWalletBridge.shared.activeTronKitWrapper() {
             do {
                 let result = try await TronSendHelper.estimateFees(
                     createdTransaction: transaction,

@@ -6,7 +6,7 @@ import EvmKit
 class LockedRecordModule {
 
 //    static func viewController(nav: UINavigationController) -> UIViewController? {
-//        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+//        guard let evmKitWrapper = ChildWalletBridge.shared.activeSafe4EvmKitWrapper() else {
 //            return nil
 //        }
 //        guard let privateKey = evmKitWrapper.signer?.privateKey else {
@@ -25,7 +25,7 @@ class LockedRecordModule {
 //    }
 
     static func viewModel() -> LockedRecordViewModel? {
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeSafe4EvmKitWrapper() else {
             return nil
         }
         guard let privateKey = evmKitWrapper.signer?.privateKey else {

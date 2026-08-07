@@ -401,7 +401,7 @@ final class NftV2WalletInventoryProvider: INftV2InventoryProvider {
 
     private func metadataContextKey(address: String, account: Account) -> String {
         let normalizedAddress = address.lowercased()
-        return "\(account.id)|\(normalizedAddress)"
+        return "\(ChildWalletBridge.shared.contextAccountId(account: account))|\(normalizedAddress)"
     }
 
     private func scheduleOnChainMetadataRefreshIfNeeded(
@@ -485,7 +485,7 @@ final class NftV2WalletInventoryProvider: INftV2InventoryProvider {
             updatesRelay.accept(
                 NftV2ProviderUpdate(
                     chain: chain,
-                    accountId: account.id,
+                    accountId: ChildWalletBridge.shared.contextAccountId(account: account),
                     address: address.lowercased()
                 )
             )

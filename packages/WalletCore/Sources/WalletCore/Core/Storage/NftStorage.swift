@@ -60,8 +60,9 @@ class NftStorage {
 extension NftStorage {
     func addressMetadata(nftKey: NftKey) -> NftAddressMetadata? {
         do {
-            let collectionRecords = try storage.collections(blockchainTypeUid: nftKey.blockchainType.uid, accountId: nftKey.account.id)
-            let assetRecords = try storage.assets(blockchainTypeUid: nftKey.blockchainType.uid, accountId: nftKey.account.id)
+            let storageAccountId = nftKey.storageAccountId
+            let collectionRecords = try storage.collections(blockchainTypeUid: nftKey.blockchainType.uid, accountId: storageAccountId)
+            let assetRecords = try storage.assets(blockchainTypeUid: nftKey.blockchainType.uid, accountId: storageAccountId)
 
             let priceRecords = priceRecords(collectionRecords: collectionRecords) + priceRecords(assetRecords: assetRecords)
             let tokens = try marketKit.tokens(queries: tokenQueries(records: priceRecords))
@@ -91,11 +92,12 @@ extension NftStorage {
 
     func save(addressMetadata: NftAddressMetadata, nftKey: NftKey) {
         do {
+            let storageAccountId = nftKey.storageAccountId
             try storage.save(
-                collections: addressMetadata.collections.map { NftCollectionRecord(blockchainTypeUid: nftKey.blockchainType.uid, accountId: nftKey.account.id, collection: $0) },
-                assets: addressMetadata.assets.map { NftAssetRecord(blockchainTypeUid: nftKey.blockchainType.uid, accountId: nftKey.account.id, asset: $0) },
+                collections: addressMetadata.collections.map { NftCollectionRecord(blockchainTypeUid: nftKey.blockchainType.uid, accountId: storageAccountId, collection: $0) },
+                assets: addressMetadata.assets.map { NftAssetRecord(blockchainTypeUid: nftKey.blockchainType.uid, accountId: storageAccountId, asset: $0) },
                 blockchainTypeUid: nftKey.blockchainType.uid,
-                accountId: nftKey.account.id
+                accountId: storageAccountId
             )
         } catch {
             print("Could not save NftAddressMetadata: \(error)")
@@ -104,7 +106,7 @@ extension NftStorage {
 
     func lastSyncTimestamp(nftKey: NftKey) -> TimeInterval? {
         do {
-            return try storage.metadataSyncRecord(blockchainTypeUid: nftKey.blockchainType.uid, accountId: nftKey.account.id)?.lastSyncTimestamp
+            return try storage.metadataSyncRecord(blockchainTypeUid: nftKey.blockchainType.uid, accountId: nftKey.storageAccountId)?.lastSyncTimestamp
         } catch {
             print("Could not fetch NftMetadataSyncRecord: \(error)")
             return nil
@@ -113,7 +115,7 @@ extension NftStorage {
 
     func save(lastSyncTimestamp: TimeInterval, nftKey: NftKey) {
         do {
-            let record = NftMetadataSyncRecord(blockchainTypeUid: nftKey.blockchainType.uid, accountId: nftKey.account.id, lastSyncTimestamp: lastSyncTimestamp)
+            let record = NftMetadataSyncRecord(blockchainTypeUid: nftKey.blockchainType.uid, accountId: nftKey.storageAccountId, lastSyncTimestamp: lastSyncTimestamp)
             try storage.save(metadataSyncRecord: record)
         } catch {
             print("Could not save NftMetadataSyncRecord: \(error)")

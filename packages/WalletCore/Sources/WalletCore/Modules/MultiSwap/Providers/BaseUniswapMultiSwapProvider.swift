@@ -22,7 +22,7 @@ class BaseUniswapMultiSwapProvider: BaseEvmMultiSwapProvider {
         var evmFeeData: EvmFeeData?
         var transactionError: Error?
 
-        guard let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: blockchainType) else {
             throw SwapError.noEvmKit
         }
 

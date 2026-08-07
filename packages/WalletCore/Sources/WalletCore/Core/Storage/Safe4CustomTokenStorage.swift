@@ -1,8 +1,10 @@
 import Foundation
 import GRDB
+import EvmKit
 
 class Safe4CustomTokenStorage {
     private let dbPool: DatabasePool
+    private var currentChainId: Int { Chain.safeFourChain().id }
 
     init(dbPool: DatabasePool) throws {
         self.dbPool = dbPool
@@ -23,8 +25,33 @@ class Safe4CustomTokenStorage {
                 t.column(Safe4CustomTokenRecord.Columns.logoURI.name, .text)
                 t.column(Safe4CustomTokenRecord.Columns.version.name, .text)
 
-                t.primaryKey([Redeem.Columns.address.name], onConflict: .replace)
+                t.primaryKey([Safe4CustomTokenRecord.Columns.address.name, Safe4CustomTokenRecord.Columns.chainId.name], onConflict: .replace)
             }
+        }
+        migrator.registerMigration("safe4 custom token chain primary key") { db in
+            let tableName = Safe4CustomTokenRecord.databaseTableName
+            let tempTableName = "\(tableName)_v2"
+
+            try db.create(table: tempTableName) { t in
+                t.column(Safe4CustomTokenRecord.Columns.address.name, .text).notNull()
+                t.column(Safe4CustomTokenRecord.Columns.symbol.name, .text).notNull()
+                t.column(Safe4CustomTokenRecord.Columns.creator.name, .text).notNull()
+                t.column(Safe4CustomTokenRecord.Columns.chainId.name, .integer).notNull()
+                t.column(Safe4CustomTokenRecord.Columns.decimals.name, .integer).notNull()
+                t.column(Safe4CustomTokenRecord.Columns.name.name, .text).notNull()
+                t.column(Safe4CustomTokenRecord.Columns.type.name, .integer)
+                t.column(Safe4CustomTokenRecord.Columns.logoURI.name, .text)
+                t.column(Safe4CustomTokenRecord.Columns.version.name, .text)
+
+                t.primaryKey([Safe4CustomTokenRecord.Columns.address.name, Safe4CustomTokenRecord.Columns.chainId.name], onConflict: .replace)
+            }
+
+            try db.execute(sql: """
+                INSERT OR REPLACE INTO \(tempTableName) (address, symbol, creator, chainId, decimals, name, type, logoURI, version)
+                SELECT address, symbol, creator, chainId, decimals, name, type, logoURI, version FROM \(tableName)
+                """)
+            try db.drop(table: tableName)
+            try db.execute(sql: "ALTER TABLE \(tempTableName) RENAME TO \(tableName)")
         }
         return migrator
     }
@@ -33,7 +60,9 @@ class Safe4CustomTokenStorage {
 extension Safe4CustomTokenStorage {
     func allTokens() -> [Safe4CustomTokenRecord] {
         try! dbPool.read { db in
-            try Safe4CustomTokenRecord.fetchAll(db)
+            try Safe4CustomTokenRecord
+                .filter(Safe4CustomTokenRecord.Columns.chainId == currentChainId)
+                .fetchAll(db)
         }
     }
 
@@ -45,13 +74,7 @@ extension Safe4CustomTokenStorage {
 
     func save(token: Safe4CustomTokenRecord) {
         _ = try? dbPool.write { db in
-            guard let record = try Safe4CustomTokenRecord
-                .filter(Safe4CustomTokenRecord.Columns.address.lowercased == token.address.lowercased())
-                .fetchOne(db) else {
-                try token.insert(db)
-                return
-            }
-            try record.update(db)
+            try token.save(db)
         }
     }
 
@@ -59,6 +82,7 @@ extension Safe4CustomTokenStorage {
         try dbPool.read { db in
             try Safe4CustomTokenRecord
                 .filter(Safe4CustomTokenRecord.Columns.address.lowercased == address.lowercased())
+                .filter(Safe4CustomTokenRecord.Columns.chainId == currentChainId)
                 .fetchOne(db)
         }
     }
@@ -73,6 +97,7 @@ extension Safe4CustomTokenStorage {
         _ = try? dbPool.write { db in
             guard let record = try Safe4CustomTokenRecord
                 .filter(Safe4CustomTokenRecord.Columns.address.lowercased == address.lowercased())
+                .filter(Safe4CustomTokenRecord.Columns.chainId == currentChainId)
                 .fetchOne(db) else {
                 return
             }
@@ -85,6 +110,7 @@ extension Safe4CustomTokenStorage {
         _ = try! dbPool.write { db in
             try Safe4CustomTokenRecord
                 .filter(Safe4CustomTokenRecord.Columns.address.lowercased == address.lowercased())
+                .filter(Safe4CustomTokenRecord.Columns.chainId == currentChainId)
                 .deleteAll(db)
         }
     }

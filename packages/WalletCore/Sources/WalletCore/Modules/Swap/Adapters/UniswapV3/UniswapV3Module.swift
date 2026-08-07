@@ -9,7 +9,7 @@ class UniswapV3Module {
     private let service: UniswapV3Service
 
     init?(dex: SwapModule.Dex, dataSourceState: SwapModule.DataSourceState) {
-        guard let evmKit = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
+        guard let evmKit = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: dex.blockchainType)?.evmKit else {
             return nil
         }
 

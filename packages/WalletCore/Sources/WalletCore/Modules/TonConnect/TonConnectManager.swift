@@ -151,6 +151,15 @@ class TonConnectManager {
             switch request.method {
             case .sendTransaction:
                 if let param = request.params.first, param.network == .mainnet, !param.messages.isEmpty {
+                    if let account = accountManager.account(id: app.accountId),
+                       ChildWalletBridge.shared.isChildWalletActive(account: account)
+                    {
+                        let requestError = TonConnectSendTransactionRequestError(id: request.id, app: app)
+                        sendTransactionRequestErrorSubject.send(requestError)
+                        handle(requestError: requestError)
+                        return
+                    }
+
                     sendTransactionRequestSubject.send(.init(id: request.id, param: param, app: app))
                 } else {
                     let requestError = TonConnectSendTransactionRequestError(id: request.id, app: app)

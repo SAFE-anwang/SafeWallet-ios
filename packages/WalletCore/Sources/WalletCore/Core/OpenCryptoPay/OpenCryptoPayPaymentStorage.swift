@@ -54,9 +54,38 @@ extension OpenCryptoPayPaymentStorage {
         }
     }
 
-    func clear(exceptAccountIds accountIds: [String]) throws {
+    func clear(parentAccountId: String) throws {
         _ = try dbPool.write { db in
-            try R.filter(!accountIds.contains(R.Columns.accountId)).deleteAll(db)
+            try db.execute(
+                sql: """
+                DELETE FROM \(R.databaseTableName)
+                WHERE \(R.Columns.accountId.name) = ?
+                    OR \(R.Columns.accountId.name) LIKE ?
+                """,
+                arguments: [parentAccountId, "\(parentAccountId):child:%"]
+            )
+        }
+    }
+
+    func clear(exceptParentAccountIds accountIds: [String]) throws {
+        _ = try dbPool.write { db in
+            guard !accountIds.isEmpty else {
+                try R.deleteAll(db)
+                return
+            }
+
+            let rootPlaceholders = Array(repeating: "?", count: accountIds.count).joined(separator: ", ")
+            let childPredicates = accountIds.map { _ in "\(R.Columns.accountId.name) LIKE ?" }.joined(separator: " OR ")
+            let arguments = StatementArguments(accountIds + accountIds.map { "\($0):child:%" })
+
+            try db.execute(
+                sql: """
+                DELETE FROM \(R.databaseTableName)
+                WHERE \(R.Columns.accountId.name) NOT IN (\(rootPlaceholders))
+                    AND NOT (\(childPredicates))
+                """,
+                arguments: arguments
+            )
         }
     }
 }

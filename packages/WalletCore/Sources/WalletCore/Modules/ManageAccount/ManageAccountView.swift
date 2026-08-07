@@ -81,6 +81,18 @@ struct ManageAccountView: View {
                         }
                     }
 
+                    if viewModel.childWalletsVisible {
+                        ListSection {
+                            NavigationRow(destination: {
+                                ChildWalletsView(account: viewModel.account)
+                            }) {
+                                ThemeImage("wallet", size: .iconSize24)
+                                Text("子钱包").themeBody()
+                                Image.disclosureIcon
+                            }
+                        }
+                    }
+
                     ListSection(
                         footer: viewModel.account.backedUp || viewModel.isCloudBackedUp ? "manage_account.backup.has_backup_description".localized : "manage_account.backup.no_backup_yet_description".localized
                     ) {

@@ -4,6 +4,10 @@ import TronKit
 
 enum AccountAddress {
     static func evmAddress(account: Account, blockchainType: BlockchainType) throws -> EvmKit.Address {
+        if let childAddress = try ChildWalletBridge.shared.evmAddress(account: account, blockchainType: blockchainType) {
+            return childAddress
+        }
+
         switch account.type {
         case .mnemonic:
             guard let seed = account.type.mnemonicSeed else {
@@ -30,6 +34,10 @@ enum AccountAddress {
     }
 
     static func tronAddress(account: Account) throws -> TronKit.Address {
+        if let childAddress = try ChildWalletBridge.shared.tronAddress(account: account) {
+            return childAddress
+        }
+
         switch account.type {
         case .mnemonic:
             guard let seed = account.type.mnemonicSeed else {

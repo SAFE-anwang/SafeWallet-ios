@@ -118,7 +118,7 @@ extension CrossChainSendHandler {
             return nil
         }
 
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: baseWallet.token.blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: baseWallet.token.blockchainType) else {
             return nil
         }
 

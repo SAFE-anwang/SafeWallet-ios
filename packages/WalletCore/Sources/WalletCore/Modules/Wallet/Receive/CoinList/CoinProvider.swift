@@ -4,15 +4,15 @@ import MarketKit
 class CoinProvider {
     private let marketKit: MarketKit.Kit
     private let walletManager: WalletManager
-    private let accountType: AccountType
+    private let account: Account
 
     var custom: [FullCoin] = []
     var predefined: [FullCoin] = []
 
-    init(marketKit: MarketKit.Kit, walletManager: WalletManager, accountType: AccountType) {
+    init(marketKit: MarketKit.Kit, walletManager: WalletManager, account: Account) {
         self.marketKit = marketKit
         self.walletManager = walletManager
-        self.accountType = accountType
+        self.account = account
 
         custom = walletManager.activeWallets
             .filter { wallet in wallet.token.isCustom }
@@ -40,6 +40,12 @@ class CoinProvider {
             fullCoin.coin.code.localizedCaseInsensitiveContains(filter) || fullCoin.coin.name.localizedCaseInsensitiveContains(filter)
         }
     }
+
+    private func supports(fullCoin: FullCoin) -> Bool {
+        fullCoin.tokens.contains { token in
+            account.type.supports(token: token) && ChildWalletBridge.shared.supports(account: account, token: token)
+        }
+    }
 }
 
 extension CoinProvider {
@@ -52,9 +58,7 @@ extension CoinProvider {
             var fullCoins = try marketKit.fullCoins(filter: filter)
             fullCoins.append(contentsOf: customCoins(filter: filter))
 
-            return fullCoins.filter { fullCoin in
-                fullCoin.tokens.contains { accountType.supports(token: $0) }
-            }
+            return fullCoins.filter { supports(fullCoin: $0) }
         } catch {
             return []
         }
@@ -76,9 +80,7 @@ extension CoinProvider {
 
         // filter not supported by current account
         let predefined = (walletFullCoins + nativeFullCoins).removeDuplicates()
-            .filter { fullCoin in
-                fullCoin.tokens.contains { accountType.supports(token: $0) }
-            }
+            .filter { supports(fullCoin: $0) }
 
         return predefined
     }

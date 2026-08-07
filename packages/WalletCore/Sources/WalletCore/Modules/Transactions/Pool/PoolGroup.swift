@@ -54,12 +54,12 @@ extension PoolGroup {
     }
 
     func itemsSingle(count: Int) -> Single<[TransactionItem]> {
-        let singles = pools.map { pool in
-            pool.itemsSingle(count: count)
-                .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+        pools.reduce(Single.just([[TransactionItem]]())) { partial, pool in
+            partial.flatMap { itemsArray in
+                pool.itemsSingle(count: count)
+                    .map { itemsArray + [$0] }
+            }
         }
-
-        return Single.zip(singles)
             .map { itemsArray in
                 let allItems = itemsArray.flatMap { $0 }
                 return Array(allItems.sorted().prefix(count))

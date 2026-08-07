@@ -14,7 +14,7 @@ struct TonConnectListView: View {
                         VStack(spacing: .margin24) {
                             ForEach(viewModel.items) { item in
                                 VStack(spacing: 0) {
-                                    ListSectionHeader(text: item.account.name)
+                                    ListSectionHeader(text: item.displayName)
                                     ListSection {
                                         ForEach(item.apps) { app in
                                             ClickableRow(action: {

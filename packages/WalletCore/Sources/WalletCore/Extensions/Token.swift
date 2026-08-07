@@ -52,6 +52,10 @@ extension Token {
     }
 
     var badge: String? {
+        if blockchainType == .safe4, AppConfig.isSafe4TestNet {
+            return "SAFE4 TestNet"
+        }
+
         switch type {
         case let .derived(derivation): return derivation.mnemonicDerivation.rawValue.uppercased()
         case let .addressType(type): return type.bitcoinCashCoinType.title

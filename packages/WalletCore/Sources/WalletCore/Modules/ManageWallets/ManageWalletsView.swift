@@ -32,8 +32,13 @@ struct ManageWalletsView: View {
                             }
                         )
                     )
+                    if let noticeText = viewModel.childWalletNoticeText {
+                        AlertCardView(.init(text: noticeText, type: .caution, style: .inline))
+                            .padding(.horizontal, .margin16)
+                            .padding(.top, .margin12)
+                    }
                     if !viewModel.filter.isEmpty, viewModel.items.isEmpty {
-                        PlaceholderViewNew(icon: "warning_filled", subtitle: "manage_wallets.not_found".localized)
+                        PlaceholderViewNew(icon: "warning_filled", subtitle: viewModel.emptySearchText)
                     } else {
                         ManageWalletListView(viewModel: viewModel)
                     }
@@ -64,7 +69,7 @@ struct ManageWalletsView: View {
     }
 
     private func openAddToken() {
-        guard let (account, items) = AddTokenModule.items() else {
+        guard let (account, items) = viewModel.addTokenInput() else {
             return
         }
 

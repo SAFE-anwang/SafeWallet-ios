@@ -4,18 +4,18 @@ import MarketKit
 
 class ReceiveBlockchainListViewModel: ObservableObject {
     private let fullCoin: FullCoin
-    private let accountType: AccountType
+    private let account: Account
 
-    init(fullCoin: FullCoin, accountType: AccountType) {
+    init(fullCoin: FullCoin, account: Account) {
         self.fullCoin = fullCoin
-        self.accountType = accountType
+        self.account = account
     }
 }
 
 extension ReceiveBlockchainListViewModel {
     var viewItems: [ReceiveBlockchainListViewModel.ViewItem] {
         let tokens = fullCoin.tokens
-            .filter { accountType.supports(token: $0) }
+            .filter { account.type.supports(token: $0) && ChildWalletBridge.shared.supports(account: account, token: $0) }
             .sorted(by: SortCriterion.blockchainList, context: TokenSortContext())
 
         return tokens.map {

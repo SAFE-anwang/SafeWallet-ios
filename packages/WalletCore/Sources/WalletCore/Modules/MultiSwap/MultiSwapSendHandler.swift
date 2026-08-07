@@ -130,7 +130,7 @@ extension MultiSwapSendHandler: ISendHandler {
                 throw SendError.noGasPrice
             }
 
-            guard let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: tokenIn.blockchainType).evmKitWrapper else {
+            guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: tokenIn.blockchainType) else {
                 throw SendError.noEvmKitWrapper
             }
 
@@ -186,7 +186,7 @@ extension MultiSwapSendHandler: ISendHandler {
                 secretKey: secretKey
             )
         } else if let quote = data.quote as? TronSwapFinalQuote {
-            guard let tronKitWrapper = tronKitManager.tronKitWrapper else {
+            guard let tronKitWrapper = ChildWalletBridge.shared.activeTronKitWrapper() else {
                 throw SendError.noTronKitWrapper
             }
 
@@ -239,7 +239,7 @@ extension MultiSwapSendHandler: ISendHandler {
             let swap = Swap(
                 uid: UUID().uuidString,
                 txHash: txHash,
-                accountId: account.id,
+                accountId: ChildWalletBridge.shared.contextAccountId(account: account),
                 providerId: provider.id,
                 status: .pending,
                 tokenIn: tokenIn,

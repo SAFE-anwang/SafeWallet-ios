@@ -22,7 +22,7 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
         var evmFeeData: EvmFeeData?
         var transactionError: Error?
 
-        if let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper, let gasPriceData {
+        if let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: blockchainType), let gasPriceData {
             do {
                 let evmKit = evmKitWrapper.evmKit
                 let transactionData = try await transactionData(receiveAddress: evmKit.receiveAddress, chain: evmKit.chain, trade: quote.trade, tradeOptions: quote.tradeOptions)

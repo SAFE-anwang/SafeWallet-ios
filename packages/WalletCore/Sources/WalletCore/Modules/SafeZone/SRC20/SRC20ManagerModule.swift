@@ -7,7 +7,7 @@ import MarketKit
 class SRC20ManagerModule {
 
     static func viewModel() -> SRC20ManagerViewModel? {
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeSafe4EvmKitWrapper() else {
             HudHelper.instance.show(banner: .error(string: "safe_zone.send.openCoin".localized("SAFE")))
             return nil
         }
@@ -22,7 +22,7 @@ class SRC20ManagerModule {
 
     static func detailViewModel(token: Safe4CustomTokenRecord, type: SRC20EditType) -> (any ObservableObject)? {
         let walletList = Core.shared.walletManager.activeWallets
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeSafe4EvmKitWrapper() else {
             return nil
         }
         guard let privateKey = evmKitWrapper.signer?.privateKey else {

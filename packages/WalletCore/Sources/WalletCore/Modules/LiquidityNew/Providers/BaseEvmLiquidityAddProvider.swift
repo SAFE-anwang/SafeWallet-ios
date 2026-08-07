@@ -70,7 +70,7 @@ class BaseEvmLiquidityAddProvider: ILiquidityAddProvider {
     }
 
     func send(blockchainType: BlockchainType, transactionData: TransactionData, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil) async throws {
-        guard let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: blockchainType) else {
             throw SwapError.noEvmKitWrapper
         }
 

@@ -34,7 +34,7 @@ class AdapterManager {
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).adapter_manager", qos: .userInitiated)
     private let initAdaptersQueue = DispatchQueue(label: "\(AppConfig.label).adapter_manager.init_adapters", qos: .userInitiated)
-    private var _adapterData = AdapterData(adapterMap: [:], account: nil)
+    private var _adapterData = AdapterData(adapterMap: [:], account: nil, childWalletId: nil)
     private(set) var src20SyncManager: SRC20SyncManager?
 
     public init(adapterFactory: AdapterFactory, walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager,
@@ -56,7 +56,7 @@ class AdapterManager {
         walletManager.activeWalletDataUpdatedObservable
             .observeOn(SerialDispatchQueueScheduler(qos: .userInitiated))
             .subscribe(onNext: { [weak self] walletData in
-                self?.initAdapters(wallets: walletData.wallets, account: walletData.account)
+                self?.initAdapters(wallets: walletData.wallets, account: walletData.account, childWalletId: walletData.childWalletId)
             })
             .disposed(by: disposeBag)
 
@@ -73,14 +73,24 @@ class AdapterManager {
         subscribe(disposeBag, solanaKitManager.kitStoppedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .solana) }
     }
 
-    private func initAdapters(wallets: [Wallet], account: Account?) {
+    private func initAdapters(wallets: [Wallet], account: Account?, childWalletId: String?) {
         initAdaptersQueue.async {
-            self._initAdapters(wallets: wallets, account: account)
+            self._initAdapters(wallets: wallets, account: account, childWalletId: childWalletId)
         }
     }
 
-    private func _initAdapters(wallets: [Wallet], account: Account?) {
+    private func _initAdapters(wallets: [Wallet], account: Account?, childWalletId: String?) {
         var newAdapterMap = queue.sync { _adapterData.adapterMap }
+        let previousContext = queue.sync { (accountId: _adapterData.account?.id, childWalletId: _adapterData.childWalletId) }
+        let nextContext = (accountId: account?.id, childWalletId: childWalletId)
+
+        if previousContext.accountId != nextContext.accountId || previousContext.childWalletId != nextContext.childWalletId {
+            for adapter in newAdapterMap.values {
+                adapter.stop()
+            }
+            newAdapterMap = [:]
+            src20SyncManager = nil
+        }
 
         for wallet in wallets {
             guard newAdapterMap[wallet] == nil else {
@@ -106,7 +116,7 @@ class AdapterManager {
         }
 
         queue.async {
-            let newAdapterData = AdapterData(adapterMap: newAdapterMap, account: account)
+            let newAdapterData = AdapterData(adapterMap: newAdapterMap, account: account, childWalletId: childWalletId)
             self._adapterData = newAdapterData
             self.adapterDataReadyRelay.accept(newAdapterData)
         }
@@ -179,6 +189,10 @@ class AdapterManager {
             return
         }
 
+        if wallets.contains(where: { $0.token.blockchain.type == .safe4 }) {
+            src20SyncManager = nil
+        }
+
         queue.sync {
             for wallet in wallets {
                 _adapterData.adapterMap[wallet]?.stop()
@@ -187,7 +201,7 @@ class AdapterManager {
         }
 
         let activeWalletData = walletManager.activeWalletData
-        initAdapters(wallets: activeWalletData.wallets, account: activeWalletData.account)
+        initAdapters(wallets: activeWalletData.wallets, account: activeWalletData.account, childWalletId: activeWalletData.childWalletId)
     }
 }
 
@@ -256,15 +270,10 @@ extension AdapterManager {
 
     func refresh() {
         DispatchQueue.global(qos: .background).async {
-            for blockchain in self.evmBlockchainManager.allBlockchains {
-                try? self.evmBlockchainManager.evmKitManager(blockchainType: blockchain.type).evmKitWrapper?.evmKit.refresh()
-            }
-
             for (_, adapter) in self._adapterData.adapterMap {
                 adapter.refresh()
             }
 
-            self.tronKitManager.tronKitWrapper?.tronKit.refresh()
             self.tonKitManager.tonKit?.sync()
             self.stellarKitManager.stellarKit?.sync()
             self.zanoKitManager.kit?.refresh()
@@ -274,10 +283,8 @@ extension AdapterManager {
 
     func refresh(wallet: Wallet) {
         DispatchQueue.global(qos: .background).async {
-            if let blockchainType = self.evmBlockchainManager.blockchain(token: wallet.token)?.type {
-                try? self.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper?.evmKit.refresh()
-            } else if wallet.token.blockchainType == .tron {
-                self.tronKitManager.tronKitWrapper?.tronKit.refresh()
+            if let adapter = self._adapterData.adapterMap[wallet] {
+                adapter.refresh()
             } else if wallet.token.blockchainType == .ton {
                 self.tonKitManager.tonKit?.sync()
             } else if wallet.token.blockchainType == .stellar {
@@ -288,15 +295,13 @@ extension AdapterManager {
                 (self._adapterData.adapterMap[wallet] as? MoneroAdapter)?.restart()
             } else if wallet.token.blockchainType == .zano {
                 self.zanoKitManager.kit?.restart()
-            } else {
-                self._adapterData.adapterMap[wallet]?.refresh()
             }
         }
     }
 
     func preloadAdapters() {
         let activeWalletData = walletManager.activeWalletData
-        initAdapters(wallets: activeWalletData.wallets, account: activeWalletData.account)
+        initAdapters(wallets: activeWalletData.wallets, account: activeWalletData.account, childWalletId: activeWalletData.childWalletId)
     }
 }
 
@@ -304,5 +309,6 @@ extension AdapterManager {
     struct AdapterData {
         var adapterMap: [Wallet: IAdapter]
         let account: Account?
+        let childWalletId: String?
     }
 }

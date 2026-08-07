@@ -118,5 +118,9 @@ let package = Package(
                 .process("Modules/RestoreAccount/RestoreType/wallet.json"),
             ]
         ),
+        .testTarget(
+            name: "WalletCoreTests",
+            dependencies: ["WalletCore"]
+        ),
     ]
 )

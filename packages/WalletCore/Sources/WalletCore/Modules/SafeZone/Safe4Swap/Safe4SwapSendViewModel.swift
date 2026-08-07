@@ -91,12 +91,12 @@ extension Safe4SwapSendViewModel {
         if !state.isQuoting {
             state = .quoting
         }
-        quoteTask = Task { [weak self, transactionData, tokenIn, evmBlockchainManager] in
+        quoteTask = Task { [weak self, transactionData, tokenIn] in
             var state: State
             do {
                 let gasLimit = Safe4SwapModule.gasLimit
 
-                guard let evmKit = try? evmBlockchainManager.evmKitManager(blockchainType: tokenIn.blockchainType).evmKitWrapper?.evmKit else { throw SwapError.noEvmKitWrapper }
+                guard let evmKit = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: tokenIn.blockchainType)?.evmKit else { throw SwapError.noEvmKitWrapper }
                 let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKit)
                 async let gasPrice = try gasPriceProvider.gasPrice()
                 async let nonce = try evmKit.nonce(defaultBlockParameter: .pending)
@@ -135,7 +135,7 @@ extension Safe4SwapSendViewModel {
 
             await set(swapping: true)
 
-            guard let evmKitWrapper = try? evmBlockchainManager.evmKitManager(blockchainType: tokenIn.blockchainType).evmKitWrapper else {
+            guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: tokenIn.blockchainType) else {
                 throw SwapError.noEvmKitWrapper
             }
 

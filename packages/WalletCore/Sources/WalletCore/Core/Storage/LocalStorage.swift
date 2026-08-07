@@ -36,12 +36,11 @@ public class LocalStorage {
     private let keyAppStateLastSyncTimestamp = "app-state-last-sync-timestamp"
     private let keyForceEnableSwap = "force-enable-swap"
     private let keySimulateFailSwap = "simulate-fail-swap"
-
     private let keyRecipientAddressCheck = "recipient-address-check"
 
     private let keyDebuggingAmlCheckResult = "debugging-aml-check-result"
 
-    private let userDefaultsStorage: UserDefaultsStorage
+    let userDefaultsStorage: UserDefaultsStorage
 
     public init(userDefaultsStorage: UserDefaultsStorage) {
         self.userDefaultsStorage = userDefaultsStorage

@@ -35,9 +35,9 @@ struct TonConnectConnectView: View {
                                 if let account = viewModel.account {
                                     ClickableRow {
                                         Coordinator.shared.present(type: .alert) { isPresented in
-                                            OptionAlertView(
-                                                title: "ton_connect.connect.wallet".localized,
-                                                viewItems: viewModel.eligibleAccounts.map { .init(text: $0.name, selected: viewModel.account == $0) },
+                                        OptionAlertView(
+                                            title: "ton_connect.connect.wallet".localized,
+                                                viewItems: viewModel.eligibleAccounts.map { .init(text: viewModel.displayName(account: $0), selected: viewModel.account == $0) },
                                                 onSelect: { index in
                                                     viewModel.account = viewModel.eligibleAccounts[index]
                                                 },
@@ -48,7 +48,7 @@ struct TonConnectConnectView: View {
                                         Text("ton_connect.connect.wallet".localized).textSubhead2()
                                         Spacer()
                                         HStack(spacing: .margin8) {
-                                            Text(account.name).textSubhead1(color: .themeLeah)
+                                            Text(viewModel.displayName(account: account)).textSubhead1(color: .themeLeah)
                                             Image("arrow_small_down_20").themeIcon()
                                         }
                                     }

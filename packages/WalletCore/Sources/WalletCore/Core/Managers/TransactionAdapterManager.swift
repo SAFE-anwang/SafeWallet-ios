@@ -42,9 +42,17 @@ class TransactionAdapterManager {
             let transactionsAdapter: ITransactionsAdapter?
 
             if evmBlockchainManager.allBlockchains.contains(where: { $0.type == source.blockchainType }) {
-                transactionsAdapter = adapterFactory.evmTransactionsAdapter(transactionSource: source)
+                if let evmAdapter = adapter as? BaseEvmAdapter {
+                    transactionsAdapter = adapterFactory.evmTransactionsAdapter(transactionSource: source, evmKitWrapper: evmAdapter.evmKitWrapper)
+                } else {
+                    transactionsAdapter = nil
+                }
             } else if source.blockchainType == .tron {
-                transactionsAdapter = adapterFactory.tronTransactionsAdapter(transactionSource: source)
+                if let tronAdapter = adapter as? BaseTronAdapter {
+                    transactionsAdapter = adapterFactory.tronTransactionsAdapter(transactionSource: source, tronKitWrapper: tronAdapter.tronKitWrapper)
+                } else {
+                    transactionsAdapter = nil
+                }
             } else if source.blockchainType == .ton {
                 transactionsAdapter = adapterFactory.tonTransactionAdapter(transactionSource: source)
             } else if source.blockchainType == .stellar {

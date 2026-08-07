@@ -65,6 +65,10 @@ class RevokeCashViewModel:NSObject, ObservableObject {
             let info = SendEvmData.DAppInfo(name: "RevokeCash", chainName: nil, address: nil)
             let sendData = SendEvmData(transactionData: transactionData, additionalInfo: .otherDApp(info: info), warnings: [])
             let evmKitWrapper = try Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchain.type).evmKitWrapper(account: account, blockchainType: blockchain.type)
+            guard evmKitWrapper.evmKit.receiveAddress == walletAddress else {
+                return
+            }
+
             if let vc = SendEvmConfirmationModule.viewController(evmKitWrapper: evmKitWrapper, sendData: sendData) {
                 DispatchQueue.main.async { [self] in
                     presentDestination = .toConfirmation(vc: vc)

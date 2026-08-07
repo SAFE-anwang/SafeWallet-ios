@@ -33,6 +33,10 @@ class WalletConnectSessionManager {
             .sink { [weak self] in self?.handleDeleted(account: $0) }
             .store(in: &cancellables)
 
+        ChildWalletBridge.shared.activeChildWalletChangedPublisher
+            .sink { [weak self] change in self?.handleActiveChildWalletChanged(change) }
+            .store(in: &cancellables)
+
         subscribe(disposeBag, service.sessionsUpdatedObservable) { [weak self] in
             self?.syncSessions()
         }
@@ -48,6 +52,7 @@ class WalletConnectSessionManager {
 
     private func handleDeleted(account: Account) {
         storage.deleteSessions(accountId: account.id)
+        storage.deleteChildSessions(parentAccountId: account.id)
         syncSessions()
         syncPendingRequest()
     }
@@ -57,10 +62,20 @@ class WalletConnectSessionManager {
         syncPendingRequest()
     }
 
-    private func syncSessions() {
-        guard let accountId = accountManager.activeAccount?.id else {
+    private func handleActiveChildWalletChanged(_ change: ChildWalletBridge.ActiveChildWalletChange) {
+        guard accountManager.activeAccount?.id == change.parentAccountId else {
             return
         }
+
+        syncSessions()
+        syncPendingRequest()
+    }
+
+    private func syncSessions() {
+        guard let account = accountManager.activeAccount else {
+            return
+        }
+        let accountId = storageAccountId(account: account)
 
         let currentSessions = allSessions
         let allDbSessions = storage.sessions(accountId: nil)
@@ -88,7 +103,7 @@ class WalletConnectSessionManager {
         guard let account = accountManager.activeAccount else {
             return
         }
-        let activeSessions = storage.sessions(accountId: account.id)
+        let activeSessions = storage.sessions(accountId: storageAccountId(account: account))
 
         guard activeSessions.first(where: { session in session.topic == request.topic }) != nil,
               let session = allSessions.first(where: { session in session.topic == request.topic })
@@ -123,6 +138,9 @@ class WalletConnectSessionManager {
 
     private func requests(accountId: String? = nil) -> [Request] {
         let allRequests = service.pendingRequests
+        guard let accountId = accountId ?? activeStorageAccountId else {
+            return []
+        }
         let dbSessions = storage.sessions(accountId: accountId)
 
         return allRequests.filter { request in
@@ -131,15 +149,27 @@ class WalletConnectSessionManager {
             }
         }
     }
+
+    private var activeStorageAccountId: String? {
+        accountManager.activeAccount.map { storageAccountId(account: $0) }
+    }
+
+    private func storageAccountId(account: Account) -> String {
+        guard let childWalletId = ChildWalletBridge.shared.activeChildWalletId(account: account) else {
+            return account.id
+        }
+
+        return [account.id, "child", childWalletId].joined(separator: ":")
+    }
 }
 
 extension WalletConnectSessionManager {
     public var sessions: [Session] {
-        guard let accountId = accountManager.activeAccount?.id else {
+        guard let account = accountManager.activeAccount else {
             return []
         }
 
-        return sessions(accountId: accountId, sessions: nil)
+        return sessions(accountId: storageAccountId(account: account), sessions: nil)
     }
 
     public var allSessions: [Session] {
@@ -155,11 +185,11 @@ extension WalletConnectSessionManager {
     }
 
     public var activePendingRequests: [Request] {
-        guard let accountId = accountManager.activeAccount?.id else {
+        guard let account = accountManager.activeAccount else {
             return []
         }
 
-        return pendingRequests(accountId: accountId)
+        return pendingRequests(accountId: storageAccountId(account: account))
     }
 
     public func pendingRequests(accountId: String? = nil) -> [Request] {

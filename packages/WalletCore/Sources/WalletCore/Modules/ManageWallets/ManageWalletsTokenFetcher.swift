@@ -82,7 +82,7 @@ struct ManageWalletsTokenFetcher {
 extension ManageWalletsTokenFetcher {
     func fetch(filter: String, account: Account, preferredTokens: [Token], allowedBlockchainTypes: [BlockchainType]? = nil) -> [Token] {
         let trimmed = filter.trimmingCharacters(in: .whitespaces)
-        let allowedBlockchainTypes = normalizedAllowedBlockchainTypes(allowedBlockchainTypes)
+        let searchAllowedBlockchainTypes = normalizedAllowedBlockchainTypes(allowedBlockchainTypes)
 
         do {
             let tokens: [Token]
@@ -113,9 +113,15 @@ extension ManageWalletsTokenFetcher {
                     }
                     .removeDuplicates()
             } else {
-                let fetched = try tokensBySearch(trimmed, allowedBlockchainTypes: allowedBlockchainTypes)
+                let fetched = try tokensBySearch(trimmed, allowedBlockchainTypes: searchAllowedBlockchainTypes)
                 tokens = (fetched + safe4CustomTokens(account: account, filter: trimmed, allowedBlockchainTypes: allowedBlockchainTypes))
                     .filter { account.type.supports(token: $0) }
+                    .filter {
+                        guard let allowedBlockchainTypes else {
+                            return true
+                        }
+                        return allowedBlockchainTypes.contains($0.blockchainType)
+                    }
                     .removeDuplicates()
             }
 
