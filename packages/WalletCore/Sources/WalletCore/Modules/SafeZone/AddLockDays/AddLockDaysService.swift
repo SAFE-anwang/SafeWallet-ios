@@ -26,9 +26,8 @@ class AddLockDaysService {
     }
 
     private func web3() async throws -> Web3 {
-        let chain = Chain.safeFourChain()
-        let url = RpcSource.safeFourRpcHttp().url
-        return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+        let context = try Safe4Network.activeContext(chainId: evmKit.chain.id)
+        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
     }
 
     func addLock(id: BigUInt, day: BigUInt) async throws -> String {

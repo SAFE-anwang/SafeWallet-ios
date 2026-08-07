@@ -2802,6 +2802,7 @@
 "safe_zone.safe4.amont.input.tips" = "Enter quantity";
 "cex_deposit.memo_warning.description" = "Both a memo (tag) and the address are needed to ensure that assets are received. Otherwise your funds will be lost.";
 "nft_v2.chain.bsc" = "BSC";
+"nft_v2.chain.safe4" = "SAFE";
 "restore.private_key.paste_confirm_message" = "You are about to paste a private key from your clipboard. Make sure you trust the source of this key.";
 "nft_v2.rollout.title" = "Gray rollout in progress";
 "safe_zone.safe4.info.update.button" = "Update";

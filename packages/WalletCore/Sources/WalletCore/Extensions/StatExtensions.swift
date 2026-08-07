@@ -44,6 +44,7 @@ extension MarketModule.Tab {
         case .coins: return .coins
         case .watchlist: return .watchlist
         case .dapp: return .dapp
+        case .tweets: return .twiitter
         }
     }
 }

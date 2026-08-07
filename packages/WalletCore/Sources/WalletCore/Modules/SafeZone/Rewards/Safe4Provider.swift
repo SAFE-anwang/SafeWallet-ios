@@ -30,14 +30,12 @@ extension Safe4Provider {
             "token1": token1,
             "interval": interval,
         ]
-        let baseUrl = AppConfig.isSafe4TestNet == true ? "https://safe4testnet.anwang.com" : "https://safe4.anwang.com"
-        let request = networkManager.session.request("\(baseUrl)/list/market/klines", parameters: parameters, headers:[])
+        let request = networkManager.session.request("\(Safe4Network.currentContext.apiBaseUrl)/list/market/klines", parameters: parameters, headers:[])
         return networkManager.single(request: request)
     }
 
     func wsafePricesSingle() -> Single<[KLineWSafeTokenPriceModel]>{
-        let baseUrl = AppConfig.isSafe4TestNet == true ? "https://safe4testnet.anwang.com" : "https://safe4.anwang.com"
-        let request = networkManager.session.request("\(baseUrl)/list/market/prices", parameters: [:], headers:[])
+        let request = networkManager.session.request("\(Safe4Network.currentContext.apiBaseUrl)/list/market/prices", parameters: [:], headers:[])
         return networkManager.single(request: request)
     }
 

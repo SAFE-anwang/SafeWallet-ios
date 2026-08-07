@@ -36,6 +36,7 @@ class AdapterManager {
     private let initAdaptersQueue = DispatchQueue(label: "\(AppConfig.label).adapter_manager.init_adapters", qos: .userInitiated)
     private var _adapterData = AdapterData(adapterMap: [:], account: nil)
     private(set) var src20SyncManager: SRC20SyncManager?
+    private var subscribedEvmKitManagers = [BlockchainType: ObjectIdentifier]()
 
     public init(adapterFactory: AdapterFactory, walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager,
                 tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager, zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager,
@@ -61,9 +62,7 @@ class AdapterManager {
             .disposed(by: disposeBag)
 
         for blockchain in evmBlockchainManager.allBlockchains {
-            if let manager = try? evmBlockchainManager.evmKitManager(blockchainType: blockchain.type) {
-                subscribe(disposeBag, manager.evmKitUpdatedObservable) { [weak self] in self?.handleUpdatedEvmKit(blockchainType: blockchain.type) }
-            }
+            subscribeEvmKitManager(blockchainType: blockchain.type)
         }
         subscribe(disposeBag, btcBlockchainManager.restoreModeUpdatedObservable) { [weak self] in self?.handleUpdatedRestoreMode(blockchainType: $0) }
         subscribe(disposeBag, moneroNodeManager.nodeObservable) { [weak self] in self?.recreateAdapter(blockchainType: $0) }
@@ -73,13 +72,27 @@ class AdapterManager {
         subscribe(disposeBag, solanaKitManager.kitStoppedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .solana) }
     }
 
-    private func initAdapters(wallets: [Wallet], account: Account?) {
+    private func subscribeEvmKitManager(blockchainType: BlockchainType) {
+        guard let manager = try? evmBlockchainManager.evmKitManager(blockchainType: blockchainType) else {
+            return
+        }
+
+        let identifier = ObjectIdentifier(manager)
+        guard subscribedEvmKitManagers[blockchainType] != identifier else {
+            return
+        }
+
+        subscribedEvmKitManagers[blockchainType] = identifier
+        subscribe(disposeBag, manager.evmKitUpdatedObservable) { [weak self] in self?.handleUpdatedEvmKit(blockchainType: blockchainType) }
+    }
+
+    private func initAdapters(wallets: [Wallet], account: Account?, completion: (() -> Void)? = nil) {
         initAdaptersQueue.async {
-            self._initAdapters(wallets: wallets, account: account)
+            self._initAdapters(wallets: wallets, account: account, completion: completion)
         }
     }
 
-    private func _initAdapters(wallets: [Wallet], account: Account?) {
+    private func _initAdapters(wallets: [Wallet], account: Account?, completion: (() -> Void)? = nil) {
         var newAdapterMap = queue.sync { _adapterData.adapterMap }
 
         for wallet in wallets {
@@ -110,6 +123,7 @@ class AdapterManager {
             let newAdapterData = AdapterData(adapterMap: newAdapterMap, account: account)
             self._adapterData = newAdapterData
             self.adapterDataReadyRelay.accept(newAdapterData)
+            completion?()
         }
 
         for adapter in removedAdapters {
@@ -175,8 +189,9 @@ class AdapterManager {
         zcashNodeManager.setCurrent(node: node, blockchainType: .zcash)
     }
 
-    private func refreshAdapters(wallets: [Wallet]) {
+    private func refreshAdapters(wallets: [Wallet], completion: (() -> Void)? = nil) {
         guard !wallets.isEmpty else {
+            completion?()
             return
         }
 
@@ -192,7 +207,7 @@ class AdapterManager {
         }
 
         let activeWalletData = walletManager.activeWalletData
-        initAdapters(wallets: activeWalletData.wallets, account: activeWalletData.account)
+        initAdapters(wallets: activeWalletData.wallets, account: activeWalletData.account, completion: completion)
     }
 }
 
@@ -229,15 +244,23 @@ extension AdapterManager {
 
     func recreateAdapter(blockchainType: BlockchainType) {
         Task {
+            await recreateAdapterAndWait(blockchainType: blockchainType)
+        }
+    }
+
+    func recreateAdapterAndWait(blockchainType: BlockchainType) async {
+        await withCheckedContinuation { continuation in
             if blockchainType == .zano {
                 self.zanoKitManager.recreateKit()
             }
 
             let wallets = queue.sync { _adapterData.adapterMap.keys }
-
             refreshAdapters(wallets: wallets.filter {
                 $0.token.blockchain.type == blockchainType
-            })
+            }) { [weak self] in
+                self?.subscribeEvmKitManager(blockchainType: blockchainType)
+                continuation.resume()
+            }
         }
     }
 

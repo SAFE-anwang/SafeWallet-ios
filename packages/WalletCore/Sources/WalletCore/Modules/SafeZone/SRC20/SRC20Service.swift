@@ -24,7 +24,7 @@ class SRC20Service {
     }
 
     private func src20LockFactory() async throws -> SRC20LockFactory {
-        return try await SRC20LockFactory(web3: web3(), contractAddr: scr20TimeLockAddress)
+        return try await SRC20LockFactory(web3: web3(), contractAddr: src20TimeLockAddress())
     }
 
     init(token: Safe4CustomTokenRecord? = nil, privateKey: Data, lockAddress: String, chainId: Int = Safe4Network.currentChainId) {
@@ -35,12 +35,8 @@ class SRC20Service {
     }
 
     private func web3() async throws -> Web3 {
-        let chain = chainId == Chain.SafeFourTestNet.id ? Chain.SafeFourTestNet : Chain.SafeFour
-        let urlString = chainId == Chain.SafeFourTestNet.id
-            ? ApiKeyManager.rpcEndpoint(network: .safe4_testnet) ?? "https://safe4testnet.anwang.com/rpc"
-            : ApiKeyManager.rpcEndpoint(network: .safe4) ?? "https://safe4.anwang.com/rpc"
-        let url = URL(string: urlString)!
-        return try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+        let context = try Safe4Network.supportedContext(chainId: chainId)
+        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
     }
 
     func deploy(type: DeployType, name: String, symbol: String, totalSupply: BigUInt) async throws -> [String] {
@@ -180,8 +176,8 @@ class SRC20Service {
     }
 
     func version(chainId: Int, contract: String) async throws -> String {
-        let url = RpcSource.safeFourRpcHttp().url
-        let web3 = try await Web3.new( url, network: Networks.Custom(networkID: BigUInt(chainId)))
+        let context = try Safe4Network.supportedContext(chainId: chainId)
+        let web3 = try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
         let src20 = SRC20(web3: web3, contractAddr: contract)
         return try await src20.version()
     }
@@ -212,12 +208,8 @@ class SRC20Service {
 // locked
 extension SRC20Service {
 
-    var scr20TimeLockAddress: String {
-        if AppConfig.isSafe4TestNet {
-            "0x4f203092FB68732D8484c099a72dDc5a195f26f9"
-        } else {
-            "0x6A6dFAF83cc1741FE08A9EFDea596dEad68f7420"
-        }
+    private func src20TimeLockAddress() throws -> String {
+        try Safe4Network.supportedContext(chainId: chainId).src20TimeLockAddress
     }
 
 //    func getLock() async throws -> Web3Core.EthereumAddress {

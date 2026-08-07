@@ -1,4 +1,5 @@
 import Combine
+import Foundation
 import MarketKit
 
 @MainActor
@@ -11,6 +12,9 @@ final class Safe4NetworkSwitchService: ObservableObject {
 
     @Published private(set) var isTestNet: Bool
     @Published private(set) var isSwitching = false
+
+    private var switchTask: Task<Void, Never>?
+    private var requestedTestNet: Bool?
 
     init(localStorage: LocalStorage, evmBlockchainManager: EvmBlockchainManager, adapterManager: AdapterManager, marketKit: MarketKit.Kit, userDefaultsStorage: UserDefaultsStorage) {
         self.localStorage = localStorage
@@ -32,19 +36,39 @@ final class Safe4NetworkSwitchService: ObservableObject {
     }
 
     func set(testNet enabled: Bool) {
-        guard !isSwitching else {
-            isTestNet = localStorage.isSafe4TestNet
+        requestedTestNet = enabled
+        isTestNet = enabled
+
+        guard switchTask == nil else {
             return
         }
 
-        guard enabled != localStorage.isSafe4TestNet else {
-            isTestNet = enabled
-            return
+        switchTask = Task { [weak self] in
+            await self?.runPendingSwitches()
         }
+    }
 
+    private func runPendingSwitches() async {
         isSwitching = true
-        defer { isSwitching = false }
+        defer {
+            isSwitching = false
+            switchTask = nil
+            isTestNet = localStorage.isSafe4TestNet
+        }
 
+        while let enabled = requestedTestNet {
+            requestedTestNet = nil
+
+            guard enabled != localStorage.isSafe4TestNet else {
+                isTestNet = enabled
+                continue
+            }
+
+            await apply(testNet: enabled)
+        }
+    }
+
+    private func apply(testNet enabled: Bool) async {
         adapterManager.cancelSafe4SyncManager()
         localStorage.isSafe4TestNet = enabled
         AppConfig.isSafe4TestNet = enabled
@@ -54,6 +78,11 @@ final class Safe4NetworkSwitchService: ObservableObject {
 
         marketKit.sync()
         evmBlockchainManager.resyncSafe4()
-        adapterManager.recreateAdapter(blockchainType: .safe4)
+        await adapterManager.recreateAdapterAndWait(blockchainType: .safe4)
+        NotificationCenter.default.post(
+            name: .safe4NetworkDidSwitch,
+            object: nil,
+            userInfo: ["chainId": Safe4Network.chainId(testNet: enabled)]
+        )
     }
 }

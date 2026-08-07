@@ -13,9 +13,8 @@ class ProposalService {
     }
 
     private func web3() async throws -> Web3 {
-        let chain = Chain.safeFourChain()
-        let url = RpcSource.safeFourRpcHttp() .url
-        return try await Web3.new(url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+        let context = Safe4Network.currentContext
+        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
     }
 
     private func withRetry<T>(

@@ -496,7 +496,7 @@ class LiquidityRPCService {
     private func rpcEndpoint(blockchainType: BlockchainType) throws -> String {
         switch blockchainType {
         case .safe4:
-            return AppConfig.isSafe4TestNet ? "https://safe4testnet.anwang.com/rpc" : "https://safe4.anwang.com/rpc"
+            return Safe4Network.currentContext.rpcUrlString
         case .ethereum:
             // 使用 EvmSyncSourceManager 获取 RPC 端点
             guard let rpcSource = Core.shared.evmSyncSourceManager.httpSyncSource(blockchainType: .ethereum)?.rpcSource else {
@@ -521,7 +521,7 @@ class LiquidityRPCService {
     }
 
     private func safe4AssetsEndpoint() -> String {
-        AppConfig.isSafe4TestNet ? "https://safe4testnet.anwang.com/5005/assets/addressERC20" : "https://safe4.anwang.com/5005/assets/addressERC20"
+        "\(Safe4Network.currentContext.apiBaseUrl)/5005/assets/addressERC20"
     }
 }
 

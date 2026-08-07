@@ -15,6 +15,7 @@ final class MarketDappWeb3Handler: NSObject, ObservableObject {
 
     private var activeRequestId: Int?
     private weak var webView: WKWebView?
+    private var safe4NetworkObserver: NSObjectProtocol?
 
     // ✅ 并发请求管理
     private var allActiveRequestIds: Set<Int> = []  // 跟踪所有活跃请求
@@ -26,6 +27,21 @@ final class MarketDappWeb3Handler: NSObject, ObservableObject {
         self.chainId = chainId
         self.address = address
         self.dAppName = dAppName
+        super.init()
+
+        safe4NetworkObserver = NotificationCenter.default.addObserver(
+            forName: .safe4NetworkDidSwitch,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleSafe4NetworkSwitch(notification)
+        }
+    }
+
+    deinit {
+        if let safe4NetworkObserver {
+            NotificationCenter.default.removeObserver(safe4NetworkObserver)
+        }
     }
 
     func bind(webView: WKWebView) {
@@ -487,6 +503,44 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
         }
     }
 
+    private func handleSafe4NetworkSwitch(_ notification: Notification) {
+        guard Safe4Network.context(chainId: chainId) != nil,
+              let newChainId = notification.userInfo?["chainId"] as? Int
+        else {
+            return
+        }
+
+        chainId = newChainId
+        notifyChainChanged(chainId: newChainId)
+    }
+
+    private func notifyChainChanged(chainId: Int) {
+        guard let webView else { return }
+
+        let hexChainId = "0x" + String(chainId, radix: 16)
+        let script = """
+        (function() {
+            if (window.ethereum && window.ethereum._isSafeWallet) {
+                window.ethereum.chainId = '\(hexChainId)';
+                if (window.ethereum._eventHandlers && window.ethereum._eventHandlers.chainChanged) {
+                    window.ethereum._eventHandlers.chainChanged.forEach(function(handler) {
+                        handler('\(hexChainId)');
+                    });
+                }
+                if (typeof window.ethereum.emit === 'function') {
+                    window.ethereum.emit('chainChanged', '\(hexChainId)');
+                }
+            }
+        })();
+        """
+
+        webView.evaluateJavaScript(script) { _, error in
+            if let error {
+                print("[Dapp] Failed to notify chainChanged: \(error)")
+            }
+        }
+    }
+
     private func handleSendTransaction(id: Int, params: Any?) {
         print("[Dapp] INFO: handleSendTransaction called for request \(id)")
 
@@ -689,6 +743,11 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
             return
         }
 
+        if Safe4Network.context(chainId: newChain) != nil, !Safe4Network.isCurrent(chainId: newChain) {
+            sendProviderResponse(id: id, resultJson: "null", error: "Switch SAFE4 network in wallet settings first.")
+            return
+        }
+
         // 验证目标链是否受支持
         guard let account = Core.shared.accountManager.activeAccount,
               let _ = Core.shared.evmBlockchainManager.kitWrapper(chainId: newChain, account: account) else {
@@ -704,6 +763,7 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
 
         // 返回成功响应给 DApp
         sendProviderResponse(id: id, resultJson: "null", error: nil)
+        notifyChainChanged(chainId: newChain)
     }
 }
 

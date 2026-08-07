@@ -62,7 +62,11 @@ public class EvmBlockchainManager {
 
 extension EvmBlockchainManager {
     func blockchain(chainId: Int) -> Blockchain? {
-        allBlockchains.first(where: { (try? chain(blockchainType: $0.type).id) == chainId })
+        if Safe4Network.context(chainId: chainId) != nil {
+            return blockchain(type: .safe4)
+        }
+
+        return allBlockchains.first(where: { (try? chain(blockchainType: $0.type).id) == chainId })
     }
 
     func blockchain(token: Token) -> Blockchain? {
@@ -74,7 +78,11 @@ extension EvmBlockchainManager {
     }
 
     func chain(chainId: Int) -> Chain? {
-        blockchain(chainId: chainId).flatMap { try? chain(blockchainType: $0.type) }
+        if let context = Safe4Network.context(chainId: chainId) {
+            return context.chain
+        }
+
+        return blockchain(chainId: chainId).flatMap { try? chain(blockchainType: $0.type) }
     }
 
     func chain(blockchainType: BlockchainType) throws -> Chain {
@@ -128,6 +136,10 @@ extension EvmBlockchainManager {
     }
 
     func kitWrapper(chainId: Int, account: Account) -> EvmKitWrapper? {
+        if Safe4Network.context(chainId: chainId) != nil, !Safe4Network.isCurrent(chainId: chainId) {
+            return nil
+        }
+
         guard let blockchainType = blockchain(chainId: chainId)?.type else {
             return nil
         }

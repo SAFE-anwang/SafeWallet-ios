@@ -160,6 +160,7 @@ extension BlockchainType {
         case .optimism: return [.eip721, .eip1155]
         case .base: return [.eip721, .eip1155]
         case .binanceSmartChain: return [.eip721, .eip1155]
+        case .safe4: return [.eip721]
         default: return []
         }
     }

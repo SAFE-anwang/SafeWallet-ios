@@ -75,12 +75,14 @@ enum MarketModule {
         case coins
         case watchlist
         case dapp
+        case tweets
 
         var title: String {
             switch self {
             case .coins: return "market.tab.coins".localized
             case .watchlist: return "market.tab.watchlist".localized
             case .dapp: return "Dapp".localized
+            case .tweets: return "coin_page.tweets".localized
             }
         }
     }

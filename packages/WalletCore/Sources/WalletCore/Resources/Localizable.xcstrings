@@ -126,6 +126,9 @@
     "Invalid Pre Swap Step" : {
 
     },
+    "MainNet" : {
+
+    },
     "No Handler" : {
 
     },
@@ -135,7 +138,13 @@
     "purchase.lifetime.description" : {
 
     },
+    "SAFE4 TestNet" : {
+
+    },
     "Telegram" : {
+
+    },
+    "TestNet" : {
 
     },
     "TON Connect" : {

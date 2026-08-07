@@ -20,7 +20,7 @@ public class EvmSyncSourceManager {
 
     private func defaultTransactionSource(blockchainType: BlockchainType) -> EvmKit.TransactionSource {
         switch blockchainType {
-        case .safe4: return AppConfig.isSafe4TestNet ? .safeFourscanTestNet(apiKeys: AppConfig.etherscanKeys) : .safeFourscan(apiKeys: AppConfig.etherscanKeys)
+        case .safe4: return Safe4Network.currentContext.isTestNet ? .safeFourscanTestNet(apiKeys: AppConfig.etherscanKeys) : .safeFourscan(apiKeys: AppConfig.etherscanKeys)
         case .ethereum: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
         case .binanceSmartChain: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
         case .polygon: return .ethereumEtherscan(apiKeys: AppConfig.etherscanKeys)
@@ -80,12 +80,7 @@ extension RpcSource {
     }
 
     static func safeFourRpcHttp() -> RpcSource {
-        if AppConfig.isSafe4TestNet {
-           return .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .safe4_testnet) ?? "https://safe4testnet.anwang.com/rpc")!], auth: nil)
-
-        }else {
-            return .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .safe4) ?? "https://safe4.anwang.com/rpc")!], auth: nil)
-        }
+        .http(urls: [Safe4Network.currentContext.rpcUrl], auth: nil)
     }
 
 }
@@ -349,7 +344,7 @@ extension EvmSyncSourceManager {
     }
 
     func syncSource(blockchainType: BlockchainType) -> EvmSyncSource {
-        if blockchainType == .safe4, AppConfig.isSafe4TestNet {
+        if blockchainType == .safe4, Safe4Network.currentContext.isTestNet {
             return defaultSyncSources(blockchainType: blockchainType)[0]
         }
 
@@ -365,7 +360,7 @@ extension EvmSyncSourceManager {
     }
 
     func httpSyncSource(blockchainType: BlockchainType) -> EvmSyncSource? {
-        if blockchainType == .safe4, AppConfig.isSafe4TestNet {
+        if blockchainType == .safe4, Safe4Network.currentContext.isTestNet {
             return defaultSyncSources(blockchainType: blockchainType).first { $0.isHttp }
         }
 

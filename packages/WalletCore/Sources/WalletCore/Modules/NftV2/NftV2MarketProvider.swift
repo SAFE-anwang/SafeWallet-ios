@@ -7,6 +7,8 @@ final class NftV2MarketProvider {
             return .openSea
         case .binanceSmartChain:
             return .element
+        case .safe4:
+            return nil
         }
     }
 
@@ -42,6 +44,7 @@ private extension NftV2Chain {
         case .optimism: return "optimism"
         case .base: return "base"
         case .binanceSmartChain: return "bnb"
+        case .safe4: return "safe4"
         }
     }
 
@@ -53,6 +56,7 @@ private extension NftV2Chain {
         case .optimism: return "optimism"
         case .base: return "base"
         case .binanceSmartChain: return "bsc"
+        case .safe4: return "safe4"
         }
     }
 }

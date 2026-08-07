@@ -9,6 +9,7 @@ enum NftV2TransferType: String, Codable, Hashable {
 
 enum NftV2Chain: String, CaseIterable, Identifiable {
     case binanceSmartChain
+    case safe4
     case ethereum
     case polygon
     case arbitrum
@@ -27,6 +28,7 @@ enum NftV2Chain: String, CaseIterable, Identifiable {
         case .optimism: return .optimism
         case .base: return .base
         case .binanceSmartChain: return .binanceSmartChain
+        case .safe4: return .safe4
         }
     }
 
@@ -38,6 +40,7 @@ enum NftV2Chain: String, CaseIterable, Identifiable {
         case .optimism: return "nft_v2.chain.optimism".localized
         case .base: return "nft_v2.chain.base".localized
         case .binanceSmartChain: return "nft_v2.chain.bsc".localized
+        case .safe4: return "nft_v2.chain.safe4".localized
         }
     }
 
@@ -49,6 +52,7 @@ enum NftV2Chain: String, CaseIterable, Identifiable {
         case .optimism: return 3
         case .base: return 4
         case .binanceSmartChain: return 5
+        case .safe4: return 6
         }
     }
 }

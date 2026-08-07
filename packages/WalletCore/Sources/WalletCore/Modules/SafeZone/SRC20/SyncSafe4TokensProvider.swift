@@ -7,7 +7,6 @@ import GRDB
 class SyncSafe4TokensProvider {
 
     private let chainId: Int
-    private var baseUrl: String { chainId == Safe4Network.chainId(testNet: true) ? "https://safe4testnet.anwang.com" : "https://safe4.anwang.com" }
     private let networkManager: NetworkManager
 
     init(networkManager: NetworkManager, chainId: Int = Safe4Network.currentChainId) {
@@ -16,7 +15,8 @@ class SyncSafe4TokensProvider {
     }
 
     func requestTokens() async throws -> Safe4TokensResponse {
-         let urlString = "\(baseUrl)/list/token"
+        let context = try Safe4Network.supportedContext(chainId: chainId)
+        let urlString = "\(context.apiBaseUrl)/list/token"
         let json = try await networkManager.fetchJson(url: urlString, method: .get, parameters: [:], responseCacherBehavior: .doNotCache)
         let result = try Safe4TokensResponse(JSONObject: json, context: nil)
         return result

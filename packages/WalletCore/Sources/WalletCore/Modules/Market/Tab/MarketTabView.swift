@@ -1,3 +1,4 @@
+import MarketKit
 import SwiftUI
 
 struct MarketTabView: View {
@@ -7,6 +8,7 @@ struct MarketTabView: View {
     @StateObject var coinsViewModel = MarketCoinsViewModel()
     @StateObject var marketWatchlistViewModel = MarketWatchlistViewModel()
     @StateObject var dappViewModel = MarketDappViewModel()
+    @StateObject var tweetsViewModel = CoinTweetsViewModel(coinUid: safeCoinUid)
     @State private var loadedTabs = [MarketModule.Tab]()
 
     var body: some View {
@@ -28,6 +30,7 @@ struct MarketTabView: View {
                 case .coins: MarketCoinsView(viewModel: coinsViewModel, watchlistViewModel: watchlistViewModel)
                 case .watchlist: MarketWatchlistView(viewModel: marketWatchlistViewModel)
                 case .dapp: MarketDappView(viewModel: dappViewModel)
+                case .tweets: CoinTweetsView(viewModel: tweetsViewModel)
                 }
             }
             .frame(maxHeight: .infinity)
@@ -52,6 +55,7 @@ struct MarketTabView: View {
         case .coins: coinsViewModel.load()
         case .watchlist: marketWatchlistViewModel.load()
         case .dapp: dappViewModel.load()
+        case .tweets: tweetsViewModel.load()
         }
     }
 }

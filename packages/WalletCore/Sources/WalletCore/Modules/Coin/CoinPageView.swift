@@ -8,6 +8,7 @@ struct CoinPageView: View {
     @StateObject private var chartViewModel: CoinChartViewModel
     @StateObject private var analyticsViewModel: CoinAnalyticsViewModel
     @StateObject private var marketsViewModel: CoinMarketsViewModel
+    @StateObject private var tweetsViewModel: CoinTweetsViewModel
 
     @Environment(\.dismiss) private var dismiss
 
@@ -21,6 +22,7 @@ struct CoinPageView: View {
         _chartViewModel = StateObject(wrappedValue: CoinChartViewModel.instance(coinUid: coinUid))
         _analyticsViewModel = StateObject(wrappedValue: CoinAnalyticsViewModel(coin: coin))
         _marketsViewModel = StateObject(wrappedValue: CoinMarketsViewModel(coinUid: coinUid))
+        _tweetsViewModel = StateObject(wrappedValue: CoinTweetsViewModel(coinUid: coinUid))
     }
 
     var body: some View {
@@ -44,6 +46,7 @@ struct CoinPageView: View {
                         case .overview: CoinOverviewView(viewModel: overviewViewModel, chartViewModel: chartViewModel)
                         case .analytics: CoinAnalyticsView(viewModel: analyticsViewModel)
                         case .markets: CoinMarketsView(viewModel: marketsViewModel)
+                        case .tweets: CoinTweetsView(viewModel: tweetsViewModel)
                         }
                     }
                     .frame(maxHeight: .infinity)
@@ -88,6 +91,7 @@ struct CoinPageView: View {
         case .overview: overviewViewModel.load()
         case .analytics: analyticsViewModel.load()
         case .markets: marketsViewModel.load()
+        case .tweets: tweetsViewModel.load()
         }
     }
 }
@@ -97,12 +101,14 @@ extension CoinPageView {
         case overview
         case analytics
         case markets
+        case tweets
 
         var title: String {
             switch self {
             case .overview: return "coin_page.overview".localized
             case .analytics: return "coin_page.analytics".localized
             case .markets: return "coin_page.markets".localized
+            case .tweets: return "coin_page.tweets".localized
             }
         }
     }

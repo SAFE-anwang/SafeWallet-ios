@@ -23,7 +23,7 @@ final class NftV2OnChainMetadataProvider {
     }
 
     func assetMetadataSingle(records: [NftRecord], account: Account, blockchainType: BlockchainType) -> Single<[NftUid: NftV2OnChainAssetMetadata]> {
-        guard blockchainType.isEvm else {
+        guard blockchainType.isEvm || blockchainType == .safe4 else {
             return .just([:])
         }
 

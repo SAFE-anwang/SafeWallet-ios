@@ -49,11 +49,7 @@ extension PreSendAllowanceHandler {
     }
 
     var scr20TimeLockAddress: String {
-        if isSafe4TestNet {
-            "0x4f203092FB68732D8484c099a72dDc5a195f26f9"
-        } else {
-            "0x6A6dFAF83cc1741FE08A9EFDea596dEad68f7420"
-        }
+        Safe4Network.currentContext.src20TimeLockAddress
     }
 
     func getAllowanceState(amount: Decimal, availableBalance: Decimal, onSuccess: @escaping (MultiSwapAllowanceHelper.AllowanceState?) -> Void) {

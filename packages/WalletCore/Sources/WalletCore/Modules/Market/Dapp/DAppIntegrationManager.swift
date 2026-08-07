@@ -161,9 +161,15 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
     private weak var userScriptReference: WKUserScript?
     private var currentWorkItem: DispatchWorkItem?
     private lazy var encodedAddress: String = encodeForJavaScript(address)
-    private lazy var chainIdHex: String = String(chainId, radix: 16)
     private var isConnectedFlag: Bool = false
     private lazy var fixedUUID: String = "safe-wallet-\(address.lowercased())-\(chainId)"
+    private var resolvedChainId: Int {
+        DAppChainIdStorage.resolvedChainId(fallback: chainId)
+    }
+
+    private var chainIdHex: String {
+        String(resolvedChainId, radix: 16)
+    }
 
     // MARK: - 初始化
     /// 初始化 DApp 集成管理器
@@ -323,7 +329,7 @@ public final class DAppIntegrationManager: NSObject, ObservableObject {
             var chainId = "0x\(chainIdHex)";
             var address = \(encodedAddress);
             var isConnected = \(address != "0x0000000000000000000000000000000000000000" ? "true" : "false");
-            var chainIdDecimal = \(chainId);
+            var chainIdDecimal = \(resolvedChainId);
 
             // ==========================================
             // 工具函数：安全的 UUID 生成（兼容 iOS WKWebView）

@@ -1372,7 +1372,7 @@
 "transactions.receive" = "接收";
 "transactions.send" = "已发送";
 "transactions.burn" = "燃烧";
-"transactions.mint" = "薄荷绿";
+"transactions.mint" = "添加流动性";
 "transactions.approve" = "批准";
 "transactions.swap" = "已交换";
 "transactions.shield" = "屏蔽";
@@ -2802,6 +2802,7 @@
 "safe_zone.safe4.amont.input.tips" = "输入数量";
 "cex_deposit.memo_warning.description" = "需要填写备注(标签)和地址以确保收到资产。否则您的资金将丢失。";
 "nft_v2.chain.bsc" = "BSC";
+"nft_v2.chain.safe4" = "SAFE";
 "restore.private_key.paste_confirm_message" = "您即将从剪贴板粘贴私钥。请确保您信任此密钥的来源。";
 "nft_v2.rollout.title" = "灰度发布进行中";
 "safe_zone.safe4.info.update.button" = "更新";
