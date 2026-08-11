@@ -8,9 +8,20 @@ enum AddTokenModule {
             return nil
         }
 
+        let items = items(account: account)
+        guard !items.isEmpty else { return nil }
+        return (account, items)
+    }
+
+    static func items(account: Account) -> [Item] {
+        let childWalletBridge = ChildWalletBridge.shared
         var items = [Item]()
 
         for blockchain in Core.shared.evmBlockchainManager.allBlockchains {
+            guard childWalletBridge.supportsTokenManagement(account: account, blockchainType: blockchain.type) else {
+                continue
+            }
+
             if let service: IAddTokenBlockchainService = AddEvmTokenBlockchainService(
                 blockchain: blockchain,
                 networkManager: Core.shared.networkManager,
@@ -21,7 +32,10 @@ enum AddTokenModule {
             }
         }
 
-        if let blockchain = try? Core.shared.marketKit.blockchain(uid: BlockchainType.tron.uid), blockchain.type.supports(accountType: account.type) {
+        if let blockchain = try? Core.shared.marketKit.blockchain(uid: BlockchainType.tron.uid),
+           blockchain.type.supports(accountType: account.type),
+           childWalletBridge.supportsTokenManagement(account: account, blockchainType: blockchain.type)
+        {
             let service: IAddTokenBlockchainService = AddTronTokenBlockchainService(
                 blockchain: blockchain,
                 networkManager: Core.shared.networkManager,
@@ -32,13 +46,19 @@ enum AddTokenModule {
             items.append(item)
         }
 
-        if let blockchain = try? Core.shared.marketKit.blockchain(uid: BlockchainType.ton.uid), blockchain.type.supports(accountType: account.type) {
+        if let blockchain = try? Core.shared.marketKit.blockchain(uid: BlockchainType.ton.uid),
+           blockchain.type.supports(accountType: account.type),
+           childWalletBridge.supportsTokenManagement(account: account, blockchainType: blockchain.type)
+        {
             let service: IAddTokenBlockchainService = AddJettonBlockchainService(blockchain: blockchain)
             let item = Item(blockchain: blockchain, service: service)
             items.append(item)
         }
 
-        if let blockchain = try? Core.shared.marketKit.blockchain(uid: BlockchainType.solana.uid), blockchain.type.supports(accountType: account.type) {
+        if let blockchain = try? Core.shared.marketKit.blockchain(uid: BlockchainType.solana.uid),
+           blockchain.type.supports(accountType: account.type),
+           childWalletBridge.supportsTokenManagement(account: account, blockchainType: blockchain.type)
+        {
             let service: IAddTokenBlockchainService = AddSplTokenBlockchainService(
                 blockchain: blockchain,
                 networkManager: Core.shared.networkManager
@@ -47,8 +67,7 @@ enum AddTokenModule {
             items.append(item)
         }
 
-        guard !items.isEmpty else { return nil }
-        return (account, items)
+        return items
     }
 
     // static func viewController() -> UIViewController? {

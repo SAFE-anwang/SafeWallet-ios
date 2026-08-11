@@ -307,6 +307,17 @@ final class MarketDappWeb3Handler: NSObject, ObservableObject {
     private func signatureJson(_ data: Data) -> String {
         "\"\(data.hs.hexString)\""
     }
+
+    private func connectedEvmKitWrapper() -> EvmKitWrapper? {
+        guard let account = Core.shared.accountManager.activeAccount,
+              let evmKitWrapper = Core.shared.evmBlockchainManager.kitWrapper(chainId: chainId, account: account),
+              evmKitWrapper.evmKit.receiveAddress.eip55.caseInsensitiveCompare(address) == .orderedSame
+        else {
+            return nil
+        }
+
+        return evmKitWrapper
+    }
 }
 
 extension MarketDappWeb3Handler: WKScriptMessageHandler {
@@ -565,10 +576,8 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
     private func handleSendTransaction(id: Int, params: Any?) {
         print("[Dapp] INFO: handleSendTransaction called for request \(id)")
 
-        guard let account = Core.shared.accountManager.activeAccount,
-              let evmKitWrapper = Core.shared.evmBlockchainManager.kitWrapper(chainId: chainId, account: account)
-        else {
-            print("[Dapp] ERROR: Wallet not available for sendTransaction (account: \(Core.shared.accountManager.activeAccount != nil), chainId: \(chainId))")
+        guard let evmKitWrapper = connectedEvmKitWrapper() else {
+            print("[Dapp] ERROR: Connected wallet not available for sendTransaction (account: \(Core.shared.accountManager.activeAccount != nil), chainId: \(chainId), address: \(address))")
             sendProviderResponse(id: id, resultJson: "null", error: "Wallet not available.")
             return
         }
@@ -660,8 +669,7 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
             return
         }
 
-        guard let account = Core.shared.accountManager.activeAccount,
-              let evmWrapper = Core.shared.evmBlockchainManager.kitWrapper(chainId: chainId, account: account),
+        guard let evmWrapper = connectedEvmKitWrapper(),
               let signer = evmWrapper.signer
         else {
             sendProviderResponse(id: id, resultJson: "null", error: "Wallet not available.")
@@ -706,8 +714,7 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
             return
         }
 
-        guard let account = Core.shared.accountManager.activeAccount,
-              let evmWrapper = Core.shared.evmBlockchainManager.kitWrapper(chainId: chainId, account: account),
+        guard let evmWrapper = connectedEvmKitWrapper(),
               let signer = evmWrapper.signer
         else {
             sendProviderResponse(id: id, resultJson: "null", error: "Wallet not available.")
@@ -770,8 +777,11 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
         }
 
         // 验证目标链是否受支持
-        guard let account = Core.shared.accountManager.activeAccount,
-              let _ = Core.shared.evmBlockchainManager.kitWrapper(chainId: newChain, account: account) else {
+        let currentChainId = chainId
+        chainId = newChain
+
+        guard connectedEvmKitWrapper() != nil else {
+            chainId = currentChainId
             sendProviderResponse(id: id, resultJson: "null", error: "Chain \(newChain) is not supported.")
             return
         }

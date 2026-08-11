@@ -79,7 +79,7 @@ struct ManageAccountsView: View {
             middle: {
                 let subtitle = alertSubtitle(item: item) ?? item.account.type.detailedDescription
 
-                MultiText(title: item.account.name, subtitle: subtitle)
+                MultiText(title: item.displayName, subtitle: subtitle)
             },
             right: {
                 let alert = item.account.nonStandard || item.account.nonRecommended || !item.account.backedUp

@@ -16,12 +16,12 @@ class OpenCryptoPayPaymentManager {
         self.logger = logger
 
         accountManager.accountDeletedPublisher
-            .sink { [weak self] account in self?.clear(accountId: account.id) }
+            .sink { [weak self] account in self?.clear(parentAccountId: account.id) }
             .store(in: &cancellables)
 
         let liveAccountIds = accountManager.accounts.map(\.id)
         do {
-            try storage.clear(exceptAccountIds: liveAccountIds)
+            try storage.clear(exceptParentAccountIds: liveAccountIds)
         } catch {
             logger?.log(level: .error, message: "OCP orphan-repair failed: \(error)")
         }
@@ -91,6 +91,10 @@ extension OpenCryptoPayPaymentManager {
 
     func clear(accountId: String) {
         wrap { try storage.clear(accountId: accountId) }
+    }
+
+    func clear(parentAccountId: String) {
+        wrap { try storage.clear(parentAccountId: parentAccountId) }
     }
 }
 

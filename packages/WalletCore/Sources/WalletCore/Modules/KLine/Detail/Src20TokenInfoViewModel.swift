@@ -21,7 +21,7 @@ class Src20TokenInfoViewModel: ObservableObject {
         self.provider = provider
         self.token = token
         getPrices()
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeSafe4EvmKitWrapper() else {
             return
         }
         guard let privateKey = evmKitWrapper.signer?.privateKey else {

@@ -3,7 +3,7 @@ import SwiftUI
 
 struct MasterNodeDetailModule {
     static func viewModel(nodeType: Safe4NodeType, viewItem: MasterNodeViewModel.ViewItem) -> MasterNodeDetailViewModel? {
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeSafe4EvmKitWrapper() else {
             return nil
         }
         guard let privateKey = evmKitWrapper.signer?.privateKey else {

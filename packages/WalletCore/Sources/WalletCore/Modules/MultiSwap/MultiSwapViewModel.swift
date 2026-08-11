@@ -322,6 +322,17 @@ public class MultiSwapViewModel: ObservableObject {
             .sink { [weak self] _ in self?.syncDefaultTokens() }
             .store(in: &cancellables)
 
+        ChildWalletBridge.shared.activeChildWalletChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                guard self?.accountManager.activeAccount?.id == change.parentAccountId else {
+                    return
+                }
+
+                self?.syncDefaultTokens()
+            }
+            .store(in: &cancellables)
+
         subscribe(disposeBag, adapterManager.adapterDataReadyObservable) { [weak self] _ in self?.syncAdapter() }
 
         subscribeToProviders()
@@ -339,7 +350,7 @@ public class MultiSwapViewModel: ObservableObject {
         if let token {
             internalTokenIn = token
             internalTokenOut = autoResolveTokenOut ? MultiSwapDefaultTokenResolver.default(for: token) ?? (token.blockchainType == .bitcoin ? monero : bitcoin) : nil
-        } else if let account = accountManager.activeAccount, let lastSwap = swapHistoryManager.lastSwap(accountId: account.id) {
+        } else if let account = accountManager.activeAccount, let lastSwap = swapHistoryManager.lastSwap(account: account) {
             internalTokenIn = lastSwap.tokenIn
             internalTokenOut = lastSwap.tokenOut
         } else {

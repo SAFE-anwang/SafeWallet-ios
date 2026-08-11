@@ -130,6 +130,10 @@ extension WalletConnectEvmSendHandler {
             return nil
         }
 
+        guard ChildWalletBridge.shared.supports(account: account, token: baseToken) else {
+            return nil
+        }
+
         let transactionData = TransactionData(
             to: payload.transaction.to,
             value: payload.transaction.value,

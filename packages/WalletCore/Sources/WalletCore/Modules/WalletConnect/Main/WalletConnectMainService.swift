@@ -16,6 +16,7 @@ class WalletConnectMainService {
     private let purchaseManager = Core.shared.purchaseManager
     private let dappProvider = WhitelistDappProvider(networkManager: Core.shared.networkManager)
     private let accountManager: AccountManager
+    private let childWalletBridge = ChildWalletBridge.shared
     private let securityManager: SecurityManager
     private let proposalHandler: IProposalHandler
 
@@ -205,7 +206,7 @@ class WalletConnectMainService {
 
 extension WalletConnectMainService {
     var activeAccountName: String? {
-        accountManager.activeAccount?.name
+        accountManager.activeAccount.map { childWalletBridge.displayName(account: $0) }
     }
 
     var appMetaItem: WalletConnectMainModule.AppMetaItem? {

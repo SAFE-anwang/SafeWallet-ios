@@ -1,4 +1,5 @@
 import Combine
+import Dispatch
 import Foundation
 
 class TonConnectConnectViewModel: ObservableObject {
@@ -8,8 +9,10 @@ class TonConnectConnectViewModel: ObservableObject {
 
     private let tonConnectManager = Core.shared.tonConnectManager
     private let accountManager = Core.shared.accountManager
+    private let childWalletBridge = ChildWalletBridge.shared
+    private var cancellables = Set<AnyCancellable>()
 
-    let eligibleAccounts: [Account]
+    @Published private(set) var eligibleAccounts = [Account]()
     @Published var account: Account?
 
     private let finishSubject = PassthroughSubject<Void, Never>()
@@ -19,13 +22,22 @@ class TonConnectConnectViewModel: ObservableObject {
         manifest = config.manifest
         self.returnDeepLink = returnDeepLink
 
-        eligibleAccounts = accountManager.accounts.filter(\.type.supportsTonConnect).sorted { $0.name < $1.name }
+        accountManager.activeAccountPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.sync() }
+            .store(in: &cancellables)
 
-        if let activeAccount = accountManager.activeAccount, eligibleAccounts.contains(activeAccount) {
-            account = activeAccount
-        } else {
-            account = eligibleAccounts.first
-        }
+        accountManager.accountsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.sync() }
+            .store(in: &cancellables)
+
+        childWalletBridge.activeChildWalletChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.sync() }
+            .store(in: &cancellables)
+
+        sync()
     }
 }
 
@@ -34,8 +46,17 @@ extension TonConnectConnectViewModel {
         finishSubject.eraseToAnyPublisher()
     }
 
+    func displayName(account: Account) -> String {
+        childWalletBridge.displayName(account: account)
+    }
+
     func connect() {
         guard let account else {
+            return
+        }
+
+        guard !childWalletBridge.isChildWalletActive(account: account) else {
+            sync()
             return
         }
 
@@ -51,6 +72,20 @@ extension TonConnectConnectViewModel {
     func rejectConnection() {
         Task {
             try await tonConnectManager.rejectConnection(parameters: parameters)
+        }
+    }
+
+    private func sync() {
+        eligibleAccounts = accountManager.accounts.filter {
+            $0.type.supportsTonConnect && !childWalletBridge.isChildWalletActive(account: $0)
+        }.sorted {
+            childWalletBridge.displayName(account: $0).lowercased() < childWalletBridge.displayName(account: $1).lowercased()
+        }
+
+        if let activeAccount = accountManager.activeAccount, eligibleAccounts.contains(activeAccount) {
+            account = activeAccount
+        } else {
+            account = eligibleAccounts.first
         }
     }
 }

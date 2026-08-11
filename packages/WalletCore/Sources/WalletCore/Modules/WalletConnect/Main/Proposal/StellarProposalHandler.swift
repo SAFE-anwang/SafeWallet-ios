@@ -23,6 +23,10 @@ class StellarProposalHandler {
     }
 
     private func blockchains(namespace: ProposalNamespace) -> [WalletConnectMainModule.BlockchainProposal] {
+        guard !ChildWalletBridge.shared.isChildWalletActive(account: account) else {
+            return []
+        }
+
         var items = [WalletConnectMainModule.BlockchainItem]()
         var methods = Set<String>()
         var events = Set<String>()

@@ -10,21 +10,23 @@ public class KitCleaner {
 
 public extension KitCleaner {
     func clear() {
-        let accountIds = accountManager.allAccounts.map(\.id)
+        let accounts = accountManager.allAccounts
+        let accountIds = accounts.map(\.id)
+        let kitWalletIds = accountIds + ChildWalletBridge.shared.kitWalletIdsToKeep(parentAccounts: accounts)
 
         DispatchQueue.global(qos: .background).async {
-            try? BitcoinAdapter.clear(except: accountIds)
-            try? LitecoinAdapter.clear(except: accountIds)
-            try? DogecoinAdapter.clear(except: accountIds)
-            try? BitcoinCashAdapter.clear(except: accountIds)
-            try? DashAdapter.clear(except: accountIds)
-            try? EvmAdapter.clear(except: accountIds)
-            try? EvmNftAdapter.clear(except: accountIds)
-            try? ZcashAdapter.clear(except: accountIds)
-            try? SafeCoinAdapter.clear(except: accountIds)
-            try? TronAdapter.clear(except: accountIds)
-            try? MoneroAdapter.clear(except: accountIds)
-            try? ZanoAdapter.clear(except: accountIds)
+            try? BitcoinAdapter.clear(except: kitWalletIds)
+            try? LitecoinAdapter.clear(except: kitWalletIds)
+            try? DogecoinAdapter.clear(except: kitWalletIds)
+            try? BitcoinCashAdapter.clear(except: kitWalletIds)
+            try? DashAdapter.clear(except: kitWalletIds)
+            try? EvmAdapter.clear(except: kitWalletIds)
+            try? EvmNftAdapter.clear(except: kitWalletIds)
+            try? ZcashAdapter.clear(except: kitWalletIds)
+            try? SafeCoinAdapter.clear(except: kitWalletIds)
+            try? TronAdapter.clear(except: kitWalletIds)
+            try? MoneroAdapter.clear(except: kitWalletIds)
+            try? ZanoAdapter.clear(except: kitWalletIds)
         }
     }
 }

@@ -124,7 +124,7 @@ extension LiquidityAddSendHandler: ISendHandler {
                 throw SendError.noGasPrice
             }
 
-            guard let evmKitWrapper = try evmBlockchainManager.evmKitManager(blockchainType: token1.blockchainType).evmKitWrapper else {
+            guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: token1.blockchainType) else {
                 throw SendError.noEvmKitWrapper
             }
 

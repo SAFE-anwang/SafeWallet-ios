@@ -35,16 +35,30 @@ class TronAccountManager {
             return
         }
 
+        let subscribedAccount = tronKitManager.currentAccount
+        let subscribedChildWalletId = subscribedAccount.flatMap { ChildWalletBridge.shared.activeChildWalletId(account: $0) }
+
         tronKitWrapper.tronKit.allTransactionsPublisher.asObservable()
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
             .subscribe(onNext: { [weak self] fullTransactions, initial in
-                self?.handle(fullTransactions: fullTransactions, initial: initial)
+                self?.handle(
+                    fullTransactions: fullTransactions,
+                    initial: initial,
+                    subscribedAccount: subscribedAccount,
+                    subscribedChildWalletId: subscribedChildWalletId,
+                    tronKit: tronKitWrapper.tronKit
+                )
             })
             .disposed(by: internalDisposeBag)
     }
 
-    private func handle(fullTransactions: [FullTransaction], initial: Bool) {
-        guard let account = accountManager.activeAccount else {
+    private func handle(fullTransactions: [FullTransaction], initial: Bool, subscribedAccount: Account?, subscribedChildWalletId: String?, tronKit: TronKit.Kit) {
+        guard let account = subscribedAccount else {
+            return
+        }
+
+        let activeChildWalletId = ChildWalletBridge.shared.activeChildWalletId(account: account)
+        guard accountManager.activeAccount?.id == account.id, activeChildWalletId == subscribedChildWalletId else {
             return
         }
 
@@ -52,11 +66,7 @@ class TronAccountManager {
             return
         }
 
-        guard let tronKitWrapper = tronKitManager.tronKitWrapper else {
-            return
-        }
-
-        let address = tronKitWrapper.tronKit.address
+        let address = tronKit.address
 
         var foundTokens = Set<FoundToken>()
         var suspiciousTokenTypes = Set<TokenType>()
@@ -92,10 +102,10 @@ class TronAccountManager {
             }
         }
 
-        handle(foundTokens: Array(foundTokens), suspiciousTokenTypes: Array(suspiciousTokenTypes.subtracting(foundTokens.map(\.tokenType))), account: account, tronKit: tronKitWrapper.tronKit)
+        handle(foundTokens: Array(foundTokens), suspiciousTokenTypes: Array(suspiciousTokenTypes.subtracting(foundTokens.map(\.tokenType))), account: account, childWalletId: subscribedChildWalletId, tronKit: tronKit)
     }
 
-    private func handle(foundTokens: [FoundToken], suspiciousTokenTypes: [TokenType], account: Account, tronKit: TronKit.Kit) {
+    private func handle(foundTokens: [FoundToken], suspiciousTokenTypes: [TokenType], account: Account, childWalletId: String?, tronKit: TronKit.Kit) {
         guard !foundTokens.isEmpty || !suspiciousTokenTypes.isEmpty else {
             return
         }
@@ -143,11 +153,11 @@ class TronAccountManager {
             }
         }
 
-        handle(tokenInfos: tokenInfos, account: account, tronKit: tronKit)
+        handle(tokenInfos: tokenInfos, account: account, childWalletId: childWalletId, tronKit: tronKit)
     }
 
-    private func handle(tokenInfos: [TokenInfo], account: Account, tronKit: TronKit.Kit) {
-        let existingWallets = walletManager.activeWallets
+    private func handle(tokenInfos: [TokenInfo], account: Account, childWalletId: String?, tronKit: TronKit.Kit) {
+        let existingWallets = walletManager.wallets(account: account, childWalletId: childWalletId)
         let existingTokenTypeIds = existingWallets.map(\.token.type.id)
         let newTokenInfos = tokenInfos.filter { !existingTokenTypeIds.contains($0.type.id) }
 
@@ -163,11 +173,28 @@ class TronAccountManager {
             return tronKit.trc20Balance(contractAddress: contractAddress) > 0 ? info : nil
         }
 
-        handle(processedTokenInfos: tokenInfos.compactMap { $0 }, account: account)
+        handle(processedTokenInfos: tokenInfos.compactMap { $0 }, account: account, childWalletId: childWalletId)
     }
 
-    private func handle(processedTokenInfos infos: [TokenInfo], account: Account) {
+    private func handle(processedTokenInfos infos: [TokenInfo], account: Account, childWalletId: String?) {
         guard !infos.isEmpty else {
+            return
+        }
+
+        if let childWalletId {
+            let childEnabledWallets = infos.map { info in
+                ChildEnabledWallet(
+                    parentAccountId: account.id,
+                    childWalletId: childWalletId,
+                    tokenQueryId: TokenQuery(blockchainType: blockchainType, tokenType: info.type).id,
+                    coinName: info.coinName,
+                    coinCode: info.coinCode,
+                    tokenDecimals: info.tokenDecimals
+                )
+            }
+
+            try? ChildWalletBridge.shared.save(enabledWallets: childEnabledWallets, parentAccountId: account.id)
+            walletManager.preloadWallets()
             return
         }
 
@@ -181,7 +208,7 @@ class TronAccountManager {
             )
         }
 
-        walletManager.save(enabledWallets: enabledWallets)
+        walletManager.saveRoot(enabledWallets: enabledWallets, account: account)
     }
 }
 

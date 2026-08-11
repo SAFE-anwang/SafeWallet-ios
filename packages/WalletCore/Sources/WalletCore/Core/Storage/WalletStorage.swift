@@ -25,7 +25,10 @@ public class WalletStorage {
 extension WalletStorage {
     func wallets(account: Account) throws -> [Wallet] {
         let enabledWallets = try storage.enabledWallets(accountId: account.id)
+        return try wallets(account: account, enabledWallets: enabledWallets)
+    }
 
+    func wallets(account: Account, enabledWallets: [EnabledWallet]) throws -> [Wallet] {
         let queries = enabledWallets.compactMap { TokenQuery(id: $0.tokenQueryId) }
         let tokens = try marketKit.tokens(queries: queries)
 
@@ -58,6 +61,10 @@ extension WalletStorage {
 
             return nil
         }
+    }
+
+    func wallets(childWalletId: String, account: Account) throws -> [Wallet] {
+        try ChildWalletBridge.shared.wallets(childWalletId: childWalletId, account: account, marketKit: marketKit)
     }
 
     func handle(newWallets: [Wallet], deletedWallets: [Wallet]) {

@@ -254,7 +254,7 @@ extension AppBackupProvider {
                     tokenDecimals: wallet.tokenDecimals
                 )
             }
-            walletManager.save(enabledWallets: wallets)
+            walletManager.saveRoot(enabledWallets: wallets, account: raw.account)
         }
     }
 

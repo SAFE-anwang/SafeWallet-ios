@@ -39,7 +39,10 @@ class OpenCryptoPayManager {
     }
 
     func resolve(wallet: Wallet, against payment: OpenCryptoPayPayment) async throws -> SendData {
-        guard accountManager.activeAccount?.id == payment.capturedAccountId else {
+        guard let activeAccount = accountManager.activeAccount,
+              activeAccount.id == payment.capturedAccountId,
+              ChildWalletBridge.shared.contextAccountId(account: activeAccount) == payment.capturedContextAccountId
+        else {
             throw OpenCryptoPayManager.Error.accountChanged
         }
         guard walletManager.activeWallets.contains(wallet) else {
@@ -77,7 +80,7 @@ class OpenCryptoPayManager {
         let apiUrl = try OpenCryptoPayUrl.decodeLnurl(url)
         let response = try await provider.fetchPaymentDetails(url: apiUrl)
 
-        guard let accountId = accountManager.activeAccount?.id else {
+        guard let account = accountManager.activeAccount else {
             throw OpenCryptoPayManager.Error.noSupportedMethod
         }
 
@@ -116,7 +119,8 @@ class OpenCryptoPayManager {
                 website: response.recipient.website
             ),
             entries: entries,
-            capturedAccountId: accountId
+            capturedAccountId: account.id,
+            capturedContextAccountId: ChildWalletBridge.shared.contextAccountId(account: account)
         )
     }
 

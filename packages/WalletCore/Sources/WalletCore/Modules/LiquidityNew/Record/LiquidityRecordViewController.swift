@@ -143,7 +143,7 @@ class LiquidityRecordViewController: ThemeViewController {
     }
 
     private func getEvmKit(for blockchainType: BlockchainType) throws -> EvmKit.Kit {
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: blockchainType) else {
             throw LiquidityRecordError.noWallet
         }
         return evmKitWrapper.evmKit

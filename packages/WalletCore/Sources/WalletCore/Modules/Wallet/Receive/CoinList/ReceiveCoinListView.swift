@@ -12,9 +12,9 @@ struct ReceiveCoinListView: View {
         let coinProvider = CoinProvider(
             marketKit: Core.shared.marketKit,
             walletManager: Core.shared.walletManager,
-            accountType: account.type
+            account: account
         )
-        let service = ReceiveCoinListService(provider: coinProvider, accountType: account.type)
+        let service = ReceiveCoinListService(provider: coinProvider, account: account)
         _viewModel = StateObject(wrappedValue: ReceiveCoinListViewModel(account: account, service: service))
     }
 

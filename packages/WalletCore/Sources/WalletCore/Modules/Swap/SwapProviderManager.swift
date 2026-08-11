@@ -35,6 +35,10 @@ class SwapProviderManager {
         let blockchainType: BlockchainType
 
         if let tokenFrom {
+            guard ChildWalletBridge.shared.supports(account: Core.shared.accountManager.activeAccount, token: tokenFrom) else {
+                return
+            }
+
             if let type = evmBlockchainManager.blockchain(token: tokenFrom)?.type {
                 blockchainType = type
             } else {

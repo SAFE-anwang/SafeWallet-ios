@@ -29,7 +29,7 @@ final class NftV2FavoritesStore: ObservableObject {
     }
 
     func toggle(id: String) {
-        guard let accountId = accountManager.activeAccount?.id else {
+        guard let accountId = activeContextAccountId else {
             return
         }
 
@@ -40,7 +40,7 @@ final class NftV2FavoritesStore: ObservableObject {
             self.cachedFavoriteIds = ids
             self.save(favoriteIds: ids, accountId: accountId)
             DispatchQueue.main.async {
-                guard self.accountManager.activeAccount?.id == accountId else {
+                guard self.activeContextAccountId == accountId else {
                     return
                 }
 
@@ -50,13 +50,13 @@ final class NftV2FavoritesStore: ObservableObject {
     }
 
     func syncFavorites() {
-        let accountId = accountManager.activeAccount?.id
+        let accountId = activeContextAccountId
         queue.async {
             let ids = accountId.flatMap(self.loadFavoriteIds(accountId:)) ?? []
             self.cachedFavoriteIds = ids
 
             DispatchQueue.main.async {
-                guard self.accountManager.activeAccount?.id == accountId else {
+                guard self.activeContextAccountId == accountId else {
                     return
                 }
 
@@ -114,5 +114,9 @@ final class NftV2FavoritesStore: ObservableObject {
     private func contextKey(accountId: String) -> String {
         return accountId
             .replacingOccurrences(of: "[^a-zA-Z0-9_\\-]+", with: "_", options: .regularExpression)
+    }
+
+    private var activeContextAccountId: String? {
+        accountManager.activeAccount.map { ChildWalletBridge.shared.contextAccountId(account: $0) }
     }
 }

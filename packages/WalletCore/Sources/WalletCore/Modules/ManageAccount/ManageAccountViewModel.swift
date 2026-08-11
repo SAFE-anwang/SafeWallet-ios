@@ -1,9 +1,11 @@
 import Combine
+import Dispatch
 
 class ManageAccountViewModel: ObservableObject {
     private let accountManager = Core.shared.accountManager
     private let cloudBackupManager = Core.shared.cloudBackupManager
     private let passcodeManager = Core.shared.passcodeManager
+    private let childWalletBridge = ChildWalletBridge.shared
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var account: Account
@@ -20,6 +22,17 @@ class ManageAccountViewModel: ObservableObject {
 
         cloudBackupManager.$oneWalletItems
             .sink { [weak self] _ in self?.syncCloudBackedUp() }
+            .store(in: &cancellables)
+
+        childWalletBridge.activeChildWalletChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                guard change.parentAccountId == self?.account.id else {
+                    return
+                }
+
+                self?.objectWillChange.send()
+            }
             .store(in: &cancellables)
 
         syncCloudBackedUp()
@@ -45,6 +58,10 @@ extension ManageAccountViewModel {
     }
 
     var privateKeysVisible: Bool {
+        guard !ChildWalletBridge.shared.isChildWalletActive(account: account) else {
+            return false
+        }
+
         switch account.type {
         case .mnemonic, .evmPrivateKey, .trcPrivateKey, .stellarSecretKey: return true
         case let .hdExtendedKey(key):
@@ -61,6 +78,14 @@ extension ManageAccountViewModel {
         case .mnemonic, .passkeyOwned, .evmPrivateKey, .trcPrivateKey, .hdExtendedKey: return true
         default: return false
         }
+    }
+
+    var childWalletsVisible: Bool {
+        guard case .mnemonic = account.type else {
+            return false
+        }
+
+        return account.type.mnemonicSeed != nil
     }
 
     func save() {

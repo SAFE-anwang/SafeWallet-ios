@@ -42,6 +42,10 @@ class Eip155ProposalHandler {
                 continue
             }
 
+            guard ChildWalletBridge.shared.supports(account: account, blockchainType: evmBlockchain.type) else {
+                continue
+            }
+
             items.append(
                 WalletConnectMainModule.BlockchainItem(
                     namespace: blockchain.namespace,

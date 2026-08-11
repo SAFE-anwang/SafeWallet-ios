@@ -31,9 +31,35 @@ class SwapHistoryViewModel: ObservableObject {
     init() {
         __load()
 
+        accountManager.activeAccountPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.resetAndLoad() }
+            .store(in: &cancellables)
+
+        ChildWalletBridge.shared.activeChildWalletChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                guard self?.accountManager.activeAccount?.id == change.parentAccountId else {
+                    return
+                }
+
+                self?.resetAndLoad()
+            }
+            .store(in: &cancellables)
+
         subscribe(&cancellables, manager.swapUpdatePublisher) { [weak self] in self?.handleUpdated(swap: $0) }
         subscribe(disposeBag, rateService.ratesChangedObservable) { [weak self] in self?.handleRatesChanged() }
         subscribe(disposeBag, rateService.rateUpdatedObservable) { [weak self] in self?.handle(rate: $0) }
+    }
+
+    private func resetAndLoad() {
+        queue.async {
+            self.__items = []
+            self.__loading = false
+            self.__allLoaded = false
+            self.__sections = []
+            self.__load()
+        }
     }
 
     private func handleUpdated(swap: Swap) {
@@ -90,7 +116,7 @@ class SwapHistoryViewModel: ObservableObject {
             return
         }
 
-        let swaps = manager.swaps(accountId: account.id, from: __items.last?.swap.date, limit: Self.pageLimit)
+        let swaps = manager.swaps(account: account, from: __items.last?.swap.date, limit: Self.pageLimit)
         let newItems = swaps.map { swap in
             Item(
                 swap: swap,

@@ -2,6 +2,10 @@ import MarketKit
 
 public enum SendHandlerFactory {
     static func handler(sendData: SendData) -> ISendHandler? {
+        guard ChildWalletBridge.shared.supports(account: Core.shared.accountManager.activeAccount, sendData: sendData) else {
+            return nil
+        }
+
         switch sendData {
         case let .evm(blockchainType, transactionData, token):
             let activeAccount = Core.shared.accountManager.activeAccount
@@ -52,6 +56,10 @@ public enum SendHandlerFactory {
     }
 
     public static func preSendHandler(wallet: Wallet, address: ResolvedAddress) -> IPreSendHandler? {
+        guard ChildWalletBridge.shared.supports(account: Core.shared.accountManager.activeAccount, token: wallet.token) else {
+            return nil
+        }
+
         let adapter = Core.shared.adapterManager.adapter(for: wallet)
 
         if let adapter = adapter as? ISendEthereumAdapter & IBalanceAdapter {

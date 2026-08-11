@@ -14,7 +14,8 @@ public class TronKitManager {
 
     private let tronKitCreatedRelay = PublishRelay<Void>()
     private let tronKitUpdatedRelay = PublishRelay<Void>()
-    private var currentAccount: Account?
+    private(set) var currentAccount: Account?
+    private var currentKitCacheKey: ChildWalletKitCacheKey?
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).tron-kit-manager", qos: .userInitiated)
 
@@ -52,7 +53,9 @@ public class TronKitManager {
     }
 
     private func _tronKitWrapper(account: Account) throws -> TronKitWrapper {
-        if let _tronKitWrapper, let currentAccount, currentAccount == account {
+        let kitCacheKey = try ChildWalletBridge.shared.kitCacheKey(account: account, blockchainType: .tron)
+
+        if let _tronKitWrapper, currentKitCacheKey == kitCacheKey {
             return _tronKitWrapper
         }
 
@@ -65,7 +68,7 @@ public class TronKitManager {
             guard let seed = account.type.mnemonicSeed else {
                 throw KitWrapperError.mnemonicNoSeed
             }
-            signer = try Signer.instance(seed: seed)
+            signer = try ChildWalletBridge.shared.tronSigner(account: account) ?? Signer.instance(seed: seed)
         case let .trcPrivateKey(data):
             signer = try Signer.instance(privateKey: data)
         case .tronAddress:
@@ -82,7 +85,7 @@ public class TronKitManager {
         let tronKit = try TronKit.Kit.instance(
             address: address,
             network: network,
-            walletId: account.id,
+            walletId: try ChildWalletBridge.shared.walletId(account: account, blockchainType: .tron),
             rpcSource: rpcSource(network: network, syncSource: syncSource),
             transactionSource: .tronGrid(network: network, apiKeys: AppConfig.tronGridApiKeys),
             minLogLevel: .error,
@@ -99,6 +102,7 @@ public class TronKitManager {
 
         _tronKitWrapper = wrapper
         currentAccount = account
+        currentKitCacheKey = kitCacheKey
 
         tronKitCreatedRelay.accept(())
 

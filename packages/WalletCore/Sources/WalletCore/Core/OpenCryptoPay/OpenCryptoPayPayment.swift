@@ -9,6 +9,7 @@ public struct OpenCryptoPayPayment: Equatable {
     let recipient: Recipient
     let entries: [Entry]
     let capturedAccountId: String
+    let capturedContextAccountId: String
 
     public struct Entry: Equatable, Identifiable {
         public let id: String

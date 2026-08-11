@@ -5,6 +5,7 @@ import MarketKit
 class ManageWalletsViewModel: ObservableObject {
     private let account: Account
     private let walletManager = Core.shared.walletManager
+    private let childWalletBridge = ChildWalletBridge.shared
     private let restoreSettingsService: RestoreSettingsService
 
     private let tokenFetcher = ManageWalletsTokenFetcher()
@@ -12,12 +13,14 @@ class ManageWalletsViewModel: ObservableObject {
 
     private var tokens = [Token]()
     private var wallets = Set<Wallet>()
+    private let childWalletBlockchainTypes: [BlockchainType]?
     private var cancellables = Set<AnyCancellable>()
 
     @Published var items = [Item]()
     @Published var enabledTokens: [Int: Bool] = [:]
 
     @Published var filter = ""
+    let canAddToken: Bool
 
     let blockchains: [Blockchain]
     @Published var blockchainFilter: Blockchain? = nil {
@@ -30,13 +33,24 @@ class ManageWalletsViewModel: ObservableObject {
         }
     }
 
-    var canAddToken: Bool {
-        account.type.canAddTokens
+    var emptySearchText: String {
+        childWalletBlockchainTypes == nil ? "manage_wallets.not_found".localized : "当前子钱包仅支持 EVM/TRON/SAFE 资产。"
+    }
+
+    var childWalletNoticeText: String? {
+        guard childWalletBlockchainTypes != nil else {
+            return nil
+        }
+
+        return "当前为子钱包模式，仅显示并管理 EVM/TRON/SAFE 资产；其他链资产请切回主钱包查看。"
     }
 
     init(account: Account, restoreSettingsService: RestoreSettingsService) {
         self.account = account
         self.restoreSettingsService = restoreSettingsService
+        let childWalletBlockchainTypes = ChildWalletBridge.shared.tokenManagementBlockchainTypes(account: account)
+        self.childWalletBlockchainTypes = childWalletBlockchainTypes
+        canAddToken = account.type.canAddTokens && !AddTokenModule.items(account: account).isEmpty
         tokenInfoProvider = ManageWalletsTokenInfoProvider(restoreSettingsService: restoreSettingsService)
 
         wallets = Set(walletManager.activeWallets)
@@ -45,6 +59,7 @@ class ManageWalletsViewModel: ObservableObject {
 
         blockchains = supported
             .filter { $0.type != .safe }
+            .filter { childWalletBlockchainTypes?.contains($0.type) ?? true }
             .sorted(by: { $0.type.order < $1.type.order })
         setupBindings()
         reloadTokens(initial: true)
@@ -89,7 +104,7 @@ class ManageWalletsViewModel: ObservableObject {
             filter: filter,
             account: account,
             preferredTokens: enabledTokens,
-            allowedBlockchainTypes: blockchainFilter.map { [$0.type] }
+            allowedBlockchainTypes: allowedBlockchainTypes
         )
 
         let context = TokenSortContext()
@@ -153,6 +168,10 @@ class ManageWalletsViewModel: ObservableObject {
         let wallet = Wallet(token: token, account: account)
         walletManager.save(wallets: [wallet])
     }
+
+    private var allowedBlockchainTypes: [BlockchainType]? {
+        blockchainFilter.map { [$0.type] } ?? childWalletBlockchainTypes
+    }
 }
 
 extension ManageWalletsViewModel {
@@ -188,6 +207,15 @@ extension ManageWalletsViewModel {
         stat(page: .coinManager, event: .openTokenInfo(token: item.token))
 
         return infoItem
+    }
+
+    func addTokenInput() -> (Account, [AddTokenModule.Item])? {
+        let items = AddTokenModule.items(account: account)
+        guard !items.isEmpty else {
+            return nil
+        }
+
+        return (account, items)
     }
 
     private func enable(token: Token) {

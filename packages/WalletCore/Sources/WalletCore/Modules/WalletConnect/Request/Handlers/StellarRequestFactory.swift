@@ -19,6 +19,10 @@ extension StellarRequestFactory {
             throw WalletConnectRequest.CreationError.noActiveAccount
         }
 
+        guard !ChildWalletBridge.shared.isChildWalletActive(account: account) else {
+            throw WalletConnectRequest.CreationError.invalidChain
+        }
+
         guard request.chainId.namespace == StellarProposalHandler.namespace else {
             throw WalletConnectRequest.CreationError.invalidChain
         }

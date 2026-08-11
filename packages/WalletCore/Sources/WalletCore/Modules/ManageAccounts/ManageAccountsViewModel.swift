@@ -1,8 +1,10 @@
 import Combine
+import Dispatch
 
 class ManageAccountsViewModel: ObservableObject {
     private let accountManager = Core.shared.accountManager
     private let cloudBackupManager = Core.shared.cloudBackupManager
+    private let childWalletBridge = ChildWalletBridge.shared
     private var cancellables = Set<AnyCancellable>()
 
     @Published var filter: String = "" {
@@ -13,14 +15,22 @@ class ManageAccountsViewModel: ObservableObject {
 
     init() {
         accountManager.activeAccountPublisher
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.sync() }
             .store(in: &cancellables)
 
         accountManager.accountsPublisher
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.sync() }
             .store(in: &cancellables)
 
         cloudBackupManager.$oneWalletItems
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.sync() }
+            .store(in: &cancellables)
+
+        childWalletBridge.activeChildWalletChangedPublisher
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.sync() }
             .store(in: &cancellables)
 
@@ -32,16 +42,21 @@ class ManageAccountsViewModel: ObservableObject {
         let trimmed = filter.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         let mapped = accountManager.accounts
-            .filter { trimmed.isEmpty || $0.name.lowercased().contains(trimmed) }
             .map { account in
                 let cloudBackedUp = cloudBackupManager.backedUp(uniqueId: account.type.uniqueId())
-                return Item(account: account, cloudBackedUp: cloudBackedUp, isActive: account == activeAccount)
+                return Item(
+                    account: account,
+                    displayName: childWalletBridge.displayName(account: account),
+                    cloudBackedUp: cloudBackedUp,
+                    isActive: account == activeAccount
+                )
             }
+            .filter { trimmed.isEmpty || $0.displayName.lowercased().contains(trimmed) }
 
         let regular = mapped.filter { !$0.account.watchAccount }
-            .sorted { $0.account.name.lowercased() < $1.account.name.lowercased() }
+            .sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
         let watch = mapped.filter(\.account.watchAccount)
-            .sorted { $0.account.name.lowercased() < $1.account.name.lowercased() }
+            .sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
 
         var sections = [Section]()
         if !regular.isEmpty {
@@ -67,11 +82,13 @@ extension ManageAccountsViewModel {
 extension ManageAccountsViewModel {
     struct Item: Hashable {
         let account: Account
+        let displayName: String
         let cloudBackedUp: Bool
         let isActive: Bool
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(account)
+            hasher.combine(displayName)
             hasher.combine(isActive)
         }
     }

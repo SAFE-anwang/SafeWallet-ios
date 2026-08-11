@@ -101,42 +101,40 @@ public class AdapterFactory {
 }
 
 extension AdapterFactory {
-    func evmTransactionsAdapter(transactionSource: TransactionSource) -> ITransactionsAdapter? {
+    func evmTransactionsAdapter(transactionSource: TransactionSource, evmKitWrapper: EvmKitWrapper) -> ITransactionsAdapter? {
         let blockchainType = transactionSource.blockchainType
 
-        if let evmKitWrapper = try? evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper,
-           let baseToken = evmBlockchainManager.baseToken(blockchainType: blockchainType)
-        {
-            let syncSource = evmSyncSourceManager.syncSource(blockchainType: blockchainType)
-            return EvmTransactionsAdapter(
-                evmKitWrapper: evmKitWrapper,
-                source: transactionSource,
-                baseToken: baseToken,
-                evmTransactionSource: syncSource.transactionSource,
-                coinManager: coinManager,
-                spamWrapper: spamWrapper,
-                evmLabelManager: evmLabelManager
-            )
+        guard let baseToken = evmBlockchainManager.baseToken(blockchainType: blockchainType) else {
+            return nil
         }
 
-        return nil
+        let syncSource = evmSyncSourceManager.syncSource(blockchainType: blockchainType)
+        return EvmTransactionsAdapter(
+            evmKitWrapper: evmKitWrapper,
+            source: transactionSource,
+            baseToken: baseToken,
+            evmTransactionSource: syncSource.transactionSource,
+            coinManager: coinManager,
+            spamWrapper: spamWrapper,
+            evmLabelManager: evmLabelManager
+        )
     }
 
-    func tronTransactionsAdapter(transactionSource: TransactionSource) -> ITransactionsAdapter? {
+    func tronTransactionsAdapter(transactionSource: TransactionSource, tronKitWrapper: TronKitWrapper) -> ITransactionsAdapter? {
         let query = TokenQuery(blockchainType: .tron, tokenType: .native)
 
-        if let tronKitWrapper = tronKitManager.tronKitWrapper, let baseToken = try? coinManager.token(query: query) {
-            return TronTransactionsAdapter(
-                tronKitWrapper: tronKitWrapper,
-                source: transactionSource,
-                baseToken: baseToken,
-                coinManager: coinManager,
-                spamWrapper: spamWrapper,
-                evmLabelManager: evmLabelManager
-            )
+        guard let baseToken = try? coinManager.token(query: query) else {
+            return nil
         }
 
-        return nil
+        return TronTransactionsAdapter(
+            tronKitWrapper: tronKitWrapper,
+            source: transactionSource,
+            baseToken: baseToken,
+            coinManager: coinManager,
+            spamWrapper: spamWrapper,
+            evmLabelManager: evmLabelManager
+        )
     }
 
     func tonTransactionAdapter(transactionSource: TransactionSource) -> ITransactionsAdapter? {

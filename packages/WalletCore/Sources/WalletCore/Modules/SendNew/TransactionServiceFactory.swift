@@ -3,6 +3,11 @@ import MarketKit
 enum TransactionServiceFactory {
     static func transactionService(sendData: SendData, baseToken: Token, initialTransactionSettings: InitialTransactionSettings?) -> ITransactionService? {
         let activeAccount = Core.shared.accountManager.activeAccount
+        guard ChildWalletBridge.shared.supports(account: activeAccount, token: baseToken),
+              ChildWalletBridge.shared.supports(account: activeAccount, sendData: sendData)
+        else {
+            return nil
+        }
 
         if let activeAccount, case .passkeyOwned = activeAccount.type,
            EvmBlockchainManager.blockchainTypes.contains(baseToken.blockchainType),
@@ -12,7 +17,7 @@ enum TransactionServiceFactory {
         }
 
         if EvmBlockchainManager.blockchainTypes.contains(baseToken.blockchainType),
-           let evmKit = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: baseToken.blockchainType).evmKitWrapper?.evmKit,
+           let evmKit = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: baseToken.blockchainType)?.evmKit,
            let transactionService = EvmTransactionService(blockchainType: baseToken.blockchainType, evmKit: evmKit, initialTransactionSettings: initialTransactionSettings)
         {
             return transactionService

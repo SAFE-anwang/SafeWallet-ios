@@ -40,4 +40,12 @@ extension WalletConnectSessionStorage {
             try WalletConnectSession.filter(WalletConnectSession.Columns.accountId == accountId).deleteAll(db)
         }
     }
+
+    func deleteChildSessions(parentAccountId: String) {
+        _ = try! dbPool.write { db in
+            try WalletConnectSession
+                .filter(WalletConnectSession.Columns.accountId.like("\(parentAccountId):child:%"))
+                .deleteAll(db)
+        }
+    }
 }

@@ -27,7 +27,7 @@ struct RedeemSafe3Module {
             return nil
         }
 
-        guard let safe4EvmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper else {
+        guard let safe4EvmKitWrapper = ChildWalletBridge.shared.activeSafe4EvmKitWrapper() else {
             return nil
         }
 

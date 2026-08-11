@@ -13,7 +13,11 @@ class WCWalletHandler<Payload: WCWalletPayload>: WalletConnectRequestHandler {
     }
 
     private func isValidated(chainId: Int) -> Bool {
-        requestFactory.evmBlockchainManager.blockchain(chainId: chainId) != nil
+        guard let blockchain = requestFactory.evmBlockchainManager.blockchain(chainId: chainId) else {
+            return false
+        }
+
+        return ChildWalletBridge.shared.supports(account: requestFactory.accountManager.activeAccount, blockchainType: blockchain.type)
     }
 
     private func respond(request: Request, successful: Bool) throws {

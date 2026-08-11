@@ -14,6 +14,20 @@ class SwapHistoryManager {
         self.accountManager = accountManager
         self.storage = storage
 
+        accountManager.activeAccountPublisher
+            .sink { [weak self] _ in self?.sync() }
+            .store(in: &cancellables)
+
+        ChildWalletBridge.shared.activeChildWalletChangedPublisher
+            .sink { [weak self] change in
+                guard self?.accountManager.activeAccount?.id == change.parentAccountId else {
+                    return
+                }
+
+                self?.sync()
+            }
+            .store(in: &cancellables)
+
         sync()
     }
 
@@ -22,7 +36,7 @@ class SwapHistoryManager {
             return
         }
 
-        let pendingSwaps = try storage.pendingSwaps(accountId: account.id)
+        let pendingSwaps = try storage.pendingSwaps(accountId: ChildWalletBridge.shared.contextAccountId(account: account))
 
         guard !pendingSwaps.isEmpty else {
             return
@@ -93,12 +107,20 @@ extension SwapHistoryManager {
         try? storage.lastSwap(accountId: accountId)
     }
 
+    func lastSwap(account: Account) -> Swap? {
+        lastSwap(accountId: ChildWalletBridge.shared.contextAccountId(account: account))
+    }
+
     func swaps(accountId: String, from: Date? = nil, limit: Int) -> [Swap] {
         do {
             return try storage.swaps(accountId: accountId, from: from, limit: limit)
         } catch {
             return []
         }
+    }
+
+    func swaps(account: Account, from: Date? = nil, limit: Int) -> [Swap] {
+        swaps(accountId: ChildWalletBridge.shared.contextAccountId(account: account), from: from, limit: limit)
     }
 
     func save(swap: Swap) {

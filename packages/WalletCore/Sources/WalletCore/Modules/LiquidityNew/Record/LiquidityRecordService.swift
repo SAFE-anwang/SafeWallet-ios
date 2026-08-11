@@ -42,7 +42,7 @@ class LiquidityRecordService {
 
         self.currentBlockchainType = blockchainType
 
-        guard let evmKitWrapper = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: blockchainType).evmKitWrapper else {
+        guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: blockchainType) else {
             return
         }
         self.evmKitWrapper = evmKitWrapper

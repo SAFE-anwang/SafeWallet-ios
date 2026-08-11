@@ -84,7 +84,7 @@ extension OpenCryptoPaySendHandler: ISendHandler {
         }
         try preSendGuards()
 
-        let accountId = payment.capturedAccountId
+        let accountId = payment.capturedContextAccountId
         let result = try await broadcaster.broadcast(data: ocpData.inner)
 
         guard let hash = result.transactionHash else {
@@ -110,7 +110,10 @@ extension OpenCryptoPaySendHandler: ISendHandler {
     }
 
     private func preSendGuards() throws {
-        guard accountManager.activeAccount?.id == payment.capturedAccountId else {
+        guard let activeAccount = accountManager.activeAccount,
+              activeAccount.id == payment.capturedAccountId,
+              ChildWalletBridge.shared.contextAccountId(account: activeAccount) == payment.capturedContextAccountId
+        else {
             throw OpenCryptoPayManager.Error.accountChanged
         }
         guard walletManager.activeWallets.contains(where: { $0.token == entry.token }) else {

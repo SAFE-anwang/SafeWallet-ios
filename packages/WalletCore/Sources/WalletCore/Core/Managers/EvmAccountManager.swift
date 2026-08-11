@@ -45,16 +45,29 @@ class EvmAccountManager {
             return
         }
 
+        let subscribedAccount = evmKitManager.currentAccount
+        let subscribedChildWalletId = subscribedAccount.flatMap { ChildWalletBridge.shared.activeChildWalletId(account: $0) }
+
         evmKitWrapper.evmKit.allTransactionsPublisher
             .receive(on: DispatchQueue.global(qos: .userInitiated))
             .sink { [weak self] fullTransactions, initial in
-                self?.handle(fullTransactions: fullTransactions, initial: initial)
+                self?.handle(
+                    fullTransactions: fullTransactions,
+                    initial: initial,
+                    subscribedAccount: subscribedAccount,
+                    subscribedChildWalletId: subscribedChildWalletId
+                )
             }
             .store(in: &cancellables)
     }
 
-    private func handle(fullTransactions: [FullTransaction], initial: Bool) {
-        guard let account = accountManager.activeAccount else {
+    private func handle(fullTransactions: [FullTransaction], initial: Bool, subscribedAccount: Account?, subscribedChildWalletId: String?) {
+        guard let account = subscribedAccount else {
+            return
+        }
+
+        let activeChildWalletId = ChildWalletBridge.shared.activeChildWalletId(account: account)
+        guard accountManager.activeAccount?.id == account.id, activeChildWalletId == subscribedChildWalletId else {
             return
         }
 
@@ -128,10 +141,10 @@ class EvmAccountManager {
             }
         }
 
-        handle(foundTokens: Array(foundTokens), suspiciousTokenTypes: Array(suspiciousTokenTypes.subtracting(foundTokens.map(\.tokenType))), account: account, evmKit: evmKitWrapper.evmKit)
+        handle(foundTokens: Array(foundTokens), suspiciousTokenTypes: Array(suspiciousTokenTypes.subtracting(foundTokens.map(\.tokenType))), account: account, childWalletId: subscribedChildWalletId, evmKit: evmKitWrapper.evmKit)
     }
 
-    private func handle(foundTokens: [FoundToken], suspiciousTokenTypes: [TokenType], account: Account, evmKit: EvmKit.Kit) {
+    private func handle(foundTokens: [FoundToken], suspiciousTokenTypes: [TokenType], account: Account, childWalletId: String?, evmKit: EvmKit.Kit) {
         guard !foundTokens.isEmpty || !suspiciousTokenTypes.isEmpty else {
             return
         }
@@ -180,16 +193,16 @@ class EvmAccountManager {
                 }
             }
 
-            handle(tokenInfos: tokenInfos, account: account, evmKit: evmKit)
+            handle(tokenInfos: tokenInfos, account: account, childWalletId: childWalletId, evmKit: evmKit)
         } catch {
             // do nothing
         }
     }
 
-    private func handle(tokenInfos: [TokenInfo], account: Account, evmKit: EvmKit.Kit) {
+    private func handle(tokenInfos: [TokenInfo], account: Account, childWalletId: String?, evmKit: EvmKit.Kit) {
 //        print("Handle Tokens: \(tokenInfos.count)\n\(tokenInfos.map { $0.type.id }.joined(separator: " "))")
 
-        let existingWallets = walletManager.activeWallets
+        let existingWallets = walletManager.wallets(account: account, childWalletId: childWalletId)
         let existingTokenTypeIds = existingWallets.map(\.token.type.id)
         let newTokenInfos = tokenInfos.filter { !existingTokenTypeIds.contains($0.type.id) }
 
@@ -228,16 +241,33 @@ class EvmAccountManager {
 
             let nonZeroBalanceTokens = tokenInfos.filter { $0.balance > 0 }.map(\.tokenInfo)
 
-            self?.handle(processedTokenInfos: nonZeroBalanceTokens, account: account)
+            self?.handle(processedTokenInfos: nonZeroBalanceTokens, account: account, childWalletId: childWalletId)
         }
 
         task.store(in: &tasks)
     }
 
-    private func handle(processedTokenInfos infos: [TokenInfo], account: Account) {
+    private func handle(processedTokenInfos infos: [TokenInfo], account: Account, childWalletId: String?) {
 //        print("Processed Tokens: \(infos.count): \n\(infos.map { $0.type.id }.joined(separator: ", "))")
 
         guard !infos.isEmpty else {
+            return
+        }
+
+        if let childWalletId {
+            let childEnabledWallets = infos.map { info in
+                ChildEnabledWallet(
+                    parentAccountId: account.id,
+                    childWalletId: childWalletId,
+                    tokenQueryId: TokenQuery(blockchainType: blockchainType, tokenType: info.type).id,
+                    coinName: info.coinName,
+                    coinCode: info.coinCode,
+                    tokenDecimals: info.tokenDecimals
+                )
+            }
+
+            try? ChildWalletBridge.shared.save(enabledWallets: childEnabledWallets, parentAccountId: account.id)
+            walletManager.preloadWallets()
             return
         }
 
@@ -251,7 +281,7 @@ class EvmAccountManager {
             )
         }
 
-        walletManager.save(enabledWallets: enabledWallets)
+        walletManager.saveRoot(enabledWallets: enabledWallets, account: account)
     }
 }
 

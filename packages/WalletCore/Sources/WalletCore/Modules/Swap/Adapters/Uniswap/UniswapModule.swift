@@ -11,7 +11,7 @@ class UniswapModule {
 
     init?(dex: SwapModule.Dex, dataSourceState: SwapModule.DataSourceState, isSafeSwap: Bool) {
         self.isSafeSwap = isSafeSwap
-        guard let evmKit = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: dex.blockchainType).evmKitWrapper?.evmKit else {
+        guard let evmKit = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: dex.blockchainType)?.evmKit else {
             return nil
         }
         guard let swapKit = try? UniswapKit.Kit.instance(isSafeSwap: isSafeSwap),

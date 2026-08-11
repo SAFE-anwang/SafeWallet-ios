@@ -23,11 +23,26 @@ extension Eip155RequestFactory {
             throw WalletConnectRequest.CreationError.invalidChain
         }
 
+        guard ChildWalletBridge.shared.supports(account: account, blockchainType: blockchain.type) else {
+            throw WalletConnectRequest.CreationError.invalidChain
+        }
+
         guard let address = try? AccountAddress.evmAddress(
             account: account,
             blockchainType: blockchain.type
         )
         else {
+            throw WalletConnectRequest.CreationError.cantCreateAddress
+        }
+
+        if let transactionPayload = payload as? WCEthereumTransactionPayload,
+           transactionPayload.transaction.from != address {
+            throw WalletConnectRequest.CreationError.cantCreateAddress
+        }
+
+        if let signPayload = payload as? WCSignMessagePayload,
+           let payloadAddress = signPayload.address,
+           payloadAddress != address {
             throw WalletConnectRequest.CreationError.cantCreateAddress
         }
 

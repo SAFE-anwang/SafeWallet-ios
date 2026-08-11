@@ -57,7 +57,7 @@ struct SafeLineLockView: View {
                                 do {
                                     let info = SendEvmData.SendInfo(domain: data.to.eip55)
                                     let sendData = SendEvmData(transactionData: data, additionalInfo: .send(info: info), warnings: [])
-                                    let evmKitWrapper = try Core.shared.evmBlockchainManager.evmKitManager(blockchainType: .safe4).evmKitWrapper(account: viewModel.account, blockchainType: .safe4)
+                                    let evmKitWrapper = try ChildWalletBridge.shared.safe4EvmKitWrapper(account: viewModel.account)
                                     if let vc = SendEvmConfirmationModule.viewController(evmKitWrapper: evmKitWrapper, sendData: sendData) {
                                         DispatchQueue.main.async { [self] in
                                             presentDestination = .toConfirmation(vc: vc)

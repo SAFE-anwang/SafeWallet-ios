@@ -15,7 +15,7 @@ struct ReceiveBlockhainListView: View {
         _path = path
         self.onDismiss = onDismiss
 
-        _viewModel = StateObject(wrappedValue: ReceiveBlockchainListViewModel(fullCoin: fullCoin, accountType: account.type))
+        _viewModel = StateObject(wrappedValue: ReceiveBlockchainListViewModel(fullCoin: fullCoin, account: account))
     }
 
     var body: some View {

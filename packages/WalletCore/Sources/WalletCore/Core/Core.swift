@@ -165,6 +165,7 @@ public class Core {
         let sharedLocalStorage = SharedLocalStorage()
 
         try StorageMigrator.migrate(dbPool: dbPool, localStorage: localStorage)
+        try ChildWalletLegacyEvmKitDatabaseCleaner().cleanAllLegacyChildWalletDatabases()
 
         marketKit = try MarketKit.Kit.instance(
             hsApiBaseUrl: AppConfig.marketApiUrl,
