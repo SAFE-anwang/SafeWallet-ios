@@ -44,7 +44,7 @@ let package = Package(
         .package(url: "https://github.com/SAFE-anwang/SafeCoinKit.Swift.git", exact: "3.1.9"),
         .package(url: "https://github.com/horizontalsystems/SectionsTableView.Swift", exact: "1.0.0"),
         .package(url: "https://github.com/SnapKit/SnapKit.git", from: "5.7.1"),
-        .package(url: "https://github.com/horizontalsystems/solana-kit-ios.git", exact: "1.0.2"),
+        .package(url: "https://github.com/horizontalsystems/solana-kit-ios.git", exact: "1.0.5"),
         .package(url: "https://github.com/daltoniam/Starscream", from: "3.1.2"),
         .package(url: "https://github.com/horizontalsystems/StellarKit.Swift", exact: "1.2.0"),
         .package(url: "https://github.com/zhwayne/SwiftKLine.git", revision: "56fe301973b06b4dcb39621a32db860b9b21c356"),
