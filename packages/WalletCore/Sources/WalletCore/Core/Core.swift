@@ -250,7 +250,7 @@ public class Core {
         restoreStateManager = RestoreStateManager(storage: restoreStateStorage)
 
         let evmAccountManagerFactory = EvmAccountManagerFactory(accountManager: accountManager, walletManager: walletManager, restoreStateManager: restoreStateManager, marketKit: marketKit)
-        evmBlockchainManager = EvmBlockchainManager(syncSourceManager: evmSyncSourceManager, testNetManager: testNetManager, marketKit: marketKit, accountManagerFactory: evmAccountManagerFactory)
+        evmBlockchainManager = EvmBlockchainManager(syncSourceManager: evmSyncSourceManager, testNetManager: testNetManager, marketKit: marketKit, accountManagerFactory: evmAccountManagerFactory, smartAccountManager: smartAccountManager)
 
         let hsLabelProvider = HsLabelProvider(networkManager: networkManager)
         let evmLabelStorage = EvmLabelStorage(dbPool: dbPool)

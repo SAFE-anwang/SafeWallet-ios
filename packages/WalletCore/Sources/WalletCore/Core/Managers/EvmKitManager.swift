@@ -15,6 +15,7 @@ import web3swift
 class EvmKitManager {
     let chain: Chain
     private let syncSourceManager: EvmSyncSourceManager
+    private let smartAccountManager: SmartAccountManager
     private let disposeBag = DisposeBag()
 
     private weak var _evmKitWrapper: EvmKitWrapper?
@@ -25,9 +26,10 @@ class EvmKitManager {
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).ethereum-kit-manager", qos: .userInitiated)
 
-    init(chain: Chain, syncSourceManager: EvmSyncSourceManager) {
+    init(chain: Chain, syncSourceManager: EvmSyncSourceManager, smartAccountManager: SmartAccountManager) {
         self.chain = chain
         self.syncSourceManager = syncSourceManager
+        self.smartAccountManager = smartAccountManager
 
         subscribe(disposeBag, syncSourceManager.syncSourceObservable) { [weak self] blockchainType in
             self?.handleUpdatedSyncSource(blockchainType: blockchainType)
@@ -56,7 +58,7 @@ class EvmKitManager {
 
         let syncSource = syncSourceManager.syncSource(blockchainType: blockchainType)
 
-        let address = try AccountAddress.evmAddress(account: account, blockchainType: blockchainType)
+        let address = try AccountAddress.evmAddress(account: account, blockchainType: blockchainType, chain: chain, smartAccountManager: smartAccountManager)
         var signer: Signer?
 
         switch account.type {

@@ -1,4 +1,5 @@
 import UIKit
+import BigInt
 import RxSwift
 import SectionsTableView
 import SwiftUI
@@ -12,6 +13,8 @@ class MarketDappListViewController: ThemeViewController {
     private let errorView = PlaceholderViewModule.reachabilityView()
     private let refreshControl = UIRefreshControl()
     private var viewItems: [MarketDappListViewModel.ViewItem]?
+    private var allViewItems: [MarketDappListViewModel.ViewItem]?
+    private var searchText = ""
     private let _tab: MarketDappModule.Tab
     weak var parentNavigationController: UINavigationController?
     var headerView: UITableViewHeaderFooterView? { nil }
@@ -93,7 +96,8 @@ class MarketDappListViewController: ThemeViewController {
 
     private func sync(data:([MarketDappListViewModel.ViewItem], MarketDappModule.Tab)?) {
         guard self._tab == data?.1 else { return }
-        self.viewItems = data?.0
+        allViewItems = data?.0
+        applyFilter()
 
         if viewItems != nil {
             tableView.bounces = true
@@ -105,6 +109,31 @@ class MarketDappListViewController: ThemeViewController {
 
     private func open(url: String) {
         MarketDappModule.open(rawUrl: url, tab: _tab)
+    }
+
+    func apply(searchText: String) {
+        self.searchText = searchText
+        applyFilter()
+    }
+
+    private func applyFilter() {
+        guard _tab == .SAFE else {
+            viewItems = allViewItems
+            tableView.reload()
+            return
+        }
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else {
+            viewItems = allViewItems
+            tableView.reload()
+            return
+        }
+        viewItems = allViewItems?.compactMap { section in
+            let subs = section.subs.filter { $0.matchesSafeDapp(query: query) }
+            guard !subs.isEmpty else { return nil }
+            return MarketDappListViewModel.ViewItem(subType: section.subType, subs: subs)
+        }
+        tableView.reload()
     }
 
 }
@@ -120,8 +149,8 @@ extension MarketDappListViewController {
                     isFirst: index == 0,
                     isLast: false,
                     rowActionProvider: nil,
-                    action:  { [weak self] in
-                        self?.open(url: listViewItem.dlink)
+                    action: { [weak self] in
+                        self?.open(item: listViewItem)
                     })
         }
     }
@@ -134,11 +163,16 @@ extension MarketDappListViewController {
                         component.imageView.clipsToBounds = true
                         component.imageView.cornerRadius = 16
                         component.imageView.layer.cornerCurve = .continuous
-                        component.imageView.kf.setImage(
+                        if let data = listViewItem.safeDappLogoData, let image = UIImage(data: data) {
+                            component.imageView.kf.cancelDownloadTask()
+                            component.imageView.image = image
+                        } else {
+                            component.imageView.kf.setImage(
                                 with: URL(string: listViewItem.icon),
-                                placeholder: nil,
+                                placeholder: UIImage(named: "safe-anwang_trx_32"),
                                 options: [.onlyLoadFirstFrame]
-                        )
+                            )
+                        }
                     },
                     .vStackCentered([
                         .hStack([
@@ -154,7 +188,7 @@ extension MarketDappListViewController {
                                 component.font = .subhead2
                                 component.textColor = .themeGray
                                 let  isZh = LanguageManager.shared.currentLanguage == "zh"
-                                component.text = isZh ? listViewItem.desc : listViewItem.descEN
+                                component.text = listViewItem.safeSubtitle(isZh: isZh)
                                 component.numberOfLines = 2
                             },
 
@@ -172,6 +206,76 @@ extension MarketDappListViewController {
                 },
                 action: action
         )
+    }
+
+    private func open(item: MarktDapp) {
+        guard _tab == .SAFE, let id = item.safeDappId else {
+            open(url: item.dlink)
+            return
+        }
+
+        Task { [weak self] in
+            do {
+                if try await SafeDappService.isFrozen(id: id) {
+                    await MainActor.run {
+                        self?.showAlert(title: "safe_dapp.frozen".localized, message: "safe_dapp.frozen_message".localized)
+                    }
+                    return
+                }
+                await MainActor.run {
+                    if let fraudNum = item.safeDappFraudNum, fraudNum > 0 {
+                        self?.showConfirm(
+                            title: "safe_dapp.fraud_warning".localized,
+                            message: "safe_dapp.fraud_warning_message".localized(fraudNum.description),
+                            url: item.dlink
+                        )
+                    } else {
+                        self?.open(url: item.dlink)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self?.showAlert(title: "alert.error".localized, message: error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func showAlert(title: String, message: String) {
+        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: "button.ok".localized, style: .default))
+        present(controller, animated: true)
+    }
+
+    private func showConfirm(title: String, message: String, url: String) {
+        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        controller.addAction(UIAlertAction(title: "button.cancel".localized, style: .cancel))
+        controller.addAction(UIAlertAction(title: "button.continue".localized, style: .default) { [weak self] _ in
+            self?.open(url: url)
+        })
+        present(controller, animated: true)
+    }
+}
+
+private extension MarktDapp {
+    func matchesSafeDapp(query: String) -> Bool {
+        [
+            safeDappId?.description,
+            name,
+            safeDappKeyword,
+            dlink,
+            safeDappContractAddr,
+        ]
+        .compactMap { $0?.lowercased() }
+        .contains { $0.contains(query) }
+    }
+
+    func safeSubtitle(isZh: Bool) -> String {
+        guard let safeDappId else {
+            return isZh ? desc : descEN
+        }
+        let fraud = safeDappFraudNum?.description ?? "0"
+        return "ID: \(safeDappId.description) · \("safe_dapp.fraud_count".localized): \(fraud)\n\(isZh ? desc : descEN)"
     }
 }
 

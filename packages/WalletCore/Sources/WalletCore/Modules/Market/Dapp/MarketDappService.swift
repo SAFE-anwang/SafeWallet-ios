@@ -41,7 +41,7 @@ class MarketDappService {
         case .BSC:
             single = dappProvider.dappTypeRequestSingle(type: "BSC")
         case .SAFE:
-            single = dappProvider.dappByNameRequestSingle(name: "Safeswap")
+            single = safeDappsSingle()
         }
 
         single
@@ -69,6 +69,42 @@ extension MarketDappService {
         fetch(currentTab)
     }
 
+}
+
+private extension MarketDappService {
+    func safeDappsSingle() -> Single<[MarktDapp]> {
+        Single.create { single in
+            let task = Task {
+                do {
+                    let items = try await SafeDappService.publishedDappItems()
+                    let dapps = items.map {
+                        MarktDapp(
+                            type: "SAFE",
+                            subType: "SAFE DAPP",
+                            name: $0.info.name,
+                            desc: $0.info.description,
+                            descEN: $0.info.description,
+                            icon: "",
+                            dlink: $0.info.runUrl,
+                            md5Code: $0.info.id.description,
+                            safeDappId: $0.info.id,
+                            safeDappContractAddr: $0.info.contractAddr.address,
+                            safeDappKeyword: $0.info.keyword,
+                            safeDappFraudNum: $0.info.fraudNum,
+                            safeDappIsFrozen: $0.info.isFrozen,
+                            safeDappLogoData: $0.logoData
+                        )
+                    }
+                    single(.success(dapps))
+                } catch {
+                    single(.error(error))
+                }
+            }
+            return Disposables.create {
+                task.cancel()
+            }
+        }
+    }
 }
 extension MarketDappService {
 

@@ -3,13 +3,13 @@ import MarketKit
 import TronKit
 
 enum AccountAddress {
-    static func evmAddress(account: Account, blockchainType: BlockchainType) throws -> EvmKit.Address {
+    static func evmAddress(account: Account, blockchainType: BlockchainType, chain: Chain? = nil, smartAccountManager: SmartAccountManager? = nil) throws -> EvmKit.Address {
         switch account.type {
         case .mnemonic:
             guard let seed = account.type.mnemonicSeed else {
                 throw AdapterError.unsupportedAccount
             }
-            let chain = try Core.shared.evmBlockchainManager.chain(blockchainType: blockchainType)
+            let chain = try chain ?? Core.shared.evmBlockchainManager.chain(blockchainType: blockchainType)
             return try EvmKit.Signer.address(seed: seed, chain: chain)
 
         case let .evmPrivateKey(data):
@@ -19,7 +19,8 @@ enum AccountAddress {
             return address
 
         case .passkeyOwned:
-            guard let profile = try Core.shared.smartAccountManager.profile(accountId: account.id) else {
+            let smartAccountManager = smartAccountManager ?? Core.shared.smartAccountManager
+            guard let profile = try smartAccountManager.profile(accountId: account.id) else {
                 throw AdapterError.unsupportedAccount
             }
             return try profile.address(blockchainType: blockchainType)
