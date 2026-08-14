@@ -148,39 +148,12 @@ struct SRC20ManagerView: View {
         }
 
         @ViewBuilder private func buttonsView() -> some View {
-            HStack{
-                Button(action: {
-                    editAction()
-                }) {
-                    Text("SRC20_Info_Edit".localized)
-                        .themeSubhead1(color: .themeLeah, alignment: .center)
-                }
-                .buttonStyle(PrimaryButtonStyle(style: .yellow))
-
-                Button(action: {
-                    promotionAction()
-                }) {
-                    Text("SRC20_Info_Promotion".localized)
-                        .themeSubhead1(color: .themeLeah, alignment: .center)
-                }
-                .buttonStyle(PrimaryButtonStyle(style: .yellow))
-
-                Button(action: {
-                    addAction()
-                }) {
-                    Text("SRC20_Info_Add".localized)
-                        .themeSubhead1(color: .themeLeah, alignment: .center)
-                }
-                .buttonStyle(PrimaryButtonStyle(style: .yellow))
+            SafeZoneItemActionGrid {
+                SafeZoneItemActionButton(title: "SRC20_Info_Edit".localized, action: editAction)
+                SafeZoneItemActionButton(title: "SRC20_Info_Promotion".localized, action: promotionAction)
+                SafeZoneItemActionButton(title: "SRC20_Info_Add".localized, action: addAction)
                 .disabled(!token.canAdditionalIssuance)
-
-                Button(action: {
-                    destroyAction()
-                }) {
-                    Text("SRC20_Info_Destroy".localized)
-                        .themeSubhead1(color: .themeLeah, alignment: .center)
-                }
-                .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                SafeZoneItemActionButton(title: "SRC20_Info_Destroy".localized, action: destroyAction)
                 .disabled(!token.canDestroy)
             }
         }

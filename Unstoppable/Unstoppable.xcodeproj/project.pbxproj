@@ -60,9 +60,7 @@
 				"Configuration/App/App-Dev.xcconfig",
 				"Configuration/App/App-Prod.xcconfig",
 				Configuration/Config.xcconfig,
-				Resources/Strings/translation_snapshot.json,
 				Supporting/Info.plist,
-				Supporting/Unstoppable.storekit,
 			);
 			target = D33D63F12F98F2CF00E16ADA /* App */;
 		};

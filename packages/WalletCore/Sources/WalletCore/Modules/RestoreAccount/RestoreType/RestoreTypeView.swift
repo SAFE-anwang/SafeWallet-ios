@@ -54,21 +54,14 @@ struct RestoreTypeView: View {
                         row(item: $0)
                     }
 
-                    if case .wallet = type {
+                    if case .full = type {
                         legacyRow(
-                            icon: "face_id",
-                            title: "restore_type.passkey.title".localized,
-                            description: "restore_type.passkey.description".localized,
-                            action: restorePasskey
+                            icon: "cloud",
+                            title: "restore_type.backup.title".localized,
+                            description: "restore_type.backup.description".localized,
+                            action: { backupPresented = true }
                         )
                     }
-
-                    legacyRow(
-                        icon: "cloud",
-                        title: "restore_type.backup.title".localized,
-                        description: "restore_type.backup.description".localized,
-                        action: { backupPresented = true }
-                    )
                 }
                 .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
             }

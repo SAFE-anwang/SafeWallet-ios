@@ -210,22 +210,14 @@ private struct SafeDappItemView: View {
     }
 
     @ViewBuilder private var buttons: some View {
-        HStack {
-            button("safe_dapp.open".localized, action: openAction)
+        SafeZoneItemActionGrid {
+            SafeZoneItemActionButton(title: "safe_dapp.open".localized, action: openAction)
                 .disabled(item.info.isFrozen)
-            button("button.edit".localized, action: editAction)
+            SafeZoneItemActionButton(title: "button.edit".localized, action: editAction)
                 .disabled(item.info.isFrozen)
-            button("safe_dapp.logo".localized, action: logoAction)
+            SafeZoneItemActionButton(title: "safe_dapp.logo".localized, action: logoAction)
                 .disabled(item.info.isFrozen)
-            button("button.delete".localized, action: removeAction)
+            SafeZoneItemActionButton(title: "button.delete".localized, action: removeAction)
         }
-    }
-
-    private func button(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .themeSubhead1(color: .themeLeah, alignment: .center)
-        }
-        .buttonStyle(PrimaryButtonStyle(style: .yellow))
     }
 }
