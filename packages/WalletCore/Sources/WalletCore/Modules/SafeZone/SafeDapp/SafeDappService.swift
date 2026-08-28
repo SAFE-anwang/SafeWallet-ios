@@ -16,12 +16,11 @@ class SafeDappService {
     }
 
     private static func web3(chainId: Int) async throws -> Web3 {
-        let chain = chainId == Chain.SafeFourTestNet.id ? Chain.SafeFourTestNet : Chain.SafeFour
-        let urlString = chainId == Chain.SafeFourTestNet.id
-            ? ApiKeyManager.rpcEndpoint(network: .safe4_testnet) ?? "https://safe4testnet.anwang.com/rpc"
-            : ApiKeyManager.rpcEndpoint(network: .safe4) ?? "https://safe4.anwang.com/rpc"
-        let url = URL(string: urlString)!
-        return try await Web3.new(url, network: Networks.Custom(networkID: BigUInt(chain.id)))
+        let context = try Safe4Network.supportedContext(chainId: chainId)
+        return try await Web3.new(
+            context.rpcUrl,
+            network: Networks.Custom(networkID: BigUInt(context.chainId))
+        )
     }
 
     private static func dapp(chainId: Int) async throws -> DAppManager {
@@ -37,6 +36,11 @@ class SafeDappService {
 extension SafeDappService {
     var account: SafeDappEthereumAddress { userAddress }
 
+    func availableBalance() async throws -> BigUInt {
+        let web3 = try await Self.web3(chainId: chainId)
+        return try await web3.eth.getBalance(for: userAddress)
+    }
+
     func register(data: SafeDappFormData) async throws -> String {
         let name = data.name.trimmingCharacters(in: .whitespacesAndNewlines)
         if let error = SafeDappValidation.validateRequired(name, min: 5, max: 50, title: SafeDappField.name.title) {
@@ -48,11 +52,12 @@ extension SafeDappService {
         if let error = SafeDappValidation.validateRequired(description, min: 10, max: 1024, title: SafeDappField.description.title) {
             throw SafeDappValidationError(message: error)
         }
+        let keyword = try SafeDappValidation.normalizedKeyword(data.keyword, title: SafeDappField.keyword.title).get()
         let gitUrl = try SafeDappValidation.normalizedUrl(data.gitUrl, required: false, title: SafeDappField.gitUrl.title, min: 0, max: 200).get()
         let officialUrl = try SafeDappValidation.normalizedUrl(data.officialUrl, required: false, title: SafeDappField.officialUrl.title, min: 0, max: 200).get()
         let officialEmail = try SafeDappValidation.optionalEmail(data.officialEmail, title: SafeDappField.officialEmail.title).get()
 
-        return try await dapp().register(
+        let transactionHash = try await dapp().register(
             privateKey: privateKey,
             name: name,
             contractAddr: contractAddr,
@@ -62,6 +67,21 @@ extension SafeDappService {
             officialUrl: officialUrl,
             officialEmail: officialEmail
         )
+
+        guard !keyword.isEmpty else { return transactionHash }
+
+        let web3 = try await Self.web3(chainId: chainId)
+        guard let hashData = Data.fromHex(transactionHash), !hashData.isEmpty else {
+            throw SafeDappValidationError(message: "safe_dapp.error.register_failed".localized)
+        }
+        let receipt = try await TransactionPollingTask(transactionHash: hashData, web3Instance: web3).wait()
+        guard receipt.status == .ok else {
+            throw SafeDappValidationError(message: "safe_dapp.error.register_failed".localized)
+        }
+
+        let info = try await dapp().getInfoByName(name)
+        _ = try await dapp().setKeyword(privateKey: privateKey, id: info.id, keyword: keyword)
+        return transactionHash
     }
 
     func getMineNum() async throws -> BigUInt {
@@ -119,13 +139,13 @@ extension SafeDappService {
             let url = try SafeDappValidation.normalizedUrl(trimmed, required: true, title: field.title, min: 15, max: 200).get()
             return try await dapp().setRunUrl(privateKey: privateKey, id: id, runUrl: url)
         case .gitUrl:
-            let url = try SafeDappValidation.normalizedUrl(trimmed, required: true, title: field.title, min: 20, max: 200).get()
+            let url = try SafeDappValidation.normalizedUrl(trimmed, required: false, title: field.title, min: 0, max: 200).get()
             return try await dapp().setGitUrl(privateKey: privateKey, id: id, gitUrl: url)
         case .officialUrl:
-            let url = try SafeDappValidation.normalizedUrl(trimmed, required: true, title: field.title, min: 15, max: 200).get()
+            let url = try SafeDappValidation.normalizedUrl(trimmed, required: false, title: field.title, min: 0, max: 200).get()
             return try await dapp().setOfficialUrl(privateKey: privateKey, id: id, officialUrl: url)
         case .officialEmail:
-            let email = try SafeDappValidation.requiredEmail(trimmed, title: field.title).get()
+            let email = try SafeDappValidation.optionalEmail(trimmed, title: field.title).get()
             return try await dapp().setOfficialEmail(privateKey: privateKey, id: id, officialEmail: email)
         case .officialAccount:
             let address = try SafeDappValidation.ethereumAddress(trimmed, title: field.title).get()

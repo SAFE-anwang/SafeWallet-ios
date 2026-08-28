@@ -31,9 +31,9 @@ enum SafeDappModule {
         return SafeDappManagerViewModel(service: service)
     }
 
-    static func editViewModel(info: DAppInfo) -> SafeDappEditViewModel? {
+    static func editViewModel(info: DAppInfo, currentLogo: UIImage? = nil) -> SafeDappEditViewModel? {
         guard let service = service() else { return nil }
-        return SafeDappEditViewModel(info: info, service: service)
+        return SafeDappEditViewModel(info: info, currentLogo: currentLogo, service: service)
     }
 
     static func logoViewModel(info: DAppInfo, currentLogo: UIImage?) -> SafeDappLogoViewModel? {

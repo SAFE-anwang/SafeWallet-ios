@@ -1,17 +1,20 @@
 import BigInt
 import Foundation
+import UIKit
 import web3swift
 
 class SafeDappEditViewModel: ObservableObject {
     let info: DAppInfo
+    let currentLogo: UIImage?
     private let service: SafeDappService
 
     @Published var values: [SafeDappField: String]
     @Published var cautionStates: [SafeDappField: CautionState] = [:]
     @Published var sendState: SafeDappAsyncState = .idle
 
-    init(info: DAppInfo, service: SafeDappService) {
+    init(info: DAppInfo, currentLogo: UIImage? = nil, service: SafeDappService) {
         self.info = info
+        self.currentLogo = currentLogo
         self.service = service
         values = [
             .name: info.name,
@@ -26,10 +29,16 @@ class SafeDappEditViewModel: ObservableObject {
         ]
     }
 
+    var hasChanges: Bool {
+        SafeDappField.editableFields.contains { field in
+            normalizedValueWithoutCaution(field: field, value: values[field] ?? "") != originalValue(for: field)
+        }
+    }
+
     func binding(for field: SafeDappField) -> BindingBox {
         BindingBox(
             get: { self.values[field] ?? "" },
-            set: { self.values[field] = $0 }
+            set: { self.values[field] = field.truncatedInput($0) }
         )
     }
 
@@ -51,6 +60,17 @@ class SafeDappEditViewModel: ObservableObject {
         case .officialAccount: return info.officialAccount.address
         case .description: return info.description
         case .keyword: return info.keyword
+        }
+    }
+
+    private func normalizedValueWithoutCaution(field: SafeDappField, value: String) -> String {
+        switch field {
+        case .contractAddr, .officialAccount:
+            return (try? SafeDappValidation.ethereumAddress(value, title: field.title).get().address) ?? value.trimmingCharacters(in: .whitespacesAndNewlines)
+        case .runUrl, .gitUrl, .officialUrl:
+            return (try? SafeDappValidation.normalizedUrl(value, required: field != .gitUrl && field != .officialUrl, title: field.title, min: field == .gitUrl || field == .officialUrl ? 0 : 15, max: 200).get()) ?? value.trimmingCharacters(in: .whitespacesAndNewlines)
+        default:
+            return value.trimmingCharacters(in: .whitespacesAndNewlines)
         }
     }
 
@@ -93,7 +113,7 @@ class SafeDappEditViewModel: ObservableObject {
                 normalized = trimmed
             }
         case .gitUrl:
-            switch SafeDappValidation.normalizedUrl(trimmed, required: true, title: field.title, min: 20, max: 200) {
+            switch SafeDappValidation.normalizedUrl(trimmed, required: false, title: field.title, min: 0, max: 200) {
             case let .success(url):
                 error = nil
                 normalized = url
@@ -102,7 +122,7 @@ class SafeDappEditViewModel: ObservableObject {
                 normalized = trimmed
             }
         case .officialUrl:
-            switch SafeDappValidation.normalizedUrl(trimmed, required: true, title: field.title, min: 15, max: 200) {
+            switch SafeDappValidation.normalizedUrl(trimmed, required: false, title: field.title, min: 0, max: 200) {
             case let .success(url):
                 error = nil
                 normalized = url
@@ -111,7 +131,7 @@ class SafeDappEditViewModel: ObservableObject {
                 normalized = trimmed
             }
         case .officialEmail:
-            switch SafeDappValidation.requiredEmail(trimmed, title: field.title) {
+            switch SafeDappValidation.optionalEmail(trimmed, title: field.title) {
             case let .success(email):
                 error = nil
                 normalized = email
@@ -143,59 +163,45 @@ class SafeDappEditViewModel: ObservableObject {
     }
 
     @MainActor
-    func prepareUpdate(field: SafeDappField) -> Bool {
-        guard let value = normalizedValue(field: field, value: values[field] ?? "") else {
-            sendState = .idle
-            return false
+    func validateForSubmit() -> Bool {
+        var valid = true
+        for field in SafeDappField.editableFields {
+            guard let normalized = normalizedValue(field: field, value: values[field] ?? "") else {
+                valid = false
+                continue
+            }
+            values[field] = normalized
         }
-        if value == originalValue(for: field).trimmingCharacters(in: .whitespacesAndNewlines) {
-            setCaution("safe_dapp.error.unchanged".localized, for: field)
-            sendState = .idle
-            return false
-        }
-        values[field] = value
-        sendState = .ready
-        return true
+        sendState = valid && hasChanges ? .ready : .idle
+        return valid && hasChanges
     }
 
-    func update(field: SafeDappField, onComplete: @escaping (SafeDappAsyncState) -> Void) {
-        let rawValue = values[field] ?? ""
-        Task {
-            guard let value = await normalizedValue(field: field, value: rawValue) else {
-                await MainActor.run { onComplete(sendState) }
+    func update(onComplete: @escaping (SafeDappAsyncState) -> Void) {
+        Task { @MainActor in
+            guard validateForSubmit() else {
+                onComplete(sendState)
                 return
             }
-            if value == originalValue(for: field).trimmingCharacters(in: .whitespacesAndNewlines) {
-                await MainActor.run {
-                    setCaution("safe_dapp.error.unchanged".localized, for: field)
-                    sendState = .idle
-                    onComplete(sendState)
-                }
-                return
+            let changedFields = SafeDappField.editableFields.filter {
+                values[$0] != originalValue(for: $0)
             }
-            await MainActor.run {
-                values[field] = value
-                sendState = .sending
-            }
+            sendState = .sending
             do {
-                if [.name, .contractAddr, .runUrl].contains(field), try await service.exists(field: field, value: value) {
-                    await MainActor.run {
+                for field in changedFields {
+                    let value = values[field] ?? ""
+                    if [.name, .contractAddr, .runUrl].contains(field), try await service.exists(field: field, value: value) {
                         setCaution("safe_dapp.error.value_exists".localized, for: field)
                         sendState = .ready
                         onComplete(sendState)
+                        return
                     }
-                    return
+                    _ = try await service.update(field: field, id: info.id, value: value)
                 }
-                _ = try await service.update(field: field, id: info.id, value: value)
-                await MainActor.run {
-                    sendState = .completed
-                    onComplete(sendState)
-                }
+                sendState = .completed
+                onComplete(sendState)
             } catch {
-                await MainActor.run {
-                    sendState = .failed(error.localizedDescription)
-                    onComplete(sendState)
-                }
+                sendState = .failed(error.localizedDescription)
+                onComplete(sendState)
             }
         }
     }

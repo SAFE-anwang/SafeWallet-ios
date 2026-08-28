@@ -47,7 +47,7 @@ struct SafeDappLogoView: View {
                 viewModel.upload { state in
                     switch state {
                     case .completed:
-                        HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
+                        HudHelper.instance.show(banner: .success(string: "safe_dapp.logo_success_message".localized))
                         presentationMode.wrappedValue.dismiss()
                     case let .failed(message):
                         HudHelper.instance.show(banner: .error(string: message))

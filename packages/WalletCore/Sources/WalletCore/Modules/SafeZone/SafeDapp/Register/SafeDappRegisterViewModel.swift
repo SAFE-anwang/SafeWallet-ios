@@ -2,24 +2,55 @@ import Combine
 import Foundation
 
 class SafeDappRegisterViewModel: ObservableObject {
+    private static let draftKeyPrefix = "safe_dapp.register_draft."
     private let service: SafeDappService
     private var cancellables = Set<AnyCancellable>()
 
-    @Published var form = SafeDappFormData()
+    @Published var form: SafeDappFormData
     @Published var sendState: SafeDappAsyncState = .idle
     @Published var nameCautionState: CautionState = .none
     @Published var contractCautionState: CautionState = .none
     @Published var runUrlCautionState: CautionState = .none
     @Published var descriptionCautionState: CautionState = .none
+    @Published var keywordCautionState: CautionState = .none
     @Published var gitUrlCautionState: CautionState = .none
     @Published var officialUrlCautionState: CautionState = .none
     @Published var officialEmailCautionState: CautionState = .none
 
     init(service: SafeDappService) {
         self.service = service
+        form = Self.loadDraft(for: service.account.address) ?? SafeDappFormData()
         $form
-            .sink { [weak self] _ in self?.sendState = .ready }
+            .sink { [weak self] form in
+                guard let self else { return }
+                self.sendState = .ready
+                self.saveDraft(form)
+            }
             .store(in: &cancellables)
+    }
+
+    private func saveDraft(_ form: SafeDappFormData) {
+        let key = Self.draftKey(for: service.account.address)
+        if let data = try? JSONEncoder().encode(form) {
+            UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.synchronize()
+        }
+    }
+
+    private static func draftKey(for address: String) -> String {
+        "\(draftKeyPrefix)\(address.lowercased())"
+    }
+
+    private static func loadDraft(for address: String) -> SafeDappFormData? {
+        guard let data = UserDefaults.standard.data(forKey: draftKey(for: address)) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(SafeDappFormData.self, from: data)
+    }
+
+    private func removeDraft() {
+        UserDefaults.standard.removeObject(forKey: Self.draftKey(for: service.account.address))
+        UserDefaults.standard.synchronize()
     }
 
     @MainActor
@@ -28,6 +59,7 @@ class SafeDappRegisterViewModel: ObservableObject {
         contractCautionState = .none
         runUrlCautionState = .none
         descriptionCautionState = .none
+        keywordCautionState = .none
         gitUrlCautionState = .none
         officialUrlCautionState = .none
         officialEmailCautionState = .none
@@ -41,6 +73,7 @@ class SafeDappRegisterViewModel: ObservableObject {
         case .contractAddr: contractCautionState = caution
         case .runUrl: runUrlCautionState = caution
         case .description: descriptionCautionState = caution
+        case .keyword: keywordCautionState = caution
         case .gitUrl: gitUrlCautionState = caution
         case .officialUrl: officialUrlCautionState = caution
         case .officialEmail: officialEmailCautionState = caution
@@ -77,6 +110,13 @@ class SafeDappRegisterViewModel: ObservableObject {
         }
         if let error = SafeDappValidation.validateRequired(normalizedForm.description, min: 10, max: 1024, title: SafeDappField.description.title) {
             setCaution(error, for: .description)
+            isValid = false
+        }
+        switch SafeDappValidation.normalizedKeyword(form.keyword, title: SafeDappField.keyword.title) {
+        case let .success(keyword):
+            normalizedForm.keyword = keyword
+        case let .failure(error):
+            setCaution(error.message, for: .keyword)
             isValid = false
         }
         switch SafeDappValidation.normalizedUrl(form.gitUrl, required: false, title: SafeDappField.gitUrl.title, min: 0, max: 200) {
@@ -148,6 +188,7 @@ class SafeDappRegisterViewModel: ObservableObject {
 
                 _ = try await service.register(data: form)
                 await MainActor.run {
+                    removeDraft()
                     sendState = .completed
                     onComplete(sendState)
                 }

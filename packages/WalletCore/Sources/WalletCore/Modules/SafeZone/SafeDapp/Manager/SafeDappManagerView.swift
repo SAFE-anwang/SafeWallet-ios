@@ -97,14 +97,9 @@ struct SafeDappManagerView: View {
                             ForEach(items) { item in
                                 SafeDappItemView(
                                     item: item,
-                                    openAction: { viewModel.prepareOpen(item: item) },
                                     editAction: {
-                                        guard let editViewModel = SafeDappModule.editViewModel(info: item.info) else { return }
+                                        guard let editViewModel = SafeDappModule.editViewModel(info: item.info, currentLogo: item.logo) else { return }
                                         path.append(SafeDappManagerViewModel.DetailViewType(kind: .edit, viewModel: editViewModel))
-                                    },
-                                    logoAction: {
-                                        guard let logoViewModel = SafeDappModule.logoViewModel(info: item.info, currentLogo: item.logo) else { return }
-                                        path.append(SafeDappManagerViewModel.DetailViewType(kind: .logo, viewModel: logoViewModel))
                                     },
                                     removeAction: { removeTarget = item }
                                 )
@@ -144,28 +139,41 @@ private extension SafeDappManagerView {
 
 private struct SafeDappItemView: View {
     let item: SafeDappViewItem
-    let openAction: () -> Void
     let editAction: () -> Void
-    let logoAction: () -> Void
     let removeAction: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: .margin8) {
-            HStack(spacing: .margin12) {
-                logo
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.info.name)
-                        .themeSubhead1(color: .themeLeah)
-                    Text("ID: \(item.info.id.description)")
-                        .themeSubhead2(color: .themeGray)
+        HStack(alignment: .top, spacing: .margin12) {
+            logo
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.info.name)
+                    .themeSubhead1(color: .themeLeah)
+                    .lineLimit(1)
+
+                Text(item.info.runUrl)
+                    .themeCaption(color: .themeGray)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text(item.info.description)
+                    .themeCaption(color: .themeGray)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                if item.info.isFrozen || item.logoMissing {
+                    status
                 }
-                Spacer()
-                status
             }
-            value(title: SafeDappField.runUrl.title, value: item.info.runUrl)
-            value(title: SafeDappField.contractAddr.title, value: item.contractAddress)
-            value(title: "safe_dapp.fraud_count".localized, value: item.info.fraudNum.description)
-            buttons
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(spacing: .margin8) {
+                IconButton(icon: "edit_20", style: .secondary, size: .small, action: editAction)
+                    .disabled(item.info.isFrozen)
+                    .accessibilityLabel("SRC20_Info_Edit".localized)
+                IconButton(icon: "trash", style: .secondary, size: .small, action: removeAction)
+                    .accessibilityLabel("button.delete".localized)
+            }
         }
         .padding(.horizontal, .margin16)
         .padding(.vertical, .margin12)
@@ -174,9 +182,13 @@ private struct SafeDappItemView: View {
     @ViewBuilder private var logo: some View {
         Group {
             if let image = item.logo {
-                Image(uiImage: image).resizable()
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
             } else {
-                Image("safe-anwang_trx_32").resizable().scaledToFit()
+                Image("safe-anwang_trx_32")
+                    .resizable()
+                    .scaledToFit()
             }
         }
         .clipShape(Circle())
@@ -194,30 +206,4 @@ private struct SafeDappItemView: View {
         }
     }
 
-    @ViewBuilder private func value(title: String, value: String) -> some View {
-        HStack(spacing: .margin8) {
-            Text(title).themeSubhead2(color: .themeGray)
-            Button(action: {
-                UIPasteboard.general.string = value
-                HudHelper.instance.show(banner: .copied)
-            }) {
-                Text(value)
-                    .themeSubhead2(color: .themeLeah, alignment: .leading)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-        }
-    }
-
-    @ViewBuilder private var buttons: some View {
-        SafeZoneItemActionGrid {
-            SafeZoneItemActionButton(title: "safe_dapp.open".localized, action: openAction)
-                .disabled(item.info.isFrozen)
-            SafeZoneItemActionButton(title: "button.edit".localized, action: editAction)
-                .disabled(item.info.isFrozen)
-            SafeZoneItemActionButton(title: "safe_dapp.logo".localized, action: logoAction)
-                .disabled(item.info.isFrozen)
-            SafeZoneItemActionButton(title: "button.delete".localized, action: removeAction)
-        }
-    }
 }

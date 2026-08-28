@@ -58,6 +58,15 @@ class SafeDappLogoViewModel: ObservableObject {
         sendState = .sending
         Task {
             do {
+                let logoPayAmount = try await service.getLogoPayAmount()
+                let availableBalance = try await service.availableBalance()
+                guard availableBalance > logoPayAmount else {
+                    await MainActor.run {
+                        sendState = .ready
+                        onComplete(.failed("safe_dapp.insufficient_safe_balance".localized))
+                    }
+                    return
+                }
                 _ = try await service.setLogo(id: info.id, logo: logoData)
                 await MainActor.run {
                     sendState = .completed
