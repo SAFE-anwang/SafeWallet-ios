@@ -558,6 +558,7 @@ extension EvmTransactionConverter {
                     source: source,
                     transaction: transaction,
                     baseToken: baseToken,
+                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
                     incomingEvents: incomingEvents,
                     outgoingEvents: outgoingEvents,
                     protected: protected

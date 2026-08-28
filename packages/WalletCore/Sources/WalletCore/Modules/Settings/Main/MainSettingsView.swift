@@ -41,15 +41,8 @@ struct MainSettingsView: View {
                         addressChecker()
 //                        privacy()
                         dAppConnection()
-                        fallbackBlock()
                         revokeCash()
                         // tonConnect()
-                    }
-
-                    Spacer().frame(height: .margin32)
-
-                    ListSection {
-                        contacts()
                     }
 
                     Spacer().frame(height: .margin32)
@@ -102,14 +95,6 @@ struct MainSettingsView: View {
                 .padding(.padding16)
             }
             .padding(EdgeInsets(top: .margin12, leading: 0, bottom: .margin32, trailing: 0))
-        }
-        .navigationDestination(isPresented: $walletConnectPresented) {
-            WalletConnectListView()
-                .navigationTitle("wallet_connect_list.title".localized)
-                .ignoresSafeArea()
-                .onFirstAppear {
-                    stat(page: .settings, event: .open(page: .walletConnect))
-                }
         }
     }
 
@@ -274,21 +259,6 @@ struct MainSettingsView: View {
                 Text("\(viewModel.walletConnectSessionCount)").textSubhead1()
             }
 
-            Image.disclosureIcon
-        }
-    }
-
-    @ViewBuilder private func fallbackBlock() -> some View {
-        ClickableRow(spacing: .margin8) {
-            Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                FallbackBlockView()
-            }
-        } content: {
-            HStack(spacing: .margin16) {
-                Image("safe_logo_24")//.themeIcon()
-                Text("settings_security.safe_block_height".localized).textBody()
-            }
-            Spacer()
             Image.disclosureIcon
         }
     }

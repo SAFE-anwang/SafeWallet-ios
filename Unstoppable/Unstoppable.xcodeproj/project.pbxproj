@@ -565,11 +565,16 @@
 			baseConfigurationReferenceRelativePath = "Configuration/App/App-Dev.xcconfig";
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 3B669F6LS9;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1901;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
+				MARKETING_VERSION = 0.49.202608;
 				PRODUCT_NAME = Unstoppable;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = prod_Profile_Sa;
 			};
 			name = "Debug-Dev";
 		};
@@ -579,11 +584,16 @@
 			baseConfigurationReferenceRelativePath = "Configuration/App/App-Prod.xcconfig";
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 3B669F6LS9;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1901;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
+				MARKETING_VERSION = 0.49.202608;
 				PRODUCT_NAME = Unstoppable;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = prod_Profile_Sa;
 			};
 			name = "Debug-Prod";
 		};
@@ -593,11 +603,16 @@
 			baseConfigurationReferenceRelativePath = "Configuration/App/App-Dev.xcconfig";
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 3B669F6LS9;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1901;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
+				MARKETING_VERSION = 0.49.202608;
 				PRODUCT_NAME = Unstoppable;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = prod_Profile_Sa;
 			};
 			name = "Release-Dev";
 		};
@@ -607,11 +622,16 @@
 			baseConfigurationReferenceRelativePath = "Configuration/App/App-Prod.xcconfig";
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 3B669F6LS9;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1901;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
+				MARKETING_VERSION = 0.49.202608;
 				PRODUCT_NAME = Unstoppable;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = prod_Profile_Sa;
 			};
 			name = "Release-Prod";
 		};

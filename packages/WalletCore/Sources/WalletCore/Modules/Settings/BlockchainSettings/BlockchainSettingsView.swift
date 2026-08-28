@@ -9,10 +9,6 @@ struct BlockchainSettingsView: View {
         ScrollableThemeView {
             VStack(spacing: .margin32) {
                 ListSection {
-                    Safe4NetworkToggleRow()
-                }
-
-                ListSection {
                     ForEach(viewModel.btcItems, id: \.blockchain.uid) { item in
                         ItemView(item: item)
                     }
@@ -25,6 +21,10 @@ struct BlockchainSettingsView: View {
                     if let tronItem = viewModel.tronItem {
                         ItemView(item: tronItem)
                     }
+                }
+                
+                ListSection {
+                    Safe4NetworkToggleRow()
                 }
             }
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))

@@ -154,7 +154,10 @@ extension WalletViewModel {
             return true
         }
 
-        Coordinator.shared.presentWalletBackup(account: account, statPage: .balance)
+        Coordinator.shared.present { _ in
+            BackupManualView(account: account).ignoresSafeArea()
+        }
+        stat(page: .balance, event: .open(page: .manualBackup))
         return false
     }
 

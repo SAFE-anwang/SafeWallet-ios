@@ -3201,7 +3201,7 @@
 "safe_zone.safe4.node" = "Node";
 "nft_v2.collection.floor_price" = "Floor Price";
 "safe_zone.locked_balance_with_record" = "Locked Balance (Lock Record %@)";
-"safe_dapp.title" = "SAFE DAPP Management";
+"safe_dapp.title" = "SAFE DApp Management";
 "safe_dapp.register" = "Register DApp";
 "safe_dapp.manage" = "DApp Management";
 "safe_dapp.name" = "Name";
@@ -3256,6 +3256,7 @@
 "safe_dapp.error.name_exists" = "Name already exists.";
 "safe_dapp.error.contract_exists" = "Contract address already exists.";
 "safe_dapp.error.run_url_exists" = "Run URL already exists.";
+"safe_dapp.error.register_failed" = "The SAFE DAPP registration transaction failed.";
 "safe_dapp.error.value_exists" = "Value already exists.";
 "safe_dapp.error.unchanged" = "Value has not changed.";
 "safe_zone.src721.title" = "SAFE NFT";

@@ -358,7 +358,7 @@
 
 "balance.title" = "钱包";
 "balance.send" = "发送​​";
-"balance.swap" = "掉期交易";
+"balance.swap" = "兑换交易";
 "balance.receive" = "接收";
 "balance.chart" = "图表";
 "balance.scan" = "扫描";
@@ -651,13 +651,13 @@
 
 // Swap
 
-"swap.title" = "掉期交易";
+"swap.title" = "兑换交易";
 "swap.you_pay" = "您支付";
 "swap.estimated" = "估计";
 "swap.balance" = "余额";
 "swap.you_get" = "您获得";
 "swap.token" = "选择";
-"swap.advanced_settings" = "掉期设置";
+"swap.advanced_settings" = "兑换设置";
 "swap.proceed_button" = "下一步";
 "swap.approve.title" = "互兑批准";
 "swap.approve.description" = "您应为智能合约授予权限，以代表您互兑给定的代币。此权限设定了智能合约可以使用的金额。它不会影响您的余额，但需要小额费用以执行批准交易。\n\n虽然这可以在每一次交易之前按需完成，但是预先对将来的交易批准较大的金额将使成本更低。";
@@ -784,7 +784,7 @@
 
 // Swap Approving
 
-"swap.approve.subtitle" = "掉期交易";
+"swap.approve.subtitle" = "兑换交易";
 
 // Swap Confirmation
 
@@ -802,7 +802,7 @@
 "swap.confirmation.swapping" = "交易";
 "swap.confirmation.refresh" = "刷新";
 "swap.confirmation.impact_high" = "在此次兑换交易中，您将损失您资金中的很大一部分（%@）。";
-"swap.confirmation.impact_too_high" = "%@ 已禁用此交易的掉期操作，因为您得到的价格极其不利。 这是由于流动性极低造成的。\n如果您仍想兑换，请使用 %@ 网站。";
+"swap.confirmation.impact_too_high" = "%@ 已禁用此交易的兑换操作，因为您得到的价格极其不利。 这是由于流动性极低造成的。\n如果您仍想兑换，请使用 %@ 网站。";
 "swap.confirmation.impact_warning" = "重要提示！您正在以极其不利的价格进行交易。这是因为流动性非常低。";
 
 "swap.confirmation.minimum_received" = "保证到账";
@@ -1457,7 +1457,7 @@
 "transactions.types.all" = "所有";
 "transactions.types.incoming" = "接收";
 "transactions.types.outgoing" = "已发送";
-"transactions.types.swap" = "掉期交易";
+"transactions.types.swap" = "兑换交易";
 "transactions.types.approve" = "批准";
 
 "transactions.unknown_transaction.title" = "未知交易";
@@ -2985,7 +2985,7 @@
 "liquidity.tick.price.min" = "最低价格";
 "restore.private_key.paste_too_short" = "粘贴的内容太短，无法作为有效的私钥。";
 "safe_zone.safe4.proposal.create.time.start" = "开始日期";
-"settings_security.safe_block_height" = "SAFE高度";
+"settings_security.safe_block_height" = "SAFE3区块回退";
 "nft_v2.action.open_collection_market" = "在市场中打开合集";
 "kline.asset_name" = "资产名称";
 "SRC20_Destroy_Number" = "销毁数量";

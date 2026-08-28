@@ -23,11 +23,6 @@ struct BackupRequiredView: View {
                         }
                         stat(page: statPage, event: .open(page: .manualBackup))
                     },
-                    .init(style: .gray, title: "backup_prompt.backup_cloud".localized, icon: "icloud_24") {
-                        isPresented = false
-
-                        Coordinator.shared.presentWalletBackup(account: account, statPage: statPage)
-                    },
                     .init(style: .transparent, title: cancelText) {
                         isPresented = false
                     },

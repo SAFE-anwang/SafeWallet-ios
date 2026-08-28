@@ -3,10 +3,12 @@ import MarketKit
 import TronKit
 
 class TronExternalContractCallTransactionRecord: TronTransactionRecord, TransferEventsProvider {
+    let method: String?
     let incomingEvents: [TransferEvent]
     let outgoingEvents: [TransferEvent]
 
-    init(source: TransactionSource, transaction: Transaction, baseToken: Token, incomingEvents: [TransferEvent], outgoingEvents: [TransferEvent], spam: Bool = false) {
+    init(source: TransactionSource, transaction: Transaction, baseToken: Token, method: String?, incomingEvents: [TransferEvent], outgoingEvents: [TransferEvent], spam: Bool = false) {
+        self.method = method
         self.incomingEvents = incomingEvents
         self.outgoingEvents = outgoingEvents
 

@@ -94,9 +94,9 @@ struct MainView: View {
                 }
 
                 ToolbarItemGroup(placement: .primaryAction) {
-                    Button(action: onTapHistory) {
-                        Image("clock")
-                    }
+//                    Button(action: onTapHistory) {
+//                        Image("clock")
+//                    }
 
                     Button(action: {
                         Coordinator.shared.present { isPresented in

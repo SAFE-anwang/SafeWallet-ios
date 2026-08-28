@@ -21,6 +21,7 @@ struct MainSafeZoneView: View {
                 SectionSafeSwapView()
                 SectionWithdrawView()
                 SectionSRC20View()
+                SectionSRC721View()
                 SectionSafeDappView()
                 SectionBasicInfoView()
             }
@@ -432,6 +433,28 @@ struct MainSafeZoneView: View {
                 }
             }) {
                 ItemView(title: "SRC20_Deploy_Promotion".localized)
+            }
+        }
+    }
+
+    @ViewBuilder private func SectionSRC721View() -> some View {
+        SafeListSectionHeader(text: "safe_zone.src721.title".localized)
+        ListSection {
+            ClickableRow(action: {
+                guard let viewModel = SRC721Module.deployViewModel() else { return }
+                Coordinator.shared.present { isPresented in
+                    SRC721DeployView(viewModel: viewModel, isPresented: isPresented)
+                }
+            }) {
+                ItemView(title: "safe_zone.src721.action.deploy".localized)
+            }
+            ClickableRow(action: {
+                guard let viewModel = SRC721Module.managerViewModel() else { return }
+                Coordinator.shared.present { isPresented in
+                    SRC721ManagerView(viewModel: viewModel, isPresented: isPresented)
+                }
+            }) {
+                ItemView(title: "safe_zone.src721.action.manage".localized)
             }
         }
     }

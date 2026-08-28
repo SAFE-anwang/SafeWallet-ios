@@ -176,6 +176,7 @@ extension TronTransactionConverter {
                     source: source,
                     transaction: transaction,
                     baseToken: baseToken,
+                    method: decoration.data.flatMap { evmLabelManager.methodLabel(input: $0) },
                     incomingEvents: incomingEvents,
                     outgoingEvents: outgoingEvents,
                 )
