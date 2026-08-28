@@ -6,8 +6,8 @@ struct Safe4NetworkToggleRow: View {
     var body: some View {
         HStack(spacing: .margin16) {
             VStack(spacing: 1) {
-                Text("SAFE4 TestNet").themeBody()
-                Text(service.isTestNet ? "TestNet" : "MainNet").themeSubhead2()
+                Text("SAFE TestNet").themeBody()
+//                Text(service.isTestNet ? "TestNet" : "MainNet").themeSubhead2()
             }
 
             Spacer()
