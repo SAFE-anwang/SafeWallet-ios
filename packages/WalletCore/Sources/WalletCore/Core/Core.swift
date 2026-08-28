@@ -142,6 +142,8 @@ public class Core {
 
     public let smartAccountService: CreateSmartAccountService
     let apiKeyManager: ApiKeyManager
+    let safe4SRC20EnabledWalletStorage: Safe4SRC20EnabledWalletStorage
+    let safe4SRC20ProjectionCoordinator: Safe4SRC20ProjectionCoordinator
     let safe4CustomTokenStorage: Safe4CustomTokenStorage
     let safe4StorageManager: Safe4StorageManager
     let safeCrossChainManager: SafeCrossChainManager
@@ -225,6 +227,15 @@ public class Core {
         let enabledWalletStorage = EnabledWalletStorage(dbPool: dbPool)
         let walletStorage = WalletStorage(marketKit: marketKit, storage: enabledWalletStorage)
         walletManager = WalletManager(accountManager: accountManager, storage: walletStorage)
+        safe4CustomTokenStorage = try Safe4CustomTokenStorage(dbPool: dbPool)
+        safe4SRC20EnabledWalletStorage = try Safe4SRC20EnabledWalletStorage(dbPool: dbPool)
+        safe4SRC20ProjectionCoordinator = Safe4SRC20ProjectionCoordinator(
+            accountManager: accountManager,
+            walletManager: walletManager,
+            safe4SRC20EnabledWalletStorage: safe4SRC20EnabledWalletStorage,
+            src20TokenClassifier: Safe4SRC20TokenClassifier(storage: safe4CustomTokenStorage),
+            userDefaultsStorage: userDefaultsStorage
+        )
         coinManager = CoinManager(marketKit: marketKit, walletManager: walletManager)
         passcodeLockManager = PasscodeLockManager(accountManager: accountManager, walletManager: walletManager)
         amountRoundingManager = AmountRoundingManager(storage: localStorage)
@@ -289,7 +300,6 @@ public class Core {
         redeemStorage = try RedeemStorage(dbPool: dbPool)
 
         apiKeyManager = ApiKeyManager(networkManager: networkManager)
-        safe4CustomTokenStorage = try Safe4CustomTokenStorage(dbPool: dbPool)
         safe4StorageManager = try Safe4StorageManager(dbPool: dbPool)
         let nftDatabaseStorage = try NftDatabaseStorage(dbPool: dbPool)
         let nftStorage = NftStorage(marketKit: marketKit, storage: nftDatabaseStorage)

@@ -4,6 +4,11 @@ import MarketKit
 import RxRelay
 import RxSwift
 
+enum WalletMutationSource {
+    case user
+    case projection
+}
+
 public class WalletManager {
     private let accountManager: AccountManager
     private let storage: WalletStorage
@@ -15,6 +20,9 @@ public class WalletManager {
     private let queue = DispatchQueue(label: "\(AppConfig.label).wallet_manager", qos: .userInitiated)
 
     private var cachedActiveWalletData = WalletData(wallets: [], account: nil)
+
+    var onWalletMutation: (([Wallet], [Wallet], WalletMutationSource) -> Void)?
+    var onEnabledWalletMutation: (([EnabledWallet], [EnabledWallet], WalletMutationSource) -> Void)?
 
     public init(accountManager: AccountManager, storage: WalletStorage) {
         self.accountManager = accountManager
@@ -57,6 +65,15 @@ public class WalletManager {
     private func reloadWallets() {
         queue.async { [weak self] in self?._reloadWallets() }
     }
+
+    private func reloadWalletsAndWait() async {
+        await withCheckedContinuation { continuation in
+            queue.async { [weak self] in
+                self?._reloadWallets()
+                continuation.resume()
+            }
+        }
+    }
 }
 
 extension WalletManager {
@@ -80,6 +97,10 @@ extension WalletManager {
         reloadWallets()
     }
 
+    func preloadWalletsAndWait() async {
+        await reloadWalletsAndWait()
+    }
+
     func wallets(account: Account) -> [Wallet] {
         do {
             return try storage.wallets(account: account)
@@ -89,22 +110,24 @@ extension WalletManager {
         }
     }
 
-    func handle(newWallets: [Wallet], deletedWallets: [Wallet]) {
+    func handle(newWallets: [Wallet], deletedWallets: [Wallet], source: WalletMutationSource = .user) {
         storage.handle(newWallets: newWallets, deletedWallets: deletedWallets)
         reloadWallets()
+        onWalletMutation?(newWallets, deletedWallets, source)
     }
 
-    func save(wallets: [Wallet]) {
-        handle(newWallets: wallets, deletedWallets: [])
+    func save(wallets: [Wallet], source: WalletMutationSource = .user) {
+        handle(newWallets: wallets, deletedWallets: [], source: source)
     }
 
-    func save(enabledWallets: [EnabledWallet]) {
-        storage.handle(newEnabledWallets: enabledWallets)
+    func save(enabledWallets: [EnabledWallet], deletedEnabledWallets: [EnabledWallet] = [], source: WalletMutationSource = .user) {
+        storage.handle(newEnabledWallets: enabledWallets, deletedEnabledWallets: deletedEnabledWallets)
         reloadWallets()
+        onEnabledWalletMutation?(enabledWallets, deletedEnabledWallets, source)
     }
 
-    func delete(wallets: [Wallet]) {
-        handle(newWallets: [], deletedWallets: wallets)
+    func delete(wallets: [Wallet], source: WalletMutationSource = .user) {
+        handle(newWallets: [], deletedWallets: wallets, source: source)
     }
 
     func clearWallets() {
