@@ -113,35 +113,6 @@ struct ManageAccountView: View {
                             }
                         }
 
-                        if !viewModel.account.watchAccount {
-                            if viewModel.isCloudBackedUp {
-                                ClickableRow {
-                                    if viewModel.account.backedUp {
-                                        Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                                            confirmDeleteCloudBackupView(isPresented: isPresented)
-                                        }
-                                    } else {
-                                        Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                                            confirmDeleteCloudBackupAfterManualBackupView(isPresented: isPresented)
-                                        }
-                                    }
-                                } content: {
-                                    Image("no_internet_24").themeIcon(color: .themeLucian)
-                                    Text("manage_account.cloud_delete_backup_recovery_phrase".localized).themeBody(color: .themeLucian)
-                                }
-                            } else {
-                                ClickableRow {
-                                    Coordinator.shared.presentWalletBackup(account: viewModel.account, statPage: .manageWallet)
-                                } content: {
-                                    Image("icloud_24").themeIcon(color: .themeJacob)
-                                    Text("manage_account.cloud_backup_recovery_phrase".localized).themeBody(color: .themeJacob)
-
-                                    if !viewModel.account.backedUp {
-                                        Image("warning_2_24").themeIcon(color: .themeLucian)
-                                    }
-                                }
-                            }
-                        }
                     }
 
                     ListSection {
@@ -215,80 +186,21 @@ struct ManageAccountView: View {
         )
     }
 
-    @ViewBuilder private func confirmDeleteCloudBackupView(isPresented: Binding<Bool>) -> some View {
-        BottomSheetView(
-            items: [
-                .title(icon: ThemeImage.trash, title: "manage_account.cloud_delete_backup_recovery_phrase".localized),
-                .text(text: "manage_account.cloud_delete_backup_recovery_phrase.description".localized),
-                .buttonGroup(.init(buttons: [
-                    .init(style: .gray, title: "button.delete".localized) {
-                        isPresented.wrappedValue = false
-                        deleteCloudBackup()
-                    },
-                    .init(style: .transparent, title: "button.cancel".localized) {
-                        isPresented.wrappedValue = false
-                    },
-                ])),
-            ],
-        )
-    }
-
-    @ViewBuilder private func confirmDeleteCloudBackupAfterManualBackupView(isPresented: Binding<Bool>) -> some View {
-        BottomSheetView(
-            items: [
-                .title(icon: ThemeImage.trash, title: "manage_account.manual_backup_required".localized),
-                .warning(text: "manage_account.manual_backup_required.description".localized),
-                .buttonGroup(.init(buttons: [
-                    .init(style: .gray, title: "manage_account.manual_backup_required.button".localized) {
-                        isPresented.wrappedValue = false
-
-                        Coordinator.shared.performAfterUnlock {
-                            presentBackup(reason: .deleteCloudBackup)
-                        }
-                    },
-                    .init(style: .transparent, title: "button.cancel".localized) {
-                        isPresented.wrappedValue = false
-                    },
-                ])),
-            ],
-        )
-    }
-
-    private func presentBackup(reason: BackupReason) {
-        Coordinator.shared.present { _ in
-            BackupManualView(account: viewModel.account) {
-                switch reason {
-                case .deleteCloudBackup: deleteCloudBackup()
-                default: ()
-                }
-            }
-            .ignoresSafeArea()
-        }
-        stat(page: .manageWallet, event: .open(page: .manualBackup))
-    }
-
-    private func deleteCloudBackup() {
-        do {
-            try viewModel.deleteCloudBackup()
-            HudHelper.instance.show(banner: .deleted)
-            stat(page: .manageWallet, event: .delete(entity: .cloudBackup))
-        } catch {
-            HudHelper.instance.show(banner: .error(string: "backup.cloud.cant_delete_file".localized))
-        }
-    }
-
     private func unlink() {
         viewModel.deleteAccount()
         HudHelper.instance.show(banner: .deleted)
         isPresented = false
     }
+
+    private func presentBackup(reason _: BackupReason) {
+        Coordinator.shared.present { _ in
+            BackupManualView(account: viewModel.account)
+                .ignoresSafeArea()
+        }
+        stat(page: .manageWallet, event: .open(page: .manualBackup))
+    }
 }
 
-extension ManageAccountView {
-    enum BackupReason: Identifiable {
-        case manual
-        case deleteCloudBackup
-
-        var id: Self { self }
-    }
+private enum BackupReason {
+    case manual
 }

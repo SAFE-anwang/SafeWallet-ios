@@ -15,6 +15,7 @@ import web3swift
 class EvmKitManager {
     let chain: Chain
     private let syncSourceManager: EvmSyncSourceManager
+    private let smartAccountManager: SmartAccountManager
     private let disposeBag = DisposeBag()
 
     private weak var _evmKitWrapper: EvmKitWrapper?
@@ -22,13 +23,13 @@ class EvmKitManager {
     private let evmKitCreatedRelay = PublishRelay<Void>()
     private let evmKitUpdatedRelay = PublishRelay<Void>()
     private(set) var currentAccount: Account?
-    private var currentKitCacheKey: ChildWalletKitCacheKey?
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).ethereum-kit-manager", qos: .userInitiated)
 
-    init(chain: Chain, syncSourceManager: EvmSyncSourceManager) {
+    init(chain: Chain, syncSourceManager: EvmSyncSourceManager, smartAccountManager: SmartAccountManager) {
         self.chain = chain
         self.syncSourceManager = syncSourceManager
+        self.smartAccountManager = smartAccountManager
 
         subscribe(disposeBag, syncSourceManager.syncSourceObservable) { [weak self] blockchainType in
             self?.handleUpdatedSyncSource(blockchainType: blockchainType)
@@ -50,39 +51,14 @@ class EvmKitManager {
         }
     }
 
-    private func evmAddress(account: Account, blockchainType: BlockchainType) throws -> EvmKit.Address {
-        if let childAddress = try ChildWalletBridge.shared.evmAddress(account: account, blockchainType: blockchainType, chain: chain) {
-            return childAddress
-        }
-
-        switch account.type {
-        case .mnemonic:
-            guard let seed = account.type.mnemonicSeed else {
-                throw KitWrapperError.mnemonicNoSeed
-            }
-
-            return try Signer.address(seed: seed, chain: chain)
-        case let .evmPrivateKey(data):
-            return Signer.address(privateKey: data)
-        case let .evmAddress(address):
-            return address
-        case .passkeyOwned:
-            return try AccountAddress.evmAddress(account: account, blockchainType: blockchainType)
-        default:
-            throw AdapterError.unsupportedAccount
-        }
-    }
-
     private func _evmKitWrapper(account: Account, blockchainType: BlockchainType) throws -> EvmKitWrapper {
-        let kitCacheKey = try ChildWalletBridge.shared.kitCacheKey(account: account, blockchainType: blockchainType)
-
-        if let _evmKitWrapper, currentKitCacheKey == kitCacheKey {
+        if let _evmKitWrapper, let currentAccount, currentAccount == account {
             return _evmKitWrapper
         }
 
         let syncSource = syncSourceManager.syncSource(blockchainType: blockchainType)
 
-        let address = try evmAddress(account: account, blockchainType: blockchainType)
+        let address = try AccountAddress.evmAddress(account: account, blockchainType: blockchainType, chain: chain, smartAccountManager: smartAccountManager)
         var signer: Signer?
 
         switch account.type {
@@ -91,7 +67,7 @@ class EvmKitManager {
                 throw KitWrapperError.mnemonicNoSeed
             }
 //            address = try Signer.address(seed: seed, chain: chain)
-            signer = try ChildWalletBridge.shared.evmSigner(account: account, chain: chain) ?? Signer.instance(seed: seed, chain: chain)
+            signer = try Signer.instance(seed: seed, chain: chain)
         case let .evmPrivateKey(data):
 //            address = Signer.address(privateKey: data)
             signer = Signer.instance(privateKey: data, chain: chain)
@@ -106,9 +82,20 @@ class EvmKitManager {
             chain: chain,
             rpcSource: syncSource.rpcSource,
             transactionSource: syncSource.transactionSource,
-            walletId: try ChildWalletBridge.shared.walletId(account: account, blockchainType: blockchainType),
+            walletId: account.id,
             minLogLevel: .error
         )
+
+        var transactionSyncers: [ITransactionSyncer] = [
+            evmKit.ethereumSyncer,
+            evmKit.internalSyncer,
+        ]
+
+        if let safe4Syncer = evmKit.safe4Syncer {
+            transactionSyncers.append(safe4Syncer)
+        }
+
+        evmKit.set(syncers: transactionSyncers)
 
         Eip20Kit.Kit.addDecorators(to: evmKit)
         Eip20Kit.Kit.addTransactionSyncer(to: evmKit)
@@ -166,7 +153,6 @@ class EvmKitManager {
 
         _evmKitWrapper = wrapper
         currentAccount = account
-        currentKitCacheKey = kitCacheKey
 
         evmKitCreatedRelay.accept(())
 

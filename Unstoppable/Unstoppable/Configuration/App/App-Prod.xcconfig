@@ -1,7 +1,7 @@
 #include "../Config.xcconfig"
 
 PRODUCT_BUNDLE_IDENTIFIER = com.anwang4.safewallet
-APP_DISPLAY_NAME = Unstoppable
+APP_DISPLAY_NAME = SafeWallet
 CODE_SIGN_ENTITLEMENTS = Unstoppable/Configuration/App/App-Prod.entitlements
 PROVISIONING_PROFILE_SPECIFIER[config=Debug-Prod] = match Development com.anwang4.safewallet
 PROVISIONING_PROFILE_SPECIFIER[config=Release-Prod] = match AppStore com.anwang4.safewallet

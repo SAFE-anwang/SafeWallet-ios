@@ -16,6 +16,9 @@
     "(%@%%)" : {
 
     },
+    "#%@" : {
+
+    },
     "#%lld" : {
 
     },
@@ -47,6 +50,16 @@
     },
     "%@ SAFE" : {
 
+    },
+    "%@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@"
+          }
+        }
+      }
     },
     "%@/%@" : {
       "localizations" : {
@@ -120,13 +133,13 @@
     "Hashdit.io" : {
 
     },
+    "ID: %@" : {
+
+    },
     "Input" : {
 
     },
     "Invalid Pre Swap Step" : {
-
-    },
-    "MainNet" : {
 
     },
     "No Handler" : {
@@ -138,13 +151,13 @@
     "purchase.lifetime.description" : {
 
     },
+    "SAFE TestNet" : {
+
+    },
     "SAFE4 TestNet" : {
 
     },
     "Telegram" : {
-
-    },
-    "TestNet" : {
 
     },
     "TON Connect" : {
@@ -6061,6 +6074,27 @@
           }
         }
       }
+    },
+    "子钱包" : {
+
+    },
+    "子钱包名称" : {
+
+    },
+    "重命名" : {
+
+    },
+    "重命名子钱包" : {
+
+    },
+    "隐藏" : {
+
+    },
+    "隐藏后不会释放 Index，也不会影响助记词派生地址。" : {
+
+    },
+    "隐藏子钱包" : {
+
     }
   },
   "version" : "1.0"

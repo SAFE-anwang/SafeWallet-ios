@@ -16,6 +16,7 @@ class SyncSafe4TokensService {
     private let srC20Service: SRC20Service
     private let evmKit: EvmKit.Kit
     private let marketKit: MarketKit.Kit
+    private let src20ProjectionCoordinator = Core.shared.safe4SRC20ProjectionCoordinator
     private var dataRelay = PublishRelay<[Safe4CustomTokenRecord]>()
     private var isSyncing = false
     private var requestTask: Task<Void, Never>?
@@ -96,6 +97,8 @@ class SyncSafe4TokensService {
                 storage.update(logo: url, address: token.address, chainId: chainId)
             }
         }
+
+        src20ProjectionCoordinator.reconcileCurrentChain(chainId: chainId)
 
         versionTask?.cancel()
         versionTask = Task {

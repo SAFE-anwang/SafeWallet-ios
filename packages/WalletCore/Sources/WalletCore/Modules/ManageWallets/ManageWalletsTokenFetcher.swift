@@ -6,6 +6,14 @@ struct ManageWalletsTokenFetcher {
     private let marketKit = Core.shared.marketKit
     private let safe4CustomTokenStorage = Core.shared.safe4CustomTokenStorage
 
+    private var safe4Blockchain: Blockchain? {
+        guard let blockchains = try? marketKit.blockchains(uids: [BlockchainType.safe4.uid]) else {
+            return nil
+        }
+
+        return blockchains.first
+    }
+
     private func tokenQueries(account: Account) -> [TokenQuery] {
         switch account.type {
         case .hdExtendedKey:
@@ -35,6 +43,10 @@ struct ManageWalletsTokenFetcher {
 
     private func safe4CustomTokens(account: Account, filter: String? = nil, allowedBlockchainTypes: [BlockchainType]?) -> [Token] {
         let lowercasedFilter = filter?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard let safe4Blockchain else {
+            return []
+        }
+
         var tokens = [Token]()
 
         for tokenInfo in safe4CustomTokenStorage.allTokens() {
@@ -48,9 +60,19 @@ struct ManageWalletsTokenFetcher {
                 }
             }
 
-            let query = TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: tokenInfo.address))
+            let token = Token(
+                coin: Coin(
+                    uid: TokenQuery(blockchainType: .safe4, tokenType: .eip20(address: tokenInfo.address)).customCoinUid,
+                    name: tokenInfo.name,
+                    code: tokenInfo.symbol,
+                    image: tokenInfo.logoURI
+                ),
+                blockchain: safe4Blockchain,
+                type: .eip20(address: tokenInfo.address),
+                decimals: tokenInfo.decimals
+            )
 
-            guard let token = try? marketKit.token(query: query), account.type.supports(token: token) else {
+            guard account.type.supports(token: token) else {
                 continue
             }
 
@@ -82,7 +104,7 @@ struct ManageWalletsTokenFetcher {
 extension ManageWalletsTokenFetcher {
     func fetch(filter: String, account: Account, preferredTokens: [Token], allowedBlockchainTypes: [BlockchainType]? = nil) -> [Token] {
         let trimmed = filter.trimmingCharacters(in: .whitespaces)
-        let searchAllowedBlockchainTypes = normalizedAllowedBlockchainTypes(allowedBlockchainTypes)
+        let allowedBlockchainTypes = normalizedAllowedBlockchainTypes(allowedBlockchainTypes)
 
         do {
             let tokens: [Token]
@@ -91,7 +113,7 @@ extension ManageWalletsTokenFetcher {
                 let featured = try featuredTokens(account: account)
                 let supported = featured.filter { account.type.supports(token: $0) }
                 let safe4Tokens = safe4CustomTokens(account: account, allowedBlockchainTypes: allowedBlockchainTypes)
-                tokens = (preferredTokens + supported + safe4Tokens)
+                tokens = (safe4Tokens + preferredTokens + supported)
                     .filter {
                         guard let allowedBlockchainTypes else {
                             return true
@@ -101,7 +123,7 @@ extension ManageWalletsTokenFetcher {
                     .removeDuplicates()
             } else if let evmAddress = try? EvmKit.Address(hex: trimmed) {
                 let fetched = try tokensByAddress(evmAddress.hex)
-                tokens = (fetched + safe4CustomTokens(account: account, filter: trimmed, allowedBlockchainTypes: allowedBlockchainTypes))
+                tokens = (safe4CustomTokens(account: account, filter: trimmed, allowedBlockchainTypes: allowedBlockchainTypes) + fetched)
                     .filter {
                         account.type.supports(token: $0)
                     }
@@ -113,15 +135,9 @@ extension ManageWalletsTokenFetcher {
                     }
                     .removeDuplicates()
             } else {
-                let fetched = try tokensBySearch(trimmed, allowedBlockchainTypes: searchAllowedBlockchainTypes)
-                tokens = (fetched + safe4CustomTokens(account: account, filter: trimmed, allowedBlockchainTypes: allowedBlockchainTypes))
+                let fetched = try tokensBySearch(trimmed, allowedBlockchainTypes: allowedBlockchainTypes)
+                tokens = (safe4CustomTokens(account: account, filter: trimmed, allowedBlockchainTypes: allowedBlockchainTypes) + fetched)
                     .filter { account.type.supports(token: $0) }
-                    .filter {
-                        guard let allowedBlockchainTypes else {
-                            return true
-                        }
-                        return allowedBlockchainTypes.contains($0.blockchainType)
-                    }
                     .removeDuplicates()
             }
 

@@ -6,22 +6,12 @@ struct NewWalletTypeView: View {
     var showClose: Bool = false
 
     @State private var standardWalletPresented = false
-    @State private var passkeyWalletPresented = false
-    @State private var passkeyTermsPresented = false
 
     var body: some View {
         ScrollableThemeView {
             ListSection {
                 row(icon: "list", title: "new_wallet.standard".localized, description: "new_wallet.standard.description".localized) {
                     standardWalletPresented = true
-                }
-
-                row(icon: "face_id", title: "new_wallet.passkey".localized, description: "new_wallet.passkey.description".localized) {
-                    if Core.shared.termsManager.passkeyTermsAccepted {
-                        passkeyWalletPresented = true
-                    } else {
-                        passkeyTermsPresented = true
-                    }
                 }
             }
             .padding(EdgeInsets(top: 12, leading: 16, bottom: 32, trailing: 16))
@@ -40,12 +30,6 @@ struct NewWalletTypeView: View {
         }
         .navigationDestination(isPresented: $standardWalletPresented) {
             CreateAccountView(walletType: .regular, isPresented: parentPresented ?? $isPresented)
-        }
-        .navigationDestination(isPresented: $passkeyWalletPresented) {
-            CreateAccountView(walletType: .passkey, isPresented: parentPresented ?? $isPresented)
-        }
-        .navigationDestination(isPresented: $passkeyTermsPresented) {
-            PasskeyTermsView(isPresented: parentPresented ?? $isPresented)
         }
     }
 

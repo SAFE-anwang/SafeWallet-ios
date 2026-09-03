@@ -15,12 +15,43 @@ public class WalletViewModel: WalletListViewModel {
 
     @Published private(set) var buttonHidden: Bool
     @Published public private(set) var totalItem: TotalItem
+    @Published public private(set) var displayAccountName: String?
 
     override public init() {
         buttonHidden = walletButtonHiddenManager.buttonHidden
         totalItem = .init(currencyValue: .init(currency: .init(code: "", symbol: "", decimal: 0), value: 0), state: .synced, convertedValue: nil, convertedValueExpired: false)
+        displayAccountName = nil
 
         super.init()
+
+        syncDisplayAccountName()
+
+        accountManager.activeAccountPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.syncDisplayAccountName() }
+            .store(in: &cancellables)
+
+        accountManager.accountUpdatedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] account in
+                guard self?.account?.id == account.id else {
+                    return
+                }
+
+                self?.syncDisplayAccountName()
+            }
+            .store(in: &cancellables)
+
+        ChildWalletBridge.shared.activeChildWalletChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                guard self?.account?.id == change.parentAccountId else {
+                    return
+                }
+
+                self?.syncDisplayAccountName()
+            }
+            .store(in: &cancellables)
 
         subscribe(disposeBag, appManager.willEnterForegroundObservable) { [weak self] in
             self?.coinPriceService.refresh()
@@ -42,6 +73,10 @@ public class WalletViewModel: WalletListViewModel {
         queue.async {
             self._syncTotalItem()
         }
+    }
+
+    private func syncDisplayAccountName() {
+        displayAccountName = account.map { ChildWalletBridge.shared.displayName(account: $0) }
     }
 
     override var conversionCoinUids: Set<String> {
@@ -154,7 +189,10 @@ extension WalletViewModel {
             return true
         }
 
-        Coordinator.shared.presentWalletBackup(account: account, statPage: .balance)
+        Coordinator.shared.present { _ in
+            BackupManualView(account: account).ignoresSafeArea()
+        }
+        stat(page: .balance, event: .open(page: .manualBackup))
         return false
     }
 

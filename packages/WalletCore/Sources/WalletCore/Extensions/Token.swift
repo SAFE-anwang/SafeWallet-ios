@@ -53,6 +53,10 @@ extension Token {
 
     var badge: String? {
         if blockchainType == .safe4, AppConfig.isSafe4TestNet {
+            if case .eip20 = type, !isSafeUSDT() {
+                return "SRC20 (SAFE4 TestNet)"
+            }
+
             return "SAFE4 TestNet"
         }
 

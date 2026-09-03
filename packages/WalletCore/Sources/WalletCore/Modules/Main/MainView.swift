@@ -94,9 +94,9 @@ struct MainView: View {
                 }
 
                 ToolbarItemGroup(placement: .primaryAction) {
-                    Button(action: onTapHistory) {
-                        Image("clock")
-                    }
+//                    Button(action: onTapHistory) {
+//                        Image("clock")
+//                    }
 
                     Button(action: {
                         Coordinator.shared.present { isPresented in
@@ -137,7 +137,7 @@ struct MainView: View {
         case .markets:
             return "market.title".localized
         case .wallet:
-            return walletViewModel.account?.name ?? "balance.title".localized
+            return walletViewModel.displayAccountName ?? "balance.title".localized
         case .safe:
             return "safe_zone.nav.title".localized
         case .settings:

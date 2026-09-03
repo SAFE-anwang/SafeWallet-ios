@@ -9,6 +9,7 @@ final class Safe4NetworkSwitchService: ObservableObject {
     private let adapterManager: AdapterManager
     private let marketKit: MarketKit.Kit
     private let userDefaultsStorage: UserDefaultsStorage
+    private let src20ProjectionCoordinator: Safe4SRC20ProjectionCoordinator
 
     @Published private(set) var isTestNet: Bool
     @Published private(set) var isSwitching = false
@@ -16,12 +17,13 @@ final class Safe4NetworkSwitchService: ObservableObject {
     private var switchTask: Task<Void, Never>?
     private var requestedTestNet: Bool?
 
-    init(localStorage: LocalStorage, evmBlockchainManager: EvmBlockchainManager, adapterManager: AdapterManager, marketKit: MarketKit.Kit, userDefaultsStorage: UserDefaultsStorage) {
+    init(localStorage: LocalStorage, evmBlockchainManager: EvmBlockchainManager, adapterManager: AdapterManager, marketKit: MarketKit.Kit, userDefaultsStorage: UserDefaultsStorage, src20ProjectionCoordinator: Safe4SRC20ProjectionCoordinator) {
         self.localStorage = localStorage
         self.evmBlockchainManager = evmBlockchainManager
         self.adapterManager = adapterManager
         self.marketKit = marketKit
         self.userDefaultsStorage = userDefaultsStorage
+        self.src20ProjectionCoordinator = src20ProjectionCoordinator
         isTestNet = localStorage.isSafe4TestNet
     }
 
@@ -31,7 +33,8 @@ final class Safe4NetworkSwitchService: ObservableObject {
             evmBlockchainManager: Core.shared.evmBlockchainManager,
             adapterManager: Core.shared.adapterManager,
             marketKit: Core.shared.marketKit,
-            userDefaultsStorage: Core.shared.userDefaultsStorage
+            userDefaultsStorage: Core.shared.userDefaultsStorage,
+            src20ProjectionCoordinator: Core.shared.safe4SRC20ProjectionCoordinator
         )
     }
 
@@ -69,7 +72,9 @@ final class Safe4NetworkSwitchService: ObservableObject {
     }
 
     private func apply(testNet enabled: Bool) async {
+        let previousChainId = Safe4Network.currentChainId
         adapterManager.cancelSafe4SyncManager()
+        src20ProjectionCoordinator.prepareSwitch(from: previousChainId)
         localStorage.isSafe4TestNet = enabled
         AppConfig.isSafe4TestNet = enabled
         MarketKit.isSafe4TestNet = enabled
@@ -83,6 +88,10 @@ final class Safe4NetworkSwitchService: ObservableObject {
 
         marketKit.sync()
         evmBlockchainManager.resyncSafe4()
+        await src20ProjectionCoordinator.projectAndWait(
+            chainId: chainId,
+            replacing: previousChainId
+        )
         await adapterManager.recreateAdapterAndWait(blockchainType: .safe4)
         NotificationCenter.default.post(
             name: .safe4NetworkDidSwitch,

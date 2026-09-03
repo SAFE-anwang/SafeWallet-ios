@@ -4,6 +4,11 @@ import MarketKit
 import RxRelay
 import RxSwift
 
+enum WalletMutationSource: Equatable {
+    case user
+    case projection
+}
+
 public class WalletManager {
     private let accountManager: AccountManager
     private let storage: WalletStorage
@@ -15,6 +20,9 @@ public class WalletManager {
     private let queue = DispatchQueue(label: "\(AppConfig.label).wallet_manager", qos: .userInitiated)
 
     private var cachedActiveWalletData = WalletData(wallets: [], account: nil, childWalletId: nil)
+
+    var onWalletMutation: (([Wallet], [Wallet], WalletMutationSource) -> Void)?
+    var onEnabledWalletMutation: (([EnabledWallet], [EnabledWallet], WalletMutationSource) -> Void)?
 
     public init(accountManager: AccountManager, storage: WalletStorage) {
         self.accountManager = accountManager
@@ -54,13 +62,8 @@ public class WalletManager {
     private func _reloadWallets() {
         if let activeAccount = accountManager.activeAccount {
             do {
-                let wallets: [Wallet]
                 let childWalletId = ChildWalletBridge.shared.activeChildWalletId(account: activeAccount)
-                if let childWalletId {
-                    wallets = try storage.wallets(childWalletId: childWalletId, account: activeAccount)
-                } else {
-                    wallets = try storage.wallets(account: activeAccount)
-                }
+                let wallets = try childWalletId.map { try storage.wallets(childWalletId: $0, account: activeAccount) } ?? storage.wallets(account: activeAccount)
                 cachedActiveWalletData = WalletData(wallets: wallets, account: activeAccount, childWalletId: childWalletId)
             } catch {
                 // todo
@@ -76,6 +79,15 @@ public class WalletManager {
 
     private func reloadWallets() {
         queue.async { [weak self] in self?._reloadWallets() }
+    }
+
+    private func reloadWalletsAndWait() async {
+        await withCheckedContinuation { continuation in
+            queue.async { [weak self] in
+                self?._reloadWallets()
+                continuation.resume()
+            }
+        }
     }
 }
 
@@ -100,6 +112,10 @@ extension WalletManager {
         reloadWallets()
     }
 
+    func preloadWalletsAndWait() async {
+        await reloadWalletsAndWait()
+    }
+
     func wallets(account: Account) -> [Wallet] {
         do {
             return try storage.wallets(account: account)
@@ -117,13 +133,13 @@ extension WalletManager {
 
             return try storage.wallets(account: account)
         } catch {
-            // todo
             return []
         }
     }
 
-    func handle(newWallets: [Wallet], deletedWallets: [Wallet]) {
-        if let activeAccount = accountManager.activeAccount,
+    func handle(newWallets: [Wallet], deletedWallets: [Wallet], source: WalletMutationSource = .user) {
+        if source == .user,
+           let activeAccount = accountManager.activeAccount,
            (newWallets + deletedWallets).allSatisfy({ $0.account.id == activeAccount.id })
         {
             do {
@@ -144,14 +160,17 @@ extension WalletManager {
 
         storage.handle(newWallets: newWallets, deletedWallets: deletedWallets)
         reloadWallets()
+        onWalletMutation?(newWallets, deletedWallets, source)
     }
 
-    func save(wallets: [Wallet]) {
-        handle(newWallets: wallets, deletedWallets: [])
+    func save(wallets: [Wallet], source: WalletMutationSource = .user) {
+        handle(newWallets: wallets, deletedWallets: [], source: source)
     }
 
-    func save(enabledWallets: [EnabledWallet]) {
-        if let activeAccount = accountManager.activeAccount,
+    func save(enabledWallets: [EnabledWallet], deletedEnabledWallets: [EnabledWallet] = [], source: WalletMutationSource = .user) {
+        if source == .user,
+           deletedEnabledWallets.isEmpty,
+           let activeAccount = accountManager.activeAccount,
            enabledWallets.allSatisfy({ $0.accountId == activeAccount.id })
         {
             do {
@@ -170,21 +189,23 @@ extension WalletManager {
             }
         }
 
-        storage.handle(newEnabledWallets: enabledWallets)
+        storage.handle(newEnabledWallets: enabledWallets, deletedEnabledWallets: deletedEnabledWallets)
         reloadWallets()
+        onEnabledWalletMutation?(enabledWallets, deletedEnabledWallets, source)
     }
 
-    func saveRoot(enabledWallets: [EnabledWallet], account: Account) {
+    func saveRoot(enabledWallets: [EnabledWallet], account: Account, source: WalletMutationSource = .user) {
         guard enabledWallets.allSatisfy({ $0.accountId == account.id }) else {
             return
         }
 
         storage.handle(newEnabledWallets: enabledWallets)
         reloadWallets()
+        onEnabledWalletMutation?(enabledWallets, [], source)
     }
 
-    func delete(wallets: [Wallet]) {
-        handle(newWallets: [], deletedWallets: wallets)
+    func delete(wallets: [Wallet], source: WalletMutationSource = .user) {
+        handle(newWallets: [], deletedWallets: wallets, source: source)
     }
 
     func clearWallets() {

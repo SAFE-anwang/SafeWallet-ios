@@ -1,4 +1,5 @@
 import Foundation
+import BigInt
 import RxSwift
 import HsToolKit
 import ObjectMapper
@@ -17,9 +18,14 @@ class MarketDappProvider {
         self.networkManager = networkManager
     }
 
-
     func dappAllRequestSingle() -> Single<[MarktDapp]> {
-         let ur = URL(string: "\(baseUrl)/walletcontent/getAll")!
+        let ur = URL(string: "\(baseUrl)/walletcontent/getAll")!
+        let request = networkManager.session.request(ur, headers: headers)
+        return networkManager.single(request: request)
+    }
+
+    func dappRecommendsRequestSingle() -> Single<[MarktDapp]> {
+        let ur = URL(string: "\(baseUrl)/walletcontent/recommends")!
         let request = networkManager.session.request(ur, headers: headers)
         return networkManager.single(request: request)
     }
@@ -29,7 +35,7 @@ class MarketDappProvider {
             "type": type,
         ]
         return networkManager
-                .single(url: "\(baseUrl)/walletcontent/byType", method: .get, parameters: parameters, headers: nil)
+                .single(url: "\(baseUrl)/walletcontent/byType", method: .get, parameters: parameters, headers: headers)
     }
 
     func dappSubTypeRequestSingle(subType: String) -> Single<[MarktDapp]> {
@@ -38,7 +44,7 @@ class MarketDappProvider {
         ]
 
         return networkManager
-                .single(url: "\(baseUrl)/walletcontent/bySubType", method: .get, parameters: parameters, headers: nil)
+                .single(url: "\(baseUrl)/walletcontent/bySubType", method: .get, parameters: parameters, headers: headers)
 
     }
 
@@ -47,7 +53,7 @@ class MarketDappProvider {
             "name": name,
         ]
         return networkManager
-                .single(url: "\(baseUrl)/walletcontent/byName", method: .get, parameters: parameters, headers: nil)
+                .single(url: "\(baseUrl)/walletcontent/byName", method: .get, parameters: parameters, headers: headers)
 
     }
 
@@ -63,6 +69,33 @@ struct MarktDapp: ImmutableMappable {
     var icon: String
     let dlink: String
     var md5Code: String
+    let keywords: String?
+    let chainId: String?
+    let safeDappId: BigUInt?
+    let safeDappContractAddr: String?
+    let safeDappKeyword: String?
+    let safeDappFraudNum: BigUInt?
+    let safeDappIsFrozen: Bool?
+    let safeDappLogoData: Data?
+
+    init(type: String, subType: String, name: String, desc: String, descEN: String, icon: String, dlink: String, md5Code: String, keywords: String? = nil, chainId: String? = nil, safeDappId: BigUInt? = nil, safeDappContractAddr: String? = nil, safeDappKeyword: String? = nil, safeDappFraudNum: BigUInt? = nil, safeDappIsFrozen: Bool? = nil, safeDappLogoData: Data? = nil) {
+        self.type = type
+        self.subType = subType
+        self.name = name
+        self.desc = desc
+        self.descEN = descEN
+        self.icon = icon
+        self.dlink = dlink
+        self.md5Code = md5Code
+        self.keywords = keywords
+        self.chainId = chainId
+        self.safeDappId = safeDappId
+        self.safeDappContractAddr = safeDappContractAddr
+        self.safeDappKeyword = safeDappKeyword
+        self.safeDappFraudNum = safeDappFraudNum
+        self.safeDappIsFrozen = safeDappIsFrozen
+        self.safeDappLogoData = safeDappLogoData
+    }
 
     init(map: Map) throws {
         type = try map.value("type", default: "")
@@ -73,5 +106,13 @@ struct MarktDapp: ImmutableMappable {
         icon = try map.value("icon", default: "")
         dlink = try map.value("dlink")
         md5Code = try map.value("md5Code", default: "")
+        keywords = try? map.value("keywords")
+        chainId = try? map.value("chainId")
+        safeDappId = nil
+        safeDappContractAddr = nil
+        safeDappKeyword = nil
+        safeDappFraudNum = nil
+        safeDappIsFrozen = nil
+        safeDappLogoData = nil
     }
 }

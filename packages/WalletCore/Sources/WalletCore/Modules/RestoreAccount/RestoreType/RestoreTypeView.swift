@@ -14,7 +14,6 @@ struct RestoreTypeView: View {
     @State private var namedSource: BackupModule.NamedSource?
     @State private var selectCoinsAccount: Account?
     @State private var fileConfigRawBackup: RawFullBackup?
-    @State private var backupPresented = false
     @State private var passkeyLogin: RestoreTypeViewModel.PasskeyLogin?
     @State private var restoreSelectPresented = false
 
@@ -54,21 +53,6 @@ struct RestoreTypeView: View {
                         row(item: $0)
                     }
 
-                    if case .wallet = type {
-                        legacyRow(
-                            icon: "face_id",
-                            title: "restore_type.passkey.title".localized,
-                            description: "restore_type.passkey.description".localized,
-                            action: restorePasskey
-                        )
-                    }
-
-                    legacyRow(
-                        icon: "cloud",
-                        title: "restore_type.backup.title".localized,
-                        description: "restore_type.backup.description".localized,
-                        action: { backupPresented = true }
-                    )
                 }
                 .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
             }
@@ -119,9 +103,6 @@ struct RestoreTypeView: View {
                 case let .recoveryNew(walletType):
                     RestoreView(isPresented: $isPresented, path: $path, walletType: walletType, onRestore: onRestore)
                 }
-            }
-            .navigationDestination(isPresented: $backupPresented) {
-                RestoreBackupListView(isParentPresented: parentPresented ?? $isPresented)
             }
             .navigationDestination(isPresented: $restoreSelectPresented) {
                 if let passkeyLogin {

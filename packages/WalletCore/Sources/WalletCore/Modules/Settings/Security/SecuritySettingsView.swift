@@ -106,6 +106,21 @@ struct SecuritySettingsView: View {
                     toggledRow(title: "transaction_filter.hide_suspicious_txs".localized, subtitle: "transaction_filter.hide_suspicious_txs.description".localized, isOn: $viewModel.spamFilterEnabled)
                 }
 
+                ListSection {
+                    ClickableRow(spacing: .margin8) {
+                        Coordinator.shared.present(type: .bottomSheet) { isPresented in
+                            FallbackBlockView()
+                        }
+                    } content: {
+                        HStack(spacing: .margin16) {
+                            Image("safe_logo_24")
+                            Text("settings_security.safe_block_height".localized).textBody()
+                        }
+                        Spacer()
+                        Image.disclosureIcon
+                    }
+                }
+
 //                premiumSection()
             }
             .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))

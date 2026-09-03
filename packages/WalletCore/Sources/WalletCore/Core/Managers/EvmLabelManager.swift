@@ -10,6 +10,7 @@ public class EvmLabelManager {
     private let storage: EvmLabelStorage
     private let syncerStateStorage: SyncerStateStorage
     private let disposeBag = DisposeBag()
+    private let methodLabelsUpdatedSubject = PublishSubject<Void>()
 
     public init(provider: HsLabelProvider, storage: EvmLabelStorage, syncerStateStorage: SyncerStateStorage) {
         self.provider = provider
@@ -27,6 +28,7 @@ public class EvmLabelManager {
             .subscribe(onSuccess: { [weak self] labels in
                 try? self?.storage.save(evmMethodLabels: labels)
                 self?.saveMethodLabels(timestamp: timestamp)
+                self?.methodLabelsUpdatedSubject.onNext(())
             }, onError: { error in
                 print("Method Labels sync error: \(error)")
             })
@@ -60,6 +62,10 @@ public class EvmLabelManager {
 }
 
 extension EvmLabelManager {
+    var methodLabelsUpdatedObservable: Observable<Void> {
+        methodLabelsUpdatedSubject.asObservable()
+    }
+
     func sync() {
         provider.updateStatusSingle()
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))

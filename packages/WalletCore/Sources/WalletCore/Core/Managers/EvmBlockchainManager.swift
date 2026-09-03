@@ -22,6 +22,7 @@ public class EvmBlockchainManager {
     private let testNetManager: TestNetManager
     private let marketKit: MarketKit.Kit
     private let accountManagerFactory: EvmAccountManagerFactory
+    private let smartAccountManager: SmartAccountManager
 
     let allBlockchains: [Blockchain]
 
@@ -30,11 +31,12 @@ public class EvmBlockchainManager {
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).evm_blockchain_manager", qos: .userInitiated)
 
-    public init(syncSourceManager: EvmSyncSourceManager, testNetManager: TestNetManager, marketKit: MarketKit.Kit, accountManagerFactory: EvmAccountManagerFactory) {
+    public init(syncSourceManager: EvmSyncSourceManager, testNetManager: TestNetManager, marketKit: MarketKit.Kit, accountManagerFactory: EvmAccountManagerFactory, smartAccountManager: SmartAccountManager) {
         self.syncSourceManager = syncSourceManager
         self.testNetManager = testNetManager
         self.marketKit = marketKit
         self.accountManagerFactory = accountManagerFactory
+        self.smartAccountManager = smartAccountManager
 
         do {
             allBlockchains = try marketKit.blockchains(uids: Self.blockchainTypes.map(\.uid))
@@ -49,7 +51,7 @@ public class EvmBlockchainManager {
                 return (evmKitManager, evmAccountManager)
             }
 
-            let evmKitManager = try EvmKitManager(chain: chain(blockchainType: blockchainType), syncSourceManager: syncSourceManager)
+            let evmKitManager = try EvmKitManager(chain: chain(blockchainType: blockchainType), syncSourceManager: syncSourceManager, smartAccountManager: smartAccountManager)
             let evmAccountManager = accountManagerFactory.evmAccountManager(blockchainType: blockchainType, evmKitManager: evmKitManager)
 
             evmKitManagerMap[blockchainType] = evmKitManager

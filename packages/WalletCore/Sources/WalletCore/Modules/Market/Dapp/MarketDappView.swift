@@ -19,13 +19,22 @@ struct MarketDappView: View {
 
                 DappUrlInputField(
                     placeholder: "safe_dapp.input".localized,
-                    text: $dappUrl,
+                    text: Binding(
+                        get: { dappUrl },
+                        set: {
+                            dappUrl = $0
+                            if viewModel.currentTab == .SAFE {
+                                viewModel.safeSearchText = $0
+                            }
+                        }
+                    ),
                     onSubmit: openInputUrl
                 )
 
                 if !dappUrl.isEmpty {
                     IconButton(icon: "trash_filled", style: .secondary, mode: .transparent, size: .small) {
                         dappUrl = ""
+                        viewModel.safeSearchText = ""
                     }
                 }
             }
@@ -49,7 +58,11 @@ struct MarketDappView: View {
                         MarketDappModule.Tab.allCases.firstIndex(of: viewModel.currentTab) ?? 0
                     },
                     set: { index in
-                        viewModel.currentTab = MarketDappModule.Tab.allCases[index]
+                        let tab = MarketDappModule.Tab.allCases[index]
+                        viewModel.currentTab = tab
+                        if tab == .SAFE {
+                            viewModel.safeSearchText = dappUrl
+                        }
                     }
                 ),
                 isAequilate: true
@@ -62,7 +75,7 @@ struct MarketDappView: View {
 
             ZStack {
                 ForEach(MarketDappModule.Tab.allCases, id: \.id) { tab in
-                    MarketDappListView(tab: tab)
+                    MarketDappListView(tab: tab, safeSearchText: viewModel.safeSearchText)
                         .tag(tab.id)
                         .ignoresSafeArea()
                         .opacity(viewModel.currentTab == tab ? 1 : 0)

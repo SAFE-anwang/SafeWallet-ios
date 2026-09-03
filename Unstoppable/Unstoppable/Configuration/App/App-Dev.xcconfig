@@ -1,7 +1,7 @@
 #include "../Config.xcconfig"
 
 PRODUCT_BUNDLE_IDENTIFIER = com.anwang4.safewallet
-APP_DISPLAY_NAME = Unstoppable D
+APP_DISPLAY_NAME = SafeWallet
 CODE_SIGN_ENTITLEMENTS = Unstoppable/Configuration/App/App-Dev.entitlements
 PROVISIONING_PROFILE_SPECIFIER[config=Debug-Dev] = match Development com.anwang4.safewallet
 PROVISIONING_PROFILE_SPECIFIER[config=Release-Dev] = match AdHoc com.anwang4.safewallet

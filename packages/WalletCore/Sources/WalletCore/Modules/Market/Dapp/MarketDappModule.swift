@@ -14,17 +14,20 @@ struct MarketDappModule {
 }
 
 struct MarketDappListView: UIViewControllerRepresentable {
-    typealias UIViewControllerType = UIViewController
+    typealias UIViewControllerType = MarketDappListViewController
     let tab: MarketDappModule.Tab
-    func makeUIViewController(context _: Context) -> UIViewController {
-        // TODO: must provide any VC
+    let safeSearchText: String
+
+    func makeUIViewController(context _: Context) -> MarketDappListViewController {
         let dappProvider = MarketDappProvider(networkManager: Core.shared.networkManager)
         let service = MarketDappService(provider: dappProvider, currentTab: tab)
         let viewModel = MarketDappListViewModel(service: service)
         return MarketDappListViewController(viewModel: viewModel, tab: tab)
     }
 
-    func updateUIViewController(_: UIViewController, context _: Context) {}
+    func updateUIViewController(_ uiViewController: MarketDappListViewController, context _: Context) {
+        uiViewController.apply(searchText: safeSearchText)
+    }
 }
 
 extension MarketDappModule {

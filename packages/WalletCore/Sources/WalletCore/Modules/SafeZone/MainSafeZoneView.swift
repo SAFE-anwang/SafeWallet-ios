@@ -21,6 +21,8 @@ struct MainSafeZoneView: View {
                 SectionSafeSwapView()
                 SectionWithdrawView()
                 SectionSRC20View()
+                SectionSRC721View()
+                SectionSafeDappView()
                 SectionBasicInfoView()
             }
             .padding(EdgeInsets(top: .margin2, leading: .margin16, bottom: .margin32, trailing: .margin16))
@@ -431,6 +433,50 @@ struct MainSafeZoneView: View {
                 }
             }) {
                 ItemView(title: "SRC20_Deploy_Promotion".localized)
+            }
+        }
+    }
+
+    @ViewBuilder private func SectionSRC721View() -> some View {
+        SafeListSectionHeader(text: "safe_zone.src721.title".localized)
+        ListSection {
+            ClickableRow(action: {
+                guard let viewModel = SRC721Module.deployViewModel() else { return }
+                Coordinator.shared.present { isPresented in
+                    SRC721DeployView(viewModel: viewModel, isPresented: isPresented)
+                }
+            }) {
+                ItemView(title: "safe_zone.src721.action.deploy".localized)
+            }
+            ClickableRow(action: {
+                guard let viewModel = SRC721Module.managerViewModel() else { return }
+                Coordinator.shared.present { isPresented in
+                    SRC721ManagerView(viewModel: viewModel, isPresented: isPresented)
+                }
+            }) {
+                ItemView(title: "safe_zone.src721.action.manage".localized)
+            }
+        }
+    }
+
+    @ViewBuilder private func SectionSafeDappView() -> some View {
+        SafeListSectionHeader(text: "safe_dapp.title".localized)
+        ListSection {
+            ClickableRow(action: {
+                guard let viewModel = SafeDappModule.registerViewModel() else { return }
+                Coordinator.shared.present { isPresented in
+                    SafeDappRegisterView(viewModel: viewModel, isPresented: isPresented)
+                }
+            }) {
+                ItemView(title: "safe_dapp.register".localized)
+            }
+            ClickableRow(action: {
+                guard let viewModel = SafeDappModule.managerViewModel() else { return }
+                Coordinator.shared.present { isPresented in
+                    SafeDappManagerView(viewModel: viewModel, isPresented: isPresented)
+                }
+            }) {
+                ItemView(title: "safe_dapp.manage".localized)
             }
         }
     }
