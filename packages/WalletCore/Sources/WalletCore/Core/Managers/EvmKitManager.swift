@@ -86,6 +86,17 @@ class EvmKitManager {
             minLogLevel: .error
         )
 
+        var transactionSyncers: [ITransactionSyncer] = [
+            evmKit.ethereumSyncer,
+            evmKit.internalSyncer,
+        ]
+
+        if let safe4Syncer = evmKit.safe4Syncer {
+            transactionSyncers.append(safe4Syncer)
+        }
+
+        evmKit.set(syncers: transactionSyncers)
+
         Eip20Kit.Kit.addDecorators(to: evmKit)
         Eip20Kit.Kit.addTransactionSyncer(to: evmKit)
 

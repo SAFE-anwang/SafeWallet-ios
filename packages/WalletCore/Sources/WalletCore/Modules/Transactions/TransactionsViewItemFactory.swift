@@ -277,7 +277,7 @@ class TransactionsViewItemFactory {
                     subTitle = "transactions.multiple".localized
                 }
             } else {
-                title = record.method ?? "transactions.external_call".localized
+                title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? record.method ?? "transactions.external_call".localized
                 subTitle = "---"
             }
 

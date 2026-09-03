@@ -42,6 +42,11 @@ class EvmTransactionConverter {
         return AppValue(token: baseToken, value: amount)
     }
 
+    private func safe4AppValue(transaction: EvmKit.Transaction, fallback: BigUInt, sign: FloatingPointSign) -> AppValue {
+        let value = blockchainType == .safe4 ? transaction.safe4Value ?? fallback : fallback
+        return baseAppValue(value: value, sign: sign)
+    }
+
     private func eip20Value(tokenAddress: EvmKit.Address, value: BigUInt, sign: FloatingPointSign, tokenInfo: Eip20Kit.TokenInfo?) -> AppValue {
         let query = TokenQuery(blockchainType: blockchainType, tokenType: .eip20(address: tokenAddress.hex))
 
@@ -257,7 +262,7 @@ extension EvmTransactionConverter {
                 transaction: transaction,
                 baseToken: baseToken,
                 from: decoration.from.eip55,
-                value: baseAppValue(value: decoration.value, sign: .plus),
+                value: safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .plus),
                 protected: protected
             )
 
@@ -267,7 +272,7 @@ extension EvmTransactionConverter {
                 transaction: transaction,
                 baseToken: baseToken,
                 to: decoration.to.eip55,
-                value: baseAppValue(value: decoration.value, sign: .minus),
+                value: safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .minus),
                 sentToSelf: decoration.sentToSelf,
                 protected: protected
             )
@@ -378,12 +383,12 @@ extension EvmTransactionConverter {
                 transaction: transaction,
                 baseToken: baseToken,
                 from: decoration.from.eip55,
-                value: baseAppValue(value: decoration.value, sign: .plus),
+                value: safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .plus),
                 protected: protected
             )
 
         case let decoration as Safe4RedeemDecoration:
-            let value = baseAppValue(value: decoration.value, sign: .plus)
+            let value = safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .plus)
             return Safe4RedeemTransactionRecoard(
                 source: source,
                 transaction: transaction,
@@ -395,7 +400,7 @@ extension EvmTransactionConverter {
             )
 
         case let decoration as Safe4NodeVoteDecoration:
-            let value = baseAppValue(value: decoration.value, sign: .minus)
+            let value = safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .minus)
             return Safe4VoteTransactionRecoard(
                 source: source,
                 transaction: transaction,
@@ -407,7 +412,7 @@ extension EvmTransactionConverter {
             )
 
         case let decoration as Safe4NodeRegisterDecoration:
-            let value = baseAppValue(value: decoration.value, sign: .minus)
+            let value = safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .minus)
             let method = transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) }
             return Safe4NodeRegisterTransactionRecoard(
                 source: source,
@@ -418,6 +423,18 @@ extension EvmTransactionConverter {
                 to: decoration.to?.eip55 ?? "",
                 value: value,
                 contractAddress: decoration.contract?.eip55 ?? "",
+                protected: protected
+            )
+
+        case let decoration as Safe4NodeUpdateDecoration:
+            return ContractCallTransactionRecord(
+                source: source,
+                transaction: transaction,
+                baseToken: baseToken,
+                contractAddress: decoration.contract?.eip55 ?? decoration.to?.eip55 ?? "",
+                method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                incomingEvents: [],
+                outgoingEvents: [],
                 protected: protected
             )
 
@@ -440,12 +457,12 @@ extension EvmTransactionConverter {
                 baseToken: baseToken,
                 from: decoration.from?.eip55 ?? "",
                 to: decoration.to?.eip55 ?? "",
-                value: AppValue(value: 0),
+                value: safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .plus),
                 protected: protected
             )
 
         case let decoration as Safe4CrossChainIncomingDecoration:
-            let value = baseAppValue(value: decoration.value, sign: .plus)
+            let value = safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .plus)
             return Safe4CrossChainIncomingRecoard(
                 source: source,
                 transaction: transaction,
@@ -457,7 +474,7 @@ extension EvmTransactionConverter {
             )
 
         case let decoration as Safe4CrossChainOutgoingDecoration:
-            let value = baseAppValue(value: decoration.value, sign: .minus)
+            let value = safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .minus)
             return Safe4CrossChainOutgoingRecoard(
                 source: source,
                 transaction: transaction,
@@ -528,6 +545,27 @@ extension EvmTransactionConverter {
         case let decoration as UnknownTransactionDecoration:
             let internalTransactions = decoration.internalTransactions.filter { $0.to == userAddress }
 
+            let transactionMethodId = transaction.input.map { input in
+                input.prefix(4).map { String(format: "%02x", $0) }.joined()
+            }
+            let withdrawMethodId = String(EvmKit.Safe4Methods.Withdraw.id.dropFirst(2))
+
+            if source.blockchainType == .safe4,
+               transactionMethodId?.caseInsensitiveCompare(withdrawMethodId) == .orderedSame,
+               let withdrawal = internalTransactions.first(where: { !$0.value.isZero })
+            {
+                let withdrawalValue = internalTransactions.reduce(BigUInt.zero) { $0 + $1.value }
+
+                return Safe4WithdrawTransactionRecord(
+                    source: source,
+                    transaction: transaction,
+                    baseToken: baseToken,
+                    from: withdrawal.from.eip55,
+                    value: baseAppValue(value: withdrawalValue, sign: .plus),
+                    protected: protected
+                )
+            }
+
             let eip20Transfers = decoration.eventInstances.compactMap { $0 as? TransferEventInstance }
             let incomingEip20Transfers = eip20Transfers.filter { $0.to == userAddress && $0.from != userAddress }
             let outgoingEip20Transfers = eip20Transfers.filter { $0.from == userAddress }
@@ -543,7 +581,9 @@ extension EvmTransactionConverter {
             let incomingEvents = transferEvents(internalTransactions: internalTransactions) + transferEvents(incomingEip20Transfers: incomingEip20Transfers) + transferEvents(incomingEip721Transfers: incomingEip721Transfers) + transferEvents(incomingEip1155Transfers: incomingEip1155Transfers)
             let outgoingEvents = transferEvents(outgoingEip20Transfers: outgoingEip20Transfers) + transferEvents(outgoingEip721Transfers: outgoingEip721Transfers) + transferEvents(outgoingEip1155Transfers: outgoingEip1155Transfers)
 
-            if transaction.from == userAddress, let contractAddress = transaction.to, let value = transaction.value {
+            let transactionValue = blockchainType == .safe4 ? transaction.safe4Value ?? transaction.value : transaction.value
+
+            if transaction.from == userAddress, let contractAddress = transaction.to, let value = transactionValue {
                 return ContractCallTransactionRecord(
                     source: source,
                     transaction: transaction,
