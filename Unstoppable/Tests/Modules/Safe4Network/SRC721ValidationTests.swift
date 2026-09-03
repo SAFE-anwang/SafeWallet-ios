@@ -128,6 +128,112 @@ final class SRC721ValidationTests: XCTestCase {
         ))
     }
 
+    func testOwnedTokenPagingRejectsAnEmptyNonTerminalPage() {
+        XCTAssertThrowsError(
+            try SRC721OwnedTokenPaging.nextOffset(offset: 0, total: 2, returnedCount: 0, limit: 20)
+        )
+    }
+
+    func testOwnedTokenPagingAdvancesByActualReturnedCountOnLastPage() throws {
+        XCTAssertEqual(
+            try SRC721OwnedTokenPaging.nextOffset(offset: 20, total: 23, returnedCount: 3, limit: 20),
+            23
+        )
+        XCTAssertEqual(
+            try SRC721OwnedTokenPaging.nextOffset(offset: 23, total: 23, returnedCount: 0, limit: 20),
+            23
+        )
+    }
+
+    func testOwnedTokenPagingRejectsProviderOverrun() {
+        XCTAssertThrowsError(
+            try SRC721OwnedTokenPaging.nextOffset(offset: 20, total: 21, returnedCount: 2, limit: 20)
+        )
+    }
+
+    func testWalletCollectionsGroupAssetsByContractAndSortTokens() {
+        let contractA = testContract(name: "Alpha", address: "0x0000000000000000000000000000000000000010")
+        let contractB = testContract(name: "Beta", address: "0x0000000000000000000000000000000000000020")
+        let owner = "0x0000000000000000000000000000000000000001"
+        let assets = [
+            SRC721WalletAsset(contract: contractB, token: SRC721OwnedToken(tokenId: 5, ownerAddress: owner, tokenURI: nil, source: .onChain)),
+            SRC721WalletAsset(contract: contractA, token: SRC721OwnedToken(tokenId: 2, ownerAddress: owner, tokenURI: nil, source: .onChain)),
+            SRC721WalletAsset(contract: contractB, token: SRC721OwnedToken(tokenId: 1, ownerAddress: owner, tokenURI: nil, source: .onChain))
+        ]
+
+        let collections = SRC721WalletCollection.grouped(assets: assets)
+
+        XCTAssertEqual(collections.map(\.displayName), ["Alpha", "Beta"])
+        XCTAssertEqual(collections[1].assets.map(\.token.tokenId), [BigUInt(1), BigUInt(5)])
+    }
+
+    func testPublicMintValidationChecksEligibilityAllowanceAndSupply() throws {
+        var state = testContractState(canPublicMint: true, allowance: 3, remainSupply: 5)
+        XCTAssertEqual(state.publicMintAvailableAmount, 3)
+        XCTAssertNoThrow(try SRC721Validation.validatePublicMint(state: state, amount: 3))
+
+        state = testContractState(canPublicMint: false, allowance: 3, remainSupply: 5)
+        XCTAssertEqual(state.publicMintAvailableAmount, 0)
+        XCTAssertThrowsError(try SRC721Validation.validatePublicMint(state: state, amount: 1)) { error in
+            guard case SRC721ValidationError.publicMintUnavailable = error else {
+                return XCTFail("Expected public mint eligibility error")
+            }
+        }
+
+        state = testContractState(canPublicMint: true, allowance: 2, remainSupply: 5)
+        XCTAssertThrowsError(try SRC721Validation.validatePublicMint(state: state, amount: 3)) { error in
+            guard case SRC721ValidationError.publicMintAllowanceInsufficient = error else {
+                return XCTFail("Expected public mint allowance error")
+            }
+        }
+
+        state = testContractState(canPublicMint: true, allowance: 5, remainSupply: 2)
+        XCTAssertEqual(state.publicMintAvailableAmount, 2)
+        XCTAssertThrowsError(try SRC721Validation.validatePublicMint(state: state, amount: 3)) { error in
+            guard case SRC721ValidationError.supplyInsufficient = error else {
+                return XCTFail("Expected remaining supply error")
+            }
+        }
+    }
+
+    func testAllowListEntryStorageUpsertsAndFiltersByContract() {
+        guard let defaults = UserDefaults(suiteName: "SRC721ValidationTests.allowList") else {
+            return XCTFail("Unable to create isolated defaults")
+        }
+        defaults.removePersistentDomain(forName: "SRC721ValidationTests.allowList")
+        let storage = SRC721Storage(defaults: defaults)
+        let contract = testContract(name: "Collection", address: "0x0000000000000000000000000000000000000010")
+        let entry = SRC721AllowListEntry(
+            accountId: contract.accountId, chainId: contract.chainId, walletAddress: contract.walletAddress,
+            contractAddress: contract.contractAddress, address: "0x0000000000000000000000000000000000000002",
+            amount: "1", transactionHash: "0x01", updatedAt: Date(timeIntervalSince1970: 1)
+        )
+        storage.save(allowListEntry: entry)
+        storage.save(allowListEntry: SRC721AllowListEntry(
+            accountId: contract.accountId, chainId: contract.chainId, walletAddress: contract.walletAddress,
+            contractAddress: contract.contractAddress, address: entry.address.uppercased(),
+            amount: "2", transactionHash: "0x02", updatedAt: Date(timeIntervalSince1970: 2)
+        ))
+
+        XCTAssertEqual(storage.allowListEntries(for: contract).map(\.amount), ["2"])
+        XCTAssertTrue(storage.allowListEntries(for: testContract(name: "Other", address: "0x0000000000000000000000000000000000000020")).isEmpty)
+
+        let otherAccountContract = testContract(
+            name: "Collection",
+            address: contract.contractAddress,
+            accountId: "account-b",
+            walletAddress: "0x0000000000000000000000000000000000000003"
+        )
+        storage.save(allowListEntry: SRC721AllowListEntry(
+            accountId: otherAccountContract.accountId, chainId: otherAccountContract.chainId,
+            walletAddress: otherAccountContract.walletAddress, contractAddress: otherAccountContract.contractAddress,
+            address: entry.address, amount: "3", transactionHash: "0x03", updatedAt: Date(timeIntervalSince1970: 3)
+        ))
+
+        XCTAssertEqual(storage.allowListEntries(for: contract).map(\.amount), ["2"])
+        XCTAssertEqual(storage.allowListEntries(for: otherAccountContract).map(\.amount), ["3"])
+    }
+
     func testStorageFiltersByAccountChainAndWallet() throws {
         guard let defaults = UserDefaults(suiteName: "SRC721ValidationTests") else {
             XCTFail("Unable to create isolated defaults")
@@ -182,5 +288,30 @@ final class SRC721ValidationTests: XCTestCase {
         XCTAssertEqual(storage.transactions(accountId: "account-a", chainId: 100, walletAddress: transaction.walletAddress), [transaction])
         XCTAssertTrue(storage.transactions(accountId: "account-b", chainId: 100, walletAddress: transaction.walletAddress).isEmpty)
         XCTAssertTrue(storage.transactions(accountId: "account-a", chainId: 101, walletAddress: transaction.walletAddress).isEmpty)
+    }
+
+    private func testContract(
+        name: String,
+        address: String,
+        accountId: String = "account-a",
+        walletAddress: String = "0x0000000000000000000000000000000000000001"
+    ) -> SRC721ContractRecord {
+        SRC721ContractRecord(
+            accountId: accountId, chainId: 100, walletAddress: walletAddress,
+            contractAddress: address, predictedContractAddress: nil,
+            creatorAddress: "0x0000000000000000000000000000000000000001", currentOwnerAddress: nil,
+            contractType: .standard, name: name, symbol: "NFT", baseURI: "https://example.com/",
+            maxSupply: "10", mintPrice: "0", deployTransactionHash: nil, transactionStatus: .confirmed,
+            validationStatus: "manual", createdAt: Date()
+        )
+    }
+
+    private func testContractState(canPublicMint: Bool, allowance: BigUInt, remainSupply: BigUInt) -> SRC721ContractState {
+        SRC721ContractState(
+            name: "Collection", symbol: "NFT", ownerAddress: "0x0000000000000000000000000000000000000001",
+            baseURI: "https://example.com/", maxSupply: 10, totalSupply: 5, remainSupply: remainSupply,
+            mintPrice: 0, walletBalance: 0, publicMintAllowance: allowance, canPublicMint: canPublicMint,
+            safeBalance: 0, orgName: "", description: "", officialURL: "", whitePaperURL: "", logo: Data()
+        )
     }
 }

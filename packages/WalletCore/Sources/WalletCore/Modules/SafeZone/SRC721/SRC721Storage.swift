@@ -6,6 +6,7 @@ final class SRC721Storage {
     private let defaults: UserDefaults
     private let contractsKey = "safe_zone.src721.contracts"
     private let transactionsKey = "safe_zone.src721.transactions"
+    private let allowListEntriesKey = "safe_zone.src721.allow_list_entries"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -68,6 +69,24 @@ final class SRC721Storage {
                 $0.walletAddress.lowercased() == walletAddress.lowercased()
             }
             .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func allowListEntries(for contract: SRC721ContractRecord) -> [SRC721AllowListEntry] {
+        (load([SRC721AllowListEntry].self, key: allowListEntriesKey) ?? [])
+            .filter {
+                $0.accountId == contract.accountId &&
+                $0.chainId == contract.chainId &&
+                $0.walletAddress.lowercased() == contract.walletAddress.lowercased() &&
+                $0.contractAddress.lowercased() == contract.contractAddress.lowercased()
+            }
+            .sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    func save(allowListEntry: SRC721AllowListEntry) {
+        var entries = load([SRC721AllowListEntry].self, key: allowListEntriesKey) ?? []
+        entries.removeAll { $0.id == allowListEntry.id }
+        entries.append(allowListEntry)
+        save(entries, key: allowListEntriesKey)
     }
 
     private func load<T: Decodable>(_ type: T.Type, key: String) -> T? {

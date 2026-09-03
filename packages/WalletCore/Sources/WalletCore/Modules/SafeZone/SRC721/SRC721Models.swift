@@ -28,12 +28,10 @@ enum SRC721TransactionStatus: String, Codable, Hashable {
 
 struct SRC721BatchOperationError: LocalizedError {
     let submittedHashes: [String]
-    let confirmedHashes: [String]
     let underlying: Error
 
-    init(submittedHashes: [String], confirmedHashes: [String] = [], underlying: Error) {
+    init(submittedHashes: [String], underlying: Error) {
         self.submittedHashes = submittedHashes
-        self.confirmedHashes = confirmedHashes
         self.underlying = underlying
     }
 
@@ -80,6 +78,8 @@ struct SRC721ContractState: Equatable {
     let remainSupply: BigUInt
     let mintPrice: BigUInt
     let walletBalance: BigUInt
+    let publicMintAllowance: BigUInt
+    let canPublicMint: Bool
     let safeBalance: BigUInt
     let orgName: String
     let description: String
@@ -88,13 +88,120 @@ struct SRC721ContractState: Equatable {
     let logo: Data
 
     var isSoldOut: Bool { remainSupply == 0 }
+    var publicMintAvailableAmount: BigUInt {
+        canPublicMint ? min(publicMintAllowance, remainSupply) : 0
+    }
 }
 
 struct SRC721TokenState: Equatable {
     let tokenId: BigUInt
     let ownerAddress: String
     let approvedAddress: String
-    let tokenURI: String
+    let isApprovedForAll: Bool
+    let tokenURI: String?
+}
+
+struct SRC721TokenAuthorization: Equatable {
+    let tokenId: BigUInt
+    let ownerAddress: String
+    let approvedAddress: String
+    let isApprovedForAll: Bool
+}
+
+enum SRC721AssetSource: String, Equatable {
+    case onChain
+    case indexer
+}
+
+struct SRC721OwnedToken: Identifiable, Equatable {
+    let tokenId: BigUInt
+    let ownerAddress: String
+    let tokenURI: String?
+    let source: SRC721AssetSource
+
+    var id: String { tokenId.description }
+}
+
+struct SRC721OwnedTokenPage: Equatable {
+    let total: BigUInt
+    let tokens: [SRC721OwnedToken]
+    let supportsEnumeration: Bool
+}
+
+struct SRC721WalletAsset: Identifiable, Equatable {
+    let contract: SRC721ContractRecord
+    let token: SRC721OwnedToken
+
+    var id: String { "\(contract.id):\(token.id)" }
+}
+
+struct SRC721WalletCollection: Identifiable, Equatable {
+    let contract: SRC721ContractRecord
+    let assets: [SRC721WalletAsset]
+
+    var id: String { contract.id }
+    var displayName: String { contract.name.isEmpty ? "SRC721" : contract.name }
+
+    static func grouped(assets: [SRC721WalletAsset]) -> [SRC721WalletCollection] {
+        let collections = Dictionary(grouping: assets, by: { $0.contract.id }).map { _, assets in
+            SRC721WalletCollection(
+                contract: assets[0].contract,
+                assets: assets.sorted { $0.token.tokenId < $1.token.tokenId }
+            )
+        }
+
+        return collections.sorted {
+            let result = $0.displayName.localizedCaseInsensitiveCompare($1.displayName)
+            if result == .orderedSame {
+                return $0.contract.contractAddress.localizedCaseInsensitiveCompare($1.contract.contractAddress) == .orderedAscending
+            }
+            return result == .orderedAscending
+        }
+    }
+}
+
+struct SRC721AllowListEntry: Codable, Hashable, Identifiable {
+    let accountId: String
+    let chainId: Int
+    let walletAddress: String
+    let contractAddress: String
+    let address: String
+    let amount: String
+    let transactionHash: String
+    let updatedAt: Date
+
+    var id: String {
+        "\(accountId):\(chainId):\(walletAddress.lowercased()):\(contractAddress.lowercased()):\(address.lowercased())"
+    }
+}
+
+enum SRC721AllowListEditorField: Hashable {
+    case address, amount
+}
+
+enum SRC721OwnedTokenPaging {
+    static func nextOffset(offset: Int, total: BigUInt, returnedCount: Int, limit: Int) throws -> Int {
+        guard offset >= 0, limit > 0, returnedCount >= 0, returnedCount <= limit else {
+            throw SRC721ValidationError.enumerationUnavailable
+        }
+
+        let offsetValue = BigUInt(offset)
+        let returnedValue = BigUInt(returnedCount)
+        guard offsetValue <= total, returnedValue <= total - offsetValue else {
+            throw SRC721ValidationError.enumerationUnavailable
+        }
+        guard returnedCount > 0 || offsetValue == total else {
+            throw SRC721ValidationError.enumerationUnavailable
+        }
+        guard returnedCount <= Int.max - offset else {
+            throw SRC721ValidationError.enumerationUnavailable
+        }
+        return offset + returnedCount
+    }
+}
+
+protocol SRC721OwnedAssetProvider {
+    func ownedTokenPage(type: SRC721ContractType, offset: Int, limit: Int) async throws -> SRC721OwnedTokenPage
 }
 
 struct SRC721TransactionRecord: Codable, Hashable, Identifiable {
@@ -117,11 +224,19 @@ enum SRC721ValidationError: LocalizedError {
     case invalidAmount(String)
     case invalidURL
     case invalidAllowList
+    case duplicateAllowListAddress
     case invalidTokenId
     case invalidLogo
     case emptyField(String)
     case textTooLong(String)
     case invalidContract
+    case enumerationUnavailable
+    case tokenOperationUnavailable
+    case ownerRequired
+    case contractStateUnavailable
+    case publicMintUnavailable
+    case publicMintAllowanceInsufficient
+    case supplyInsufficient
     case transactionTimeout
     case missingSigner
 
@@ -132,11 +247,19 @@ enum SRC721ValidationError: LocalizedError {
         case let .invalidAmount(field): return "safe_zone.src721.error.amount".localized(field)
         case .invalidURL: return "safe_zone.src721.error.url".localized
         case .invalidAllowList: return "safe_zone.src721.error.allow_list".localized
+        case .duplicateAllowListAddress: return "safe_zone.src721.error.allow_list_duplicate".localized
         case .invalidTokenId: return "safe_zone.src721.error.token_id".localized
         case .invalidLogo: return "safe_zone.src721.error.logo".localized
         case let .emptyField(field): return "safe_zone.src721.error.required".localized(field)
         case let .textTooLong(field): return "safe_zone.src721.error.too_long".localized(field)
         case .invalidContract: return "safe_zone.src721.error.contract".localized
+        case .enumerationUnavailable: return "safe_zone.src721.error.enumeration_unavailable".localized
+        case .tokenOperationUnavailable: return "safe_zone.src721.error.token_operation_unavailable".localized
+        case .ownerRequired: return "safe_zone.src721.error.owner_required".localized
+        case .contractStateUnavailable: return "safe_zone.src721.error.contract_state_unavailable".localized
+        case .publicMintUnavailable: return "safe_zone.src721.error.public_mint_unavailable".localized
+        case .publicMintAllowanceInsufficient: return "safe_zone.src721.error.public_mint_allowance".localized
+        case .supplyInsufficient: return "safe_zone.src721.error.supply_insufficient".localized
         case .transactionTimeout: return "safe_zone.src721.error.timeout".localized
         case .missingSigner: return "safe_zone.src721.error.signer".localized
         }
@@ -168,6 +291,12 @@ enum SRC721Validation {
             throw SRC721ValidationError.invalidAmount(field)
         }
         return amount
+    }
+
+    static func validatePublicMint(state: SRC721ContractState, amount: BigUInt) throws {
+        guard state.canPublicMint else { throw SRC721ValidationError.publicMintUnavailable }
+        guard state.publicMintAllowance >= amount else { throw SRC721ValidationError.publicMintAllowanceInsufficient }
+        guard state.remainSupply >= amount else { throw SRC721ValidationError.supplyInsufficient }
     }
 
     static func address(_ value: String, field: String, allowZero: Bool = false) throws -> Web3Core.EthereumAddress {
