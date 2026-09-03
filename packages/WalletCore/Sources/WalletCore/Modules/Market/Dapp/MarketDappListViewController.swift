@@ -274,8 +274,7 @@ private extension MarktDapp {
         guard let safeDappId else {
             return isZh ? desc : descEN
         }
-        let fraud = safeDappFraudNum?.description ?? "0"
-        return "ID: \(safeDappId.description) · \("safe_dapp.fraud_count".localized): \(fraud)\n\(isZh ? desc : descEN)"
+        return "ID: \(safeDappId.description)\n\(isZh ? desc : descEN)"
     }
 }
 
@@ -283,21 +282,13 @@ private extension MarktDapp {
 extension MarketDappListViewController: SectionsDataSource {
 
     func buildSections() -> [SectionProtocol] {
-        let headerState: ViewState<UITableViewHeaderFooterView>
-
-        if let headerView = headerView, let viewItems = viewItems, !viewItems.isEmpty {
-            headerState = .static(view: headerView, height: .heightCell56)
-        } else {
-            headerState = .margin(height: 0)
-        }
-
         var sections: [SectionProtocol] = [SectionProtocol]()
         if let viewItems = viewItems, !viewItems.isEmpty {
             for section in viewItems {
                 sections.append(
                     Section(
-                        id: "coins",
-                        headerState: headerState,
+                        id: "dapp-\(section.subType)",
+                        headerState: tableView.sectionHeader(text: section.subType),
                         footerState: .marginColor(height: .margin32, color: .clear) ,
                         rows: rows(tableView: tableView, listViewItems: section.subs)
                     ))

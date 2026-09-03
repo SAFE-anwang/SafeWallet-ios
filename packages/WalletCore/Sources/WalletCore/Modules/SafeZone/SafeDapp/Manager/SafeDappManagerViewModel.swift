@@ -13,6 +13,13 @@ class SafeDappManagerViewModel: ObservableObject {
     @Published var operationState: SafeDappAsyncState = .idle
     @Published var openAlert: SafeDappOpenAlert?
     private var allItems: [SafeDappViewItem] = []
+    private var loadTask: Task<Void, Never>?
+    private var activeLoadID = UUID()
+
+    var hasLoadedItems: Bool { !allItems.isEmpty }
+    var isSearchResultEmpty: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && items.isEmpty
+    }
 
     init(service: SafeDappService) {
         self.service = service
@@ -20,8 +27,12 @@ class SafeDappManagerViewModel: ObservableObject {
     }
 
     func load() {
+        loadTask?.cancel()
+        let loadID = UUID()
+        activeLoadID = loadID
         dataState = .loading
-        Task {
+        loadTask = Task { [weak self] in
+            guard let self else { return }
             do {
                 let total = try await service.getMineNum()
                 var ids: [BigUInt] = []
@@ -39,40 +50,44 @@ class SafeDappManagerViewModel: ObservableObject {
                     loaded.append(SafeDappViewItem(info: info))
                 }
 
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
+                    guard self.activeLoadID == loadID else { return }
                     self.allItems = loaded
                     self.applyFilter()
                 }
 
                 for item in loaded {
-                    loadLogo(id: item.info.id)
+                    loadLogo(id: item.info.id, loadID: loadID)
                 }
             } catch {
                 await MainActor.run {
+                    guard self.activeLoadID == loadID, !Task.isCancelled else { return }
                     self.dataState = .failed(error)
                 }
             }
         }
     }
 
-    func loadLogo(id: BigUInt) {
+    func loadLogo(id: BigUInt, loadID: UUID? = nil) {
         Task {
             do {
                 let data = try await service.getLogo(id: id)
                 let image = UIImage(data: data)
                 await MainActor.run {
-                    updateLogo(id: id, logo: image)
+                    updateLogo(id: id, logo: image, loadID: loadID)
                 }
             } catch {
                 await MainActor.run {
-                    updateLogo(id: id, logo: nil)
+                    updateLogo(id: id, logo: nil, loadID: loadID)
                 }
             }
         }
     }
 
     @MainActor
-    private func updateLogo(id: BigUInt, logo: UIImage?) {
+    private func updateLogo(id: BigUInt, logo: UIImage?, loadID: UUID? = nil) {
+        if let loadID, activeLoadID != loadID { return }
         guard let index = allItems.firstIndex(where: { $0.info.id == id }) else { return }
         allItems[index].logo = logo
         allItems[index].logoLoaded = true

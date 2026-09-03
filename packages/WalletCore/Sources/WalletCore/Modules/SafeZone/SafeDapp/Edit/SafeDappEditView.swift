@@ -56,11 +56,11 @@ struct SafeDappEditView: View {
         .alert("safe_dapp.update_confirm".localized, isPresented: $showConfirm, actions: {
             Button("button.cancel".localized, role: .cancel) {}
             Button("button.confirm".localized) {
-                viewModel.update { state in
-                    switch state {
-                    case .completed:
-                        HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
-                        presentationMode.wrappedValue.dismiss()
+                    viewModel.update { state in
+                        switch state {
+                        case .completed:
+                            HudHelper.instance.show(banner: .success(string: "safe_dapp.update_submitted".localized))
+                            presentationMode.wrappedValue.dismiss()
                     case let .failed(message):
                         HudHelper.instance.show(banner: .error(string: message))
                     default: ()
@@ -150,18 +150,42 @@ struct SafeDappEditView: View {
             NavigationLink {
                 SafeDappLogoView(viewModel: logoViewModel)
             } label: {
-                HStack {
-                    Text("safe_dapp.logo".localized.uppercased())
+                HStack(spacing: .margin12) {
+                    logoPreview(logoViewModel.selectedImage)
+                    Text("safe_dapp.choose_logo".localized)
                         .themeSubhead1(color: .themeLeah)
-                    Spacer()
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: .margin8)
                     Image(systemName: "chevron.right")
                         .foregroundColor(.themeGray)
                 }
-                .padding(.horizontal, .margin16)
-                .padding(.vertical, .margin16)
+                .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .padding(.horizontal, .margin16)
+            .padding(.vertical, .margin8)
             .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
         }
+    }
+
+    @ViewBuilder
+    private func logoPreview(_ image: UIImage?) -> some View {
+        Group {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image("safe-anwang_trx_32")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(.margin12)
+                    .foregroundColor(.themeGray)
+            }
+        }
+        .frame(width: 56, height: 56)
+        .background(Color.themeBlade)
+        .clipShape(RoundedRectangle(cornerRadius: .cornerRadius8, style: .continuous))
     }
 }

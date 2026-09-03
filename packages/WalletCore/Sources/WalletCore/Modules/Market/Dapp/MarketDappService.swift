@@ -20,8 +20,14 @@ class MarketDappService {
     }
 
     private func handle(datas: [MarktDapp], tab: MarketDappModule.Tab) {
-        let tempArr = Dictionary(grouping: datas) { $0.subType }.map { (key: String, value: [MarktDapp]) in
-            return MarketDappListViewModel.ViewItem(subType: key, subs: value)
+        var grouped: [String: [MarktDapp]] = [:]
+        for dapp in datas {
+            let group = dapp.type.caseInsensitiveCompare("SAFE") == .orderedSame ? "SAFE DAPP" : "DEX"
+            grouped[group, default: []].append(dapp)
+        }
+        let tempArr = ["DEX", "SAFE DAPP"].compactMap { group -> MarketDappListViewModel.ViewItem? in
+            guard let dapps = grouped[group], !dapps.isEmpty else { return nil }
+            return MarketDappListViewModel.ViewItem(subType: group, subs: dapps)
         }
         state = .completed(data: (tempArr, tab))
     }
@@ -35,7 +41,7 @@ class MarketDappService {
         let single: Single<[MarktDapp]>
         switch tab {
         case .ALL:
-            single = dappProvider.dappAllRequestSingle()
+            single = allDappsSingle()
         case .ETH:
             single = dappProvider.dappTypeRequestSingle(type: "ETH")
         case .BSC:
@@ -72,6 +78,17 @@ extension MarketDappService {
 }
 
 private extension MarketDappService {
+    func allDappsSingle() -> Single<[MarktDapp]> {
+        Single.zip(
+            dappProvider.dappAllRequestSingle(),
+            safeDappsSingle().catchErrorJustReturn([])
+        ) { apiDapps, safeDapps in
+            let existingKeys = Set(apiDapps.map(Self.dappKey))
+            let additionalSafeDapps = safeDapps.filter { !existingKeys.contains(Self.dappKey($0)) }
+            return apiDapps + additionalSafeDapps
+        }
+    }
+
     func safeDappsSingle() -> Single<[MarktDapp]> {
         Single.create { single in
             let task = Task {
@@ -87,6 +104,8 @@ private extension MarketDappService {
                             icon: "",
                             dlink: $0.info.runUrl,
                             md5Code: $0.info.id.description,
+                            keywords: $0.info.keyword,
+                            chainId: $0.info.id.description,
                             safeDappId: $0.info.id,
                             safeDappContractAddr: $0.info.contractAddr.address,
                             safeDappKeyword: $0.info.keyword,
@@ -104,6 +123,10 @@ private extension MarketDappService {
                 task.cancel()
             }
         }
+    }
+
+    static func dappKey(_ dapp: MarktDapp) -> String {
+        "\(dapp.name)|\(dapp.dlink)"
     }
 }
 extension MarketDappService {

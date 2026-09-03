@@ -87,22 +87,32 @@ struct SafeDappManagerView: View {
         case .loading:
             ProgressView()
         case let .completed(items):
-            if items.isEmpty {
+            if !viewModel.hasLoadedItems {
                 PlaceholderViewNew(icon: "no_data_48", title: "safe_dapp.empty".localized)
             } else {
                 ScrollableThemeView {
                     VStack(spacing: .margin8) {
                         searchField
-                        ListSection {
-                            ForEach(items) { item in
-                                SafeDappItemView(
-                                    item: item,
-                                    editAction: {
-                                        guard let editViewModel = SafeDappModule.editViewModel(info: item.info, currentLogo: item.logo) else { return }
-                                        path.append(SafeDappManagerViewModel.DetailViewType(kind: .edit, viewModel: editViewModel))
-                                    },
-                                    removeAction: { removeTarget = item }
-                                )
+                        if viewModel.isSearchResultEmpty {
+                            PlaceholderViewNew(
+                                icon: "no_data_48",
+                                title: "safe_dapp.search_empty".localized,
+                                layoutType: .middle,
+                                additionalContent: { EmptyView() }
+                            )
+                            .frame(maxWidth: .infinity, minHeight: 240)
+                        } else {
+                            ListSection {
+                                ForEach(items) { item in
+                                    SafeDappItemView(
+                                        item: item,
+                                        editAction: {
+                                            guard let editViewModel = SafeDappModule.editViewModel(info: item.info, currentLogo: item.logo) else { return }
+                                            path.append(SafeDappManagerViewModel.DetailViewType(kind: .edit, viewModel: editViewModel))
+                                        },
+                                        removeAction: { removeTarget = item }
+                                    )
+                                }
                             }
                         }
                     }

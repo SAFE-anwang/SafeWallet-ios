@@ -199,21 +199,22 @@ extension SafeDappService {
         while start < total {
             let count = min(pageSize, total - start)
             try SafeDappValidation.validatePage(start: start, count: count, total: total)
-            ids.append(contentsOf: try await dapp.getIDs(start, count))
-            start += count
+            let pageIDs = try await dapp.getIDs(start, count)
+            guard !pageIDs.isEmpty else { break }
+            ids.append(contentsOf: pageIDs)
+            start += BigUInt(pageIDs.count)
         }
 
         var items: [SafeDappPublishedItem] = []
         for id in ids {
-            let info = try await dapp.getInfo(id)
-            guard !info.isFrozen else { continue }
-            guard
-                let logoData = try? await dapp.getLogo(id),
-                !logoData.isEmpty
-            else {
+            // Match Android market behavior: one broken item or missing logo
+            // must not prevent the remaining on-chain DApps from displaying.
+            guard let info = try? await dapp.getInfo(id) else {
                 continue
             }
-            items.append(SafeDappPublishedItem(info: info, logoData: logoData))
+            let logoData = try? await dapp.getLogo(id)
+            let validLogoData = logoData?.isEmpty == false ? logoData : nil
+            items.append(SafeDappPublishedItem(info: info, logoData: validLogoData))
         }
         return items
     }

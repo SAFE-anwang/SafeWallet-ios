@@ -27,7 +27,7 @@ struct SafeDappViewItem: Identifiable {
 
 struct SafeDappPublishedItem {
     let info: DAppInfo
-    let logoData: Data
+    let logoData: Data?
 }
 
 struct SafeDappFormData: Codable {
