@@ -26,6 +26,8 @@ extension BlockchainType {
         .zkSync,
         .binanceSmartChain,
         .tron,
+        .thorChain,
+        .mayaChain,
         .ton,
         .safe,
         .safe4,
@@ -108,6 +110,8 @@ extension BlockchainType {
             .binanceSmartChain,
             .solana,
             .tron,
+            .thorChain,
+            .mayaChain,
             .base,
             .polygon,
             .arbitrumOne,
@@ -210,10 +214,12 @@ extension BlockchainType {
             return self == .monero
         case let .btcPrivateKey(_, _, accountBlockchainType):
             return self == accountBlockchainType
+        case .moneroMnemonic:
+            return self == .monero
         }
     }
 
-    var isEvm: Bool {
+    public var isEvm: Bool {
         switch self {
         case .arbitrumOne, .avalanche, .base, .binanceSmartChain, .ethereum, .fantom, .gnosis, .optimism, .polygon, .zkSync: return true
         default: return false
@@ -249,6 +255,8 @@ extension BlockchainType {
         case .ton: return "TON"
         case .dogecoin: return "Dogecoin"
         case .stellar: return "Stellar"
+        case .thorChain: return "RUNE, THORChain assets"
+        case .mayaChain: return "CACAO"
         case .solana: return "SOL, SPL tokens"
         default: return ""
         }
@@ -325,10 +333,10 @@ extension BlockchainType {
         }
     }
 
-    var blockTime: TimeInterval? {
+    public var blockTime: TimeInterval? {
         switch self {
         case .ethereum: return 12
-        case .binanceSmartChain, .tron: return 3
+        case .tron: return 3
         case .polygon, .avalanche, .optimism, .fantom, .base, .zkSync: return 2
         case .gnosis, .stellar, .ton: return 5
         case .bitcoin, .bitcoinCash, .ecash: return 600
@@ -336,7 +344,8 @@ extension BlockchainType {
         case .zcash: return 75
         case .monero: return 120
         case .zano: return 60
-        case .arbitrumOne: return 1
+        case .binanceSmartChain, .arbitrumOne: return 1
+        case .thorChain, .mayaChain: return nil
         case .solana, .unsupported: return nil
         case .dogecoin: return 60
         case .safe: return 5

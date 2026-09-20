@@ -3,19 +3,21 @@ import MarketKit
 import RxRelay
 import RxSwift
 
-enum ZcashEndpointValidationError: LocalizedError {
+private enum ZcashEndpointValidationError: LocalizedError {
     case noActiveAdapter
     case unavailable
+    case sendInProgress
 
     var errorDescription: String? {
         switch self {
         case .noActiveAdapter: return "No active Zcash adapter"
         case .unavailable: return "Zcash endpoint is unavailable"
+        case .sendInProgress: return "send.confirmation.sending".localized
         }
     }
 }
 
-class AdapterManager {
+public class AdapterManager {
     private let disposeBag = DisposeBag()
 
     private let adapterFactory: AdapterFactory
@@ -29,6 +31,8 @@ class AdapterManager {
     private let moneroNodeManager: MoneroNodeManager
     private let zanoNodeManager: ZanoNodeManager
     private let zcashNodeManager: ZcashNodeManager
+    private let thorChainKitManager: ThorChainKitManager
+    private let mayaChainKitManager: ThorChainKitManager
 
     private let adapterDataReadyRelay = PublishRelay<AdapterData>()
 
@@ -38,9 +42,9 @@ class AdapterManager {
     private(set) var src20SyncManager: SRC20SyncManager?
     private var subscribedEvmKitManagers = [BlockchainType: ObjectIdentifier]()
 
-    public init(adapterFactory: AdapterFactory, walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager,
-                tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager, zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager,
-                btcBlockchainManager: BtcBlockchainManager, moneroNodeManager: MoneroNodeManager, zanoNodeManager: ZanoNodeManager, zcashNodeManager: ZcashNodeManager)
+    init(adapterFactory: AdapterFactory, walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager,
+         tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager, zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager,
+         btcBlockchainManager: BtcBlockchainManager, moneroNodeManager: MoneroNodeManager, zanoNodeManager: ZanoNodeManager, zcashNodeManager: ZcashNodeManager, thorChainKitManager: ThorChainKitManager, mayaChainKitManager: ThorChainKitManager)
     {
         self.adapterFactory = adapterFactory
         self.walletManager = walletManager
@@ -53,6 +57,8 @@ class AdapterManager {
         self.moneroNodeManager = moneroNodeManager
         self.zanoNodeManager = zanoNodeManager
         self.zcashNodeManager = zcashNodeManager
+        self.thorChainKitManager = thorChainKitManager
+        self.mayaChainKitManager = mayaChainKitManager
 
         walletManager.activeWalletDataUpdatedObservable
             .observeOn(SerialDispatchQueueScheduler(qos: .userInitiated))
@@ -68,6 +74,8 @@ class AdapterManager {
         subscribe(disposeBag, moneroNodeManager.nodeObservable) { [weak self] in self?.recreateAdapter(blockchainType: $0) }
         subscribe(disposeBag, zanoNodeManager.nodeObservable) { [weak self] in self?.recreateAdapter(blockchainType: $0) }
         subscribe(disposeBag, zcashNodeManager.nodeObservable) { [weak self] in self?.handleZcashEndpointChange(blockchainType: $0) }
+        subscribe(disposeBag, thorChainKitManager.kitUpdatedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .thorChain) }
+        subscribe(disposeBag, mayaChainKitManager.kitUpdatedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .mayaChain) }
         subscribe(disposeBag, tronKitManager.tronKitUpdatedObservable) { [weak self] in self?.handleUpdatedEvmKit(blockchainType: .tron) }
         subscribe(disposeBag, solanaKitManager.kitStoppedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .solana) }
     }
@@ -171,12 +179,14 @@ class AdapterManager {
 
         guard !adapters.isEmpty else { return }
 
+        let requestedURL = zcashNodeManager.node(blockchainType: .zcash).url
+
         Task { [weak self] in
             for adapter in adapters {
                 do {
                     try await adapter.switchEndpoint(endpoint)
                 } catch {
-                    self?.revertZcashSelection(to: adapter)
+                    self?.revertZcashSelection(to: adapter, failedURL: requestedURL)
                 }
             }
         }
@@ -189,7 +199,13 @@ class AdapterManager {
         })
     }
 
-    private func revertZcashSelection(to adapter: ZcashAdapter) {
+    private func revertZcashSelection(to adapter: ZcashAdapter, failedURL: URL) {
+        // revert only while the failed target is still the persisted choice —
+        // a newer user selection must not be clobbered by an older failure
+        guard zcashNodeManager.node(blockchainType: .zcash).url == failedURL else {
+            return
+        }
+
         guard let appliedURL = adapter.currentEndpointURL,
               let node = zcashNodeManager.allNodes(blockchainType: .zcash).first(where: { $0.url == appliedURL })
         else {
@@ -235,11 +251,20 @@ extension AdapterManager {
         adapterDataReadyRelay.asObservable()
     }
 
-    func adapter(for wallet: Wallet) -> IAdapter? {
+    public func adapter(for wallet: Wallet) -> IAdapter? {
         queue.sync { _adapterData.adapterMap[wallet] }
     }
 
-    func adapter(for token: Token) -> IAdapter? {
+    // Re-emits the current adapter data so consumers (e.g. transaction pools) rebuild against
+    // adapters whose internal scope changed without being recreated - such as a Monero
+    // account switch, which requires no kit restart.
+    func reloadAdapterData() {
+        queue.async {
+            self.adapterDataReadyRelay.accept(self._adapterData)
+        }
+    }
+
+    public func adapter(for token: Token) -> IAdapter? {
         queue.sync {
             guard let wallet = walletManager.activeWallets.first(where: { $0.token == token }) else {
                 return nil
@@ -255,6 +280,17 @@ extension AdapterManager {
 
     public func depositAdapter(for wallet: Wallet) -> IDepositAdapter? {
         queue.sync { _adapterData.adapterMap[wallet] as? IDepositAdapter }
+    }
+
+    // Re-runs adapter creation for active wallets that don't have an adapter yet
+    // (e.g. Monero, deferred until the fastest node was resolved).
+    func initMissingAdapters() {
+        let activeWalletData = walletManager.activeWalletData
+        initAdapters(
+            wallets: activeWalletData.wallets,
+            account: activeWalletData.account,
+            childWalletId: activeWalletData.childWalletId
+        )
     }
 
     func recreateAdapter(blockchainType: BlockchainType) {
@@ -297,14 +333,24 @@ extension AdapterManager {
             throw ZcashEndpointValidationError.noActiveAdapter
         }
 
+        // switching reconfigures the synchronizer under a live broadcast; background-finishing
+        // work is bounded (local proving + 30s gRPC timeout per tx), so the refusal is short-lived.
+        // a migration is an ordinary send, so it holds the same "zcash-send" critical section.
+        let busy = await MainActor.run { Core.shared.backgroundTaskManager.isCriticalActive }
+        guard !busy else {
+            throw ZcashEndpointValidationError.sendInProgress
+        }
+
         guard await adapter.isEndpointAvailable(endpoint) else {
             throw ZcashEndpointValidationError.unavailable
         }
     }
 
     func refresh() {
+        let adapters = queue.sync { Array(_adapterData.adapterMap.values) }
+
         DispatchQueue.global(qos: .background).async {
-            for (_, adapter) in self._adapterData.adapterMap {
+            for adapter in adapters {
                 adapter.refresh()
             }
 
@@ -316,8 +362,10 @@ extension AdapterManager {
     }
 
     func refresh(wallet: Wallet) {
+        let adapter = queue.sync { _adapterData.adapterMap[wallet] }
+
         DispatchQueue.global(qos: .background).async {
-            if let adapter = self._adapterData.adapterMap[wallet] {
+            if let adapter {
                 adapter.refresh()
             } else if wallet.token.blockchainType == .ton {
                 self.tonKitManager.tonKit?.sync()
@@ -325,8 +373,6 @@ extension AdapterManager {
                 self.stellarKitManager.stellarKit?.sync()
             } else if wallet.token.blockchainType == .solana {
                 self.solanaKitManager.solanaKit?.refresh()
-            } else if wallet.token.blockchainType == .monero {
-                (self._adapterData.adapterMap[wallet] as? MoneroAdapter)?.restart()
             } else if wallet.token.blockchainType == .zano {
                 self.zanoKitManager.kit?.restart()
             }

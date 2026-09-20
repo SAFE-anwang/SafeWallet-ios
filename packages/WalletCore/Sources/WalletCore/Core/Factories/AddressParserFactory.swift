@@ -81,8 +81,12 @@ enum AddressParserFactory {
             return handlers
         case .tron:
             return [TronAddressParser()]
+        case .thorChain:
+            return [ThorChainAddressParserItem()]
+        case .mayaChain:
+            return [ThorChainAddressParserItem(blockchainType: .mayaChain, network: .mayaMainnet)]
         case .zcash:
-            let network = ZcashNetworkBuilder.network(for: .mainnet)
+            let network = ZcashNetworkBuilder.network(for: ZcashAdapter.networkType)
             let validator = ZcashAddressValidator(network: network)
 
             let addressType = filter.flatMap {
@@ -103,7 +107,8 @@ enum AddressParserFactory {
         case .monero:
             return [MoneroAddressParserItem()]
         case .zano:
-            return [ZanoAddressParserItem()]
+            let aliasResolver = ZanoAliasResolver(zanoNodeManager: Core.shared.zanoNodeManager, networkManager: Core.shared.networkManager)
+            return [ZanoAddressParserItem(), ZanoAliasAddressParserItem(resolver: aliasResolver)]
         case .unsupported: return []
         }
     }

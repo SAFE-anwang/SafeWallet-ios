@@ -455,6 +455,35 @@ class TransactionsViewItemFactory {
             title = record.transaction.contract?.label ?? "transactions.unknown_transaction.title".localized
             subTitle = "transactions.unknown_transaction.description".localized()
 
+        case let record as ThorChainIncomingTransactionRecord:
+            iconType = singleValueIconType(source: record.source, kind: record.value.kind)
+            title = "transactions.receive".localized
+            subTitle = record.from.flatMap { "transactions.from".localized(mapped(address: $0, blockchainType: item.record.source.blockchainType)) } ?? "---"
+
+            primaryValue = TransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .incoming))
+
+            if let currencyValue = item.currencyValue {
+                secondaryValue = TransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
+            }
+
+        case let record as ThorChainOutgoingTransactionRecord:
+            iconType = singleValueIconType(source: record.source, kind: record.value.kind)
+            title = "transactions.send".localized
+            subTitle = record.to.flatMap { "transactions.to".localized(mapped(address: $0, blockchainType: item.record.source.blockchainType)) } ?? "---"
+
+            primaryValue = TransactionsViewModel.Value(text: coinString(from: record.value, signType: record.sentToSelf ? .never : .always), type: type(value: record.value, condition: record.sentToSelf, .neutral, .outgoing))
+
+            if let currencyValue = item.currencyValue {
+                secondaryValue = TransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
+            }
+
+            sentToSelf = record.sentToSelf
+
+        case let record as ThorChainTransactionRecord:
+            iconType = .localIcon(imageName: item.record.source.blockchainType.iconPlain32)
+            title = record.transaction.type.capitalized
+            subTitle = record.transaction.memo.flatMap { $0.isEmpty ? nil : $0 } ?? "transactions.unknown_transaction.description".localized()
+
         case let record as TonTransactionRecord:
             if record.actions.count == 1, let action = record.actions.first {
                 switch action.type {
@@ -566,6 +595,12 @@ class TransactionsViewItemFactory {
                 if let currencyValue = item.currencyValue {
                     secondaryValue = TransactionsViewModel.Value(text: currencyString(from: currencyValue), type: .secondary)
                 }
+            case let .swap(valueIn, valueOut):
+                iconType = doubleValueIconType(source: record.source, primaryValue: valueOut, secondaryValue: valueIn)
+                title = "transactions.swap".localized
+                subTitle = "\(valueIn.code) → \(valueOut.code)"
+                primaryValue = TransactionsViewModel.Value(text: coinString(from: valueOut), type: type(value: valueOut, .incoming))
+                secondaryValue = TransactionsViewModel.Value(text: coinString(from: valueIn), type: type(value: valueIn, .outgoing))
             case let .changeTrust(value, _, trustee, _):
                 iconType = singleValueIconType(source: record.source, kind: value.kind)
                 title = "Change Trust"
@@ -590,7 +625,7 @@ class TransactionsViewItemFactory {
         case let record as ZcashShieldingTransactionRecord:
             iconType = .localIcon(imageName: record.direction.txIconName)
             title = record.direction.txTitle
-            subTitle = "transactions.transfer".localized
+            subTitle = record.direction.txSubtitle
 
             primaryValue = TransactionsViewModel.Value(text: coinString(from: record.value, signType: .never), type: .neutral)
 
@@ -717,6 +752,18 @@ class TransactionsViewItemFactory {
             secondaryValue = singleValueSecondaryValue(value: record.value, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
 
             sentToSelf = record.sentToSelf
+
+        case let record as SolanaSwapTransactionRecord:
+            iconType = doubleValueIconType(source: record.source, primaryValue: record.valueOut, secondaryValue: record.valueIn)
+            title = "transactions.swap".localized
+            subTitle = record.exchangeName
+
+            if let valueOut = record.valueOut {
+                primaryValue = TransactionsViewModel.Value(text: coinString(from: valueOut), type: type(value: valueOut, .incoming))
+            }
+            if let valueIn = record.valueIn {
+                secondaryValue = TransactionsViewModel.Value(text: coinString(from: valueIn), type: type(value: valueIn, .outgoing))
+            }
 
         case let record as SolanaUnknownTransactionRecord:
             let incomingValues = record.incomingTransfers.map(\.value)

@@ -7,7 +7,9 @@ public class BlockchainSettingsStorage {
     private let keyBtcTransactionSort = "btc-transaction-sort"
     private let keyBtcTransactionRbf = "btc-transaction-rbf"
     private let keyEvmSyncSource = "evm-sync-source"
+    private let keyThorChainEndpointFamily = "thorchain-endpoint-family"
     private let keyMoneroNode = "monero-node"
+    private let keyMoneroAutoSelect = "monero-auto-select"
     private let keyZanoNode = "zano-node"
     private let keyZcashNode = "zcash-node"
 
@@ -62,12 +64,30 @@ extension BlockchainSettingsStorage {
         try? storage.save(record: record)
     }
 
+    func thorChainEndpointFamilyId(blockchainType: BlockchainType) -> String? {
+        try? storage.record(blockchainUid: blockchainType.uid, key: keyThorChainEndpointFamily).map(\.value)
+    }
+
+    func save(thorChainEndpointFamilyId: String, blockchainType: BlockchainType) {
+        let record = BlockchainSettingRecord(blockchainUid: blockchainType.uid, key: keyThorChainEndpointFamily, value: thorChainEndpointFamilyId)
+        try? storage.save(record: record)
+    }
+
     func moneroNodeUrl(blockchainType: BlockchainType) -> String? {
         try? storage.record(blockchainUid: blockchainType.uid, key: keyMoneroNode).map(\.value)
     }
 
     func save(moneroNodeUrl: String, blockchainType: BlockchainType) {
         let record = BlockchainSettingRecord(blockchainUid: blockchainType.uid, key: keyMoneroNode, value: moneroNodeUrl)
+        try? storage.save(record: record)
+    }
+
+    func moneroAutoSelectEnabled(blockchainType: BlockchainType) -> Bool {
+        ((try? storage.record(blockchainUid: blockchainType.uid, key: keyMoneroAutoSelect))?.map { $0.value == "true" }) ?? false
+    }
+
+    func save(moneroAutoSelectEnabled: Bool, blockchainType: BlockchainType) {
+        let record = BlockchainSettingRecord(blockchainUid: blockchainType.uid, key: keyMoneroAutoSelect, value: moneroAutoSelectEnabled ? "true" : "false")
         try? storage.save(record: record)
     }
 

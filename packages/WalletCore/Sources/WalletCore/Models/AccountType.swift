@@ -20,6 +20,9 @@ public enum AccountType: Identifiable {
     case btcAddress(address: String, blockchainType: BlockchainType, tokenType: TokenType)
     case btcPrivateKey(data: Data, compressed: Bool, blockchainType: BlockchainType)
     case moneroWatchAccount(address: String, viewKey: String)
+    // A raw ed25519 spend key behind a Monero legacy (Electrum-style) 25-word seed; no other
+    // chain can be derived from it. The passphrase is wallet2's seed offset, not a BIP39 salt.
+    case moneroMnemonic(words: [String], passphrase: String)
 
     public var id: Self {
         self
@@ -73,6 +76,15 @@ public enum AccountType: Identifiable {
             privateData = "\(data.hexString)|\(compressed)|\(blockchainType.uid)".data(using: .utf8) ?? Data()
         case let .moneroWatchAccount(address, viewKey):
             privateData = "\(address)|\(viewKey)".data(using: .utf8) ?? Data()
+        case let .moneroMnemonic(words, passphrase):
+            // Must stay byte-identical to Android's BackupLocalModule format so encrypted
+            // backups restore across platforms.
+            var description = words.joined(separator: " ")
+            if !passphrase.isEmpty {
+                description += "@" + passphrase
+            }
+
+            privateData = description.data(using: .utf8) ?? Data()
         }
 
         if hashed {
@@ -109,6 +121,8 @@ public enum AccountType: Identifiable {
             case (.tron, .native), (.tron, .eip20): return true
             case (.safe, .native), (.safe, .eip20): return true
             case (.safe4, .native), (.safe4, .eip20): return true
+            case (.thorChain, .native), (.thorChain, .thorChainAsset): return true
+            case (.mayaChain, .native): return true
             case (.ton, .native), (.ton, .jetton): return true
             case (.stellar, .native), (.stellar, .stellar), (.stellar, .unsupported(type: "native", reference: nil)): return true
             case (.solana, .native), (.solana, .spl): return true
@@ -132,11 +146,7 @@ public enum AccountType: Identifiable {
                 return false
             }
         case .passkeyOwned:
-            guard case let .eip20(address) = token.type else {
-                return false
-            }
-
-            return StablecoinRegistry.supports(blockchainType: token.blockchainType, tokenAddress: address)
+            return AccountTokenSupport.supports(accountType: self, token: token) ?? false
         case .evmPrivateKey, .evmAddress:
             switch (token.blockchainType, token.type) {
             case (.ethereum, .native), (.ethereum, .eip20), (.safe4, .native): return true
@@ -177,6 +187,8 @@ public enum AccountType: Identifiable {
             }
         case .moneroWatchAccount:
             return token.blockchainType == .monero
+        case .moneroMnemonic:
+            return token.blockchainType == .monero && token.type == .native
         }
     }
 
@@ -242,6 +254,9 @@ public enum AccountType: Identifiable {
             return "Bitcoin Private Key"
         case .moneroWatchAccount:
             return "Monero Watch Account"
+        case let .moneroMnemonic(words, passphrase):
+            let count = "\(words.count)"
+            return passphrase.isEmpty ? "manage_accounts.n_words".localized(count) : "manage_accounts.n_words_with_passphrase".localized(count)
         }
     }
 
@@ -286,6 +301,8 @@ public enum AccountType: Identifiable {
             return "btc_private_key"
         case .moneroWatchAccount:
             return "monero_watch_account"
+        case let .moneroMnemonic(_, passphrase):
+            return passphrase.isEmpty ? "monero_mnemonic" : "monero_mnemonic_with_passphrase"
         }
     }
 
@@ -426,6 +443,8 @@ extension AccountType {
             return AccountType.trcPrivateKey(data: uniqueId)
         case .stellarSecretKey:
             return AccountType.stellarSecretKey(secretSeed: string)
+        case .passkeyOwned:
+            return nil // device-bound passkey + separate local storage: not restorable from a portable backup
         case .hdExtendedKey:
             do {
                 return try AccountType.hdExtendedKey(key: HDExtendedKey(data: uniqueId))
@@ -481,15 +500,24 @@ extension AccountType {
             let viewKey = components[1]
 
             return AccountType.moneroWatchAccount(address: address, viewKey: viewKey)
+        case .moneroMnemonic:
+            let (wordList, passphrase) = split(string, separator: "@")
+            let words = wordList.split(separator: " ").map(String.init)
+
+            guard words.count == 25 else {
+                return nil
+            }
+
+            return AccountType.moneroMnemonic(words: words, passphrase: passphrase)
         }
     }
 
-    enum Abstract: String, Codable {
+    public enum Abstract: String, Codable {
         case mnemonic
         case evmPrivateKey = "private_key"
         case trcPrivateKey = "tron_private_key"
         case stellarSecretKey = "stellar_secret_key"
-        // TODO(v3): add `passkeyOwned = "passkey_owned"` when backup/restore support is implemented.
+        case passkeyOwned = "passkey_owned"
         case evmAddress = "evm_address"
         case tronAddress = "tron_address"
         case tonAddress = "ton_address"
@@ -498,12 +526,12 @@ extension AccountType {
         case btcAddress = "btc_address_key"
         case btcPrivateKey = "btc_private_key"
         case moneroWatchAccount = "monero_watch_account"
+        case moneroMnemonic = "monero_mnemonic"
 
         init(_ type: AccountType) {
             switch type {
             case .mnemonic: self = .mnemonic
-            // TODO: before Part 9 (Create AA-wallet UI) — hide backup entry points for passkey (ManageAccountView iCloud row, BackupSelectContentViewModel "regular" filter) or replace preconditionFailure with throws. Currently crashes if any backup flow reaches a passkeyOwned account.
-            case .passkeyOwned: preconditionFailure("passkeyOwned backup/restore is not implemented yet")
+            case .passkeyOwned: self = .passkeyOwned
             case .evmPrivateKey: self = .evmPrivateKey
             case .trcPrivateKey: self = .trcPrivateKey
             case .stellarSecretKey: self = .stellarSecretKey
@@ -515,6 +543,7 @@ extension AccountType {
             case .btcAddress: self = .btcAddress
             case .btcPrivateKey: self = .btcPrivateKey
             case .moneroWatchAccount: self = .moneroWatchAccount
+            case .moneroMnemonic: self = .moneroMnemonic
             }
         }
     }
@@ -549,6 +578,8 @@ extension AccountType: Hashable {
             return lhsData == rhsData && lhsCompressed == rhsCompressed && lhsBlockchainType == rhsBlockchainType
         case let (.moneroWatchAccount(lhsAddress, lhsViewKey), .moneroWatchAccount(rhsAddress, rhsViewKey)):
             return lhsAddress == rhsAddress && lhsViewKey == rhsViewKey
+        case let (.moneroMnemonic(lhsWords, lhsPassphrase), .moneroMnemonic(rhsWords, rhsPassphrase)):
+            return lhsWords == rhsWords && lhsPassphrase == rhsPassphrase
         default: return false
         }
     }
@@ -601,6 +632,10 @@ extension AccountType: Hashable {
             hasher.combine("moneroWatchWallet")
             hasher.combine(address)
             hasher.combine(viewKey)
+        case let .moneroMnemonic(words, passphrase):
+            hasher.combine("moneroMnemonic")
+            hasher.combine(words)
+            hasher.combine(passphrase)
         }
     }
 }

@@ -33,12 +33,24 @@ class MainSettingsViewModel: ObservableObject {
 
     @Published var debu: String?
 
-    let showTestSwitchers: Bool
+    let showDevTools: Bool
 
     @Published var forceEnableSwap: Bool {
         didSet {
             localStorage.forceEnableSwap = forceEnableSwap
             appStateManager.sync()
+        }
+    }
+
+    @Published var stellarBrokerEnabled: Bool {
+        didSet {
+            localStorage.stellarBrokerEnabled = stellarBrokerEnabled
+        }
+    }
+
+    @Published var emulateEvmSwapSend: Bool {
+        didSet {
+            localStorage.emulateEvmSwapSend = emulateEvmSwapSend
         }
     }
 
@@ -68,6 +80,20 @@ class MainSettingsViewModel: ObservableObject {
         }
     }
 
+    @Published var emulateZcashMigration: Bool {
+        didSet {
+            localStorage.emulateZcashMigration = emulateZcashMigration
+
+            // turning the toggle off clears the migration-history markers so the flow can be re-run
+            if !emulateZcashMigration,
+               let token = try? Core.shared.coinManager.token(query: .init(blockchainType: .zcash, tokenType: .native)),
+               let adapter = Core.shared.adapterManager.adapter(for: token) as? ZcashAdapter
+            {
+                adapter.clearMigrationHistory()
+            }
+        }
+    }
+
     @Published var debuggingAmlResult: MultiSwapViewModel.AmlRiskResult? {
         didSet {
             localStorage.debuggingAmlCheckResult = debuggingAmlResult
@@ -75,17 +101,22 @@ class MainSettingsViewModel: ObservableObject {
     }
 
     init() {
-        showTestSwitchers = AppConfig.showTestSwitchers
+        showDevTools = AppConfig.showDevTools
         forceEnableSwap = localStorage.forceEnableSwap
+        stellarBrokerEnabled = localStorage.stellarBrokerEnabled
+        emulateEvmSwapSend = localStorage.emulateEvmSwapSend
         simulateFailSwap = localStorage.simulateFailSwap
         emulatePurchase = localStorage.emulatePurchase
         testNetEnabled = testNetManager.testNetEnabled
         mayaStagenetEnabled = testNetManager.mayaStagenetEnabled
+        emulateZcashMigration = localStorage.emulateZcashMigration
         debuggingAmlResult = localStorage.debuggingAmlCheckResult
 
         subscribe(MainScheduler.instance, disposeBag, backupManager.allBackedUpObservable) { [weak self] _ in self?.syncManageWalletsAlert() }
-        subscribe(MainScheduler.instance, disposeBag, walletConnectSessionManager.sessionsObservable) { [weak self] _ in self?.syncWalletConnectSessionCount() }
-        subscribe(MainScheduler.instance, disposeBag, walletConnectSessionManager.activePendingRequestsObservable) { [weak self] _ in self?.syncWalletConnectPendingRequestCount() }
+        if let walletConnectSessionManager {
+            subscribe(MainScheduler.instance, disposeBag, walletConnectSessionManager.sessionsObservable) { [weak self] _ in self?.syncWalletConnectSessionCount() }
+            subscribe(MainScheduler.instance, disposeBag, walletConnectSessionManager.activePendingRequestsObservable) { [weak self] _ in self?.syncWalletConnectPendingRequestCount() }
+        }
         subscribe(MainScheduler.instance, disposeBag, contactManager.iCloudErrorObservable) { [weak self] error in
             if error != nil, self?.contactManager.remoteSync ?? false {
                 self?.iCloudUnavailable = true
@@ -138,11 +169,11 @@ class MainSettingsViewModel: ObservableObject {
     }
 
     private func syncWalletConnectSessionCount() {
-        walletConnectSessionCount = walletConnectSessionManager.sessions.count
+        walletConnectSessionCount = walletConnectSessionManager?.sessions.count ?? 0
     }
 
     private func syncWalletConnectPendingRequestCount() {
-        walletConnectPendingRequestCount = walletConnectSessionManager.activePendingRequests.count
+        walletConnectPendingRequestCount = walletConnectSessionManager?.activePendingRequests.count ?? 0
     }
 
     private func syncSecurityAlert() {
