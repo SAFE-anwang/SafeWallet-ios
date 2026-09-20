@@ -25,6 +25,7 @@
 "button.reject" = "Rechazar";
 "button.connect" = "Conectar";
 "button.save" = "Guardar";
+"button.create" = "Crear";
 "button.send" = "Enviar";
 "button.sign" = "Firma";
 "button.i_understand" = "Entiendo";
@@ -263,13 +264,13 @@
 
 // Backup Prompt
 
-"backup_prompt.backup_recovery_phrase" = "Backup del Monedero";
-"backup_prompt.backup_required" = "Se requiere una copia de seg";
-"backup_prompt.warning" = "Crear una copia de seguridad de la frase de recuperación y la contraseña asociada que le permitirá recuperar su cartera si su teléfono está perdido, robado, roto, etc.";
-"backup_prompt.backup" = "Copia de seguridad";
+"backup_prompt.title" = "Haz una copia de seguridad de tu wallet";
+"backup_prompt.description" = "Sin una copia de seguridad, perder tu teléfono significa perder tus fondos permanentemente. No hay forma de recuperarlos.";
 "backup_prompt.backup_manual" = "Copia de seguridad manual";
+"backup_prompt.backup_manual.description" = "Escribe tu frase de recuperación";
 "backup_prompt.backup_cloud" = "Copia de seguridad en iCloud";
-"backup_prompt.later" = "Más tarde";
+"backup_prompt.backup_cloud.description" = "Cifrado, sincronizado entre dispositivos";
+"backup_prompt.remind_later" = "Recordarme más tarde";
 
 // Backup to iCloud
 
@@ -293,6 +294,7 @@
 // Errors
 
 "error.send.self_transfer" = "Enviarte a vos mismo no está soportado";
+"error.send.in_progress" = "Un envío está en curso. Inténtelo de nuevo en un momento.";
 "error.send_binance.memo_required" = "El receptor requiere que el memo no esté vacío en la transacción de transferencia";
 "error.send_binance.only_digits_allowed" = "Es necesario que el memo contenga únicamente dígitos";
 
@@ -349,6 +351,17 @@
 "balance.token.transparent.detected.title" = "ZEC transparente detectado";
 "balance.token.transparent.detected.description" = "Tienes un saldo de ZEC en una dirección transparente. Para usarlo en Unstoppable, debe ser protegido (shielded) para garantizar total privacidad.";
 "balance.token.shield" = "Blindado";
+"balance.token.migration.required" = "Migración requerida";
+"transactions.migrate" = "Migrar";
+"transactions.migrate.to_ironwood" = "a Ironwood";
+"balance.token.migration.detected.title" = "Migración de pool ZEC";
+"balance.token.migration.detected.description" = "Zcash has upgraded to a new shielded pool. Your shielded balance must be migrated to that new pool to remain fully anonymous in future transactions.
+\n\nPlease note that migration transactions aren’t fully anonymous and expose the amounts involved.
+\n\nTo maintain high level of privacy you may consider using VPN or TOR when making migration transactions.";
+"balance.token.migrate" = "Migrar";
+"error.zcash.migration_failed" = "La migración no pudo completarse. No se perdieron fondos — puede intentarlo de nuevo más tarde.";
+"zcash.migration.warning.title" = "Monto públicamente visible";
+"zcash.migration.warning" = "Mover fondos entre pools requiere que el monto migrado sea públicamente visible en la blockchain. El remitente, el destinatario y sus direcciones permanecen privados.";
 
 "balance.token.receive_address" = "Dirección de recepción";
 "balance.token.account.inactive.description" = "Las transacciones aparecerán después de la activación";
@@ -475,6 +488,9 @@
 "send.confirmation.contact_name" = "Nombre de contacto";
 "send.confirmation.memo" = "Memo";
 "send.confirmation.memo_placeholder" = "Memo";
+"send.memo.public_warning" = "Este memo será público en la blockchain.";
+"send.memo.private_warning" = "Esta nota se publicará en la blockchain de forma encriptada.";
+"send.memo.local_warning" = "Este memo se guardará solo en tu teléfono.";
 "send.confirmation.fee" = "Comisión";
 "send.confirmation.fee_sponsored" = "Patrocinado";
 "send.confirmation.fee_paid_in" = "Pagado en %@";
@@ -578,6 +594,35 @@
 "send.address.blacklist.caution.title" = "¡Dirección en lista negra!";
 "send.address.blacklist.caution.description" = "La dirección que ingresaste está marcada como incluida en lista negra. Las transacciones a esta dirección podrían conducir a pérdidas u otros riesgos. Por favor, verifica los detalles del destinatario antes de proceder.";
 
+// Private Send
+
+"private_send.toggle.title" = "Envío privado";
+"private_send.toggle.subtitle" = "El destinatario no puede vincularse contigo en la cadena";
+"private_send.amount_caption" = "Cantidad que recibe el destinatario";
+"private_send.unavailable" = "Envío privado no disponible";
+
+"private_send.fee" = "Comisión de envío privado";
+"private_send.max_deposit" = "Depósito máximo";
+"private_send.refundable" = "Se reembolsa si no se usa";
+"private_send.estimated_time" = "Llegada estimada";
+
+"private_send.quote_expired" = "La cotización expiró: vuelve atrás y reintroduce el monto";
+"private_send.commit_failed" = "No se pudo configurar el envío privado. Inténtalo de nuevo.";
+
+"private_send.caution.title" = "Envío privado";
+"private_send.caution.below_minimum %@" = "El envío privado requiere que el destinatario reciba al menos %@.";
+"private_send.caution.above_maximum %@" = "El envío privado admite como máximo %@.";
+"private_send.caution.insufficient_balance %@" = "Este envío privado necesita %@ en tu wallet, incluyendo comisiones.";
+"private_send.caution.no_route" = "No hay una ruta privada disponible para este token y monto en este momento.";
+"private_send.caution.exact_output_unsupported" = "Esta ruta no puede garantizar una cantidad recibida exacta.";
+"private_send.caution.provider_suspended" = "El proveedor de envío privado no está disponible temporalmente.";
+"private_send.caution.network_error" = "No se pudo contactar al proveedor de envío privado. Verifica tu conexión e inténtalo de nuevo.";
+"private_send.caution.token_unsupported" = "El envío privado ya no está disponible para este token.";
+"private_send.caution.attachment_unsupported" = "Esta ruta privada requiere una etiqueta de transacción que este wallet no puede adjuntar. El envío privado no está disponible para este token.";
+"private_send.caution.amount_adjusted" = "El monto se ajustó para cubrir comisiones y ya no coincide con la cotización del envío privado. Reduce el monto e inténtalo de nuevo.";
+"private_send.caution.quote_expired" = "Esta cotización ha expirado. Vuelve atrás y reintroduce el monto para obtener una nueva.";
+"private_send.caution.buffer_unknown" = "La comisión mostrada es una estimación máxima; el costo final puede ser menor.";
+
 // Donate
 
 "donate.list.title" = "Donar con";
@@ -594,6 +639,10 @@
 // Swap
 
 "swap.title" = "Permutar";
+"swap.token_select.popular_tokens" = "Tokens Populares";
+"swap.token_select.your_tokens" = "Tus Tokens";
+"swap.token_select.top_tokens" = "Tokens Principales";
+"swap.token_select.recent" = "Búsqueda Reciente";
 "swap.you_pay" = "Usted paga";
 "swap.estimated" = "estimado";
 "swap.balance" = "Saldo";
@@ -625,6 +674,7 @@
 "swap.no_providers" = "Sin rutas";
 "swap.enter_amount" = "Introducir cantidad";
 "swap.no_quotes" = "Sin ofertas";
+"swap.error.no_memo" = "Esta ruta no se puede confirmar en este momento. Por favor, actualiza la cotización o elige otro proveedor.";
 "swap.token_not_enabled" = "Token no habilitado";
 "swap.token_syncing" = "Sincronización de tokens";
 "swap.token_not_synced" = "Token no sincronizado";
@@ -651,6 +701,7 @@
 "swap.pending_allowance" = "Asignación pendiente";
 "swap.approve" = "Aprobar";
 "swap.approving" = "Aprobando";
+"swap.activate_asset" = "Activar %@ en Stellar";
 "swap.allowance_error" = "Error de asignación";
 "swap.revoke" = "Revocar";
 "swap.revoking" = "Revocando";
@@ -664,9 +715,10 @@
 "swap.price_impact.info" = "La desviación esperada del precio mostrado, típicamente aumenta con la cantidad de intercambio.";
 "swap.high_price_impact" = "Alto impacto en el precio";
 "swap.recipient" = "Destinatario";
+"swap.external_recipient.description" = "La billetera que recibirá los fondos intercambiados.";
 "swap.slippage" = "Deslizamiento";
-"swap.swapped_time" = "Tiempo";
-"swap.swapped_time.info" = "Tiempo aproximado para recibir los fondos. El procesamiento del swap y las confirmaciones de la transacción pueden tardar algún tiempo según la red y el proveedor.";
+"swap.swapped_time" = "Tiempo de Swap";
+"swap.swapped_time.info" = "Este es el tiempo estimado necesario para completar el swap y recibir sus fondos. El tiempo real puede ser más corto o más largo dependiendo de las condiciones de la red, las confirmaciones de transacción y la ruta de swap seleccionada.";
 
 "swap.affiliate_fee" = "Tarifa de afiliado";
 "swap.liquidity_fee" = "Tarifa de liquidez";
@@ -1080,6 +1132,8 @@
 "coin_page.overview" = "Precio";
 "coin_page.analytics" = "Estadísticas";
 "coin_page.markets" = "Mercados";
+"coin_page.buy" = "Comprar";
+"coin_page.sell" = "Vender";
 "coin_page.tweets" = "Tweets";
 
 // Coin Page -> Overview
@@ -1931,6 +1985,8 @@
 "add_token.contract_address_not_found" = "Dirección del contrato no encontrada en la cadena de bloques %@";
 "add_token.jetton_master_not_found" = "Jetton Master no encontrado en la cadena de bloques %@";
 "add_token.input_placeholder.contract_address" = "Dirección del contrato";
+"add_token.input_placeholder.asset_id" = "ID del activo";
+"add_token.invalid_asset_id" = "ID de activo no válido";
 "add_token.input_placeholder.jetton_master_address" = "Dirección principal de Jetton";
 "add_token.input_placeholder.mint_address" = "Dirección Mint del token";
 "add_token.invalid_mint_address" = "Dirección de Solana no válida";
@@ -2124,6 +2180,16 @@
 "monero_network.added" = "Añadido";
 "monero_network.add_new" = "Añadir Nuevo";
 "monero_network.description" = "Elige el nodo que la aplicación Unstoppable debe usar para sincronizar la(s) wallet(s).";
+"monero_network.auto_select" = "Selección automática de nodo";
+"monero_network.auto_select.description" = "Conectar al nodo más rápido y actualizado";
+"monero_network.unreachable" = "Inaccesible";
+"add_monero_node.error.port_required" = "La URL debe incluir un puerto";
+"monero.account" = "Cuenta";
+"monero.accounts.title" = "Cuentas";
+"monero.accounts.description" = "Las cuentas son compartimentos separados dentro de la misma wallet de Monero. Los saldos, direcciones y transacciones mostrados pertenecen a la cuenta activa. Mover fondos entre cuentas requiere una transacción en la cadena.";
+"monero.accounts.new" = "Nueva cuenta";
+"monero.accounts.rename" = "Renombrar";
+"monero.accounts.name_placeholder" = "Nombre (opcional)";
 "monero_network.settings.title" = "Preferencias de nodo";
 "monero_network.settings.description" = "Nodo de confianza – Cuando está habilitado, la wallet confía en el nodo seleccionado y acepta sus datos sin verificación adicional. \n\nActivado → Las transacciones aparecen como pendientes inmediatamente después de la transmisión (sincronización más rápida, pero menor privacidad y mayor dependencia del nodo).\n\nDesactivado → Las transacciones aparecen solo después de las confirmaciones de la red (más lento, pero más seguro y privado).";
 "monero_network.settings.trust" = "Confiar";

@@ -25,6 +25,7 @@
 "button.reject" = "거절";
 "button.connect" = "연결";
 "button.save" = "저장";
+"button.create" = "생성";
 "button.send" = "전송";
 "button.sign" = "가입";
 "button.i_understand" = "이해합니다";
@@ -263,13 +264,13 @@
 
 // Backup Prompt
 
-"backup_prompt.backup_recovery_phrase" = "백업용 지갑";
-"backup_prompt.backup_required" = "백업이 필요합니다";
-"backup_prompt.warning" = "휴대전화 분실, 도난, 파손 등의 경우 지갑을 복구할 수 있도록 복구 문구 및 관련 비밀번호의 백업 사본을 만드십시오.";
-"backup_prompt.backup" = "백업";
+"backup_prompt.title" = "지갑 백업하기";
+"backup_prompt.description" = "백업 없이 휴대폰을 분실하면 자금을 영구적으로 잃게 됩니다. 복구할 수 있는 방법이 없습니다.";
 "backup_prompt.backup_manual" = "수동으로 백업합니다";
+"backup_prompt.backup_manual.description" = "복구 문구를 적어두세요";
 "backup_prompt.backup_cloud" = "iCloud에 백업";
-"backup_prompt.later" = "나중에";
+"backup_prompt.backup_cloud.description" = "암호화됨, 기기 간 동기화";
+"backup_prompt.remind_later" = "나중에 알림";
 
 // Backup to iCloud
 
@@ -293,6 +294,7 @@
 // Errors
 
 "error.send.self_transfer" = "자체로 전송이 지원되지 않음";
+"error.send.in_progress" = "전송이 진행 중입니다. 잠시 후 다시 시도하세요.";
 "error.send_binance.memo_required" = "수신자는 송금 내역에 메모 기록을 필요로 합니다";
 "error.send_binance.only_digits_allowed" = "메모에는 숫자만 포함하셔야 합니다";
 
@@ -349,6 +351,17 @@
 "balance.token.transparent.detected.title" = "투명 ZEC 감지됨";
 "balance.token.transparent.detected.description" = "투명 주소에 보유 중인 ZEC 잔액이 있습니다. Unstoppable에서 사용하려면 완전한 프라이버시 보호를 위해 보호(Shield) 처리해야 합니다.";
 "balance.token.shield" = "차폐(Shield)";
+"balance.token.migration.required" = "마이그레이션 필요";
+"transactions.migrate" = "마이그레이션";
+"transactions.migrate.to_ironwood" = "Ironwood로";
+"balance.token.migration.detected.title" = "ZEC 풀 마이그레이션";
+"balance.token.migration.detected.description" = "Zcash has upgraded to a new shielded pool. Your shielded balance must be migrated to that new pool to remain fully anonymous in future transactions.
+\n\nPlease note that migration transactions aren’t fully anonymous and expose the amounts involved.
+\n\nTo maintain high level of privacy you may consider using VPN or TOR when making migration transactions.";
+"balance.token.migrate" = "마이그레이션";
+"error.zcash.migration_failed" = "마이그레이션을 완료할 수 없습니다. 자금 손실은 없습니다 — 나중에 다시 시도할 수 있습니다.";
+"zcash.migration.warning.title" = "공개적으로 표시되는 금액";
+"zcash.migration.warning" = "풀 간 자금 이동 시 마이그레이션된 금액이 블록체인에서 공개적으로 표시됩니다. 발신자, 수신자 및 귀하의 주소는 비공개로 유지됩니다.";
 
 "balance.token.receive_address" = "수신 주소";
 "balance.token.account.inactive.description" = "활성화 후 트랜잭션이 표시됩니다";
@@ -475,6 +488,9 @@
 "send.confirmation.contact_name" = "담당자 이름";
 "send.confirmation.memo" = "Memo";
 "send.confirmation.memo_placeholder" = "Memo";
+"send.memo.public_warning" = "이 메모는 블록체인에 공개됩니다.";
+"send.memo.private_warning" = "이 메모는 암호화된 형태로 블록체인에 게시됩니다.";
+"send.memo.local_warning" = "이 메모는 휴대폰에만 저장됩니다.";
 "send.confirmation.fee" = "수수료";
 "send.confirmation.fee_sponsored" = "스폰서됨";
 "send.confirmation.fee_paid_in" = "%@(으)로 지불";
@@ -578,6 +594,35 @@
 "send.address.blacklist.caution.title" = "블랙리스트 주소!";
 "send.address.blacklist.caution.description" = "입력한 주소가 블랙리스트에 등록된 것으로 표시되어 있습니다. 이 주소로의 거래는 손실이나 기타 위험을 초래할 수 있습니다. 수신자 정보를 진행하기 전에 확인하세요.";
 
+// Private Send
+
+"private_send.toggle.title" = "프라이빗 전송";
+"private_send.toggle.subtitle" = "수신자가 온체인에서 귀하와 연결될 수 없습니다";
+"private_send.amount_caption" = "수신자가 받는 금액";
+"private_send.unavailable" = "프라이빗 전송을 사용할 수 없습니다";
+
+"private_send.fee" = "프라이빗 전송 수수료";
+"private_send.max_deposit" = "최대 입금액";
+"private_send.refundable" = "미사용 시 환불";
+"private_send.estimated_time" = "예상 도착 시간";
+
+"private_send.quote_expired" = "견적이 만료되었습니다 — 뒤로 가서 다시 입력하세요";
+"private_send.commit_failed" = "프라이빗 전송을 설정할 수 없습니다. 다시 시도해 주세요.";
+
+"private_send.caution.title" = "프라이빗 전송";
+"private_send.caution.below_minimum %@" = "프라이빗 전송은 수신자가 최소 %@을(를) 받아야 합니다.";
+"private_send.caution.above_maximum %@" = "프라이빗 전송은 최대 %@까지 지원합니다.";
+"private_send.caution.insufficient_balance %@" = "이 프라이빗 전송에는 수수료를 포함하여 지갑에 %@이(가) 필요합니다.";
+"private_send.caution.no_route" = "현재 이 토큰 및 금액에 대해 사용 가능한 프라이빗 경로가 없습니다.";
+"private_send.caution.exact_output_unsupported" = "이 경로는 정확한 수신 금액을 보장할 수 없습니다.";
+"private_send.caution.provider_suspended" = "프라이빗 전송 제공자가 일시적으로 사용할 수 없습니다.";
+"private_send.caution.network_error" = "프라이빗 전송 제공자에 연결할 수 없습니다. 연결을 확인하고 다시 시도해 주세요.";
+"private_send.caution.token_unsupported" = "이 토큰에 대해 프라이빗 전송을 더 이상 사용할 수 없습니다.";
+"private_send.caution.attachment_unsupported" = "이 프라이빗 경로에는 이 지갑이 첨부할 수 없는 트랜잭션 태그가 필요합니다. 이 토큰에 대해 프라이빗 전송을 사용할 수 없습니다.";
+"private_send.caution.amount_adjusted" = "수수료를 충당하기 위해 금액이 조정되어 프라이빗 전송 견적과 더 이상 일치하지 않습니다. 금액을 줄이고 다시 시도하세요.";
+"private_send.caution.quote_expired" = "이 견적이 만료되었습니다. 뒤로 가서 금액을 다시 입력하여 새 견적을 받으세요.";
+"private_send.caution.buffer_unknown" = "표시된 수수료는 상한 추정치이며, 최종 비용은 더 낮을 수 있습니다.";
+
 // Donate
 
 "donate.list.title" = "기부하기";
@@ -594,6 +639,10 @@
 // Swap
 
 "swap.title" = "스왑";
+"swap.token_select.popular_tokens" = "인기 토큰";
+"swap.token_select.your_tokens" = "내 토큰";
+"swap.token_select.top_tokens" = "상위 토큰";
+"swap.token_select.recent" = "최근 검색";
 "swap.you_pay" = "지불하기";
 "swap.estimated" = "예상";
 "swap.balance" = "잔액";
@@ -625,6 +674,7 @@
 "swap.no_providers" = "경로 없음";
 "swap.enter_amount" = "금액 입력";
 "swap.no_quotes" = "제안이 없습니다";
+"swap.error.no_memo" = "이 경로는 현재 확인할 수 없습니다. 견적을 새로고침하거나 다른 제공자를 선택해 주세요.";
 "swap.token_not_enabled" = "토큰 활성화되지 않음";
 "swap.token_syncing" = "토큰 동기화 중";
 "swap.token_not_synced" = "토큰 동기화되지 않음";
@@ -651,6 +701,7 @@
 "swap.pending_allowance" = "보류 중인 허용량";
 "swap.approve" = "승인";
 "swap.approving" = "승인 중";
+"swap.activate_asset" = "Stellar에서 %@ 활성화";
 "swap.allowance_error" = "허용량 오류";
 "swap.revoke" = "취소";
 "swap.revoking" = "철회";
@@ -664,9 +715,10 @@
 "swap.price_impact.info" = "표시된 가격 대비 예상 가격 편차로, 일반적으로 스왑 금액이 클수록 증가합니다.";
 "swap.high_price_impact" = "높은 가격 영향";
 "swap.recipient" = "수령인";
+"swap.external_recipient.description" = "스왑된 자금을 받을 지갑입니다.";
 "swap.slippage" = "미끄러짐";
-"swap.swapped_time" = "예상 시간";
-"swap.swapped_time.info" = "자금을 수령하기까지의 예상 시간입니다. 네트워크와 제공업체에 따라 스왑 처리 및 트랜잭션 확인에 시간이 걸릴 수 있습니다.";
+"swap.swapped_time" = "스왑 시간";
+"swap.swapped_time.info" = "스왑을 완료하고 자금을 수령하는 데 필요한 예상 시간입니다. 실제 시간은 네트워크 상태, 트랜잭션 확인 및 선택한 스왑 경로에 따라 더 짧거나 길어질 수 있습니다.";
 
 "swap.affiliate_fee" = "제휴 수수료";
 "swap.liquidity_fee" = "유동성 수수료";
@@ -1080,6 +1132,8 @@
 "coin_page.overview" = "금액";
 "coin_page.analytics" = "분석";
 "coin_page.markets" = "시장";
+"coin_page.buy" = "구매";
+"coin_page.sell" = "판매";
 "coin_page.tweets" = "트윗";
 
 // Coin Page -> Overview
@@ -1931,6 +1985,8 @@
 "add_token.contract_address_not_found" = "%@ 블록체인에서 계약 주소를 찾을 수 없습니다.";
 "add_token.jetton_master_not_found" = "Jetton Master를 %@ 블록체인에서 찾을 수 없습니다";
 "add_token.input_placeholder.contract_address" = "계약 주소";
+"add_token.input_placeholder.asset_id" = "자산 ID";
+"add_token.invalid_asset_id" = "유효하지 않은 자산 ID";
 "add_token.input_placeholder.jetton_master_address" = "제톤 마스터 주소";
 "add_token.input_placeholder.mint_address" = "토큰 민트 주소";
 "add_token.invalid_mint_address" = "유효하지 않은 솔라나 주소";
@@ -2124,6 +2180,16 @@
 "monero_network.added" = "추가됨";
 "monero_network.add_new" = "신규로 추가";
 "monero_network.description" = "Unstoppable 앱이 지갑 동기화에 사용할 노드를 선택하세요.";
+"monero_network.auto_select" = "노드 자동 선택";
+"monero_network.auto_select.description" = "가장 빠르고 최신 상태인 노드에 연결";
+"monero_network.unreachable" = "연결 불가";
+"add_monero_node.error.port_required" = "URL에 포트가 포함되어야 합니다";
+"monero.account" = "계정";
+"monero.accounts.title" = "계정";
+"monero.accounts.description" = "계정은 동일한 모네로 지갑 내의 별도 구획입니다. 표시되는 잔액, 주소 및 트랜잭션은 활성 계정에 속합니다. 계정 간 자금 이동에는 온체인 트랜잭션이 필요합니다.";
+"monero.accounts.new" = "새 계정";
+"monero.accounts.rename" = "이름 변경";
+"monero.accounts.name_placeholder" = "이름 (선택 사항)";
 "monero_network.settings.title" = "노드 설정";
 "monero_network.settings.description" = "신뢰 노드 – 활성화하면 지갑은 선택된 노드를 신뢰하고 추가 검증 없이 해당 데이터를 수락합니다. \n\n켜기 → 트랜잭션이 브로드캐스트 직후 대기 중으로 표시됩니다 (더 빠른 동기화, 그러나 프라이버시가 낮고 노드에 대한 의존도가 높음).\n\n끄기 → 트랜잭션이 네트워크 확인 후에만 표시됩니다 (더 느리지만 더 안전하고 프라이버시 보호가 높음).";
 "monero_network.settings.trust" = "신뢰";

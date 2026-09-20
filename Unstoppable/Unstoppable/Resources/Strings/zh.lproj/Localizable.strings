@@ -85,6 +85,7 @@
 "button.reject" = "拒绝";
 "button.connect" = "连接";
 "button.save" = "保存";
+"button.create" = "创建";
 "button.send" = "发送​​";
 "button.sign" = "签名";
 "button.i_understand" = "我理解";
@@ -323,13 +324,13 @@
 
 // Backup Prompt
 
-"backup_prompt.backup_recovery_phrase" = "备份钱包";
-"backup_prompt.backup_required" = "需要备份";
-"backup_prompt.warning" = "创建恢复短语和相关密码的备份副本，允许您在手机丢失时恢复钱包， • 盗窃、故障等问题";
-"backup_prompt.backup" = "备份";
+"backup_prompt.title" = "备份您的钱包";
+"backup_prompt.description" = "没有备份，丢失手机意味着永久丢失您的资金。无法恢复。";
 "backup_prompt.backup_manual" = "进行手动备份";
+"backup_prompt.backup_manual.description" = "写下您的恢复助记词";
 "backup_prompt.backup_cloud" = "备份到iCloud";
-"backup_prompt.later" = "稍后";
+"backup_prompt.backup_cloud.description" = "加密存储，跨设备同步";
+"backup_prompt.remind_later" = "稍后提醒我";
 
 // Backup to iCloud
 
@@ -353,6 +354,7 @@
 // Errors
 
 "error.send.self_transfer" = "不支持发送给自己";
+"error.send.in_progress" = "正在发送中，请稍后重试。";
 "error.send_binance.memo_required" = "收款人要求在转账交易中包含非空的备注";
 "error.send_binance.only_digits_allowed" = "要求备注仅包含数字";
 
@@ -409,6 +411,17 @@
 "balance.token.transparent.detected.title" = "检测到透明 ZEC 地址";
 "balance.token.transparent.detected.description" = "您在透明地址中持有 ZEC 余额。要在 Unstoppable 中使用，必须将其屏蔽（shield）以实现完全隐私。";
 "balance.token.shield" = "屏蔽";
+"balance.token.migration.required" = "需要迁移";
+"transactions.migrate" = "迁移";
+"transactions.migrate.to_ironwood" = "至 Ironwood";
+"balance.token.migration.detected.title" = "ZEC 池迁移";
+"balance.token.migration.detected.description" = "Zcash has upgraded to a new shielded pool. Your shielded balance must be migrated to that new pool to remain fully anonymous in future transactions.
+\n\nPlease note that migration transactions aren’t fully anonymous and expose the amounts involved.
+\n\nTo maintain high level of privacy you may consider using VPN or TOR when making migration transactions.";
+"balance.token.migrate" = "迁移";
+"error.zcash.migration_failed" = "迁移无法完成。没有资金丢失——您可以稍后重试。";
+"zcash.migration.warning.title" = "公开可见金额";
+"zcash.migration.warning" = "在池之间转移资金需要迁移金额在区块链上公开可见。发送方、接收方和您的地址仍然保持私密。";
 
 "balance.token.receive_address" = "收款地址";
 "balance.token.account.inactive.description" = "激活后将显示交易记录";
@@ -535,6 +548,9 @@
 "send.confirmation.contact_name" = "联系人姓名";
 "send.confirmation.memo" = "备忘录";
 "send.confirmation.memo_placeholder" = "备忘录";
+"send.memo.public_warning" = "此备注将在区块链上公开显示。";
+"send.memo.private_warning" = "此备注将以加密形式发布到区块链上。";
+"send.memo.local_warning" = "此备注将仅保存在您的手机上。";
 "send.confirmation.fee" = "费用";
 "send.confirmation.fee_sponsored" = "已赞助";
 "send.confirmation.fee_paid_in" = "以 %@ 支付";
@@ -638,6 +654,35 @@
 "send.address.blacklist.caution.title" = "黑名单地址！";
 "send.address.blacklist.caution.description" = "您输入的地址已被标记为黑名单地址。向该地址转账可能导致资金损失或其他风险。请在继续之前仔细核实收款人信息。";
 
+// Private Send
+
+"private_send.toggle.title" = "隐私发送";
+"private_send.toggle.subtitle" = "收款方无法在链上与您关联";
+"private_send.amount_caption" = "收款方收到的金额";
+"private_send.unavailable" = "隐私发送不可用";
+
+"private_send.fee" = "隐私发送费用";
+"private_send.max_deposit" = "最大存款金额";
+"private_send.refundable" = "未使用时退还";
+"private_send.estimated_time" = "预计到账时间";
+
+"private_send.quote_expired" = "报价已过期 — 请返回并重新输入";
+"private_send.commit_failed" = "无法设置隐私发送，请重试。";
+
+"private_send.caution.title" = "隐私发送";
+"private_send.caution.below_minimum %@" = "隐私发送要求收款方至少收到 %@。";
+"private_send.caution.above_maximum %@" = "隐私发送最多支持 %@。";
+"private_send.caution.insufficient_balance %@" = "此隐私发送需要您的钱包中有 %@（含手续费）。";
+"private_send.caution.no_route" = "当前没有适用于此代币和金额的隐私路由。";
+"private_send.caution.exact_output_unsupported" = "此路由无法保证精确的到账金额。";
+"private_send.caution.provider_suspended" = "隐私发送提供商暂时不可用。";
+"private_send.caution.network_error" = "无法连接隐私发送提供商。请检查网络连接后重试。";
+"private_send.caution.token_unsupported" = "此代币已不再支持隐私发送。";
+"private_send.caution.attachment_unsupported" = "此隐私路由需要一个此钱包无法附加的交易标签。此代币无法使用隐私发送。";
+"private_send.caution.amount_adjusted" = "金额已调整以涵盖手续费，不再与隐私发送报价匹配。请减少金额后重试。";
+"private_send.caution.quote_expired" = "此报价已过期。请返回并重新输入金额以获取新报价。";
+"private_send.caution.buffer_unknown" = "显示的费用为上限估算值，实际费用可能更低。";
+
 // Donate
 
 "donate.list.title" = "捐赠方式";
@@ -654,6 +699,10 @@
 // Swap
 
 "swap.title" = "兑换交易";
+"swap.token_select.popular_tokens" = "热门代币";
+"swap.token_select.your_tokens" = "您的代币";
+"swap.token_select.top_tokens" = "顶级代币";
+"swap.token_select.recent" = "最近搜索";
 "swap.you_pay" = "您支付";
 "swap.estimated" = "估计";
 "swap.balance" = "余额";
@@ -685,6 +734,7 @@
 "swap.no_providers" = "无可用路由";
 "swap.enter_amount" = "输入金额";
 "swap.no_quotes" = "没有报价";
+"swap.error.no_memo" = "此路由目前无法确认。请刷新报价或选择其他提供商。";
 "swap.token_not_enabled" = "代币未启用";
 "swap.token_syncing" = "代币同步";
 "swap.token_not_synced" = "代币未同步";
@@ -711,6 +761,7 @@
 "swap.pending_allowance" = "待批准的额度";
 "swap.approve" = "批准";
 "swap.approving" = "审批中";
+"swap.activate_asset" = "在 Stellar 上激活 %@";
 "swap.allowance_error" = "授权错误";
 "swap.revoke" = "撤回";
 "swap.revoking" = "正在取消";
@@ -724,9 +775,10 @@
 "swap.price_impact.info" = "相对于所显示价格的预期价格偏差，通常会随着兑换金额的增加而增大。";
 "swap.high_price_impact" = "高价格影响";
 "swap.recipient" = "收款人";
+"swap.external_recipient.description" = "将接收兑换资金的钱包。";
 "swap.slippage" = "滑点";
-"swap.swapped_time" = "预计时间";
-"swap.swapped_time.info" = "预计到账时间。兑换处理和交易确认所需时间可能会因网络和服务提供方而有所不同。";
+"swap.swapped_time" = "兑换时间";
+"swap.swapped_time.info" = "这是完成兑换并收到您的资金所需的预计时间。实际时间可能会因网络状况、交易确认和所选兑换路径的不同而有所缩短或延长。";
 
 "swap.affiliate_fee" = "联盟费";
 "swap.liquidity_fee" = "流动性费用";
@@ -1140,6 +1192,8 @@
 "coin_page.overview" = "价格";
 "coin_page.analytics" = "分析";
 "coin_page.markets" = "市场";
+"coin_page.buy" = "购买";
+"coin_page.sell" = "出售";
 "coin_page.tweets" = "推文";
 
 // Coin Page -> Overview
@@ -1991,6 +2045,8 @@
 "add_token.contract_address_not_found" = "在 %@ 区块链中找不到合同地址";
 "add_token.jetton_master_not_found" = "在 %@ 区块链中找不到杰顿大师";
 "add_token.input_placeholder.contract_address" = "智能合约地址";
+"add_token.input_placeholder.asset_id" = "资产 ID";
+"add_token.invalid_asset_id" = "无效的资产 ID";
 "add_token.input_placeholder.jetton_master_address" = "Jetton Master 地址";
 "add_token.input_placeholder.mint_address" = "代币铸造地址";
 "add_token.invalid_mint_address" = "无效的 Solana 地址";
@@ -2184,6 +2240,16 @@
 "monero_network.added" = "已添加";
 "monero_network.add_new" = "添加新的";
 "monero_network.description" = "选择 Unstoppable 应用用于同步钱包的节点。";
+"monero_network.auto_select" = "自动选择节点";
+"monero_network.auto_select.description" = "连接到最快的最新节点";
+"monero_network.unreachable" = "无法连接";
+"add_monero_node.error.port_required" = "URL 必须包含端口";
+"monero.account" = "账户";
+"monero.accounts.title" = "账户";
+"monero.accounts.description" = "账户是同一个门罗币钱包中的独立分区。显示的余额、地址和交易属于当前活跃账户。在账户之间转移资金需要进行链上交易。";
+"monero.accounts.new" = "新建账户";
+"monero.accounts.rename" = "重命名";
+"monero.accounts.name_placeholder" = "名称（可选）";
 "monero_network.settings.title" = "节点偏好设置";
 "monero_network.settings.description" = "受信节点 – 启用后，钱包将信任所选节点并接受其数据，无需额外验证。\n\n开启 → 交易在广播后立即显示为待处理（同步更快，但隐私性较低且更依赖节点）。\n\n关闭 → 交易仅在网络确认后才会显示（速度较慢，但更安全、更私密）。";
 "monero_network.settings.trust" = "信任";

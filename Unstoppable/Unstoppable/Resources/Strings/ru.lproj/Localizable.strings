@@ -25,6 +25,7 @@
 "button.reject" = "Отклонить";
 "button.connect" = "Подключиться";
 "button.save" = "Сохранить";
+"button.create" = "Создать";
 "button.send" = "Отправить";
 "button.sign" = "Подписать";
 "button.i_understand" = "Я понимаю";
@@ -263,13 +264,13 @@
 
 // Backup Prompt
 
-"backup_prompt.backup_recovery_phrase" = "Резервная копия";
-"backup_prompt.backup_required" = "Необходима резервная копия";
-"backup_prompt.warning" = "Создайте резервную копию вашей фразы восстановления и пароля, которые позволят вам восстановить ваш кошелек, если телефон потерян, украден, сломал и т.д.";
-"backup_prompt.backup" = "Резервная копия";
+"backup_prompt.title" = "Создайте резервную копию кошелька";
+"backup_prompt.description" = "Без резервной копии потеря телефона означает безвозвратную потерю ваших средств. Восстановить их невозможно.";
 "backup_prompt.backup_manual" = "Ручное резервное копирование";
+"backup_prompt.backup_manual.description" = "Запишите вашу фразу восстановления";
 "backup_prompt.backup_cloud" = "Резерв. копирование в iCloud";
-"backup_prompt.later" = "Позже";
+"backup_prompt.backup_cloud.description" = "Зашифровано, синхронизировано между устройствами";
+"backup_prompt.remind_later" = "Напомнить позже";
 
 // Backup to iCloud
 
@@ -293,6 +294,7 @@
 // Errors
 
 "error.send.self_transfer" = "Отправка самому себе невозможна";
+"error.send.in_progress" = "Выполняется отправка. Попробуйте снова через некоторое время.";
 "error.send_binance.memo_required" = "При отправке транзакции получателю необходимо заполнить поле мемо";
 "error.send_binance.only_digits_allowed" = "Поле мемо должно содержать только цифры";
 
@@ -349,6 +351,17 @@
 "balance.token.transparent.detected.title" = "Обнаружен Transparent ZEC";
 "balance.token.transparent.detected.description" = "У вас есть ZEC, находящийся на transparent адресе. Чтобы использовать его в Unstoppable, необходимо выполнить shielding для полной приватности.";
 "balance.token.shield" = "Shield";
+"balance.token.migration.required" = "Требуется миграция";
+"transactions.migrate" = "Мигрировать";
+"transactions.migrate.to_ironwood" = "в Ironwood";
+"balance.token.migration.detected.title" = "Миграция пула ZEC";
+"balance.token.migration.detected.description" = "Zcash has upgraded to a new shielded pool. Your shielded balance must be migrated to that new pool to remain fully anonymous in future transactions.
+\n\nPlease note that migration transactions aren’t fully anonymous and expose the amounts involved.
+\n\nTo maintain high level of privacy you may consider using VPN or TOR when making migration transactions.";
+"balance.token.migrate" = "Мигрировать";
+"error.zcash.migration_failed" = "Миграцию не удалось завершить. Средства не были потеряны — вы можете попробовать позже.";
+"zcash.migration.warning.title" = "Публично видимая сумма";
+"zcash.migration.warning" = "Перемещение средств между пулами требует, чтобы мигрируемая сумма была публично видна в блокчейне. Отправитель, получатель и ваши адреса остаются конфиденциальными.";
 
 "balance.token.receive_address" = "Адрес получателя";
 "balance.token.account.inactive.description" = "Транзакции появятся после активации";
@@ -475,6 +488,9 @@
 "send.confirmation.contact_name" = "Имя контакта";
 "send.confirmation.memo" = "Мемо";
 "send.confirmation.memo_placeholder" = "Мемо";
+"send.memo.public_warning" = "Это примечание будет публичным в блокчейне.";
+"send.memo.private_warning" = "Эта заметка будет опубликована в блокчейне в зашифрованном виде.";
+"send.memo.local_warning" = "Это примечание будет сохранено только на вашем телефоне.";
 "send.confirmation.fee" = "Комиссия";
 "send.confirmation.fee_sponsored" = "Спонсировано";
 "send.confirmation.fee_paid_in" = "Оплачено в %@";
@@ -578,6 +594,35 @@
 "send.address.blacklist.caution.title" = "Адрес в черном списке!";
 "send.address.blacklist.caution.description" = "Введенный вами адрес помечен как находящийся в черном списке. Транзакции на этот адрес могут привести к потерям или другим рискам. Пожалуйста, проверьте данные получателя перед продолжением.";
 
+// Private Send
+
+"private_send.toggle.title" = "Приватная отправка";
+"private_send.toggle.subtitle" = "Получателя невозможно связать с вами в блокчейне";
+"private_send.amount_caption" = "Сумма, которую получит получатель";
+"private_send.unavailable" = "Приватная отправка недоступна";
+
+"private_send.fee" = "Комиссия за приватную отправку";
+"private_send.max_deposit" = "Максимальный депозит";
+"private_send.refundable" = "Возвращается, если не использовано";
+"private_send.estimated_time" = "Расчётное время получения";
+
+"private_send.quote_expired" = "Котировка истекла — вернитесь и введите сумму заново";
+"private_send.commit_failed" = "Не удалось настроить приватную отправку. Попробуйте снова.";
+
+"private_send.caution.title" = "Приватная отправка";
+"private_send.caution.below_minimum %@" = "Для приватной отправки получатель должен получить не менее %@.";
+"private_send.caution.above_maximum %@" = "Приватная отправка поддерживает не более %@.";
+"private_send.caution.insufficient_balance %@" = "Для этой приватной отправки необходимо %@ в вашем кошельке, включая комиссии.";
+"private_send.caution.no_route" = "В данный момент нет доступного приватного маршрута для этого токена и суммы.";
+"private_send.caution.exact_output_unsupported" = "Этот маршрут не может гарантировать точную сумму получения.";
+"private_send.caution.provider_suspended" = "Провайдер приватной отправки временно недоступен.";
+"private_send.caution.network_error" = "Не удалось связаться с провайдером приватной отправки. Проверьте подключение и попробуйте снова.";
+"private_send.caution.token_unsupported" = "Приватная отправка больше не доступна для этого токена.";
+"private_send.caution.attachment_unsupported" = "Этот приватный маршрут требует тег транзакции, который этот кошелёк не может прикрепить. Приватная отправка недоступна для этого токена.";
+"private_send.caution.amount_adjusted" = "Сумма была скорректирована для покрытия комиссий и больше не соответствует котировке приватной отправки. Уменьшите сумму и попробуйте снова.";
+"private_send.caution.quote_expired" = "Эта котировка истекла. Вернитесь и введите сумму заново, чтобы получить новую.";
+"private_send.caution.buffer_unknown" = "Указанная комиссия — это верхняя оценка; итоговая стоимость может быть ниже.";
+
 // Donate
 
 "donate.list.title" = "Пожертвовать с помощью";
@@ -594,6 +639,10 @@
 // Swap
 
 "swap.title" = "Обмен";
+"swap.token_select.popular_tokens" = "Популярные токены";
+"swap.token_select.your_tokens" = "Ваши токены";
+"swap.token_select.top_tokens" = "Топ токены";
+"swap.token_select.recent" = "Недавний поиск";
 "swap.you_pay" = "Вы платите";
 "swap.estimated" = "приблизительно";
 "swap.balance" = "Баланс";
@@ -625,6 +674,7 @@
 "swap.no_providers" = "Нет маршрутов";
 "swap.enter_amount" = "Введите сумму";
 "swap.no_quotes" = "Нет предложений";
+"swap.error.no_memo" = "Этот маршрут не может быть подтверждён прямо сейчас. Пожалуйста, обновите котировку или выберите другого провайдера.";
 "swap.token_not_enabled" = "Токен не включен";
 "swap.token_syncing" = "Синхронизация токенов";
 "swap.token_not_synced" = "Токен не синхронизирован";
@@ -651,6 +701,7 @@
 "swap.pending_allowance" = "Ожидающие разрешения";
 "swap.approve" = "Разрешить";
 "swap.approving" = "Разрешение";
+"swap.activate_asset" = "Активировать %@ в сети Stellar";
 "swap.allowance_error" = "Ошибка разрешения";
 "swap.revoke" = "Отменить";
 "swap.revoking" = "Отмена";
@@ -664,9 +715,10 @@
 "swap.price_impact.info" = "Ожидаемое отклонение цены от отображаемой. Обычно увеличивается с ростом суммы обмена.";
 "swap.high_price_impact" = "Высокое отклонение цены";
 "swap.recipient" = "Получатель";
+"swap.external_recipient.description" = "Кошелёк, который получит обменянные средства.";
 "swap.slippage" = "Отклонение от курса";
-"swap.swapped_time" = "Время";
-"swap.swapped_time.info" = "Примерное время получения средств. Обработка обмена и подтверждение транзакции могут занять некоторое время в зависимости от сети и провайдера.";
+"swap.swapped_time" = "Время свопа";
+"swap.swapped_time.info" = "Это расчётное время, необходимое для завершения свопа и получения ваших средств. Фактическое время может быть короче или длиннее в зависимости от состояния сети, подтверждений транзакций и выбранного маршрута свопа.";
 
 "swap.affiliate_fee" = "Партнерская плата";
 "swap.liquidity_fee" = "Плата за ликвидность";
@@ -1080,6 +1132,8 @@
 "coin_page.overview" = "Цена";
 "coin_page.analytics" = "Аналитика";
 "coin_page.markets" = "Рынки";
+"coin_page.buy" = "Купить";
+"coin_page.sell" = "Продать";
 "coin_page.tweets" = "Твиты";
 
 // Coin Page -> Overview
@@ -1931,6 +1985,8 @@
 "add_token.contract_address_not_found" = "Адрес контракта не найден в %@ блокчейне";
 "add_token.jetton_master_not_found" = "Jetton Master не найден в блокчейне %@";
 "add_token.input_placeholder.contract_address" = "Адрес контракта";
+"add_token.input_placeholder.asset_id" = "ID актива";
+"add_token.invalid_asset_id" = "Недопустимый ID актива";
 "add_token.input_placeholder.jetton_master_address" = "Jetton Master адрес";
 "add_token.input_placeholder.mint_address" = "Mint-адрес токена";
 "add_token.invalid_mint_address" = "Недействительный адрес Solana";
@@ -2124,6 +2180,16 @@
 "monero_network.added" = "Добавлен";
 "monero_network.add_new" = "Добавить новый";
 "monero_network.description" = "Выберите ноду, которую приложение Unstoppable будет использовать для синхронизации кошелька(ов).";
+"monero_network.auto_select" = "Автоматический выбор ноды";
+"monero_network.auto_select.description" = "Подключиться к самой быстрой актуальной ноде";
+"monero_network.unreachable" = "Недоступен";
+"add_monero_node.error.port_required" = "URL должен содержать порт";
+"monero.account" = "Аккаунт";
+"monero.accounts.title" = "Аккаунты";
+"monero.accounts.description" = "Аккаунты — это отдельные разделы внутри одного кошелька Monero. Отображаемые балансы, адреса и транзакции принадлежат активному аккаунту. Перевод средств между аккаунтами требует ончейн-транзакции.";
+"monero.accounts.new" = "Новый аккаунт";
+"monero.accounts.rename" = "Переименовать";
+"monero.accounts.name_placeholder" = "Имя (необязательно)";
 "monero_network.settings.title" = "Настройки узла";
 "monero_network.settings.description" = "Доверенная нода – При включении кошелёк доверяет выбранной ноде и принимает её данные без дополнительной проверки. \n\nВкл → Транзакции отображаются как ожидающие сразу после отправки (более быстрая синхронизация, но меньшая конфиденциальность и большая зависимость от ноды).\n\nВыкл → Транзакции отображаются только после подтверждений сети (медленнее, но безопаснее и конфиденциальнее).";
 "monero_network.settings.trust" = "Доверять узлу";

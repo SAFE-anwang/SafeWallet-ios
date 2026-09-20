@@ -25,6 +25,7 @@
 "button.reject" = "Reddet";
 "button.connect" = "Bağlan";
 "button.save" = "Kaydet";
+"button.create" = "Oluştur";
 "button.send" = "Gönder";
 "button.sign" = "kaydol";
 "button.i_understand" = "Anlıyorum";
@@ -263,13 +264,13 @@
 
 // Backup Prompt
 
-"backup_prompt.backup_recovery_phrase" = "Cüzdanı yedekle";
-"backup_prompt.backup_required" = "Yedekleme Gerekli";
-"backup_prompt.warning" = "Telefonunuzun kaybolması, çalınması, kırılması vb. durumlarda cüzdanınızı kurtarmanıza olanak sağlayacak kurtarma ifadesinin ve ilgili parolanın yedek bir kopyasını oluşturun.";
-"backup_prompt.backup" = "Yedekle";
+"backup_prompt.title" = "Cüzdanınızı yedekleyin";
+"backup_prompt.description" = "Yedekleme olmadan telefonunuzu kaybetmek, fonlarınızı kalıcı olarak kaybetmeniz anlamına gelir. Onları kurtarmanın hiçbir yolu yoktur.";
 "backup_prompt.backup_manual" = "Manuel Yedekleme";
+"backup_prompt.backup_manual.description" = "Kurtarma ifadenizi yazın";
 "backup_prompt.backup_cloud" = "iCloud'a yedekle";
-"backup_prompt.later" = "Sonra";
+"backup_prompt.backup_cloud.description" = "Şifrelenmiş, cihazlar arasında senkronize";
+"backup_prompt.remind_later" = "Daha Sonra Hatırlat";
 
 // Backup to iCloud
 
@@ -293,6 +294,7 @@
 // Errors
 
 "error.send.self_transfer" = "Kendine gönderme desteklenmiyor";
+"error.send.in_progress" = "Bir gönderim devam ediyor. Bir süre sonra tekrar deneyin.";
 "error.send_binance.memo_required" = "Alıcı, transfer işleminde boş olmayan bir not gerektirmektedir";
 "error.send_binance.only_digits_allowed" = "Notun yalnızca rakam içermesini gerektirir";
 
@@ -349,6 +351,17 @@
 "balance.token.transparent.detected.title" = "Şeffaf ZEC Tespit Edildi";
 "balance.token.transparent.detected.description" = "Şeffaf bir adreste tutulan ZEC bakiyeniz var. Unstoppable’da kullanmak için tam gizlilik amacıyla shield edilmesi gerekir.";
 "balance.token.shield" = "Shield";
+"balance.token.migration.required" = "Geçiş Gerekli";
+"transactions.migrate" = "Geçiş Yap";
+"transactions.migrate.to_ironwood" = "Ironwood'a";
+"balance.token.migration.detected.title" = "ZEC Havuz Geçişi";
+"balance.token.migration.detected.description" = "Zcash has upgraded to a new shielded pool. Your shielded balance must be migrated to that new pool to remain fully anonymous in future transactions.
+\n\nPlease note that migration transactions aren’t fully anonymous and expose the amounts involved.
+\n\nTo maintain high level of privacy you may consider using VPN or TOR when making migration transactions.";
+"balance.token.migrate" = "Geçiş Yap";
+"error.zcash.migration_failed" = "Geçiş tamamlanamadı. Hiçbir fon kaybedilmedi — daha sonra tekrar deneyebilirsiniz.";
+"zcash.migration.warning.title" = "Herkese Açık Görünür Tutar";
+"zcash.migration.warning" = "Havuzlar arasında fon taşımak, taşınan tutarın blok zincirinde herkese açık olarak görünür olmasını gerektirir. Gönderen, alıcı ve adresleriniz gizli kalır.";
 
 "balance.token.receive_address" = "Alım Adresi";
 "balance.token.account.inactive.description" = "Cüzdan etkinleştirildikten sonra işlemler görünecektir.";
@@ -475,6 +488,9 @@
 "send.confirmation.contact_name" = "Kişi Adı";
 "send.confirmation.memo" = "Not";
 "send.confirmation.memo_placeholder" = "Not";
+"send.memo.public_warning" = "Bu not blok zincirinde herkese açık olacaktır.";
+"send.memo.private_warning" = "Bu not blok zincirinde şifrelenmiş biçimde yayınlanacaktır.";
+"send.memo.local_warning" = "Bu not yalnızca telefonunuzda kaydedilecektir.";
 "send.confirmation.fee" = "Ücret";
 "send.confirmation.fee_sponsored" = "Sponsorlu";
 "send.confirmation.fee_paid_in" = "%@ ile ödendi";
@@ -578,6 +594,35 @@
 "send.address.blacklist.caution.title" = "Kara Listeye Alınmış Adres!";
 "send.address.blacklist.caution.description" = "Girdiğiniz adres kara listeye alınmış olarak işaretlenmiştir. Bu adrese yapılan işlemler kayıplara veya diğer risklere yol açabilir. Lütfen devam etmeden önce alıcının bilgilerini doğrulayın.";
 
+// Private Send
+
+"private_send.toggle.title" = "Gizli gönderim";
+"private_send.toggle.subtitle" = "Alıcı zincir üzerinde sizinle ilişkilendirilemez";
+"private_send.amount_caption" = "Alıcının aldığı tutar";
+"private_send.unavailable" = "Gizli gönderim kullanılamıyor";
+
+"private_send.fee" = "Gizli gönderim ücreti";
+"private_send.max_deposit" = "Maksimum yatırma";
+"private_send.refundable" = "Kullanılmazsa iade edilir";
+"private_send.estimated_time" = "Tahmini varış süresi";
+
+"private_send.quote_expired" = "Teklif süresi doldu — geri dönüp tutarı yeniden girin";
+"private_send.commit_failed" = "Gizli gönderim ayarlanamadı. Tekrar deneyin.";
+
+"private_send.caution.title" = "Gizli gönderim";
+"private_send.caution.below_minimum %@" = "Gizli gönderim için alıcının en az %@ alması gerekir.";
+"private_send.caution.above_maximum %@" = "Gizli gönderim en fazla %@ destekler.";
+"private_send.caution.insufficient_balance %@" = "Bu gizli gönderim, ücretler dahil cüzdanınızda %@ gerektirir.";
+"private_send.caution.no_route" = "Bu token ve tutar için şu anda kullanılabilir gizli rota yok.";
+"private_send.caution.exact_output_unsupported" = "Bu rota kesin bir alım tutarını garanti edemez.";
+"private_send.caution.provider_suspended" = "Gizli gönderim sağlayıcısı geçici olarak kullanılamıyor.";
+"private_send.caution.network_error" = "Gizli gönderim sağlayıcısına ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin.";
+"private_send.caution.token_unsupported" = "Bu token için gizli gönderim artık kullanılamıyor.";
+"private_send.caution.attachment_unsupported" = "Bu gizli rota, bu cüzdanın ekleyemeyeceği bir işlem etiketi gerektiriyor. Bu token için gizli gönderim kullanılamıyor.";
+"private_send.caution.amount_adjusted" = "Tutar, ücretleri karşılamak için ayarlandı ve artık gizli gönderim teklifiyle eşleşmiyor. Tutarı azaltıp tekrar deneyin.";
+"private_send.caution.quote_expired" = "Bu teklifin süresi doldu. Geri dönüp yeni bir teklif almak için tutarı yeniden girin.";
+"private_send.caution.buffer_unknown" = "Gösterilen ücret üst tahmindir; nihai maliyet daha düşük olabilir.";
+
 // Donate
 
 "donate.list.title" = "Bağış yapın";
@@ -594,6 +639,10 @@
 // Swap
 
 "swap.title" = "Takas";
+"swap.token_select.popular_tokens" = "Popüler Tokenlar";
+"swap.token_select.your_tokens" = "Tokenlarınız";
+"swap.token_select.top_tokens" = "En İyi Tokenlar";
+"swap.token_select.recent" = "Son Arama";
 "swap.you_pay" = "Ödediğiniz";
 "swap.estimated" = "tahmini";
 "swap.balance" = "Bakiye";
@@ -625,6 +674,7 @@
 "swap.no_providers" = "Rota Yok";
 "swap.enter_amount" = "Miktarı Girin";
 "swap.no_quotes" = "Teklif Yok";
+"swap.error.no_memo" = "Bu rota şu anda onaylanamıyor. Lütfen teklifi yenileyin veya başka bir sağlayıcı seçin.";
 "swap.token_not_enabled" = "Jeton Etkin Değil";
 "swap.token_syncing" = "Token Senkronizasyonu";
 "swap.token_not_synced" = "Jeton Senkronize Edilmedi";
@@ -651,6 +701,7 @@
 "swap.pending_allowance" = "Bekleyen İzin";
 "swap.approve" = "Onayla";
 "swap.approving" = "Onaylayan";
+"swap.activate_asset" = "%@ varlığını Stellar'da etkinleştir";
 "swap.allowance_error" = "İzin Hatası";
 "swap.revoke" = "İptal et";
 "swap.revoking" = "İptal ediliyor";
@@ -664,9 +715,10 @@
 "swap.price_impact.info" = "Gösterilen fiyattan beklenen fiyat sapması, genellikle takas miktarıyla artar.";
 "swap.high_price_impact" = "Yüksek Fiyat Etkisi";
 "swap.recipient" = "Alıcı";
+"swap.external_recipient.description" = "Takas edilen fonları alacak cüzdan.";
 "swap.slippage" = "Kayma";
-"swap.swapped_time" = "Tahmini Süre";
-"swap.swapped_time.info" = "Fonların alınması için gereken tahmini süre. Swap işleminin işlenmesi ve işlem onayları, ağ ve sağlayıcıya bağlı olarak zaman alabilir.";
+"swap.swapped_time" = "Swap Süresi";
+"swap.swapped_time.info" = "Bu, swap işlemini tamamlamak ve fonlarınızı almak için gereken tahmini süredir. Gerçek süre, ağ koşullarına, işlem onaylarına ve seçilen swap rotasına bağlı olarak daha kısa veya daha uzun olabilir.";
 
 "swap.affiliate_fee" = "Ortaklık Ücreti";
 "swap.liquidity_fee" = "Likidite Ücreti";
@@ -1080,6 +1132,8 @@
 "coin_page.overview" = "Fiyat";
 "coin_page.analytics" = "Analitik";
 "coin_page.markets" = "Marketler";
+"coin_page.buy" = "Satın Al";
+"coin_page.sell" = "Sat";
 "coin_page.tweets" = "Tweets";
 
 // Coin Page -> Overview
@@ -1931,6 +1985,8 @@
 "add_token.contract_address_not_found" = "Sözleşme adresi %@ blockchain'de bulunamadı";
 "add_token.jetton_master_not_found" = "Jetton Master %@ blockchain'inde bulunamadı";
 "add_token.input_placeholder.contract_address" = "Sözleşme Adresi";
+"add_token.input_placeholder.asset_id" = "Varlık ID";
+"add_token.invalid_asset_id" = "Geçersiz varlık ID";
 "add_token.input_placeholder.jetton_master_address" = "Jetton Ana Adresi";
 "add_token.input_placeholder.mint_address" = "Token Mint Adresi";
 "add_token.invalid_mint_address" = "Geçersiz Solana adresi";
@@ -2124,6 +2180,16 @@
 "monero_network.added" = "Eklendi";
 "monero_network.add_new" = "Yeni ekle";
 "monero_network.description" = "Unstoppable uygulamasının cüzdan(lar)ı senkronize etmek için kullanacağı node’u seçin.";
+"monero_network.auto_select" = "Düğümü Otomatik Seç";
+"monero_network.auto_select.description" = "En hızlı ve güncel düğüme bağlan";
+"monero_network.unreachable" = "Ulaşılamıyor";
+"add_monero_node.error.port_required" = "URL bir port içermelidir";
+"monero.account" = "Hesap";
+"monero.accounts.title" = "Hesaplar";
+"monero.accounts.description" = "Hesaplar, aynı Monero cüzdanı içindeki ayrı bölümlerdir. Gösterilen bakiyeler, adresler ve işlemler aktif hesaba aittir. Hesaplar arasında fon taşımak zincir üstü bir işlem gerektirir.";
+"monero.accounts.new" = "Yeni Hesap";
+"monero.accounts.rename" = "Yeniden Adlandır";
+"monero.accounts.name_placeholder" = "Ad (isteğe bağlı)";
 "monero_network.settings.title" = "Node Tercihleri";
 "monero_network.settings.description" = "Güvenilir düğüm – Etkinleştirildiğinde, cüzdan seçilen düğüme güvenir ve verilerini ek doğrulama olmadan kabul eder. \n\nAçık → İşlemler yayınlandıktan hemen sonra Beklemede olarak görünür (daha hızlı senkronizasyon, ancak daha düşük gizlilik ve düğüme daha fazla bağımlılık).\n\nKapalı → İşlemler yalnızca ağ onaylarından sonra görünür (daha yavaş, ancak daha güvenli ve daha gizli).";
 "monero_network.settings.trust" = "Güven";
