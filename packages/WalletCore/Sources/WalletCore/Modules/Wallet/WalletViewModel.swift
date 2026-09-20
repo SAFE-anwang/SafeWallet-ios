@@ -11,6 +11,7 @@ public class WalletViewModel: WalletListViewModel {
     private let cloudBackupManager = Core.shared.cloudBackupManager
     private let eventHandler = Core.shared.appEventHandler
     private let rateAppManager = Core.shared.rateAppManager
+    private let backupPromptManager = Core.shared.backupPromptManager
     private let appStateManager = AppStateManager.instance
 
     @Published private(set) var buttonHidden: Bool
@@ -151,10 +152,12 @@ extension WalletViewModel {
         adapterManager.src20SyncManager?.updateSRC20Tokens()
 
         rateAppManager.onBalancePageAppear()
+        backupPromptManager.onBalancePageAppear()
     }
 
     func onDisappear() {
         rateAppManager.onBalancePageDisappear()
+        backupPromptManager.onBalancePageDisappear()
     }
 
     public func onTapAmount() {
@@ -204,7 +207,7 @@ extension WalletViewModel {
         try? await Task.sleep(seconds: 1)
     }
 
-    func process(scanned: String) {
+    public func process(scanned: String) {
         Task { [eventHandler] in
             try await eventHandler.handle(source: StatPage.balance, event: scanned.trimmingCharacters(in: .whitespacesAndNewlines), eventType: [.walletConnectUri, .address])
         }

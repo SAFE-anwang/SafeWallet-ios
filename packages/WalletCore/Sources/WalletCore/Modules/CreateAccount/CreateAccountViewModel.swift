@@ -10,19 +10,7 @@ class CreateAccountViewModel: ObservableObject {
     private let walletManager = Core.shared.walletManager
     private let marketKit = Core.shared.marketKit
     private let predefinedBlockchainService = Core.shared.predefinedBlockchainService
-    private let passkeyManager = PasskeyManager()
-    private lazy var smartAccountService: CreateSmartAccountService = {
-        let core = Core.shared
-        return CreateSmartAccountService(
-            accountFactory: core.accountFactory,
-            accountManager: core.accountManager,
-            smartAccountManager: core.smartAccountManager,
-            activateDefaultWallets: CreateSmartAccountService.defaultActivator(
-                marketKit: core.marketKit,
-                walletManager: core.walletManager
-            )
-        )
-    }()
+//    private let passkeyManager = PasskeyManager(domain: AppConfig.passkeyDomain)
 
     let walletType: WalletType
 
@@ -74,6 +62,12 @@ class CreateAccountViewModel: ObservableObject {
         return trimmedName.isEmpty ? defaultAccountName : trimmedName
     }
 
+    // TODO: extract this inline account creation into a `CreateMnemonicAccountService`
+    // (parallel to stable's `CreatePasskeyAccountService` — same persist tail: accountFactory.account →
+    // accountManager.save → activateDefaultWallets → set(lastCreated) → stat; only the secret/type differ).
+    // Longer term: make account creation pluggable via an `IAccountCreator` registry that each app
+    // registers into (unstoppable: mnemonic + passkey; a CEX app: email+password),
+    // and drive the "Add wallet" / restore screen from the registry instead of the hardcoded `WalletType`.
     private func createAccount(words: [String], salt: String, isPasskey: Bool, statPage: StatPage) -> Account {
         let accountType: AccountType = .mnemonic(words: words, salt: salt, bip39Compliant: true)
 
@@ -129,23 +123,18 @@ extension CreateAccountViewModel {
         return createAccount(words: words, salt: salt, isPasskey: false, statPage: advanced ? .newWalletAdvanced : .newWallet)
     }
 
-    func createPasskeyAccount() async throws -> Account {
-        let credentialID = try await passkeyManager.create(name: resolvedName)
-        let passkey = try await passkeyManager.loginWith(credentialID: credentialID)
-
-        return createAccount(words: passkey.mnemonic, salt: "", isPasskey: true, statPage: .newWalletPasskey)
-    }
-
-    func createSmartAccount() async throws -> Account {
-        try await smartAccountService.create(name: resolvedName)
-    }
+//    func createPasskeyAccount() async throws -> Account {
+//        let credentialID = try await passkeyManager.create(name: resolvedName)
+//        let passkey = try await passkeyManager.loginWith(credentialID: credentialID)
+//
+//        return createAccount(words: passkey.mnemonic, salt: "", isPasskey: true, statPage: .newWalletPasskey)
+//    }
 }
 
 extension CreateAccountViewModel {
     enum WalletType {
         case regular
         case passkey
-        case smartAccount
     }
 
     enum CreateError: Error {

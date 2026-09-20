@@ -1,22 +1,22 @@
 import MarketKit
 
-struct TransactionItem: Comparable {
-    var record: TransactionRecord
-    var status: TransactionStatus
-    var lockState: TransactionLockState?
+public struct TransactionItem: Comparable {
+    public var record: TransactionRecord
+    public var status: TransactionStatus
+    public var lockState: TransactionLockState?
 
-    static func < (lhs: TransactionItem, rhs: TransactionItem) -> Bool {
+    public static func < (lhs: TransactionItem, rhs: TransactionItem) -> Bool {
         lhs.record < rhs.record
     }
 
-    static func == (lhs: TransactionItem, rhs: TransactionItem) -> Bool {
+    public static func == (lhs: TransactionItem, rhs: TransactionItem) -> Bool {
         lhs.record == rhs.record
     }
 }
 
 public struct TransactionFilter: Equatable {
-    private(set) var blockchain: Blockchain?
-    private(set) var token: Token?
+    public private(set) var blockchain: Blockchain?
+    public private(set) var token: Token?
     var contact: Contact?
     var scamFilterEnabled: Bool
 
@@ -34,7 +34,7 @@ public struct TransactionFilter: Equatable {
         scamFilterEnabled = true
     }
 
-    var hasChanges: Bool {
+    public var hasChanges: Bool {
         blockchain != nil || token != nil || contact != nil
     }
 

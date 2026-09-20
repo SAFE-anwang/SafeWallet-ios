@@ -50,7 +50,7 @@ class ManageWalletsViewModel: ObservableObject {
         self.restoreSettingsService = restoreSettingsService
         let childWalletBlockchainTypes = ChildWalletBridge.shared.tokenManagementBlockchainTypes(account: account)
         self.childWalletBlockchainTypes = childWalletBlockchainTypes
-        canAddToken = account.type.canAddTokens && !AddTokenModule.items(account: account).isEmpty
+        canAddToken = account.type.canAddTokens && AddTokenModule.items()?.0.id == account.id
         tokenInfoProvider = ManageWalletsTokenInfoProvider(restoreSettingsService: restoreSettingsService)
 
         wallets = Set(walletManager.activeWallets)
@@ -210,12 +210,11 @@ extension ManageWalletsViewModel {
     }
 
     func addTokenInput() -> (Account, [AddTokenModule.Item])? {
-        let items = AddTokenModule.items(account: account)
-        guard !items.isEmpty else {
+        guard let input = AddTokenModule.items(), input.0.id == account.id else {
             return nil
         }
 
-        return (account, items)
+        return input
     }
 
     private func enable(token: Token) {
