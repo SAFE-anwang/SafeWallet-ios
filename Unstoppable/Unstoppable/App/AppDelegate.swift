@@ -1,7 +1,28 @@
 import Foundation
+import Combine
 import UIKit
+import WalletCore
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
+    @Published private(set) var initResult: Result<Void, Error>?
+
+    func application(_: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        #if DEV
+            AppEnvironment.configure(.dev)
+        #endif
+
+        Theme.updateNavigationBarTheme() // TODO: get rid of this
+
+        do {
+            try UnstoppableApp.initCore()
+            initResult = .success(())
+        } catch {
+            initResult = .failure(error)
+        }
+
+        return true
+    }
+
     func application(_: UIApplication, shouldAllowExtensionPointIdentifier extensionPointIdentifier: UIApplication.ExtensionPointIdentifier) -> Bool {
         if extensionPointIdentifier == .keyboard {
             // disable custom keyboards
