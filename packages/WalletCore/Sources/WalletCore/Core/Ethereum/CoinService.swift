@@ -29,7 +29,7 @@ extension CoinService: ICoinService {
     var rate: CurrencyValue? {
         let baseCurrency = currencyManager.baseCurrency
 
-        return marketKit.coinPrice(coinUid: token.coin.uid, currencyCode: baseCurrency.code).map { coinPrice in
+        return marketKit.walletCoinPrice(coinUid: token.coin.uid, currencyCode: baseCurrency.code).map { coinPrice in
             CurrencyValue(currency: baseCurrency, value: coinPrice.value)
         }
     }

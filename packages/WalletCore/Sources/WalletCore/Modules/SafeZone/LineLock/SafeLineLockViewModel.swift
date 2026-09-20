@@ -34,7 +34,6 @@ class SafeLineLockViewModel: ObservableObject {
     private let wallet: Wallet
     private let adapter: EvmAdapter
     private var enteringFiat = false
-    private let decimalParser = AmountDecimalParser()
     private let currencyManager = Core.shared.currencyManager
     private let marketKit = Core.shared.marketKit
     private let parserChain: AddressParserChain
@@ -66,8 +65,8 @@ class SafeLineLockViewModel: ObservableObject {
         self.address = address
         self.addressResult = .valid(.init(address: Address(raw: address), uri: nil))
 
-        rate = marketKit.coinPrice(coinUid: wallet.coin.uid, currencyCode: currency.code)?.value
-        marketKit.coinPricePublisher( coinUid: wallet.coin.uid, currencyCode: currency.code)
+        rate = marketKit.walletCoinPrice(coinUid: wallet.coin.uid, currencyCode: currency.code)?.value
+        marketKit.walletCoinPricePublisher(coinUid: wallet.coin.uid, currencyCode: currency.code)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] price in self?.rate = price.value }
             .store(in: &cancellables)
@@ -104,7 +103,7 @@ class SafeLineLockViewModel: ObservableObject {
             syncFiatAmount()
             syncSendData()
 
-            let amount = decimalParser.parseAnyDecimal(from: amountString)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             if amount != self.amount {
                 amountString = self.amount?.description ?? ""
@@ -114,7 +113,7 @@ class SafeLineLockViewModel: ObservableObject {
 
     @Published var amountString: String = "" {
         didSet {
-            var amount = decimalParser.parseAnyDecimal(from: amountString)
+            var amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             if amount == 0 {
                 amount = nil
@@ -134,7 +133,7 @@ class SafeLineLockViewModel: ObservableObject {
         didSet {
             syncAmount()
 
-            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             if amount != fiatAmount {
                 fiatAmountString = fiatAmount?.description ?? ""
@@ -144,7 +143,7 @@ class SafeLineLockViewModel: ObservableObject {
 
     @Published var fiatAmountString: String = "" {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             guard amount != fiatAmount else {
                 return

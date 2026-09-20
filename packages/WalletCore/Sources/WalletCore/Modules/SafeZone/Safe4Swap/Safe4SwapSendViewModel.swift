@@ -66,7 +66,7 @@ class Safe4SwapSendViewModel: ObservableObject {
         feeToken = try? marketKit.token(query: TokenQuery(blockchainType: tokenIn.blockchainType, tokenType: .native))
 
         if let feeToken {
-            feeTokenRate = marketKit.coinPrice(coinUid: feeToken.coin.uid, currencyCode: currency.code)?.value
+            feeTokenRate = marketKit.walletCoinPrice(coinUid: feeToken.coin.uid, currencyCode: currency.code)?.value
         }
 
         syncQuote()

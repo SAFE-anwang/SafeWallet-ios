@@ -14,14 +14,16 @@ class WalletCoinPriceService {
     private let marketKit = Core.shared.marketKit
     private var cancellables = Set<AnyCancellable>()
     private var coinPriceCancellables = Set<AnyCancellable>()
+    private let priceQueue = DispatchQueue(label: "\(AppConfig.label).wallet-coin-price-service", qos: .userInitiated)
+    private var priceItems = [String: Item]()
 
-    private(set) var currency: Currency
+    private var _currency: Currency
     private var coinUids = Set<String>()
     private var feeCoinUids = Set<String>()
     private var conversionCoinUids = Set<String>()
 
     init() {
-        currency = currencyManager.baseCurrency
+        _currency = currencyManager.baseCurrency
 
         currencyManager.$baseCurrency
             .sink { [weak self] currency in
@@ -37,43 +39,56 @@ class WalletCoinPriceService {
     }
 
     private func onUpdate(baseCurrency: Currency) {
-        currency = baseCurrency
-        subscribeToCoinPrices()
-        delegate?.didUpdate(itemsMap: nil)
+        priceQueue.async {
+            self._currency = baseCurrency
+            self.priceItems.removeAll()
+            self.subscribeToCoinPrices()
+            self.delegate?.didUpdate(itemsMap: nil)
+        }
     }
 
     private func subscribeToCoinPrices() {
         coinPriceCancellables = Set()
 
-        if !coinUids.isEmpty {
-            marketKit.coinPriceMapPublisher(coinUids: Array(coinUids), currencyCode: currencyManager.baseCurrency.code)
-                .sink { [weak self] in
-                    self?.onUpdate(coinPriceMap: $0)
-                }
-                .store(in: &coinPriceCancellables)
-        }
+        let currencyCode = _currency.code
 
-        if !feeCoinUids.isEmpty {
-            marketKit.coinPriceMapPublisher(coinUids: Array(feeCoinUids), currencyCode: currencyManager.baseCurrency.code)
-                .sink { _ in }
-                .store(in: &coinPriceCancellables)
+        subscribe(coinUids: coinUids, currencyCode: currencyCode) { [weak self] coinPriceMap in
+            self?.onUpdate(coinPriceMap: coinPriceMap, currencyCode: currencyCode)
         }
-
-        if !conversionCoinUids.isEmpty {
-            marketKit.coinPriceMapPublisher(coinUids: Array(conversionCoinUids), currencyCode: currencyManager.baseCurrency.code)
-                .sink { _ in }
-                .store(in: &coinPriceCancellables)
-        }
+        subscribe(coinUids: feeCoinUids, currencyCode: currencyCode) { _ in }
+        subscribe(coinUids: conversionCoinUids, currencyCode: currencyCode) { _ in }
     }
 
-    private func onUpdate(coinPriceMap: [String: CoinPrice]) {
-        let itemsMap = coinPriceMap.mapValues { item(coinPrice: $0) }
-        delegate?.didUpdate(itemsMap: itemsMap)
+    private func subscribe(coinUids: Set<String>, currencyCode: String, onUpdate: @escaping ([String: CoinPrice]) -> Void) {
+        guard !coinUids.isEmpty else {
+            return
+        }
+
+        marketKit.walletCoinPriceMapPublisher(coinUids: Array(coinUids), currencyCode: currencyCode)
+            .sink(receiveValue: onUpdate)
+            .store(in: &coinPriceCancellables)
+    }
+
+    private func onUpdate(coinPriceMap: [String: CoinPrice], currencyCode: String) {
+        priceQueue.async {
+            guard self._currency.code == currencyCode else {
+                return
+            }
+
+            for (coinUid, coinPrice) in coinPriceMap {
+                self.priceItems[coinUid] = self.item(coinPrice: coinPrice)
+            }
+
+            // MarketKit publishes updates per price source. Keep the accumulated
+            // snapshot here so consumers do not clear prices that arrived earlier
+            // from another source.
+            let activeCoinUids = self.coinUids
+            self.priceItems = self.priceItems.filter { activeCoinUids.contains($0.key) }
+            self.delegate?.didUpdate(itemsMap: self.priceItems)
+        }
     }
 
     private func item(coinPrice: CoinPrice) -> Item {
-        let currency = currencyManager.baseCurrency
-
         let diff: Decimal?
         switch priceChangeModeManager.priceChangeMode {
         case .hour24:
@@ -83,7 +98,7 @@ class WalletCoinPriceService {
         }
 
         return Item(
-            price: CurrencyValue(currency: currency, value: coinPrice.value),
+            price: CurrencyValue(currency: _currency, value: coinPrice.value),
             diff: diff,
             expired: coinPrice.expired
         )
@@ -92,29 +107,42 @@ class WalletCoinPriceService {
 
 extension WalletCoinPriceService {
     func set(coinUids: Set<String>, feeCoinUids: Set<String> = Set(), conversionCoinUids: Set<String> = Set()) {
-        if self.coinUids == coinUids, self.feeCoinUids == feeCoinUids, self.conversionCoinUids == conversionCoinUids {
-            return
+        priceQueue.async {
+            guard self.coinUids != coinUids || self.feeCoinUids != feeCoinUids || self.conversionCoinUids != conversionCoinUids else {
+                return
+            }
+
+            self.coinUids = coinUids
+            self.feeCoinUids = feeCoinUids
+            self.conversionCoinUids = conversionCoinUids
+            self.priceItems = self.priceItems.filter { coinUids.contains($0.key) }
+
+            self.subscribeToCoinPrices()
         }
-
-        self.coinUids = coinUids
-        self.feeCoinUids = feeCoinUids
-        self.conversionCoinUids = conversionCoinUids
-
-        subscribeToCoinPrices()
     }
 
     func itemMap(coinUids: [String]) -> [String: Item] {
-        marketKit.coinPriceMap(coinUids: coinUids, currencyCode: currency.code).mapValues {
-            item(coinPrice: $0)
+        priceQueue.sync {
+            marketKit.walletCoinPriceMap(coinUids: coinUids, currencyCode: _currency.code).mapValues(item(coinPrice:))
         }
     }
 
     func item(coinUid: String) -> Item? {
-        marketKit.coinPrice(coinUid: coinUid, currencyCode: currency.code).map { item(coinPrice: $0) }
+        priceQueue.sync {
+            marketKit.walletCoinPrice(coinUid: coinUid, currencyCode: _currency.code).map(item(coinPrice:))
+        }
     }
 
     func refresh() {
-        marketKit.refreshCoinPrices(currencyCode: currency.code)
+        priceQueue.sync {
+            marketKit.refreshCoinPrices(currencyCode: _currency.code)
+        }
+    }
+}
+
+extension WalletCoinPriceService {
+    var currency: Currency {
+        priceQueue.sync { _currency }
     }
 }
 

@@ -13,7 +13,6 @@ class CrossPreSendViewModel: ObservableObject {
     private let marketKit = Core.shared.marketKit
     private let walletManager = Core.shared.walletManager
     private let adapterManager = Core.shared.adapterManager
-    private let decimalParser = AmountDecimalParser()
     private let parserChain: AddressParserChain
 
     private var cancellables = Set<AnyCancellable>()
@@ -45,7 +44,7 @@ class CrossPreSendViewModel: ObservableObject {
             syncFiatAmount()
             syncSendData()
 
-            let amount = decimalParser.parseAnyDecimal(from: amountString)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             if amount != self.amount {
                 amountString = self.amount?.description ?? ""
@@ -55,7 +54,7 @@ class CrossPreSendViewModel: ObservableObject {
 
     @Published var amountString: String = "" {
         didSet {
-            var amount = decimalParser.parseAnyDecimal(from: amountString)
+            var amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             if amount == 0 {
                 amount = nil
@@ -75,7 +74,7 @@ class CrossPreSendViewModel: ObservableObject {
         didSet {
             syncAmount()
 
-            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             if amount != fiatAmount {
                 fiatAmountString = fiatAmount?.description ?? ""
@@ -85,7 +84,7 @@ class CrossPreSendViewModel: ObservableObject {
 
     @Published var fiatAmountString: String = "" {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             guard amount != fiatAmount else {
                 return
@@ -145,8 +144,8 @@ class CrossPreSendViewModel: ObservableObject {
             .sink { [weak self] in self?.currency = $0 }
             .store(in: &cancellables)
 
-        coinPrice = marketKit.coinPrice(coinUid: wallet.coin.uid, currencyCode: currency.code)
-        marketKit.coinPricePublisher(coinUid: wallet.coin.uid, currencyCode: currency.code)
+        coinPrice = marketKit.walletCoinPrice(coinUid: wallet.coin.uid, currencyCode: currency.code)
+        marketKit.walletCoinPricePublisher(coinUid: wallet.coin.uid, currencyCode: currency.code)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] price in self?.coinPrice = price }
             .store(in: &cancellables)
@@ -154,7 +153,7 @@ class CrossPreSendViewModel: ObservableObject {
         if let handler {
             adapterState = handler.state
             availableBalance = handler.balance
-            hasMemo = handler.hasMemo(address: resolvedAddress.address)
+            hasMemo = handler.memoType(address: resolvedAddress.address).deliversAttachment
 
             handler.statePublisher
                 .receive(on: DispatchQueue.main)
@@ -218,7 +217,7 @@ class CrossPreSendViewModel: ObservableObject {
             return
         }
 
-        hasMemo = handler.hasMemo(address: resolvedAddress.address)
+        hasMemo = handler.memoType(address: resolvedAddress.address).deliversAttachment
     }
 }
 

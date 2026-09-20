@@ -54,7 +54,7 @@ class ReceiveCoinListService {
         let coinUids = Array(Set(eligibleTokens.map(\.coin.uid)))
 
         let currency = Core.shared.currencyManager.baseCurrency
-        let coinPriceMap = Core.shared.marketKit.coinPriceMap(coinUids: coinUids, currencyCode: currency.code)
+        let coinPriceMap = Core.shared.marketKit.walletCoinPriceMap(coinUids: coinUids, currencyCode: currency.code)
         let coinPrices: [String: Decimal] = coinPriceMap.compactMapValues { $0.expired ? nil : $0.value }
 
         let activeWallets = Core.shared.walletManager.activeWallets

@@ -54,7 +54,7 @@ class CoinSelectService {
         }
 
         return balanceCoins.map { token, balance -> Item in
-            let coinPrice: CoinPrice? = marketKit.coinPrice(coinUid: token.coin.uid, currencyCode: currencyManager.baseCurrency.code)
+            let coinPrice: CoinPrice? = marketKit.walletCoinPrice(coinUid: token.coin.uid, currencyCode: currencyManager.baseCurrency.code)
             let rate: Decimal? = coinPrice.flatMap { $0.expired ? nil : $0.value }
 
             return Item(token: token, balance: balance, rate: rate)

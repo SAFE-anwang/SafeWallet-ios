@@ -50,10 +50,10 @@ class BaseFiatService {
     }
 
     private func fetchRate(coin: Coin, subscribe: Bool) {
-        sync(coinPrice: marketKit.coinPrice(coinUid: coin.uid, currencyCode: currency.code))
+        sync(coinPrice: marketKit.walletCoinPrice(coinUid: coin.uid, currencyCode: currency.code))
 
         if subscribe {
-            marketKit.coinPricePublisher(coinUid: coin.uid, currencyCode: currency.code)
+            marketKit.walletCoinPricePublisher(coinUid: coin.uid, currencyCode: currency.code)
                 .sink { [weak self] coinPrice in
                     self?.sync(coinPrice: coinPrice)
                 }
