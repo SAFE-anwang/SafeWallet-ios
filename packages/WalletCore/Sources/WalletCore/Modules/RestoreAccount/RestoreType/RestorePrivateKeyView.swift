@@ -69,9 +69,10 @@ struct RestorePrivateKeyView: View {
         .navigationDestination(for: RestoreSelectDestination.self) { destination in
             switch destination {
             case let .selectCoins(accountName, accountType, options):
-                RestoreSelectWrapperNew(
+                RestoreCoinsView(
                     accountName: accountName,
                     accountType: accountType,
+                    isParentPresented: $isPresented,
                     statPage: .importWalletFromKey,
                     allowedBitcoinDerivations: options?.allowedBitcoinDerivations,
                     allowedBlockchainTypes: options?.allowedBlockchainTypes,
@@ -79,17 +80,14 @@ struct RestorePrivateKeyView: View {
                     blockchainsRequireManualTokenSelection: options?.blockchainsRequireManualTokenSelection,
                     onRestore: handleRestore
                 )
-                .ignoresSafeArea()
-                .navigationBarHidden(true)
             case let .selectAccountType(accountName, accountTypes):
-                AccountTypeSelectWrapper(
+                AccountTypeSelectView(
                     accountName: accountName,
                     accountTypes: accountTypes,
+                    isParentPresented: $isPresented,
                     statPage: .importWalletFromKey,
                     onRestore: handleRestore
                 )
-                .ignoresSafeArea()
-                .navigationBarHidden(true)
             }
         }
         .onAppear {
@@ -412,7 +410,7 @@ struct RestorePrivateKeyView: View {
     }
 
     private func navigateToSelectCoins(accountName: String, accountType: AccountType, options: RestorePrivateKeyViewModelNew.RestoreSelectOptions?) {
-        let supportedTokens = RestoreSelectModule.supportedTokens(accountType: accountType).filter { token in
+        let supportedTokens = RestoreCoinsViewModel.supportedTokens(accountType: accountType).filter { token in
             guard let allowedBlockchainTypes = options?.allowedBlockchainTypes else {
                 return true
             }
@@ -425,8 +423,12 @@ struct RestorePrivateKeyView: View {
             || options?.blockchainsRequireManualTokenSelection != nil
 
         if !shouldOpenSelectionScreen, blockchains.count == 1, let token = supportedTokens.first, token.blockchainType.restoreSettingTypes.isEmpty {
-            RestoreSelectModule.restoreSingleBlockchain(accountName: accountName, accountType: accountType, token: token)
-            stat(page: .importWalletFromKey, event: .importWallet(walletType: accountType.statDescription))
+            RestoreCoinsViewModel.restoreSingleBlockchain(
+                accountName: accountName,
+                accountType: accountType,
+                token: token,
+                statPage: .importWalletFromKey
+            )
             HudHelper.instance.show(banner: .imported)
             handleRestore()
             return
@@ -452,65 +454,6 @@ struct RestorePrivateKeyView: View {
 enum RestoreSelectDestination: Hashable {
     case selectCoins(accountName: String, accountType: AccountType, options: RestorePrivateKeyViewModelNew.RestoreSelectOptions?)
     case selectAccountType(accountName: String, accountTypes: [AccountType])
-}
-
-struct RestoreSelectWrapperNew: UIViewControllerRepresentable {
-    let accountName: String
-    let accountType: AccountType
-    let statPage: StatPage
-    let allowedBitcoinDerivations: Set<MnemonicDerivation>?
-    let allowedBlockchainTypes: Set<BlockchainType>?
-    let autoEnableDefaultTokensForAllowedBlockchains: Bool
-    let blockchainsRequireManualTokenSelection: Set<BlockchainType>?
-    let onRestore: () -> Void
-
-    func makeUIViewController(context _: Context) -> UINavigationController {
-        let vc = RestoreSelectModule.viewController(
-            accountName: accountName,
-            accountType: accountType,
-            statPage: statPage,
-            isManualBackedUp: true,
-            allowedBitcoinDerivations: allowedBitcoinDerivations,
-            allowedBlockchainTypes: allowedBlockchainTypes,
-            autoEnableDefaultTokensForAllowedBlockchains: autoEnableDefaultTokensForAllowedBlockchains,
-            blockchainsRequireManualTokenSelection: blockchainsRequireManualTokenSelection,
-            onRestore: onRestore
-        )
-
-        let navController = UINavigationController(rootViewController: vc)
-        navController.navigationBar.prefersLargeTitles = false
-        navController.setNavigationBarHidden(false, animated: false)
-
-        return navController
-    }
-
-    func updateUIViewController(_: UINavigationController, context _: Context) {}
-}
-
-struct AccountTypeSelectWrapper: UIViewControllerRepresentable {
-    let accountName: String
-    let accountTypes: [AccountType]
-    let statPage: StatPage
-    let onRestore: () -> Void
-
-    func makeUIViewController(context _: Context) -> UINavigationController {
-        let viewModel = AccountTypeSelectViewModel(accountName: accountName, accountTypes: accountTypes)
-        let vc = AccountTypeSelectViewController(
-            viewModel: viewModel,
-            accountName: accountName,
-            statPage: statPage,
-            showCloseButton: false,
-            onRestore: onRestore
-        )
-
-        let navController = UINavigationController(rootViewController: vc)
-        navController.navigationBar.prefersLargeTitles = false
-        navController.setNavigationBarHidden(false, animated: false)
-
-        return navController
-    }
-
-    func updateUIViewController(_: UINavigationController, context _: Context) {}
 }
 
 extension RestorePrivateKeyView {

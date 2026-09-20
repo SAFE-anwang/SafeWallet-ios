@@ -1,25 +1,39 @@
 import Kingfisher
+import HdWalletKit
 import MarketKit
 import SwiftUI
 
 struct RestoreCoinsView: View {
     @StateObject private var viewModel: RestoreCoinsViewModel
     @Binding private var isParentPresented: Bool
+    private let onRestore: (() -> Void)?
 
     init(
         accountName: String,
         accountType: AccountType,
         isManualBackedUp: Bool = true,
         isFileBackedUp: Bool = false,
-        isParentPresented: Binding<Bool>
+        isParentPresented: Binding<Bool>,
+        statPage: StatPage = .importWallet,
+        allowedBitcoinDerivations: Set<MnemonicDerivation>? = nil,
+        allowedBlockchainTypes: Set<BlockchainType>? = nil,
+        autoEnableDefaultTokensForAllowedBlockchains: Bool = false,
+        blockchainsRequireManualTokenSelection: Set<BlockchainType>? = nil,
+        onRestore: (() -> Void)? = nil
     ) {
         _viewModel = StateObject(wrappedValue: RestoreCoinsViewModel(
             accountName: accountName,
             accountType: accountType,
             isManualBackedUp: isManualBackedUp,
-            isFileBackedUp: isFileBackedUp
+            isFileBackedUp: isFileBackedUp,
+            statPage: statPage,
+            allowedBitcoinDerivations: allowedBitcoinDerivations,
+            allowedBlockchainTypes: allowedBlockchainTypes,
+            autoEnableDefaultTokensForAllowedBlockchains: autoEnableDefaultTokensForAllowedBlockchains,
+            blockchainsRequireManualTokenSelection: blockchainsRequireManualTokenSelection
         ))
         _isParentPresented = isParentPresented
+        self.onRestore = onRestore
     }
 
     var body: some View {
@@ -49,7 +63,11 @@ struct RestoreCoinsView: View {
                     viewModel.restore()
 
                     HudHelper.instance.show(banner: .imported)
-                    isParentPresented = false
+                    if let onRestore {
+                        onRestore()
+                    } else {
+                        isParentPresented = false
+                    }
                 }
                 .disabled(!viewModel.canRestore)
             }

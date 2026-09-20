@@ -75,4 +75,19 @@ struct WalletItem: Codable, Identifiable, Hashable {
     enum CodingKeys: String, CodingKey {
         case name, wallet, bip32path, custompath, needpassword
     }
+
+    static func mnemonicDerivation(path: String) -> MnemonicDerivation? {
+        let components = path.split(separator: "/")
+        guard components.count > 1 else {
+            return nil
+        }
+
+        switch String(components[1]).replacingOccurrences(of: "'", with: "") {
+        case "44": return .bip44
+        case "49": return .bip49
+        case "84": return .bip84
+        case "86": return .bip86
+        default: return nil
+        }
+    }
 }

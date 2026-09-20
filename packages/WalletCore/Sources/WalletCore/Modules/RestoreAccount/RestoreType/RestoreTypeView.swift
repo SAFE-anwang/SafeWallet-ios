@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct RestoreTypeView: View {
     let type: SourceType
@@ -10,19 +9,12 @@ struct RestoreTypeView: View {
 
     @StateObject private var viewModel: RestoreTypeViewModel
     @State private var path = NavigationPath()
-    @State private var showFilePicker = false
-    @State private var namedSource: BackupModule.NamedSource?
-    @State private var selectCoinsAccount: Account?
-    @State private var fileConfigRawBackup: RawFullBackup?
-    @State private var passkeyLogin: RestoreTypeViewModel.PasskeyLogin?
-    @State private var restoreSelectPresented = false
 
     private enum Route: Hashable {
         case walletTypeList
         case recoveryOrPrivateKey
-        case passphrase
-        case selectCoins
         case privateKey
+        case backup
         case recoveryNew(walletType: MnemonicRestoreWalletType)
     }
 
@@ -33,12 +25,7 @@ struct RestoreTypeView: View {
         self.showClose = showClose
 
         _isPresented = isPresented
-        _viewModel = StateObject(wrappedValue:
-            RestoreTypeViewModel(
-                cloudAccountBackupManager: Core.shared.cloudBackupManager,
-                sourceType: type
-            )
-        )
+        _viewModel = StateObject(wrappedValue: RestoreTypeViewModel(sourceType: type))
     }
 
     init(isPresented: Binding<Bool>, parentPresented: Binding<Bool>? = nil, showClose: Bool = false) {
@@ -73,50 +60,27 @@ struct RestoreTypeView: View {
                 case .walletTypeList:
                     WalletTypeListView(isPresented: $isPresented, path: $path, onRestore: onRestore, onSelectWallet: { walletType in
                         switch walletType {
-                        case .identityWallet, .imToken, .tokenPocket:
+                        case .identityWallet, .safeWallet, .imToken, .tokenPocket:
                             path.append(Route.recoveryNew(walletType: walletType))
-                        case .safeWallet:
-                            path.append(Route.recoveryOrPrivateKey)
                         }
                     })
 
                 case .recoveryOrPrivateKey:
-                    RestoreViewWrapper(advanced: false, initialRestoreType: .mnemonic, onRestore: handleRestore)
-                        .ignoresSafeArea()
-                        .navigationTitle("restore.title".localized)
+                    RestoreCombinedView(isPresented: $isPresented, path: $path, onRestore: handleRestore)
+
+                case .backup:
+                    RestoreBackupListView(
+                        isParentPresented: parentPresented ?? $isPresented,
+                        showClose: false
+                    )
 
                 case .privateKey:
                     RestorePrivateKeyView(isPresented: $isPresented, path: $path, onRestore: handleRestore)
                         .navigationTitle("restore.title".localized)
 
-                case .passphrase:
-                    if let source = namedSource {
-                        showPassphrase(source)
-                    }
-                case .selectCoins:
-                    if let account = selectCoinsAccount {
-                        RestoreSelectWrapper(account: account, statPage: passphraseStatPage, onRestore: handleRestore)
-                            .ignoresSafeArea()
-                            .navigationTitle("restore.title".localized)
-                    }
-
                 case let .recoveryNew(walletType):
                     RestoreView(isPresented: $isPresented, path: $path, walletType: walletType, onRestore: onRestore)
                 }
-            }
-            .navigationDestination(isPresented: $restoreSelectPresented) {
-                if let passkeyLogin {
-                    RestoreCoinsView(
-                        accountName: passkeyLogin.accountName,
-                        accountType: passkeyLogin.accountType,
-                        isParentPresented: parentPresented ?? $isPresented
-                    )
-                }
-            }
-        }
-        .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [.json]) { result in
-            if case let .success(url) = result {
-                viewModel.didPick(url: url, destination: .files)
             }
         }
         .onReceive(viewModel.showModulePublisher) { type in
@@ -127,13 +91,10 @@ struct RestoreTypeView: View {
 
             case .privateKey:
                 path.append(Route.privateKey)
+
+            case .backup:
+                path.append(Route.backup)
             }
-        }
-        .onReceive(viewModel.showCloudNotAvailablePublisher) {
-            showCloudNotAvailable()
-        }
-        .onReceive(viewModel.showWrongFilePublisher) {
-            HudHelper.instance.show(banner: .error(string: "alert.cant_recognize".localized))
         }
     }
 
@@ -154,67 +115,6 @@ struct RestoreTypeView: View {
         .padding(.top, .margin4)
     }
 
-    @ViewBuilder private func legacyRow(icon: String, title: String, description: String, action: @escaping () -> Void) -> some View {
-        ListSection {
-            Cell(
-                left: {
-                    ThemeImage(icon, size: 24)
-                },
-                middle: {
-                    MultiText(title: title, subtitle: description)
-                },
-                right: {
-                    Image.disclosureIcon
-                },
-                action: action
-            )
-        }
-        .padding(.top, .margin4)
-    }
-
-    private func restorePasskey() {
-        Task {
-            do {
-                let login = try await viewModel.loginPasskey()
-
-                await MainActor.run {
-                    passkeyLogin = login
-                    restoreSelectPresented = true
-                }
-            } catch {
-                if case PasskeyManager.PasskeyError.userCanceled = error {
-                    return
-                }
-                await MainActor.run {
-                    HudHelper.instance.show(banner: .error(string: error.smartDescription))
-                }
-            }
-        }
-    }
-
-    @ViewBuilder private func showPassphrase(_ source: BackupModule.NamedSource) -> some View {
-        RestorePassphraseView(
-            item: source,
-            isParentPresented: parentPresented ?? $isPresented
-        )
-    }
-
-    private func showCloudNotAvailable() {
-        Coordinator.shared.present(type: .bottomSheet) { isPresented in
-            BottomSheetView(
-                items: [
-                    .title(icon: ComponentImage("icloud_24", size: .iconSize72, colorStyle: .yellow), title: "backup.cloud.no_access.title".localized),
-                    .warning(text: "backup.cloud.no_access.description".localized),
-                    .buttonGroup(.init(buttons: [
-                        .init(style: .yellow, title: "button.ok".localized) {
-                            isPresented.wrappedValue = false
-                        },
-                    ])),
-                ]
-            )
-        }
-    }
-
     private var handleRestore: () -> Void {
         if let onRestore {
             return onRestore
@@ -222,43 +122,8 @@ struct RestoreTypeView: View {
         return { (parentPresented ?? $isPresented).wrappedValue = false }
     }
 
-    private var passphraseStatPage: StatPage {
-        viewModel.sourceType == .wallet ? .importWalletFromFiles : .importFullFromFiles
-    }
-
     enum SourceType {
         case wallet
         case full
     }
-}
-
-private struct RestoreViewWrapper: UIViewControllerRepresentable {
-    let advanced: Bool
-    let initialRestoreType: RestoreViewModel.RestoreType
-    let onRestore: () -> Void
-
-    func makeUIViewController(context _: Context) -> UIViewController {
-        RestoreModule.viewController(advanced: advanced, initialRestoreType: initialRestoreType, onRestore: onRestore)
-    }
-
-    func updateUIViewController(_: UIViewController, context _: Context) {}
-}
-
-private struct RestoreSelectWrapper: UIViewControllerRepresentable {
-    let account: Account
-    let statPage: StatPage
-    let onRestore: () -> Void
-
-    func makeUIViewController(context _: Context) -> UIViewController {
-        RestoreSelectModule.viewController(
-            accountName: account.name,
-            accountType: account.type,
-            statPage: statPage,
-            isManualBackedUp: account.backedUp,
-            isFileBackedUp: account.fileBackedUp,
-            onRestore: onRestore
-        )
-    }
-
-    func updateUIViewController(_: UIViewController, context _: Context) {}
 }

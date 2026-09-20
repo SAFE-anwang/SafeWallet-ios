@@ -416,7 +416,7 @@ extension RestorePrivateKeyViewModelNew {
     }
 }
 
-extension RestorePrivateKeyViewModelNew: IRestoreSubViewModel {
+extension RestorePrivateKeyViewModelNew {
     func resolveAccountTypes() -> [AccountType]? {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
 

@@ -1,4 +1,5 @@
 import Combine
+import HdWalletKit
 import MarketKit
 import SwiftUI
 
@@ -7,6 +8,11 @@ class RestoreCoinsViewModel: ObservableObject {
     private let accountType: AccountType
     private let isManualBackedUp: Bool
     private let isFileBackedUp: Bool
+    private let statPage: StatPage
+    private let allowedBitcoinDerivations: Set<MnemonicDerivation>?
+    private let allowedBlockchainTypes: Set<BlockchainType>?
+    private let autoEnableDefaultTokensForAllowedBlockchains: Bool
+    private let blockchainsRequireManualTokenSelection: Set<BlockchainType>?
 
     private let accountFactory = Core.shared.accountFactory
     private let accountManager = Core.shared.accountManager
@@ -29,21 +35,37 @@ class RestoreCoinsViewModel: ObservableObject {
         accountName: String,
         accountType: AccountType,
         isManualBackedUp: Bool = true,
-        isFileBackedUp: Bool = false
+        isFileBackedUp: Bool = false,
+        statPage: StatPage = .importWallet,
+        allowedBitcoinDerivations: Set<MnemonicDerivation>? = nil,
+        allowedBlockchainTypes: Set<BlockchainType>? = nil,
+        autoEnableDefaultTokensForAllowedBlockchains: Bool = false,
+        blockchainsRequireManualTokenSelection: Set<BlockchainType>? = nil
     ) {
         self.accountName = accountName
         self.accountType = accountType
         self.isManualBackedUp = isManualBackedUp
         self.isFileBackedUp = isFileBackedUp
+        self.statPage = statPage
+        self.allowedBitcoinDerivations = allowedBitcoinDerivations
+        self.allowedBlockchainTypes = allowedBlockchainTypes
+        self.autoEnableDefaultTokensForAllowedBlockchains = autoEnableDefaultTokensForAllowedBlockchains
+        self.blockchainsRequireManualTokenSelection = blockchainsRequireManualTokenSelection
 
         loadBlockchains()
+        autoEnableAllowedBlockchainsIfNeeded()
         syncItems()
     }
 
     private func loadBlockchains() {
         let queries = BlockchainType.supported.map(\.nativeTokenQueries).flatMap { $0 }
         let allTokens = (try? marketKit.tokens(queries: queries)) ?? []
-        let supported = allTokens.filter { accountType.supports(token: $0) }
+        let supported = allTokens.filter { token in
+            accountType.supports(token: token)
+                && token.blockchainType != .safe
+                && supportsDerivationLimit(token: token)
+                && supportsBlockchainLimit(token: token)
+        }
         blockchainTokens = Dictionary(grouping: supported, by: { $0.blockchain })
     }
 
@@ -83,7 +105,7 @@ extension RestoreCoinsViewModel {
             requestTokenSelection(
                 blockchain: blockchain,
                 tokens: tokens,
-                currentlyEnabled: tokens.filter(\.type.isDefault),
+                currentlyEnabled: blockchainsRequireManualTokenSelection?.contains(blockchain.type) == true ? [] : tokens.filter(\.type.isDefault),
                 allowEmpty: false
             )
         } else if !blockchain.type.restoreSettingTypes.isEmpty {
@@ -121,10 +143,15 @@ extension RestoreCoinsViewModel {
             fileBackedUp: isFileBackedUp,
             name: accountName
         )
-        accountManager.save(account: account)
+        accountManager.save(account: account, makeActive: false)
 
         for (token, settings) in restoreSettingsMap {
             restoreSettingsManager.save(settings: settings, account: account, blockchainType: token.blockchainType)
+        }
+
+        guard !enabledTokens.isEmpty else {
+            accountManager.set(activeAccountId: account.id)
+            return
         }
 
         for blockchainType in Set(enabledTokens.map(\.blockchainType)) {
@@ -133,12 +160,41 @@ extension RestoreCoinsViewModel {
 
         let wallets = enabledTokens.map { Wallet(token: $0, account: account) }
         walletManager.save(wallets: wallets)
+        accountManager.set(activeAccountId: account.id)
 
-        stat(page: .importWallet, event: .importWallet(walletType: accountType.statDescription))
+        stat(page: statPage, event: .importWallet(walletType: accountType.statDescription))
     }
 }
 
 extension RestoreCoinsViewModel {
+    static func supportedTokens(accountType: AccountType) -> [Token] {
+        let tokenQueries = BlockchainType.supported.map(\.nativeTokenQueries).flatMap { $0 }
+        let allTokens = (try? Core.shared.marketKit.tokens(queries: tokenQueries)) ?? []
+        return allTokens.filter { accountType.supports(token: $0) }
+    }
+
+    static func restoreSingleBlockchain(
+        accountName: String,
+        accountType: AccountType,
+        token: Token,
+        backedUp: Bool = true,
+        fileBackedUp: Bool = false,
+        statPage: StatPage = .importWallet
+    ) {
+        let account = Core.shared.accountFactory.account(
+            type: accountType,
+            origin: .restored,
+            backedUp: backedUp,
+            fileBackedUp: fileBackedUp,
+            name: accountName
+        )
+        Core.shared.accountManager.save(account: account, makeActive: false)
+        Core.shared.restoreStateManager.setShouldRestore(account: account, blockchainType: token.blockchainType)
+        Core.shared.walletManager.save(wallets: [Wallet(token: token, account: account)])
+        Core.shared.accountManager.set(activeAccountId: account.id)
+        stat(page: statPage, event: .importWallet(walletType: accountType.statDescription))
+    }
+
     private func handleApprove(blockchain: Blockchain, tokens: [Token]) {
         let existingTokens = enabledTokens.filter { $0.blockchain == blockchain }
         let newTokens = tokens.filter { !existingTokens.contains($0) }
@@ -213,6 +269,46 @@ extension RestoreCoinsViewModel {
 
         Coordinator.shared.present(type: .bottomSheet) { [self] isPresented in
             BottomMultiSelectorView(config: config, delegate: self, isPresented: isPresented)
+        }
+    }
+
+    private func supportsBlockchainLimit(token: Token) -> Bool {
+        guard let allowedBlockchainTypes else {
+            return true
+        }
+
+        return allowedBlockchainTypes.contains(token.blockchainType)
+    }
+
+    private func supportsDerivationLimit(token: Token) -> Bool {
+        guard let allowedBitcoinDerivations else {
+            return true
+        }
+
+        guard token.blockchainType == .bitcoin || token.blockchainType == .litecoin else {
+            return true
+        }
+
+        guard let derivation = token.type.derivation else {
+            return true
+        }
+
+        return allowedBitcoinDerivations.contains(derivation)
+    }
+
+    private func autoEnableAllowedBlockchainsIfNeeded() {
+        guard autoEnableDefaultTokensForAllowedBlockchains, let allowedBlockchainTypes else {
+            return
+        }
+
+        for blockchainType in allowedBlockchainTypes {
+            let tokens = blockchainTokens.values.flatMap { $0 }.filter { $0.blockchainType == blockchainType }
+            guard let firstToken = tokens.first else {
+                continue
+            }
+
+            let tokensToEnable = tokens.count == 1 ? [firstToken] : (tokens.filter(\.type.isDefault).isEmpty ? [firstToken] : tokens.filter(\.type.isDefault))
+            handleApprove(blockchain: firstToken.blockchain, tokens: tokensToEnable)
         }
     }
 }

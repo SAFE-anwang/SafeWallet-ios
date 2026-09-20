@@ -1,10 +1,12 @@
 import Foundation
 import HdWalletKit
+import MoneroKit
 import RxRelay
 import RxSwift
 
 class RestoreMnemonicService {
     private let languageManager: LanguageManager
+    private let supportsMonero: Bool
     private var wordList: [String] = Mnemonic.wordList(for: .english).map(String.init)
     private let passphraseEnabledRelay = BehaviorRelay<Bool>(value: false)
 
@@ -20,8 +22,9 @@ class RestoreMnemonicService {
 
     var passphrase: String = ""
 
-    init(languageManager: LanguageManager) {
+    init(languageManager: LanguageManager, supportsMonero: Bool = false) {
         self.languageManager = languageManager
+        self.supportsMonero = supportsMonero
     }
 
     private func language(wordList: Mnemonic.Language) -> String {
@@ -74,9 +77,9 @@ extension RestoreMnemonicService {
 
             let type: WordItemType
 
-            if wordList.contains(word) {
+            if wordList.contains(word) || supportsMonero && MoneroMnemonic.isValid(word: word) {
                 type = .correct
-            } else if wordList.contains(where: { $0.hasPrefix(word) }) {
+            } else if wordList.contains(where: { $0.hasPrefix(word) }) || supportsMonero && MoneroMnemonic.isValid(word: word, partial: true) {
                 type = .correctPrefix
             } else {
                 type = .incorrect
@@ -87,7 +90,7 @@ extension RestoreMnemonicService {
     }
 
     func possibleWords(string: String) -> [String] {
-        wordList.filter { $0.hasPrefix(string) }
+        wordList.filter { $0.hasPrefix(string) } + (supportsMonero ? MoneroMnemonic.suggestions(prefix: string) : [])
     }
 
     func set(passphraseEnabled: Bool) {
@@ -96,18 +99,38 @@ extension RestoreMnemonicService {
 
     func accountType(words: [String]) throws -> AccountType {
         var errors = [Error]()
-        if passphraseEnabled, passphrase.isEmpty {
+        let isMoneroMnemonic = supportsMonero && words.count == MoneroMnemonic.wordCount
+
+        if passphraseEnabled, (isMoneroMnemonic ? passphrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty : passphrase.isEmpty) {
             errors.append(RestoreError.emptyPassphrase)
         }
 
-        do {
-            try Mnemonic.validate(words: words)
-        } catch {
-            errors.append(error)
+        if isMoneroMnemonic {
+            do {
+                guard words.allSatisfy({ MoneroMnemonic.isValid(word: $0) }) else {
+                    throw RestoreError.invalidMoneroChecksum
+                }
+                try MoneroMnemonic.validateChecksum(words: words)
+            } catch {
+                errors.append(RestoreError.invalidMoneroChecksum)
+            }
+        } else {
+            do {
+                try Mnemonic.validate(words: words)
+            } catch {
+                errors.append(error)
+            }
         }
 
         guard errors.isEmpty else {
             throw ErrorList.errors(errors)
+        }
+
+        if isMoneroMnemonic {
+            return .moneroMnemonic(
+                words: words.map(\.decomposedStringWithCompatibilityMapping),
+                passphrase: passphraseEnabled ? passphrase : ""
+            )
         }
 
         return .mnemonic(
@@ -133,6 +156,7 @@ extension RestoreMnemonicService {
 
     enum RestoreError: Error {
         case emptyPassphrase
+        case invalidMoneroChecksum
     }
 
     enum ErrorList: Error {

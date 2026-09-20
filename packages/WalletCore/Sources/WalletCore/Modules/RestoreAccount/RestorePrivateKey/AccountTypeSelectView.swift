@@ -4,12 +4,28 @@ import SwiftUI
 struct AccountTypeSelectView: View {
     let accountName: String
     let accountTypes: [AccountType]
+    let statPage: StatPage
+    let onRestore: (() -> Void)?
     @Binding var isParentPresented: Bool
 
     @State private var selectCoinsAccountType: AccountType?
 
     private var items: [ViewItem] {
         accountTypes.compactMap { Self.viewItem(accountType: $0) }
+    }
+
+    init(
+        accountName: String,
+        accountTypes: [AccountType],
+        isParentPresented: Binding<Bool>,
+        statPage: StatPage = .importWalletFromKey,
+        onRestore: (() -> Void)? = nil
+    ) {
+        self.accountName = accountName
+        self.accountTypes = accountTypes
+        self.statPage = statPage
+        self.onRestore = onRestore
+        _isParentPresented = isParentPresented
     }
 
     private static func viewItem(accountType: AccountType) -> ViewItem? {
@@ -49,7 +65,13 @@ struct AccountTypeSelectView: View {
             set: { if !$0 { selectCoinsAccountType = nil } }
         )) {
             if let accountType = selectCoinsAccountType {
-                RestoreCoinsView(accountName: accountName, accountType: accountType, isParentPresented: $isParentPresented)
+                RestoreCoinsView(
+                    accountName: accountName,
+                    accountType: accountType,
+                    isParentPresented: $isParentPresented,
+                    statPage: statPage,
+                    onRestore: handleRestore
+                )
             }
         }
     }
@@ -67,10 +89,19 @@ struct AccountTypeSelectView: View {
     private func restoreDirectly(accountType: AccountType) {
         let supportedTokens = RestoreHelper.supportedTokens(accountType: accountType)
         if let token = supportedTokens.first {
-            RestoreHelper.restoreSingleBlockchain(accountName: accountName, accountType: accountType, token: token)
+            RestoreCoinsViewModel.restoreSingleBlockchain(
+                accountName: accountName,
+                accountType: accountType,
+                token: token,
+                statPage: statPage
+            )
         }
         HudHelper.instance.show(banner: .imported)
-        isParentPresented = false
+        handleRestore()
+    }
+
+    private var handleRestore: () -> Void {
+        onRestore ?? { isParentPresented = false }
     }
 }
 
