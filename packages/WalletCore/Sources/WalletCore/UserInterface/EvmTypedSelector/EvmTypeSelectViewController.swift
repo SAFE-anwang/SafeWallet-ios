@@ -2,6 +2,7 @@ import Combine
 import MarketKit
 import SectionsTableView
 import SnapKit
+import SwiftUI
 import UIKit
 
 class AccountTypeSelectViewController: ThemeViewController {
@@ -63,8 +64,17 @@ class AccountTypeSelectViewController: ThemeViewController {
     }
 
     private func openSelectCoins(accountType: AccountType) {
-        let viewController = RestoreSelectModule.viewController(accountName: accountName, accountType: accountType, statPage: statPage, onRestore: onRestore)
-        navigationController?.pushViewController(viewController, animated: true)
+        let view = RestoreCoinsView(
+            accountName: accountName,
+            accountType: accountType,
+            isParentPresented: .constant(true),
+            statPage: statPage,
+            onRestore: { [weak self] in
+                self?.onRestore()
+                self?.navigationController?.popViewController(animated: true)
+            }
+        )
+        navigationController?.pushViewController(UIHostingController(rootView: view), animated: true)
     }
 }
 

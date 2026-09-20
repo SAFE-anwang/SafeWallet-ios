@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ThemeButton: View {
+public struct ThemeButton: View {
     let text: String
     var icon: String? = nil
     var spinner: Bool = false
@@ -9,7 +9,25 @@ struct ThemeButton: View {
     var size: ThemeButton.Size = .medium
     let action: () -> Void
 
-    var body: some View {
+    public init(
+        text: String,
+        icon: String? = nil,
+        spinner: Bool = false,
+        style: Style = .primary,
+        mode: Mode = .solid,
+        size: Size = .medium,
+        action: @escaping () -> Void
+    ) {
+        self.text = text
+        self.icon = icon
+        self.spinner = spinner
+        self.style = style
+        self.mode = mode
+        self.size = size
+        self.action = action
+    }
+
+    public var body: some View {
         Button(action: action) {
             HStack(spacing: size.iconSpacing) {
                 if spinner {
@@ -49,7 +67,7 @@ struct ThemeButton: View {
     }
 }
 
-extension ThemeButton {
+public extension ThemeButton {
     enum Style {
         case primary
         case secondary
@@ -100,7 +118,7 @@ extension ThemeButton {
         }
     }
 
-    static func foregroundColor(style: Style, mode: Mode, size: Size, isEnabled: Bool) -> Color {
+    internal static func foregroundColor(style: Style, mode: Mode, size: Size, isEnabled: Bool) -> Color {
         switch mode {
         case .solid:
             guard isEnabled else {
@@ -123,7 +141,7 @@ extension ThemeButton {
         }
     }
 
-    static func backgroundColor(style: Style, mode: Mode, size: Size, isEnabled: Bool) -> Color {
+    internal static func backgroundColor(style: Style, mode: Mode, size: Size, isEnabled: Bool) -> Color {
         switch mode {
         case .solid:
             guard isEnabled else {

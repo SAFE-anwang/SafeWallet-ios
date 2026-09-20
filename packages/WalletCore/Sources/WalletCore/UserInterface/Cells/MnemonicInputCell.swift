@@ -36,8 +36,16 @@ class MnemonicInputCell: TextInputCell {
     }
 
     override func set(text: String) {
+        set(text: text, notifyMnemonicChange: true)
+    }
+
+    func set(text: String, notifyMnemonicChange: Bool) {
         super.set(text: text)
-        onChangeMnemonicText?(text, text.count)
+        textView.selectedRange = NSRange(location: text.utf16.count, length: 0)
+
+        if notifyMnemonicChange {
+            onChangeMnemonicText?(text, text.utf16.count)
+        }
     }
 }
 
@@ -48,8 +56,11 @@ extension MnemonicInputCell {
             .font: textViewFont,
         ])
 
+        let textRange = NSRange(location: 0, length: (textView.text as NSString).length)
         for range in invalidRanges {
-            attributedString.addAttribute(.foregroundColor, value: UIColor.themeLucian, range: range)
+            let validRange = NSIntersectionRange(range, textRange)
+            guard validRange.length > 0 else { continue }
+            attributedString.addAttribute(.foregroundColor, value: UIColor.themeLucian, range: validRange)
         }
 
         let range = textView.selectedRange
@@ -69,7 +80,7 @@ extension MnemonicInputCell {
 
         super.set(text: text)
 
-        let cursorOffset = range.lowerBound + replaceWord.count
+        let cursorOffset = range.lowerBound + (replaceWord as NSString).length
         if let newPosition = textView.position(from: textView.beginningOfDocument, offset: cursorOffset) {
             textView.selectedTextRange = textView.textRange(from: newPosition, to: newPosition)
         }

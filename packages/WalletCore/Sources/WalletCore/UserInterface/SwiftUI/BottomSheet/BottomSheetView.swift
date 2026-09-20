@@ -143,24 +143,18 @@ struct BottomSheetView: View {
 }
 
 public struct InfoDescription: Identifiable {
-    static var fee = InfoDescription(title: "fee_settings.network_fee".localized, description: "fee_settings.network_fee.info".localized)
+    public static var fee = InfoDescription(title: "fee_settings.network_fee".localized, description: "fee_settings.network_fee.info".localized)
+    public static var swapTime = InfoDescription(
+        title: "swap.swapped_time".localized,
+        description: "swap.swapped_time.info".localized,
+        icon: ComponentImage("clock", size: .iconSize72)
+    )
 
     let title: String
     let description: String
+    var icon: CustomStringConvertible = ThemeImage.book
 
     public var id: String {
         title + description
-    }
-}
-
-class BottomSheetWrapperView: UIHostingController<BottomSheetView> {
-    init(items: [BSModule.Item], id: String = "ID") {
-        let view = BottomSheetView(items: items, id: id)
-        super.init(rootView: view)
-    }
-
-    @available(*, unavailable)
-    @MainActor dynamic required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 }
