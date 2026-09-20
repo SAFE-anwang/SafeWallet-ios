@@ -1012,6 +1012,8 @@ struct MarketDappSendEvmConfirmationView: View {
                 return "warning_2_20"
             case .warning:
                 return "warning_2_20"
+            case .regular:
+                return "warning_2_20"
             }
         }
 
@@ -1021,6 +1023,8 @@ struct MarketDappSendEvmConfirmationView: View {
                 return .themeLucian
             case .warning:
                 return .themeJacob
+            case .regular:
+                return .themeGray
             }
         }
 
@@ -1030,6 +1034,8 @@ struct MarketDappSendEvmConfirmationView: View {
                 return .themeRed
             case .warning:
                 return .themeYellow
+            case .regular:
+                return .themeGray
             }
         }
     }

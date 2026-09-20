@@ -45,7 +45,6 @@ class MarketDappListViewController: ThemeViewController {
         tableView.backgroundColor = .clear
 
         tableView.sectionDataSource = self
-        tableView.registerCell(forClass: PostCell.self)
 
         view.addSubview(spinner)
         spinner.snp.makeConstraints { maker in
