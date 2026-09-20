@@ -3,8 +3,8 @@ import EvmKit
 import Foundation
 import MarketKit
 
-enum DestinationHelper {
-    static func resolveDestinationUnified(token: Token, temporary: Destination? = nil) async throws -> Destination {
+public enum DestinationHelper {
+    public static func resolveDestinationUnified(token: Token, temporary: Destination? = nil) async throws -> Destination {
         if let adapter = Core.shared.adapterManager.adapter(for: token) as? ZcashAdapter,
            let uAddress = adapter.uAddress?.stringEncoded
         {
@@ -23,7 +23,7 @@ enum DestinationHelper {
         return .init(address: address, type: .nonExisting)
     }
 
-    static func resolveDestination(token: Token, temporary: Destination? = nil) async throws -> Destination {
+    public static func resolveDestination(token: Token, temporary: Destination? = nil) async throws -> Destination {
         let blockchainType = token.blockchainType
 
         switch Core.shared.adapterManager.adapter(for: token) {
@@ -74,6 +74,12 @@ enum DestinationHelper {
             address = MoneroAdapter.address(accountType: account.type)
         case .zano:
             address = ZanoAdapter.address(accountType: account.type)
+        case .solana:
+            address = try SolanaKitManager.address(accountType: account.type)
+        case .thorChain:
+            address = try AccountAddress.thorChainAddress(account: account, network: .mainnet).raw
+        case .mayaChain:
+            address = try AccountAddress.thorChainAddress(account: account, network: .mayaMainnet).raw
         default:
             throw SwapError.noDestinationAddress
         }
@@ -81,7 +87,7 @@ enum DestinationHelper {
         return .init(address: address, type: .nonExisting)
     }
 
-    static func sourceAddresses(token: Token, amountIn: Decimal, destinationAddress: String?) async -> [String] {
+    public static func sourceAddresses(token: Token, amountIn: Decimal, destinationAddress: String?) async -> [String] {
         let adapterManager = Core.shared.adapterManager
 
         // UTXO chains: select the UTXOs that will actually cover amountIn
@@ -123,8 +129,8 @@ enum DestinationHelper {
 }
 
 extension DestinationHelper {
-    struct Destination {
-        let address: String
+    public struct Destination {
+        public let address: String
         let type: ResolvedType
     }
 

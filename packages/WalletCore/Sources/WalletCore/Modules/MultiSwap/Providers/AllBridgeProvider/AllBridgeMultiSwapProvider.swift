@@ -360,6 +360,9 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
                 }
             }
 
+            // router-approve intent: the bridge router pulls eip20 via transferFrom
+            let approval = (try? EvmKit.Address(hex: router)).flatMap { SwapApproval.build(spender: $0, tokenIn: tokenIn, amountIn: amountIn) }
+
             return EvmSwapFinalQuote(
                 expectedBuyAmount: amountOut,
                 transactionData: transactionData,
@@ -370,6 +373,8 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
                 gasPrice: gasPriceData?.userDefined,
                 evmFeeData: evmFeeData,
                 nonce: transactionSettings?.nonce,
+                mevProtectionAllowed: mevProtectionAllowed(tokenIn: tokenIn, tokenOut: tokenOut),
+                approval: approval,
                 toAddress: recipient
             )
         } else if tokenIn.blockchainType == .tron {
@@ -514,8 +519,8 @@ class AllBridgeMultiSwapProvider: IMultiSwapProvider {
 
         let isCrosschain = swap.tokenIn.blockchainType != swap.tokenOut.blockchainType
 
-        let chainIdIn = USwapMultiSwapProvider.blockchainTypeMap.first(where: { $0.value == swap.tokenIn.blockchainType })?.key
-        let chainIdOut = USwapMultiSwapProvider.blockchainTypeMap.first(where: { $0.value == swap.tokenOut.blockchainType })?.key
+        let chainIdIn = USwapAssetRepository.blockchainTypeMap.first(where: { $0.value == swap.tokenIn.blockchainType })?.key
+        let chainIdOut = USwapAssetRepository.blockchainTypeMap.first(where: { $0.value == swap.tokenOut.blockchainType })?.key
 
         let isDepositSuspended = (response?.isSuspended ?? false) && (response?.receive == nil)
         var isDepositCompleted = false

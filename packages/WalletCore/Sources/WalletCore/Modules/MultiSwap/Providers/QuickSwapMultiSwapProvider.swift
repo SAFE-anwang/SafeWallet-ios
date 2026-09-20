@@ -1,8 +1,10 @@
 import MarketKit
 
 class QuickSwapMultiSwapProvider: BaseUniswapV2MultiSwapProvider {
-    override var id: String { "quickswap" }
-    override var name: String { "QuickSwap" }
+    public static let id = "quickswap"
+    static let name = "QuickSwap"
+    override var id: String { Self.id }
+    override var name: String { Self.name }
     override var type: SwapProviderType { .excellent }
     override var icon: String { "swap_provider_quick" }
 

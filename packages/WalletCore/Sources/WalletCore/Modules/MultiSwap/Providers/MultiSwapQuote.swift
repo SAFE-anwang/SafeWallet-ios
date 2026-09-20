@@ -1,10 +1,10 @@
 import Foundation
 
 public class MultiSwapQuote {
-    let expectedBuyAmount: Decimal
-    let estimatedTime: TimeInterval?
+    public let expectedBuyAmount: Decimal
+    public let estimatedTime: TimeInterval?
 
-    init(expectedBuyAmount: Decimal, estimatedTime: TimeInterval? = nil) {
+    public init(expectedBuyAmount: Decimal, estimatedTime: TimeInterval? = nil) {
         self.expectedBuyAmount = expectedBuyAmount
         self.estimatedTime = estimatedTime
     }

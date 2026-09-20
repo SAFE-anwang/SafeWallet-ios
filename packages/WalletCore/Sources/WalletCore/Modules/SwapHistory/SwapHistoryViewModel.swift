@@ -247,7 +247,7 @@ extension SwapHistoryViewModel {
     }
 
     func correctedSwap(_ swap: Swap) -> Swap {
-        guard AppConfig.showTestSwitchers, Core.shared.localStorage.simulateFailSwap == .local else {
+        guard AppConfig.showDevTools, Core.shared.localStorage.simulateFailSwap == .local else {
             return swap
         }
 

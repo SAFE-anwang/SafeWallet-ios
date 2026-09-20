@@ -4,8 +4,10 @@ import UniswapKit
 import Foundation
 
 class SafeSwapMultiSwapProvider: BaseUniswapV2MultiSwapProvider {
-    override var id: String { "SafeSwap" }
-    override var name: String { "SafeSwap" }
+    public static let id = "SafeSwap"
+    static let name = "SafeSwap"
+    override var id: String { Self.id }
+    override var name: String { Self.name }
     override var type: SwapProviderType { .excellent }
     override var icon: String { "safelog" }
 

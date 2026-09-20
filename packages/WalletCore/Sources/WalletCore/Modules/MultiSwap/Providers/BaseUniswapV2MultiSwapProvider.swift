@@ -37,4 +37,25 @@ class BaseUniswapV2MultiSwapProvider: BaseUniswapMultiSwapProvider {
 
         return try kit.transactionData(receiveAddress: receiveAddress, chain: chain, tradeData: tradeData)
     }
+
+    /// V2 providers execute directly on-chain and are not tracked by uswap-server.
+    /// Resolve their pending history from the active EVM kit instead of inheriting the
+    /// base provider's fatal placeholder.
+    override public func track(swap: Swap) async throws -> Swap {
+        guard let transactionHash = swap.txHash?.hs.hexData,
+              let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: swap.tokenIn.blockchainType),
+              let transaction = evmKitWrapper.evmKit.transaction(hash: transactionHash)
+        else {
+            return swap
+        }
+
+        var updatedSwap = swap
+        if transaction.transaction.isFailed {
+            updatedSwap.status = .failed
+        } else if transaction.transaction.blockNumber != nil {
+            updatedSwap.status = .completed
+        }
+
+        return updatedSwap
+    }
 }

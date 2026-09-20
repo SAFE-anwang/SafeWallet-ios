@@ -6,18 +6,26 @@ import SwiftUI
 struct MultiSwapView: View {
     @ObservedObject var viewModel: MultiSwapViewModel
     @Binding var sendPresented: Bool
+    var autoFocus = false
 
-    @FocusState var isInputActive: Bool
+    @FocusState var focusedField: FocusField?
+
+    private var isInputActive: Bool {
+        focusedField != nil
+    }
 
     var body: some View {
-        ThemeView {
-            BottomGradientWrapper {
+        ThemeView(style: .list) {
+            BottomGradientWrapper(gradientColor: .themeLawrence) {
                 ScrollView {
-                    VStack(spacing: 12) {
-                        VStack(spacing: 8) {
+                    VStack(spacing: 16) {
+                        VStack(spacing: 0) {
                             amountsView()
+                                .themeListTopView()
 
-                            if viewModel.currentQuote == nil {
+                            if let currentQuote = viewModel.currentQuote {
+                                quoteList(quote: currentQuote)
+                            } else {
                                 availableBalanceView(value: balanceValue())
                             }
                         }
@@ -27,30 +35,38 @@ struct MultiSwapView: View {
                             quoteCautionsView(quote: currentQuote)
                         }
                     }
-                    .padding(EdgeInsets(top: 8, leading: 16, bottom: 32, trailing: 16))
+                    .padding(.bottom, 32)
                 }
+                .themeListScrollHeader()
                 .onTapGesture {
-                    isInputActive = false
+                    focusedField = nil
                 }
             } bottomContent: {
                 buttonView()
             } keyboardContent: {
-                AmountAccessoryView(
-                    visible: isInputActive,
-                    hasPercents: viewModel.availableBalance != nil,
-                    onPercent: { percent in
-                        viewModel.setAmountIn(percent: percent)
-                        isInputActive = false
-                    },
-                    onTrash: {
-                        viewModel.clearAmountIn()
-                    }
-                )
+                if isInputActive {
+                    AmountAccessoryView(
+                        visible: isInputActive,
+                        enabledPercents: (viewModel.availableBalance ?? 0) > 0,
+                        onPercent: { percent in
+                            viewModel.setAmountIn(percent: percent)
+                            focusedField = nil
+                        },
+                        onTrash: {
+                            viewModel.clearAmountIn()
+                        }
+                    )
+                }
             }
             .animation(.easeOut(duration: 0.25), value: isInputActive)
         }
         .onAppear {
             viewModel.autoQuoteIfRequired()
+        }
+        .onFirstAppear {
+            if autoFocus {
+                focusedField = .amount
+            }
         }
         .onDisappear {
             viewModel.stopAutoQuoting()
@@ -74,48 +90,11 @@ struct MultiSwapView: View {
             boxOutView().padding(.horizontal, 16)
         }
         .padding(.vertical, 24)
-        .modifier(ThemeListStyleModifier(cornerRadius: 16))
+        .background(Color.themeTyler)
     }
 
     @ViewBuilder private func boxInView() -> some View {
         HStack(spacing: 8) {
-            VStack(spacing: 0) {
-                TextField("", text: $viewModel.amountString, prompt: Text("0").foregroundColor(.themeGray))
-                    .foregroundColor(.themeLeah)
-                    .font(.themeTitle3)
-                    .tint(.themeInputFieldTintColor)
-                    .keyboardType(.decimalPad)
-                    .focused($isInputActive)
-                    .frame(height: 33)
-
-                if viewModel.tokenIn != nil {
-                    if let coinPriceIn = viewModel.coinPriceIn {
-                        HStack(spacing: 0) {
-                            Text(viewModel.currency.symbol).textBody(color: viewModel.fiatAmountString.isEmpty ? .themeAndy : .themeGray)
-
-                            TextField("", text: $viewModel.fiatAmountString, prompt: Text("0").foregroundColor(.themeAndy))
-                                .foregroundColor(.themeGray)
-                                .font(.themeBody)
-                                .tint(.themeInputFieldTintColor)
-                                .keyboardType(.decimalPad)
-                                .focused($isInputActive)
-                                .frame(height: 22)
-                                .disabled(coinPriceIn.expired)
-                        }
-                    } else {
-                        Text("n/a".localized)
-                            .themeBody(color: .themeAndy)
-                            .frame(height: 22)
-                    }
-                } else {
-                    Text("\(viewModel.currency.symbol)0")
-                        .themeBody(color: .themeAndy)
-                        .frame(height: 22)
-                }
-            }
-
-            Spacer()
-
             selectorButton(token: viewModel.tokenIn) {
                 Coordinator.shared.present { isPresented in
                     MultiSwapTokenSelectView(
@@ -126,6 +105,43 @@ struct MultiSwapView: View {
                     )
                 }
             }
+            VStack(alignment: .trailing, spacing: 0) {
+                TextField("", text: $viewModel.amountString, prompt: Text("0").foregroundColor(.themeGray))
+                    .multilineTextAlignment(.trailing)
+                    .foregroundColor(.themeLeah)
+                    .font(.themeHeadline1)
+                    .tint(.themeInputFieldTintColor)
+                    .keyboardType(.decimalPad)
+                    .focused($focusedField, equals: .amount)
+                    .frame(height: 33)
+
+                if viewModel.tokenIn != nil {
+                    if let coinPriceIn = viewModel.coinPriceIn {
+                        HStack(spacing: 0) {
+                            ThemeText(viewModel.currency.symbol, style: .body, colorStyle: viewModel.fiatAmountString.isEmpty ? .andy : .secondary)
+
+                            TextField("", text: $viewModel.fiatAmountString, prompt: Text("0").foregroundColor(.themeAndy))
+                                .fixedSize(horizontal: true, vertical: false)
+                                .multilineTextAlignment(.trailing)
+                                .foregroundColor(.themeGray)
+                                .font(.themeBody)
+                                .tint(.themeInputFieldTintColor)
+                                .keyboardType(.decimalPad)
+                                .focused($focusedField, equals: .fiat)
+                                .frame(height: 22)
+                                .disabled(coinPriceIn.expired)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    } else {
+                        ThemeText("n/a".localized, style: .body, colorStyle: .andy)
+                            .frame(height: 22)
+                    }
+                } else {
+                    ThemeText("\(viewModel.currency.symbol)0", style: .body, colorStyle: .andy)
+                        .frame(height: 22)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
@@ -136,12 +152,15 @@ struct MultiSwapView: View {
                 .frame(height: .heightOnePixel)
                 .frame(maxWidth: .infinity)
 
+            // an externally-delivered tokenOut can't become the sell side — the account
+            // can't sign transactions for it
             Button(action: {
                 viewModel.interchange()
             }) {
                 Image("arrow_medium_2_down_20").renderingMode(.template)
             }
             .buttonStyle(SecondaryCircleButtonStyle(style: .default))
+            .disabled(viewModel.externalRecipientRequired)
 
             Rectangle()
                 .fill(Color.themeBlade)
@@ -152,20 +171,33 @@ struct MultiSwapView: View {
 
     @ViewBuilder private func boxOutView() -> some View {
         HStack(spacing: 8) {
-            VStack(spacing: 0) {
-                if let amountOutString = viewModel.amountOutString {
-                    Text(amountOutString)
-                        .themeTitle3()
+            selectorButton(token: viewModel.tokenOut) {
+                Coordinator.shared.present { isPresented in
+                    MultiSwapTokenSelectView(
+                        title: "swap.you_get".localized,
+                        currentToken: $viewModel.tokenOut,
+                        otherToken: viewModel.tokenIn,
+                        allowExternalReceive: true,
+                        isPresented: isPresented
+                    )
+                }
+            }
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 0) {
+                if let amountOut = viewModel.amountOut {
+                    ThemeText(amountOut.description, style: .headline1)
                         .lineLimit(1)
                 } else {
-                    Text("0").themeTitle3(color: .themeGray)
+                    ThemeText("0", style: .headline1, colorStyle: .secondary)
                 }
 
                 if viewModel.tokenOut != nil {
                     if viewModel.rateOut != nil {
                         HStack(spacing: 8) {
-                            Text("\(viewModel.currency.symbol)\((viewModel.fiatAmountOut ?? 0).description)")
-                                .textBody(color: viewModel.fiatAmountOut == nil ? .themeAndy : .themeGray)
+                            Spacer()
+
+                            ThemeText("\(viewModel.currency.symbol)\((viewModel.fiatAmountOut ?? 0).description)", style: .body, colorStyle: viewModel.fiatAmountOut == nil ? .andy : .secondary)
                                 .frame(height: 22)
 
                             if let priceImpact = viewModel.priceImpact {
@@ -175,35 +207,17 @@ struct MultiSwapView: View {
                                 case .negligible, .low:
                                     EmptyView()
                                 default:
-                                    Text("(\(PriceImpact.display(value: priceImpact)))")
-                                        .textBody(color: level.valueLevel.colorStyle.color)
+                                    ThemeText("(\(PriceImpact.display(value: priceImpact)))", style: .body, colorStyle: level.valueLevel.colorStyle)
                                 }
                             }
-
-                            Spacer()
                         }
                     } else {
-                        Text("n/a".localized)
-                            .themeBody(color: .themeAndy)
+                        ThemeText("n/a".localized, style: .body, colorStyle: .andy)
                             .frame(height: 22)
                     }
                 } else {
-                    Text("\(viewModel.currency.symbol)0")
-                        .themeBody(color: .themeAndy)
+                    ThemeText("\(viewModel.currency.symbol)0", style: .body, colorStyle: .andy)
                         .frame(height: 22)
-                }
-            }
-
-            Spacer()
-
-            selectorButton(token: viewModel.tokenOut) {
-                Coordinator.shared.present { isPresented in
-                    MultiSwapTokenSelectView(
-                        title: "swap.you_get".localized,
-                        currentToken: $viewModel.tokenOut,
-                        otherToken: viewModel.tokenIn,
-                        isPresented: isPresented
-                    )
                 }
             }
         }
@@ -211,19 +225,19 @@ struct MultiSwapView: View {
 
     @ViewBuilder private func selectorButton(token: Token?, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: 16) {
                 CoinIconView(coin: token.map(\.coin))
 
                 if let token {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(token.coin.code).textHeadline2()
-                        Text(token.fullBadge).textSubhead1()
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(token.coin.code).textHeadline1()
+                        BadgeViewNew(token.fullBadge)
                     }
                 } else {
                     Text("swap.select".localized).textHeadline2(color: .themeJacob)
                 }
 
-                Image("arrow_small_down_20").themeIcon(color: .themeGray)
+                ThemeImage("arrow_s_down", size: 20, colorStyle: .primary)
             }
         }
     }
@@ -271,6 +285,90 @@ struct MultiSwapView: View {
         }
     }
 
+    @ViewBuilder private func availableBalanceView(value: String?) -> some View {
+        HStack(spacing: 8) {
+            ThemeText("send.available_balance".localized, style: .subhead)
+            Spacer()
+            ThemeText(value ?? "----", style: .subheadSB)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(16)
+    }
+
+    @ViewBuilder private func quoteList(quote: MultiSwapViewModel.Quote) -> some View {
+        VStack(spacing: 0) {
+            Cell(
+                style: .secondary,
+                middle: {
+                    RightButtonText(text: ComponentText(text: "swap.route".localized, colorStyle: .primary), textStyle: .subhead, icon: "arrow_s_down") {
+                        viewModel.stopAutoQuoting()
+
+                        showSelectProvider()
+                    }
+                },
+                right: {
+                    if let price = viewModel.price {
+                        VStack(alignment: .trailing, spacing: 3) {
+                            ThemeText(price, style: .subheadSB, colorStyle: .primary)
+                                .multilineTextAlignment(.trailing)
+                                .minimumScaleFactor(0.5)
+                                .lineLimit(1)
+                                .id(price)
+                                .transition(.opacity)
+                                .onTapGesture {
+                                    viewModel.flipPrice()
+                                }
+                        }
+                        .animation(.easeInOut(duration: 0.15), value: price)
+                    }
+                }
+            )
+
+            Cell(
+                style: .secondary,
+                middle: {
+                    HStack(spacing: 8) {
+                        ThemeText("swap.provider.score".localized, style: .subhead, colorStyle: .secondary)
+                        Image("information").icon(size: 20, colorStyle: .secondary)
+                    }
+                }, right: {
+                    MultiSwapQuotesView.view(type: quote.provider.type)
+                },
+                action: {
+                    onTapProviderInfo()
+                }
+            )
+
+            if let timeState = quote.timeState {
+                Cell(
+                    style: .secondary,
+                    middle: {
+                        HStack(spacing: 8) {
+                            ThemeText("swap.swapped_time".localized, style: .subhead, colorStyle: .secondary)
+                            Image("information").icon(size: 20, colorStyle: .secondary)
+                        }
+                    }, right: {
+                        MultiSwapQuotesView.view(time: timeState.value, colorStyle: timeState.colorStyle)
+                    },
+                    action: {
+                        Coordinator.shared.present(info: .swapTime)
+                    }
+                )
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    @ViewBuilder private func quoteCautionsView(quote: MultiSwapViewModel.Quote) -> some View {
+        let cautions = quote.quote.cautions()
+
+        if !cautions.isEmpty {
+            ForEach(cautions.indices, id: \.self) { index in
+                AlertCardView(caution: cautions[index])
+            }
+        }
+    }
+
     private func showSwap() {
         if viewModel.shouldShowTerms {
             Coordinator.shared.present { isPresented in
@@ -278,16 +376,41 @@ struct MultiSwapView: View {
                     viewModel.onAcceptTerms()
 
                     DispatchQueue.main.async {
-                        isInputActive = false
-                        sendPresented = true
+                        proceedToConfirmation()
                     }
                 }
             } onDismiss: {
                 viewModel.autoQuoteIfRequired()
             }
         } else {
-            isInputActive = false
+            proceedToConfirmation()
+        }
+    }
+
+    // tokenOut the account can't hold: ask for the external delivery address first,
+    // then open the confirmation with it
+    private func proceedToConfirmation() {
+        focusedField = nil
+
+        guard viewModel.externalRecipientRequired, let tokenOut = viewModel.tokenOut else {
             sendPresented = true
+            return
+        }
+
+        Coordinator.shared.present { isPresented in
+            MultiSwapExternalRecipientView(
+                token: tokenOut,
+                initialAddress: viewModel.externalRecipient,
+                isPresented: isPresented
+            ) { address in
+                viewModel.setExternalRecipient(address: address)
+
+                DispatchQueue.main.async {
+                    sendPresented = true
+                }
+            }
+        } onDismiss: {
+            viewModel.autoQuoteIfRequired()
         }
     }
 
@@ -336,81 +459,6 @@ struct MultiSwapView: View {
     private func onTapProviderInfo() {
         Coordinator.shared.present(type: .bottomSheet) { isPresented in
             MultiSwapProviderTypeBottomSheet(isPresented: isPresented)
-        }
-    }
-
-    @ViewBuilder private func quoteList(quote: MultiSwapViewModel.Quote) -> some View {
-        VStack(spacing: 0) {
-            Cell(
-                style: .secondary,
-                middle: {
-                    RightButtonText(text: ComponentText(text: "swap.route".localized, colorStyle: .primary), textStyle: .subhead, icon: "arrow_s_down") {
-                        viewModel.stopAutoQuoting()
-
-                        showSelectProvider()
-                    }
-                },
-                right: {
-                    if let price = viewModel.price {
-                        VStack(alignment: .trailing, spacing: 3) {
-                            ThemeText(price, style: .subheadSB, colorStyle: .primary)
-                                .multilineTextAlignment(.trailing)
-                                .minimumScaleFactor(0.5)
-                                .lineLimit(1)
-                                .id(price)
-                                .transition(.opacity)
-                                .onTapGesture {
-                                    viewModel.flipPrice()
-                                }
-                        }
-                        .animation(.easeInOut(duration: 0.15), value: price)
-                    }
-                }
-            )
-
-            Cell(
-                style: .secondary,
-                middle: {
-                    RightButtonText(text: ComponentText(text: "swap.provider.score".localized, colorStyle: .secondary), textStyle: .subhead, icon: "information", iconColorStyle: .secondary) {
-                        onTapProviderInfo()
-                    }
-                }, right: {
-                    MultiSwapQuotesView.view(type: quote.provider.type)
-                }
-            )
-
-            if case let .attention(warningTime) = quote.timeState {
-                Cell(
-                    style: .secondary,
-                    middle: {
-                        MiddleTextIcon(text: "swap.provider.swap_time".localized)
-                    }, right: {
-                        MultiSwapQuotesView.view(estimatedTime: warningTime)
-                    }
-                )
-            }
-        }
-        .padding(.vertical, 8)
-    }
-
-    @ViewBuilder private func availableBalanceView(value: String?) -> some View {
-        HStack(spacing: 8) {
-            Text("send.available_balance".localized).textCaptionSB()
-            Spacer()
-            Text(value ?? "----")
-                .textCaption()
-                .multilineTextAlignment(.trailing)
-        }
-        .padding(.horizontal, 16)
-    }
-
-    @ViewBuilder private func quoteCautionsView(quote: MultiSwapViewModel.Quote) -> some View {
-        let cautions = quote.quote.cautions()
-
-        if !cautions.isEmpty {
-            ForEach(cautions.indices, id: \.self) { index in
-                AlertCardView(caution: cautions[index])
-            }
         }
     }
 
@@ -479,6 +527,13 @@ struct MultiSwapView: View {
     }
 }
 
+extension MultiSwapView {
+    enum FocusField {
+        case amount
+        case fiat
+    }
+}
+
 struct MultiSwapSendDestinationView: View {
     @ObservedObject var viewModel: MultiSwapViewModel
     let onFinish: () -> Void
@@ -495,6 +550,7 @@ struct MultiSwapSendDestinationView: View {
                 amountIn: amountIn,
                 provider: currentQuote.provider,
                 multiSwapQuote: currentQuote.quote,
+                recipientHolder: viewModel.externalRecipientHolder,
                 onFinish: onFinish
             )
         }

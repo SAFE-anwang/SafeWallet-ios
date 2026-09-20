@@ -4,25 +4,29 @@ import MarketKit
 import SwiftUI
 
 public struct Swap: Hashable {
-    let uid: String
-    let txHash: String?
+    public let uid: String
+    public let txHash: String?
+    // opaque mechanism handle (set by the broadcaster) used by resolve() to attach
+    // the on-chain txHash later; nil for directly-broadcast swaps
+    public let trackingHandle: String?
     let accountId: String
-    let providerId: String
-    var status: Status
-    let tokenIn: Token
-    let tokenOut: Token
-    let amountIn: Decimal
-    var amountOut: Decimal
-    let recipient: String?
+    public let providerId: String
+    public var status: Status
+    public let tokenIn: Token
+    public let tokenOut: Token
+    public let amountIn: Decimal
+    public var amountOut: Decimal
+    public let recipient: String?
     let toAddress: String
     let depositAddress: String?
-    let providerSwapId: String?
+    public let providerSwapId: String?
     let sourceAddress: String?
     let refundAddress: String?
-    let date: Date
-    var fromAsset: String?
-    var toAsset: String?
-    var legs: [Leg]?
+    public let estimatedTime: TimeInterval?
+    public let date: Date
+    public var fromAsset: String?
+    public var toAsset: String?
+    public var legs: [Leg]?
     var pauseReason: String?
 
     var isPending: Bool {
@@ -30,10 +34,35 @@ public struct Swap: Hashable {
     }
 
     static var pendingStatuses: [Status] {
-        [.notStarted, .pending, .swapping, .unknown, .actionRequired]
+        [.notStarted, .pending, .swapping]
     }
 
-    enum Status: String {
+    public init(uid: String, txHash: String?, trackingHandle: String?, accountId: String, providerId: String, status: Status, tokenIn: Token, tokenOut: Token, amountIn: Decimal, amountOut: Decimal, recipient: String?, toAddress: String, depositAddress: String?, providerSwapId: String?, sourceAddress: String?, refundAddress: String?, estimatedTime: TimeInterval? = nil, date: Date, fromAsset: String? = nil, toAsset: String? = nil, legs: [Leg]? = nil, pauseReason: String? = nil) {
+        self.uid = uid
+        self.txHash = txHash
+        self.trackingHandle = trackingHandle
+        self.accountId = accountId
+        self.providerId = providerId
+        self.status = status
+        self.tokenIn = tokenIn
+        self.tokenOut = tokenOut
+        self.amountIn = amountIn
+        self.amountOut = amountOut
+        self.recipient = recipient
+        self.toAddress = toAddress
+        self.depositAddress = depositAddress
+        self.providerSwapId = providerSwapId
+        self.sourceAddress = sourceAddress
+        self.refundAddress = refundAddress
+        self.estimatedTime = estimatedTime
+        self.date = date
+        self.fromAsset = fromAsset
+        self.toAsset = toAsset
+        self.legs = legs
+        self.pauseReason = pauseReason
+    }
+
+    public enum Status: String {
         case notStarted = "not_started"
         case pending
         case swapping
@@ -47,7 +76,7 @@ public struct Swap: Hashable {
             "swap_info.status.\(rawValue)".localized
         }
 
-        var isExpected: Bool {
+        public var isExpected: Bool {
             switch self {
             case .notStarted, .pending, .swapping, .completed: true
             default: false
@@ -68,20 +97,29 @@ public struct Swap: Hashable {
     }
 }
 
-extension Swap {
+public extension Swap {
+    // A private send is recorded as a Swap so it inherits polling, statuses, legs and the refund UI
+    // for free — but it must not read as one.
+    var isPrivateSend: Bool {
+        tokenIn == tokenOut && (SwapProviderFactory.providerInfo(id: providerId)?.confidential ?? false)
+    }
+}
+
+public extension Swap {
     struct Leg: Hashable {
-        let status: Status
-        let type: String
-        let chainId: String
-        let txHash: String
-        let fromAsset: String
-        let toAsset: String
+        public let status: Status
+        public let type: String
+        public let chainId: String
+        public let txHash: String
+        public let fromAsset: String
+        public let toAsset: String
     }
 }
 
 struct SwapRecord: Codable {
     let uid: String
     let txHash: String?
+    let trackingHandle: String?
     let accountId: String
     let providerId: String
     let status: String
@@ -95,6 +133,7 @@ struct SwapRecord: Codable {
     let providerSwapId: String?
     let sourceAddress: String?
     let refundAddress: String?
+    let estimatedTime: TimeInterval?
     let date: Date
     let fromAsset: String?
     let toAsset: String?
@@ -121,6 +160,7 @@ extension SwapRecord: FetchableRecord, PersistableRecord {
     enum Columns {
         static let uid = Column(CodingKeys.uid)
         static let txHash = Column(CodingKeys.txHash)
+        static let trackingHandle = Column(CodingKeys.trackingHandle)
         static let accountId = Column(CodingKeys.accountId)
         static let providerId = Column(CodingKeys.providerId)
         static let status = Column(CodingKeys.status)
@@ -134,6 +174,7 @@ extension SwapRecord: FetchableRecord, PersistableRecord {
         static let providerSwapId = Column(CodingKeys.providerSwapId)
         static let sourceAddress = Column(CodingKeys.sourceAddress)
         static let refundAddress = Column(CodingKeys.refundAddress)
+        static let estimatedTime = Column(CodingKeys.estimatedTime)
         static let date = Column(CodingKeys.date)
         static let fromAsset = Column(CodingKeys.fromAsset)
         static let toAsset = Column(CodingKeys.toAsset)

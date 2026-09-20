@@ -31,6 +31,7 @@ class SwapStorage {
             return Swap(
                 uid: record.uid,
                 txHash: record.txHash,
+                trackingHandle: record.trackingHandle,
                 accountId: record.accountId,
                 providerId: record.providerId,
                 status: Swap.Status(rawValue: record.status) ?? .unknown,
@@ -44,6 +45,7 @@ class SwapStorage {
                 providerSwapId: record.providerSwapId,
                 sourceAddress: record.sourceAddress,
                 refundAddress: record.refundAddress,
+                estimatedTime: record.estimatedTime,
                 date: record.date,
                 fromAsset: record.fromAsset,
                 toAsset: record.toAsset,
@@ -66,6 +68,7 @@ class SwapStorage {
         SwapRecord(
             uid: swap.uid,
             txHash: swap.txHash,
+            trackingHandle: swap.trackingHandle,
             accountId: swap.accountId,
             providerId: swap.providerId,
             status: swap.status.rawValue,
@@ -79,6 +82,7 @@ class SwapStorage {
             providerSwapId: swap.providerSwapId,
             sourceAddress: swap.sourceAddress,
             refundAddress: swap.refundAddress,
+            estimatedTime: swap.estimatedTime,
             date: swap.date,
             fromAsset: swap.fromAsset,
             toAsset: swap.toAsset,
@@ -149,5 +153,41 @@ extension SwapStorage {
         _ = try dbPool.write { db in
             try record(swap: swap).insert(db)
         }
+    }
+
+    // attaches the on-chain hash to a mechanism-pending swap; returns false when
+    // the handle is unknown or the hash is already set
+    func setTxHash(_ txHash: String, trackingHandle: String) throws -> Bool {
+        try dbPool.write { db in
+            try SwapRecord
+                .filter(SwapRecord.Columns.trackingHandle == trackingHandle && SwapRecord.Columns.txHash == nil)
+                .updateAll(db, SwapRecord.Columns.txHash.set(to: txHash)) > 0
+        }
+    }
+
+    // targeted status update for a swap whose mechanism reported failure; scoped to pending
+    // statuses so a settled swap can never be downgraded and a re-delivery is a no-op
+    func markFailed(trackingHandle: String) throws -> Bool {
+        let pendingStatuses = Swap.pendingStatuses.map(\.rawValue)
+
+        return try dbPool.write { db in
+            try SwapRecord
+                .filter(SwapRecord.Columns.trackingHandle == trackingHandle && pendingStatuses.contains(SwapRecord.Columns.status))
+                .updateAll(db, SwapRecord.Columns.status.set(to: Swap.Status.failed.rawValue)) > 0
+        }
+    }
+
+    func swap(trackingHandle: String) throws -> Swap? {
+        let record = try dbPool.read { db in
+            try SwapRecord
+                .filter(SwapRecord.Columns.trackingHandle == trackingHandle)
+                .fetchOne(db)
+        }
+
+        guard let record else {
+            return nil
+        }
+
+        return try swaps(records: [record]).first
     }
 }

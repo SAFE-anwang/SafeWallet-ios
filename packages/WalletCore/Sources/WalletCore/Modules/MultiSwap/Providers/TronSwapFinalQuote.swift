@@ -4,18 +4,20 @@ import Foundation
 import MarketKit
 import TronKit
 
-class TronSwapFinalQuote: SwapFinalQuote {
+public class TronSwapFinalQuote: SwapFinalQuote {
     private let amountIn: Decimal
-    let createdTransaction: CreatedTransactionResponse
+    let createdTransaction: CreatedTransactionResponse?
+    let transferIntent: TronTransferIntent?
     private let fees: [Fee]
 
-    init(
+    public init(
         amountIn: Decimal,
         expectedAmountOut: Decimal,
         recipient: String?,
         slippage: Decimal?,
         estimatedTime: TimeInterval? = nil,
-        createdTransaction: CreatedTransactionResponse,
+        createdTransaction: CreatedTransactionResponse?,
+        transferIntent: TronTransferIntent? = nil,
         fees: [Fee],
         transactionError: Error?,
         toAddress: String,
@@ -24,6 +26,7 @@ class TronSwapFinalQuote: SwapFinalQuote {
     ) {
         self.amountIn = amountIn
         self.createdTransaction = createdTransaction
+        self.transferIntent = transferIntent
         self.fees = fees
 
         super.init(
@@ -42,15 +45,19 @@ class TronSwapFinalQuote: SwapFinalQuote {
         .tron(fees: fees)
     }
 
+    override public var canSwap: Bool {
+        super.canSwap && createdTransaction != nil
+    }
+
+    override public func executable(tokenIn: Token) -> ISwapExecutable {
+        TronExecutable(created: createdTransaction, transferIntent: transferIntent, token: tokenIn)
+    }
+
     override func caution(transactionError: Error, baseToken: Token) -> CautionNew? {
         TronSendHelper.caution(transactionError: transactionError, feeToken: baseToken)
     }
 
-    override func fields(tokenIn: Token, tokenOut: Token, baseToken: Token, currency: Currency, tokenInRate: Decimal?, tokenOutRate: Decimal?, baseTokenRate: Decimal?) -> [SendField] {
-        var fields = super.fields(tokenIn: tokenIn, tokenOut: tokenOut, baseToken: baseToken, currency: currency, tokenInRate: tokenInRate, tokenOutRate: tokenOutRate, baseTokenRate: baseTokenRate)
-
-        fields.append(contentsOf: TronSendHelper.feeFields(baseToken: baseToken, totalFees: fees.calculateTotalFees(), fees: fees, currency: currency, feeTokenRate: baseTokenRate))
-
-        return fields
+    override func feeFields(baseToken: Token, currency: Currency, baseTokenRate: Decimal?) -> [SendField] {
+        TronSendHelper.feeFields(baseToken: baseToken, totalFees: fees.calculateTotalFees(), fees: fees, currency: currency, feeTokenRate: baseTokenRate)
     }
 }

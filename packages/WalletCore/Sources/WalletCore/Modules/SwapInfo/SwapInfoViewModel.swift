@@ -77,6 +77,17 @@ class SwapInfoViewModel: ObservableObject {
             )
         )
 
+        // The estimate captured when the swap was sent; single route, so no baseline.
+        let precise = SwapProviderFactory.provider(id: swap.providerId)?.preciseEstimateTime ?? true
+        if let timeState = MultiSwapViewModel.timeState(for: swap.estimatedTime, precise: precise, baseline: nil) {
+            fields.append(
+                .simpleValue(
+                    title: ComponentInformedTitle("swap.swapped_time".localized, info: .swapTime),
+                    value: ComponentText(text: MultiSwapQuotesView.string(time: timeState.value), colorStyle: timeState.colorStyle)
+                )
+            )
+        }
+
         if let recipient = swap.recipient {
             fields.append(
                 .recipient(
@@ -137,7 +148,11 @@ class SwapInfoViewModel: ObservableObject {
                 title = "swap_info.swap".localized
             }
 
-            return Leg(title: title, status: leg.status, url: explorerUrl(chainId: leg.chainId, hash: leg.txHash))
+            return Leg(
+                title: title,
+                status: leg.status,
+                url: leg.txHash.isEmpty ? nil : explorerUrl(chainId: leg.chainId, hash: leg.txHash)
+            )
         }
     }
 
@@ -180,7 +195,7 @@ class SwapInfoViewModel: ObservableObject {
         default: ()
         }
 
-        guard let blockchainType = USwapMultiSwapProvider.blockchainTypeMap[chainId] else {
+        guard let blockchainType = USwapAssetRepository.blockchainTypeMap[chainId] else {
             return nil
         }
 

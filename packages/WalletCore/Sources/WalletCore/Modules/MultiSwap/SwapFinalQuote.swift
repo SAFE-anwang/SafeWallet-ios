@@ -4,14 +4,18 @@ import MarketKit
 public class SwapFinalQuote {
     private let expectedBuyAmount: Decimal
     private let slippage: Decimal?
-    let recipient: String?
-    private let estimatedTime: TimeInterval?
+    public let recipient: String?
+    public let estimatedTime: TimeInterval?
     private let transactionError: Error?
 
-    let toAddress: String
-    let depositAddress: String?
-    let providerSwapId: String?
-    var refundAddress: String?
+    public let toAddress: String
+    public let depositAddress: String?
+    public let providerSwapId: String?
+    public var refundAddress: String?
+    public var minAmountOut: Decimal?
+    // Set by the send handler from the provider; a deposit-based exchanger's estimate
+    // renders as a (X−25%)–(X+25%) range instead of ~X.
+    public var preciseEstimateTime = true
 
     public init(
         expectedBuyAmount: Decimal,
@@ -22,7 +26,8 @@ public class SwapFinalQuote {
         toAddress: String,
         depositAddress: String? = nil,
         providerSwapId: String? = nil,
-        refundAddress: String? = nil
+        refundAddress: String? = nil,
+        minAmountOut: Decimal? = nil
     ) {
         self.expectedBuyAmount = expectedBuyAmount
         self.slippage = slippage
@@ -33,18 +38,36 @@ public class SwapFinalQuote {
         self.depositAddress = depositAddress
         self.providerSwapId = providerSwapId
         self.refundAddress = refundAddress
+        self.minAmountOut = minAmountOut
     }
 
-    var amountOut: Decimal {
+    public var amountOut: Decimal {
         expectedBuyAmount
+    }
+
+    // server-enforced floor when the provider reports one, slippage estimate otherwise
+    var guaranteedAmountOut: Decimal? {
+        guard let slippage else {
+            return nil
+        }
+
+        return minAmountOut ?? amountOut * (1 - slippage / 100)
     }
 
     var feeData: FeeData? {
         nil
     }
 
-    var canSwap: Bool {
+    public var canSwap: Bool {
         transactionError == nil
+    }
+
+    public func executable(tokenIn _: Token) -> ISwapExecutable {
+        UnsupportedExecutable()
+    }
+
+    func feeFields(baseToken _: Token, currency _: Currency, baseTokenRate _: Decimal?) -> [SendField] {
+        []
     }
 
     func cautions(baseToken: Token) -> [CautionNew] {
@@ -61,12 +84,11 @@ public class SwapFinalQuote {
         nil
     }
 
-    func fields(tokenIn _: Token, tokenOut: Token, baseToken _: Token, currency _: Currency, tokenInRate _: Decimal?, tokenOutRate _: Decimal?, baseTokenRate _: Decimal?) -> [SendField] {
+    public func fields(tokenIn _: Token, tokenOut: Token, baseToken _: Token, currency _: Currency, tokenInRate _: Decimal?, tokenOutRate _: Decimal?, baseTokenRate _: Decimal?) -> [SendField] {
         var fields = [SendField]()
 
         if let slippage {
-            let minAmountOut = amountOut * (1 - slippage / 100)
-            if let minRecieve = SendField.minRecieve(token: tokenOut, value: minAmountOut) {
+            if let guaranteedAmountOut, let minRecieve = SendField.minRecieve(token: tokenOut, value: guaranteedAmountOut) {
                 fields.append(minRecieve)
             }
 
@@ -79,13 +101,11 @@ public class SwapFinalQuote {
             fields.append(.recipient(recipient, blockchainType: tokenOut.blockchainType))
         }
 
-        if let estimatedTime {
+        // Single route on the confirm screen: no baseline, absolute threshold only.
+        if let timeState = MultiSwapViewModel.timeState(for: estimatedTime, precise: preciseEstimateTime, baseline: nil) {
             fields.append(.simpleValue(
-                title: ComponentInformedTitle("swap.swapped_time".localized, info: InfoDescription(
-                    title: "swap.swapped_time".localized,
-                    description: "swap.swapped_time.info".localized
-                )),
-                value: Duration.seconds(estimatedTime).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .narrow))
+                title: ComponentInformedTitle("swap.swapped_time".localized, info: .swapTime),
+                value: ComponentText(text: MultiSwapQuotesView.string(time: timeState.value), colorStyle: timeState.colorStyle)
             ))
         }
 

@@ -44,18 +44,7 @@ protocol ISwapDataSource: AnyObject {
     func viewDidAppear()
 }
 
-enum SwapModule {
-    static func viewController(tokenFrom: MarketKit.Token? = nil) -> UIViewController? {
-        let swapDexManager = SwapProviderManager(localStorage: Core.shared.localStorage, evmBlockchainManager: Core.shared.evmBlockchainManager, tokenFrom: tokenFrom)
-
-        let viewModel = SwapViewModel(dexManager: swapDexManager)
-        let viewController = SwapViewController(
-            viewModel: viewModel,
-            dataSourceManager: swapDexManager
-        )
-        return viewController
-    }
-}
+enum SwapModule {}
 
 struct SwapView: UIViewControllerRepresentable {
     typealias UIViewControllerType = UIViewController

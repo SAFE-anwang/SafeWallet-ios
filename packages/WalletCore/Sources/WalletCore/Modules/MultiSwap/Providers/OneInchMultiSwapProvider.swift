@@ -1,4 +1,3 @@
-import Alamofire
 import BigInt
 import EvmKit
 import Foundation
@@ -7,31 +6,41 @@ import MarketKit
 import OneInchKit
 import SwiftUI
 
-class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
-    static let id = "ONEINCH"
-    static let name = "1Inch"
+public class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
+    public static let id = "ONEINCH"
+    public static let name = "1Inch"
 
     private let networkManager = Core.shared.networkManager
 //    private let networkManager = NetworkManager(logger: Logger(minLogLevel: .debug))
     private let evmSyncSourceManager = Core.shared.evmSyncSourceManager
 
     private let kit: OneInchKit.Kit
+    private let tracker: USwapTracker
     private let evmFeeEstimator = EvmFeeEstimator()
     private let commission: Decimal? = AppConfig.oneInchCommission
     private let commissionAddress: String? = AppConfig.oneInchCommissionAddress
+    // when true, 1inch skips its own on-chain allowance/balance simulation and returns the swap tx
+    // regardless — the caller validates itself; nil omits the query param entirely (1inch default)
+    private let disableEstimate: Bool?
 
-    init(kit: OneInchKit.Kit) {
+    public init(kit: OneInchKit.Kit, tracker: USwapTracker, disableEstimate: Bool? = nil) {
         self.kit = kit
+        self.tracker = tracker
+        self.disableEstimate = disableEstimate
 
         super.init()
     }
 
-    override var id: String { Self.id }
-    override var name: String { Self.name }
-    override var type: SwapProviderType { .excellent }
-    override var icon: String { "swap_provider_1inch" }
+    public convenience init(apiKey: String, tracker: USwapTracker, disableEstimate: Bool? = nil) {
+        self.init(kit: OneInchKit.Kit.instance(apiKey: apiKey), tracker: tracker, disableEstimate: disableEstimate)
+    }
 
-    override func supports(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token) -> Bool {
+    override public var id: String { Self.id }
+    override public var name: String { Self.name }
+    override public var type: SwapProviderType { .excellent }
+    override public var icon: String { "swap_provider_1inch" }
+
+    override public func supports(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token) -> Bool {
         guard tokenIn.blockchainType == tokenOut.blockchainType else {
             return false
         }
@@ -42,7 +51,7 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
         }
     }
 
-    override func quote(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal) async throws -> MultiSwapQuote {
+    override public func quote(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal) async throws -> MultiSwapQuote {
         let blockchainType = tokenIn.blockchainType
         let chain = try evmBlockchainManager.chain(blockchainType: blockchainType)
 
@@ -69,7 +78,7 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
         )
     }
 
-    override func confirmationQuote(multiSwapQuote _: MultiSwapQuote, tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal, slippage: Decimal, recipient: String?, transactionSettings: TransactionSettings?) async throws -> SwapFinalQuote {
+    override public func confirmationQuote(multiSwapQuote _: MultiSwapQuote, tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal, slippage: Decimal, recipient: String?, transactionSettings: TransactionSettings?) async throws -> SwapFinalQuote {
         let blockchainType = tokenIn.blockchainType
 
         guard let evmKitWrapper = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: blockchainType) else {
@@ -99,7 +108,8 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
             referrer: commissionAddress,
             fee: commission,
             recipient: recipientAddress,
-            gasPrice: gasPriceData.userDefined
+            gasPrice: gasPriceData.userDefined,
+            disableEstimate: disableEstimate
         )
 
         let evmBalance = evmKit.accountState?.balance ?? 0
@@ -115,6 +125,10 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
             predefinedGasLimit: swap.transaction.gasLimit
         )
 
+        // router-approve intent for broadcasters that submit approvals with the swap
+        let spender = try? spenderAddress(chain: evmKit.chain)
+        let approval = spender.flatMap { SwapApproval.build(spender: $0, tokenIn: tokenIn, amountIn: amountIn) }
+
         return EvmSwapFinalQuote(
             expectedBuyAmount: swap.amountOut ?? 0,
             transactionData: swap.transactionData,
@@ -125,26 +139,27 @@ class OneInchMultiSwapProvider: BaseEvmMultiSwapProvider {
             gasPrice: swap.transaction.gasPrice,
             evmFeeData: evmFeeData,
             nonce: transactionSettings?.nonce,
+            mevProtectionAllowed: mevProtectionAllowed(tokenIn: tokenIn, tokenOut: tokenOut),
+            approval: approval,
             toAddress: receiveAddress.eip55
         )
     }
 
-    override func track(swap: Swap) async throws -> Swap {
+    override public func track(swap: Swap) async throws -> Swap {
         let blockchainType = swap.tokenIn.blockchainType
 
-        var parameters: Parameters = try [
-            "provider": swap.providerId,
-            "chainId": String(evmBlockchainManager.chain(blockchainType: blockchainType).id),
-            "fromAsset": address(token: swap.tokenIn).eip55,
-            "toAsset": address(token: swap.tokenOut).eip55,
-            "toAddress": swap.toAddress,
-        ]
-
-        if let hash = swap.txHash {
-            parameters["hash"] = hash
-        }
-
-        return try await USwapMultiSwapProvider.track(swap: swap, parameters: parameters, networkManager: networkManager, isEvm: true)
+        return try await tracker.track(
+            swap: swap,
+            request: .evm(
+                providerId: swap.providerId,
+                toAddress: swap.toAddress,
+                transactionHash: swap.txHash,
+                chainId: String(evmBlockchainManager.chain(blockchainType: blockchainType).id),
+                fromAsset: address(token: swap.tokenIn).eip55,
+                toAsset: address(token: swap.tokenOut).eip55,
+                providerSwapId: nil
+            )
+        )
     }
 
     override func spenderAddress(chain: Chain) throws -> EvmKit.Address {

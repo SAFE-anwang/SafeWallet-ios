@@ -4,16 +4,16 @@ import MarketKit
 import SwiftUI
 import UniswapKit
 
-class BaseUniswapMultiSwapProvider: BaseEvmMultiSwapProvider {
+public class BaseUniswapMultiSwapProvider: BaseEvmMultiSwapProvider {
     let marketKit = Core.shared.marketKit
     let evmSyncSourceManager = Core.shared.evmSyncSourceManager
     let evmFeeEstimator = EvmFeeEstimator()
 
-    override func quote(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal) async throws -> MultiSwapQuote {
+    override public func quote(tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal) async throws -> MultiSwapQuote {
         try await internalQuote(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, slippage: MultiSwapSlippage.default)
     }
 
-    override func confirmationQuote(multiSwapQuote _: MultiSwapQuote, tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal, slippage: Decimal, recipient: String?, transactionSettings: TransactionSettings?) async throws -> SwapFinalQuote {
+    override public func confirmationQuote(multiSwapQuote _: MultiSwapQuote, tokenIn: MarketKit.Token, tokenOut: MarketKit.Token, amountIn: Decimal, slippage: Decimal, recipient: String?, transactionSettings: TransactionSettings?) async throws -> SwapFinalQuote {
         let quote = try await internalQuote(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, slippage: slippage, recipient: recipient)
 
         let blockchainType = tokenIn.blockchainType
@@ -38,6 +38,10 @@ class BaseUniswapMultiSwapProvider: BaseEvmMultiSwapProvider {
             }
         }
 
+        // router-approve intent for broadcasters that submit approvals with the swap
+        let spender = try? spenderAddress(chain: evmKit.chain)
+        let approval = spender.flatMap { SwapApproval.build(spender: $0, tokenIn: tokenIn, amountIn: amountIn) }
+
         return EvmSwapFinalQuote(
             expectedBuyAmount: quote.trade.amountOut ?? 0,
             transactionData: txData,
@@ -47,6 +51,8 @@ class BaseUniswapMultiSwapProvider: BaseEvmMultiSwapProvider {
             gasPrice: gasPriceData?.userDefined,
             evmFeeData: evmFeeData,
             nonce: transactionSettings?.nonce,
+            mevProtectionAllowed: mevProtectionAllowed(tokenIn: tokenIn, tokenOut: tokenOut),
+            approval: approval,
             toAddress: evmKit.receiveAddress.eip55
         )
     }
