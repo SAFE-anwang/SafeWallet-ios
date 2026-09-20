@@ -32,7 +32,6 @@ open class AmountInputViewModel {
     private let service: IAmountInputService
     let fiatService: FiatService
     private let switchService: AmountTypeSwitchService
-    private let decimalParser: AmountDecimalParser
     private let isMaxSupported: Bool
 
     private let decimalFormatter: NumberFormatter = {
@@ -62,11 +61,10 @@ open class AmountInputViewModel {
         }
     }
 
-    init(service: IAmountInputService, fiatService: FiatService, switchService: AmountTypeSwitchService, decimalParser: AmountDecimalParser, coinDecimals: Int = AmountInputViewModel.fallbackCoinDecimals, isMaxSupported: Bool = true) {
+    init(service: IAmountInputService, fiatService: FiatService, switchService: AmountTypeSwitchService, coinDecimals: Int = AmountInputViewModel.fallbackCoinDecimals, isMaxSupported: Bool = true) {
         self.service = service
         self.fiatService = fiatService
         self.switchService = switchService
-        self.decimalParser = decimalParser
         self.coinDecimals = coinDecimals
         self.isMaxSupported = isMaxSupported
         switchEnabledRelay = BehaviorRelay(value: switchService.toggleAvailable)
@@ -210,7 +208,7 @@ extension AmountInputViewModel {
     }
 
     func isValid(amount: String?) -> Bool {
-        guard let amount = decimalParser.parseAnyDecimal(from: amount) else {
+        guard let amount = AmountDecimalParser.parseAnyDecimal(from: amount) else {
             return false
         }
 
@@ -221,8 +219,8 @@ extension AmountInputViewModel {
     }
 
     func equalValue(lhs: String?, rhs: String?) -> Bool {
-        let lhsDecimal = decimalParser.parseAnyDecimal(from: lhs) ?? 0
-        let rhsDecimal = decimalParser.parseAnyDecimal(from: rhs) ?? 0
+        let lhsDecimal = AmountDecimalParser.parseAnyDecimal(from: lhs) ?? 0
+        let rhsDecimal = AmountDecimalParser.parseAnyDecimal(from: rhs) ?? 0
 
         return lhsDecimal == rhsDecimal
     }
@@ -264,7 +262,7 @@ extension AmountInputViewModel {
     }
 
     func onChange(amount: String?) {
-        let amount = decimalParser.parseAnyDecimal(from: amount) ?? 0
+        let amount = AmountDecimalParser.parseAnyDecimal(from: amount) ?? 0
 
         fiatService.set(amount: amount)
     }

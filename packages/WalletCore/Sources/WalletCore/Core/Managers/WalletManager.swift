@@ -163,8 +163,8 @@ extension WalletManager {
         onWalletMutation?(newWallets, deletedWallets, source)
     }
 
-    func save(wallets: [Wallet], source: WalletMutationSource = .user) {
-        handle(newWallets: wallets, deletedWallets: [], source: source)
+    public func save(wallets: [Wallet]) {
+        handle(newWallets: wallets, deletedWallets: [])
     }
 
     func save(enabledWallets: [EnabledWallet], deletedEnabledWallets: [EnabledWallet] = [], source: WalletMutationSource = .user) {

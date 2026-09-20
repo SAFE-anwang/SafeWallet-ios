@@ -7,16 +7,30 @@ public protocol ISendData {
     var canSend: Bool { get }
     var rateCoins: [Coin] { get }
     var customSendButtonTitle: String? { get }
+    // The fee rows alone, so a decorator can splice them into a section of its own instead of
+    // reusing `sections(...)` wholesale — those render the whole transfer, which a decorated send
+    // must present differently.
+    func feeFields(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendField]
+    // True when the handler silently reduced the transfer amount to fit the balance.
+    var amountAdjusted: Bool { get }
     func cautions(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [CautionNew]
     func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection]
 }
 
-extension ISendData {
+public extension ISendData {
     var customSendButtonTitle: String? {
         nil
     }
 
-    func flowSection(baseToken _: Token, currency _: Currency, rates _: [String: Decimal]) -> (SendField, SendField)? {
+    func feeFields(baseToken _: Token, currency _: Currency, rates _: [String: Decimal]) -> [SendField] {
+        []
+    }
+
+    var amountAdjusted: Bool {
+        false
+    }
+
+    internal func flowSection(baseToken _: Token, currency _: Currency, rates _: [String: Decimal]) -> (SendField, SendField)? {
         nil
     }
 }
@@ -34,16 +48,16 @@ public struct SendDataSection {
         self.isList = isList
     }
 
-    @ViewBuilder var fieldList: some View {
+    @MainActor @ViewBuilder var fieldList: some View {
         ForEach(fields.indices, id: \.self) { index in
-            fields[index].listRow
+            fields[index].listRow()
             if isFlow, index < (fields.count - 1) {
                 flowDivider
             }
         }
     }
 
-    @ViewBuilder private var flowDivider: some View {
+    @MainActor @ViewBuilder private var flowDivider: some View {
         HorizontalDivider()
             .overlay(
                 Circle()
@@ -57,7 +71,7 @@ public struct SendDataSection {
 }
 
 extension [SendDataSection] {
-    @ViewBuilder var sectionViews: some View {
+    @MainActor @ViewBuilder var sectionViews: some View {
         if !isEmpty {
             ForEach(indices, id: \.self) { sectionIndex in
                 let section = self[sectionIndex]

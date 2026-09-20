@@ -1,9 +1,11 @@
 import BitcoinCore
 import EvmKit
+import HsToolKit
 import MarketKit
 import RxRelay
 import RxSwift
 import StellarKit
+import ThorChainKit
 
 public class AdapterFactory {
     private let evmBlockchainManager: EvmBlockchainManager
@@ -12,6 +14,8 @@ public class AdapterFactory {
     private let zcashNodeManager: ZcashNodeManager
     private let btcBlockchainManager: BtcBlockchainManager
     private let tronKitManager: TronKitManager
+    private let thorChainKitManager: ThorChainKitManager
+    private let mayaChainKitManager: ThorChainKitManager
     private let tonKitManager: TonKitManager
     private let stellarKitManager: StellarKitManager
     private let zanoKitManager: ZanoKitManager
@@ -21,8 +25,38 @@ public class AdapterFactory {
     private let spamWrapper: SpamWrapper
     private let evmLabelManager: EvmLabelManager
 
+    public convenience init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, moneroNodeManager: MoneroNodeManager, zcashNodeManager: ZcashNodeManager,
+                            btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager,
+                            zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager,
+                            spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager)
+    {
+        self.init(
+            evmBlockchainManager: evmBlockchainManager,
+            evmSyncSourceManager: evmSyncSourceManager,
+            moneroNodeManager: moneroNodeManager,
+            zcashNodeManager: zcashNodeManager,
+            btcBlockchainManager: btcBlockchainManager,
+            tronKitManager: tronKitManager,
+            thorChainKitManager: ThorChainKitManager(
+                endpointManager: ThorChainEndpointManager(endpointProvider: ThorChainEndpointConfigurationProvider())
+            ),
+            mayaChainKitManager: ThorChainKitManager(
+                endpointManager: ThorChainEndpointManager(endpointProvider: MayaChainEndpointConfigurationProvider(), blockchainType: .mayaChain),
+                network: .mayaMainnet
+            ),
+            tonKitManager: tonKitManager,
+            stellarKitManager: stellarKitManager,
+            zanoKitManager: zanoKitManager,
+            solanaKitManager: solanaKitManager,
+            restoreSettingsManager: restoreSettingsManager,
+            coinManager: coinManager,
+            spamWrapper: spamWrapper,
+            evmLabelManager: evmLabelManager
+        )
+    }
+
     init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, moneroNodeManager: MoneroNodeManager, zcashNodeManager: ZcashNodeManager,
-         btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager,
+         btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager, thorChainKitManager: ThorChainKitManager, mayaChainKitManager: ThorChainKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager,
          zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager,
          spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager)
     {
@@ -32,6 +66,8 @@ public class AdapterFactory {
         self.zcashNodeManager = zcashNodeManager
         self.btcBlockchainManager = btcBlockchainManager
         self.tronKitManager = tronKitManager
+        self.thorChainKitManager = thorChainKitManager
+        self.mayaChainKitManager = mayaChainKitManager
         self.tonKitManager = tonKitManager
         self.stellarKitManager = stellarKitManager
         self.zanoKitManager = zanoKitManager
@@ -53,7 +89,7 @@ public class AdapterFactory {
         return EvmAdapter(evmKitWrapper: evmKitWrapper)
     }
 
-    private func eip20Adapter(address: String, wallet: Wallet, coinManager: CoinManager) -> IAdapter? {
+    private func eip20Adapter(address: String, wallet: Wallet) -> IAdapter? {
         guard let blockchainType = evmBlockchainManager.blockchain(token: wallet.token)?.type else {
             return nil
         }
@@ -68,9 +104,7 @@ public class AdapterFactory {
             evmKitWrapper: evmKitWrapper,
             contractAddress: address,
             wallet: wallet,
-            baseToken: baseToken,
-            coinManager: coinManager,
-            evmLabelManager: evmLabelManager
+            baseToken: baseToken
         )
     }
 
@@ -80,6 +114,35 @@ public class AdapterFactory {
         }
 
         return TronAdapter(tronKitWrapper: tronKitWrapper)
+    }
+
+    // THORChain (RUNE) and Maya (CACAO) share the ThorChainKit; pick the per-chain manager
+    func thorChainFamilyKitManager(blockchainType: BlockchainType) -> ThorChainKitManager {
+        blockchainType == .mayaChain ? mayaChainKitManager : thorChainKitManager
+    }
+
+    private func thorChainAdapter(wallet: Wallet) -> IAdapter? {
+        let blockchainType = wallet.token.blockchainType
+        guard blockchainType == .thorChain || blockchainType == .mayaChain else { return nil }
+
+        let denom: ThorChainKit.Denom
+        switch wallet.token.type {
+        case .native: denom = blockchainType == .mayaChain ? .cacao : .rune
+        // Never fall back to the native coin on a malformed reference — that would move the wrong asset.
+        case let .thorChainAsset(rawDenom):
+            guard blockchainType == .thorChain, let parsed = try? ThorChainKit.Denom(rawValue: rawDenom) else { return nil }
+            denom = parsed
+        default: return nil
+        }
+
+        do {
+            // Every denom of an account shares one kit; the wrapper is cached per account
+            let wrapper = try thorChainFamilyKitManager(blockchainType: blockchainType).thorChainKitWrapper(account: wallet.account)
+            let adapter = try ThorChainAdapter(thorChainKitWrapper: wrapper, denom: denom)
+            return adapter
+        } catch {
+            return nil
+        }
     }
 
     private func trc20Adapter(address: String, wallet: Wallet) -> IAdapter? {
@@ -107,17 +170,15 @@ extension AdapterFactory {
         guard let baseToken = evmBlockchainManager.baseToken(blockchainType: blockchainType) else {
             return nil
         }
-
         let syncSource = evmSyncSourceManager.syncSource(blockchainType: blockchainType)
-        return EvmTransactionsAdapter(
+        let adapter = EvmTransactionsAdapter(
             evmKitWrapper: evmKitWrapper,
             source: transactionSource,
             baseToken: baseToken,
             evmTransactionSource: syncSource.transactionSource,
-            coinManager: coinManager,
-            spamWrapper: spamWrapper,
-            evmLabelManager: evmLabelManager
+            spamWrapper: spamWrapper
         )
+        return TransactionsAdapterDecoratorFactory.decorate(adapter: adapter, source: transactionSource)
     }
 
     func tronTransactionsAdapter(transactionSource: TransactionSource, tronKitWrapper: TronKitWrapper) -> ITransactionsAdapter? {
@@ -126,8 +187,7 @@ extension AdapterFactory {
         guard let baseToken = try? coinManager.token(query: query) else {
             return nil
         }
-
-        return TronTransactionsAdapter(
+        let adapter = TronTransactionsAdapter(
             tronKitWrapper: tronKitWrapper,
             source: transactionSource,
             baseToken: baseToken,
@@ -135,6 +195,24 @@ extension AdapterFactory {
             spamWrapper: spamWrapper,
             evmLabelManager: evmLabelManager
         )
+        return TransactionsAdapterDecoratorFactory.decorate(adapter: adapter, source: transactionSource)
+    }
+
+    func thorChainTransactionsAdapter(transactionSource: TransactionSource, thorChainKitWrapper: ThorChainKitWrapper) -> ITransactionsAdapter? {
+        let blockchainType = transactionSource.blockchainType
+        let query = TokenQuery(blockchainType: blockchainType, tokenType: .native)
+
+        guard let baseToken = try? coinManager.token(query: query) else {
+            return nil
+        }
+
+        let adapter = ThorChainTransactionsAdapter(
+            thorChainKitWrapper: thorChainKitWrapper,
+            source: transactionSource,
+            baseToken: baseToken,
+            coinManager: coinManager
+        )
+        return TransactionsAdapterDecoratorFactory.decorate(adapter: adapter, source: transactionSource)
     }
 
     func tonTransactionAdapter(transactionSource: TransactionSource) -> ITransactionsAdapter? {
@@ -199,6 +277,10 @@ extension AdapterFactory {
             return try? ZcashAdapter(wallet: wallet, restoreSettings: restoreSettings, endpoint: zcashEndpoint)
 
         case (.native, .monero):
+            // Deferred while startup auto-select resolves the fastest node, so the wallet never
+            // connects to a stale stored node; created via initMissingAdapters right after.
+            guard !moneroNodeManager.isResolvingFastestNode else { return nil }
+
             let restoreSettings = restoreSettingsManager.settings(accountId: wallet.account.id, blockchainType: .monero)
             let moneroNode = moneroNodeManager.node(blockchainType: .monero)
             return try? MoneroAdapter(wallet: wallet, restoreSettings: restoreSettings, node: moneroNode.node)
@@ -226,10 +308,10 @@ extension AdapterFactory {
             return evmAdapter(wallet: wallet)
 
         case let (.eip20(address), .ethereum), let (.eip20(address), .binanceSmartChain), let (.eip20(address), .polygon), let (.eip20(address), .avalanche), let (.eip20(address), .optimism), let (.eip20(address), .arbitrumOne), let (.eip20(address), .gnosis), let (.eip20(address), .fantom), let (.eip20(address), .base), let (.eip20(address), .zkSync):
-            return eip20Adapter(address: address, wallet: wallet, coinManager: coinManager)
+            return eip20Adapter(address: address, wallet: wallet)
 
         case let (.eip20(address), .safe4):
-            return eip20Adapter(address: address, wallet: wallet, coinManager: coinManager)
+            return eip20Adapter(address: address, wallet: wallet)
 
         case (.native, .safe):
             let syncMode = btcBlockchainManager.syncMode(blockchainType: .safe, accountOrigin: wallet.account.origin)
@@ -241,6 +323,9 @@ extension AdapterFactory {
 
         case (.native, .tron):
             return tronAdapter(wallet: wallet)
+
+        case (.native, .thorChain), (.thorChainAsset, .thorChain), (.native, .mayaChain):
+            return thorChainAdapter(wallet: wallet)
 
         case let (.eip20(address), .tron):
             return trc20Adapter(address: address, wallet: wallet)

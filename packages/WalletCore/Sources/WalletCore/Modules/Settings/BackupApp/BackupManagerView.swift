@@ -5,6 +5,7 @@ struct BackupManagerView: View {
         ScrollableThemeView {
             VStack(spacing: .margin24) {
                 ListSection {
+                    /*
                     Cell(
                         left: {
                             ThemeImage("arrow_in", size: 24)
@@ -26,6 +27,7 @@ struct BackupManagerView: View {
                             }
                         }
                     )
+                    */
                     Cell(
                         left: {
                             ThemeImage("list", size: 24)

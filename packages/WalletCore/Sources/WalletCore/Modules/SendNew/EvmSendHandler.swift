@@ -3,7 +3,7 @@ import Foundation
 import MarketKit
 import SwiftUI
 
-class EvmSendHandler {
+class EvmSendHandler: SendHandler {
     let baseToken: Token
     private let transactionData: TransactionData
     private let evmKitWrapper: EvmKitWrapper
@@ -17,11 +17,24 @@ class EvmSendHandler {
         self.evmKitWrapper = evmKitWrapper
         self.timeLock = timeLock
     }
+
+    override class func instance(sendData: SendData) -> ISendHandler? {
+        guard case let .evm(blockchainType, transactionData, _) = sendData else { return nil }
+        return instance(blockchainType: blockchainType, transactionData: transactionData)
+    }
 }
 
 extension EvmSendHandler: ISendHandler {
     var expirationDuration: Int? {
         10
+    }
+
+    var supportsFeeSettings: Bool {
+        !isSrc20TimeLock
+    }
+
+    var supportsNonceSettings: Bool {
+        !isSrc20TimeLock
     }
 
     func sendData(transactionSettings: TransactionSettings?) async throws -> ISendData {
@@ -78,6 +91,13 @@ extension EvmSendHandler: ISendHandler {
     }
 
     func send(data: ISendData) async throws {
+        _ = try await sendCapturingRef(data: data)
+    }
+}
+
+extension EvmSendHandler: ISendHandlerRefCapturing {
+    // Same broadcast path as `send`, returning the on-chain tx hash.
+    func sendCapturingRef(data: ISendData) async throws -> String {
         guard let data = data as? EvmSendData else {
             throw SendError.invalidData
         }
@@ -96,31 +116,45 @@ extension EvmSendHandler: ISendHandler {
         if let timeLock = data.timeLock {
             switch timeLock.token {
             case .native:
-                _ = try await evmKitWrapper.sendSafe4TimeLock(
+                let fullTransaction = try await evmKitWrapper.sendSafe4TimeLock(
                     transactionData: transactionData,
                     gasPrice: gasPrice,
                     gasLimit: gasLimit,
                     nonce: data.nonce,
                     timeLock: timeLock
                 )
+                return fullTransaction.transaction.hash.hs.hexString
             case .src20:
-                _ = try await evmKitWrapper.sendSrc20TimeLock(
+                return try await evmKitWrapper.sendSrc20TimeLock(
                     to: transactionData.to,
-                    gasPrice: gasPrice,
-                    gasLimit: gasLimit,
-                    nonce: data.nonce,
                     timeLock: timeLock
                 )
             }
-        } else {
-            _ = try await evmKitWrapper.send(
-                transactionData: transactionData,
-                gasPrice: gasPrice,
-                gasLimit: gasLimit,
-                privateSend: false,
-                nonce: data.nonce
-            )
         }
+
+        let fullTransaction = try await evmKitWrapper.send(
+            transactionData: transactionData,
+            gasPrice: gasPrice,
+            gasLimit: gasLimit,
+            privateSend: false,
+            nonce: data.nonce
+        )
+
+        return fullTransaction.transaction.hash.hs.hexString
+    }
+}
+
+private extension EvmSendHandler {
+    var isSrc20TimeLock: Bool {
+        guard let timeLock else {
+            return false
+        }
+
+        if case .src20 = timeLock.token {
+            return true
+        }
+
+        return false
     }
 }
 

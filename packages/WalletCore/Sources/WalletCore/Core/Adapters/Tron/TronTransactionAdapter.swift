@@ -55,7 +55,6 @@ class TronTransactionsAdapter: BaseTronAdapter {
         case .all: ()
         case .incoming: type = .incoming
         case .outgoing: type = .outgoing
-        case .swap, .approve: ()
         }
 
         return TransactionTagQuery(type: type, protocol: `protocol`, contractAddress: contractAddress, address: address)
@@ -160,7 +159,6 @@ extension TronTransactionsAdapter: ITransactionsAdapter {
     private static func supports(filter: TransactionTypeFilter) -> Bool {
         switch filter {
         case .all, .incoming, .outgoing: return true
-        case .swap, .approve: return false
         }
     }
 }

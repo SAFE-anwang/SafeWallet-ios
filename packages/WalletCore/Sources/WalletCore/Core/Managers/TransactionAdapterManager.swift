@@ -2,7 +2,7 @@ import Foundation
 import RxRelay
 import RxSwift
 
-class TransactionAdapterManager {
+public class TransactionAdapterManager {
     private let disposeBag = DisposeBag()
 
     private let adapterManager: AdapterManager
@@ -15,7 +15,7 @@ class TransactionAdapterManager {
     private let queueKey = DispatchSpecificKey<Void>()
     private var _adapterMap = [TransactionSource: ITransactionsAdapter]()
 
-    init(adapterManager: AdapterManager, evmBlockchainManager: EvmBlockchainManager, adapterFactory: AdapterFactory) {
+    public init(adapterManager: AdapterManager, evmBlockchainManager: EvmBlockchainManager, adapterFactory: AdapterFactory) {
         self.adapterManager = adapterManager
         self.evmBlockchainManager = evmBlockchainManager
         self.adapterFactory = adapterFactory
@@ -53,6 +53,12 @@ class TransactionAdapterManager {
                 } else {
                     transactionsAdapter = nil
                 }
+            } else if source.blockchainType == .thorChain || source.blockchainType == .mayaChain {
+                if let thorChainAdapter = adapter as? ThorChainAdapter {
+                    transactionsAdapter = adapterFactory.thorChainTransactionsAdapter(transactionSource: source, thorChainKitWrapper: thorChainAdapter.thorChainKitWrapper)
+                } else {
+                    transactionsAdapter = nil
+                }
             } else if source.blockchainType == .ton {
                 transactionsAdapter = adapterFactory.tonTransactionAdapter(transactionSource: source)
             } else if source.blockchainType == .stellar {
@@ -75,13 +81,9 @@ class TransactionAdapterManager {
     }
 }
 
-extension TransactionAdapterManager {
-    var adapterMap: [TransactionSource: ITransactionsAdapter] {
-        if DispatchQueue.getSpecific(key: queueKey) != nil {
-            return _adapterMap
-        }
-
-        return queue.sync { _adapterMap }
+public extension TransactionAdapterManager {
+    internal var adapterMap: [TransactionSource: ITransactionsAdapter] {
+        queue.sync { _adapterMap }
     }
 
     var adaptersReadyObservable: Observable<Void> {

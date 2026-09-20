@@ -11,26 +11,28 @@ class EvmTransactionsAdapter: BaseEvmAdapter {
     static let decimal = 18
 
     private let evmTransactionSource: EvmKit.TransactionSource
-    private let transactionConverter: EvmTransactionConverter
+    private let converters: [IEvmTransactionConverter]
     private let spamManager: SpamManager?
 
-    init(evmKitWrapper: EvmKitWrapper, source: TransactionSource, baseToken: MarketKit.Token, evmTransactionSource: EvmKit.TransactionSource, coinManager: CoinManager, spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager) {
+    init(evmKitWrapper: EvmKitWrapper, source: TransactionSource, baseToken: MarketKit.Token, evmTransactionSource: EvmKit.TransactionSource,  spamWrapper: SpamWrapper) {
         self.evmTransactionSource = evmTransactionSource
         spamManager = spamWrapper.spamManager(source: source)
 
-        transactionConverter = EvmTransactionConverter(
-            source: source,
-            baseToken: baseToken,
-            coinManager: coinManager,
-            evmKitWrapper: evmKitWrapper,
-            blockchainType: evmKitWrapper.blockchainType,
-            userAddress: evmKitWrapper.evmKit.address,
-            evmLabelManager: evmLabelManager
-        )
-
+        converters = EvmTransactionConverterFactory.converters(baseToken: baseToken, userAddress: evmKitWrapper.evmKit.address)
         super.init(evmKitWrapper: evmKitWrapper, decimals: EvmAdapter.decimals)
 
         initializeSpamManager()
+    }
+
+    private func record(fromTransaction fullTransaction: FullTransaction, token: MarketKit.Token?) -> TransactionRecord? {
+        for converter in converters {
+            if let record = converter.convert(fullTransaction: fullTransaction, token: token) {
+                return record
+            }
+        }
+
+        print("EvmTransactionsAdapter: converter chain produced no record for \(fullTransaction.transaction.hash.hs.hexString)")
+        return nil
     }
 
     private func initializeSpamManager() {
@@ -59,8 +61,6 @@ class EvmTransactionsAdapter: BaseEvmAdapter {
         case .all: ()
         case .incoming: type = .incoming
         case .outgoing: type = .outgoing
-        case .swap: type = .swap
-        case .approve: type = .approve
         }
 
         return TransactionTagQuery(type: type, protocol: `protocol`, contractAddress: contractAddress, address: address)
@@ -132,9 +132,9 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
 
     }
 
-    private func handleTransactions(_ transactions: [FullTransaction]) -> [TransactionRecord] {
+    private func handleTransactions(_ transactions: [FullTransaction], token: MarketKit.Token?) -> [TransactionRecord] {
         // Preserve evmKit order (descending — newest first)
-        let records = transactions.map { transactionConverter.transactionRecord(fromTransaction: $0) }
+        let records = transactions.compactMap { record(fromTransaction: $0, token: token) }
 
         // Mutates .spam in-place via reference type.
         // Internally sorts ascending for correct detection,
@@ -147,7 +147,7 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
     func transactionsObservable(token: MarketKit.Token?, filter: TransactionTypeFilter, address: String?) -> Observable<[TransactionRecord]> {
         evmKit.transactionsObservable(tagQueries: [tagQuery(token: token, filter: filter, address: address?.lowercased())]).map { [weak self] in
 
-            self?.handleTransactions($0) ?? []
+            self?.handleTransactions($0, token: token) ?? []
         }
     }
 
@@ -161,14 +161,14 @@ extension EvmTransactionsAdapter: ITransactionsAdapter {
                     return []
                 }
 
-                return self?.handleTransactions(transactions) ?? []
+                return self?.handleTransactions(transactions, token: token) ?? []
             }
     }
 
     func allTransactionsAfter(paginationData: String?) -> Single<[TransactionRecord]> {
         let hash = paginationData?.hs.hexData
         let transactions = evmKit.allTransactionsAfter(transactionHash: hash)
-        let records = transactions.compactMap { transactionConverter.transactionRecord(fromTransaction: $0) }
+        let records = transactions.compactMap { record(fromTransaction: $0, token: nil) }
 
         return Single.just(records)
     }

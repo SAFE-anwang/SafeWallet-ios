@@ -7,64 +7,74 @@ import HsToolKit
 import MarketKit
 import RxSwift
 
-class Eip20Adapter: BaseEvmAdapter {
+public class Eip20Adapter: BaseEvmAdapter {
     private static let approveConfirmationsThreshold: Int? = nil
-    let eip20Kit: Eip20Kit.Kit
+    public let eip20Kit: Eip20Kit.Kit
     private let contractAddress: EvmKit.Address
-    private let transactionConverter: EvmTransactionConverter
     private let balanceDataSubject = PublishSubject<BalanceData>()
     private var lockedAmount: Decimal = 0
     private var lockedAmountCancellable: AnyCancellable?
     private var lockedService: SRC20LockedService?
+    private let token: Token
+    private let converters: [IEvmTransactionConverter]
 
-    init(evmKitWrapper: EvmKitWrapper, contractAddress: String, wallet: Wallet, baseToken: Token, coinManager: CoinManager, evmLabelManager: EvmLabelManager) throws {
+    init(evmKitWrapper: EvmKitWrapper, contractAddress: String, wallet: Wallet, baseToken: Token) throws {
         let address = try EvmKit.Address(hex: contractAddress)
         eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: address)
         self.contractAddress = address
+        token = wallet.token
 
-        transactionConverter = EvmTransactionConverter(
-            source: wallet.transactionSource, baseToken: baseToken, coinManager: coinManager, evmKitWrapper: evmKitWrapper, blockchainType: evmKitWrapper.blockchainType,
-            userAddress: evmKitWrapper.evmKit.address, evmLabelManager: evmLabelManager
-        )
+        converters = EvmTransactionConverterFactory.converters(baseToken: baseToken, userAddress: evmKitWrapper.evmKit.address)
         super.init(evmKitWrapper: evmKitWrapper, decimals: wallet.decimals)
         synceSrc20LockedRecord()
+    }
+
+    private func record(fromTransaction fullTransaction: FullTransaction, token: Token?) -> TransactionRecord? {
+        for converter in converters {
+            if let record = converter.convert(fullTransaction: fullTransaction, token: token) {
+                return record
+            }
+        }
+
+        print("Eip20Adapter: converter chain produced no record for \(fullTransaction.transaction.hash.hs.hexString)")
+        return nil
     }
 }
 
 // IAdapter
 
 extension Eip20Adapter: IAdapter {
-    func start() {
+    public func start() {
         eip20Kit.start()
     }
 
-    func stop() {
+    public func stop() {
         eip20Kit.stop()
     }
 
-    func refresh() {
+    public func refresh() {
         start()
         synceSrc20LockedRecord()
     }
 }
 
 extension Eip20Adapter: IBalanceAdapter {
-    var balanceState: AdapterState {
+    public var balanceState: AdapterState {
         convertToAdapterState(evmSyncState: eip20Kit.syncState)
     }
 
-    var balanceStateUpdatedObservable: Observable<AdapterState> {
+    public var balanceStateUpdatedObservable: Observable<AdapterState> {
         eip20Kit.syncStateObservable.map { [weak self] in
             self?.convertToAdapterState(evmSyncState: $0) ?? .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
         }
     }
 
-    var balanceData: BalanceData {
+    public var balanceData: BalanceData {
         let available = balanceDecimal(kitBalance: eip20Kit.balance, decimals: decimals)
         return BalanceData(balance: available, locked: lockedAmount)
     }
 
-    var balanceDataUpdatedObservable: Observable<BalanceData> {
+    public var balanceDataUpdatedObservable: Observable<BalanceData> {
         Observable.merge(
             eip20Kit.balanceObservable.map { [weak self] in
                 guard let self else {
@@ -86,7 +96,7 @@ extension Eip20Adapter: ISendEthereumAdapter {
 
 extension Eip20Adapter: IAllowanceAdapter {
     var pendingTransactions: [TransactionRecord] {
-        eip20Kit.pendingTransactions().map { transactionConverter.transactionRecord(fromTransaction: $0) }
+        eip20Kit.pendingTransactions().compactMap { record(fromTransaction: $0, token: token) }
     }
 
     func allowance(spenderAddress: Address, defaultBlockParameter: BlockParameter) async throws -> Decimal {

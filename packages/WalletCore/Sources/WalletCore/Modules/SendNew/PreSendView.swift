@@ -35,6 +35,7 @@ struct PreSendView: View {
                         VStack(spacing: .margin8) {
                             inputView()
                             availableBalanceView(value: balanceValue())
+//                            privateSendView()
                         }
 
                         if viewModel.isSupportedTimeLockToken {
@@ -43,8 +44,8 @@ struct PreSendView: View {
                             }
                         }
 
-                        if viewModel.hasMemo {
-                            memoView()
+                        if viewModel.memoType != .none {
+                            memoView(type: viewModel.memoType)
                         }
 
                         if !viewModel.cautions.isEmpty {
@@ -52,7 +53,7 @@ struct PreSendView: View {
                         }
                     }
                     .padding(EdgeInsets(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
-                    .animation(.linear, value: viewModel.hasMemo)
+                    .animation(.linear, value: viewModel.memoType)
                 }
                 .onTapGesture {
                     focusField = nil
@@ -62,7 +63,7 @@ struct PreSendView: View {
             } keyboardContent: {
                 AmountAccessoryView(
                     visible: focusField != nil,
-                    hasPercents: viewModel.availableBalance != nil,
+                    enabledPercents: (viewModel.availableBalance ?? 0) > 0,
                     onPercent: { percent in
                         viewModel.setAmountIn(percent: percent)
                         focusField = nil
@@ -74,9 +75,9 @@ struct PreSendView: View {
             }
             .animation(.easeOut(duration: 0.25), value: focusField)
         }
-        .onFirstAppear {
-            focusField = .amount
-        }
+        // .onFirstAppear {
+        //     focusField = .amount
+        // }
         .navigationDestination(for: ConfirmationData.self) { data in
             RegularSendView(sendData: data.sendData, address: data.address) {
                 HudHelper.instance.show(banner: .sent)
@@ -172,7 +173,9 @@ struct PreSendView: View {
         }
     }
 
-    @ViewBuilder private func memoView() -> some View {
+    @ViewBuilder private func memoView(type: MemoType) -> some View {
+        let cautionState = CautionState.caution(Caution(text: memoWarningText(type: type), type: viewModel.memo.isEmpty ? .regular : .warning))
+
         InputTextRow {
             InputTextView(
                 placeholder: "send.confirmation.memo_placeholder".localized,
@@ -180,6 +183,16 @@ struct PreSendView: View {
                 font: .themeBody.italic(),
                 text: $viewModel.memo
             )
+        }
+        .modifier(CautionBorder(cautionState: .constant(cautionState)))
+        .modifier(CautionPrompt(cautionState: .constant(cautionState)))
+    }
+
+    private func memoWarningText(type: MemoType) -> String {
+        switch type {
+        case .onChainPrivate: return "send.memo.private_warning".localized
+        case .local: return "send.memo.local_warning".localized
+        default: return "send.memo.public_warning".localized
         }
     }
 
@@ -214,10 +227,7 @@ struct PreSendView: View {
             let proceedToSend = {
                 if #available(iOS 17.0, *) {
                     focusField = nil
-                    path.append(ConfirmationData(
-                        sendData: sendData.sendData,
-                        address: sendData.address
-                    ))
+                    path.append(ConfirmationData(sendData: sendData.sendData, address: sendData.address))
                 } else {
                     presentRegularSendView(sendData: sendData.sendData, address: sendData.address)
                 }
@@ -352,6 +362,9 @@ struct PreSendView: View {
             }
         } else {
             title = "send.next_button".localized
+            // A private send has no inner SendData at this stage — it is built inside the handler
+            // after the commit — so it must not be gated on `viewModel.sendData`.
+//            disabled = !privateSend.isEnabled && viewModel.sendData == nil
             disabled = viewModel.sendData == nil
         }
 

@@ -21,7 +21,7 @@ enum ResendBitcoinModule {
 
         let token = adapter.token
         let currency = Core.shared.currencyManager.baseCurrency
-        let price = Core.shared.marketKit.coinPrice(coinUid: token.coin.uid, currencyCode: currency.code)
+        let price = Core.shared.marketKit.walletCoinPrice(coinUid: token.coin.uid, currencyCode: currency.code)
 
         let service = ResendBitcoinService(
             transactionRecord: transactionRecord,

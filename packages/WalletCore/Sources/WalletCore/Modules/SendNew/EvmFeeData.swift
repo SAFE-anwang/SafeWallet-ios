@@ -23,7 +23,7 @@ public struct EvmFeeData {
             return nil
         }
 
-        var amount = Decimal(gasLimit) * Decimal(gasPrice.max) / pow(10, feeToken.decimals)
+        var amount = Decimal(surchargedGasLimit) * Decimal(gasPrice.max) / pow(10, feeToken.decimals)
 
         if let l1FeeValue = l1FeeValue(feeToken: feeToken) {
             amount += l1FeeValue
@@ -41,7 +41,7 @@ public struct EvmFeeData {
     func l2AmountData(gasPrice: GasPrice?, feeToken: Token, currency: Currency, feeTokenRate: Decimal?) -> AmountData? {
         gasPrice.flatMap {
             amountData(
-                amount: Decimal(gasLimit) * Decimal($0.max) / pow(10, feeToken.decimals),
+                amount: Decimal(surchargedGasLimit) * Decimal($0.max) / pow(10, feeToken.decimals),
                 feeToken: feeToken, currency: currency, feeTokenRate: feeTokenRate
             )
         }

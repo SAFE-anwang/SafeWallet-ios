@@ -1,24 +1,21 @@
 import BigInt
-import Eip20Kit
 import EvmKit
 import Foundation
 import HdWalletKit
 import MarketKit
 import NftKit
-import OneInchKit
 import RxRelay
 import RxSwift
-import UniswapKit
 import HsExtensions
 import web3swift
 
-class EvmKitManager {
+public class EvmKitManager {
     let chain: Chain
     private let syncSourceManager: EvmSyncSourceManager
-    private let smartAccountManager: SmartAccountManager
     private let disposeBag = DisposeBag()
 
     private weak var _evmKitWrapper: EvmKitWrapper?
+    private var currentChildWalletId: String?
 
     private let evmKitCreatedRelay = PublishRelay<Void>()
     private let evmKitUpdatedRelay = PublishRelay<Void>()
@@ -26,10 +23,9 @@ class EvmKitManager {
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).ethereum-kit-manager", qos: .userInitiated)
 
-    init(chain: Chain, syncSourceManager: EvmSyncSourceManager, smartAccountManager: SmartAccountManager) {
+    init(chain: Chain, syncSourceManager: EvmSyncSourceManager) {
         self.chain = chain
         self.syncSourceManager = syncSourceManager
-        self.smartAccountManager = smartAccountManager
 
         subscribe(disposeBag, syncSourceManager.syncSourceObservable) { [weak self] blockchainType in
             self?.handleUpdatedSyncSource(blockchainType: blockchainType)
@@ -46,35 +42,61 @@ class EvmKitManager {
                 return
             }
 
+            _evmKitWrapper.evmKit.stop()
             self._evmKitWrapper = nil
+            currentAccount = nil
+            currentChildWalletId = nil
             evmKitUpdatedRelay.accept(())
         }
     }
 
     private func _evmKitWrapper(account: Account, blockchainType: BlockchainType) throws -> EvmKitWrapper {
-        if let _evmKitWrapper, let currentAccount, currentAccount == account {
+        let childWalletId = ChildWalletBridge.shared.activeChildWalletId(account: account)
+        if let _evmKitWrapper, let currentAccount, currentAccount == account, currentChildWalletId == childWalletId {
             return _evmKitWrapper
         }
 
+        _evmKitWrapper?.evmKit.stop()
+        _evmKitWrapper = nil
+
         let syncSource = syncSourceManager.syncSource(blockchainType: blockchainType)
 
-        let address = try AccountAddress.evmAddress(account: account, blockchainType: blockchainType, chain: chain, smartAccountManager: smartAccountManager)
+        let address: EvmKit.Address
+        if childWalletId != nil {
+            guard let childAddress = try ChildWalletBridge.shared.evmAddress(account: account, blockchainType: blockchainType, chain: chain) else {
+                throw AdapterError.unsupportedAccount
+            }
+            address = childAddress
+        } else {
+            address = try AccountAddress.evmAddress(account: account, blockchainType: blockchainType)
+        }
         var signer: Signer?
 
-        switch account.type {
-        case .mnemonic:
-            guard let seed = account.type.mnemonicSeed else {
-                throw KitWrapperError.mnemonicNoSeed
+        if childWalletId != nil {
+            if let privateKey = try ChildWalletBridge.shared.evmPrivateKey(account: account, chain: chain) {
+                signer = Signer.instance(privateKey: privateKey, chain: chain)
             }
-//            address = try Signer.address(seed: seed, chain: chain)
-            signer = try Signer.instance(seed: seed, chain: chain)
-        case let .evmPrivateKey(data):
-//            address = Signer.address(privateKey: data)
-            signer = Signer.instance(privateKey: data, chain: chain)
-        case .evmAddress, .passkeyOwned:
-            ()
-        default:
-            throw AdapterError.unsupportedAccount
+        } else {
+            switch account.type {
+            case .mnemonic:
+                guard let seed = account.type.mnemonicSeed else {
+                    throw KitWrapperError.mnemonicNoSeed
+                }
+                signer = try Signer.instance(seed: seed, chain: chain)
+            case let .evmPrivateKey(data):
+                signer = Signer.instance(privateKey: data, chain: chain)
+            case .evmAddress, .passkeyOwned:
+                ()
+            default:
+                throw AdapterError.unsupportedAccount
+            }
+        }
+
+        let walletId: String
+        if childWalletId != nil {
+            walletId = try ChildWalletBridge.shared.walletId(account: account, blockchainType: blockchainType)
+        } else {
+            walletId = account.id
         }
 
         let evmKit = try EvmKit.Kit.instance(
@@ -82,31 +104,18 @@ class EvmKitManager {
             chain: chain,
             rpcSource: syncSource.rpcSource,
             transactionSource: syncSource.transactionSource,
-            walletId: account.id,
+            walletId: walletId,
             minLogLevel: .error
         )
 
-        var transactionSyncers: [ITransactionSyncer] = [
-            evmKit.ethereumSyncer,
-            evmKit.internalSyncer,
-        ]
-
-        if let safe4Syncer = evmKit.safe4Syncer {
-            transactionSyncers.append(safe4Syncer)
-        }
-
-        evmKit.set(syncers: transactionSyncers)
-
-        Eip20Kit.Kit.addDecorators(to: evmKit)
-        Eip20Kit.Kit.addTransactionSyncer(to: evmKit)
+        evmKit.set(syncers: EvmKitConfigFactory.syncers(account: account, evmKit: evmKit))
+        EvmKitConfigFactory.applyDecorators(account: account, evmKit: evmKit)
 
         var nftKit: NftKit.Kit?
-        let supportedNftTypes = blockchainType.supportedNftTypes
-
-        if !supportedNftTypes.isEmpty {
-            let kit = try NftKit.Kit.instance(evmKit: evmKit)
-
-            for nftType in supportedNftTypes {
+        if !blockchainType.supportedNftTypes.isEmpty,
+           let kit = try? NftKit.Kit.instance(evmKit: evmKit)
+        {
+            for nftType in blockchainType.supportedNftTypes {
                 switch nftType {
                 case .eip721:
                     kit.addEip721TransactionSyncer()
@@ -116,30 +125,25 @@ class EvmKitManager {
                     kit.addEip1155Decorators()
                 }
             }
-
             nftKit = kit
         }
 
         var merkleTransactionAdapter: MerkleTransactionAdapter?
-//        if signer != nil,
-//           let merkleAdapter = MerkleTransactionAdapter(
-//               transactionManager: evmKit.transactionManager,
-//               address: address,
-//               chain: chain,
-//               walletId: account.id,
-//               logger: nil
-//           )
-//        {
-//            evmKit.add(nonceProvider: merkleAdapter.blockchain)
-//            evmKit.add(transactionSyncer: merkleAdapter.syncer)
-//            evmKit.add(extraDecorator: merkleAdapter.syncer)
-//
-//            merkleTransactionAdapter = merkleAdapter
-//        }
+        if signer != nil,
+           let merkleAdapter = MerkleTransactionAdapter(
+               transactionManager: evmKit.transactionManager,
+               address: address,
+               chain: chain,
+               walletId: walletId,
+               logger: nil
+           )
+        {
+            evmKit.add(nonceProvider: merkleAdapter.blockchain)
+            evmKit.add(transactionSyncer: merkleAdapter.syncer)
+            evmKit.add(extraDecorator: merkleAdapter.syncer)
 
-        UniswapKit.Kit.addDecorators(to: evmKit)
-        try? KitV3.addDecorators(to: evmKit)
-        OneInchKit.Kit.addDecorators(to: evmKit)
+            merkleTransactionAdapter = merkleAdapter
+        }
 
         evmKit.start()
 
@@ -153,6 +157,7 @@ class EvmKitManager {
 
         _evmKitWrapper = wrapper
         currentAccount = account
+        currentChildWalletId = childWalletId
 
         evmKitCreatedRelay.accept(())
 
@@ -180,19 +185,20 @@ extension EvmKitManager {
             _evmKitWrapper?.evmKit.stop()
             _evmKitWrapper = nil
             currentAccount = nil
+            currentChildWalletId = nil
         }
     }
 
-    func evmKitWrapper(account: Account, blockchainType: BlockchainType) throws -> EvmKitWrapper {
+    public func evmKitWrapper(account: Account, blockchainType: BlockchainType) throws -> EvmKitWrapper {
         try queue.sync {
             try _evmKitWrapper(account: account, blockchainType: blockchainType)
         }
     }
 }
 
-class EvmKitWrapper {
+public class EvmKitWrapper {
     let blockchainType: BlockchainType
-    let evmKit: EvmKit.Kit
+    public let evmKit: EvmKit.Kit
     let nftKit: NftKit.Kit?
     let merkleTransactionAdapter: MerkleTransactionAdapter?
     let signer: Signer?
@@ -265,7 +271,7 @@ class EvmKitWrapper {
             throw SignerError.signerNotSupported
         }
         if case .native = timeLock.token {
-            let rawTransaction = try await evmKit.fetchRawTransactionSafe4TimeLock(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, lockDay: timeLock.lockDays)
+            let rawTransaction = try await evmKit.fetchRawTransactionSafe4TimeLock(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, lockDay: timeLock.lockDays, nonce: nonce)
             let signature = try signer.signature(rawTransaction: rawTransaction)
             return try await evmKit.sendSafe4TimeLock(rawTransaction: rawTransaction, signature: signature, privateKey: signer.privateKey, lockDay: timeLock.lockDays)
         }else {
@@ -273,7 +279,7 @@ class EvmKitWrapper {
         }
     }
 
-    func sendSrc20TimeLock(to: EvmKit.Address, gasPrice: GasPrice, gasLimit: Int, nonce: Int? = nil, timeLock: TimeLock) async throws -> String {
+    func sendSrc20TimeLock(to: EvmKit.Address, timeLock: TimeLock) async throws -> String {
         guard let signer else {
             throw SignerError.signerNotSupported
         }

@@ -22,7 +22,6 @@ public class EvmBlockchainManager {
     private let testNetManager: TestNetManager
     private let marketKit: MarketKit.Kit
     private let accountManagerFactory: EvmAccountManagerFactory
-    private let smartAccountManager: SmartAccountManager
 
     let allBlockchains: [Blockchain]
 
@@ -31,12 +30,11 @@ public class EvmBlockchainManager {
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).evm_blockchain_manager", qos: .userInitiated)
 
-    public init(syncSourceManager: EvmSyncSourceManager, testNetManager: TestNetManager, marketKit: MarketKit.Kit, accountManagerFactory: EvmAccountManagerFactory, smartAccountManager: SmartAccountManager) {
+    public init(syncSourceManager: EvmSyncSourceManager, testNetManager: TestNetManager, marketKit: MarketKit.Kit, accountManagerFactory: EvmAccountManagerFactory) {
         self.syncSourceManager = syncSourceManager
         self.testNetManager = testNetManager
         self.marketKit = marketKit
         self.accountManagerFactory = accountManagerFactory
-        self.smartAccountManager = smartAccountManager
 
         do {
             allBlockchains = try marketKit.blockchains(uids: Self.blockchainTypes.map(\.uid))
@@ -51,7 +49,7 @@ public class EvmBlockchainManager {
                 return (evmKitManager, evmAccountManager)
             }
 
-            let evmKitManager = try EvmKitManager(chain: chain(blockchainType: blockchainType), syncSourceManager: syncSourceManager, smartAccountManager: smartAccountManager)
+            let evmKitManager = try EvmKitManager(chain: chain(blockchainType: blockchainType), syncSourceManager: syncSourceManager)
             let evmAccountManager = accountManagerFactory.evmAccountManager(blockchainType: blockchainType, evmKitManager: evmKitManager)
 
             evmKitManagerMap[blockchainType] = evmKitManager
@@ -63,11 +61,11 @@ public class EvmBlockchainManager {
 }
 
 extension EvmBlockchainManager {
-    func blockchain(chainId: Int) -> Blockchain? {
+
+    public func blockchain(chainId: Int) -> Blockchain? {
         if Safe4Network.context(chainId: chainId) != nil {
             return blockchain(type: .safe4)
         }
-
         return allBlockchains.first(where: { (try? chain(blockchainType: $0.type).id) == chainId })
     }
 
@@ -87,7 +85,7 @@ extension EvmBlockchainManager {
         return blockchain(chainId: chainId).flatMap { try? chain(blockchainType: $0.type) }
     }
 
-    func chain(blockchainType: BlockchainType) throws -> Chain {
+    public func chain(blockchainType: BlockchainType) throws -> Chain {
         switch blockchainType {
         case .ethereum:
             if testNetManager.testNetEnabled {
@@ -129,7 +127,7 @@ extension EvmBlockchainManager {
         return try? marketKit.token(query: query)
     }
 
-    func evmKitManager(blockchainType: BlockchainType) throws -> EvmKitManager {
+    public func evmKitManager(blockchainType: BlockchainType) throws -> EvmKitManager {
         try evmManagers(blockchainType: blockchainType).0
     }
 

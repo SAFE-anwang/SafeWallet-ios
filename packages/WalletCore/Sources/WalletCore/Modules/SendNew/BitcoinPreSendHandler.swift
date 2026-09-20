@@ -7,7 +7,12 @@ import MarketKit
 import RxSwift
 import SwiftUI
 
-class BitcoinPreSendHandler {
+class BitcoinPreSendHandler: PreSendHandler {
+    override class func instance(wallet: Wallet, address: ResolvedAddress) -> IPreSendHandler? {
+        guard let adapter = Core.shared.adapterManager.adapter(for: wallet) as? BitcoinBaseAdapter else { return nil }
+        return BitcoinPreSendHandler(token: wallet.token, address: address, adapter: adapter)
+    }
+
     let token: Token
     let defaultSortMode: TransactionDataSortMode
     let defaultRbfEnabled: Bool
@@ -90,6 +95,8 @@ class BitcoinPreSendHandler {
             lockTimeIntervalState = isLegacyAddress ? .enabled : .disabled
         }
 
+        super.init()
+
         adapter.balanceStateUpdatedObservable
             .observeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
             .subscribe { [weak self] state in
@@ -142,8 +149,10 @@ extension BitcoinPreSendHandler: IPreSendHandler {
         settingsModifiedSubject.eraseToAnyPublisher()
     }
 
-    func hasMemo(address _: String?) -> Bool {
-        true
+    // Chain-constant, so it reads the one table rather than restating it: a memo here becomes an
+    // OP_RETURN output (.onChainPublic).
+    func memoType(address _: String?) -> MemoType {
+        token.blockchainType.memoType
     }
 
     func settingsView(onChangeSettings: @escaping () -> Void) -> AnyView {

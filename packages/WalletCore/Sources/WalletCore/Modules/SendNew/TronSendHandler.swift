@@ -3,7 +3,12 @@ import Foundation
 import MarketKit
 import TronKit
 
-class TronSendHandler {
+class TronSendHandler: SendHandler {
+    override class func instance(sendData: SendData) -> ISendHandler? {
+        guard case let .tron(token, contract) = sendData else { return nil }
+        return instance(token: token, contract: contract)
+    }
+
     let baseToken: Token
     private let token: Token
     private let contract: Contract
@@ -76,6 +81,13 @@ extension TronSendHandler: ISendHandler {
     }
 
     func send(data: ISendData) async throws {
+        _ = try await sendCapturingRef(data: data)
+    }
+}
+
+extension TronSendHandler: ISendHandlerRefCapturing {
+    // Same broadcast path as `send`. The Tron tx hash IS the created transaction's `txID`.
+    func sendCapturingRef(data: ISendData) async throws -> String {
         guard let data = data as? TronSendData else {
             throw SendError.invalidData
         }
@@ -88,10 +100,12 @@ extension TronSendHandler: ISendHandler {
             throw SendError.noFees
         }
 
-        _ = try await tronKitWrapper.send(
+        let created = try await tronKitWrapper.send(
             contract: contract,
             feeLimit: totalFees
         )
+
+        return created.txID.hs.hex
     }
 }
 

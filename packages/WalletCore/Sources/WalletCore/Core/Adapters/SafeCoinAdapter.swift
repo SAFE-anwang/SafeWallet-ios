@@ -174,6 +174,25 @@ class SafeCoinAdapter: BitcoinBaseAdapter {
         }
     }
 
+    override func sendSingle(params: SendParameters, logger: Logger) -> Single<Void> {
+        Single.create { [weak self] observer in
+            do {
+                guard let self else {
+                    observer(.error(AdapterError.unsupportedAccount))
+                    return Disposables.create()
+                }
+
+                logger.debug("Sending to \(String(reflecting: self.safeCoinKit))", save: true)
+                _ = try self.safeCoinKit.sendSafe(params: params)
+                observer(.success(()))
+            } catch {
+                observer(.error(error))
+            }
+
+            return Disposables.create()
+        }
+    }
+
 }
 
 private extension SafeCoinAdapter {
@@ -437,7 +456,7 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
         var convertFeeRate = feeRate
         convertFeeRate += 50
         let satoshiAmount = convertToSatoshi(value: amount)
-        let params = SendParameters(address: address, value: satoshiAmount, feeRate: feeRate, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
+        let params = SendParameters(address: address, value: satoshiAmount, feeRate: convertFeeRate, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
         return try sendInfo(params: params)//sendInfo(amount: Decimal(convertFeeRate), feeRate: feeRate, address: address, memo: memo, unspentOutputs: unspentOutputs, pluginData: pluginData)
     }
 
@@ -453,8 +472,13 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
 
         return Single.create { [weak self] observer in
             do {
+                guard let self else {
+                    observer(.error(AdapterError.unsupportedAccount))
+                    return Disposables.create()
+                }
+
                 // 增加兑换WSAFE流量手续费
-                var convertFeeRate = self!.feeRate
+                var convertFeeRate = self.feeRate
                 var newReverseHex = reverseHex
                 if let reverseHex = reverseHex, reverseHex.starts(with: "73616665") {
                     convertFeeRate += 50
@@ -462,17 +486,18 @@ extension SafeCoinAdapter: ISendSafeCoinAdapter {
                     convertFeeRate += 50
                     if let lineLock = reverseHex.stringToObj(LineLock.self) {
                         // 设置最新区块高度
-                        lineLock.lastHeight = self?.safeCoinKit.lastBlockInfo?.height ?? 0
-                        let value = self!.convertToSatoshi(value: Decimal(string: lineLock.lockedValue)!)
+                        lineLock.lastHeight = self.safeCoinKit.lastBlockInfo?.height ?? 0
+                        guard let lockedValue = Decimal(string: lineLock.lockedValue) else {
+                            throw AdapterError.wrongParameters
+                        }
+                        let value = self.convertToSatoshi(value: lockedValue)
                         lineLock.lockedValue = "\(value)"
                         newReverseHex = lineLock.reverseHex()
                     }
 
                 }
-                if let adapter = self {
-                    let params = SendParameters(address: address, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, rbfEnabled: rbfEnabled, memo: memo, unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
-                    _ = try adapter.safeCoinKit.sendSafe(params: params)//sendSafe(to: address, memo: memo, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, rbfEnabled: rbfEnabled, unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
-                }
+                let params = SendParameters(address: address, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, rbfEnabled: rbfEnabled, memo: memo, unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
+                _ = try self.safeCoinKit.sendSafe(params: params)//sendSafe(to: address, memo: memo, value: satoshiAmount, feeRate: convertFeeRate, sortType: sortType, rbfEnabled: rbfEnabled, unlockedHeight: unlockedHeight, reverseHex: newReverseHex)
                 observer(.success(()))
             } catch {
                 observer(.error(error))

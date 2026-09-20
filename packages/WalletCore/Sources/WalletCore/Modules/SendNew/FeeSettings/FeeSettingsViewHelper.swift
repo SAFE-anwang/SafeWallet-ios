@@ -23,7 +23,7 @@ class FeeSettingsViewHelper {
             )
         }
 
-        return (l2Value, l1Value, .value(primary: evmFeeData.gasLimit.description, secondary: nil))
+        return (l2Value, l1Value, .value(primary: evmFeeData.surchargedGasLimit.description, secondary: nil))
     }
 
     func feeAmount(fee: Decimal?, feeToken: Token, currency: Currency, feeTokenRate: Decimal?) -> FeeSettings.FeeValue {

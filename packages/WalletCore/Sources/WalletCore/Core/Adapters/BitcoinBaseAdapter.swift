@@ -181,6 +181,22 @@ class BitcoinBaseAdapter {
         fatalError("Must be overridden by subclass")
     }
 
+    func sendSingle(params: SendParameters, logger: Logger) -> Single<Void> {
+        Single.create { [weak self] observer in
+            do {
+                if let adapter = self {
+                    logger.debug("Sending to \(String(reflecting: adapter.abstractKit))", save: true)
+                    try adapter.send(params: params)
+                }
+                observer(.success(()))
+            } catch {
+                observer(.error(error))
+            }
+
+            return Disposables.create()
+        }
+    }
+
     private var showSyncedUntil: Bool {
         if case .blockchair = syncMode {
             return false
@@ -388,22 +404,6 @@ extension BitcoinBaseAdapter {
 
     func rawTransaction(params: SendParameters) throws -> Data {
         try abstractKit.createRawTransaction(params: params)
-    }
-
-    func sendSingle(params: SendParameters, logger: Logger) -> Single<Void> {
-        Single.create { [weak self] observer in
-            do {
-                if let adapter = self {
-                    logger.debug("Sending to \(String(reflecting: adapter.abstractKit))", save: true)
-                    try adapter.send(params: params)
-                }
-                observer(.success(()))
-            } catch {
-                observer(.error(error))
-            }
-
-            return Disposables.create()
-        }
     }
 
     func convertToSatoshi(value: Decimal) -> Int {

@@ -21,8 +21,8 @@ class OutputSelectorViewModel2: ObservableObject {
         self.handler = handler
 
         let currency = Core.shared.currencyManager.baseCurrency
-        rate = Core.shared.marketKit.coinPrice(coinUid: handler.token.coin.uid, currencyCode: currency.code)?.value
-        rateCancellable = Core.shared.marketKit.coinPricePublisher(coinUid: handler.token.coin.uid, currencyCode: currency.code)
+        rate = Core.shared.marketKit.walletCoinPrice(coinUid: handler.token.coin.uid, currencyCode: currency.code)?.value
+        rateCancellable = Core.shared.marketKit.walletCoinPricePublisher(coinUid: handler.token.coin.uid, currencyCode: currency.code)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] price in
                 self?.rate = price.value

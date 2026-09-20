@@ -17,7 +17,7 @@ class SendEvmCautionsFactory {
                     return [
                         TitledCaution(
                             title: "fee_settings.errors.insufficient_balance".localized,
-                            text: "fee_settings.errors.insufficient_balance.info".localized(baseCoinService.token.coin.code),
+                            text: "fee_settings.errors.insufficient_balance.info".localized(baseCoinService.token.coinCodeWithBadge),
                             type: .error
                         ),
                     ]
@@ -66,7 +66,7 @@ class SendEvmCautionsFactory {
             switch reason {
             case .insufficientBalanceWithFee:
                 title = "fee_settings.errors.insufficient_balance".localized
-                text = "ethereum_transaction.error.insufficient_balance_with_fee".localized(baseCoinService.token.coin.code)
+                text = "ethereum_transaction.error.insufficient_balance_with_fee".localized(baseCoinService.token.coinCodeWithBadge)
             case .invalidNftAsset:
                 title = "fee_settings.errors.unexpected_error".localized
                 text = "nft_v2.send.invalid_asset".localized
@@ -95,10 +95,10 @@ class SendEvmCautionsFactory {
             switch reason {
             case .insufficientBalanceWithFee:
                 title = "fee_settings.errors.insufficient_balance".localized
-                text = "ethereum_transaction.error.insufficient_balance_with_fee".localized(baseCoinService.token.coin.code)
+                text = "ethereum_transaction.error.insufficient_balance_with_fee".localized(baseCoinService.token.coinCodeWithBadge)
             case .cannotEstimate:
                 title = "swap.one_inch.error.cannot_estimate".localized
-                text = "swap.one_inch.error.cannot_estimate.info".localized(baseCoinService.token.coin.code)
+                text = "swap.one_inch.error.cannot_estimate.info".localized(baseCoinService.token.coinCodeWithBadge)
             case .insufficientLiquidity:
                 title = "swap.one_inch.error.insufficient_liquidity".localized()
                 text = "swap.one_inch.error.insufficient_liquidity.info".localized()

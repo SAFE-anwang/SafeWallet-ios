@@ -5,14 +5,14 @@ import MarketKit
 struct EvmFeeEstimator {
     private static let surchargePercent: Double = 10
 
-    func estimateFee(evmKitWrapper: EvmKitWrapper, transactionData: TransactionData, gasPriceData: GasPriceData, predefinedGasLimit: Int? = nil) async throws -> EvmFeeData {
+    func estimateFee(evmKitWrapper: EvmKitWrapper, transactionData: TransactionData, gasPriceData: GasPriceData, predefinedGasLimit: Int? = nil, allowFallbackEstimate: Bool = true) async throws -> EvmFeeData {
         let evmKit = evmKitWrapper.evmKit
         let gasLimit: Int
         let gasPrice = gasPriceData.userDefined
 
         if let predefinedGasLimit {
             gasLimit = predefinedGasLimit
-        } else {
+        } else if allowFallbackEstimate {
             do {
                 gasLimit = try await evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
             } catch {
@@ -31,6 +31,8 @@ struct EvmFeeEstimator {
                     }
                 }
             }
+        } else {
+            gasLimit = try await evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
         }
 
         let txAmount = transactionData.value

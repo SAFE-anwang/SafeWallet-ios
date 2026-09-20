@@ -12,16 +12,15 @@ public class PreSendViewModel: ObservableObject {
     private let marketKit = Core.shared.marketKit
     private let walletManager = Core.shared.walletManager
     private let adapterManager = Core.shared.adapterManager
-    private let decimalParser = AmountDecimalParser()
 
     private var cancellables = Set<AnyCancellable>()
 
     @Published var currency: Currency
     private let customDecimals: Int?
-    public var timeLockItems: [TimeLockService.Item] {
-        TimeLockService.Item.allCases
+    public var timeLockItems: [SafeTimeLockOption] {
+        SafeTimeLockOption.allCases
     }
-    public var selectedTimeLock: TimeLockService.Item = .none {
+    public var selectedTimeLock: SafeTimeLockOption = .none {
         didSet {
             allowanceHandler.resetState()
             sendData = nil
@@ -35,12 +34,7 @@ public class PreSendViewModel: ObservableObject {
     }
 
     public var isSupportedTimeLockToken: Bool {
-        if token.isSafe4Native || token.isSafe4ETH || token.isSafe4BSC || token.isSafe4POL || token.isSafe4SRC {
-            return true
-        } else if token.coin.uid.isSafeFourCustomCoin, let _ = SRC20SyncManager.logo(coinUid: token.coin.uid.lowercased()) {
-            return true
-        }
-        return false
+        timeLockToken != nil
     }
 
     public var amount: Decimal? {
@@ -48,21 +42,21 @@ public class PreSendViewModel: ObservableObject {
             syncFiatAmount()
             syncSendData()
 
-            var amount = decimalParser.parseAnyDecimal(from: amountString)
+            var amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             if amount == 0 {
                 amount = nil
             }
 
             if amount != self.amount {
-                amountString = self.amount?.description ?? ""
+                amountString = AmountDecimalParser.string(from: self.amount)
             }
         }
     }
 
     @Published public var amountString: String = "" {
         didSet {
-            var amount = decimalParser.parseAnyDecimal(from: amountString)
+            var amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             if amount == 0 {
                 amount = nil
@@ -82,17 +76,17 @@ public class PreSendViewModel: ObservableObject {
         didSet {
             syncAmount()
 
-            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             if amount != fiatAmount {
-                fiatAmountString = fiatAmount?.description ?? ""
+                fiatAmountString = AmountDecimalParser.string(from: fiatAmount)
             }
         }
     }
 
     @Published var fiatAmountString: String = "" {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             guard amount != fiatAmount else {
                 return
@@ -112,7 +106,7 @@ public class PreSendViewModel: ObservableObject {
 
     @Published public private(set) var adapterState: AdapterState?
     @Published public private(set) var availableBalance: Decimal?
-    @Published var hasMemo = false
+    @Published var memoType: MemoType = .none
 
     private var enteringFiat = false
 
@@ -124,7 +118,7 @@ public class PreSendViewModel: ObservableObject {
 
     var handler: IPreSendHandler?
     @Published public private(set) var sendData: ExtendedSendData?
-    @Published var cautions = [CautionNew]()
+    @Published public var cautions = [CautionNew]()
     var allowanceHandler: PreSendAllowanceHandler
 
     public init(wallet: Wallet, handler: IPreSendHandler?, resolvedAddress: ResolvedAddress, amount: Decimal?, memo: String?, customDecimals: Int? = nil) {
@@ -150,8 +144,8 @@ public class PreSendViewModel: ObservableObject {
             .sink { [weak self] in self?.currency = $0 }
             .store(in: &cancellables)
 
-        coinPrice = marketKit.coinPrice(coinUid: wallet.coin.uid, currencyCode: currency.code)
-        marketKit.coinPricePublisher(coinUid: wallet.coin.uid, currencyCode: currency.code)
+        coinPrice = marketKit.walletCoinPrice(coinUid: wallet.coin.uid, currencyCode: currency.code)
+        marketKit.walletCoinPricePublisher(coinUid: wallet.coin.uid, currencyCode: currency.code)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] price in self?.coinPrice = price }
             .store(in: &cancellables)
@@ -159,7 +153,7 @@ public class PreSendViewModel: ObservableObject {
         if let handler {
             adapterState = handler.state
             availableBalance = handler.balance
-            hasMemo = handler.hasMemo(address: resolvedAddress.address)
+            memoType = handler.memoType(address: resolvedAddress.address)
 
             handler.statePublisher
                 .receive(on: DispatchQueue.main)
@@ -190,7 +184,7 @@ public class PreSendViewModel: ObservableObject {
             return
         }
 
-        amount = fiatAmount / coinPrice.value
+        amount = (fiatAmount / coinPrice.value).roundedDown(decimal: customDecimals ?? token.decimals)
     }
 
     private func syncFiatAmount() {
@@ -206,13 +200,13 @@ public class PreSendViewModel: ObservableObject {
         fiatAmount = (amount * coinPrice.value).rounded(decimal: 2)
     }
 
-    private func syncHasMemo() {
+    private func syncMemoType() {
         guard let handler else {
-            hasMemo = false
+            memoType = .none
             return
         }
 
-        hasMemo = handler.hasMemo(address: resolvedAddress.address)
+        memoType = handler.memoType(address: resolvedAddress.address)
     }
 }
 
@@ -242,7 +236,7 @@ public extension PreSendViewModel {
         }
 
         let trimmedMemo = memo.trimmingCharacters(in: .whitespaces)
-        let memo = hasMemo && !trimmedMemo.isEmpty ? trimmedMemo : nil
+        let memo = memoType != .none && !trimmedMemo.isEmpty ? trimmedMemo : nil
 
 
         if selectedTimeLock != .none {
@@ -254,7 +248,10 @@ public extension PreSendViewModel {
 
         synceTimeLock()
 
-        if let sendHandler = handler as? EvmPreSendHandler, !token.type.isNative, selectedTimeLock != .none {
+        if let sendHandler = handler as? EvmPreSendHandler,
+           case .some(.src20) = sendHandler.timeLock?.token,
+           selectedTimeLock != .none
+        {
             if let availableBalance {
                 allowanceHandler.getAllowanceState(amount: amount, availableBalance: availableBalance, onSuccess: { [weak self] state in
                     self?.synceSendDataResult(handler: handler, amount: amount, memo: memo)
@@ -286,7 +283,7 @@ public extension PreSendViewModel {
 
         enteringFiat = false
 
-        amount = (availableBalance * Decimal(percent) / 100).rounded(decimal: customDecimals ?? token.decimals)
+        amount = (availableBalance * Decimal(percent) / 100).roundedDown(decimal: customDecimals ?? token.decimals)
     }
 
     func clearAmountIn() {
@@ -318,6 +315,23 @@ extension PreSendViewModel {
 }
 
 extension PreSendViewModel {
+    private var timeLockToken: TimeLock.Token? {
+        if token.isSafe4Native {
+            return .native
+        }
+
+        guard token.blockchain.type == .safe4,
+              case let .eip20(address) = token.type,
+              token.isSafe4ETH || token.isSafe4BSC || token.isSafe4POL || token.isSafe4SRC ||
+                  (token.coin.uid.isSafeFourCustomCoin && SRC20SyncManager.logo(coinUid: token.coin.uid.lowercased()) != nil),
+              let contract = try? EvmKit.Address(hex: address)
+        else {
+            return nil
+        }
+
+        return .src20(contract: contract)
+    }
+
     func synceTimeLock() {
         switch handler  {
         case let handler as EvmPreSendHandler:
@@ -329,12 +343,8 @@ extension PreSendViewModel {
                 guard let amount, let evmAmount = BigUInt(amount.hs.roundedString(decimal: token.decimals)) else {
                     return
                 }
-                if token.coin.uid == safe4CoinUid, token.type == .native {
-                    timeLock = TimeLock(token: .native, lockDays: days, value: evmAmount)
-                } else if token.coin.uid.isSafeFourCustomCoin, let _ = SRC20SyncManager.logo(coinUid: token.coin.uid.lowercased()) {
-                    if case let .eip20(address) = token.type {
-                        timeLock = TimeLock(token: .src20(contract: try! EvmKit.Address(hex: address)), lockDays: days, value: evmAmount)
-                    }
+                if let token = timeLockToken {
+                    timeLock = TimeLock(token: token, lockDays: days, value: evmAmount)
                 }
             }
             handler.timeLock = timeLock
