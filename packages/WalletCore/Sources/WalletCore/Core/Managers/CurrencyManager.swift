@@ -1,7 +1,7 @@
 import Combine
 import HsExtensions
 
-class CurrencyManager {
+public class CurrencyManager {
     static let supportedCurrencies = [
         Currency(code: "ARS", symbol: "$", decimal: 2),
         Currency(code: "AUD", symbol: "A$", decimal: 2),

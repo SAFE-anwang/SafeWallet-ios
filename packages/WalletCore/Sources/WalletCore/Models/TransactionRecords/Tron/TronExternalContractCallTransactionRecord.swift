@@ -2,10 +2,10 @@ import Foundation
 import MarketKit
 import TronKit
 
-class TronExternalContractCallTransactionRecord: TronTransactionRecord, TransferEventsProvider {
+public class TronExternalContractCallTransactionRecord: TronTransactionRecord, TransferEventsProvider {
     let method: String?
-    let incomingEvents: [TransferEvent]
-    let outgoingEvents: [TransferEvent]
+    public let incomingEvents: [TransferEvent]
+    public let outgoingEvents: [TransferEvent]
 
     init(source: TransactionSource, transaction: Transaction, baseToken: Token, method: String?, incomingEvents: [TransferEvent], outgoingEvents: [TransferEvent], spam: Bool = false) {
         self.method = method
@@ -19,7 +19,7 @@ class TronExternalContractCallTransactionRecord: TronTransactionRecord, Transfer
         combined(incomingEvents: incomingEvents, outgoingEvents: outgoingEvents)
     }
 
-    override var mainValue: AppValue? {
+    override public var mainValue: AppValue? {
         let (incomingValues, outgoingValues) = combinedValues
 
         if incomingValues.count == 1, outgoingValues.isEmpty {

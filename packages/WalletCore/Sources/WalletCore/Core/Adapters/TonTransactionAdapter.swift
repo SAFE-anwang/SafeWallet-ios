@@ -51,7 +51,6 @@ class TonTransactionAdapter {
         case .all: ()
         case .incoming: type = .incoming
         case .outgoing: type = .outgoing
-        case .swap, .approve: ()
         }
 
         let address = address.flatMap { try? TonSwift.Address.parse($0) }
@@ -158,7 +157,6 @@ extension TonTransactionAdapter: ITransactionsAdapter {
     private static func supports(filter: TransactionTypeFilter) -> Bool {
         switch filter {
         case .all, .incoming, .outgoing: return true
-        case .swap, .approve: return false
         }
     }
 }

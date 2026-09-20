@@ -4,7 +4,7 @@ public struct Wallet {
     public let token: Token
     public let account: Account
 
-    init(token: Token, account: Account) {
+    public init(token: Token, account: Account) {
         self.token = token
         self.account = account
     }
@@ -29,12 +29,11 @@ public struct Wallet {
     }
 
     var priceCoinUid: String? {
-        if coin.uid.isSafeSrc20CustomCoin {
-            return coin.uid//.lowercased()
-        }else {
+        if coin.uid.isSafe4Src20Token {
             return coin.uid
         }
-         //        token.isCustom ? nil : coin.uid
+
+        return token.isCustom ? nil : coin.uid
     }
 }
 

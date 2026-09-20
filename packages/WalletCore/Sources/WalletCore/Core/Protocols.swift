@@ -24,7 +24,7 @@ public protocol IBaseAdapter: AnyObject {
     var isMainNet: Bool { get }
 }
 
-protocol IAdapter: AnyObject {
+public protocol IAdapter: AnyObject {
     func start()
     func stop()
     func refresh()
@@ -43,7 +43,7 @@ public protocol IBalanceAdapter: IBaseAdapter {
     var cautionUpdatedObservable: Observable<CautionNew?> { get }
 }
 
-extension IBalanceAdapter {
+public extension IBalanceAdapter {
     var caution: CautionNew? {
         nil
     }
@@ -81,7 +81,7 @@ protocol IHDDepositAdapter: IDepositAdapter {
     func usedAddresses(change: Bool) -> [UsedAddress]
 }
 
-extension IDepositAdapter {
+public extension IDepositAdapter {
     var receiveAddressStatus: DataStatus<DepositAddress> {
         .completed(receiveAddress)
     }
@@ -93,7 +93,7 @@ extension IDepositAdapter {
     func usedAddresses(change _: Bool) -> [UsedAddress] { [] }
 }
 
-protocol ITransactionsAdapter {
+public protocol ITransactionsAdapter {
     var syncing: Bool { get }
     var syncingObservable: Observable<Void> { get }
     var lastBlockInfo: LastBlockInfo? { get }
@@ -150,7 +150,7 @@ protocol ISendSafeCoinAdapter {
 //    func sendSingle(amount: Decimal, address: String, memo: String?, feeRate: Int, unspentOutputs: [UnspentOutputInfo]?, pluginData: [UInt8: IBitcoinPluginData], sortMode: TransactionDataSortMode, rbfEnabled: Bool, logger: HsToolKit.Logger, lockedTimeInterval: HodlerPlugin.LockTimeInterval?, reverseHex: String?) -> Single<Void>
 }
 
-protocol ISendTronAdapter {
+public protocol ISendTronAdapter {
     var tronKitWrapper: TronKitWrapper { get }
     var balanceData: BalanceData { get }
     func contract(amount: BigUInt, address: TronKit.Address, memo: String?) -> TronKit.Contract

@@ -25,6 +25,8 @@ public class AppManager {
     private let tonKitManager: TonKitManager
     private let stellarKitManager: StellarKitManager
     private let solanaKitManager: SolanaKitManager
+    private let swapHistoryManager: SwapHistoryManager
+    private let moneroNodeManager: MoneroNodeManager
 
     private let didBecomeActiveSubjectOld = PublishSubject<Void>()
     private let willEnterForegroundSubjectOld = PublishSubject<Void>()
@@ -41,7 +43,8 @@ public class AppManager {
          logRecordManager: LogRecordManager, deeplinkStorage: DeeplinkStorage,
          evmLabelManager: EvmLabelManager, balanceHiddenManager: BalanceHiddenManager, statManager: StatManager,
          nftMetadataSyncer: NftMetadataSyncer, nftV2InventoryService: NftV2InventoryService, tonKitManager: TonKitManager,
-         stellarKitManager: StellarKitManager, solanaKitManager: SolanaKitManager)
+         stellarKitManager: StellarKitManager, solanaKitManager: SolanaKitManager,
+         swapHistoryManager: SwapHistoryManager, moneroNodeManager: MoneroNodeManager)
     {
         self.widgetRefresher = widgetRefresher
         self.accountManager = accountManager
@@ -64,6 +67,8 @@ public class AppManager {
         self.tonKitManager = tonKitManager
         self.stellarKitManager = stellarKitManager
         self.solanaKitManager = solanaKitManager
+        self.swapHistoryManager = swapHistoryManager
+        self.moneroNodeManager = moneroNodeManager
     }
 
     private func warmUp() {
@@ -81,8 +86,16 @@ public extension AppManager {
         accountManager.handleLaunch()
         walletManager.preloadWallets()
         kitCleaner.clear()
+        swapHistoryManager.sync()
 
         rateAppManager.onLaunch()
+
+        if moneroNodeManager.isResolvingFastestNode {
+            Task { [moneroNodeManager, adapterManager] in
+                await moneroNodeManager.autoSelectFastestNodeOnStartup()
+                adapterManager.initMissingAdapters()
+            }
+        }
 
         evmLabelManager.sync()
 
@@ -139,7 +152,7 @@ public extension AppManager {
         widgetRefresher?.refreshAll()
     }
 
-    internal func didReceive(url: URL) {
+    func didReceive(url: URL) {
         deeplinkStorage.deepLinkUrl = url
     }
 }

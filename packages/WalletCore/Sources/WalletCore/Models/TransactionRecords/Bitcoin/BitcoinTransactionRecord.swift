@@ -45,7 +45,7 @@ class BitcoinTransactionRecord: TransactionRecord {
     }
 }
 
-struct TransactionLockState {
+public struct TransactionLockState {
     let locked: Bool
     let date: Date
     let unlockedHeight: Int?

@@ -254,13 +254,13 @@ extension EvmSyncSourceManager {
         case .base:
             return [
                 EvmSyncSource(
-                    name: "Base",
-                    rpcSource: .baseRpcHttp(),
+                    name: "dRPC",
+                    rpcSource: .http(urls: [URL(string: "https://base.drpc.org")!], auth: nil),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
                 EvmSyncSource(
-                    name: "dRPC",
-                    rpcSource: .http(urls: [URL(string: "https://base.drpc.org")!], auth: nil),
+                    name: "Base",
+                    rpcSource: .baseRpcHttp(),
                     transactionSource: defaultTransactionSource(blockchainType: blockchainType)
                 ),
                 EvmSyncSource(
@@ -343,7 +343,7 @@ extension EvmSyncSourceManager {
         defaultSyncSources(blockchainType: blockchainType) + customSyncSources(blockchainType: blockchainType)
     }
 
-    func syncSource(blockchainType: BlockchainType) -> EvmSyncSource {
+    public func syncSource(blockchainType: BlockchainType) -> EvmSyncSource {
         if blockchainType == .safe4, Safe4Network.currentContext.isTestNet {
             return defaultSyncSources(blockchainType: blockchainType)[0]
         }
@@ -359,7 +359,7 @@ extension EvmSyncSourceManager {
         return syncSources[0]
     }
 
-    func httpSyncSource(blockchainType: BlockchainType) -> EvmSyncSource? {
+    public func httpSyncSource(blockchainType: BlockchainType) -> EvmSyncSource? {
         if blockchainType == .safe4, Safe4Network.currentContext.isTestNet {
             return defaultSyncSources(blockchainType: blockchainType).first { $0.isHttp }
         }

@@ -12,6 +12,7 @@ public class LocalStorage {
     private let keyLockTimeEnabled = "lock_time_enabled"
     private let keyAppLaunchCount = "app_launch_count"
     private let keyRateAppLastRequestDate = "rate_app_last_request_date"
+    private let keyBackupPromptShownDates = "backup-prompt-shown-dates"
     private let keyZCashRewind = "z_cash_always_pending_rewind"
     private let keyDefaultProvider = "swap_provider"
     private let keyRemoteContactSync = "icloud-sync-value"
@@ -31,10 +32,15 @@ public class LocalStorage {
     private let keySwapTermsAccepted = "swap-terms-accepted"
     private let keyLiquidityTermsAccepted = "liquidity-terms-accepted"
     private let keySwapProvidersLastSyncTimestamp = "swap-providers-last-sync-timestamp"
+    private let keySwapRecentTokenQueryIds = "swap-recent-token-query-ids"
     private let keyUSwapProviders = "uswap-providers"
+    private let keyUSwapSuspensions = "uswap-suspensions"
     private let keySwapEnabled = "swap_enabled"
     private let keyAppStateLastSyncTimestamp = "app-state-last-sync-timestamp"
     private let keyForceEnableSwap = "force-enable-swap"
+    private let keyStellarBrokerEnabled = "stellar-broker-enabled"
+    private let keyEmulateEvmSwapSend = "emulate-evm-swap-send"
+    private let keyEmulateZcashMigration = "emulate-zcash-migration"
     private let keySimulateFailSwap = "simulate-fail-swap"
     private let keyRecipientAddressCheck = "recipient-address-check"
 
@@ -92,6 +98,11 @@ extension LocalStorage {
     var rateAppLastRequestDate: Date? {
         get { userDefaultsStorage.value(for: keyRateAppLastRequestDate) }
         set { userDefaultsStorage.set(value: newValue, for: keyRateAppLastRequestDate) }
+    }
+
+    var backupPromptShownDates: [String: Date] {
+        get { userDefaultsStorage.value(for: keyBackupPromptShownDates) ?? [:] }
+        set { userDefaultsStorage.set(value: newValue, for: keyBackupPromptShownDates) }
     }
 
     var zcashAlwaysPendingRewind: Bool {
@@ -204,9 +215,21 @@ extension LocalStorage {
         set { userDefaultsStorage.set(value: newValue, for: keySwapProvidersLastSyncTimestamp) }
     }
 
+    var swapRecentTokenQueryIds: [String] {
+        get { userDefaultsStorage.value(for: keySwapRecentTokenQueryIds) ?? [] }
+        set { userDefaultsStorage.set(value: newValue, for: keySwapRecentTokenQueryIds) }
+    }
+
     var uSwapProviders: String? {
         get { userDefaultsStorage.value(for: keyUSwapProviders) }
         set { userDefaultsStorage.set(value: newValue, for: keyUSwapProviders) }
+    }
+
+    // Scoped provider suspensions (JSON, provider id -> rules). Cached alongside the provider list
+    // so a cold launch keeps honouring them until the next sync.
+    var uSwapSuspensions: String? {
+        get { userDefaultsStorage.value(for: keyUSwapSuspensions) }
+        set { userDefaultsStorage.set(value: newValue, for: keyUSwapSuspensions) }
     }
 
     var swapEnabled: Bool {
@@ -222,6 +245,21 @@ extension LocalStorage {
     var forceEnableSwap: Bool {
         get { userDefaultsStorage.value(for: keyForceEnableSwap) ?? false }
         set { userDefaultsStorage.set(value: newValue, for: keyForceEnableSwap) }
+    }
+
+    var stellarBrokerEnabled: Bool {
+        get { userDefaultsStorage.value(for: keyStellarBrokerEnabled) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyStellarBrokerEnabled) }
+    }
+
+    var emulateEvmSwapSend: Bool {
+        get { userDefaultsStorage.value(for: keyEmulateEvmSwapSend) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyEmulateEvmSwapSend) }
+    }
+
+    var emulateZcashMigration: Bool {
+        get { userDefaultsStorage.value(for: keyEmulateZcashMigration) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyEmulateZcashMigration) }
     }
 
     var simulateFailSwap: SimulateFailSwapMode {
@@ -256,6 +294,17 @@ extension LocalStorage {
 
     func setAddressSecurityIssue(_ value: Bool, type: AddressSecurityIssueType) {
         userDefaultsStorage.set(value: value, for: type.storageKey)
+    }
+}
+
+extension LocalStorage {
+    // Keyed per app account, matching Android's convention
+    func moneroActiveAccount(accountId: String) -> Int {
+        userDefaultsStorage.value(for: "monero_active_account_\(accountId)") ?? 0
+    }
+
+    func setMoneroActiveAccount(accountId: String, index: Int) {
+        userDefaultsStorage.set(value: index, for: "monero_active_account_\(accountId)")
     }
 }
 

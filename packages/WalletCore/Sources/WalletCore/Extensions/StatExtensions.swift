@@ -55,8 +55,6 @@ extension TransactionTypeFilter {
         case .all: return .all
         case .incoming: return .incoming
         case .outgoing: return .outgoing
-        case .swap: return .swap
-        case .approve: return .approve
         }
     }
 }

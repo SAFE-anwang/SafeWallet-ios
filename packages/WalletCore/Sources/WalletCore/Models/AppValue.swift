@@ -5,14 +5,14 @@ import TonKit
 
 public struct AppValue {
     let kind: Kind
-    let value: Decimal
+    public let value: Decimal
 
     init(kind: Kind, value: Decimal) {
         self.kind = kind
         self.value = value
     }
 
-    init(token: Token, value: Decimal) {
+    public init(token: Token, value: Decimal) {
         kind = .token(token: token)
         self.value = value
     }
@@ -42,7 +42,7 @@ public struct AppValue {
         self.value = value
     }
 
-    var token: Token? {
+    public var token: Token? {
         kind.token
     }
 
@@ -111,7 +111,7 @@ public struct AppValue {
         }
     }
 
-    var zeroValue: Bool {
+    public var zeroValue: Bool {
         value == 0
     }
 
@@ -219,7 +219,7 @@ protocol TransferEventsProvider {
     var transferEvents: TransferEvents { get }
 }
 
-struct TransferEvents {
+public struct TransferEvents {
     let incoming: [TransferEvent]
     let outgoing: [TransferEvent]
 
@@ -233,7 +233,7 @@ struct TransferEvents {
     }
 }
 
-struct TransferEvent {
-    let address: String
-    let value: AppValue
+public struct TransferEvent {
+    public let address: String
+    public let value: AppValue
 }

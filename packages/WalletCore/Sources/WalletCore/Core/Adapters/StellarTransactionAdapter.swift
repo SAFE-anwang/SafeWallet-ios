@@ -63,7 +63,6 @@ class StellarTransactionAdapter {
         case .all: ()
         case .incoming: type = .incoming
         case .outgoing: type = .outgoing
-        case .swap, .approve: ()
         }
 
         if let address {
@@ -125,9 +124,38 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
         "https://stellar.expert/explorer/public/tx/\(transactionHash)"
     }
 
+    /// A transaction's operations can straddle the page boundary of a limited fetch (a
+    /// fee-bearing STELLAR_DEX swap is exactly 2 ops) — grouping only within the page would
+    /// then emit two records with the same hash: a duplicate list row, one mis-typed. When a
+    /// page came back full, pull the ops that complete its last transaction (local-storage
+    /// reads, one op per peek).
+    private func completingLastTransaction(_ operations: [TxOperation], tagQuery: TagQuery, limit: Int) -> [TxOperation] {
+        guard operations.count == limit, var last = operations.last else { return operations }
+        var result = operations
+        while true {
+            guard let next = stellarKit.operations(tagQuery: tagQuery, pagingToken: last.pagingToken, descending: true, limit: 1).first,
+                  next.transactionHash == last.transactionHash
+            else { return result }
+            result.append(next)
+            last = next
+        }
+    }
+
+    /// Operations of the same transaction are adjacent in ledger order (either sort
+    /// direction), so consecutive grouping by hash is enough to yield one record per tx.
+    private static func groupedByTransaction(_ operations: [TxOperation]) -> [[TxOperation]] {
+        operations.reduce(into: [[TxOperation]]()) { groups, operation in
+            if let last = groups.last, last[0].transactionHash == operation.transactionHash {
+                groups[groups.count - 1].append(operation)
+            } else {
+                groups.append([operation])
+            }
+        }
+    }
+
     private func handleTransactions(_ operations: [TxOperation]) -> [TransactionRecord] {
         // Preserve stellarKit order
-        let records = operations.map { converter.transactionRecord(operation: $0) }
+        let records = Self.groupedByTransaction(operations).compactMap { converter.transactionRecord(operations: $0) }
 
         // Mutates .spam in-place via reference type.
         // Internally sorts ascending for correct detection,
@@ -161,7 +189,8 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
             Task { [weak self, stellarKit] in
 
                 let operations = stellarKit.operations(tagQuery: tagQuery, pagingToken: pagingToken, descending: true, limit: limit)
-                let records = self?.handleTransactions(operations) ?? []
+                let completed = self?.completingLastTransaction(operations, tagQuery: tagQuery, limit: limit) ?? operations
+                let records = self?.handleTransactions(completed) ?? []
 
                 observer(.success(records))
             }
@@ -177,7 +206,7 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
             Task { [weak self, stellarKit] in
 
                 let operations = stellarKit.operations(tagQuery: .init(), pagingToken: pagingToken, descending: false, limit: nil)
-                let records = operations.compactMap { self?.converter.transactionRecord(operation: $0) }
+                let records = Self.groupedByTransaction(operations).compactMap { self?.converter.transactionRecord(operations: $0) }
 
                 observer(.success(records))
             }
@@ -193,7 +222,6 @@ extension StellarTransactionAdapter: ITransactionsAdapter {
     private static func supports(filter: TransactionTypeFilter) -> Bool {
         switch filter {
         case .all, .incoming, .outgoing: return true
-        case .swap, .approve: return false
         }
     }
 }
