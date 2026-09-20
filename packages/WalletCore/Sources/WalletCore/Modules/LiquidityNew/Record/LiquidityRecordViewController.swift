@@ -201,17 +201,35 @@ class LiquidityRecordViewController: ThemeViewController {
 
     private func removeConfirmation(viewItem: LiquidityRecordViewModel.RecordItem) {
         let vm = viewModel ?? createTempViewModel(for: viewItem.tokenA.blockchainType)
-        let viewController = LiquidityRemoveConfirmViewController(viewModel: vm, recordItem: viewItem)
-        Coordinator.shared.present { _ in
-            LiquidityViewRepresentable(viewController: viewController)
+        Coordinator.shared.present { isPresented in
+            LiquidityRemoveSendView(isPresented: isPresented, displayData: .v2(
+                token0: viewItem.tokenA,
+                token1: viewItem.tokenB,
+                amount0: viewItem.amountAStr,
+                amount1: viewItem.amountBStr,
+                liquidity: viewItem.liquidityDec
+            )) { ratio in
+                SendData.liquidityRemove(request: LiquidityRemoveRequest(blockchainType: viewItem.tokenA.blockchainType) { LiquidityRemoveSendHandler.v2(item: viewItem, ratio: ratio, service: vm.service) })
+            } onSuccess: { vm.refresh() }
         }
     }
 
     private func toDetailView(viewItem: LiquidityV3RecordViewModel.V3RecordItem) {
         let vm = v3ViewModel ?? createTempV3ViewModel(for: viewItem.token0.blockchainType)
-        let viewController = LiquidityV3RecordDetailViewController(viewModel: vm, viewItem: viewItem)
-        Coordinator.shared.present { _ in
-            LiquidityViewRepresentable(viewController: viewController)
+        guard let service = vm.service else { return }
+        Coordinator.shared.present { isPresented in
+            LiquidityRemoveSendView(isPresented: isPresented, allowsContinuousRatio: true, displayData: .v3(
+                token0: viewItem.token0,
+                token1: viewItem.token1,
+                amount0: viewItem.token0Amount,
+                amount1: viewItem.token1Amount,
+                lpName: viewItem.lpName,
+                tokenId: viewItem.tokenId,
+                state: viewItem.state,
+                isInRange: viewItem.isInRange
+            )) { ratio in
+                SendData.liquidityRemove(request: LiquidityRemoveRequest(blockchainType: viewItem.token0.blockchainType) { LiquidityRemoveSendHandler.v3(item: viewItem, ratio: ratio, service: service) })
+            } onSuccess: { vm.refresh() }
         }
     }
 

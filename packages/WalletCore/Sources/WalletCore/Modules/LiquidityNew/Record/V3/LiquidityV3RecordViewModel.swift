@@ -10,7 +10,7 @@ import EvmKit
 
 class LiquidityV3RecordViewModel {
     private var statusRelay = PublishRelay<LiquidityV3RecordService.State>()
-    private var service: LiquidityV3RecordService?
+    var service: LiquidityV3RecordService?
     private var disposeBag = DisposeBag()
 
     init(service: LiquidityV3RecordService?) {
@@ -27,8 +27,8 @@ extension LiquidityV3RecordViewModel {
         statusRelay.asObservable()
     }
 
-    func removeLiquidity(recordItem: V3RecordItem, ratio: BigUInt) {
-        service?.removeLiquidity(item: recordItem, ratio: ratio)
+    func removeLiquidity(recordItem: V3RecordItem, ratio: BigUInt, transactionSettings: TransactionSettings? = nil) {
+        service?.removeLiquidity(item: recordItem, ratio: ratio, transactionSettings: transactionSettings)
     }
 
     func refresh() {

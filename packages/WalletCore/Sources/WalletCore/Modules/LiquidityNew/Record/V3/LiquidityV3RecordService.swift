@@ -23,10 +23,17 @@ class LiquidityV3RecordService {
     private let stateRelay = PublishRelay<State>()
 
     private var legacyGasPrice: GasPrice?
+    private var selectedGasPrice: GasPrice?
+    private var nextNonceOverride: Int?
+    private var feePlan: LiquidityFeePlan?
+    private var plannedRatio: BigUInt?
+    private var plannedGasPrice: GasPrice?
+    private(set) var lastSubmittedTransactionHash: String?
     private let evmKitWrapper: EvmKitWrapper
     private let uniswapKit: UniswapKit.KitV3
     private let rpcSource: RpcSource
     private let gasPriceProvider: LegacyGasPriceProvider
+    private var ratio: BigUInt = 100
 
     private(set) var state: State = .loading {
         didSet {
@@ -75,7 +82,7 @@ class LiquidityV3RecordService {
                     }
                 }
                 state = .completed(datas: items)
-            }catch {
+            } catch {
                 state = .failed(error: error.localizedDescription)
             }
         }
@@ -116,22 +123,109 @@ class LiquidityV3RecordService {
 
 extension LiquidityV3RecordService {
 
-    func removeLiquidity(item: LiquidityV3RecordViewModel.V3RecordItem, ratio: BigUInt) {
+    func estimateRemoveFee(item: LiquidityV3RecordViewModel.V3RecordItem, ratio: BigUInt, transactionSettings: TransactionSettings?) async throws -> (EvmFeeData, GasPrice) {
+        let gasPrice = transactionSettings?.gasPriceData?.userDefined ?? legacyGasPrice
+        guard let gasPrice else { throw LiquidityV3RecordError.noGasPrice }
+        let gasData = GasPriceData(recommended: gasPrice, userDefined: gasPrice)
+        feePlan = nil
+        plannedRatio = nil
+        plannedGasPrice = nil
+
+        let liquidity = item.positions.liquidity * ratio / 100
+        let removeData = try await uniswapKit.removeLiquidityTransactionData(
+            positions: item.positions,
+            rpcSource: rpcSource,
+            chain: evmKitWrapper.evmKit.chain,
+            liquidity: liquidity,
+            slippage: slippage(positions: item.positions),
+            recipient: evmKitWrapper.evmKit.receiveAddress,
+            deadline: deadLine()
+        )
+
+        let spenderAddress = uniswapKit.nonfungiblePositionAddress(chain: evmKitWrapper.evmKit.chain)
+        let eip20Kit0 = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: item.positions.token0)
+        let eip20Kit1 = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: item.positions.token1)
+        async let allowanceString0 = eip20Kit0.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
+        async let allowanceString1 = eip20Kit1.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
+        async let amounts = uniswapKit.getAmountsForLiquidity(positions: item.positions, rpcSource: rpcSource, chain: evmKitWrapper.evmKit.chain, liquidity: liquidity)
+        let (rawAllowance0, rawAllowance1, (amount0, amount1, _)) = try await (allowanceString0, allowanceString1, amounts)
+        let allowance0 = BigUInt(rawAllowance0) ?? 0
+        let allowance1 = BigUInt(rawAllowance1) ?? 0
+        let maxValue = BigUInt(Data(hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
+        var steps = [LiquidityFeeStep]()
+
+        if allowance0 < amount0 {
+            let data = eip20Kit0.approveTransactionData(spenderAddress: spenderAddress, amount: maxValue)
+            steps.append(try await feeStep(id: "approveToken0", transactionData: data, gasPriceData: gasData))
+        }
+        if allowance1 < amount1 {
+            let data = eip20Kit1.approveTransactionData(spenderAddress: spenderAddress, amount: maxValue)
+            steps.append(try await feeStep(id: "approveToken1", transactionData: data, gasPriceData: gasData))
+        }
+
+        let requiresApproval = allowance0 < amount0 || allowance1 < amount1
+        steps.append(try await feeStep(id: "remove", transactionData: removeData, gasPriceData: gasData, allowFallback: requiresApproval))
+        let plan = LiquidityFeePlan(steps: steps)
+        feePlan = plan
+        plannedRatio = ratio
+        plannedGasPrice = gasPrice
+        selectedGasPrice = gasPrice
+        return (plan.aggregateFeeData, gasPrice)
+    }
+
+    private func feeStep(id: String, transactionData: TransactionData, gasPriceData: GasPriceData, allowFallback: Bool = false) async throws -> LiquidityFeeStep {
+        do {
+            let feeData = try await EvmFeeEstimator().estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData, allowFallbackEstimate: false)
+            return LiquidityFeeStep(id: id, transactionData: transactionData, gasLimit: feeData.gasLimit, surchargedGasLimit: feeData.surchargedGasLimit, l1Fee: feeData.l1Fee, gasPrice: gasPriceData.userDefined, isFallbackEstimate: false)
+        } catch {
+            guard allowFallback else { throw error }
+            let feeData = try await EvmFeeEstimator().estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData, predefinedGasLimit: 500_000, allowFallbackEstimate: false)
+            return LiquidityFeeStep(id: id, transactionData: transactionData, gasLimit: feeData.gasLimit, surchargedGasLimit: feeData.surchargedGasLimit, l1Fee: feeData.l1Fee, gasPrice: gasPriceData.userDefined, isFallbackEstimate: true)
+        }
+    }
+
+    private func matchingFeePlan(for ratio: BigUInt) -> LiquidityFeePlan? {
+        guard let feePlan, plannedRatio == ratio,
+              let gasPrice = selectedGasPrice ?? legacyGasPrice,
+              plannedGasPrice == gasPrice else { return nil }
+        return feePlan
+    }
+
+    func removeLiquidity(item: LiquidityV3RecordViewModel.V3RecordItem, ratio: BigUInt, transactionSettings: TransactionSettings? = nil) {
 
         let chain = evmKitWrapper.evmKit.chain
         let recipient = evmKitWrapper.evmKit.receiveAddress
         let liquidity = item.positions.liquidity * ratio / 100
         let slippage = slippage(positions: item.positions)
         let deadline = deadLine()
+        selectedGasPrice = transactionSettings?.gasPriceData?.userDefined
+        nextNonceOverride = transactionSettings?.nonce
+        self.ratio = ratio
+        lastSubmittedTransactionHash = nil
         Task {
             do {
-                try await allowance(item: item)
+                if let plan = matchingFeePlan(for: ratio) {
+                    if plan.step(id: "approveToken0") != nil {
+                        try await approve(tokenAddress: item.positions.token0, stepId: "approveToken0", transactionDataOverride: plan.step(id: "approveToken0")?.transactionData)
+                    }
+                    if plan.step(id: "approveToken1") != nil {
+                        try await approve(tokenAddress: item.positions.token1, stepId: "approveToken1", transactionDataOverride: plan.step(id: "approveToken1")?.transactionData)
+                    }
+                } else {
+                    try await allowance(item: item, ratio: ratio)
+                }
 
-                let transactionData = try await uniswapKit.removeLiquidityTransactionData(positions: item.positions, rpcSource: rpcSource, chain: chain, liquidity: liquidity, slippage: slippage, recipient: recipient, deadline: deadline)
+                let transactionData: TransactionData
+                if let planned = matchingFeePlan(for: ratio)?.step(id: "remove") {
+                    transactionData = planned.transactionData
+                } else {
+                    transactionData = try await uniswapKit.removeLiquidityTransactionData(positions: item.positions, rpcSource: rpcSource, chain: chain, liquidity: liquidity, slippage: slippage, recipient: recipient, deadline: deadline)
+                }
 
-                try await send(transactionData: transactionData)
+                try await send(transactionData: transactionData, gasLimit: matchingFeePlan(for: ratio)?.step(id: "remove")?.surchargedGasLimit)
                     .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-                    .subscribe(onSuccess: { [weak self] _ in
+                    .subscribe(onSuccess: { [weak self] tx in
+                        self?.lastSubmittedTransactionHash = tx.transaction.hash.hs.hexString
                         self?.state = .removeSuccess
 
                     }, onError: { error in
@@ -139,13 +233,17 @@ extension LiquidityV3RecordService {
                         self.state = .removeFailed(error: message)
                     })
                     .disposed(by: disposeBag)
-            }catch {
-                state = .failed(error: error.localizedDescription)
+            } catch {
+                if lastSubmittedTransactionHash != nil {
+                    state = .removeFailed(error: error.localizedDescription)
+                } else {
+                    state = .failed(error: error.localizedDescription)
+                }
             }
         }
     }
 
-    private func allowance(item: LiquidityV3RecordViewModel.V3RecordItem) async throws  {
+    private func allowance(item: LiquidityV3RecordViewModel.V3RecordItem, ratio: BigUInt) async throws  {
 
         let evmKit = evmKitWrapper.evmKit
         let chain = evmKitWrapper.evmKit.chain
@@ -159,48 +257,70 @@ extension LiquidityV3RecordService {
         async let result0 = try eip20Kit0.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
         async let result1 = try eip20Kit1.allowance(spenderAddress: spenderAddress, defaultBlockParameter: .latest)
 
-        let (amount0, amount1, _) = try await uniswapKit.getAmountsForLiquidity(positions: item.positions, rpcSource: rpcSource, chain: chain, liquidity: item.positions.liquidity)
+        let liquidity = item.positions.liquidity * ratio / 100
+        let (amount0, amount1, _) = try await uniswapKit.getAmountsForLiquidity(positions: item.positions, rpcSource: rpcSource, chain: chain, liquidity: liquidity)
 
         let allowance0 = try await BigUInt(result0) ?? 0
         let allowance1 = try await BigUInt(result1) ?? 0
 
         if  allowance0 < amount0  {
-            try await approve(tokenAddress: token0Address)
+            try await approve(tokenAddress: token0Address, stepId: "approveToken0")
         }
 
         if allowance1 < amount1  {
-            try await approve(tokenAddress: token1Address)
+            try await approve(tokenAddress: token1Address, stepId: "approveToken1")
         }
     }
 
-    private func approve(tokenAddress: EvmKit.Address) async throws {
+    private func approve(tokenAddress: EvmKit.Address, stepId: String, transactionDataOverride: TransactionData? = nil) async throws {
         let evmKit = evmKitWrapper.evmKit
 
-        guard let gasPrice = legacyGasPrice else { throw LiquidityV3RecordError.noGasPrice }
-        async let nonce = try evmKitWrapper.evmKit.nonce(defaultBlockParameter: .pending)
+        guard let gasPrice = selectedGasPrice ?? legacyGasPrice else { throw LiquidityV3RecordError.noGasPrice }
+        let nonce = try await takeNonce()
         let eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKit, contractAddress: tokenAddress)
 
         let spenderAddress = uniswapKit.nonfungiblePositionAddress(chain: evmKit.chain)
         let maxValue = BigUInt(Data(hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
-        let transactionData = eip20Kit.approveTransactionData(spenderAddress: spenderAddress, amount:maxValue)
+        let transactionData = transactionDataOverride ?? eip20Kit.approveTransactionData(spenderAddress: spenderAddress, amount: maxValue)
 
-        async let gasLimit = try evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
-        let _ = try await evmKitWrapper.send(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, privateSend: false, nonce: nonce)
+        let gasLimit: Int
+        if let plannedGasLimit = matchingFeePlan(for: ratio)?.step(id: stepId)?.surchargedGasLimit {
+            gasLimit = plannedGasLimit
+        } else {
+            gasLimit = try await evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
+        }
+        let transaction = try await evmKitWrapper.send(transactionData: transactionData, gasPrice: gasPrice, gasLimit: gasLimit, privateSend: false, nonce: nonce)
+        lastSubmittedTransactionHash = transaction.transaction.hash.hs.hexString
     }
 
-    private func send(transactionData: TransactionData) async throws -> Single<FullTransaction> {
+    private func send(transactionData: TransactionData, gasLimit plannedGasLimit: Int? = nil) async throws -> Single<FullTransaction> {
 
-        guard let gasPrice = legacyGasPrice else { return Single.error( LiquidityV3RecordError.noGasPrice) }
-        async let nonce = try evmKitWrapper.evmKit.nonce(defaultBlockParameter: .pending)
-        async let gasLimit = try evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)// 500000
+        guard let gasPrice = selectedGasPrice ?? legacyGasPrice else { return Single.error( LiquidityV3RecordError.noGasPrice) }
+        let nonce = try await takeNonce()
+        let gasLimit: Int
+        if let plannedGasLimit {
+            gasLimit = plannedGasLimit
+        } else {
+            gasLimit = try await evmKitWrapper.evmKit.fetchEstimateGas(transactionData: transactionData, gasPrice: gasPrice)
+        }
 
-        return try await evmKitWrapper.sendSingle(
+        return evmKitWrapper.sendSingle(
                         transactionData: transactionData,
                         gasPrice: gasPrice,
                         gasLimit: gasLimit,
                         privateSend: false,
                         nonce: nonce
         )
+    }
+
+    private func takeNonce() async throws -> Int {
+        if let nextNonceOverride {
+            self.nextNonceOverride = nextNonceOverride + 1
+            return nextNonceOverride
+        }
+        let nonce = try await evmKitWrapper.evmKit.nonce(defaultBlockParameter: .pending)
+        nextNonceOverride = nonce + 1
+        return nonce
     }
 }
 

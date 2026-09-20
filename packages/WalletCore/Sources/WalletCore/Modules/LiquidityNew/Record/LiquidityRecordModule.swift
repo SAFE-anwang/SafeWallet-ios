@@ -33,8 +33,25 @@ class LiquidityRecordModule {
     }
 
     static func removeConfirmViewController(viewModel: LiquidityRecordViewModel, recordItem: LiquidityRecordViewModel.RecordItem) -> UIViewController? {
-        let viewController = LiquidityRemoveConfirmViewController(viewModel: viewModel, recordItem: recordItem)
-        return viewController
+        UIHostingController(
+            rootView: LiquidityRemoveHostingView(
+                displayData: .v2(
+                    token0: recordItem.tokenA,
+                    token1: recordItem.tokenB,
+                    amount0: recordItem.amountAStr,
+                    amount1: recordItem.amountBStr,
+                    liquidity: recordItem.liquidityDec
+                ),
+                makeSendData: { ratio in
+                    SendData.liquidityRemove(
+                        request: LiquidityRemoveRequest(blockchainType: recordItem.tokenA.blockchainType) {
+                            LiquidityRemoveSendHandler.v2(item: recordItem, ratio: ratio, service: viewModel.service)
+                        }
+                    )
+                },
+                onSuccess: { viewModel.refresh() }
+            )
+        )
     }
 
     enum Tab: Int, CaseIterable {
@@ -48,6 +65,30 @@ class LiquidityRecordModule {
             case .bsc: return "BSC".localized
             case .eth: return "ETH".localized
             }
+        }
+    }
+}
+
+/// Compatibility host for callers that still ask the module for a UIViewController.
+/// The old UIKit confirmation controller is intentionally unavailable; this keeps the
+/// public module boundary stable while routing those callers through SendNew.
+private struct LiquidityRemoveHostingView: View {
+    private let displayData: LiquidityRemoveDisplayData
+    private let makeSendData: (BigUInt) -> SendData
+    private let onSuccess: () -> Void
+    @Environment(\.presentationMode) private var presentationMode
+    @State private var isPresented = true
+
+    init(displayData: LiquidityRemoveDisplayData, makeSendData: @escaping (BigUInt) -> SendData, onSuccess: @escaping () -> Void) {
+        self.displayData = displayData
+        self.makeSendData = makeSendData
+        self.onSuccess = onSuccess
+    }
+
+    var body: some View {
+        LiquidityRemoveSendView(isPresented: $isPresented, displayData: displayData, makeSendData: makeSendData) {
+            onSuccess()
+            presentationMode.wrappedValue.dismiss()
         }
     }
 }

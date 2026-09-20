@@ -35,7 +35,6 @@ class LiquidityAddViewModel: ObservableObject {
     private let walletManager = Core.shared.walletManager
     private let adapterManager = Core.shared.adapterManager
     private let localStorage = Core.shared.localStorage
-    private let decimalParser = AmountDecimalParser()
 
     @Published var currency: Currency
 
@@ -56,8 +55,8 @@ class LiquidityAddViewModel: ObservableObject {
             }
 
             if let internalTokenIn {
-                coinPriceIn = marketKit.coinPrice(coinUid: internalTokenIn.coin.uid, currencyCode: currency.code)
-                rateInCancellable = marketKit.coinPricePublisher(coinUid: internalTokenIn.coin.uid, currencyCode: currency.code)
+                coinPriceIn = marketKit.walletCoinPrice(coinUid: internalTokenIn.coin.uid, currencyCode: currency.code)
+                rateInCancellable = marketKit.walletCoinPricePublisher(coinUid: internalTokenIn.coin.uid, currencyCode: currency.code)
                     .receive(on: DispatchQueue.main)
                     .sink { [weak self] price in self?.coinPriceIn = price }
             } else {
@@ -153,8 +152,8 @@ class LiquidityAddViewModel: ObservableObject {
             }
 
             if let internalTokenOut {
-                rateOut = marketKit.coinPrice(coinUid: internalTokenOut.coin.uid, currencyCode: currency.code)?.value
-                rateOutCancellable = marketKit.coinPricePublisher(coinUid: internalTokenOut.coin.uid, currencyCode: currency.code)
+                rateOut = marketKit.walletCoinPrice(coinUid: internalTokenOut.coin.uid, currencyCode: currency.code)?.value
+                rateOutCancellable = marketKit.walletCoinPricePublisher(coinUid: internalTokenOut.coin.uid, currencyCode: currency.code)
                     .receive(on: DispatchQueue.main)
                     .sink { [weak self] price in self?.rateOut = price.value }
             } else {
@@ -257,7 +256,7 @@ class LiquidityAddViewModel: ObservableObject {
             syncFiatAmountIn()
             syncManualAllowanceStates()
 
-            let amount = decimalParser.parseAnyDecimal(from: amountString)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             if amount != amountIn {
                 amountString = amountIn?.description ?? ""
@@ -267,7 +266,7 @@ class LiquidityAddViewModel: ObservableObject {
 
     @Published var amountString: String = "" {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: amountString)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             guard amount != amountIn else {
                 return
@@ -283,7 +282,7 @@ class LiquidityAddViewModel: ObservableObject {
         didSet {
             syncAmountIn()
 
-            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             if amount != fiatAmountIn {
                 fiatAmountString = fiatAmountIn?.description ?? ""
@@ -293,7 +292,7 @@ class LiquidityAddViewModel: ObservableObject {
 
     @Published var fiatAmountString: String = "" {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: fiatAmountString)?.rounded(decimal: 2)
 
             guard amount != fiatAmountIn else {
                 return
@@ -387,7 +386,7 @@ class LiquidityAddViewModel: ObservableObject {
     @Published var amountOutString: String?
     @Published var manualAmountOutString: String = "" {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: manualAmountOutString)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: manualAmountOutString)
             guard amount != manualAmountOut else {
                 return
             }
@@ -774,7 +773,7 @@ extension LiquidityAddViewModel {
             return
         }
 
-        let parsed = decimalParser.parseAnyDecimal(from: text)
+        let parsed = AmountDecimalParser.parseAnyDecimal(from: text)
         guard let price = parsed else {
             v3PriceError = "liquidity.invalid_price_input"
             return

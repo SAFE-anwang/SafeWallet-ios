@@ -11,7 +11,7 @@ import EvmKit
 
 class LiquidityRecordViewModel {
     private var statusRelay = PublishRelay<LiquidityRecordService.State>()
-    private let service: LiquidityRecordService
+    let service: LiquidityRecordService
     private var disposeBag = DisposeBag()
 
     init(service: LiquidityRecordService) {
@@ -29,8 +29,8 @@ extension LiquidityRecordViewModel {
         statusRelay.asObservable()
     }
 
-    func removeLiquidity(recordItem: RecordItem, ratio: BigUInt) {
-        service.removeLiquidity(viewItem: recordItem, ratio: ratio)
+    func removeLiquidity(recordItem: RecordItem, ratio: BigUInt, transactionSettings: TransactionSettings? = nil) {
+        service.removeLiquidity(viewItem: recordItem, ratio: ratio, transactionSettings: transactionSettings)
     }
 
     func refresh() {

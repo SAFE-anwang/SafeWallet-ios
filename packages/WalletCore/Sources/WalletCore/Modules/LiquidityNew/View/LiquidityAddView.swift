@@ -53,7 +53,7 @@ struct LiquidityAddView: View {
             } keyboardContent: {
                 AmountAccessoryView(
                     visible: isInputActive,
-                    hasPercents: viewModel.availableBalance != nil,
+                    enabledPercents: (viewModel.availableBalance ?? 0) > 0,
                     onPercent: { percent in
                         viewModel.setAmountIn(percent: percent)
                         isInputActive = false
