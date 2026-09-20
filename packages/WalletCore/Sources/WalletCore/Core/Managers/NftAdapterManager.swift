@@ -13,6 +13,7 @@ class NftAdapterManager {
 
     private let adaptersUpdatedRelay = PublishRelay<[NftKey: INftAdapter]>()
     private var _adapterMap = [NftKey: INftAdapter]()
+    private var started = false
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).nft-adapter_manager", qos: .userInitiated)
 
@@ -42,25 +43,41 @@ class NftAdapterManager {
             }
         }
 
-        _initAdapters(
-            wallets: walletManager.activeWallets,
-            account: accountManager.activeAccount,
-            childWalletId: accountManager.activeAccount.flatMap { ChildWalletBridge.shared.activeChildWalletId(account: $0) }
-        )
+        // Wallet data is preloaded after Core.initApp publishes Core.shared. Creating an EVM
+        // kit here would resolve mnemonic addresses through Core.shared during Core construction.
+        // The wallet-data subscription above performs the same initialization after publication.
     }
 
-    private func _initAdapters(wallets: [Wallet], account: Account?, childWalletId: String?) {
+    // EVM mnemonic addresses resolve through Core.shared. Start only after Core.initApp
+    // publishes the Core instance, while still initializing adapters for an already active wallet.
+    func start() {
+        queue.async {
+            guard !self.started else {
+                return
+            }
+
+            self.started = true
+            let account = self.accountManager.activeAccount
+            self._initAdapters(
+                wallets: self.walletManager.activeWallets,
+                account: account,
+                childWalletId: account.flatMap { ChildWalletBridge.shared.activeChildWalletId(account: $0) }
+            )
+        }
+    }
+
+    private func _initAdapters(wallets: [Wallet], account: Account?, childWalletId: String?, notify: Bool = true) {
         guard let account else {
             _adapterMap = [:]
-            adaptersUpdatedRelay.accept(_adapterMap)
+            if notify {
+                adaptersUpdatedRelay.accept(_adapterMap)
+            }
             return
         }
 
         var blockchainTypes = Set(wallets.map { $0.token.blockchainType })
-        if childWalletId == nil {
-            for blockchainType in EvmBlockchainManager.blockchainTypes where !blockchainType.supportedNftTypes.isEmpty {
-                blockchainTypes.insert(blockchainType)
-            }
+        for blockchainType in EvmBlockchainManager.blockchainTypes where !blockchainType.supportedNftTypes.isEmpty {
+            blockchainTypes.insert(blockchainType)
         }
 
         let nftKeys = Array(Set(blockchainTypes.map { NftKey(account: account, blockchainType: $0, childWalletId: childWalletId) }))
@@ -73,34 +90,46 @@ class NftAdapterManager {
                 continue
             }
 
-            guard !nftKey.blockchainType.supportedNftTypes.isEmpty else {
+            guard !nftKey.blockchainType.supportedNftTypes.isEmpty,
+                  evmBlockchainManager.blockchain(type: nftKey.blockchainType) != nil,
+                  let evmKitWrapper = try? evmBlockchainManager
+                      .evmKitManager(blockchainType: nftKey.blockchainType)
+                      .evmKitWrapper(account: nftKey.account, blockchainType: nftKey.blockchainType),
+                  let nftKit = evmKitWrapper.nftKit
+            else {
                 continue
             }
 
-            if evmBlockchainManager.blockchain(type: nftKey.blockchainType) != nil {
-                let evmKitWrapper = try? evmBlockchainManager.evmKitManager(blockchainType: nftKey.blockchainType).evmKitWrapper(account: nftKey.account, blockchainType: nftKey.blockchainType)
-
-                if let evmKitWrapper, let nftKit = evmKitWrapper.nftKit {
-                    newAdapterMap[nftKey] = EvmNftAdapter(blockchainType: nftKey.blockchainType, evmKitWrapper: evmKitWrapper, nftKit: nftKit)
-                }
-            } else {
-                // Init other blockchain adapter here (e.g. Solana)
-            }
+            newAdapterMap[nftKey] = EvmNftAdapter(
+                blockchainType: nftKey.blockchainType,
+                evmKitWrapper: evmKitWrapper,
+                nftKit: nftKit
+            )
         }
 
 //        print("NEW ADAPTERS: \(newAdapterMap.keys)")
         _adapterMap = newAdapterMap
-        adaptersUpdatedRelay.accept(newAdapterMap)
+        if notify {
+            adaptersUpdatedRelay.accept(newAdapterMap)
+        }
     }
 
     private func handleAdaptersReady(wallets: [Wallet], account: Account?, childWalletId: String?) {
         queue.async {
+            guard self.started else {
+                return
+            }
+
             self._initAdapters(wallets: wallets, account: account, childWalletId: childWalletId)
         }
     }
 
     private func handleActiveAccountChanged(account: Account?) {
         queue.async {
+            guard self.started else {
+                return
+            }
+
             guard self._adapterMap.keys.contains(where: { $0.account != account }) else {
                 return
             }
@@ -112,6 +141,10 @@ class NftAdapterManager {
 
     private func handleUpdatedEvmKit(blockchainType: BlockchainType) {
         queue.async {
+            guard self.started else {
+                return
+            }
+
             guard let account = self.accountManager.activeAccount else {
                 return
             }
@@ -164,14 +197,21 @@ extension NftAdapterManager {
     }
 
     func ensuredAdapter(nftKey: NftKey) -> INftAdapter? {
-        queue.sync {
+        let result: (adapter: INftAdapter?, notification: [NftKey: INftAdapter]?) = queue.sync {
             let hasOnlyCurrentAccountAdapters = _adapterMap.keys.allSatisfy { $0.account == nftKey.account && $0.childWalletId == nftKey.childWalletId }
             if _adapterMap.isEmpty || !hasOnlyCurrentAccountAdapters {
-                _initAdapters(wallets: walletManager.activeWallets, account: nftKey.account, childWalletId: nftKey.childWalletId)
+                _initAdapters(wallets: walletManager.activeWallets, account: nftKey.account, childWalletId: nftKey.childWalletId, notify: false)
+                return (_adapterMap[nftKey], _adapterMap)
             }
 
-            return _adapterMap[nftKey]
+            return (_adapterMap[nftKey], nil)
         }
+
+        if let notification = result.notification {
+            adaptersUpdatedRelay.accept(notification)
+        }
+
+        return result.adapter
     }
 
     func ensuredAdapterAsync(nftKey: NftKey) async -> INftAdapter? {

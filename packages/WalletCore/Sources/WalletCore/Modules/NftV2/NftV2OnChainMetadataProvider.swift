@@ -355,13 +355,19 @@ final class NftV2OnChainMetadataProvider {
             throw NftV2OnChainMetadataError.invalidPayload
         }
 
-        let offset = Int(BigUInt(data[0 ..< 32]))
-        guard data.count >= offset + 32 else {
+        guard let offset = Int(exactly: BigUInt(data[0 ..< 32])), offset <= data.count - 32 else {
             throw NftV2OnChainMetadataError.invalidPayload
         }
 
-        let length = Int(BigUInt(data[offset ..< offset + 32]))
+        guard let length = Int(exactly: BigUInt(data[offset ..< offset + 32])) else {
+            throw NftV2OnChainMetadataError.invalidPayload
+        }
+
         let start = offset + 32
+        guard length <= data.count - start else {
+            throw NftV2OnChainMetadataError.invalidPayload
+        }
+
         let end = start + length
 
         guard data.count >= end,

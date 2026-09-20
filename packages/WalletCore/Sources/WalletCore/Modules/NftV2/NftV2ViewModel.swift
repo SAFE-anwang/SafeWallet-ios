@@ -341,10 +341,6 @@ final class NftV2ViewModel: ObservableObject {
         )
     }
 
-    func legacyController() -> UIViewController {
-        inventoryService.legacyController()
-    }
-
     func isChainSynced(chain: NftV2Chain) -> Bool {
         chainStates.first(where: { $0.chain == chain })?.isActionEnabled ?? false
     }
@@ -729,15 +725,27 @@ final class NftV2ViewModel: ObservableObject {
 
     private func pendingTransferIsApplied(_ pending: NftV2PendingTransferItem) -> Bool {
         guard let rawCollection = rawCollections.first(where: { $0.id == pending.collectionId }) else {
-            return true
+            return chainHasConfirmedEmptyInventory(for: pending.chain)
         }
 
         guard let rawAsset = rawCollection.items.first(where: { $0.id == pending.asset.id }) else {
-            return true
+            return chainHasConfirmedEmptyInventory(for: pending.chain)
         }
 
         let expectedBalance = max(pending.asset.balance - max(pending.amount, 1), 0)
         return rawAsset.balance <= expectedBalance
+    }
+
+    private func chainHasConfirmedEmptyInventory(for chain: NftV2Chain) -> Bool {
+        guard let chainState = chainStates.first(where: { $0.chain == chain }) else {
+            return false
+        }
+
+        guard case .synced = chainState.status else {
+            return false
+        }
+
+        return chainState.payload != nil
     }
 
     private func pendingTransferReturnedToCurrentAccount(_ pending: NftV2PendingTransferItem, record: TransactionRecord) -> Bool {

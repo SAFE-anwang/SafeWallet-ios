@@ -41,6 +41,7 @@ final class NftV2InventoryService {
     private var lastFullSyncTimestampByKey = [String: TimeInterval]()
     private var lastBackgroundReconcileTimestampByKey = [String: TimeInterval]()
     private var syncGeneration = 0
+    private var started = false
 
     init(
         accountManager: AccountManager,
@@ -73,9 +74,18 @@ final class NftV2InventoryService {
         bindAdapterChanges()
         bindMetadataChanges()
         bindProviderChanges()
+    }
 
-        queue.async { [weak self] in
-            self?.handleActiveAccountChanged(account: accountManager.activeAccount)
+    // Creating the first local NFT payload may initialize an EVM kit, whose mnemonic address
+    // resolution depends on Core.shared. Core starts this service only after publication.
+    func start() {
+        queue.async {
+            guard !self.started else {
+                return
+            }
+
+            self.started = true
+            self.handleActiveAccountChanged(account: self.accountManager.activeAccount)
         }
     }
 
@@ -126,10 +136,6 @@ final class NftV2InventoryService {
             onSendSuccess: onSendSuccess,
             onSendFailed: onSendFailed
         )
-    }
-
-    func legacyController() -> UIViewController {
-        NftV2Module.legacyViewController()
     }
 
     var activeAccountId: String? {
@@ -376,6 +382,10 @@ final class NftV2InventoryService {
     }
 
     private func handleActiveAccountChanged(account: Account?) {
+        guard started else {
+            return
+        }
+
         syncGeneration += 1
         currentAccountIdValue = account.map { contextAccountId(account: $0) }
         adapterDisposeBag = DisposeBag()
@@ -402,6 +412,10 @@ final class NftV2InventoryService {
 
     private func handleAdaptersUpdated(adapterMap: [NftKey: INftAdapter]) {
         queue.async {
+            guard self.started else {
+                return
+            }
+
             guard let account = self.accountManager.activeAccount,
                   self.contextAccountId(account: account) == self.currentAccountIdValue
             else {
@@ -429,6 +443,10 @@ final class NftV2InventoryService {
 
     private func handleAdapterRecordsUpdated(nftKey: NftKey) {
         queue.async {
+            guard self.started else {
+                return
+            }
+
             guard nftKey.storageAccountId == self.currentAccountIdValue,
                   let account = self.accountManager.activeAccount,
                   account.id == nftKey.account.id,
@@ -444,6 +462,10 @@ final class NftV2InventoryService {
 
     private func handleMetadataUpdated(nftKey: NftKey) {
         queue.async {
+            guard self.started else {
+                return
+            }
+
             guard nftKey.storageAccountId == self.currentAccountIdValue,
                   let account = self.accountManager.activeAccount,
                   account.id == nftKey.account.id,
@@ -458,6 +480,10 @@ final class NftV2InventoryService {
 
     private func handleProviderUpdated(update: NftV2ProviderUpdate) {
         queue.async {
+            guard self.started else {
+                return
+            }
+
             guard let account = self.accountManager.activeAccount,
                   self.contextAccountId(account: account) == self.currentAccountIdValue,
                   self.contextAccountId(account: account) == update.accountId,
@@ -472,6 +498,10 @@ final class NftV2InventoryService {
     }
 
     private func performRefresh(force: Bool) {
+        guard started else {
+            return
+        }
+
         guard let account = accountManager.activeAccount,
               contextAccountId(account: account) == currentAccountIdValue
         else {

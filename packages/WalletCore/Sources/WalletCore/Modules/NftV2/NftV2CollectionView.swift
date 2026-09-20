@@ -140,13 +140,6 @@ struct NftV2CollectionView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Divider()
-
-            HStack(spacing: 12) {
-                statItem(title: "nft_v2.collection.floor_price".localized, value: "0")
-                statItem(title: "nft_v2.collection.average_price".localized, value: "0")
-                statItem(title: "nft_v2.collection.volume".localized, value: "0")
-            }
         }
         .padding(16)
         .background(Color.themeTyler)
@@ -385,8 +378,6 @@ private struct NftV2AssetDetailView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         ThemeText(collection.name, style: .headline2)
-                            .lineLimit(1)
-                        ThemeText("nft_v2.asset.floor_price".localized("0 BNB", "$0"), style: .subhead, colorStyle: .secondary)
                             .lineLimit(1)
                     }
 

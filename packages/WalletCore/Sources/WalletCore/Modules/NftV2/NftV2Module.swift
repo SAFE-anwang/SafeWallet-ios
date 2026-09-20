@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 enum NftV2Module {
     @MainActor
@@ -8,10 +7,6 @@ enum NftV2Module {
             viewModel: NftV2ViewModel(inventoryService: Core.shared.nftV2InventoryService),
             isPresented: isPresented
         )
-    }
-
-    static func legacyViewController() -> UIViewController {
-        NftModule.viewController() ?? UIViewController()
     }
 }
 

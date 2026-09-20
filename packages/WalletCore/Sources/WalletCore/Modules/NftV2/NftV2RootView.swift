@@ -175,9 +175,9 @@ struct NftV2RootView: View {
             ForEach(viewModel.chainSections) { section in
                 Section {
                     if !isCollapsed(section.chainState.chain) {
-//                        ForEach(section.pendingTransfers) { pending in
-//                            pendingRow(pending)
-//                        }
+                        ForEach(section.pendingTransfers) { pending in
+                            pendingRow(pending)
+                        }
 
                         ForEach(section.collections) { collection in
                             Button {
