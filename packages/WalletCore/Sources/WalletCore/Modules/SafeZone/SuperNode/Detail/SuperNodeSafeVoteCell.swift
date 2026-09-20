@@ -113,7 +113,7 @@ class SuperNodeSafeVoteCell: BaseThemeCell {
 
     @objc
     private func vote() {
-        let amount = AmountDecimalParser().parseAnyDecimal(from: inputStackView.text)
+        let amount = AmountDecimalParser.parseAnyDecimal(from: inputStackView.text)
         inputStackView.text = amount?.description
         guard let balance, let amount else{ return }
         guard amount <= balance else{

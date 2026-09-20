@@ -8,7 +8,6 @@ import BigInt
 
 class DeployViewModel: ObservableObject {
 
-    private let decimalParser = AmountDecimalParser()
     private let evmKitWrapper: EvmKitWrapper
     private let service: SRC20Service
     private var disposeBag = DisposeBag()
@@ -34,7 +33,7 @@ class DeployViewModel: ObservableObject {
 
     @Published var totalSupplyString: String = "" {
         didSet {
-            var totalSupply = decimalParser.parseAnyDecimal(from: totalSupplyString)
+            var totalSupply = AmountDecimalParser.parseAnyDecimal(from: totalSupplyString)
 
             if totalSupply == 0 {
                 totalSupply = nil
@@ -51,7 +50,7 @@ class DeployViewModel: ObservableObject {
 //            syncAmountCautionState()
             syncSendData()
 
-            let totalSupply = decimalParser.parseAnyDecimal(from: totalSupplyString)
+            let totalSupply = AmountDecimalParser.parseAnyDecimal(from: totalSupplyString)
 
             if totalSupply != self.totalSupply {
                 totalSupplyString = self.totalSupply?.description ?? ""

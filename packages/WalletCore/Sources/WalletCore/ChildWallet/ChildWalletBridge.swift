@@ -199,10 +199,12 @@ extension ChildWalletBridge {
             return supports(account: account, token: token)
         case let .tronGasFree(token, _, _):
             return supports(account: account, token: token)
-        case let .swap(tokenIn, tokenOut, _, _, _):
+        case let .swap(tokenIn, tokenOut, _, _, _, _):
             return supports(account: account, token: tokenIn) && supports(account: account, token: tokenOut)
         case let .liquidityAdd(token0, token1, _, _, _, _, _):
             return supports(account: account, token: token0) && supports(account: account, token: token1)
+        case let .liquidityRemove(request):
+            return supports(account: account, blockchainType: request.blockchainType)
         case let .walletConnect(request):
             guard let chainId = Int(request.chain.id),
                   let blockchain = Core.shared.evmBlockchainManager.blockchain(chainId: chainId)
@@ -213,11 +215,15 @@ extension ChildWalletBridge {
             return supports(account: account, blockchainType: blockchain.type)
         case let .openCryptoPay(_, _, inner):
             return supports(account: account, sendData: inner)
+        case let .payment(_, inner):
+            return supports(account: account, sendData: inner)
+        case let .privateSend(request):
+            return supports(account: account, token: request.token)
         case let .evmSafe4TimeLock(blockchainType, _, _):
             return supports(account: account, blockchainType: blockchainType)
         case let .crossChain(baseWallet, _):
             return supports(account: account, token: baseWallet.token)
-        case .bitcoin, .zcash, .zcashResend, .zcashShield, .ton, .stellar, .solana, .monero, .zano, .zanoAsset, .tonConnect:
+        case .bitcoin, .zcash, .zcashResend, .zcashShield, .zcashMigration, .ton, .stellar, .solana, .monero, .zano, .zanoAsset, .thorChain, .tonConnect:
             return false
         }
     }
@@ -313,6 +319,14 @@ extension ChildWalletBridge {
         }
 
         return try derivationService.evmSigner(account: account, childWallet: childWallet, chain: chain)
+    }
+
+    func evmPrivateKey(account: Account, chain: Chain) throws -> Data? {
+        guard let childWallet = try activeChildWallet(account: account) else {
+            return nil
+        }
+
+        return try derivationService.evmPrivateKey(account: account, childWallet: childWallet, chain: chain)
     }
 
     func activeSafe4EvmKitWrapper() -> EvmKitWrapper? {

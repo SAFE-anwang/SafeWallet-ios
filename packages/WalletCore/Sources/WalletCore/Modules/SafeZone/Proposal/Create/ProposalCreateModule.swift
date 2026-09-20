@@ -4,7 +4,7 @@ import SwiftUI
 struct ProposalCreateModule {
     static func viewModel(privateKey: Data) -> ProposalCreateViewModel {
         let service = ProposalCreateService(privateKey: privateKey)
-        let viewModel = ProposalCreateViewModel(service: service, decimalParser: AmountDecimalParser())
+        let viewModel = ProposalCreateViewModel(service: service)
         return viewModel
     }
 }

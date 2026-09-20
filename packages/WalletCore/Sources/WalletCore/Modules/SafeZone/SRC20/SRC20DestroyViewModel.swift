@@ -11,7 +11,6 @@ class SRC20DestroyViewModel: ObservableObject {
     private let type: DeployType
     private let service: SRC20Service
     private let adapter: ISendEthereumAdapter
-    private let decimalParser = AmountDecimalParser()
     @Published private(set) var totalSupply: BigUInt?
     @Published var sendState: SendState = .notReady
     @Published var amountCautionState: CautionState = .none
@@ -35,7 +34,7 @@ class SRC20DestroyViewModel: ObservableObject {
     }
     @Published var numberString: String = "" {
         didSet {
-            var number = decimalParser.parseAnyDecimal(from: numberString)
+            var number = AmountDecimalParser.parseAnyDecimal(from: numberString)
 
             if number == 0 {
                 number = nil
@@ -51,7 +50,7 @@ class SRC20DestroyViewModel: ObservableObject {
         didSet {
             syncAmountCautionState()
             syncSendData()
-            let number = decimalParser.parseAnyDecimal(from: numberString)
+            let number = AmountDecimalParser.parseAnyDecimal(from: numberString)
 
             if number != self.number {
                 numberString = self.number?.description ?? ""

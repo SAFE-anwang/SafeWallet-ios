@@ -15,7 +15,6 @@ class SRC20AdditionalViewModel: ObservableObject {
     private let service: SRC20Service
     private var disposeBag = DisposeBag()
     private var cancellables = Set<AnyCancellable>()
-    private let decimalParser = AmountDecimalParser()
     private let parserChain: AddressParserChain = AddressParserFactory.parserChain(blockchainType: .safe4)
     @Published private(set) var totalSupply: BigUInt?
 
@@ -68,7 +67,7 @@ class SRC20AdditionalViewModel: ObservableObject {
 
     @Published var numberString: String = "" {
         didSet {
-            var number = decimalParser.parseAnyDecimal(from: numberString)
+            var number = AmountDecimalParser.parseAnyDecimal(from: numberString)
 
             if number == 0 {
                 number = nil
@@ -98,7 +97,7 @@ class SRC20AdditionalViewModel: ObservableObject {
     var number: Decimal? {
         didSet {
             syncSendData()
-            let number = decimalParser.parseAnyDecimal(from: numberString)
+            let number = AmountDecimalParser.parseAnyDecimal(from: numberString)
 
             if number != self.number {
                 numberString = self.number?.description ?? ""

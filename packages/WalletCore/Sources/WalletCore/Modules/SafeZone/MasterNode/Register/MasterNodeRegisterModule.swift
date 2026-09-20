@@ -12,7 +12,7 @@ struct MasterNodeRegisterModule {
         }
 
         let service = MasterNodeRegisterService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
-        let viewModel = MasterNodeRegisterViewModel(service: service, decimalParser: AmountDecimalParser())
+        let viewModel = MasterNodeRegisterViewModel(service: service)
         return viewModel
     }
 }

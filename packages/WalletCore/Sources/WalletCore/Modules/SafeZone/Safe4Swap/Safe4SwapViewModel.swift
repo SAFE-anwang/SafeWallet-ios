@@ -18,7 +18,6 @@ class Safe4SwapViewModel: ObservableObject {
     private let marketKit = Core.shared.marketKit
     private let walletManager = Core.shared.walletManager
     private let adapterManager = Core.shared.adapterManager
-    private let decimalParser = AmountDecimalParser()
 
     @Published var currency: Currency
 
@@ -150,7 +149,7 @@ class Safe4SwapViewModel: ObservableObject {
 
     var amountIn: Decimal? {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: amountString)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             if amount != amountIn {
                 amountString = amountIn?.description ?? ""
@@ -160,7 +159,7 @@ class Safe4SwapViewModel: ObservableObject {
 
     var amountOut: Decimal? {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: amountOutString)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: amountOutString)
 
             if amount != amountOut {
                 amountOutString = amountOut?.description //?? ""
@@ -170,7 +169,7 @@ class Safe4SwapViewModel: ObservableObject {
 
     @Published var amountString: String = "" {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: amountString)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
             guard amount != amountIn else {
                 return
@@ -182,7 +181,7 @@ class Safe4SwapViewModel: ObservableObject {
 
     @Published var amountOutString: String? {
         didSet {
-            let amount = decimalParser.parseAnyDecimal(from: amountOutString)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: amountOutString)
 
             guard amount != amountOut else {
                 return

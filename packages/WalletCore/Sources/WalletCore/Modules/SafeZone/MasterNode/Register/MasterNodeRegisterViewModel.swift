@@ -5,7 +5,6 @@ import RxCocoa
 
 class MasterNodeRegisterViewModel {
     private let service: MasterNodeRegisterService
-    private let decimalParser: AmountDecimalParser
     private var stateRelay = PublishRelay<MasterNodeRegisterViewModel.State>()
 
     private(set) var state: MasterNodeRegisterViewModel.State = .loading {
@@ -14,9 +13,8 @@ class MasterNodeRegisterViewModel {
         }
     }
 
-    init(service: MasterNodeRegisterService, decimalParser: AmountDecimalParser) {
+    init(service: MasterNodeRegisterService) {
         self.service = service
-        self.decimalParser = decimalParser
     }
 }
 

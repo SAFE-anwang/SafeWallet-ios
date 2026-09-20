@@ -12,7 +12,7 @@ struct SuperNodeRegisterModule {
         }
 
         let service = SuperNodeRegisterService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
-        let viewModel = SuperNodeRegisterViewModel(service: service, decimalParser: AmountDecimalParser())
+        let viewModel = SuperNodeRegisterViewModel(service: service)
         return SuperNodeRegisterViewController(viewModel: viewModel)
     }
 
@@ -25,7 +25,7 @@ struct SuperNodeRegisterModule {
         }
 
         let service = SuperNodeRegisterService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
-        let viewModel = SuperNodeRegisterViewModel(service: service, decimalParser: AmountDecimalParser())
+        let viewModel = SuperNodeRegisterViewModel(service: service)
         return viewModel
     }
 }

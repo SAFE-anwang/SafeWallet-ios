@@ -11,6 +11,7 @@ final class Safe4SRC20ProjectionCoordinator {
     private let src20TokenClassifier: Safe4SRC20TokenClassifier
     private let userDefaultsStorage: UserDefaultsStorage
     private var cancellables = Set<AnyCancellable>()
+    private var started = false
 
     init(
         accountManager: AccountManager,
@@ -38,6 +39,15 @@ final class Safe4SRC20ProjectionCoordinator {
             }
             .store(in: &cancellables)
 
+    }
+
+    // Projection updates wallet state, which can create EVM kits. Core must be published first.
+    func start() {
+        guard !started else {
+            return
+        }
+
+        started = true
         migrateIfNeeded()
         project(chainId: Safe4Network.currentChainId)
     }

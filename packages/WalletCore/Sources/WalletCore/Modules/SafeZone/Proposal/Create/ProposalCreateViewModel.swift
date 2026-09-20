@@ -5,7 +5,6 @@ import RxCocoa
 
 class ProposalCreateViewModel {
     private let service: ProposalCreateService
-    private let decimalParser: AmountDecimalParser
     private var stateRelay = PublishRelay<ProposalCreateViewModel.State>()
 
     private(set) var state: ProposalCreateViewModel.State = .loading {
@@ -14,9 +13,8 @@ class ProposalCreateViewModel {
         }
     }
 
-    init(service: ProposalCreateService, decimalParser: AmountDecimalParser) {
+    init(service: ProposalCreateService) {
         self.service = service
-        self.decimalParser = decimalParser
     }
 
     func onChange(text: String?, type: ProposalInputCell.InputType) {
@@ -26,7 +24,7 @@ class ProposalCreateViewModel {
         case .desc:
             service.desc = text
         case .safeAmount:
-            let amount = decimalParser.parseAnyDecimal(from: text)
+            let amount = AmountDecimalParser.parseAnyDecimal(from: text)
             service.amount = amount
         case .payTimes:
             if let text {
