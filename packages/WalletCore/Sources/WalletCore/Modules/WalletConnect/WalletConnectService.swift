@@ -6,7 +6,6 @@ import HsToolKit
 import RxRelay
 import RxSwift
 
-import ReownRouter
 import ReownWalletKit
 
 class WalletConnectService {

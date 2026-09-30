@@ -4,6 +4,7 @@ import EvmKit
 import Foundation
 import MarketKit
 import RxSwift
+import UIExtensions
 
 public final class LiquidityRemoveRequest {
     public let blockchainType: BlockchainType
@@ -102,6 +103,11 @@ final class LiquidityRemoveSendHandler: ISendHandler {
             var disposable: Disposable?
             disposable = completion { result in
                 disposable?.dispose()
+                if case let .failure(error) = result {
+                    DispatchQueue.main.async {
+                        HudHelper.instance.show(banner: .error(string: error.smartDescription))
+                    }
+                }
                 continuation.resume(with: result)
             }
             start(transactionSettings)

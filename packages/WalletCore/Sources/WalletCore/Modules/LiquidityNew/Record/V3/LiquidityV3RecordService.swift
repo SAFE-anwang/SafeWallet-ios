@@ -34,6 +34,8 @@ class LiquidityV3RecordService {
     private let rpcSource: RpcSource
     private let gasPriceProvider: LegacyGasPriceProvider
     private var ratio: BigUInt = 100
+    private var refreshTask: Task<Void, Never>?
+    private var refreshGeneration = 0
 
     private(set) var state: State = .loading {
         didSet {
@@ -59,33 +61,43 @@ class LiquidityV3RecordService {
         self.gasPriceProvider = gasPriceProvider
         syncgasPrice()
 
-        liquidityV3Records()
     }
 
     func refresh() {
+        refreshTask?.cancel()
+        refreshGeneration += 1
         liquidityV3Records()
     }
 
     private func liquidityV3Records() {
+        let generation = refreshGeneration
         state = .loading
-        Task {
+        refreshTask = Task { [weak self] in
             do {
-                let chain = evmKitWrapper.evmKit.chain
-                let owner = evmKitWrapper.evmKit.receiveAddress
-                let datas = try await uniswapKit.ownedLiquidity(rpcSource: rpcSource, chain: chain, owner: owner)
+                guard let self else { return }
+                let chain = self.evmKitWrapper.evmKit.chain
+                let owner = self.evmKitWrapper.evmKit.receiveAddress
+                let datas = try await self.uniswapKit.ownedLiquidity(rpcSource: self.rpcSource, chain: chain, owner: owner)
                 let ownedDatas = datas.filter{$0.liquidity > 0}
-                let tokens = try fetchTokens(for: ownedDatas)
+                let tokens = try self.fetchTokens(for: ownedDatas)
                 var items = [LiquidityV3RecordViewModel.V3RecordItem]()
                 for positions in ownedDatas {
-                    if let item = try await viewItem(tokens: tokens, positions: positions) {
+                    try Task.checkCancellation()
+                    if let item = try await self.viewItem(tokens: tokens, positions: positions) {
                         items.append(item)
                     }
                 }
-                state = .completed(datas: items)
+                guard !Task.isCancelled, generation == self.refreshGeneration else { return }
+                self.state = .completed(datas: items)
             } catch {
-                state = .failed(error: error.localizedDescription)
+                guard !Task.isCancelled, generation == self?.refreshGeneration else { return }
+                self?.state = .failed(error: error.localizedDescription)
             }
         }
+    }
+
+    deinit {
+        refreshTask?.cancel()
     }
 
     private func fetchTokens(for positions: [Positions]) throws -> [MarketKit.Token] {
@@ -124,6 +136,10 @@ class LiquidityV3RecordService {
 extension LiquidityV3RecordService {
 
     func estimateRemoveFee(item: LiquidityV3RecordViewModel.V3RecordItem, ratio: BigUInt, transactionSettings: TransactionSettings?) async throws -> (EvmFeeData, GasPrice) {
+        let positionManager = uniswapKit.nonfungiblePositionAddress(chain: evmKitWrapper.evmKit.chain)
+        guard !hasPendingRemovalTransaction(positionManager: positionManager) else {
+            throw LiquidityV3RecordError.pendingRemoval
+        }
         let gasPrice = transactionSettings?.gasPriceData?.userDefined ?? legacyGasPrice
         guard let gasPrice else { throw LiquidityV3RecordError.noGasPrice }
         let gasData = GasPriceData(recommended: gasPrice, userDefined: gasPrice)
@@ -204,6 +220,9 @@ extension LiquidityV3RecordService {
         lastSubmittedTransactionHash = nil
         Task {
             do {
+                guard !self.hasPendingRemovalTransaction(positionManager: self.uniswapKit.nonfungiblePositionAddress(chain: self.evmKitWrapper.evmKit.chain)) else {
+                    throw LiquidityV3RecordError.pendingRemoval
+                }
                 if let plan = matchingFeePlan(for: ratio) {
                     if plan.step(id: "approveToken0") != nil {
                         try await approve(tokenAddress: item.positions.token0, stepId: "approveToken0", transactionDataOverride: plan.step(id: "approveToken0")?.transactionData)
@@ -403,6 +422,74 @@ private extension LiquidityV3RecordService {
         }
         return error.localizedDescription
     }
+
+    private func hasPendingRemovalTransaction(positionManager: EvmKit.Address) -> Bool {
+        let owner = evmKitWrapper.evmKit.receiveAddress.hex.lowercased()
+
+        return evmKitWrapper.evmKit.pendingTransactions(tagQueries: []).contains { fullTransaction in
+            let transaction = fullTransaction.transaction
+            guard transaction.from?.hex.lowercased() == owner,
+                  transaction.to == positionManager,
+                  let input = transaction.input,
+                  input.count >= 4 else { return false }
+
+            let selector = input.prefix(4).map { String(format: "%02x", $0) }.joined()
+            switch selector {
+            case "0c49ccbe": // decreaseLiquidity
+                return true
+            case "ac9650d8": // multicall(bytes[])
+                return containsDecreaseLiquidity(inMulticallInput: input)
+            default:
+                return false
+            }
+        }
+    }
+
+    /// Checks the ABI encoded bytes[] passed to NonfungiblePositionManager.multicall.
+    /// The bounds checks are intentional: pending transaction storage can contain
+    /// externally-created or partially decoded input and must never crash the app.
+    private func containsDecreaseLiquidity(inMulticallInput input: Data) -> Bool {
+        let arguments = Data(input.dropFirst(4))
+        guard let arrayOffset = readABINumber(arguments, at: 0),
+              arrayOffset <= arguments.count - 32,
+              let methodCount = readABINumber(arguments, at: arrayOffset),
+              methodCount <= (arguments.count - arrayOffset - 32) / 32 else {
+            return false
+        }
+
+        let offsetsStart = arrayOffset + 32
+        for index in 0 ..< methodCount {
+            let offsetPosition = offsetsStart + index * 32
+            guard let methodOffset = readABINumber(arguments, at: offsetPosition),
+                  methodOffset <= arguments.count - offsetsStart else {
+                continue
+            }
+
+            let methodStart = offsetsStart + methodOffset
+            guard let methodLength = readABINumber(arguments, at: methodStart),
+                  methodLength >= 4,
+                  methodLength <= arguments.count - methodStart - 32 else {
+                continue
+            }
+
+            let selectorStart = methodStart + 32
+            let methodSelector = arguments[selectorStart ..< selectorStart + 4]
+                .map { String(format: "%02x", $0) }
+                .joined()
+            if methodSelector == "0c49ccbe" {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private func readABINumber(_ data: Data, at offset: Int) -> Int? {
+        guard offset >= 0, offset <= data.count - 32 else { return nil }
+        let value = BigUInt(data[offset ..< offset + 32])
+        guard value <= BigUInt(Int.max) else { return nil }
+        return Int(value)
+    }
 }
 
 extension LiquidityV3RecordService {
@@ -427,13 +514,21 @@ extension LiquidityV3RecordService {
 
 extension LiquidityV3RecordService {
 
-    enum LiquidityV3RecordError: Error {
+    enum LiquidityV3RecordError: Error, UserFacingError {
         case invalidAddress
         case insufficientAmount
         case unsupportedToken
         case dataError
         case evmKitWrapperError
         case noGasPrice
+        case pendingRemoval
+
+        var errorDescription: String? {
+            if case .pendingRemoval = self {
+                return "transactions.pending".localized
+            }
+            return nil
+        }
     }
 
     enum State {

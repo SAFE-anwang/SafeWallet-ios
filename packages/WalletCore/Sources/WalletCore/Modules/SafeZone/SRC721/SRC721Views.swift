@@ -427,9 +427,12 @@ private struct SRC721WalletCollectionTokenRow: View {
 
     var body: some View {
         HStack(spacing: .margin12) {
-            Image(systemName: "photo")
-                .frame(width: 24, height: 24)
-                .foregroundColor(.themeLeah)
+            ThemeImage(
+                ComponentImage.remote(url: asset.token.imageURL ?? "", placeholder: "placeholder_nft_32", size: CGSize(width: 40, height: 40)),
+                size: CGSize(width: 40, height: 40),
+                colorStyle: nil
+            )
+            .clipShape(RoundedRectangle(cornerRadius: .cornerRadius8, style: .continuous))
             Text("safe_zone.src721.nft_detail".localized(asset.token.tokenId.description))
                 .themeSubhead1(color: .themeLeah)
             Spacer()
@@ -609,6 +612,14 @@ private struct SRC721WalletAssetDetailView: View {
     private func detailContent(token: SRC721TokenState) -> some View {
         ScrollableThemeView {
             VStack(spacing: .margin8) {
+                if let imageURL = asset.token.imageURL, !imageURL.isEmpty {
+                    ThemeImage(
+                        ComponentImage.remote(url: imageURL, placeholder: "placeholder_nft_32", size: CGSize(width: 240, height: 240)),
+                        size: CGSize(width: 240, height: 240),
+                        colorStyle: nil
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: .cornerRadius8, style: .continuous))
+                }
                 section(title: "safe_zone.src721.section.nft_details".localized) {
                     detailRow("safe_zone.src721.field.name".localized, asset.contract.name.isEmpty ? "SRC721" : asset.contract.name)
                     detailRow("safe_zone.src721.field.symbol".localized, asset.contract.symbol)
@@ -751,22 +762,45 @@ private struct SRC721AllowListView: View {
                     Spacer()
                     ProgressView()
                     Spacer()
-                } else if viewModel.entries.isEmpty {
+                } else if viewModel.entries.isEmpty && viewModel.dataState == .completed {
                     Spacer()
                     PlaceholderViewNew(icon: "no_data_48", title: "safe_zone.src721.empty.allow_list".localized)
                     Spacer()
-                } else {
+                } else if !viewModel.entries.isEmpty {
                     ScrollableThemeView {
-                        ListSection {
-                            ForEach(viewModel.entries) { entry in
-                                Button {
-                                    viewModel.beginEditing(entry)
-                                    isShowingEditor = true
-                                } label: {
-                                    SRC721AllowListRow(entry: entry)
+                        VStack(spacing: .margin8) {
+                            ListSection {
+                                ForEach(viewModel.entries) { entry in
+                                    Button {
+                                        viewModel.beginEditing(entry)
+                                        isShowingEditor = true
+                                    } label: {
+                                        SRC721AllowListRow(entry: entry)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(!viewModel.isOwner || viewModel.operationState == .sending)
                                 }
-                                .buttonStyle(.plain)
-                                .disabled(!viewModel.isOwner || viewModel.operationState == .sending)
+                            }
+                            if viewModel.isLoadingNextPage {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, .margin12)
+                            } else if let error = viewModel.loadMoreError {
+                                VStack(spacing: .margin8) {
+                                    Text(error)
+                                        .themeSubhead2(color: .themeRed, alignment: .center)
+                                    Button("button.retry".localized) { viewModel.loadNextPage() }
+                                        .buttonStyle(SecondaryButtonStyle())
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, .margin12)
+                            } else if viewModel.hasMore {
+                                Button("safe_zone.src721.action.load_more_allow_list".localized) {
+                                    viewModel.loadNextPage()
+                                }
+                                .buttonStyle(SecondaryButtonStyle())
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, .margin12)
                             }
                         }
                         .padding(.horizontal, .margin16)

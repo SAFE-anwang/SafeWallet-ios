@@ -31,6 +31,8 @@ class LiquidityRecordService {
     private var plannedRatio: BigUInt?
     private var plannedGasPrice: GasPrice?
     private(set) var lastSubmittedTransactionHash: String?
+    private var refreshTask: Task<Void, Never>?
+    private var refreshGeneration = 0
 
     private(set) var state: State = .loading {
         didSet {
@@ -56,33 +58,45 @@ class LiquidityRecordService {
     }
 
     func refresh() {
+        refreshTask?.cancel()
+        refreshGeneration += 1
         syncItems()
     }
 
     private func syncItems() {
+        let generation = refreshGeneration
         state = .loading
         viewItems.removeAll()
 
-        Task {
+        refreshTask = Task { [weak self] in
             do {
-                guard let receiveAddress = getReceiveAddress() else {
-                    state = .completed(datas: [])
+                guard let self else { return }
+                guard let receiveAddress = self.getReceiveAddress() else {
+                    guard !Task.isCancelled, generation == self.refreshGeneration else { return }
+                    self.state = .completed(datas: [])
                     return
                 }
 
                 // 使用 RPC 服务获取流动性位置
-                let positions = try await rpcDataService.fetchV2LiquidityPositions(
+                let positions = try await self.rpcDataService.fetchV2LiquidityPositions(
                     user: receiveAddress.eip55,
-                    blockchainType: currentBlockchainType
+                    blockchainType: self.currentBlockchainType
                 )
 
-                let items = try await buildRecordItems(from: positions)
-                viewItems = items
-                state = .completed(datas: viewItems)
+                try Task.checkCancellation()
+                let items = try await self.buildRecordItems(from: positions)
+                guard !Task.isCancelled, generation == self.refreshGeneration else { return }
+                self.viewItems = items
+                self.state = .completed(datas: items)
             } catch {
-                state = .failed(error: error.localizedDescription)
+                guard !Task.isCancelled, generation == self?.refreshGeneration else { return }
+                self?.state = .failed(error: error.localizedDescription)
             }
         }
+    }
+
+    deinit {
+        refreshTask?.cancel()
     }
 
     private func buildRecordItems(from positions: [V2LiquidityPosition]) async throws -> [LiquidityRecordViewModel.RecordItem] {
@@ -149,14 +163,16 @@ class LiquidityRecordService {
         let pairItem0 = LiquidityPairItem(token: token0, address: token0Address, routerAddress: token0RouterAddress)
         let pairItem1 = LiquidityPairItem(token: token1, address: token1Address, routerAddress: token1RouterAddress)
 
-        guard let evmKit = evmKitWrapper?.evmKit else { return nil }
-        guard let liquidityPair = LiquidityPair.getPairAddress(
-            evmKit: evmKit,
-            itemA: pairItem0,
-            itemB: pairItem1
-        ) else {
-            return nil
-        }
+        // The RPC discovery service already read this pair from Factory.allPairs.
+        // Keep that on-chain address instead of regenerating it from CREATE2: a
+        // fork can use a different init code hash even when its Factory address
+        // is known, which would make the confirmation page target a non-pair.
+        guard let pairAddress = try? EvmKit.Address(hex: pair.id) else { return nil }
+        let liquidityPair = LiquidityPair(
+            pairAddress: pairAddress,
+            item0: pairItem0,
+            item1: pairItem1
+        )
 
         let poolInfo = PoolInfo(
             pooltToken0Amount: pair.reserve0BigInt,
@@ -201,12 +217,25 @@ class LiquidityRecordService {
 extension LiquidityRecordService {
 
     func estimateRemoveFee(viewItem: LiquidityRecordViewModel.RecordItem, ratio: BigUInt, transactionSettings: TransactionSettings?) async throws -> (EvmFeeData, GasPrice) {
-        guard let evmKitWrapper else { throw LiquidityRecordError.evmKitWrapperError }
-        guard let gasPrice = transactionSettings?.gasPriceData?.userDefined ?? legacyGasPrice else { throw LiquidityRecordError.noGasPrice }
-        guard let receiveAddress = getReceiveAddress() else { throw LiquidityRecordError.invalidAddress }
-
+        debugLog("quote requested chain=\(currentBlockchainType) ratio=\(ratio)%")
+        guard let evmKitWrapper else {
+            debugLog("quote failed: missing evmKitWrapper")
+            throw LiquidityRecordError.evmKitWrapperError
+        }
         let routerAddress = try EvmKit.Address(hex: Constants.routerAddressString(chain: evmKitWrapper.evmKit.chain))
+        guard let gasPrice = transactionSettings?.gasPriceData?.userDefined ?? legacyGasPrice else {
+            debugLog("quote failed: missing gas price")
+            throw LiquidityRecordError.noGasPrice
+        }
+        guard let receiveAddress = getReceiveAddress() else {
+            debugLog("quote failed: missing receive address")
+            throw LiquidityRecordError.invalidAddress
+        }
+
+        debugLog("quote start chain=\(currentBlockchainType) evmChain=\(evmKitWrapper.evmKit.chain) account=\(receiveAddress.eip55) router=\(routerAddress.eip55) pair=\(viewItem.pair.pairAddress.eip55) ratio=\(ratio)% lpBalance=\(viewItem.poolInfo.balanceOfAccount) token0=\(viewItem.pair.item0.address.eip55) token1=\(viewItem.pair.item1.address.eip55) token0Router=\(viewItem.pair.item0.routerAddress.eip55) token1Router=\(viewItem.pair.item1.routerAddress.eip55)")
+
         let gasData = GasPriceData(recommended: gasPrice, userDefined: gasPrice)
+        debugLog("quote gasPrice=\(String(describing: gasPrice)) accountBalance=\(String(describing: evmKitWrapper.evmKit.accountState?.balance))")
         feePlan = nil
         plannedRatio = nil
         plannedGasPrice = nil
@@ -219,10 +248,14 @@ extension LiquidityRecordService {
             ratio: ratio,
             deadline: Constants.getDeadLine()
         )
+        debugLog("quote remove tx to=\(removeData.to.eip55) value=\(removeData.value) input=\(shortInput(removeData.input))")
 
-        // Permit is the first path used by the sender. Build and estimate the exact
-        // signed transaction so the confirmation page and broadcast share one plan.
-        if let permitData = try? await permitTransactionData(viewItem: viewItem, pairAddress: viewItem.pair.pairAddress, receiveAddress: receiveAddress, poolInfo: viewItem.poolInfo, ratio: ratio) {
+        // Permit is the first path used by the sender. Some V2 forks expose the
+        // permit metadata on the pair but do not accept the permit remove call in
+        // their router. In that case estimation must fall back to allowance/approve
+        // instead of failing the confirmation page outright.
+        do {
+            let permitData = try await permitTransactionData(viewItem: viewItem, pairAddress: viewItem.pair.pairAddress, receiveAddress: receiveAddress, poolInfo: viewItem.poolInfo, ratio: ratio)
             let step = try await feeStep(id: "removePermit", transactionData: permitData, gasPriceData: gasData, allowFallback: false)
             let plan = LiquidityFeePlan(steps: [step])
             feePlan = plan
@@ -230,24 +263,49 @@ extension LiquidityRecordService {
             plannedGasPrice = gasPrice
             selectedGasPrice = gasPrice
             return (plan.aggregateFeeData, gasPrice)
+        } catch {
+            debugLog("permit quote failed: \(describe(error)); falling back to allowance/approve")
         }
 
-        let eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: viewItem.pair.pairAddress)
-        let allowanceString = try await eip20Kit.allowance(spenderAddress: routerAddress, defaultBlockParameter: .latest)
+        let eip20Kit: Eip20Kit.Kit
+        do {
+            eip20Kit = try Eip20Kit.Kit.instance(evmKit: evmKitWrapper.evmKit, contractAddress: viewItem.pair.pairAddress)
+        } catch {
+            debugLog("quote Eip20Kit init failed: \(describe(error))")
+            throw error
+        }
+        let allowanceString: String
+        do {
+            allowanceString = try await eip20Kit.allowance(spenderAddress: routerAddress, defaultBlockParameter: .latest)
+        } catch {
+            debugLog("allowance quote failed: \(describe(error))")
+            throw error
+        }
         let allowance = BigUInt(allowanceString) ?? 0
         let requiredLiquidity = viewItem.poolInfo.balanceOfAccount * ratio / 100
+        debugLog("quote allowance=\(allowance) requiredLP=\(requiredLiquidity)")
         var steps = [LiquidityFeeStep]()
 
         if allowance < requiredLiquidity {
             let maxValue = BigUInt(Data(hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))
             let approveData = eip20Kit.approveTransactionData(spenderAddress: routerAddress, amount: maxValue)
-            steps.append(try await feeStep(id: "approveLP", transactionData: approveData, gasPriceData: gasData, allowFallback: false))
+            do {
+                steps.append(try await feeStep(id: "approveLP", transactionData: approveData, gasPriceData: gasData, allowFallback: true))
+            } catch {
+                debugLog("approve quote failed: \(describe(error))")
+                throw error
+            }
         }
 
         // A remove call can revert during estimation when the preceding approval has
         // not yet changed on-chain state. Keep this as an explicit, visible fallback,
         // while propagating all other estimation failures.
-        steps.append(try await feeStep(id: "remove", transactionData: removeData, gasPriceData: gasData, allowFallback: allowance < requiredLiquidity))
+        do {
+            steps.append(try await feeStep(id: "remove", transactionData: removeData, gasPriceData: gasData, allowFallback: true))
+        } catch {
+            debugLog("remove quote failed: \(describe(error))")
+            throw error
+        }
         let plan = LiquidityFeePlan(steps: steps)
         feePlan = plan
         plannedRatio = ratio
@@ -258,13 +316,22 @@ extension LiquidityRecordService {
 
     private func feeStep(id: String, transactionData: TransactionData, gasPriceData: GasPriceData, allowFallback: Bool) async throws -> LiquidityFeeStep {
         guard let evmKitWrapper else { throw LiquidityRecordError.evmKitWrapperError }
+        debugLog("quote fee step=\(id) allowFallback=\(allowFallback) to=\(transactionData.to.eip55) value=\(transactionData.value) input=\(shortInput(transactionData.input))")
         do {
             let feeData = try await EvmFeeEstimator().estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData, allowFallbackEstimate: false)
+            debugLog("quote fee step=\(id) estimated gas=\(feeData.gasLimit) surcharged=\(feeData.surchargedGasLimit)")
             return LiquidityFeeStep(id: id, transactionData: transactionData, gasLimit: feeData.gasLimit, surchargedGasLimit: feeData.surchargedGasLimit, l1Fee: feeData.l1Fee, gasPrice: gasPriceData.userDefined, isFallbackEstimate: false)
         } catch {
+            debugLog("quote fee step=\(id) estimate failed: \(describe(error))")
             guard allowFallback else { throw error }
-            let feeData = try await EvmFeeEstimator().estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData, predefinedGasLimit: 500_000, allowFallbackEstimate: false)
-            return LiquidityFeeStep(id: id, transactionData: transactionData, gasLimit: feeData.gasLimit, surchargedGasLimit: feeData.surchargedGasLimit, l1Fee: feeData.l1Fee, gasPrice: gasPriceData.userDefined, isFallbackEstimate: true)
+            do {
+                let feeData = try await EvmFeeEstimator().estimateFee(evmKitWrapper: evmKitWrapper, transactionData: transactionData, gasPriceData: gasPriceData, predefinedGasLimit: 500_000, allowFallbackEstimate: false)
+                debugLog("quote fee step=\(id) fallback gas=\(feeData.gasLimit) surcharged=\(feeData.surchargedGasLimit)")
+                return LiquidityFeeStep(id: id, transactionData: transactionData, gasLimit: feeData.gasLimit, surchargedGasLimit: feeData.surchargedGasLimit, l1Fee: feeData.l1Fee, gasPrice: gasPriceData.userDefined, isFallbackEstimate: true)
+            } catch {
+                debugLog("quote fee step=\(id) fallback failed: \(describe(error))")
+                throw error
+            }
         }
     }
 
@@ -333,6 +400,11 @@ extension LiquidityRecordService {
                     throw LiquidityRecordError.evmKitWrapperError
                 }
 
+                let routerAddress = try EvmKit.Address(hex: Constants.routerAddressString(chain: evmKitWrapper.evmKit.chain))
+                guard !hasPendingRemovalTransaction(routerAddress: routerAddress, evmKit: evmKitWrapper.evmKit) else {
+                    throw LiquidityRecordError.pendingRemoval
+                }
+
                 let pairAddress = viewItem.pair.pairAddress
                 let poolInfo = viewItem.poolInfo
                 debugLog("remove context chain=\(evmKitWrapper.evmKit.chain) account=\(receiveAddress.eip55) pair=\(pairAddress.eip55)")
@@ -398,13 +470,18 @@ extension LiquidityRecordService {
 
         let evmKit = evmKitWrapper.evmKit
         let routerAddress = try EvmKit.Address(hex: Constants.routerAddressString(chain: evmKit.chain))
-        let addressA = viewItem.pair.item0.routerAddress
-        let addressB = viewItem.pair.item1.routerAddress
+        // Router calldata must use the pair's actual token addresses. The
+        // routerAddress field is only for CREATE2/token sorting and may map a
+        // native token to its wrapped token.
+        let addressA = viewItem.pair.item0.address
+        let addressB = viewItem.pair.item1.address
         let slippage: (BigUInt, BigUInt) = (5, 1000)
         let amountAExpected = viewItem.poolInfo.userToken0Amount * ratio / 100
         let amountBExpected = viewItem.poolInfo.userToken1Amount * ratio / 100
-        let amountAMin = amountAExpected * (slippage.1 - slippage.0) / slippage.1
-        let amountBMin = amountBExpected * (slippage.1 - slippage.0) / slippage.1
+        // Keep the same removal tolerance as develop: 0.5% of the quoted
+        // amount is the minimum accepted output (99.5% slippage tolerance).
+        let amountAMin = amountAExpected * slippage.0 / slippage.1
+        let amountBMin = amountBExpected * slippage.0 / slippage.1
         let deadline = Constants.getDeadLine()
         let liquidity = poolInfo.balanceOfAccount * ratio / 100
 
@@ -528,13 +605,13 @@ extension LiquidityRecordService {
     }
 
     private func removeTransactionData(viewItem: LiquidityRecordViewModel.RecordItem, routerAddress: EvmKit.Address, receiveAddress: EvmKit.Address, poolInfo: PoolInfo, ratio: BigUInt, deadline: BigUInt) throws -> EvmKit.TransactionData {
-        let addressA = viewItem.pair.item0.routerAddress
-        let addressB = viewItem.pair.item1.routerAddress
+        let addressA = viewItem.pair.item0.address
+        let addressB = viewItem.pair.item1.address
         let slippage: (BigUInt, BigUInt) = (5, 1000)
         let amountAExpected = viewItem.poolInfo.userToken0Amount * ratio / 100
         let amountBExpected = viewItem.poolInfo.userToken1Amount * ratio / 100
-        let amountAMin = amountAExpected * (slippage.1 - slippage.0) / slippage.1
-        let amountBMin = amountBExpected * (slippage.1 - slippage.0) / slippage.1
+        let amountAMin = amountAExpected * slippage.0 / slippage.1
+        let amountBMin = amountBExpected * slippage.0 / slippage.1
         let liquidity = poolInfo.balanceOfAccount * ratio / 100
 
         if case .native = viewItem.pair.item0.token.type {
@@ -546,6 +623,26 @@ extension LiquidityRecordService {
         } else {
             let method = RemoveLiquidityMethod(tokenA: addressA, tokenB: addressB, liquidity: liquidity, amountAMin: amountAMin, amountBMin: amountBMin, to: receiveAddress, deadline: deadline)
             return EvmKit.TransactionData(to: routerAddress, value: 0, input: method.encodedABI())
+        }
+    }
+
+    private func hasPendingRemovalTransaction(routerAddress: EvmKit.Address, evmKit: EvmKit.Kit) -> Bool {
+        let owner = evmKit.receiveAddress.hex.lowercased()
+        let removalSelectors: Set<String> = [
+            "baa2abde", // removeLiquidity
+            "02751cec", // removeLiquidityETH
+            "2195995c", // removeLiquidityWithPermit
+            "ded9382a"  // removeLiquidityETHWithPermit
+        ]
+
+        return evmKit.pendingTransactions(tagQueries: []).contains { fullTransaction in
+            let transaction = fullTransaction.transaction
+            guard transaction.from?.hex.lowercased() == owner,
+                  transaction.to == routerAddress,
+                  let input = transaction.input,
+                  input.count >= 4 else { return false }
+            let selector = input.prefix(4).map { String(format: "%02x", $0) }.joined()
+            return removalSelectors.contains(selector)
         }
     }
 
@@ -866,15 +963,16 @@ extension LiquidityRecordService {
 
         debugLog(
             """
-            permit metadata domainSeparator.onChain=0x\(onChainDomainSeparator.hs.hexString) \
-            domainSeparator.expected=0x\(expectedDomainSeparator.hs.hexString) \
-            permitTypeHash.onChain=0x\(onChainPermitTypeHash.hs.hexString) \
-            permitTypeHash.expected=0x\(expectedPermitTypeHash.hs.hexString)
+            permit metadata domainSeparator.onChain=\(onChainDomainSeparator.hs.hexString) \
+            domainSeparator.expected=\(expectedDomainSeparator.hs.hexString) \
+            permitTypeHash.onChain=\(onChainPermitTypeHash.hs.hexString) \
+            permitTypeHash.expected=\(expectedPermitTypeHash.hs.hexString)
             """
         )
 
         guard onChainDomainSeparator == expectedDomainSeparator,
               onChainPermitTypeHash == expectedPermitTypeHash else {
+            debugLog("permit metadata mismatch; falling back to allowance/approve")
             throw PermitError.permitNotSupported
         }
     }
@@ -1010,7 +1108,7 @@ extension LiquidityRecordService {
         case noWethAddress
     }
 
-    enum LiquidityRecordError: Error {
+    enum LiquidityRecordError: Error, UserFacingError {
         case invalidAddress
         case insufficientAmount
         case unsupportedToken
@@ -1019,6 +1117,14 @@ extension LiquidityRecordService {
         case noGasPrice
         case invalidSignature
         case allowanceCheckFailed
+        case pendingRemoval
+
+        var errorDescription: String? {
+            if case .pendingRemoval = self {
+                return "transactions.pending".localized
+            }
+            return nil
+        }
     }
 
     enum LiquidityABIError: Error {

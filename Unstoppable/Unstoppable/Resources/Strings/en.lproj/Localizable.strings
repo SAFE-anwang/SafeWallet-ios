@@ -3335,10 +3335,10 @@
 "safe_zone.src721.my_nfts" = "My NFTs";
 "safe_zone.src721.nft_detail" = "NFT #%@";
 "safe_zone.src721.empty" = "No issued or imported SRC721 contracts";
-"safe_zone.src721.empty.wallet_nfts" = "No NFTs found in known contracts";
-"safe_zone.src721.manager.hint" = "Only issued or imported contracts are shown. Automatic discovery of all wallet NFTs is not available yet.";
-"safe_zone.src721.wallet_nfts.hint" = "Shows this wallet's NFTs by collection for issued or imported contracts that support NFT enumeration.";
-"safe_zone.src721.wallet_nfts.truncated" = "Only the first 500 NFTs in each contract are shown.";
+"safe_zone.src721.empty.wallet_nfts" = "No NFTs found for this wallet";
+"safe_zone.src721.manager.hint" = "Manage SRC721 contracts issued or imported by this wallet.";
+"safe_zone.src721.wallet_nfts.hint" = "NFTs held by this wallet on Safe4, grouped by collection.";
+"safe_zone.src721.wallet_nfts.truncated" = "Some NFTs may not be visible yet. Refresh later.";
 "safe_zone.src721.deploy.hint" = "The NFT information address is optional. It lets wallets load the NFT image and description.";
 "safe_zone.src721.placeholder.name" = "e.g. Safe Art Collection";
 "safe_zone.src721.placeholder.symbol" = "e.g. SAC";
@@ -3445,6 +3445,7 @@
 "safe_zone.src721.action.retry_nfts" = "Retry";
 "safe_zone.src721.action.refresh_nft" = "Refresh NFT";
 "safe_zone.src721.action.load_more_nfts" = "Load more NFTs";
+"safe_zone.src721.action.load_more_allow_list" = "Load more allow-list entries";
 "safe_zone.src721.action.approve_all" = "Approve all NFTs";
 "safe_zone.src721.action.revoke_all" = "Revoke all approval";
 "safe_zone.src721.action.approve" = "Approve";
@@ -3467,6 +3468,7 @@
 "safe_zone.src721.status.manager" = "Current wallet is the contract owner.";
 "safe_zone.src721.type.standard" = "Standard SRC721";
 "safe_zone.src721.type.burnable" = "Burnable SRC721";
+"safe_zone.src721.type.generic" = "ERC721 NFT";
 "safe_zone.src721.type.unknown" = "Unknown SRC721 type";
 "safe_zone.src721.error.contract" = "This address is not a valid SRC721 contract.";
 "safe_zone.src721.error.timeout" = "Transaction confirmation timed out. It is still being confirmed on-chain.";
@@ -3481,8 +3483,8 @@
 "safe_zone.src721.public_mint.hint" = "Public mint eligibility is checked for the signing wallet. NFTs can be sent to the recipient entered above.";
 "safe_zone.src721.confirm.mint" = "Confirm NFT mint?";
 "safe_zone.src721.allow_list.title" = "Allow-list management";
-"safe_zone.src721.allow_list.hint" = "Only addresses confirmed through SAFE NFT management on this device are shown. This is not the complete on-chain allow-list.";
-"safe_zone.src721.allow_list.editor.hint" = "Adding or editing sets the public mint amount for this address. The address cannot be zero and the amount must be a positive whole number.";
+"safe_zone.src721.allow_list.hint" = "On-chain allow-list addresses and their public mint amounts. An amount of 0 means public minting is unavailable.";
+"safe_zone.src721.allow_list.editor.hint" = "Adding or editing sets the public mint amount for this address. The address cannot be zero. Set the amount to 0 to disable public minting.";
 "safe_zone.src721.placeholder.allow_list_address" = "Paste or scan an allow-list address";
 "safe_zone.src721.placeholder.allow_list_amount" = "Enter the public mint amount";
 "safe_zone.src721.confirm.admin_mint" = "This will mint NFTs for free as the admin. Confirm?";

@@ -57,6 +57,10 @@ final class SRC721ValidationTests: XCTestCase {
         }
     }
 
+    func testAllowListCanSetZeroToRevokeMintAllowance() throws {
+        XCTAssertEqual(try SRC721Validation.amount("0", field: "amount", allowZero: true), BigUInt.zero)
+    }
+
     func testAmountRejectsNonDecimalAndUint256Overflow() {
         XCTAssertThrowsError(try SRC721Validation.amount("1e3", field: "amount"))
         XCTAssertThrowsError(try SRC721Validation.amount("01", field: "amount"))
@@ -149,6 +153,44 @@ final class SRC721ValidationTests: XCTestCase {
         XCTAssertThrowsError(
             try SRC721OwnedTokenPaging.nextOffset(offset: 20, total: 21, returnedCount: 2, limit: 20)
         )
+    }
+
+    func testAllowListPagingAdvancesByReturnedCountAndAcceptsFinalPage() throws {
+        XCTAssertEqual(try SRC721AllowListPage.nextStart(start: 0, total: 250, returnedCount: 100), 100)
+        XCTAssertEqual(try SRC721AllowListPage.nextStart(start: 200, total: 250, returnedCount: 50), 250)
+    }
+
+    func testAllowListPagingRejectsEmptyOrOversizedPages() {
+        XCTAssertThrowsError(try SRC721AllowListPage.nextStart(start: 0, total: 10, returnedCount: 0))
+        XCTAssertThrowsError(try SRC721AllowListPage.nextStart(start: 9, total: 10, returnedCount: 2))
+    }
+
+    func testAllowListPageTracksRemainingEntries() {
+        let firstPage = SRC721AllowListPage(
+            start: 0,
+            total: 250,
+            entries: Array(repeating: ("address", BigUInt(1)), count: SRC721AllowListPage.maximumCount)
+        )
+        XCTAssertEqual(SRC721AllowListPage.maximumCount, 100)
+        XCTAssertEqual(firstPage.nextStart, 100)
+        XCTAssertTrue(firstPage.hasMore)
+
+        let finalPage = SRC721AllowListPage(start: 200, total: 250, entries: Array(repeating: ("", BigUInt.zero), count: 50))
+        XCTAssertEqual(finalPage.nextStart, 250)
+        XCTAssertFalse(finalPage.hasMore)
+    }
+
+    func testInsightAssetsDecodeNumericAndStringTokenIds() throws {
+        let numericData = Data(#"{"owner":"0x0000000000000000000000000000000000000001","token":"0x0000000000000000000000000000000000000010","tokenType":"erc721","tokenId":0,"tokenValue":1,"tokenURI":"https://example.com/0","tokenImage":null}"#.utf8)
+        let numericAsset = try JSONDecoder().decode(SRC721InsightAsset.self, from: numericData)
+        XCTAssertEqual(numericAsset.tokenId, "0")
+        XCTAssertNil(numericAsset.tokenImage)
+
+        let largeTokenId = "184467440737095516160000"
+        let stringData = Data((#"{"owner":"0x0000000000000000000000000000000000000001","token":"0x0000000000000000000000000000000000000010","tokenType":"erc721","tokenId":""# + largeTokenId + #"","tokenValue":"1","tokenURI":null,"tokenImage":"https://example.com/image.png"}"#).utf8)
+        let stringAsset = try JSONDecoder().decode(SRC721InsightAsset.self, from: stringData)
+        XCTAssertEqual(stringAsset.tokenId, largeTokenId)
+        XCTAssertEqual(stringAsset.tokenImage, "https://example.com/image.png")
     }
 
     func testWalletCollectionsGroupAssetsByContractAndSortTokens() {

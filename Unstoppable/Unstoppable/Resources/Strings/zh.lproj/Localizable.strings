@@ -3337,10 +3337,10 @@
 "safe_zone.src721.my_nfts" = "我的 NFT";
 "safe_zone.src721.nft_detail" = "NFT #%@";
 "safe_zone.src721.empty" = "暂无已发行或已导入的 SRC721 合约";
-"safe_zone.src721.empty.wallet_nfts" = "在已知合约中未发现当前钱包持有的 NFT";
-"safe_zone.src721.manager.hint" = "这里只展示已发行或已导入的合约，暂不支持自动发现钱包全部 NFT。";
-"safe_zone.src721.wallet_nfts.hint" = "按合集展示当前钱包在已发行或已导入且支持枚举读取的合约中持有的 NFT。";
-"safe_zone.src721.wallet_nfts.truncated" = "每个合约最多展示前 500 个 NFT。";
+"safe_zone.src721.empty.wallet_nfts" = "未发现当前钱包持有的 NFT";
+"safe_zone.src721.manager.hint" = "管理当前钱包发行或导入的 SRC721 合约。";
+"safe_zone.src721.wallet_nfts.hint" = "按合集展示当前钱包在 Safe4 链上持有的 NFT。";
+"safe_zone.src721.wallet_nfts.truncated" = "部分 NFT 可能暂未显示，请稍后刷新。";
 "safe_zone.src721.deploy.hint" = "NFT 信息地址可选，用于让钱包读取 NFT 的图片和介绍。";
 "safe_zone.src721.placeholder.name" = "例如：Safe Art Collection";
 "safe_zone.src721.placeholder.symbol" = "例如：SAC";
@@ -3447,6 +3447,7 @@
 "safe_zone.src721.action.retry_nfts" = "重新读取";
 "safe_zone.src721.action.refresh_nft" = "刷新 NFT";
 "safe_zone.src721.action.load_more_nfts" = "加载更多 NFT";
+"safe_zone.src721.action.load_more_allow_list" = "加载更多白名单";
 "safe_zone.src721.action.approve_all" = "授权全部 NFT";
 "safe_zone.src721.action.revoke_all" = "取消全部授权";
 "safe_zone.src721.action.approve" = "授权";
@@ -3469,6 +3470,7 @@
 "safe_zone.src721.status.manager" = "当前钱包是合约 Owner。";
 "safe_zone.src721.type.standard" = "标准 SRC721";
 "safe_zone.src721.type.burnable" = "可销毁 SRC721";
+"safe_zone.src721.type.generic" = "ERC721 NFT";
 "safe_zone.src721.type.unknown" = "未知 SRC721 类型";
 "safe_zone.src721.error.contract" = "该地址不是有效的 SRC721 合约。";
 "safe_zone.src721.error.timeout" = "交易确认超时，状态仍在链上确认中。";
@@ -3483,8 +3485,8 @@
 "safe_zone.src721.public_mint.hint" = "公开铸造资格按当前签名钱包校验，NFT 可发送至填写的接收地址。";
 "safe_zone.src721.confirm.mint" = "确认铸造 NFT？";
 "safe_zone.src721.allow_list.title" = "白名单管理";
-"safe_zone.src721.allow_list.hint" = "仅展示本设备通过 SAFE NFT 管理功能确认提交的地址，不代表链上完整白名单。";
-"safe_zone.src721.allow_list.editor.hint" = "新增或编辑会为该地址设置可公开铸造数量。地址不可为零地址，数量必须是大于 0 的整数。";
+"safe_zone.src721.allow_list.hint" = "展示合约链上的白名单地址及其可公开铸造数量。额度为 0 表示当前不可公开铸造。";
+"safe_zone.src721.allow_list.editor.hint" = "新增或编辑会为该地址设置可公开铸造数量。地址不可为零地址，数量可为 0；设为 0 后该地址将不能公开铸造。";
 "safe_zone.src721.placeholder.allow_list_address" = "粘贴或扫描白名单地址";
 "safe_zone.src721.placeholder.allow_list_amount" = "请输入可公开铸造数量";
 "safe_zone.src721.confirm.admin_mint" = "将以管理员身份免费铸造 NFT，请确认。";

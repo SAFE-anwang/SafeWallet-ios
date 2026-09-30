@@ -5,6 +5,7 @@ import Web3Core
 enum SRC721ContractType: String, CaseIterable, Codable, Hashable, Identifiable {
     case standard
     case burnable
+    case generic
     case unknown
 
     var id: Self { self }
@@ -13,6 +14,7 @@ enum SRC721ContractType: String, CaseIterable, Codable, Hashable, Identifiable {
         switch self {
         case .standard: return "safe_zone.src721.type.standard".localized
         case .burnable: return "safe_zone.src721.type.burnable".localized
+        case .generic: return "safe_zone.src721.type.generic".localized
         case .unknown: return "safe_zone.src721.type.unknown".localized
         }
     }
@@ -117,9 +119,18 @@ struct SRC721OwnedToken: Identifiable, Equatable {
     let tokenId: BigUInt
     let ownerAddress: String
     let tokenURI: String?
+    let imageURL: String?
     let source: SRC721AssetSource
 
     var id: String { tokenId.description }
+
+    init(tokenId: BigUInt, ownerAddress: String, tokenURI: String?, imageURL: String? = nil, source: SRC721AssetSource) {
+        self.tokenId = tokenId
+        self.ownerAddress = ownerAddress
+        self.tokenURI = tokenURI
+        self.imageURL = imageURL
+        self.source = source
+    }
 }
 
 struct SRC721OwnedTokenPage: Equatable {
@@ -202,6 +213,26 @@ enum SRC721OwnedTokenPaging {
 
 protocol SRC721OwnedAssetProvider {
     func ownedTokenPage(type: SRC721ContractType, offset: Int, limit: Int) async throws -> SRC721OwnedTokenPage
+}
+
+struct SRC721AllowListPage {
+    static let maximumCount = 100
+
+    let start: BigUInt
+    let total: BigUInt
+    let entries: [(address: String, amount: BigUInt)]
+
+    var nextStart: BigUInt { start + BigUInt(entries.count) }
+    var hasMore: Bool { nextStart < total }
+
+    static func nextStart(start: BigUInt, total: BigUInt, returnedCount: Int) throws -> BigUInt {
+        guard start <= total,
+              returnedCount > 0,
+              BigUInt(returnedCount) <= total - start else {
+            throw SRC721ValidationError.invalidAllowList
+        }
+        return start + BigUInt(returnedCount)
+    }
 }
 
 struct SRC721TransactionRecord: Codable, Hashable, Identifiable {

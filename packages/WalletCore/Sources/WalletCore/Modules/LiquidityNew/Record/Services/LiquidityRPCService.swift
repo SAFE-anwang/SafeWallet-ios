@@ -9,8 +9,8 @@ import BigInt
 // 使用 RPC 调用获取流动性数据，替代 Subgraph 方式
 
 class LiquidityRPCService {
+    private let maxConcurrentRequests = 8
     private let networkManager: NetworkManager
-    private let retryDelays: [UInt64] = [0, 500_000_000, 1_000_000_000]
     private let rpcLogContext = ["LiquidityRPC"]
 
     init(networkManager: NetworkManager = NetworkManager()) {
@@ -26,27 +26,41 @@ class LiquidityRPCService {
         // 获取用户的 LP 代币列表
         let lpTokens = try await fetchLPTokens(user: normalizedAddress, blockchainType: blockchainType)
 
-        // 查询每个 LP 代币的详细信息
+        // Query position details in bounded batches. A task for every pair would
+        // overload the RPC endpoint when the wallet owns many LP tokens.
         var positions = [V2LiquidityPosition]()
-        for lpToken in lpTokens {
-            do {
-                if let position = try await fetchPositionDetail(
-                    user: normalizedAddress,
-                    pairAddress: lpToken.address,
-                    balance: lpToken.balance,
-                    blockchainType: blockchainType
-                ) {
-                    positions.append(position)
+        for batch in lpTokens.chunks(maxConcurrentRequests) {
+            let batchPositions = await withTaskGroup(of: V2LiquidityPosition?.self, returning: [V2LiquidityPosition?].self) { group in
+                for lpToken in batch {
+                    group.addTask {
+                        do {
+                            return try await self.fetchPositionDetail(
+                                user: normalizedAddress,
+                                pairAddress: lpToken.address,
+                                balance: lpToken.balance,
+                                blockchainType: blockchainType
+                            )
+                        } catch is CancellationError {
+                            return nil
+                        } catch {
+                            Core.shared.logger.log(
+                                level: .warning,
+                                message: "Failed to fetch position for \(lpToken.address): \(error.localizedDescription)",
+                                context: self.rpcLogContext,
+                                save: true
+                            )
+                            return nil
+                        }
+                    }
                 }
-            } catch {
-                Core.shared.logger.log(
-                    level: .warning,
-                    message: "Failed to fetch position for \(lpToken.address): \(error.localizedDescription)",
-                    context: rpcLogContext,
-                    save: true
-                )
-                continue
+
+                var results = [V2LiquidityPosition?]()
+                for await result in group {
+                    results.append(result)
+                }
+                return results
             }
+            positions.append(contentsOf: batchPositions.compactMap { $0 })
         }
 
         return positions
@@ -57,70 +71,48 @@ class LiquidityRPCService {
     /// 获取用户的 LP 代币列表
     private func fetchLPTokens(user: String, blockchainType: BlockchainType) async throws -> [LPTokenInfo] {
         switch blockchainType {
-        case .safe4:
-            return try await fetchSafe4LPTokens(user: user)
-        case .ethereum, .binanceSmartChain:
-            // 对于 ETH/BSC，需要通过事件日志或工厂合约查询
-            // 这里简化处理，返回空数组（实际实现需要遍历工厂合约的所有配对）
+        case .safe4, .ethereum, .binanceSmartChain:
+            // Safe4 的 SafeSwap 与其它 V2 DEX 一样，LP 代币就是 Factory 创建的 Pair。
+            // 不使用区块浏览器的 addressERC20 接口：该接口在 Safe4 已不可用，且
+            // ERC20 资产列表并不能保证包含 LP token。
             return try await fetchEvmLPTokens(user: user, blockchainType: blockchainType)
         default:
             throw RPCError.unsupportedChain
         }
     }
 
-    /// 获取 Safe4 的 LP 代币
-    private func fetchSafe4LPTokens(user: String) async throws -> [LPTokenInfo] {
-        var page = 1
-        let pageSize = 100
-        var records = [Safe4AddressErc20Record]()
-
-        while true {
-            let body = Safe4AddressErc20Request(address: user, current: page, pageSize: pageSize)
-            let response: Safe4AddressErc20Response = try await safe4ResponseWithRetry(url: safe4AssetsEndpoint(), body: body)
-            let data = response.data ?? .empty
-            records.append(contentsOf: data.records)
-
-            if data.records.count < pageSize || page >= data.totalPages {
-                break
-            }
-            page += 1
-        }
-
-        return records
-            .filter { BigUInt($0.balance) ?? 0 > 0 }
-            .map { LPTokenInfo(address: $0.token.lowercased(), balance: $0.balance) }
-    }
-
     /// 获取 EVM 链的 LP 代币
     private func fetchEvmLPTokens(user: String, blockchainType: BlockchainType) async throws -> [LPTokenInfo] {
-        // 使用事件日志查询用户的 Mint/Burn 事件来获取参与过的配对
-        let factoryAddress = try factoryAddress(for: blockchainType)
-        let rpcURL = try rpcEndpoint(blockchainType: blockchainType)
-
-        // 查询 PairCreated 事件来获取所有配对（简化：只查询最近的事件）
-        // 实际生产环境应该使用索引服务或缓存
         var lpTokens: [LPTokenInfo] = []
-
-        // 通过常见的 LP 代币合约查询余额
-        // 这里我们尝试查询用户持有的所有 ERC20 代币，筛选出可能是 LP 代币的
-        // 实际实现应该通过事件日志追踪用户的流动性操作
-
-        // 临时方案：查询一些常见的配对（可以根据需求扩展）
         let commonPairs = try await fetchCommonPairs(blockchainType: blockchainType)
 
-        for pairAddress in commonPairs {
-            do {
-                let balance = try await ethCallBalanceOf(
-                    contract: pairAddress,
-                    userAddress: user,
-                    blockchainType: blockchainType
-                )
-                if balance > 0 {
-                    lpTokens.append(LPTokenInfo(address: pairAddress, balance: balance.description))
+        for batch in commonPairs.chunks(maxConcurrentRequests) {
+            let balances = await withTaskGroup(of: LPTokenInfo?.self, returning: [LPTokenInfo?].self) { group in
+                for pairAddress in batch {
+                    group.addTask {
+                        do {
+                            let balance = try await self.ethCallBalanceOf(
+                                contract: pairAddress,
+                                userAddress: user,
+                                blockchainType: blockchainType
+                            )
+                            guard balance > 0 else { return nil }
+                            return LPTokenInfo(address: pairAddress, balance: balance.description)
+                        } catch is CancellationError {
+                            return nil
+                        } catch {
+                            return nil
+                        }
+                    }
                 }
-            } catch {
-                continue
+
+                var results = [LPTokenInfo?]()
+                for await result in group {
+                    results.append(result)
+                }
+                return results
             }
+            lpTokens.append(contentsOf: balances.compactMap { $0 })
         }
 
         return lpTokens
@@ -140,20 +132,35 @@ class LiquidityRPCService {
         guard pairCount > 0 else { return [] }
 
         // 遍历所有配对（限制数量以避免过多 RPC 调用）
-        let maxPairs = min(Int(pairCount), 1000) // 最多查询 1000 个配对
+        let maxPairs = min(pairCount, BigUInt(1000)) // 最多查询 1000 个配对
         var pairs: [String] = []
 
-        for index in 0..<maxPairs {
-            do {
-                let pairAddress = try await ethCallAddressAtIndex(
-                    contract: factoryAddress,
-                    index: index,
-                    blockchainType: blockchainType
-                )
-                pairs.append(pairAddress)
-            } catch {
-                continue
+        for batchStart in stride(from: 0, to: Int(maxPairs), by: maxConcurrentRequests) {
+            let batchEnd = min(batchStart + maxConcurrentRequests, Int(maxPairs))
+            let batchPairs = await withTaskGroup(of: String?.self, returning: [String?].self) { group in
+                for index in batchStart..<batchEnd {
+                    group.addTask {
+                        do {
+                            return try await self.ethCallAddressAtIndex(
+                                contract: factoryAddress,
+                                index: index,
+                                blockchainType: blockchainType
+                            )
+                        } catch is CancellationError {
+                            return nil
+                        } catch {
+                            return nil
+                        }
+                    }
+                }
+
+                var results = [String?]()
+                for await result in group {
+                    results.append(result)
+                }
+                return results
             }
+            pairs.append(contentsOf: batchPairs.compactMap { $0 })
         }
 
         return pairs
@@ -177,6 +184,8 @@ class LiquidityRPCService {
     /// 获取工厂合约地址
     private func factoryAddress(for blockchainType: BlockchainType) throws -> String {
         switch blockchainType {
+        case .safe4:
+            return "0xB3c827077312163c53E3822defE32cAffE574B42" // SafeSwap V2 Factory
         case .ethereum:
             return "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f" // Uniswap V2 Factory
         case .binanceSmartChain:
@@ -207,54 +216,62 @@ class LiquidityRPCService {
         let balanceBigInt = BigUInt(balance) ?? 0
         guard balanceBigInt > 0 else { return nil }
 
-        // 获取代币对信息
-        let token0Address = try await ethCallAddress(
+        // Independent pair calls can be issued together, while the batch limit
+        // above keeps the total number of in-flight RPC requests bounded.
+        async let token0AddressResult = ethCallAddress(
             contract: pairAddress,
             methodId: "0x0dfe1681",
             blockchainType: blockchainType
         )
-        let token1Address = try await ethCallAddress(
+        async let token1AddressResult = ethCallAddress(
             contract: pairAddress,
             methodId: "0xd21220a7",
             blockchainType: blockchainType
         )
-
-        // 获取储备量
-        let (reserve0, reserve1) = try await ethCallReserves(
+        async let reservesResult = ethCallReserves(
             contract: pairAddress,
             blockchainType: blockchainType
         )
-
-        // 获取总供应量
-        let totalSupply = try await ethCallUInt(
+        async let totalSupplyResult = ethCallUInt(
             contract: pairAddress,
             methodId: "0x18160ddd",
             blockchainType: blockchainType
         )
 
+        let (token0Address, token1Address, (reserve0, reserve1), totalSupply) = try await (
+            token0AddressResult,
+            token1AddressResult,
+            reservesResult,
+            totalSupplyResult
+        )
+
         guard totalSupply > 0 else { return nil }
 
         // 获取代币元数据
-        let token0Symbol = (try? await ethCallString(
+        async let token0SymbolResult = ethCallString(
             contract: token0Address,
             methodId: "0x95d89b41",
             blockchainType: blockchainType
-        )) ?? "UNKNOWN"
-        let token1Symbol = (try? await ethCallString(
+        )
+        async let token1SymbolResult = ethCallString(
             contract: token1Address,
             methodId: "0x95d89b41",
             blockchainType: blockchainType
-        )) ?? "UNKNOWN"
-        let token0Decimals = (try? await ethCallUInt(
+        )
+        async let token0DecimalsResult = ethCallUInt(
             contract: token0Address,
             methodId: "0x313ce567",
             blockchainType: blockchainType
-        )) ?? 18
-        let token1Decimals = (try? await ethCallUInt(
+        )
+        async let token1DecimalsResult = ethCallUInt(
             contract: token1Address,
             methodId: "0x313ce567",
             blockchainType: blockchainType
-        )) ?? 18
+        )
+        let token0Symbol = (try? await token0SymbolResult) ?? "UNKNOWN"
+        let token1Symbol = (try? await token1SymbolResult) ?? "UNKNOWN"
+        let token0Decimals = (try? await token0DecimalsResult) ?? 18
+        let token1Decimals = (try? await token1DecimalsResult) ?? 18
 
         return V2LiquidityPosition(
             id: "\(pairAddress)-\(user)",
@@ -376,39 +393,6 @@ class LiquidityRPCService {
 
     // MARK: - 网络请求
 
-    private func safe4ResponseWithRetry<T: Encodable, U: Decodable>(url: String, body: T) async throws -> U {
-        var lastError: Error?
-
-        for (attempt, delay) in retryDelays.enumerated() {
-            if delay > 0 {
-                try? await Task.sleep(nanoseconds: delay)
-            }
-
-            do {
-                let request = try buildRequest(url: url, body: body)
-                let response: U = try await singleResponse(request: request, as: U.self)
-                if let safe4Response = response as? Safe4AddressErc20Response, safe4Response.code != "0" {
-                    throw RPCError.safe4ApiError(safe4Response.message)
-                }
-                return response
-            } catch {
-                lastError = error
-                if attempt < retryDelays.count - 1 && shouldRetry(error: error) {
-                    Core.shared.logger.log(
-                        level: .warning,
-                        message: "Safe4 liquidity query retry \(attempt + 1) failed: \(String(reflecting: error))",
-                        context: rpcLogContext,
-                        save: true
-                    )
-                    continue
-                }
-                throw error
-            }
-        }
-
-        throw lastError ?? RPCError.invalidResponse
-    }
-
     private func singleResponse<T: Decodable>(request: DataRequest, as type: T.Type) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
             request
@@ -422,19 +406,6 @@ class LiquidityRPCService {
                     }
                 }
         }
-    }
-
-    private func buildRequest<T: Encodable>(url: String, body: T) throws -> DataRequest {
-        guard let url = URL(string: url) else {
-            throw RPCError.invalidURL
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.httpBody = try JSONEncoder().encode(body)
-        return networkManager.session.request(request)
     }
 
     private func buildRawRequest(url: String, body: [String: Any]) throws -> DataRequest {
@@ -467,32 +438,6 @@ class LiquidityRPCService {
         return value
     }
 
-    private func shouldRetry(error: Error) -> Bool {
-        if case let RPCError.safe4ApiError(message) = error, message.contains("系统繁忙") {
-            return true
-        }
-
-        if let afError = error as? AFError {
-            if case let .responseValidationFailed(reason) = afError,
-               case let .unacceptableStatusCode(code) = reason {
-                return [408, 429, 500, 502, 503, 504].contains(code)
-            }
-            if case let .sessionTaskFailed(underlyingError) = afError,
-               let urlError = underlyingError as? URLError {
-                return [
-                    .timedOut,
-                    .cannotFindHost,
-                    .cannotConnectToHost,
-                    .networkConnectionLost,
-                    .dnsLookupFailed,
-                    .notConnectedToInternet,
-                ].contains(urlError.code)
-            }
-        }
-
-        return false
-    }
-
     private func rpcEndpoint(blockchainType: BlockchainType) throws -> String {
         switch blockchainType {
         case .safe4:
@@ -520,42 +465,12 @@ class LiquidityRPCService {
         }
     }
 
-    private func safe4AssetsEndpoint() -> String {
-        "\(Safe4Network.currentContext.apiBaseUrl)/5005/assets/addressERC20"
-    }
 }
 
 // MARK: - 数据模型
 
 struct LPTokenInfo {
     let address: String
-    let balance: String
-}
-
-struct Safe4AddressErc20Request: Encodable {
-    let address: String
-    let current: Int
-    let pageSize: Int
-}
-
-struct Safe4AddressErc20Response: Decodable {
-    let code: String
-    let message: String
-    let data: Safe4AddressErc20Page?
-}
-
-struct Safe4AddressErc20Page: Decodable {
-    let current: Int
-    let pageSize: Int
-    let total: Int
-    let totalPages: Int
-    let records: [Safe4AddressErc20Record]
-
-    static let empty = Safe4AddressErc20Page(current: 1, pageSize: 0, total: 0, totalPages: 0, records: [])
-}
-
-struct Safe4AddressErc20Record: Decodable {
-    let token: String
     let balance: String
 }
 
@@ -621,7 +536,25 @@ enum RPCError: Error {
     case invalidWalletAddress
     case missingRPCEndpoint
     case rpcError(String)
-    case safe4ApiError(String)
+}
+
+extension RPCError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "Invalid liquidity service URL"
+        case .unsupportedChain:
+            return "Liquidity is not supported on this chain"
+        case .invalidResponse:
+            return "Invalid liquidity service response"
+        case .invalidWalletAddress:
+            return "Invalid wallet address"
+        case .missingRPCEndpoint:
+            return "RPC endpoint is unavailable"
+        case let .rpcError(message):
+            return message
+        }
+    }
 }
 
 // MARK: - String Extension

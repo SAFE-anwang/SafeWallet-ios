@@ -28,20 +28,31 @@ struct LiquidityRemoveSendView: View {
     }
 
     var body: some View {
-        ThemeView {
-            LiquidityRemoveSendContent(
-                sendData: makeSendData(ratio),
-                displayData: displayData,
-                selectedRatio: $ratio,
-                ratioValue: $ratioValue,
-                allowsContinuousRatio: allowsContinuousRatio,
-                isPresented: $isPresented,
-                onSuccess: onSuccess
-            )
-            .id(ratio)
+        ThemeNavigationStack {
+            ThemeView {
+                LiquidityRemoveSendContent(
+                    sendData: makeSendData(ratio),
+                    displayData: displayData,
+                    selectedRatio: $ratio,
+                    ratioValue: $ratioValue,
+                    allowsContinuousRatio: allowsContinuousRatio,
+                    isPresented: $isPresented,
+                    onSuccess: onSuccess
+                )
+                .id(ratio)
+            }
+            .navigationTitle("liquidity.remove".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("close")
+                    }
+                }
+            }
         }
-        .navigationTitle("liquidity.remove".localized)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
