@@ -77,7 +77,15 @@ public struct CoinIconView: View {
     }
 
     public var body: some View {
-        IconView(url: coin?.imageUrl, alternativeUrl: coin?.image, placeholderImage: placeholderImage, type: .circle, size: size)
+        if coin?.isSafe4Native == true {
+            Image("safelog")
+                .resizable()
+                .scaledToFit()
+                .clipShape(Circle())
+                .frame(width: size, height: size)
+        } else {
+            IconView(url: coin?.imageUrl, alternativeUrl: coin?.image, placeholderImage: placeholderImage, type: .circle, size: size)
+        }
     }
 }
 

@@ -407,9 +407,9 @@
 "balance.token.not_relayed.info.description" = "此金额的交易已广播，但尚未被网络接受。";
 "balance.token.transparent" = "透明";
 "balance.token.transparent.info.title" = "透明余额";
-"balance.token.transparent.info.description" = "您在透明地址中持有 ZEC 余额。要在 Unstoppable 中使用，必须将其屏蔽（shield）以实现完全隐私。";
+"balance.token.transparent.info.description" = "您在透明地址中持有 ZEC 余额。要在 SafeWallet 中使用，必须将其屏蔽（shield）以实现完全隐私。";
 "balance.token.transparent.detected.title" = "检测到透明 ZEC 地址";
-"balance.token.transparent.detected.description" = "您在透明地址中持有 ZEC 余额。要在 Unstoppable 中使用，必须将其屏蔽（shield）以实现完全隐私。";
+"balance.token.transparent.detected.description" = "您在透明地址中持有 ZEC 余额。要在 SafeWallet 中使用，必须将其屏蔽（shield）以实现完全隐私。";
 "balance.token.shield" = "屏蔽";
 "balance.token.migration.required" = "需要迁移";
 "transactions.migrate" = "迁移";
@@ -1570,7 +1570,7 @@
 "settings.donate.title" = "捐助";
 "settings.rate_us" = "评价我们";
 "settings.tell_friends" = "分享给好友";
-"settings.social_networks.label" = "Be Unstoppable";
+"settings.social_networks.label" = "Be SafeWallet";
 "settings.dapp_connection" = "dApp 连接";
 "settings.appearance" = "外观";
 
@@ -1611,7 +1611,7 @@
 
 // Settings -> Tell Friends
 
-"settings_tell_friends.text" = "Be Unstoppable";
+"settings_tell_friends.text" = "Be SafeWallet";
 
 // Settings -> Blockchain Settings
 
@@ -1819,7 +1819,7 @@
 "settings.privacy.allow" = "共享界面数据";
 "settings.privacy.allow.description" = "此設置允許您禁用UI/UX分析並確保完全的隱私性。";
 "settings.privacy.nym" = "获取 Nym VPN";
-"settings.privacy.nym.description" = "通过 Unstoppable 获取 Nym VPN 的最佳优惠——以更实惠的价格享受更强的隐私保护。";
+"settings.privacy.nym.description" = "通过 SafeWallet 获取 Nym VPN 的最佳优惠——以更实惠的价格享受更强的隐私保护。";
 
 // Settings -> Appearance
 
@@ -1875,7 +1875,7 @@
 
 // Settings -> Support
 
-"settings.vip_support.description" = "獲得專屬訪問我們的貴賓群組的權限，高級用戶和Unstoppable錢包團隊在此協作。接收直接協助、討論未來更新，並幫助塑造錢包的發展。";
+"settings.vip_support.description" = "獲得專屬訪問我們的貴賓群組的權限，高級用戶和SafeWallet錢包團隊在此協作。接收直接協助、討論未來更新，並幫助塑造錢包的發展。";
 "settings.vip_support.start_chat" = "加入貴賓群組";
 
 // Settings -> Contacts
@@ -1995,7 +1995,7 @@
 "passkey_terms.cross_platform.description" = "可能无法在非 Apple 设备上使用。";
 
 "passkey_terms.responsibility.title" = "责任";
-"passkey_terms.responsibility.description" = "您需对设备和 iCloud 的访问负责。如果访问丢失，Unstoppable 无法恢复此钱包。";
+"passkey_terms.responsibility.description" = "您需对设备和 iCloud 的访问负责。如果访问丢失，SafeWallet 无法恢复此钱包。";
 
 "passkey_terms.button" = "我已了解并继续";
 
@@ -2239,7 +2239,7 @@
 "monero_network.node" = "节点";
 "monero_network.added" = "已添加";
 "monero_network.add_new" = "添加新的";
-"monero_network.description" = "选择 Unstoppable 应用用于同步钱包的节点。";
+"monero_network.description" = "选择 SafeWallet 应用用于同步钱包的节点。";
 "monero_network.auto_select" = "自动选择节点";
 "monero_network.auto_select.description" = "连接到最快的最新节点";
 "monero_network.unreachable" = "无法连接";
@@ -2267,7 +2267,7 @@
 "zano_network.node" = "节点";
 "zano_network.added" = "已添加";
 "zano_network.add_new" = "添加新节点";
-"zano_network.description" = "选择 Unstoppable 应用用于同步钱包的节点。";
+"zano_network.description" = "选择 SafeWallet 应用用于同步钱包的节点。";
 
 "add_zano_node.title" = "添加节点";
 "add_zano_node.node_url" = "节点 URL";
@@ -2277,7 +2277,7 @@
 "zcash_network.node" = "服务器";
 "zcash_network.added" = "已添加";
 "zcash_network.add_new" = "添加新服务器";
-"zcash_network.description" = "选择 Unstoppable 应用用于同步钱包的轻钱包服务器。";
+"zcash_network.description" = "选择 SafeWallet 应用用于同步钱包的轻钱包服务器。";
 
 "add_zcash_node.title" = "添加服务器";
 "add_zcash_node.description" = "输入 lightwalletd 服务器地址（主机或主机:端口）。";
@@ -2466,7 +2466,7 @@
 
 "no_passcode.info_text" = "此应用要求电话已启用密码（屏幕锁定）。\n\n您可以在iOS设置中启用密码。\n\n请注意，禁用操作系统级别的PIN码后，电话的安全存储保障措施将使以前保存的数据无效。您必须恢复您的钱包密钥才能回到您的钱包。";
 "cannot_check_passcode.info_text" = "无法检查密码（屏幕锁）的状态。请重启应用程序。";
-"jailbreak.info_text" = "Unstoppable团队建议仅在未获取根权限（未越狱）的手机上使用应用。\n\n请注意，使用已获取根权限的设备，应用将难以保证您的加密货币免受来自恶意软件的安全威胁。";
+"jailbreak.info_text" = "SafeWallet团队建议仅在未获取根权限（未越狱）的手机上使用应用。\n\n请注意，使用已获取根权限的设备，应用将难以保证您的加密货币免受来自恶意软件的安全威胁。";
 
 // Transaction Filter
 
@@ -2519,7 +2519,7 @@
 "purchases.swap_control.info" = "默认情况下，我们会选择最佳可用报价。使用 Premium，您可以选择不同的路由。";
 "purchases.priority_support" = "优先支持";
 "purchases.priority_support.description" = "直接联系支持团队。";
-"purchases.priority_support.info" = "为您提供优先级支持的直接通道，获得来自 Unstoppable 团队快速且个性化的帮助。";
+"purchases.priority_support.info" = "为您提供优先级支持的直接通道，获得来自 SafeWallet 团队快速且个性化的帮助。";
 
 // Market Insights
 "purchases.market_insights" = "市场洞察";
@@ -3341,6 +3341,7 @@
 "safe_zone.src721.manager.hint" = "管理当前钱包发行或导入的 SRC721 合约。";
 "safe_zone.src721.wallet_nfts.hint" = "按合集展示当前钱包在 Safe4 链上持有的 NFT。";
 "safe_zone.src721.wallet_nfts.truncated" = "部分 NFT 可能暂未显示，请稍后刷新。";
+"safe_zone.src721.wallet_nfts.partial_error" = "部分合集读取失败，当前列表仅显示已成功读取的 NFT。";
 "safe_zone.src721.deploy.hint" = "NFT 信息地址可选，用于让钱包读取 NFT 的图片和介绍。";
 "safe_zone.src721.placeholder.name" = "例如：Safe Art Collection";
 "safe_zone.src721.placeholder.symbol" = "例如：SAC";
@@ -3385,6 +3386,10 @@
 "safe_zone.src721.error.address" = "%@ 不是有效地址。";
 "safe_zone.src721.error.amount" = "请输入有效的%@。";
 "safe_zone.src721.error.allow_list" = "白名单地址和额度不能为空，且数量必须一致。";
+"safe_zone.src721.error.allow_list_unavailable" = "当前合约不支持 Safe4 SRC721 白名单功能。";
+"safe_zone.src721.error.allow_list_read_failed" = "读取链上白名单失败：%@";
+"safe_zone.src721.error.owner_read_failed" = "暂时无法确认合约 Owner，当前页面仅展示链上数据。";
+"safe_zone.src721.error.token_status_unavailable" = "暂时无法确认 NFT 的链上操作状态，操作已禁用。";
 "safe_zone.src721.error.allow_list_duplicate" = "该地址已在白名单记录中，请直接编辑额度。";
 "safe_zone.src721.error.logo" = "Logo 文件过大，请选择较小的图片。";
 "safe_zone.src721.error.required" = "请填写%@。";
@@ -3466,6 +3471,10 @@
 "safe_zone.src721.section.withdraw" = "提取 SAFE";
 "safe_zone.src721.field.withdrawable_safe" = "可提取 SAFE";
 "safe_zone.src721.status.pending" = "发行交易等待确认";
+"safe_zone.src721.status.token_operation_pending" = "NFT 操作处理中";
+"safe_zone.src721.status.transfer_pending" = "转移处理中";
+"safe_zone.src721.status.burn_pending" = "销毁处理中";
+"safe_zone.src721.status.discovered" = "链上发现，仅展示";
 "safe_zone.src721.status.read_only" = "当前钱包不是合约 Owner，管理功能为只读。";
 "safe_zone.src721.status.manager" = "当前钱包是合约 Owner。";
 "safe_zone.src721.type.standard" = "标准 SRC721";

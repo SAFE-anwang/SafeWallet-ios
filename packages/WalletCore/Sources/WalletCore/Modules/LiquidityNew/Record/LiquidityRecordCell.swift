@@ -1,4 +1,5 @@
 import UIKit
+import MarketKit
 import SnapKit
 
 class LiquidityRecordCell: UITableViewCell {
@@ -100,13 +101,13 @@ class LiquidityRecordCell: UITableViewCell {
     func bind(viewItem: LiquidityRecordViewModel.RecordItem) {
 
         self.viewItem = viewItem
-        tokenAView.bind(iconUrl: viewItem.tokenA.coin.imageUrl,
+        tokenAView.bind(token: viewItem.tokenA,
                         name: viewItem.tokenA.coin.code,
                         blockchainBadge: viewItem.tokenA.protocolName ?? viewItem.tokenA.type.description,
                         amount: viewItem.amountAStr
         )
 
-        tokenBView.bind(iconUrl: viewItem.tokenB.coin.imageUrl,
+        tokenBView.bind(token: viewItem.tokenB,
                         name: viewItem.tokenB.coin.code,
                         blockchainBadge: viewItem.tokenB.protocolName ?? viewItem.tokenB.type.description,
                         amount: viewItem.amountBStr
@@ -203,8 +204,8 @@ class PairTokenView: UIView {
         super.init(coder: aDecoder)
     }
 
-    func bind(iconUrl: String, name: String, blockchainBadge: String, amount: String) {
-        coinIconView.setImage(withUrlString: iconUrl, placeholder: nil)
+    func bind(token: MarketKit.Token, name: String, blockchainBadge: String, amount: String) {
+        coinIconView.setImage(coin: token.coin)
         nameLabel.text = name
         blockchainBadgeView.text = blockchainBadge
         bottomLeftLabel.text = amount

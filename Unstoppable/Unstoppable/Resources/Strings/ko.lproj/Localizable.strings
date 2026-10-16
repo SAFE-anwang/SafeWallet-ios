@@ -1510,7 +1510,7 @@
 "settings.donate.title" = "후원하기";
 "settings.rate_us" = "앱 평가";
 "settings.tell_friends" = "친구에게 추천하기";
-"settings.social_networks.label" = "Be Unstoppable";
+"settings.social_networks.label" = "Be SafeWallet";
 "settings.dapp_connection" = "디앱 연결";
 "settings.appearance" = "디자인";
 
@@ -1551,7 +1551,7 @@
 
 // Settings -> Tell Friends
 
-"settings_tell_friends.text" = "Be Unstoppable";
+"settings_tell_friends.text" = "Be SafeWallet";
 
 // Settings -> Blockchain Settings
 

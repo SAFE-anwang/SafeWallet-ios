@@ -224,6 +224,9 @@ final class SRC721ManagerViewModel: ObservableObject {
 
     @Published private(set) var records: [SRC721ContractRecord] = []
     @Published private(set) var isRefreshing = false
+    @Published private(set) var loadError: String?
+    @Published private(set) var pendingTokenContractAddresses = Set<String>()
+    private var discoveredRecords: [SRC721ContractRecord] = []
 
     init(service: SRC721Service, storage: SRC721Storage, accountId: String, walletAddress: String) {
         self.service = service
@@ -231,19 +234,43 @@ final class SRC721ManagerViewModel: ObservableObject {
         self.accountId = accountId
         self.walletAddress = walletAddress
         reload()
+        refresh()
     }
 
     func reload() {
-        records = storage.contracts(accountId: accountId, chainId: service.chainId, walletAddress: walletAddress)
+        let localRecords = storage.contracts(accountId: accountId, chainId: service.chainId, walletAddress: walletAddress)
+        records = SRC721ContractRecord.merging(localRecords: localRecords, discoveredRecords: discoveredRecords)
+        pendingTokenContractAddresses = Set(
+            storage.transactions(accountId: accountId, chainId: service.chainId, walletAddress: walletAddress)
+                .filter { $0.status == .pending && $0.tokenOperation != nil }
+                .compactMap { Web3Core.EthereumAddress($0.contractAddress)?.address.lowercased() }
+        )
     }
 
     func refresh() {
         guard !isRefreshing else { return }
         isRefreshing = true
+        loadError = nil
         Task { [weak self] in
             guard let self else { return }
+
+            // Load discovered contracts before waiting on local transaction confirmations so the list is not blocked.
+            do {
+                let tokens = try await service.insightTokens()
+                discoveredRecords = SRC721ContractRecord.insightDiscoveredRecords(
+                    from: tokens,
+                    accountId: accountId,
+                    chainId: service.chainId,
+                    walletAddress: walletAddress
+                )
+                reload()
+            } catch {
+                loadError = error.localizedDescription
+            }
+
             let currentRecords = records
             for record in currentRecords {
+                guard !record.isInsightDiscovered else { continue }
                 if record.transactionStatus == .pending, let hash = record.deployTransactionHash {
                     do {
                         let success = try await service.waitForTransaction(hash)
@@ -286,6 +313,7 @@ final class SRC721ManagerViewModel: ObservableObject {
                     continue
                 }
             }
+
             await MainActor.run {
                 self.reload()
                 self.isRefreshing = false
@@ -308,6 +336,27 @@ final class SRC721WalletAssetsViewModel: ObservableObject {
     @Published private(set) var collections: [SRC721WalletCollection] = []
     @Published private(set) var dataState: SRC721DataState = .loading
     @Published private(set) var isTruncated = false
+    @Published private(set) var isRefreshing = false
+    @Published private(set) var hasLoadErrors = false
+
+    private var refreshID = UUID()
+
+    private var pendingTokenOperations: [String: SRC721TransactionOperation] {
+        Dictionary(
+            storage.transactions(accountId: accountId, chainId: service.chainId, walletAddress: walletAddress)
+                .filter { $0.status == .pending && $0.tokenOperation != nil }
+                .compactMap { transaction in
+                    guard let tokenId = transaction.tokenId,
+                          let operation = transaction.tokenOperation,
+                          Web3Core.EthereumAddress(transaction.contractAddress)?.address != nil else {
+                        return nil
+                    }
+                    let contractAddress = Web3Core.EthereumAddress(transaction.contractAddress)?.address.lowercased() ?? transaction.contractAddress.lowercased()
+                    return ("\(contractAddress):\(tokenId)", operation)
+                },
+            uniquingKeysWith: { _, latest in latest }
+        )
+    }
 
     init(service: SRC721Service, storage: SRC721Storage, accountId: String, walletAddress: String) {
         self.service = service
@@ -318,88 +367,139 @@ final class SRC721WalletAssetsViewModel: ObservableObject {
     }
 
     func refresh() {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        let requestID = UUID()
+        refreshID = requestID
         dataState = .loading
         isTruncated = false
+        hasLoadErrors = false
         let records = storage.contracts(accountId: accountId, chainId: service.chainId, walletAddress: walletAddress)
             .filter { $0.transactionStatus == .confirmed && $0.contractType != .unknown }
+        let pendingOperations = pendingTokenOperations
 
         Task { [weak self] in
             guard let self else { return }
-            do {
-                let holdings = try await service.insightHoldings()
-                let tokenCatalog = holdings.isEmpty ? [] : ((try? await service.insightTokens()) ?? [])
-                let knownRecords = Dictionary(records.map { ($0.contractAddress.lowercased(), $0) }, uniquingKeysWith: { first, _ in first })
-                let catalog = Dictionary(tokenCatalog.filter(\.isERC721).map { ($0.address.lowercased(), $0) }, uniquingKeysWith: { first, _ in first })
-                var discovered: [SRC721WalletAsset] = []
-
-                for holding in holdings {
-                    guard let normalizedAddress = Web3Core.EthereumAddress(holding.token)?.address else { continue }
-                    let contractAddress = normalizedAddress.lowercased()
-                    let assets = try await service.insightAssets(tokenAddress: normalizedAddress)
-                    let indexedToken = catalog[contractAddress]
-                    let knownRecord = knownRecords[contractAddress]
-                    let contract = knownRecord ?? SRC721ContractRecord(
-                        accountId: accountId,
-                        chainId: service.chainId,
-                        walletAddress: walletAddress,
-                        contractAddress: normalizedAddress,
-                        predictedContractAddress: nil,
-                        creatorAddress: indexedToken?.creator ?? walletAddress,
-                        currentOwnerAddress: nil,
-                        contractType: .generic,
-                        name: indexedToken?.name ?? "",
-                        symbol: indexedToken?.symbol ?? "",
-                        baseURI: "",
-                        maxSupply: "0",
-                        mintPrice: "0",
-                        deployTransactionHash: nil,
-                        transactionStatus: .confirmed,
-                        validationStatus: "insight",
-                        createdAt: Date(timeIntervalSince1970: 0)
-                    )
-
-                    for asset in assets where asset.isERC721 &&
-                        asset.token.lowercased() == contractAddress &&
-                        asset.owner.lowercased() == walletAddress.lowercased() {
-                        guard let tokenId = BigUInt(asset.tokenId) else { continue }
-                        let token = SRC721OwnedToken(
-                            tokenId: tokenId,
-                            ownerAddress: asset.owner,
-                            tokenURI: asset.tokenURI,
-                            imageURL: asset.tokenImage ?? indexedToken?.logoURI,
-                            source: .indexer
-                        )
-                        discovered.append(SRC721WalletAsset(contract: contract, token: token))
-                    }
-                }
-
-                let uniqueAssets = Dictionary(discovered.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }).values
-                let loadedAssets = Array(uniqueAssets)
-                await MainActor.run {
-                    self.assets = loadedAssets
-                    self.collections = SRC721WalletCollection.grouped(assets: loadedAssets)
-                    self.isTruncated = false
-                    self.dataState = .completed
-                }
-                return
-            } catch {
-                // Keep locally known contracts usable while the indexer is unavailable.
+            var tokenCatalog: [String: SRC721InsightToken] = [:]
+            if let catalog = try? await service.insightTokens() {
+                tokenCatalog = Dictionary(
+                    catalog.filter(\.isERC721).compactMap { token in
+                        guard let address = Web3Core.EthereumAddress(token.address)?.address else { return nil }
+                        return (address.lowercased(), token)
+                    },
+                    uniquingKeysWith: { first, _ in first }
+                )
             }
 
-            var loadedAssets: [SRC721WalletAsset] = []
-            var didLoadAnyContract = false
-            var truncated = false
+            let knownRecords = Dictionary(
+                records.compactMap { record -> (String, SRC721ContractRecord)? in
+                    guard let address = Web3Core.EthereumAddress(record.contractAddress)?.address else { return nil }
+                    return (address.lowercased(), record)
+                },
+                uniquingKeysWith: { first, _ in first }
+            )
+            var loadedAssetsByID: [String: SRC721WalletAsset] = [:]
+            var insightLoadedContracts = Set<String>()
+            var hasLoadErrors = false
+            var insightRequestError: String?
+            var insightDetailError: String?
 
+            let holdings: [SRC721InsightHolding]?
+            do {
+                holdings = try await service.insightHoldings()
+            } catch {
+                holdings = nil
+                hasLoadErrors = true
+                insightRequestError = error.localizedDescription
+            }
+
+            if let holdings,
+               let normalizedWalletAddress = Web3Core.EthereumAddress(walletAddress)?.address {
+                var holdingAddresses = Set<String>()
+
+                for holding in holdings {
+                    guard holding.owner.caseInsensitiveCompare(normalizedWalletAddress) == .orderedSame,
+                          let contractAddress = Web3Core.EthereumAddress(holding.token)?.address else {
+                        continue
+                    }
+                    let contractKey = contractAddress.lowercased()
+                    guard holdingAddresses.insert(contractKey).inserted else { continue }
+
+                    do {
+                        let indexedAssets = try await service.insightAssets(tokenAddress: contractAddress)
+                        let indexedToken = tokenCatalog[contractKey]
+                        let contract = knownRecords[contractKey] ?? SRC721ContractRecord(
+                            accountId: accountId,
+                            chainId: service.chainId,
+                            walletAddress: normalizedWalletAddress,
+                            contractAddress: contractAddress,
+                            predictedContractAddress: nil,
+                            creatorAddress: indexedToken?.creator ?? "",
+                            currentOwnerAddress: nil,
+                            contractType: .generic,
+                            name: indexedToken?.name ?? "",
+                            symbol: indexedToken?.symbol ?? "",
+                            baseURI: "",
+                            maxSupply: "0",
+                            mintPrice: "0",
+                            deployTransactionHash: nil,
+                            transactionStatus: .confirmed,
+                            validationStatus: "insight",
+                            createdAt: Date(timeIntervalSince1970: 0)
+                        )
+
+                        for indexedAsset in indexedAssets where indexedAsset.isERC721 &&
+                            Web3Core.EthereumAddress(indexedAsset.token)?.address.lowercased() == contractKey &&
+                            Web3Core.EthereumAddress(indexedAsset.owner)?.address.lowercased() == normalizedWalletAddress.lowercased() {
+                            guard let tokenId = BigUInt(indexedAsset.tokenId) else { continue }
+                            let assetKey = "\(contractKey):\(tokenId.description)"
+                            let pendingOperation = pendingOperations[assetKey]
+                            let isOwnedByWallet = (try? await service.tokenOwner(type: contract.contractType, tokenId: tokenId))?.address.caseInsensitiveCompare(normalizedWalletAddress) == .orderedSame
+                            guard isOwnedByWallet || pendingOperation != nil else {
+                                continue
+                            }
+                            let token = SRC721OwnedToken(
+                                tokenId: tokenId,
+                                ownerAddress: normalizedWalletAddress,
+                                tokenURI: indexedAsset.tokenURI,
+                                imageURL: indexedAsset.tokenImage ?? indexedToken?.logoURI,
+                                source: .indexer
+                            )
+                            let asset = SRC721WalletAsset(contract: contract, token: token, pendingOperation: pendingOperation)
+                            loadedAssetsByID[asset.id] = asset
+                            insightLoadedContracts.insert(contractKey)
+                        }
+                    } catch {
+                        hasLoadErrors = true
+                        if insightDetailError == nil {
+                            insightDetailError = error.localizedDescription
+                        }
+                        continue
+                    }
+                }
+            }
+
+            var didLoadAnyLocalContract = false
+            var truncated = false
             for record in records {
-                let provider = service.binding(contractAddress: record.contractAddress)
+                guard let normalizedAddress = Web3Core.EthereumAddress(record.contractAddress)?.address else { continue }
+                let contractKey = normalizedAddress.lowercased()
+                guard !insightLoadedContracts.contains(contractKey) else { continue }
+
+                let provider = service.binding(contractAddress: normalizedAddress)
                 var offset = 0
                 var loadedCount = 0
+                var contractHasMore = false
 
                 do {
                     while loadedCount < Self.maximumTokensPerContract {
                         let page = try await provider.ownedTokenPage(type: record.contractType, offset: offset, limit: Self.pageSize)
-                        didLoadAnyContract = true
-                        loadedAssets.append(contentsOf: page.tokens.map { SRC721WalletAsset(contract: record, token: $0) })
+                        didLoadAnyLocalContract = true
+                        for token in page.tokens {
+                            let pendingOperation = pendingOperations["\(contractKey):\(token.tokenId.description)"]
+                            let asset = SRC721WalletAsset(contract: record, token: token, pendingOperation: pendingOperation)
+                            loadedAssetsByID[asset.id] = asset
+                        }
                         loadedCount += page.tokens.count
                         offset = try SRC721OwnedTokenPaging.nextOffset(
                             offset: offset,
@@ -407,22 +507,54 @@ final class SRC721WalletAssetsViewModel: ObservableObject {
                             returnedCount: page.tokens.count,
                             limit: Self.pageSize
                         )
-                        guard BigUInt(offset) < page.total else { break }
+                        contractHasMore = SRC721OwnedTokenPaging.hasMore(offset: offset, total: page.total)
+                        guard contractHasMore, loadedCount < Self.maximumTokensPerContract else { break }
                     }
-                    if loadedCount == Self.maximumTokensPerContract {
-                        truncated = true
-                    }
+                    truncated = truncated || contractHasMore
                 } catch {
+                    hasLoadErrors = true
+                    if insightDetailError == nil {
+                        insightDetailError = error.localizedDescription
+                    }
                     continue
                 }
             }
 
-            await MainActor.run {
-                self.assets = loadedAssets
-                self.collections = SRC721WalletCollection.grouped(assets: loadedAssets)
-                self.isTruncated = truncated
-                self.dataState = records.isEmpty || didLoadAnyContract ? .completed : .failed("safe_zone.src721.error.enumeration_unavailable".localized)
+            // Keep a token visible while a transfer/burn receipt is uncertain,
+            // even if the indexer has already reflected the new owner.
+            let pendingTransactions = storage.transactions(
+                accountId: accountId,
+                chainId: service.chainId,
+                walletAddress: walletAddress
+            ).filter { transaction in
+                transaction.status == .pending &&
+                    transaction.tokenId != nil &&
+                    transaction.tokenOperation != nil
             }
+            for transaction in pendingTransactions {
+                guard let tokenIdString = transaction.tokenId,
+                      let tokenId = BigUInt(tokenIdString),
+                      let contract = records.first(where: {
+                          Web3Core.EthereumAddress($0.contractAddress)?.address.caseInsensitiveCompare(transaction.contractAddress) == .orderedSame
+                      }) else { continue }
+                let assetID = "\(contract.id):\(tokenId.description)"
+                guard loadedAssetsByID[assetID] == nil else { continue }
+                let token = SRC721OwnedToken(tokenId: tokenId, ownerAddress: walletAddress, tokenURI: nil, source: .onChain)
+                loadedAssetsByID[assetID] = SRC721WalletAsset(contract: contract, token: token, pendingOperation: transaction.tokenOperation)
+            }
+
+            guard refreshID == requestID else { return }
+            let loadedAssets = Array(loadedAssetsByID.values)
+            assets = loadedAssets
+            collections = SRC721WalletCollection.grouped(assets: loadedAssets)
+            isTruncated = truncated
+            self.hasLoadErrors = hasLoadErrors
+            if loadedAssets.isEmpty && hasLoadErrors && !didLoadAnyLocalContract {
+                dataState = .failed(insightRequestError ?? insightDetailError ?? "safe_zone.src721.error.enumeration_unavailable".localized)
+            } else {
+                dataState = .completed
+            }
+            isRefreshing = false
         }
     }
 }
@@ -478,8 +610,8 @@ final class SRC721AllowListViewModel: ObservableObject {
             guard let self else { return }
             do {
                 let record = self.record
-                let ownerAddress = try await service.ownerAddress(type: record.contractType)
                 let page = try await service.allowListPage(type: record.contractType, start: .zero, count: Self.pageSize)
+                let ownerAddress = try? await service.ownerAddress(type: record.contractType)
                 let chainEntries = page.entries.map { entry in
                     SRC721AllowListEntry(
                         accountId: record.accountId,
@@ -497,13 +629,21 @@ final class SRC721AllowListViewModel: ObservableObject {
                     self.entries = chainEntries.sorted { $0.address.localizedCaseInsensitiveCompare($1.address) == .orderedAscending }
                     self.nextStart = page.nextStart
                     self.hasMore = page.hasMore
-                    self.isOwner = ownerAddress.lowercased() == self.service.userAddress.lowercased()
+                    self.isOwner = ownerAddress?.lowercased() == self.service.userAddress.lowercased()
+                    if ownerAddress == nil {
+                        self.loadMoreError = "safe_zone.src721.error.owner_read_failed".localized
+                    }
                     self.dataState = .completed
                 }
             } catch {
                 await MainActor.run {
                     guard self.refreshID == requestID else { return }
-                    self.dataState = .failed(error.localizedDescription)
+                    if error is SRC721ValidationError,
+                       case SRC721ValidationError.allowListUnavailable = error {
+                        self.dataState = .unavailable(error.localizedDescription)
+                    } else {
+                        self.dataState = .failed(error.localizedDescription)
+                    }
                 }
             }
         }
@@ -519,6 +659,7 @@ final class SRC721AllowListViewModel: ObservableObject {
         Task { [weak self] in
             guard let self else { return }
             do {
+                let record = self.record
                 let page = try await service.allowListPage(type: record.contractType, start: start, count: Self.pageSize)
                 let newEntries = page.entries.map { entry in
                     SRC721AllowListEntry(
@@ -767,7 +908,10 @@ final class SRC721ContractDetailViewModel: ObservableObject {
     @Published private(set) var isLoadingToken = false
     @Published private(set) var tokenLoadError: String?
     @Published private(set) var burnedTokenId: BigUInt?
+    @Published private(set) var transferredTokenId: BigUInt?
     @Published private(set) var dataState: SRC721DataState = .loading
+    @Published private(set) var isRefreshing = false
+    @Published private(set) var refreshErrorMessage: String?
     @Published private(set) var operationState: SRC721AsyncState = .idle
     @Published var operationMessage: String?
     @Published private(set) var operationHashes: [String] = []
@@ -793,7 +937,27 @@ final class SRC721ContractDetailViewModel: ObservableObject {
         return owner.lowercased() == service.userAddress.lowercased()
     }
 
+    var isContractStateReady: Bool {
+        contractState != nil && dataState == .completed && !isRefreshing
+    }
+
     var canTransact: Bool { service.canSign }
+
+    var tokenOperationPending: Bool {
+        pendingTokenOperation != nil
+    }
+
+    var pendingTokenOperation: SRC721TransactionOperation? {
+        guard let tokenId = BigUInt(tokenId) else { return nil }
+        return storage.transactions(accountId: record.accountId, chainId: record.chainId, walletAddress: record.walletAddress)
+            .filter { transaction in
+                transaction.status == .pending &&
+                    transaction.tokenId == tokenId.description &&
+                    Web3Core.EthereumAddress(transaction.contractAddress)?.address.caseInsensitiveCompare(record.contractAddress) == .orderedSame
+            }
+            .compactMap(\.tokenOperation)
+            .first
+    }
 
     func hasUpdateChanges(
         baseURI: String,
@@ -838,6 +1002,8 @@ final class SRC721ContractDetailViewModel: ObservableObject {
         if isInitialLoad {
             dataState = .loading
         }
+        isRefreshing = true
+        refreshErrorMessage = nil
         Task { [weak self] in
             guard let self else { return }
             do {
@@ -846,20 +1012,25 @@ final class SRC721ContractDetailViewModel: ObservableObject {
                     guard self.refreshGeneration == generation else { return }
                     self.contractState = state
                     self.dataState = .completed
+                    self.isRefreshing = false
+                    self.refreshErrorMessage = nil
                     self.updateStoredOwner(state.ownerAddress)
                 }
             } catch {
                 await MainActor.run {
                     guard self.refreshGeneration == generation else { return }
+                    self.isRefreshing = false
                     if isInitialLoad {
                         self.dataState = .failed(error.localizedDescription)
+                    } else {
+                        self.refreshErrorMessage = error.localizedDescription
                     }
                 }
             }
         }
     }
 
-    func loadToken() {
+    func loadToken(showError: Bool = true) {
         tokenLoadGeneration += 1
         let generation = tokenLoadGeneration
         guard validateTokenIdInput(), let tokenId = try? validTokenId() else { return }
@@ -885,25 +1056,27 @@ final class SRC721ContractDetailViewModel: ObservableObject {
                     guard self.tokenLoadGeneration == generation else { return }
                     self.isLoadingToken = false
                     self.tokenLoadError = error.localizedDescription
-                    self.showOperationError(error.localizedDescription)
+                    if showError {
+                        self.showOperationError(error.localizedDescription)
+                    }
                     self.tokenState = nil
                 }
             }
         }
     }
 
-    func loadToken(tokenId: BigUInt) {
+    func loadToken(tokenId: BigUInt, showError: Bool = true) {
         self.tokenId = tokenId.description
-        loadToken()
+        loadToken(showError: showError)
     }
 
     var canTransferLoadedToken: Bool {
-        guard let tokenState else { return false }
+        guard !isLoadingToken, let tokenState else { return false }
         return isLoadedTokenOwner || isLoadedTokenApproved || tokenState.isApprovedForAll
     }
 
     var canApproveLoadedToken: Bool {
-        guard let tokenState else { return false }
+        guard !isLoadingToken, let tokenState else { return false }
         return isLoadedTokenOwner || tokenState.isApprovedForAll
     }
 
@@ -1069,7 +1242,10 @@ final class SRC721ContractDetailViewModel: ObservableObject {
             showOperationError(SRC721ValidationError.tokenOperationUnavailable.localizedDescription)
             return
         }
-        perform(operationName: "safe_zone.src721.action.transfer".localized) { [service, record] in
+        let tokenId = try? validTokenId()
+        perform(operationName: "safe_zone.src721.action.transfer".localized, operationKind: .transfer, onConfirmed: { [weak self] in
+            self?.transferredTokenId = tokenId
+        }) { [service, record] in
             let tokenId = try self.validTokenId()
             let recipient = try SRC721Validation.address(address, field: "safe_zone.src721.field.recipient".localized)
             guard let tokenState = self.tokenState, tokenState.tokenId == tokenId else {
@@ -1087,7 +1263,7 @@ final class SRC721ContractDetailViewModel: ObservableObject {
             return
         }
         guard let tokenId = try? validTokenId() else { return }
-        perform(operationName: "safe_zone.src721.action.burn".localized, onConfirmed: { [weak self] in
+        perform(operationName: "safe_zone.src721.action.burn".localized, operationKind: .burn, onConfirmed: { [weak self] in
             self?.burnedTokenId = tokenId
         }) { [service, record] in
             try await service.burn(type: record.contractType, tokenId: tokenId)
@@ -1248,11 +1424,11 @@ final class SRC721ContractDetailViewModel: ObservableObject {
         .caution(Caution(text: error.localizedDescription, type: .error))
     }
 
-    private func perform(operationName: String, onConfirmed: (() -> Void)? = nil, _ operation: @escaping () async throws -> String) {
-        perform(operationName: operationName, onConfirmed: onConfirmed) { [operation] in [try await operation()] }
+    private func perform(operationName: String, operationKind: SRC721TransactionOperation? = nil, onConfirmed: (() -> Void)? = nil, _ operation: @escaping () async throws -> String) {
+        perform(operationName: operationName, operationKind: operationKind, onConfirmed: onConfirmed) { [operation] in [try await operation()] }
     }
 
-    private func perform(operationName: String, onConfirmed: (() -> Void)? = nil, _ operation: @escaping () async throws -> [String]) {
+    private func perform(operationName: String, operationKind: SRC721TransactionOperation? = nil, onConfirmed: (() -> Void)? = nil, _ operation: @escaping () async throws -> [String]) {
         guard operationState != .sending else { return }
         operationState = .sending
         operationMessage = nil
@@ -1262,7 +1438,7 @@ final class SRC721ContractDetailViewModel: ObservableObject {
             do {
                 let hashes = try await operation()
                 guard !hashes.isEmpty else { throw Web3Error.processingError(desc: "No transaction generated") }
-                let allSucceeded = await trackTransactions(hashes, operationName: operationName)
+                let allSucceeded = await trackTransactions(hashes, operationName: operationName, operationKind: operationKind)
                 await MainActor.run {
                     self.operationState = allSucceeded ? .completed : .failed
                     self.operationMessage = allSucceeded
@@ -1275,7 +1451,7 @@ final class SRC721ContractDetailViewModel: ObservableObject {
                     self.refresh()
                 }
             } catch let batchError as SRC721BatchOperationError {
-                _ = await trackTransactions(batchError.submittedHashes, operationName: operationName)
+                _ = await trackTransactions(batchError.submittedHashes, operationName: operationName, operationKind: operationKind)
                 await MainActor.run {
                     self.operationState = .failed
                     self.operationMessage = batchError.localizedDescription
@@ -1291,7 +1467,7 @@ final class SRC721ContractDetailViewModel: ObservableObject {
         }
     }
 
-    private func trackTransactions(_ hashes: [String], operationName: String) async -> Bool {
+    private func trackTransactions(_ hashes: [String], operationName: String, operationKind: SRC721TransactionOperation? = nil) async -> Bool {
         var allSucceeded = true
         for hash in hashes {
             let transactionID = UUID()
@@ -1300,7 +1476,7 @@ final class SRC721ContractDetailViewModel: ObservableObject {
             self.storage.save(transaction: SRC721TransactionRecord(
                 id: transactionID, accountId: self.record.accountId, chainId: self.record.chainId,
                 walletAddress: self.record.walletAddress, contractAddress: self.record.contractAddress,
-                operation: operationName, tokenId: tokenId, transactionHash: hash, status: .pending,
+                operation: operationName, operationKind: operationKind, tokenId: tokenId, transactionHash: hash, status: .pending,
                 errorMessage: nil, createdAt: createdAt
             ))
 
@@ -1309,7 +1485,7 @@ final class SRC721ContractDetailViewModel: ObservableObject {
                 self.storage.save(transaction: SRC721TransactionRecord(
                     id: transactionID, accountId: self.record.accountId, chainId: self.record.chainId,
                     walletAddress: self.record.walletAddress, contractAddress: self.record.contractAddress,
-                    operation: operationName, tokenId: tokenId, transactionHash: hash,
+                    operation: operationName, operationKind: operationKind, tokenId: tokenId, transactionHash: hash,
                     status: success ? .confirmed : .failed,
                     errorMessage: success ? nil : "safe_zone.src721.error.transaction".localized,
                     createdAt: createdAt
@@ -1361,5 +1537,6 @@ enum SRC721AsyncState: Equatable {
 enum SRC721DataState: Equatable {
     case loading
     case completed
+    case unavailable(String)
     case failed(String)
 }

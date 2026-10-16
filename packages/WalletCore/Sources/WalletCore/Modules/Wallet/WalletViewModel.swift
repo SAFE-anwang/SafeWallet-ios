@@ -173,6 +173,10 @@ extension WalletViewModel {
             return
         }
 
+        guard verifyBackedUp() else {
+            return
+        }
+
         Coordinator.shared.present { _ in
             ReceiveCoinListView(account: account)
         }

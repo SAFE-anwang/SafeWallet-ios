@@ -53,6 +53,10 @@ public extension MarketKit.Kit {
 }
 
 extension Coin {
+    var isSafe4Native: Bool {
+        uid.caseInsensitiveCompare(safe4CoinUid) == .orderedSame
+    }
+
     var imageUrl: String {
         let scale = Int(UIScreen.main.scale)
         if uid.contains("custom-safe4-anwang") || uid.contains("custom-safe-anwang") || uid.isSafeCoin {

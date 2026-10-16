@@ -95,6 +95,11 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         return address
     }
 
+    private func isExecutionReverted(_ error: Error) -> Bool {
+        let description = "\(error) \(error.localizedDescription)".lowercased()
+        return description.contains("execution reverted") || description.contains("-32000")
+    }
+
     private func standard() async throws -> SRC721 {
         try await SRC721(web3: web3(), contractAddr: contractAddressValue())
     }
@@ -107,7 +112,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard: return try await standard().owner()
         case .burnable: return try await burnable().owner()
-        case .generic: throw SRC721ValidationError.tokenOperationUnavailable
+        case .generic: return try await standard().owner()
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
@@ -327,13 +332,53 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard:
             let contract = try await standard()
-            total = try await contract.getAllowAddrNum()
-            fetchPage = { start, count in try await contract.getAllowAddrs(start, count) }
+            do {
+                total = try await contract.getAllowAddrNum()
+            } catch {
+                if isExecutionReverted(error) { throw SRC721ValidationError.allowListUnavailable }
+                throw SRC721ValidationError.allowListReadFailed("getAllowAddrNum: \(error.localizedDescription)")
+            }
+            fetchPage = { start, count in
+                do {
+                    return try await contract.getAllowAddrs(start, count)
+                } catch {
+                    if self.isExecutionReverted(error) { throw SRC721ValidationError.allowListUnavailable }
+                    throw SRC721ValidationError.allowListReadFailed("getAllowAddrs(\(start), \(count)): \(error.localizedDescription)")
+                }
+            }
         case .burnable:
             let contract = try await burnable()
-            total = try await contract.getAllowAddrNum()
-            fetchPage = { start, count in try await contract.getAllowAddrs(start, count) }
-        case .generic, .unknown: throw SRC721ValidationError.invalidContract
+            do {
+                total = try await contract.getAllowAddrNum()
+            } catch {
+                if isExecutionReverted(error) { throw SRC721ValidationError.allowListUnavailable }
+                throw SRC721ValidationError.allowListReadFailed("getAllowAddrNum: \(error.localizedDescription)")
+            }
+            fetchPage = { start, count in
+                do {
+                    return try await contract.getAllowAddrs(start, count)
+                } catch {
+                    if self.isExecutionReverted(error) { throw SRC721ValidationError.allowListUnavailable }
+                    throw SRC721ValidationError.allowListReadFailed("getAllowAddrs(\(start), \(count)): \(error.localizedDescription)")
+                }
+            }
+        case .generic:
+            let contract = try await standard()
+            do {
+                total = try await contract.getAllowAddrNum()
+            } catch {
+                if isExecutionReverted(error) { throw SRC721ValidationError.allowListUnavailable }
+                throw SRC721ValidationError.allowListReadFailed("getAllowAddrNum: \(error.localizedDescription)")
+            }
+            fetchPage = { start, count in
+                do {
+                    return try await contract.getAllowAddrs(start, count)
+                } catch {
+                    if self.isExecutionReverted(error) { throw SRC721ValidationError.allowListUnavailable }
+                    throw SRC721ValidationError.allowListReadFailed("getAllowAddrs(\(start), \(count)): \(error.localizedDescription)")
+                }
+            }
+        case .unknown: throw SRC721ValidationError.invalidContract
         }
 
         guard start <= total else { throw SRC721ValidationError.invalidAllowList }
@@ -346,9 +391,15 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         guard page.addrs.count == page.amounts.count,
               !page.addrs.isEmpty,
               BigUInt(page.addrs.count) <= requestedCount else {
-            throw SRC721ValidationError.invalidAllowList
+            throw SRC721ValidationError.allowListReadFailed(
+                "getAllowAddrs returned \(page.addrs.count) addresses and \(page.amounts.count) amounts for \(requestedCount) requested entries"
+            )
         }
-        _ = try SRC721AllowListPage.nextStart(start: start, total: total, returnedCount: page.addrs.count)
+        guard let returnedCount = BigUInt(exactly: page.addrs.count),
+              returnedCount > 0,
+              returnedCount <= total - start else {
+            throw SRC721ValidationError.allowListReadFailed("getAllowAddrs returned an invalid page size")
+        }
         let entries = zip(page.addrs, page.amounts).map { ($0.address, $1) }
         return SRC721AllowListPage(start: start, total: total, entries: entries)
     }
@@ -407,7 +458,8 @@ final class SRC721Service: SRC721OwnedAssetProvider {
             let contract = SRC721Burnable(web3: web3, contractAddr: contractAddress.address)
             return try await readState(contract: contract, account: account, safeBalance: safeBalance)
         case .generic:
-            throw SRC721ValidationError.contractStateUnavailable
+            let contract = SRC721(web3: web3, contractAddr: contractAddress.address)
+            return try await readState(contract: contract, account: account, safeBalance: safeBalance)
         case .unknown:
             throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
@@ -485,7 +537,11 @@ final class SRC721Service: SRC721OwnedAssetProvider {
             guard try await contract.remainSupply() >= amount else { throw SRC721ValidationError.supplyInsufficient }
             return try await contract.mintPrice()
         case .generic:
-            throw SRC721ValidationError.tokenOperationUnavailable
+            let contract = try await standard()
+            guard try await contract.canMint(addr: account) else { throw SRC721ValidationError.publicMintUnavailable }
+            guard try await contract.amountAllowToMint(addr: account) >= amount else { throw SRC721ValidationError.publicMintAllowanceInsufficient }
+            guard try await contract.remainSupply() >= amount else { throw SRC721ValidationError.supplyInsufficient }
+            return try await contract.mintPrice()
         case .unknown:
             throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
@@ -502,7 +558,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard: return try await standard().mint(privateKey: privateKey, value: value, to: to, amount: amount)
         case .burnable: return try await burnable().mint(privateKey: privateKey, value: value, to: to, amount: amount)
-        case .generic: throw SRC721ValidationError.tokenOperationUnavailable
+        case .generic: return try await standard().mint(privateKey: privateKey, value: value, to: to, amount: amount)
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
@@ -514,7 +570,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard: return try await standard().adminMint(privateKey: privateKey, to: to, amount: amount)
         case .burnable: return try await burnable().adminMint(privateKey: privateKey, to: to, amount: amount)
-        case .generic: throw SRC721ValidationError.ownerRequired
+        case .generic: return try await standard().adminMint(privateKey: privateKey, to: to, amount: amount)
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
@@ -525,7 +581,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard: return try await standard().setBaseURI(privateKey: privateKey, baseURI: value)
         case .burnable: return try await burnable().setBaseURI(privateKey: privateKey, baseURI: value)
-        case .generic: throw SRC721ValidationError.ownerRequired
+        case .generic: return try await standard().setBaseURI(privateKey: privateKey, baseURI: value)
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
@@ -536,7 +592,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard: return try await standard().setMintPrice(privateKey: privateKey, mintPrice: value)
         case .burnable: return try await burnable().setMintPrice(privateKey: privateKey, mintPrice: value)
-        case .generic: throw SRC721ValidationError.ownerRequired
+        case .generic: return try await standard().setMintPrice(privateKey: privateKey, mintPrice: value)
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
@@ -548,7 +604,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard: currentSupply = try await standard().totalSupply()
         case .burnable: currentSupply = try await burnable().totalSupply()
-        case .generic: throw SRC721ValidationError.ownerRequired
+        case .generic: currentSupply = try await standard().totalSupply()
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
         guard value >= currentSupply else {
@@ -557,7 +613,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard: return try await standard().setMaxSupply(privateKey: privateKey, maxSupply: value)
         case .burnable: return try await burnable().setMaxSupply(privateKey: privateKey, maxSupply: value)
-        case .generic: throw SRC721ValidationError.ownerRequired
+        case .generic: return try await standard().setMaxSupply(privateKey: privateKey, maxSupply: value)
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
@@ -591,7 +647,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard: return try await standard().setAllowList(privateKey: privateKey, addresses: addresses, amounts: amounts)
         case .burnable: return try await burnable().setAllowList(privateKey: privateKey, addresses: addresses, amounts: amounts)
-        case .generic: throw SRC721ValidationError.ownerRequired
+        case .generic: return try await standard().setAllowList(privateKey: privateKey, addresses: addresses, amounts: amounts)
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
@@ -617,7 +673,12 @@ final class SRC721Service: SRC721OwnedAssetProvider {
                 if let whitePaperURL { hashes.append(try await contract.setWhitePaperUrl(privateKey: self.privateKey, whitePaperUrl: whitePaperURL)) }
                 if let logo { hashes.append(try await contract.setLogo(privateKey: self.privateKey, logo: logo)) }
             case .generic:
-                throw SRC721ValidationError.ownerRequired
+                let contract = try await standard()
+                if let orgName { hashes.append(try await contract.setOrgName(privateKey: self.privateKey, orgName: orgName)) }
+                if let description { hashes.append(try await contract.setDescription(privateKey: self.privateKey, description: description)) }
+                if let officialURL { hashes.append(try await contract.setOfficialUrl(privateKey: self.privateKey, officialUrl: officialURL)) }
+                if let whitePaperURL { hashes.append(try await contract.setWhitePaperUrl(privateKey: self.privateKey, whitePaperUrl: whitePaperURL)) }
+                if let logo { hashes.append(try await contract.setLogo(privateKey: self.privateKey, logo: logo)) }
             case .unknown:
                 throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
             }
@@ -647,7 +708,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
             switch type {
             case .standard: currentSupply = try await standard().totalSupply()
             case .burnable: currentSupply = try await burnable().totalSupply()
-            case .generic: throw SRC721ValidationError.ownerRequired
+            case .generic: currentSupply = try await standard().totalSupply()
             case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
             }
             guard maxSupply >= currentSupply else {
@@ -702,7 +763,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         switch type {
         case .standard: return try await standard().withdraw(privateKey: privateKey)
         case .burnable: return try await burnable().withdraw(privateKey: privateKey)
-        case .generic: throw SRC721ValidationError.ownerRequired
+        case .generic: return try await standard().withdraw(privateKey: privateKey)
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
@@ -715,23 +776,33 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         case .standard:
             let contract = try await standard()
             let owner = try await contract.ownerOf(tokenId: tokenId)
-            let approved = try await contract.getApproved(tokenId: tokenId)
-            let isApprovedForAll = try await isApprovedForAll(owner: owner, operatorAddress: account)
-            return .init(tokenId: tokenId, ownerAddress: owner.address, approvedAddress: approved.address, isApprovedForAll: isApprovedForAll)
+            let approvedAddress = (try? await contract.getApproved(tokenId: tokenId))?.address ?? SRC721Validation.zeroAddress
+            let isApprovedForAll = (try? await isApprovedForAll(owner: owner, operatorAddress: account)) ?? false
+            return .init(tokenId: tokenId, ownerAddress: owner.address, approvedAddress: approvedAddress, isApprovedForAll: isApprovedForAll)
         case .burnable:
             let contract = try await burnable()
             let owner = try await contract.ownerOf(tokenId: tokenId)
-            let approved = try await contract.getApproved(tokenId: tokenId)
-            let isApprovedForAll = try await isApprovedForAll(owner: owner, operatorAddress: account)
-            return .init(tokenId: tokenId, ownerAddress: owner.address, approvedAddress: approved.address, isApprovedForAll: isApprovedForAll)
+            let approvedAddress = (try? await contract.getApproved(tokenId: tokenId))?.address ?? SRC721Validation.zeroAddress
+            let isApprovedForAll = (try? await isApprovedForAll(owner: owner, operatorAddress: account)) ?? false
+            return .init(tokenId: tokenId, ownerAddress: owner.address, approvedAddress: approvedAddress, isApprovedForAll: isApprovedForAll)
         case .generic:
             let contract = try await standard()
             let owner = try await contract.ownerOf(tokenId: tokenId)
-            let approved = try await contract.getApproved(tokenId: tokenId)
-            let isApprovedForAll = try await isApprovedForAll(owner: owner, operatorAddress: account)
-            return .init(tokenId: tokenId, ownerAddress: owner.address, approvedAddress: approved.address, isApprovedForAll: isApprovedForAll)
+            let approvedAddress = (try? await contract.getApproved(tokenId: tokenId))?.address ?? SRC721Validation.zeroAddress
+            let isApprovedForAll = (try? await isApprovedForAll(owner: owner, operatorAddress: account)) ?? false
+            return .init(tokenId: tokenId, ownerAddress: owner.address, approvedAddress: approvedAddress, isApprovedForAll: isApprovedForAll)
         case .unknown:
             throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
+        }
+    }
+
+    func tokenOwner(type: SRC721ContractType, tokenId: BigUInt) async throws -> Web3Core.EthereumAddress {
+        try validateTokenId(tokenId)
+        switch type {
+        case .standard: return try await standard().ownerOf(tokenId: tokenId)
+        case .burnable: return try await burnable().ownerOf(tokenId: tokenId)
+        case .generic: return try await standard().ownerOf(tokenId: tokenId)
+        case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
 

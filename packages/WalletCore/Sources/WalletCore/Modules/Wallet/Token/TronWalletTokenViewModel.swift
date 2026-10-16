@@ -57,6 +57,14 @@ class TronWalletTokenViewModel: ObservableObject {
             return
         }
 
+        guard account.watchAccount || account.backedUp || Core.shared.cloudBackupManager.backedUp(uniqueId: account.type.uniqueId()) else {
+            Coordinator.shared.present { _ in
+                BackupManualView(account: account).ignoresSafeArea()
+            }
+            stat(page: .tokenPage, event: .open(page: .manualBackup))
+            return
+        }
+
         guard let trxToken = try? Core.shared.marketKit.token(query: .init(blockchainType: .tron, tokenType: .native)) else {
             Core.shared.logger.log(level: .error, message: "Can't found TRX in MarketKit")
             return

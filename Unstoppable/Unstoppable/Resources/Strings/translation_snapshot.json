@@ -1234,7 +1234,7 @@
   "terms.item.software": "The app is verifiably open source, with all source code published online. Everything stated above can be publicly verified by anyone.",
   "terms.item.compliance": "You are solely responsible for the security of your funds, your conduct, and compliance with applicable laws in your jurisdiction as well as globally. ",
   "terms.item.user_responsibility": "By proceeding, you acknowledge that security of your funds and legal compliance are ultimately your responsibility.",
-  "settings_tell_friends.text": "Be Unstoppable",
+  "settings_tell_friends.text": "Be SafeWallet",
   "blockchain_settings.title": "Blockchain Settings",
   "backup_app.backup_manager.title": "Backup Manager",
   "backup_app.backup_manager.restore": "Restore Backup",

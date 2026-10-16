@@ -90,8 +90,8 @@ class LiquidityV3RecordCell: UITableViewCell {
 
         self.viewItem = viewItem
 
-        token1ImageView.setImage(withUrlString: viewItem.token0.coin.imageUrl, placeholder: nil)
-        token0ImageView.setImage(withUrlString: viewItem.token1.coin.imageUrl, placeholder: nil)
+        token1ImageView.setImage(coin: viewItem.token0.coin)
+        token0ImageView.setImage(coin: viewItem.token1.coin)
         tokenNameLabel.text = viewItem.lpName
         tokenIdLabel.text = viewItem.tokenId
         feeView.text = viewItem.fee

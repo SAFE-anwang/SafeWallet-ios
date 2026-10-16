@@ -28,6 +28,11 @@ enum SRC721TransactionStatus: String, Codable, Hashable {
     case failed
 }
 
+enum SRC721TransactionOperation: String, Codable, Hashable {
+    case transfer
+    case burn
+}
+
 struct SRC721BatchOperationError: LocalizedError {
     let submittedHashes: [String]
     let underlying: Error
@@ -67,6 +72,83 @@ struct SRC721ContractRecord: Codable, Hashable, Identifiable {
     var isReadOnly: Bool {
         guard let currentOwnerAddress else { return false }
         return currentOwnerAddress.lowercased() != walletAddress.lowercased()
+    }
+
+    var isInsightDiscovered: Bool { validationStatus == "insight" }
+
+    static func insightDiscoveredRecords(
+        from tokens: [SRC721InsightToken],
+        accountId: String,
+        chainId: Int,
+        walletAddress: String
+    ) -> [SRC721ContractRecord] {
+        guard let normalizedWalletAddress = Web3Core.EthereumAddress(walletAddress)?.address else {
+            return []
+        }
+
+        var recordsByAddress: [String: SRC721ContractRecord] = [:]
+        for token in tokens where token.isERC721 {
+            guard let contractAddress = Web3Core.EthereumAddress(token.address)?.address,
+                  let creatorAddress = Web3Core.EthereumAddress(token.creator)?.address,
+                  creatorAddress.caseInsensitiveCompare(normalizedWalletAddress) == .orderedSame else {
+                continue
+            }
+
+            let record = SRC721ContractRecord(
+                accountId: accountId,
+                chainId: chainId,
+                walletAddress: normalizedWalletAddress,
+                contractAddress: contractAddress,
+                predictedContractAddress: nil,
+                creatorAddress: creatorAddress,
+                currentOwnerAddress: nil,
+                contractType: .generic,
+                name: token.name,
+                symbol: token.symbol,
+                baseURI: "",
+                maxSupply: "0",
+                mintPrice: "0",
+                deployTransactionHash: nil,
+                transactionStatus: .confirmed,
+                validationStatus: "insight",
+                createdAt: Date(timeIntervalSince1970: 0)
+            )
+            if recordsByAddress[contractAddress.lowercased()] == nil {
+                recordsByAddress[contractAddress.lowercased()] = record
+            }
+        }
+
+        return recordsByAddress.values.sorted {
+            $0.contractAddress.localizedCaseInsensitiveCompare($1.contractAddress) == .orderedAscending
+        }
+    }
+
+    static func merging(
+        localRecords: [SRC721ContractRecord],
+        discoveredRecords: [SRC721ContractRecord]
+    ) -> [SRC721ContractRecord] {
+        var recordsByAddress = Dictionary(
+            localRecords.map { (normalizedAddress($0.contractAddress), $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        for record in discoveredRecords {
+            let key = normalizedAddress(record.contractAddress)
+            if recordsByAddress[key] == nil {
+                recordsByAddress[key] = record
+            }
+        }
+
+        return recordsByAddress.values.sorted {
+            if $0.createdAt != $1.createdAt {
+                return $0.createdAt > $1.createdAt
+            }
+            return $0.contractAddress.localizedCaseInsensitiveCompare($1.contractAddress) == .orderedAscending
+        }
+    }
+
+    private static func normalizedAddress(_ value: String) -> String {
+        Web3Core.EthereumAddress(value)?.address.lowercased() ?? value.lowercased()
     }
 }
 
@@ -142,6 +224,13 @@ struct SRC721OwnedTokenPage: Equatable {
 struct SRC721WalletAsset: Identifiable, Equatable {
     let contract: SRC721ContractRecord
     let token: SRC721OwnedToken
+    let pendingOperation: SRC721TransactionOperation?
+
+    init(contract: SRC721ContractRecord, token: SRC721OwnedToken, pendingOperation: SRC721TransactionOperation? = nil) {
+        self.contract = contract
+        self.token = token
+        self.pendingOperation = pendingOperation
+    }
 
     var id: String { "\(contract.id):\(token.id)" }
 }
@@ -191,6 +280,10 @@ enum SRC721AllowListEditorField: Hashable {
 }
 
 enum SRC721OwnedTokenPaging {
+    static func hasMore(offset: Int, total: BigUInt) -> Bool {
+        offset >= 0 && BigUInt(offset) < total
+    }
+
     static func nextOffset(offset: Int, total: BigUInt, returnedCount: Int, limit: Int) throws -> Int {
         guard offset >= 0, limit > 0, returnedCount >= 0, returnedCount <= limit else {
             throw SRC721ValidationError.enumerationUnavailable
@@ -242,11 +335,74 @@ struct SRC721TransactionRecord: Codable, Hashable, Identifiable {
     let walletAddress: String
     let contractAddress: String
     let operation: String
+    let operationKind: SRC721TransactionOperation?
     let tokenId: String?
     let transactionHash: String
     var status: SRC721TransactionStatus
     var errorMessage: String?
     let createdAt: Date
+
+    private enum CodingKeys: String, CodingKey {
+        case id, accountId, chainId, walletAddress, contractAddress, operation, operationKind, tokenId
+        case transactionHash, status, errorMessage, createdAt
+    }
+
+    init(
+        id: UUID,
+        accountId: String,
+        chainId: Int,
+        walletAddress: String,
+        contractAddress: String,
+        operation: String,
+        operationKind: SRC721TransactionOperation? = nil,
+        tokenId: String?,
+        transactionHash: String,
+        status: SRC721TransactionStatus,
+        errorMessage: String?,
+        createdAt: Date
+    ) {
+        self.id = id
+        self.accountId = accountId
+        self.chainId = chainId
+        self.walletAddress = walletAddress
+        self.contractAddress = contractAddress
+        self.operation = operation
+        self.operationKind = operationKind
+        self.tokenId = tokenId
+        self.transactionHash = transactionHash
+        self.status = status
+        self.errorMessage = errorMessage
+        self.createdAt = createdAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        accountId = try container.decode(String.self, forKey: .accountId)
+        chainId = try container.decode(Int.self, forKey: .chainId)
+        walletAddress = try container.decode(String.self, forKey: .walletAddress)
+        contractAddress = try container.decode(String.self, forKey: .contractAddress)
+        operation = try container.decode(String.self, forKey: .operation)
+        operationKind = try container.decodeIfPresent(SRC721TransactionOperation.self, forKey: .operationKind)
+        tokenId = try container.decodeIfPresent(String.self, forKey: .tokenId)
+        transactionHash = try container.decode(String.self, forKey: .transactionHash)
+        status = try container.decode(SRC721TransactionStatus.self, forKey: .status)
+        errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+    }
+
+    var tokenOperation: SRC721TransactionOperation? {
+        if let operationKind {
+            return operationKind
+        }
+        if operation == "safe_zone.src721.action.transfer".localized {
+            return .transfer
+        }
+        if operation == "safe_zone.src721.action.burn".localized {
+            return .burn
+        }
+        return nil
+    }
 }
 
 enum SRC721ValidationError: LocalizedError {
@@ -255,6 +411,8 @@ enum SRC721ValidationError: LocalizedError {
     case invalidAmount(String)
     case invalidURL
     case invalidAllowList
+    case allowListUnavailable
+    case allowListReadFailed(String)
     case duplicateAllowListAddress
     case invalidTokenId
     case invalidLogo
@@ -278,6 +436,8 @@ enum SRC721ValidationError: LocalizedError {
         case let .invalidAmount(field): return "safe_zone.src721.error.amount".localized(field)
         case .invalidURL: return "safe_zone.src721.error.url".localized
         case .invalidAllowList: return "safe_zone.src721.error.allow_list".localized
+        case .allowListUnavailable: return "safe_zone.src721.error.allow_list_unavailable".localized
+        case let .allowListReadFailed(message): return "safe_zone.src721.error.allow_list_read_failed".localized(message)
         case .duplicateAllowListAddress: return "safe_zone.src721.error.allow_list_duplicate".localized
         case .invalidTokenId: return "safe_zone.src721.error.token_id".localized
         case .invalidLogo: return "safe_zone.src721.error.logo".localized

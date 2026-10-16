@@ -132,6 +132,17 @@ final class SRC721ValidationTests: XCTestCase {
         ))
     }
 
+    func testTokenIDZeroIsValidForNFTOperations() throws {
+        XCTAssertEqual(
+            try SRC721Validation.amount("0", field: "token id", allowZero: true),
+            BigUInt.zero
+        )
+    }
+
+    func testAllowListUnavailableErrorIsLocalized() {
+        XCTAssertFalse(SRC721ValidationError.allowListUnavailable.localizedDescription.isEmpty)
+    }
+
     func testOwnedTokenPagingRejectsAnEmptyNonTerminalPage() {
         XCTAssertThrowsError(
             try SRC721OwnedTokenPaging.nextOffset(offset: 0, total: 2, returnedCount: 0, limit: 20)
@@ -153,6 +164,13 @@ final class SRC721ValidationTests: XCTestCase {
         XCTAssertThrowsError(
             try SRC721OwnedTokenPaging.nextOffset(offset: 20, total: 21, returnedCount: 2, limit: 20)
         )
+    }
+
+    func testOwnedTokenPagingReportsMoreOnlyWhenOffsetIsBelowTotal() {
+        XCTAssertTrue(SRC721OwnedTokenPaging.hasMore(offset: 499, total: 501))
+        XCTAssertFalse(SRC721OwnedTokenPaging.hasMore(offset: 500, total: 500))
+        XCTAssertFalse(SRC721OwnedTokenPaging.hasMore(offset: 500, total: 499))
+        XCTAssertFalse(SRC721OwnedTokenPaging.hasMore(offset: -1, total: 10))
     }
 
     func testAllowListPagingAdvancesByReturnedCountAndAcceptsFinalPage() throws {
@@ -309,6 +327,78 @@ final class SRC721ValidationTests: XCTestCase {
         let records = storage.contracts(accountId: "account-a", chainId: 100, walletAddress: record.walletAddress)
         XCTAssertEqual(records.count, 2)
         XCTAssertTrue(records.contains { $0.contractAddress == replacedReceiptResolvedRecord.contractAddress })
+    }
+
+    func testInsightContractDiscoveryFiltersByERC721AndCreator() {
+        let wallet = "0x00000000000000000000000000000000000000ab"
+        let tokens = [
+            SRC721InsightToken(
+                address: "0x0000000000000000000000000000000000000010", name: "Valid", symbol: "VAL",
+                type: "ERC721", logoURI: nil, template: true, creator: "0x00000000000000000000000000000000000000AB"
+            ),
+            SRC721InsightToken(
+                address: "0x0000000000000000000000000000000000000020", name: "Not template", symbol: "NTP",
+                type: "erc721", logoURI: nil, template: false, creator: wallet
+            ),
+            SRC721InsightToken(
+                address: "0x0000000000000000000000000000000000000030", name: "Not NFT", symbol: "NNF",
+                type: "erc1155", logoURI: nil, template: true, creator: wallet
+            ),
+            SRC721InsightToken(
+                address: "0x0000000000000000000000000000000000000040", name: "Other creator", symbol: "OTH",
+                type: "erc721", logoURI: nil, template: true,
+                creator: "0x0000000000000000000000000000000000000002"
+            )
+        ]
+
+        let records = SRC721ContractRecord.insightDiscoveredRecords(
+            from: tokens, accountId: "account-a", chainId: 100, walletAddress: wallet
+        )
+
+        XCTAssertEqual(
+            Set(records.map(\.contractAddress)),
+            Set(["0x0000000000000000000000000000000000000010", "0x0000000000000000000000000000000000000020"])
+        )
+        XCTAssertEqual(records.first?.validationStatus, "insight")
+        XCTAssertEqual(records.first?.contractType, .generic)
+    }
+
+    func testInsightContractDiscoverySkipsInvalidAddressesAndDeduplicatesContracts() {
+        let wallet = "0x00000000000000000000000000000000000000ab"
+        let tokens = [
+            SRC721InsightToken(
+                address: "0x00000000000000000000000000000000000000cd", name: "First", symbol: "ONE",
+                type: "erc721", logoURI: nil, template: true, creator: wallet
+            ),
+            SRC721InsightToken(
+                address: "0x00000000000000000000000000000000000000CD", name: "Second", symbol: "TWO",
+                type: "erc721", logoURI: nil, template: true, creator: wallet
+            ),
+            SRC721InsightToken(
+                address: "not-an-address", name: "Invalid", symbol: "BAD",
+                type: "erc721", logoURI: nil, template: true, creator: wallet
+            )
+        ]
+
+        let records = SRC721ContractRecord.insightDiscoveredRecords(
+            from: tokens, accountId: "account-a", chainId: 100, walletAddress: wallet
+        )
+
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records.first?.name, "First")
+    }
+
+    func testLocalContractTakesPrecedenceOverInsightDiscovery() {
+        let local = testContract(name: "Local", address: "0x00000000000000000000000000000000000000cd")
+        var discovered = local
+        discovered.name = "Discovered"
+        discovered.validationStatus = "insight"
+
+        let merged = SRC721ContractRecord.merging(localRecords: [local], discoveredRecords: [discovered])
+
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertEqual(merged.first?.name, "Local")
+        XCTAssertEqual(merged.first?.validationStatus, "manual")
     }
 
     func testStorageFiltersPendingTransactionsByAccountChainAndWallet() {

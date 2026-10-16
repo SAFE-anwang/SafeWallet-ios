@@ -1510,7 +1510,7 @@
 "settings.donate.title" = "Поддержи нас";
 "settings.rate_us" = "Оцените нас";
 "settings.tell_friends" = "Расскажите друзьям";
-"settings.social_networks.label" = "Be Unstoppable";
+"settings.social_networks.label" = "Be SafeWallet";
 "settings.dapp_connection" = "Подключение к DApp";
 "settings.appearance" = "Настройки интерфейса";
 
@@ -1551,7 +1551,7 @@
 
 // Settings -> Tell Friends
 
-"settings_tell_friends.text" = "Be Unstoppable";
+"settings_tell_friends.text" = "Be SafeWallet";
 
 // Settings -> Blockchain Settings
 

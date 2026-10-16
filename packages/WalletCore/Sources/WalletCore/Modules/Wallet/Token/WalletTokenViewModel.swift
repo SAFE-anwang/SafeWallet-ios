@@ -149,6 +149,10 @@ extension WalletTokenViewModel {
     }
 
     func onTapReceive() {
+        guard verifyBackedUp() else {
+            return
+        }
+
         Coordinator.shared.present { [wallet] _ in
             EmptyThemeNavigationStack { path in
                 ReceiveAddressModule.instance(wallet: wallet, path: path)
@@ -156,6 +160,22 @@ extension WalletTokenViewModel {
         }
 
         stat(page: .tokenPage, event: .openReceive(token: wallet.token))
+    }
+
+    private func verifyBackedUp() -> Bool {
+        guard !wallet.account.watchAccount else {
+            return true
+        }
+
+        if wallet.account.backedUp || cloudBackupManager.backedUp(uniqueId: wallet.account.type.uniqueId()) {
+            return true
+        }
+
+        Coordinator.shared.present { _ in
+            BackupManualView(account: self.wallet.account).ignoresSafeArea()
+        }
+        stat(page: .tokenPage, event: .open(page: .manualBackup))
+        return false
     }
 
     func onTapAmount() {

@@ -347,9 +347,9 @@
 "balance.token.not_relayed.info.description" = "The transaction holding this amount is broadcasted but not yet accepted by the network";
 "balance.token.transparent" = "Transparent";
 "balance.token.transparent.info.title" = "Transparent Amount";
-"balance.token.transparent.info.description" = "You have a ZEC balance held in a transparent address. To use it in Unstoppable, it must be shielded for full privacy.";
+"balance.token.transparent.info.description" = "You have a ZEC balance held in a transparent address. To use it in SafeWallet, it must be shielded for full privacy.";
 "balance.token.transparent.detected.title" = "Detected Transparent ZEC";
-"balance.token.transparent.detected.description" = "You have a ZEC balance held in a transparent address. To use it in Unstoppable, it must be shielded for full privacy.";
+"balance.token.transparent.detected.description" = "You have a ZEC balance held in a transparent address. To use it in SafeWallet, it must be shielded for full privacy.";
 "balance.token.shield" = "Shield";
 "balance.token.migration.required" = "Migration Required";
 "transactions.migrate" = "Migrate";
@@ -470,7 +470,7 @@
 "send.hodler_locktime_off" = "Off";
 "send.hodler_error.unsupported_address" = "Time locking works only when sending to payment addresses starting with 1... (aka BIP44 addresses)";
 "send.fee_info.title" = "Fee Rate";
-"send.fee_info.description" = "When sending a transaction, you must pay a network fee. The busier the network, the higher the fee.\n\nUnstoppable Wallet suggests an optimal fee to help your transaction confirm in a reasonable time. You can increase or decrease this value.\n\nSetting the fee too low may cause your transaction to stay pending for a long time or even be rejected. For faster confirmation, use a higher fee.";
+"send.fee_info.description" = "When sending a transaction, you must pay a network fee. The busier the network, the higher the fee.\n\nSafeWallet Wallet suggests an optimal fee to help your transaction confirm in a reasonable time. You can increase or decrease this value.\n\nSetting the fee too low may cause your transaction to stay pending for a long time or even be rejected. For faster confirmation, use a higher fee.";
 "send.transaction_inputs_outputs_info.title" = "Transaction Inputs / Outputs";
 "send.transaction_inputs_outputs_info.description" = "Most Bitcoin transactions, as well as transactions in alike cryptocurrencies including Bitcoin Cash, Dash, and Litecoin, generate two outputs. One output is the amount that goes to the receiver and the other is the change output that is returned to the sender. The way most wallets construct transactions makes it easy for a third party to understand which of the outputs went to the receiving party and which one was the change amount returned to the sender. As the output returned to the sender is later used in future transactions, a connection between these two transactions becomes apparent.\n\nThe %@ wallet implements measures to make it harder for someone to figure out which output goes where.\n\nThere are two options available to %@ users:";
 "send.transaction_inputs_outputs_info.shuffle.title" = "1. Shuffle";
@@ -1510,7 +1510,7 @@
 "settings.donate.title" = "Donate";
 "settings.rate_us" = "Rate Us";
 "settings.tell_friends" = "Tell Friends";
-"settings.social_networks.label" = "Join Unstoppables";
+"settings.social_networks.label" = "Join SafeWallets";
 "settings.dapp_connection" = "DApp Connection";
 "settings.appearance" = "Appearance";
 
@@ -1551,7 +1551,7 @@
 
 // Settings -> Tell Friends
 
-"settings_tell_friends.text" = "Be Unstoppable";
+"settings_tell_friends.text" = "Be SafeWallet";
 
 // Settings -> Blockchain Settings
 
@@ -1706,7 +1706,7 @@
 "security_settings.delete_alert_button" = "Delete from Phone";
 
 "btc_blockchain_settings.restore_source" = "Restore Source";
-"btc_blockchain_settings.restore_source.description" = "Choose the source Unstoppable app should use for synchronizing wallet(s).";
+"btc_blockchain_settings.restore_source.description" = "Choose the source SafeWallet app should use for synchronizing wallet(s).";
 "btc_blockchain_settings.restore_source.alert" = "After changing Restore Source the wallet will have to resync itself with the %@ blockchain.";
 
 "btc_restore_mode.blockchair" = "Very Fast";
@@ -1759,7 +1759,7 @@
 "settings.privacy.allow" = "Share UI Data";
 "settings.privacy.allow.description" = "This setting lets you turn off analytics and keep your activity fully private.";
 "settings.privacy.nym" = "Get Nym VPN";
-"settings.privacy.nym.description" = "Get the best deal on Nym VPN with Unstoppable — enjoy stronger privacy at a better price.";
+"settings.privacy.nym.description" = "Get the best deal on Nym VPN with SafeWallet — enjoy stronger privacy at a better price.";
 
 // Settings -> Appearance
 
@@ -1815,7 +1815,7 @@
 
 // Settings -> Support
 
-"settings.vip_support.description" = "Join our VIP Group to get direct support, take part in discussions about upcoming updates, and connect more closely with the Unstoppable team.";
+"settings.vip_support.description" = "Join our VIP Group to get direct support, take part in discussions about upcoming updates, and connect more closely with the SafeWallet team.";
 "settings.vip_support.start_chat" = "Join VIP Group";
 
 // Settings -> Contacts
@@ -1935,7 +1935,7 @@
 "passkey_terms.cross_platform.description" = "May not work on non-Apple devices.";
 
 "passkey_terms.responsibility.title" = "Responsibility";
-"passkey_terms.responsibility.description" = "You are responsible for access to your device and iCloud. Unstoppable cannot recover this wallet if access is lost.";
+"passkey_terms.responsibility.description" = "You are responsible for access to your device and iCloud. SafeWallet cannot recover this wallet if access is lost.";
 
 "passkey_terms.button" = "I Understand and Continue";
 
@@ -2163,7 +2163,7 @@
 "evm_network.rpc_source" = "RPC Source";
 "evm_network.added" = "Added";
 "evm_network.add_new" = "Add New";
-"evm_network.description" = "Choose the source Unstoppable app should use for synchronizing wallet(s).";
+"evm_network.description" = "Choose the source SafeWallet app should use for synchronizing wallet(s).";
 
 // Add RPC Source
 
@@ -2179,7 +2179,7 @@
 "monero_network.node" = "Node";
 "monero_network.added" = "Added";
 "monero_network.add_new" = "Add New";
-"monero_network.description" = "Choose the node Unstoppable app should use for synchronizing wallet(s).";
+"monero_network.description" = "Choose the node SafeWallet app should use for synchronizing wallet(s).";
 "monero_network.auto_select" = "Auto-Select Node";
 "monero_network.auto_select.description" = "Connect to the fastest up-to-date node";
 "monero_network.unreachable" = "Unreachable";
@@ -2207,7 +2207,7 @@
 "zano_network.node" = "Node";
 "zano_network.added" = "Added";
 "zano_network.add_new" = "Add New";
-"zano_network.description" = "Choose the node Unstoppable app should use for synchronizing wallet(s).";
+"zano_network.description" = "Choose the node SafeWallet app should use for synchronizing wallet(s).";
 
 "add_zano_node.title" = "Add Node";
 "add_zano_node.node_url" = "Node URL";
@@ -2217,7 +2217,7 @@
 "zcash_network.node" = "Server";
 "zcash_network.added" = "Added";
 "zcash_network.add_new" = "Add New";
-"zcash_network.description" = "Choose the lightwallet server Unstoppable app should use for synchronizing wallet(s).";
+"zcash_network.description" = "Choose the lightwallet server SafeWallet app should use for synchronizing wallet(s).";
 
 "add_zcash_node.title" = "Add Server";
 "add_zcash_node.description" = "Enter the lightwalletd server address (host or host:port).";
@@ -2406,7 +2406,7 @@
 
 "no_passcode.info_text" = "This app requires that phone has the passcode (screen lock) enabled.\n\nYou may enable it in iOS settings.\n\nPlease note that when you disabled the PIN on the OS level the security measures in safe storage of your phonе made the previously stored data invalid. You will need to Restore your wallet keys to get back to your wallet.";
 "cannot_check_passcode.info_text" = "Unable to check the state of passcode (screen lock). Please restart the application.";
-"jailbreak.info_text" = "The Unstoppable team recommends running app only on non-rooted (not jailbroken) phones.\n\nPlease note when you use a rooted device the app can no longer guarantee the safety of your cryptocurrency from malicious software.";
+"jailbreak.info_text" = "The SafeWallet team recommends running app only on non-rooted (not jailbroken) phones.\n\nPlease note when you use a rooted device the app can no longer guarantee the safety of your cryptocurrency from malicious software.";
 
 // Transaction Filter
 
@@ -2459,7 +2459,7 @@
 "purchases.swap_control.info" = "By default, we select the best available offer. With Premium, you can choose a different route.";
 "purchases.priority_support" = "Priority Support";
 "purchases.priority_support.description" = "Direct access to our support team.";
-"purchases.priority_support.info" = "Gives you direct access to priority support. Get fast, personal help from the Unstoppable team.";
+"purchases.priority_support.info" = "Gives you direct access to priority support. Get fast, personal help from the SafeWallet team.";
 
 // Market Insights
 "purchases.market_insights" = "Market Insights";
@@ -3339,6 +3339,7 @@
 "safe_zone.src721.manager.hint" = "Manage SRC721 contracts issued or imported by this wallet.";
 "safe_zone.src721.wallet_nfts.hint" = "NFTs held by this wallet on Safe4, grouped by collection.";
 "safe_zone.src721.wallet_nfts.truncated" = "Some NFTs may not be visible yet. Refresh later.";
+"safe_zone.src721.wallet_nfts.partial_error" = "Some collections could not be loaded. Showing the NFTs that were retrieved.";
 "safe_zone.src721.deploy.hint" = "The NFT information address is optional. It lets wallets load the NFT image and description.";
 "safe_zone.src721.placeholder.name" = "e.g. Safe Art Collection";
 "safe_zone.src721.placeholder.symbol" = "e.g. SAC";
@@ -3383,6 +3384,10 @@
 "safe_zone.src721.error.address" = "%@ is not a valid address.";
 "safe_zone.src721.error.amount" = "Enter a valid amount for %@.";
 "safe_zone.src721.error.allow_list" = "Addresses and mint allowances must be non-empty and have the same count.";
+"safe_zone.src721.error.allow_list_unavailable" = "This contract does not support the Safe4 SRC721 allow-list interface.";
+"safe_zone.src721.error.allow_list_read_failed" = "Failed to read the on-chain allowlist: %@";
+"safe_zone.src721.error.owner_read_failed" = "The contract owner could not be verified. The on-chain data is shown as read-only.";
+"safe_zone.src721.error.token_status_unavailable" = "The NFT's on-chain operation status could not be verified. Operations are disabled.";
 "safe_zone.src721.error.allow_list_duplicate" = "This address is already recorded. Edit its amount instead.";
 "safe_zone.src721.error.logo" = "The logo file is too large. Choose a smaller image.";
 "safe_zone.src721.error.required" = "Enter %@.";
@@ -3464,6 +3469,10 @@
 "safe_zone.src721.section.withdraw" = "Withdraw SAFE";
 "safe_zone.src721.field.withdrawable_safe" = "Withdrawable SAFE";
 "safe_zone.src721.status.pending" = "Deployment pending confirmation";
+"safe_zone.src721.status.token_operation_pending" = "NFT operation pending";
+"safe_zone.src721.status.transfer_pending" = "Transfer pending";
+"safe_zone.src721.status.burn_pending" = "Burn pending";
+"safe_zone.src721.status.discovered" = "Found on-chain, view only";
 "safe_zone.src721.status.read_only" = "Current wallet is not the contract owner. Management is read-only.";
 "safe_zone.src721.status.manager" = "Current wallet is the contract owner.";
 "safe_zone.src721.type.standard" = "Standard SRC721";
