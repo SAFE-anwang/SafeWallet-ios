@@ -67,7 +67,15 @@ extension EvmPreSendHandler: IPreSendHandler {
             return .invalid(cautions: [])
         }
         if let timeLock {
-            let transactionData = TransactionData(to: evmAddress, value: .zero, input: Data())
+            let value: BigUInt
+            switch timeLock.token {
+            case .native:
+                value = timeLock.value
+            case .src20:
+                value = .zero
+            }
+
+            let transactionData = TransactionData(to: evmAddress, value: value, input: Data())
             return .valid(sendData: .evmSafe4TimeLock(blockchainType: token.blockchainType, transactionData: transactionData, timeLock: timeLock))
         }else {
             let transactionData = adapter.transactionData(amount: evmAmount, address: evmAddress)

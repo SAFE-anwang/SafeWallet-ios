@@ -127,6 +127,9 @@ extension EvmLabelManager {
         case lockRedeem3
         case lockRedeem4
         case registerMN
+        case swapExIn
+        case nftMint
+        case nftSend
 
         var id: String {
             switch self {
@@ -149,6 +152,9 @@ extension EvmLabelManager {
             case .lockRedeem3: "0x43594feb"
             case .lockRedeem4: "0x6d5b08d3"
             case .registerMN: "0x082ed4d5"
+            case .swapExIn: "0xedad400c"
+            case .nftMint: "0xe58306f9"
+            case .nftSend: "0x42842e0e"
             }
         }
 
@@ -165,6 +171,9 @@ extension EvmLabelManager {
             case .usdtCross, .usdtCrossToSafe: "safe_zone.cross_chain".localized
             case .lockRedeem1, .lockRedeem2, .lockRedeem3, .lockRedeem4: "safe_zone.locked_balance_migration".localized
             case .registerMN: "safe_zone.register_master_node".localized
+            case .swapExIn: "transactions.types.swap".localized
+            case .nftMint: "add_token.NFT.mint".localized
+            case .nftSend: "alert.sent".localized
             }
         }
     }
