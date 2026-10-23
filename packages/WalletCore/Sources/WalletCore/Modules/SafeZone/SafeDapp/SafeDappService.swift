@@ -207,13 +207,15 @@ extension SafeDappService {
 
         var items: [SafeDappPublishedItem] = []
         for id in ids {
-            // Match Android market behavior: one broken item or missing logo
-            // must not prevent the remaining on-chain DApps from displaying.
+            // One broken item or missing logo must not prevent the remaining
+            // promoted on-chain DApps from displaying.
             guard let info = try? await dapp.getInfo(id) else {
                 continue
             }
             let logoData = try? await dapp.getLogo(id)
-            let validLogoData = logoData?.isEmpty == false ? logoData : nil
+            guard let validLogoData = logoData, !validLogoData.isEmpty else {
+                continue
+            }
             items.append(SafeDappPublishedItem(info: info, logoData: validLogoData))
         }
         return items

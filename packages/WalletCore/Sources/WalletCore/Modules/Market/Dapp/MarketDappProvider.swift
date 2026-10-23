@@ -104,7 +104,7 @@ struct MarktDapp: ImmutableMappable {
         desc = try map.value("desc", default: "")
         descEN = try map.value("descEN", default: "")
         icon = try map.value("icon", default: "")
-        dlink = try map.value("dlink")
+        dlink = try map.value("dlink", default: "")
         md5Code = try map.value("md5Code", default: "")
         keywords = try? map.value("keywords")
         chainId = try? map.value("chainId")

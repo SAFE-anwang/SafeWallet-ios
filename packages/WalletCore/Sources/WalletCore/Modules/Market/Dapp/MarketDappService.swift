@@ -21,7 +21,7 @@ class MarketDappService {
 
     private func handle(datas: [MarktDapp], tab: MarketDappModule.Tab) {
         var grouped: [String: [MarktDapp]] = [:]
-        for dapp in datas {
+        for dapp in datas where Self.isDisplayable(dapp) {
             let group = dapp.type.caseInsensitiveCompare("SAFE") == .orderedSame ? "SAFE DAPP" : "DEX"
             grouped[group, default: []].append(dapp)
         }
@@ -127,6 +127,11 @@ private extension MarketDappService {
 
     static func dappKey(_ dapp: MarktDapp) -> String {
         "\(dapp.name)|\(dapp.dlink)"
+    }
+
+    static func isDisplayable(_ dapp: MarktDapp) -> Bool {
+        !dapp.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && MarketDappModule.normalizedUrl(from: dapp.dlink) != nil
     }
 }
 extension MarketDappService {
