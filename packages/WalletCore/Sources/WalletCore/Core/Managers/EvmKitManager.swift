@@ -51,7 +51,8 @@ public class EvmKitManager {
     }
 
     private func _evmKitWrapper(account: Account, blockchainType: BlockchainType) throws -> EvmKitWrapper {
-        let childWalletId = ChildWalletBridge.shared.activeChildWalletId(account: account)
+        let childWalletIdentity = try ChildWalletBridge.shared.kitIdentity(account: account)
+        let childWalletId = childWalletIdentity.childWalletId
         if let _evmKitWrapper, let currentAccount, currentAccount == account, currentChildWalletId == childWalletId {
             return _evmKitWrapper
         }
@@ -63,7 +64,7 @@ public class EvmKitManager {
 
         let address: EvmKit.Address
         if childWalletId != nil {
-            guard let childAddress = try ChildWalletBridge.shared.evmAddress(account: account, blockchainType: blockchainType, chain: chain) else {
+            guard let childAddress = try ChildWalletBridge.shared.evmAddress(identity: childWalletIdentity, chain: chain) else {
                 throw AdapterError.unsupportedAccount
             }
             address = childAddress
@@ -73,7 +74,7 @@ public class EvmKitManager {
         var signer: Signer?
 
         if childWalletId != nil {
-            if let privateKey = try ChildWalletBridge.shared.evmPrivateKey(account: account, chain: chain) {
+            if let privateKey = try ChildWalletBridge.shared.evmPrivateKey(identity: childWalletIdentity, chain: chain) {
                 signer = Signer.instance(privateKey: privateKey, chain: chain)
             }
         } else {
@@ -93,11 +94,7 @@ public class EvmKitManager {
         }
 
         let walletId: String
-        if childWalletId != nil {
-            walletId = try ChildWalletBridge.shared.walletId(account: account, blockchainType: blockchainType)
-        } else {
-            walletId = account.id
-        }
+        walletId = ChildWalletBridge.shared.walletId(identity: childWalletIdentity, blockchainType: blockchainType)
 
         let evmKit = try EvmKit.Kit.instance(
             address: address,
@@ -172,6 +169,19 @@ extension EvmKitManager {
 
     var evmKitUpdatedObservable: Observable<Void> {
         evmKitUpdatedRelay.asObservable()
+    }
+
+    // Read the kit and the account scope as one snapshot. Consumers that combine the
+    // wrapper with a separately-read active child id can accidentally label an old kit
+    // with the new child's identity during a fast wallet switch.
+    var currentSession: (wrapper: EvmKitWrapper, account: Account, childWalletId: String?)? {
+        queue.sync {
+            guard let wrapper = _evmKitWrapper, let account = currentAccount else {
+                return nil
+            }
+
+            return (wrapper, account, currentChildWalletId)
+        }
     }
 
     var evmKitWrapper: EvmKitWrapper? {

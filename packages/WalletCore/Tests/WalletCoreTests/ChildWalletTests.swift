@@ -179,6 +179,47 @@ final class ChildWalletTests: XCTestCase {
         XCTAssertNotEqual(firstAddress.base58, secondAddress.base58)
     }
 
+    func testKitIdentityKeepsAddressAndWalletIdStableAfterChildSelectionChanges() throws {
+        let bridge = ChildWalletBridge(storage: ChildWalletFileStorage(url: storageURL))
+        let account = mnemonicAccount(id: "parent")
+        let first = try bridge.createNextChildWallet(parentAccountId: account.id, name: "one")
+        let second = try bridge.createNextChildWallet(parentAccountId: account.id, name: "two")
+
+        try bridge.setActiveChildWallet(parentAccountId: account.id, childWalletId: first.id)
+        let identity = try bridge.kitIdentity(account: account)
+        let expectedEvmAddress = try ChildWalletDerivationService().evmAddress(account: account, childWallet: first, chain: .ethereum)
+        let expectedTronAddress = try ChildWalletDerivationService().tronAddress(account: account, childWallet: first)
+        let expectedEvmWalletId = bridge.walletId(identity: identity, blockchainType: .ethereum)
+        let expectedTronWalletId = bridge.walletId(identity: identity, blockchainType: .tron)
+
+        try bridge.setActiveChildWallet(parentAccountId: account.id, childWalletId: second.id)
+
+        XCTAssertEqual(try bridge.evmAddress(identity: identity, chain: .ethereum)?.hex, expectedEvmAddress.hex)
+        XCTAssertEqual(try bridge.tronAddress(identity: identity)?.base58, expectedTronAddress.base58)
+        XCTAssertEqual(bridge.walletId(identity: identity, blockchainType: .ethereum), expectedEvmWalletId)
+        XCTAssertEqual(bridge.walletId(identity: identity, blockchainType: .tron), expectedTronWalletId)
+        XCTAssertEqual(identity.childWalletId, first.id)
+    }
+
+    func testTronAddressResolutionMatchesActiveChildWalletAndFallsBackToParent() throws {
+        let bridge = ChildWalletBridge(storage: ChildWalletFileStorage(url: storageURL))
+        let account = mnemonicAccount(id: "parent")
+        let parentAddress = try AccountAddress.tronAddress(account: account)
+
+        XCTAssertEqual(
+            try AccountAddress.tronAddress(account: account, childWalletBridge: bridge).base58,
+            parentAddress.base58
+        )
+
+        let childWallet = try bridge.createNextChildWallet(parentAccountId: account.id, name: "one")
+        try bridge.setActiveChildWallet(parentAccountId: account.id, childWalletId: childWallet.id)
+        let expectedChildAddress = try ChildWalletDerivationService().tronAddress(account: account, childWallet: childWallet)
+        let activeAddress = try AccountAddress.tronAddress(account: account, childWalletBridge: bridge)
+
+        XCTAssertEqual(activeAddress.base58, expectedChildAddress.base58)
+        XCTAssertNotEqual(activeAddress.base58, parentAddress.base58)
+    }
+
     func testParentStateHighestKnownIndexUsesAllocatedIndexAndLegacyDetectedIndex() throws {
         var state = ChildWalletParentState.fresh(parentAccountId: "parent")
 
@@ -315,6 +356,33 @@ final class ChildWalletTests: XCTestCase {
         let enabledWallets = try storage.enabledWallets(childWalletId: child.id, parentAccountId: "parent")
         XCTAssertEqual(enabledWallets.count, 1)
         XCTAssertEqual(enabledWallets.first?.coinName, "Ethereum Updated")
+    }
+
+    func testLateTokenDiscoveryWritesToCapturedChildWalletAfterSelectionChanges() throws {
+        let storage = ChildWalletFileStorage(url: storageURL)
+        let bridge = ChildWalletBridge(storage: storage)
+        let first = try bridge.createNextChildWallet(parentAccountId: "parent", name: "one")
+        let second = try bridge.createNextChildWallet(parentAccountId: "parent", name: "two")
+
+        try bridge.setActiveChildWallet(parentAccountId: "parent", childWalletId: first.id)
+        let discoveredWallet = ChildEnabledWallet(
+            parentAccountId: "parent",
+            childWalletId: first.id,
+            tokenQueryId: "tron|eip20:late-token",
+            coinName: "Late Token",
+            coinCode: "LATE",
+            tokenDecimals: 6
+        )
+
+        // Simulate an async balance response completing after the active child has changed.
+        try bridge.setActiveChildWallet(parentAccountId: "parent", childWalletId: second.id)
+        try bridge.save(enabledWallets: [discoveredWallet], parentAccountId: "parent")
+
+        XCTAssertEqual(
+            try storage.enabledWallets(childWalletId: first.id, parentAccountId: "parent").map(\.tokenQueryId),
+            ["tron|eip20:late-token"]
+        )
+        XCTAssertTrue(try storage.enabledWallets(childWalletId: second.id, parentAccountId: "parent").isEmpty)
     }
 
     func testGRDBStoragePersistsChildWalletStateAndEnabledWallets() throws {
@@ -655,7 +723,7 @@ final class ChildWalletTests: XCTestCase {
     }
 
     func testLegacyEvmKitDatabaseCleanerRemovesOnlyLegacyChildWalletDatabasesForParent() throws {
-        let directoryURL = temporaryDirectoryURL()
+        let directoryURL = try temporaryDirectoryURL()
         let cleaner = ChildWalletLegacyEvmKitDatabaseCleaner(directoryURLProvider: { directoryURL })
         let filenamesToCreate = [
             "api-parent:child:1:ethereum-1.sqlite",
@@ -682,8 +750,8 @@ final class ChildWalletTests: XCTestCase {
     }
 
     func testLegacyEvmKitDatabaseCleanerRemovesAllLegacyChildWalletDatabasesAcrossKitDirectories() throws {
-        let evmDirectoryURL = temporaryDirectoryURL()
-        let tronDirectoryURL = temporaryDirectoryURL()
+        let evmDirectoryURL = try temporaryDirectoryURL()
+        let tronDirectoryURL = try temporaryDirectoryURL()
         let cleaner = ChildWalletLegacyEvmKitDatabaseCleaner(directoryURLProviders: [
             { evmDirectoryURL },
             { tronDirectoryURL },

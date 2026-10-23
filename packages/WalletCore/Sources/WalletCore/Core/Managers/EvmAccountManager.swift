@@ -41,12 +41,13 @@ class EvmAccountManager {
     }
 
     private func subscribeToTransactions() {
-        guard let evmKitWrapper = evmKitManager.evmKitWrapper else {
+        guard let session = evmKitManager.currentSession else {
             return
         }
 
-        let subscribedAccount = evmKitManager.currentAccount
-        let subscribedChildWalletId = subscribedAccount.flatMap { ChildWalletBridge.shared.activeChildWalletId(account: $0) }
+        let evmKitWrapper = session.wrapper
+        let subscribedAccount = session.account
+        let subscribedChildWalletId = session.childWalletId
 
         evmKitWrapper.evmKit.allTransactionsPublisher
             .receive(on: DispatchQueue.global(qos: .userInitiated))
@@ -62,7 +63,11 @@ class EvmAccountManager {
     }
 
     private func handle(fullTransactions: [FullTransaction], initial: Bool, subscribedAccount: Account?, subscribedChildWalletId: String?) {
-        guard let account = subscribedAccount else {
+        guard let account = subscribedAccount,
+              let session = evmKitManager.currentSession,
+              session.account.id == account.id,
+              session.childWalletId == subscribedChildWalletId
+        else {
             return
         }
 
@@ -75,10 +80,7 @@ class EvmAccountManager {
             return
         }
 
-        guard let evmKitWrapper = evmKitManager.evmKitWrapper else {
-            return
-        }
-
+        let evmKitWrapper = session.wrapper
         let address = evmKitWrapper.evmKit.address
 
         var foundTokens = Set<FoundToken>()
@@ -145,6 +147,14 @@ class EvmAccountManager {
     }
 
     private func handle(foundTokens: [FoundToken], suspiciousTokenTypes: [TokenType], account: Account, childWalletId: String?, evmKit: EvmKit.Kit) {
+        guard accountManager.activeAccount?.id == account.id,
+              ChildWalletBridge.shared.activeChildWalletId(account: account) == childWalletId,
+              evmKitManager.currentSession?.account.id == account.id,
+              evmKitManager.currentSession?.childWalletId == childWalletId
+        else {
+            return
+        }
+
         guard !foundTokens.isEmpty || !suspiciousTokenTypes.isEmpty else {
             return
         }
@@ -241,7 +251,8 @@ class EvmAccountManager {
 
             let nonZeroBalanceTokens = tokenInfos.filter { $0.balance > 0 }.map(\.tokenInfo)
 
-            self?.handle(processedTokenInfos: nonZeroBalanceTokens, account: account, childWalletId: childWalletId)
+            guard let self else { return }
+            self.handle(processedTokenInfos: nonZeroBalanceTokens, account: account, childWalletId: childWalletId)
         }
 
         task.store(in: &tasks)
@@ -249,6 +260,16 @@ class EvmAccountManager {
 
     private func handle(processedTokenInfos infos: [TokenInfo], account: Account, childWalletId: String?) {
 //        print("Processed Tokens: \(infos.count): \n\(infos.map { $0.type.id }.joined(separator: ", "))")
+
+        // Balance lookups above are asynchronous. The selected account/child wallet may have
+        // changed while they were running, so never apply a stale result to the new context.
+        guard accountManager.activeAccount?.id == account.id,
+              ChildWalletBridge.shared.activeChildWalletId(account: account) == childWalletId,
+              evmKitManager.currentSession?.account.id == account.id,
+              evmKitManager.currentSession?.childWalletId == childWalletId
+        else {
+            return
+        }
 
         guard Core.shared.config.autoEnableTokensOnReceive else {
             return
@@ -285,6 +306,8 @@ class EvmAccountManager {
             )
         }
 
+        // Root-wallet mutations are account-scoped; do not route them through the currently
+        // selected wallet, which may have changed since this transaction callback began.
         walletManager.saveRoot(enabledWallets: enabledWallets, account: account)
     }
 }

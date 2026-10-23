@@ -232,6 +232,10 @@ extension ChildWalletBridge {
         ChildWalletIdentity(account: account, childWallet: try? activeChildWallet(account: account))
     }
 
+    func kitIdentity(account: Account) throws -> ChildWalletIdentity {
+        ChildWalletIdentity(account: account, childWallet: try activeChildWallet(account: account))
+    }
+
     func activeChildWalletId(parentAccountId: String) -> String? {
         activeChildWalletId(parentAccountId: parentAccountId, migrateLegacyStorage: true)
     }
@@ -280,12 +284,60 @@ extension ChildWalletBridge {
         )
     }
 
+    func kitCacheKey(identity: ChildWalletIdentity, blockchainType: BlockchainType) -> ChildWalletKitCacheKey {
+        ChildWalletKitCacheKey(
+            accountId: identity.account.id,
+            childWalletId: identity.childWalletId,
+            blockchainType: blockchainType
+        )
+    }
+
     func walletId(account: Account, blockchainType: BlockchainType) throws -> String {
         guard let childWallet = try activeChildWallet(account: account) else {
             return account.id
         }
 
         return walletId(parentAccountId: account.id, derivationIndex: childWallet.derivationIndex, blockchainType: blockchainType)
+    }
+
+    func walletId(identity: ChildWalletIdentity, blockchainType: BlockchainType) -> String {
+        guard let childWallet = identity.childWallet else {
+            return identity.account.id
+        }
+
+        return walletId(parentAccountId: identity.account.id, derivationIndex: childWallet.derivationIndex, blockchainType: blockchainType)
+    }
+
+    func evmAddress(identity: ChildWalletIdentity, chain: Chain) throws -> EvmKit.Address? {
+        guard let childWallet = identity.childWallet else {
+            return nil
+        }
+
+        return try derivationService.evmAddress(account: identity.account, childWallet: childWallet, chain: chain)
+    }
+
+    func evmPrivateKey(identity: ChildWalletIdentity, chain: Chain) throws -> Data? {
+        guard let childWallet = identity.childWallet else {
+            return nil
+        }
+
+        return try derivationService.evmPrivateKey(account: identity.account, childWallet: childWallet, chain: chain)
+    }
+
+    func tronAddress(identity: ChildWalletIdentity) throws -> TronKit.Address? {
+        guard let childWallet = identity.childWallet else {
+            return nil
+        }
+
+        return try derivationService.tronAddress(account: identity.account, childWallet: childWallet)
+    }
+
+    func tronSigner(identity: ChildWalletIdentity) throws -> TronKit.Signer? {
+        guard let childWallet = identity.childWallet else {
+            return nil
+        }
+
+        return try derivationService.tronSigner(account: identity.account, childWallet: childWallet)
     }
 
     func evmAddress(account: Account, blockchainType: BlockchainType) throws -> EvmKit.Address? {

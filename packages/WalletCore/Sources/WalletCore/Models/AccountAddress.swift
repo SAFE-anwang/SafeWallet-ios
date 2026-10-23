@@ -30,6 +30,10 @@ public enum AccountAddress {
         throw AdapterError.unsupportedAccount
     }
 
+    static func tronAddress(account: Account, childWalletBridge: ChildWalletBridge) throws -> TronKit.Address {
+        try childWalletBridge.tronAddress(account: account) ?? tronAddress(account: account)
+    }
+
     static func thorChainAddress(account: Account) throws -> ThorChainKit.Address {
         for provider in providers {
             if let address = try provider.thorChainAddress(account: account) {

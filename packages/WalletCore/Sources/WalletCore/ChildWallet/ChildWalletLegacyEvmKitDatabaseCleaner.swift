@@ -44,8 +44,13 @@ final class ChildWalletLegacyEvmKitDatabaseCleaner {
                 return 0
             }
 
-            let legacyComponent = "\(parentAccountId):child:"
-            let removedCount = try removeLegacyDatabases { $0.contains(legacyComponent) }
+            // Database names include a known storage prefix followed by the account id.
+            // Match at that boundary so `other-parent` is not cleaned with `parent`.
+            let storagePrefixes = ["api-", "transactions-", "eip20-", "transactions-storage-"]
+            let legacyFilePrefixes = storagePrefixes.map { "\($0)\(parentAccountId):child:" }
+            let removedCount = try removeLegacyDatabases { filename in
+                legacyFilePrefixes.contains { filename.hasPrefix($0) }
+            }
             cleanedParentAccountIds.insert(parentAccountId)
             return removedCount
         }

@@ -57,14 +57,21 @@ public class TronKitManager {
     }
 
     private func _tronKitWrapper(account: Account) throws -> TronKitWrapper {
-        let kitCacheKey = try ChildWalletBridge.shared.kitCacheKey(account: account, blockchainType: .tron)
+        let childWalletIdentity = try ChildWalletBridge.shared.kitIdentity(account: account)
+        let kitCacheKey = ChildWalletBridge.shared.kitCacheKey(identity: childWalletIdentity, blockchainType: .tron)
 
         if let _tronKitWrapper, currentKitCacheKey == kitCacheKey {
             return _tronKitWrapper
         }
 
         let network: Network = testNetManager.testNetEnabled ? .nileTestnet : .mainNet
-        let address = try AccountAddress.tronAddress(account: account)
+        // Keep the kit address aligned with the child-derived signer when a child wallet is active.
+        let address: TronKit.Address
+        if let childAddress = try ChildWalletBridge.shared.tronAddress(identity: childWalletIdentity) {
+            address = childAddress
+        } else {
+            address = try AccountAddress.tronAddress(account: account)
+        }
         var signer: Signer?
 
         switch account.type {
@@ -72,7 +79,7 @@ public class TronKitManager {
             guard let seed = account.type.mnemonicSeed else {
                 throw KitWrapperError.mnemonicNoSeed
             }
-            signer = try ChildWalletBridge.shared.tronSigner(account: account) ?? Signer.instance(seed: seed)
+            signer = try ChildWalletBridge.shared.tronSigner(identity: childWalletIdentity) ?? Signer.instance(seed: seed)
         case let .trcPrivateKey(data):
             signer = try Signer.instance(privateKey: data)
         case .tronAddress:
@@ -89,7 +96,7 @@ public class TronKitManager {
         let tronKit = try TronKit.Kit.instance(
             address: address,
             network: network,
-            walletId: try ChildWalletBridge.shared.walletId(account: account, blockchainType: .tron),
+            walletId: ChildWalletBridge.shared.walletId(identity: childWalletIdentity, blockchainType: .tron),
             rpcSource: rpcSource(network: network, syncSource: syncSource),
             transactionSource: .tronGrid(network: network, apiKeys: AppConfig.tronGridApiKeys),
             minLogLevel: .error,
@@ -126,6 +133,21 @@ extension TronKitManager {
 
     var tronKitUpdatedObservable: Observable<Void> {
         tronKitUpdatedRelay.asObservable()
+    }
+
+    // Keep the kit and its account/child-wallet scope in one snapshot so delayed
+    // transaction callbacks cannot infer an old kit's identity from current selection.
+    var currentSession: (wrapper: TronKitWrapper, account: Account, childWalletId: String?)? {
+        queue.sync {
+            guard let wrapper = _tronKitWrapper,
+                  let account = currentAccount,
+                  let cacheKey = currentKitCacheKey
+            else {
+                return nil
+            }
+
+            return (wrapper, account, cacheKey.childWalletId)
+        }
     }
 
     public var tronKitWrapper: TronKitWrapper? {
