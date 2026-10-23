@@ -76,8 +76,56 @@ struct SRC721InsightToken: Decodable, Equatable {
     let logoURI: String?
     let template: Bool
     let creator: String
+    let burnable: Bool?
+    let version: String?
+
+    init(
+        address: String,
+        name: String,
+        symbol: String,
+        type: String,
+        logoURI: String?,
+        template: Bool,
+        creator: String,
+        burnable: Bool? = nil,
+        version: String? = nil
+    ) {
+        self.address = address
+        self.name = name
+        self.symbol = symbol
+        self.type = type
+        self.logoURI = logoURI
+        self.template = template
+        self.creator = creator
+        self.burnable = burnable
+        self.version = version
+    }
 
     var isERC721: Bool { type.caseInsensitiveCompare("erc721") == .orderedSame }
+
+    var src721ContractType: SRC721ContractType {
+        guard template else { return .generic }
+
+        let normalizedVersion = version?.lowercased()
+        let versionType: SRC721ContractType?
+        if normalizedVersion?.hasPrefix("src721-burnable-") == true {
+            versionType = .burnable
+        } else if normalizedVersion?.hasPrefix("src721-") == true {
+            versionType = .standard
+        } else {
+            versionType = nil
+        }
+
+        guard let versionType else {
+            guard version == nil, let burnable else { return .generic }
+            return burnable ? .burnable : .standard
+        }
+
+        if let burnable, burnable != (versionType == .burnable) {
+            return .generic
+        }
+        return versionType
+    }
 }
 
 struct SRC721InsightHolding: Decodable, Equatable {

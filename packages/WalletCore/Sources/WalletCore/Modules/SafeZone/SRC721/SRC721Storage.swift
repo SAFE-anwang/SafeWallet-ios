@@ -7,6 +7,7 @@ final class SRC721Storage {
     private let contractsKey = "safe_zone.src721.contracts"
     private let transactionsKey = "safe_zone.src721.transactions"
     private let allowListEntriesKey = "safe_zone.src721.allow_list_entries"
+    private let hiddenContractsKey = "safe_zone.src721.hidden_contracts"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -52,6 +53,30 @@ final class SRC721Storage {
             $0.contractAddress.lowercased() == contract.contractAddress.lowercased()
         }
         save(records, key: contractsKey)
+    }
+
+    func hide(contract: SRC721ContractRecord) {
+        var addresses = load([String].self, key: hiddenContractsKey) ?? []
+        let key = hiddenContractKey(contract)
+        guard !addresses.contains(key) else { return }
+        addresses.append(key)
+        save(addresses, key: hiddenContractsKey)
+        remove(contract: contract)
+    }
+
+    func unhide(contract: SRC721ContractRecord) {
+        let key = hiddenContractKey(contract)
+        var addresses = load([String].self, key: hiddenContractsKey) ?? []
+        addresses.removeAll { $0 == key }
+        save(addresses, key: hiddenContractsKey)
+    }
+
+    func isHidden(contract: SRC721ContractRecord) -> Bool {
+        (load([String].self, key: hiddenContractsKey) ?? []).contains(hiddenContractKey(contract))
+    }
+
+    private func hiddenContractKey(_ contract: SRC721ContractRecord) -> String {
+        "\(contract.accountId):\(contract.chainId):\(contract.walletAddress.lowercased()):\(contract.contractAddress.lowercased())"
     }
 
     func save(transaction: SRC721TransactionRecord) {

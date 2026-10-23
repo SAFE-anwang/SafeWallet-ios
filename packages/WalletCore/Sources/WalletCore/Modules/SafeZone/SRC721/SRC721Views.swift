@@ -1,13 +1,111 @@
 import BigInt
 import SwiftUI
-import PhotosUI
 import UIKit
 
-private struct SRC721MintConfirmation: Identifiable {
-    let id = UUID()
-    let recipient: String
-    let amount: String
-    let isAdmin: Bool
+private struct SRC721LogoView: View {
+    @Environment(\.presentationMode) private var presentationMode
+    @StateObject private var viewModel: SRC721LogoViewModel
+    private let onSubmitted: () -> Void
+    @State private var isShowingImagePicker = false
+    @State private var isShowingConfirmation = false
+
+    init(viewModel: SRC721LogoViewModel, onSubmitted: @escaping () -> Void) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+        self.onSubmitted = onSubmitted
+    }
+
+    var body: some View {
+        ThemeView {
+            ZStack {
+                BottomGradientWrapper {
+                    ScrollableThemeView {
+                        VStack(spacing: .margin8) {
+                            VStack(alignment: .leading, spacing: .margin8) {
+                                Text(viewModel.record.name.isEmpty ? "SRC721" : viewModel.record.name)
+                                    .themeSubhead1(color: .themeLeah)
+                                Text(viewModel.record.contractAddress)
+                                    .themeMicro(color: .themeGray)
+                                    .textSelection(.enabled)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, .margin16)
+                            .padding(.vertical, .margin8)
+                            .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
+
+                            VStack(alignment: .leading, spacing: .margin8) {
+                                Text("safe_zone.src721.section.logo".localized.uppercased())
+                                    .themeSubhead1(color: .themeLeah)
+                                    .padding(.top, .margin16)
+                                HStack(spacing: .margin16) {
+                                    Group {
+                                        if let image = viewModel.selectedImage {
+                                            Image(uiImage: image).resizable().scaledToFill()
+                                        } else {
+                                            Image(systemName: "photo").resizable().scaledToFit().padding(.margin12)
+                                                .foregroundColor(.themeGray)
+                                        }
+                                    }
+                                    .frame(width: .iconSize48, height: .iconSize48)
+                                    .clipShape(RoundedRectangle(cornerRadius: .cornerRadius8, style: .continuous))
+                                    Button("safe_zone.src721.action.choose_logo".localized) {
+                                        isShowingImagePicker = true
+                                    }
+                                    .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                                }
+                                .padding(.horizontal, .margin16)
+                                .padding(.vertical, .margin8)
+                                .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
+                                .modifier(CautionBorder(cautionState: $viewModel.logoCautionState))
+                                .modifier(CautionPrompt(cautionState: $viewModel.logoCautionState))
+                            }
+                            if let fee = viewModel.fee {
+                                HStack(spacing: .margin8) {
+                                    Image("circle_warning_24").themeIcon(color: .themeLeah)
+                                    Text("safe_zone.src721.logo_fee".localized(fee.safe4FormattedAmount))
+                                        .themeSubhead2(color: .themeLeah)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, .margin16)
+                                .padding(.vertical, .margin8)
+                                .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
+                            }
+                        }
+                        .padding(.init(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
+                    }
+                } bottomContent: {
+                    Button("safe_zone.src721.action.set_logo".localized) {
+                        isShowingConfirmation = true
+                    }
+                    .disabled(viewModel.sendState != .ready)
+                    .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                }
+                if viewModel.sendState == .sending { ProgressView() }
+            }
+        }
+        .navigationTitle("safe_zone.src721.section.logo".localized)
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isShowingImagePicker) {
+            ImagePicker(selectedImage: $viewModel.selectedImage)
+        }
+        .alert("safe_zone.src721.confirm.set_logo".localized, isPresented: $isShowingConfirmation) {
+            Button("button.cancel".localized, role: .cancel) {}
+            Button("button.confirm".localized) {
+                viewModel.upload { state in
+                    switch state {
+                    case .completed:
+                        HudHelper.instance.show(banner: .success(string: "safe_zone.src721.operation.confirmed".localized))
+                        onSubmitted()
+                        presentationMode.wrappedValue.dismiss()
+                    case .failed:
+                        HudHelper.instance.show(banner: .error(string: viewModel.operationError ?? "safe_zone.src721.operation.failure".localized))
+                    default: break
+                    }
+                }
+            }
+        } message: {
+            Text("safe_zone.src721.confirm.set_logo.details".localized)
+        }
+    }
 }
 
 struct SRC721DeployView: View {
@@ -96,9 +194,11 @@ struct SRC721DeployView: View {
             }
             .onChange(of: viewModel.sendState) { _, state in
                 if state == .completed {
-                    HudHelper.instance.show(banner: .success(string: "safe_zone.src721.deploy.success".localized))
                     isPresented = false
                 }
+            }
+            .onChange(of: viewModel.submissionID) { _, _ in
+                HudHelper.instance.show(banner: .success(string: "safe_zone.src721.deploy.success".localized))
             }
         }
     }
@@ -127,7 +227,7 @@ struct SRC721DeployView: View {
     }
 
     private var hintView: some View {
-        Text("safe_zone.src721.deploy.hint".localized)
+        Text(viewModel.type == .standard ? "safe_zone.src721.deploy.hint.standard".localized : "safe_zone.src721.deploy.hint.burnable".localized)
             .themeSubhead2(color: .themeGray)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, .margin16)
@@ -227,7 +327,6 @@ struct SRC721ManagerView: View {
 
 private struct SRC721ContractsView: View {
     @StateObject private var viewModel: SRC721ManagerViewModel
-    @State private var isShowingImport = false
 
     init(viewModel: SRC721ManagerViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -269,12 +368,13 @@ private struct SRC721ContractsView: View {
                     ScrollableThemeView {
                         ListSection {
                             ForEach(viewModel.records) { record in
-                                NavigationLink { SRC721ContractDetailRoute(record: record) } label: {
-                                    SRC721ContractRow(
-                                        record: record,
-                                        hasPendingTokenOperation: viewModel.pendingTokenContractAddresses.contains(record.contractAddress.lowercased())
-                                    )
-                                }
+                                SRC721ContractRow(
+                                    record: record,
+                                    state: viewModel.contractStates[record.contractAddress.lowercased()],
+                                    isLoadingState: viewModel.loadingContractAddresses.contains(record.contractAddress.lowercased()),
+                                    hasPendingTokenOperation: viewModel.pendingTokenContractAddresses.contains(record.contractAddress.lowercased()),
+                                    onDelete: { viewModel.removeFromList(record) }
+                                )
                             }
                         }
                         .padding(.horizontal, .margin16)
@@ -285,18 +385,7 @@ private struct SRC721ContractsView: View {
         }
         .navigationTitle("safe_zone.src721.my_contracts".localized)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button { isShowingImport = true } label: { Image(systemName: "plus") }
-                    .accessibilityLabel("safe_zone.src721.action.import".localized)
-            }
-        }
         .refreshable { viewModel.refresh() }
-        .sheet(isPresented: $isShowingImport) {
-            if let importViewModel = SRC721Module.importViewModel() {
-                SRC721ImportView(viewModel: importViewModel, isPresented: $isShowingImport)
-            }
-        }
     }
 }
 
@@ -394,9 +483,15 @@ private struct SRC721WalletCollectionRow: View {
             Text("\("safe_zone.src721.field.contract".localized): \(collection.contract.contractAddress.shortened)")
                 .themeMicro(color: .blue)
                 .lineLimit(1)
-            if collection.assets.contains(where: { $0.pendingOperation != nil }) {
-                Text("safe_zone.src721.status.token_operation_pending".localized)
-                    .themeMicro(color: .themeAndy)
+            HStack(alignment: .bottom) {
+                if collection.assets.contains(where: { $0.pendingOperation != nil }) {
+                    Text("safe_zone.src721.status.token_operation_pending".localized)
+                        .themeMicro(color: .themeAndy)
+                }
+                Spacer()
+                if collection.contract.contractType == .burnable {
+                    SRC721BurnableBadge()
+                }
             }
 //                .truncationMode(.middle)
         }
@@ -445,6 +540,7 @@ private struct SRC721WalletCollectionView: View {
                                                         ? SRC721WalletAsset(contract: $0.contract, token: $0.token, pendingOperation: operation)
                                                         : $0
                                                 }
+                                                onAssetsChanged()
                                             },
                                             onChanged: { changedAsset in
                                             assets.removeAll { $0.id == changedAsset.id }
@@ -498,40 +594,408 @@ private struct SRC721WalletCollectionTokenRow: View {
 
 private struct SRC721ContractRow: View {
     let record: SRC721ContractRecord
+    let state: SRC721ContractSupplyState?
+    let isLoadingState: Bool
     let hasPendingTokenOperation: Bool
+    let onDelete: () -> Void
+    @State private var isShowingDeleteConfirmation = false
 
-    init(record: SRC721ContractRecord, hasPendingTokenOperation: Bool = false) {
+    init(record: SRC721ContractRecord, state: SRC721ContractSupplyState?, isLoadingState: Bool = false, hasPendingTokenOperation: Bool = false, onDelete: @escaping () -> Void) {
         self.record = record
+        self.state = state
+        self.isLoadingState = isLoadingState
         self.hasPendingTokenOperation = hasPendingTokenOperation
+        self.onDelete = onDelete
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: .margin8) {
-            HStack {
-                Text("\("safe_zone.src721.field.name".localized): \(record.name.isEmpty ? "SRC721" : record.name)")
-                    .themeSubhead1(color: .themeLeah)
-                Spacer()
-                Text(record.isInsightDiscovered ? "safe_zone.src721.status.discovered".localized : record.contractType.title)
-                    .themeMicro(color: .themeGray, alignment: .trailing)
+            VStack(alignment: .leading, spacing: .margin8) {
+                HStack(alignment: .center) {
+                    Text(contractDisplayName)
+                        .themeSubhead1(color: .themeLeah)
+                        .lineLimit(1)
+                    Spacer(minLength: .margin8)
+                    if record.contractType == .burnable { SRC721BurnableBadge() }
+                }
+                Text(record.contractAddress.shortened)
+                    .themeMicro(color: .themeAndy)
+                    .lineLimit(1)
+                if isLoadingState {
+                    HStack(spacing: .margin4) {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                        Text("safe_zone.src721.status.syncing".localized)
+                            .themeSubhead2(color: .themeGray)
+                    }
+                } else {
+                    HStack(spacing: .margin16) {
+                        contractMetric("safe_zone.src721.list.minted".localized, mintedCount?.description ?? "-")
+                        contractMetric("safe_zone.src721.list.remaining".localized, state?.remainSupply.description ?? "-")
+                        if record.contractType.canBurn {
+                            contractMetric("safe_zone.src721.list.burned".localized, state?.burnedCount?.description ?? "-")
+                        }
+                    }
+                }
             }
-            Text("\("safe_zone.src721.field.symbol".localized): \(record.symbol)")
-                .themeSubhead2(color: .themeGray)
-            Text("\("safe_zone.src721.field.contract".localized): \(record.contractAddress)")
-                .themeMicro(color: .blue)
-//                .truncationMode(.middle)
-                .lineLimit(1)
-            if record.isPending {
-                Text("safe_zone.src721.status.pending".localized).themeMicro(color: .themeAndy)
-            } else if hasPendingTokenOperation {
-                Text("safe_zone.src721.status.token_operation_pending".localized).themeMicro(color: .themeAndy)
-            } else if record.isInsightDiscovered {
-                Text("safe_zone.src721.status.discovered".localized).themeMicro(color: .themeGray)
-            } else if record.isReadOnly {
-                Text("safe_zone.src721.status.read_only".localized).themeMicro(color: .themeGray)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: .margin8) {
+                NavigationLink {
+                    SRC721ContractQuickActionRoute(record: record, action: .mint)
+                } label: {
+                    Text("safe_zone.src721.action.mint_short".localized)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .truncationMode(.tail)
+                        .multilineTextAlignment(.center)
+                }
+                .buttonStyle(SRC721ContractRowActionStyle())
+                .disabled(!record.isReadOnly && record.isPending)
+                .frame(maxWidth: .infinity)
+
+                if record.contractType.canBurn {
+                    NavigationLink {
+                        SRC721BurnTokenIDRoute(record: record)
+                    } label: {
+                        Text("safe_zone.src721.action.burn".localized)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                            .truncationMode(.tail)
+                            .multilineTextAlignment(.center)
+                    }
+                    .buttonStyle(SRC721ContractRowActionStyle())
+                    .disabled(record.isPending || hasPendingTokenOperation)
+                    .frame(maxWidth: .infinity)
+                }
+
+                Button("safe_zone.src721.action.remove".localized) {
+                    isShowingDeleteConfirmation = true
+                }
+                .buttonStyle(SRC721ContractRowActionStyle())
+                .frame(maxWidth: .infinity)
             }
         }
         .padding(.horizontal, .margin16)
-        .padding(.vertical, .margin8)
+        .padding(.vertical, .margin12)
+        .background {
+            NavigationLink { SRC721ContractDetailRoute(record: record) } label: {
+                Color.clear.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHidden(true)
+        }
+        .alert("safe_zone.src721.confirm.remove".localized, isPresented: $isShowingDeleteConfirmation) {
+            Button("button.cancel".localized, role: .cancel) {}
+            Button("safe_zone.src721.action.remove".localized, role: .destructive, action: onDelete)
+        } message: {
+            Text("safe_zone.src721.confirm.remove.details".localized)
+        }
+    }
+
+    private var mintedCount: BigUInt? {
+        guard let state else { return nil }
+        return state.totalSupply + (state.burnedCount ?? 0)
+    }
+
+    private var contractDisplayName: String {
+        let name = record.name.isEmpty ? "SRC721" : record.name
+        return record.symbol.isEmpty ? name : "\(name) (\(record.symbol))"
+    }
+
+    private func contractMetric(_ title: String, _ value: String) -> some View {
+        Text("\(title) \(value)")
+            .textSubhead2(color: .themeGray)
+            .lineLimit(1)
+    }
+}
+
+private struct SRC721BurnTokenIDRoute: View {
+    let record: SRC721ContractRecord
+    @State private var viewModel: SRC721ContractDetailViewModel?
+
+    var body: some View {
+        Group {
+            if let viewModel {
+                SRC721BurnTokenIDView(viewModel: viewModel)
+            } else {
+                ProgressView()
+            }
+        }
+        .task {
+            guard viewModel == nil else { return }
+            viewModel = SRC721Module.detailViewModel(record: record)
+        }
+    }
+}
+
+private struct SRC721BurnTokenIDView: View {
+    @ObservedObject var viewModel: SRC721ContractDetailViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var tokenId = ""
+    @FocusState private var isInputFocused: Bool
+    @State private var initialSubmissionID: UUID?
+
+    private var isSubmitting: Bool { viewModel.isSubmittingOperation }
+
+    private var isValidTokenId: Bool {
+        (try? SRC721Validation.amount(tokenId, field: "safe_zone.src721.field.token_id".localized, allowZero: true)) != nil
+    }
+
+    private var tokenIdBinding: Binding<String> {
+        Binding(
+            get: { tokenId },
+            set: { value in
+                if let normalized = SRC721Validation.validDecimalInput(value) {
+                    tokenId = normalized
+                }
+            }
+        )
+    }
+
+    var body: some View {
+        ThemeView {
+            ZStack {
+                ScrollableThemeView {
+                    VStack(alignment: .leading, spacing: .margin16) {
+                        Text("safe_zone.src721.burn.dialog.description".localized)
+                            .themeBody(color: .themeLeah)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack(spacing: .margin8) {
+                            TextField("safe_zone.src721.burn.dialog.placeholder".localized, text: tokenIdBinding)
+                                .keyboardType(.numberPad)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .foregroundColor(.themeLeah)
+                                .tint(.themeLeah)
+                                .focused($isInputFocused)
+                            Button("button.paste".localized) {
+                                guard let value = UIPasteboard.general.string else { return }
+                                tokenIdBinding.wrappedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                            }
+                            .foregroundColor(.themeLeah)
+                            .padding(.horizontal, .margin12)
+                            .padding(.vertical, .margin8)
+                            .background(Color.themeBlade)
+                            .clipShape(Capsule())
+                        }
+                        .padding(.horizontal, .margin16)
+                        .frame(height: 50)
+                        .background(Color.themeLawrence)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.themeBlade, lineWidth: .heightOneDp))
+
+                        Button("button.confirm".localized) {
+                            dismissSRC721Keyboard()
+                            viewModel.burn(tokenId: tokenId)
+                        }
+                        .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                        .frame(maxWidth: .infinity)
+                        .disabled(!isValidTokenId || isSubmitting)
+                    }
+                    .padding(.horizontal, .margin16)
+                    .padding(.top, .margin16)
+                    .padding(.bottom, .margin32)
+                }
+                if isSubmitting { ProgressView() }
+            }
+        }
+        .navigationTitle("safe_zone.src721.action.burn".localized)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            initialSubmissionID = viewModel.submissionID
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { isInputFocused = true }
+        }
+        .onChange(of: viewModel.submissionID) { _, newValue in
+            guard let initialSubmissionID, newValue != initialSubmissionID else { return }
+            self.initialSubmissionID = newValue
+            dismiss()
+            HudHelper.instance.show(banner: .success(string: "safe_zone.src721.operation.confirmed".localized))
+        }
+        .onChange(of: viewModel.operationMessage) { _, message in
+            guard let message, viewModel.operationState == .failed else { return }
+            HudHelper.instance.show(banner: .error(string: message))
+        }
+    }
+}
+
+private struct SRC721ContractRowActionStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.themeCaptionSB)
+            .foregroundStyle(foregroundColor(isPressed: configuration.isPressed))
+            .padding(.horizontal, .margin8)
+            .frame(maxWidth: .infinity)
+            .frame(height: 32)
+            .background(backgroundColor(isPressed: configuration.isPressed))
+            .clipShape(Capsule(style: .continuous))
+            .contentShape(Capsule(style: .continuous))
+            .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
+    }
+
+    private func foregroundColor(isPressed: Bool) -> Color {
+        guard isEnabled else { return .themeAndy }
+        return isPressed ? .themeDark.opacity(0.7) : .themeDark
+    }
+
+    private func backgroundColor(isPressed: Bool) -> Color {
+        guard isEnabled else { return .themeBlade }
+        return isPressed ? .themeYellow50 : .themeYellow
+    }
+}
+
+private enum SRC721ContractQuickAction {
+    case mint
+    case burn
+}
+
+private struct SRC721ContractQuickActionRoute: View {
+    let record: SRC721ContractRecord
+    let action: SRC721ContractQuickAction
+    @State private var viewModel: SRC721ContractDetailViewModel?
+
+    var body: some View {
+        Group {
+            if let viewModel {
+                SRC721ContractQuickActionView(record: record, action: action, viewModel: viewModel)
+            } else {
+                ProgressView()
+            }
+        }
+        .task {
+            guard viewModel == nil else { return }
+            viewModel = SRC721Module.detailViewModel(record: record)
+        }
+    }
+}
+
+private struct SRC721ContractQuickActionView: View {
+    let record: SRC721ContractRecord
+    let action: SRC721ContractQuickAction
+    @ObservedObject var viewModel: SRC721ContractDetailViewModel
+    @State private var recipient = ""
+    @State private var amount = ""
+    @State private var tokenId = ""
+    @State private var isShowingConfirmation = false
+
+    var body: some View {
+        ThemeView {
+            ZStack {
+                ScrollableThemeView {
+                    VStack(spacing: .margin8) {
+                        Text(record.name.isEmpty ? "SRC721" : record.name)
+                            .themeSubhead1(color: .themeLeah)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if action == .mint {
+                            mintSupplySummary
+                            SRC721AddressInput(title: "safe_zone.src721.field.recipient".localized, prompt: "safe_zone.src721.placeholder.recipient", text: $recipient, caution: $viewModel.mintRecipientCautionState)
+                            TextField("safe_zone.src721.field.amount".localized, text: $amount)
+                                .keyboardType(.numberPad)
+                                .textFieldStyle(.roundedBorder)
+                            Button("safe_zone.src721.action.admin_mint".localized) {
+                                guard viewModel.validateMint(to: recipient, amount: amount, admin: true) else { return }
+                                isShowingConfirmation = true
+                            }
+                            .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                            .disabled(!viewModel.canManage || !viewModel.isContractStateReady || viewModel.isSubmittingOperation)
+                        } else {
+                            TextField("safe_zone.src721.field.token_id".localized, text: $tokenId)
+                                .keyboardType(.numberPad)
+                                .textFieldStyle(.roundedBorder)
+                            Button("safe_zone.src721.action.burn".localized) {
+                                guard BigUInt(tokenId) != nil else { return }
+                                isShowingConfirmation = true
+                            }
+                            .buttonStyle(PrimaryButtonStyle(style: .yellow))
+                            .disabled(!viewModel.canTransact || viewModel.isSubmittingOperation)
+                        }
+                    }
+                    .padding(.horizontal, .margin16)
+                    .padding(.top, .margin16)
+                }
+                if viewModel.isSubmittingOperation { ProgressView() }
+            }
+        }
+        .navigationTitle(action == .mint ? "safe_zone.src721.action.admin_mint".localized : "safe_zone.src721.action.burn".localized)
+        .navigationBarTitleDisplayMode(.inline)
+        .alert(action == .mint ? "safe_zone.src721.confirm.mint".localized : "safe_zone.src721.confirm.burn".localized, isPresented: $isShowingConfirmation) {
+            Button("button.confirm".localized, role: .destructive) {
+                if action == .mint {
+                    viewModel.mint(to: recipient, amount: amount, admin: true)
+                } else {
+                    viewModel.burn(tokenId: tokenId)
+                }
+            }
+        } message: {
+            Text(action == .mint
+                 ? "safe_zone.src721.confirm.admin_mint".localized
+                 : "safe_zone.src721.confirm.burn.details".localized)
+        }
+        .onChange(of: viewModel.submissionID) { _, _ in
+            HudHelper.instance.show(banner: .success(string: "safe_zone.src721.operation.confirmed".localized))
+        }
+        .alert("safe_zone.src721.operation.failure".localized, isPresented: Binding(
+            get: { viewModel.operationState == .failed && viewModel.operationMessage != nil },
+            set: { if !$0 { viewModel.operationMessage = nil } }
+        )) {
+            Button("button.ok".localized, role: .cancel) { viewModel.operationMessage = nil }
+        } message: {
+            Text(viewModel.operationMessage ?? "")
+        }
+    }
+
+    @ViewBuilder private var mintSupplySummary: some View {
+        if let state = viewModel.contractState {
+            VStack(alignment: .leading, spacing: .margin8) {
+                supplyMetric("safe_zone.src721.list.minted".localized, (state.totalSupply + (state.burnedCount ?? 0)).description)
+                supplyMetric("safe_zone.src721.field.supply".localized, "\(state.totalSupply) / \(state.maxSupply)")
+                supplyMetric("safe_zone.src721.field.burned_count".localized, state.burnedCount?.description ?? "-")
+                supplyMetric("safe_zone.src721.field.remain".localized, state.remainSupply.description)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, .margin16)
+            .padding(.vertical, .margin12)
+            .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
+        } else if case .loading = viewModel.dataState {
+            HStack {
+                ProgressView()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, .margin16)
+            .padding(.vertical, .margin12)
+            .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
+        } else {
+            HStack(alignment: .top, spacing: .margin8) {
+                Text(viewModel.refreshErrorMessage ?? "safe_zone.src721.error.contract_state_unavailable".localized)
+                    .themeSubhead2(color: .themeRed)
+                Spacer()
+                Button("button.retry".localized) { viewModel.refresh() }
+                    .themeSubhead2(color: .themeLeah)
+                    .disabled(viewModel.isRefreshing)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, .margin16)
+            .padding(.vertical, .margin12)
+            .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
+        }
+    }
+
+    private func supplyMetric(_ title: String, _ value: String) -> some View {
+        HStack(spacing: .margin8) {
+            Text(title).themeSubhead2(color: .themeGray)
+            Spacer()
+            Text(value).themeSubhead2(color: .themeLeah)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct SRC721BurnableBadge: View {
+    var body: some View {
+        BadgeViewNew("Burnable", mode: .transparent, colorStyle: .secondary)
     }
 }
 
@@ -566,7 +1030,7 @@ private struct SRC721ContractDetailRoute: View {
 
 private struct SRC721WalletAssetDetailRoute: View {
     let asset: SRC721WalletAsset
-    let onPending: (SRC721WalletAsset, SRC721TransactionOperation) -> Void
+    let onPending: (SRC721WalletAsset, SRC721TransactionOperation?) -> Void
     let onChanged: (SRC721WalletAsset) -> Void
     @State private var viewModel: SRC721ContractDetailViewModel?
 
@@ -589,7 +1053,7 @@ private struct SRC721WalletAssetDetailRoute: View {
 
 private struct SRC721WalletAssetDetailView: View {
     let asset: SRC721WalletAsset
-    let onPending: (SRC721WalletAsset, SRC721TransactionOperation) -> Void
+    let onPending: (SRC721WalletAsset, SRC721TransactionOperation?) -> Void
     let onChanged: (SRC721WalletAsset) -> Void
     @StateObject private var viewModel: SRC721ContractDetailViewModel
     @State private var approvedAddress = ""
@@ -600,7 +1064,7 @@ private struct SRC721WalletAssetDetailView: View {
     init(
         asset: SRC721WalletAsset,
         viewModel: SRC721ContractDetailViewModel,
-        onPending: @escaping (SRC721WalletAsset, SRC721TransactionOperation) -> Void,
+        onPending: @escaping (SRC721WalletAsset, SRC721TransactionOperation?) -> Void,
         onChanged: @escaping (SRC721WalletAsset) -> Void
     ) {
         self.asset = asset
@@ -633,15 +1097,8 @@ private struct SRC721WalletAssetDetailView: View {
         .contentShape(Rectangle())
         .onTapGesture { dismissSRC721Keyboard() }
         .refreshable { viewModel.loadToken(tokenId: asset.token.tokenId, showError: false) }
-        .overlay { if viewModel.operationState == .sending { ProgressView() } }
+        .overlay { if viewModel.isSubmittingOperation { ProgressView() } }
         .onChange(of: viewModel.burnedTokenId) { _, tokenId in
-            guard tokenId == asset.token.tokenId else { return }
-            presentationMode.wrappedValue.dismiss()
-            DispatchQueue.main.async {
-                onChanged(asset)
-            }
-        }
-        .onChange(of: viewModel.transferredTokenId) { _, tokenId in
             guard tokenId == asset.token.tokenId else { return }
             presentationMode.wrappedValue.dismiss()
             DispatchQueue.main.async {
@@ -652,8 +1109,14 @@ private struct SRC721WalletAssetDetailView: View {
             guard let operation = viewModel.pendingTokenOperation else { return }
             onPending(asset, operation)
         }
+        .onChange(of: viewModel.submissionID) { _, _ in
+            HudHelper.instance.show(banner: .success(string: "已提交，等待区块确认"))
+            guard viewModel.pendingTokenOperation == .transfer else { return }
+            onPending(asset, .transfer)
+            presentationMode.wrappedValue.dismiss()
+        }
         .alert(operationAlertTitle, isPresented: Binding(
-            get: { viewModel.operationMessage != nil && viewModel.operationState != .sending },
+            get: { viewModel.operationMessage != nil && viewModel.operationState == .failed },
             set: { if !$0 { viewModel.operationMessage = nil } }
         )) {
             if !viewModel.operationHashes.isEmpty {
@@ -692,17 +1155,17 @@ private struct SRC721WalletAssetDetailView: View {
                     detailRow("safe_zone.src721.field.name".localized, asset.contract.name.isEmpty ? "SRC721" : asset.contract.name)
                     detailRow("safe_zone.src721.field.symbol".localized, asset.contract.symbol)
                     detailRow("safe_zone.src721.field.token_id".localized, asset.token.tokenId.description)
-                    detailRow("safe_zone.src721.field.contract".localized, asset.contract.contractAddress)
+                    detailRow("safe_zone.src721.field.contract".localized, asset.contract.contractAddress, copyValue: asset.contract.contractAddress)
                     detailRow("safe_zone.src721.field.token_uri".localized, tokenURI)
                     if let token = viewModel.tokenState {
-                        detailRow("safe_zone.src721.field.owner".localized, token.ownerAddress)
-                        detailRow("safe_zone.src721.field.approved".localized, token.approvedAddress)
-                        detailRow(
-                            "safe_zone.src721.field.operator_status".localized,
-                            token.isApprovedForAll
-                                ? "safe_zone.src721.status.authorized".localized
-                                : "safe_zone.src721.status.not_authorized".localized
-                        )
+                        detailRow("safe_zone.src721.field.owner".localized, token.ownerAddress, copyValue: token.ownerAddress)
+//                        detailRow("safe_zone.src721.field.approved".localized, token.approvedAddress)
+//                        detailRow(
+//                            "safe_zone.src721.field.operator_status".localized,
+//                            token.isApprovedForAll
+//                                ? "safe_zone.src721.status.authorized".localized
+//                                : "safe_zone.src721.status.not_authorized".localized
+//                        )
                     }
                 }
 
@@ -721,17 +1184,17 @@ private struct SRC721WalletAssetDetailView: View {
                     }
 
                     VStack(spacing: .margin8) {
-                        SRC721AddressInput(
-                            title: "safe_zone.src721.field.approved".localized,
-                            prompt: "safe_zone.src721.placeholder.recipient",
-                            text: $approvedAddress,
-                            caution: $viewModel.tokenRecipientCautionState
-                        )
-                        actionButton("safe_zone.src721.action.approve".localized) {
-                            guard viewModel.validateTokenOperation(recipient: approvedAddress, allowZeroRecipient: true) else { return }
-                            viewModel.approve(to: approvedAddress)
-                        }
-                        .disabled(!viewModel.canTransact || !viewModel.canApproveLoadedToken || viewModel.operationState == .sending || viewModel.tokenOperationPending)
+//                        SRC721AddressInput(
+//                            title: "safe_zone.src721.field.approved".localized,
+//                            prompt: "safe_zone.src721.placeholder.recipient",
+//                            text: $approvedAddress,
+//                            caution: $viewModel.tokenRecipientCautionState
+//                        )
+//                        actionButton("safe_zone.src721.action.approve".localized) {
+//                            guard viewModel.validateTokenOperation(recipient: approvedAddress, allowZeroRecipient: true) else { return }
+//                            viewModel.approve(to: approvedAddress)
+//                        }
+//                        .disabled(!viewModel.canTransact || !viewModel.canApproveLoadedToken || viewModel.operationState == .sending || viewModel.tokenOperationPending)
 
                         SRC721AddressInput(
                             title: "safe_zone.src721.field.recipient".localized,
@@ -742,15 +1205,25 @@ private struct SRC721WalletAssetDetailView: View {
                         HStack(spacing: .margin8) {
                             actionButton("safe_zone.src721.action.transfer".localized) {
                                 guard viewModel.validateTokenOperation(recipient: recipient, allowZeroRecipient: false) else { return }
-                                viewModel.transfer(to: recipient)
+                                viewModel.transfer(to: recipient) { succeeded in
+                                    if succeeded {
+                                        onChanged(asset)
+                                    } else {
+                                        onPending(asset, nil)
+                                    }
+                                }
                             }
+                            .frame(maxWidth: .infinity)
                             .disabled(!viewModel.canTransact || !viewModel.canTransferLoadedToken || viewModel.operationState == .sending || viewModel.tokenOperationPending)
 
-                            actionButton("safe_zone.src721.action.burn".localized) {
-                                guard viewModel.validateTokenIdInput() else { return }
-                                isShowingBurnConfirmation = true
+                            if asset.contract.contractType == .burnable {
+                                actionButton("safe_zone.src721.action.burn".localized) {
+                                    guard viewModel.validateTokenIdInput() else { return }
+                                    isShowingBurnConfirmation = true
+                                }
+                                .frame(maxWidth: .infinity)
+                                .disabled(!viewModel.canTransact || !viewModel.canBurnLoadedToken || viewModel.operationState == .sending || viewModel.tokenOperationPending)
                             }
-                            .disabled(!viewModel.canTransact || !viewModel.canBurnLoadedToken || viewModel.operationState == .sending || viewModel.tokenOperationPending)
                         }
                     }
                     .disabled(viewModel.tokenState == nil || viewModel.isLoadingToken)
@@ -809,11 +1282,24 @@ private struct SRC721WalletAssetDetailView: View {
         .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
     }
 
-    private func detailRow(_ title: String, _ value: String) -> some View {
+    private func detailRow(_ title: String, _ value: String, copyValue: String? = nil) -> some View {
         HStack(alignment: .top, spacing: .margin8) {
             Text(title).themeSubhead2(color: .themeGray)
             Spacer()
-            Text(value).themeSubhead2(color: .themeLeah, alignment: .trailing).lineLimit(3).truncationMode(.middle)
+            if let copyValue {
+                Button {
+                    CopyHelper.copyAndNotify(value: copyValue)
+                } label: {
+                    HStack(spacing: .margin4) {
+                        Text(value).themeSubhead2(color: .themeLeah, alignment: .trailing).lineLimit(1).truncationMode(.middle)
+                        Image("copy_20").renderingMode(.template).foregroundColor(.themeGray)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("button.copy".localized)
+            } else {
+                Text(value).themeSubhead2(color: .themeLeah, alignment: .trailing).lineLimit(3).truncationMode(.middle)
+            }
         }
     }
 
@@ -1026,9 +1512,11 @@ private struct SRC721AllowListEditorView: View {
             }
             .onChange(of: viewModel.operationState) { _, state in
                 guard state == .completed else { return }
-                HudHelper.instance.show(banner: .success(string: viewModel.operationMessage ?? "safe_zone.src721.operation.success".localized))
                 onUpdated()
                 presentationMode.wrappedValue.dismiss()
+            }
+            .onChange(of: viewModel.submissionID) { _, _ in
+                HudHelper.instance.show(banner: .success(string: "已提交，等待区块确认"))
             }
             .alert("safe_zone.src721.error.title".localized, isPresented: Binding(
                 get: { viewModel.operationMessage != nil && viewModel.operationState == .failed },
@@ -1169,8 +1657,6 @@ struct SRC721ImportView: View {
 
 struct SRC721ContractDetailView: View {
     @StateObject private var viewModel: SRC721ContractDetailViewModel
-    @State private var recipient = ""
-    @State private var amount = "1"
     @State private var baseURI = ""
     @State private var maxSupply = ""
     @State private var mintPrice = ""
@@ -1178,14 +1664,12 @@ struct SRC721ContractDetailView: View {
     @State private var description = ""
     @State private var officialURL = ""
     @State private var whitePaperURL = ""
+    @State private var recipient = ""
     @State private var approvedAddress = ""
     @State private var operatorAddress = ""
-    @State private var selectedLogo: PhotosPickerItem?
-    @State private var pendingLogoData: Data?
     @FocusState private var focusedField: SRC721DetailField?
-    @State private var mintConfirmation: SRC721MintConfirmation?
     @State private var isShowingBurnConfirmation = false
-    @State private var isShowingWithdrawConfirmation = false
+    @Environment(\.presentationMode) private var presentationMode
 
     init(viewModel: SRC721ContractDetailViewModel) { _viewModel = StateObject(wrappedValue: viewModel) }
 
@@ -1203,9 +1687,9 @@ struct SRC721ContractDetailView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { dismissDetailKeyboard() }
-        .overlay { if viewModel.operationState == .sending { ProgressView() } }
+        .overlay { if viewModel.isSubmittingOperation { ProgressView() } }
         .alert(operationAlertTitle, isPresented: Binding(
-            get: { viewModel.operationMessage != nil && viewModel.operationState != .sending },
+            get: { viewModel.operationMessage != nil && viewModel.operationState == .failed },
             set: { if !$0 { viewModel.operationMessage = nil } }
         )) {
             if !viewModel.operationHashes.isEmpty {
@@ -1216,18 +1700,6 @@ struct SRC721ContractDetailView: View {
             }
             Button("button.ok".localized, role: .cancel) { viewModel.operationMessage = nil }
         } message: { Text(operationAlertMessage) }
-        .alert(item: $mintConfirmation) { confirmation in
-            Alert(
-                title: Text("safe_zone.src721.confirm.mint".localized),
-                message: Text(confirmation.isAdmin ? "safe_zone.src721.confirm.admin_mint".localized : "safe_zone.src721.confirm.mint.details".localized(confirmation.amount, confirmation.recipient)),
-                primaryButton: .destructive(Text("button.confirm".localized)) {
-                    focusedField = nil
-                    dismissSRC721Keyboard()
-                    viewModel.mint(to: confirmation.recipient, amount: confirmation.amount, admin: confirmation.isAdmin)
-                },
-                secondaryButton: .cancel(Text("button.cancel".localized))
-            )
-        }
         .alert("safe_zone.src721.confirm.burn".localized, isPresented: $isShowingBurnConfirmation) {
             Button("button.cancel".localized, role: .cancel) {}
             Button("safe_zone.src721.action.burn".localized, role: .destructive) {
@@ -1238,33 +1710,13 @@ struct SRC721ContractDetailView: View {
         } message: {
             Text("safe_zone.src721.confirm.burn.details".localized)
         }
-        .alert("safe_zone.src721.confirm.withdraw".localized, isPresented: $isShowingWithdrawConfirmation) {
-            Button("button.cancel".localized, role: .cancel) {}
-            Button("safe_zone.src721.action.withdraw".localized, role: .destructive) {
-                focusedField = nil
-                dismissSRC721Keyboard()
-                viewModel.withdraw()
-            }
-        } message: {
-            Text("safe_zone.src721.confirm.withdraw.details".localized(viewModel.contractState?.safeBalance.safe4Amount() ?? "0"))
-        }
         .onAppear { syncFields() }
         .onChange(of: viewModel.contractState) { _, _ in
             syncFields()
         }
-        .onChange(of: viewModel.operationState) { _, state in
-            if state == .completed {
-                pendingLogoData = nil
-                selectedLogo = nil
-            }
-        }
-        .onChange(of: selectedLogo) { _, item in
-            guard let item else { return }
-            Task {
-                if let data = try? await item.loadTransferable(type: Data.self) {
-                    await MainActor.run { pendingLogoData = data }
-                }
-            }
+        .onChange(of: viewModel.submissionID) { _, _ in
+            HudHelper.instance.show(banner: .success(string: "已提交，等待区块确认"))
+            presentationMode.wrappedValue.dismiss()
         }
         .refreshable { viewModel.refresh() }
     }
@@ -1293,11 +1745,11 @@ struct SRC721ContractDetailView: View {
             ScrollableThemeView {
                 VStack(spacing: .margin8) {
                     summary
-                    authorizationSection
-                    mintSection
+//                    authorizationSection
                     managementSection
-                    withdrawSection
-                    tokenSection
+                    logoSection
+//                    withdrawSection
+//                    tokenSection
                 }
                 .padding(.init(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
             }
@@ -1314,16 +1766,13 @@ struct SRC721ContractDetailView: View {
 
     private var summary: some View {
         VStack(alignment: .leading, spacing: .margin8) {
-            detailRow("safe_zone.src721.field.contract".localized, viewModel.record.contractAddress)
+            detailRow("safe_zone.src721.field.contract".localized, viewModel.record.contractAddress, copyValue: viewModel.record.contractAddress)
             detailRow("safe_zone.src721.field.type".localized, viewModel.record.contractType.title)
             if let state = viewModel.contractState {
-                detailRow("safe_zone.src721.field.owner".localized, state.ownerAddress)
+                detailRow("safe_zone.src721.field.owner".localized, state.ownerAddress, copyValue: state.ownerAddress)
                 detailRow("safe_zone.src721.field.supply".localized, "\(state.totalSupply) / \(state.maxSupply)")
+                detailRow("safe_zone.src721.field.burned_count".localized, state.burnedCount?.description ?? "-")
                 detailRow("safe_zone.src721.field.remain".localized, state.remainSupply.description)
-                detailRow("safe_zone.src721.field.wallet_balance".localized, state.walletBalance.description)
-                detailRow("safe_zone.src721.field.public_mint_allowance".localized, state.publicMintAllowance.description)
-                detailRow("safe_zone.src721.field.public_mint_available".localized, state.publicMintAvailableAmount.description)
-                detailRow("safe_zone.src721.field.public_mint_status".localized, state.canPublicMint ? "safe_zone.src721.status.available".localized : "safe_zone.src721.status.unavailable".localized)
                 Text(viewModel.canManage ? "safe_zone.src721.status.manager".localized : "safe_zone.src721.status.read_only".localized)
                     .themeSubhead2(color: viewModel.canManage ? .themeGreen : .themeGray)
             } else {
@@ -1390,111 +1839,32 @@ struct SRC721ContractDetailView: View {
         }
     }
 
-    private var mintSection: some View {
-        section(title: "safe_zone.src721.section.mint".localized) {
-            publicMintStatus
-            SRC721AddressInput(title: "safe_zone.src721.field.recipient".localized, prompt: "safe_zone.src721.placeholder.recipient", text: $recipient, caution: $viewModel.mintRecipientCautionState)
-                .id(SRC721DetailField.mintRecipient)
-            input("safe_zone.src721.field.amount".localized, text: $amount, caution: $viewModel.mintAmountCautionState, keyboard: .numberPad) { SRC721Validation.validDecimalInput($0) }
-                .id(SRC721DetailField.mintAmount)
-            HStack(spacing: .margin8) {
-                actionButton("safe_zone.src721.action.mint".localized) {
-                    guard viewModel.validateMint(to: recipient, amount: amount, admin: false) else { return }
-                    mintConfirmation = SRC721MintConfirmation(recipient: recipient, amount: amount, isAdmin: false)
-                }
-                    .disabled(!viewModel.canTransact || !viewModel.isContractStateReady)
-                actionButton("safe_zone.src721.action.admin_mint".localized) {
-                    guard viewModel.validateMint(to: recipient, amount: amount, admin: true) else { return }
-                    mintConfirmation = SRC721MintConfirmation(recipient: recipient, amount: amount, isAdmin: true)
-                }
-                    .disabled(!viewModel.canManage || !viewModel.isContractStateReady)
-            }
-        }
-    }
-
-    @ViewBuilder private var publicMintStatus: some View {
-        if let state = viewModel.contractState {
-            VStack(alignment: .leading, spacing: .margin4) {
-                Text("safe_zone.src721.public_mint.hint".localized)
-                    .themeSubhead2(color: .themeGray)
-                HStack(spacing: .margin8) {
-                    Text("safe_zone.src721.field.public_mint_status".localized)
-                        .themeSubhead2(color: .themeGray)
-                    Spacer()
-                    Text(state.canPublicMint ? "safe_zone.src721.status.available".localized : "safe_zone.src721.status.unavailable".localized)
-                        .themeSubhead2(color: state.canPublicMint ? .themeGreen : .themeRed, alignment: .trailing)
-                }
-                HStack(spacing: .margin8) {
-                    Text("safe_zone.src721.field.public_mint_available".localized)
-                        .themeSubhead2(color: .themeGray)
-                    Spacer()
-                    Text(state.publicMintAvailableAmount.description)
-                        .themeSubhead2(color: .themeLeah, alignment: .trailing)
-                }
-            }
-            .padding(.horizontal, .margin16)
-            .padding(.vertical, .margin8)
-            .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
-        } else {
-            HStack(alignment: .top, spacing: .margin8) {
-                Text(viewModel.refreshErrorMessage ?? "safe_zone.src721.error.contract_state_unavailable".localized)
-                    .themeSubhead2(color: viewModel.refreshErrorMessage == nil ? .themeGray : .themeRed)
-                Spacer()
-                if !viewModel.isRefreshing {
-                    Button("button.retry".localized) { viewModel.refresh() }
-                        .themeSubhead2(color: .themeLeah)
-                }
-            }
-        }
-    }
-
     private var managementSection: some View {
         section(title: "safe_zone.src721.section.management".localized) {
             managementInput(title: "safe_zone.src721.field.base_uri".localized, prompt: "safe_zone.src721.placeholder.base_uri", text: $baseURI, field: .baseURI, caution: $viewModel.baseURICautionState, keyboard: .URL) { SRC721Validation.textInput($0, maxUTF8Length: SRC721Validation.baseURIMaxUTF8Length) }.id(SRC721DetailField.baseURI)
             managementInput(title: "safe_zone.src721.field.max_supply".localized, prompt: "safe_zone.src721.placeholder.max_supply", text: $maxSupply, field: .maxSupply, caution: $viewModel.maxSupplyCautionState, keyboard: .numberPad) { SRC721Validation.validDecimalInput($0) }.id(SRC721DetailField.maxSupply)
             managementInput(title: "safe_zone.src721.field.mint_price".localized, prompt: "safe_zone.src721.placeholder.mint_price", text: $mintPrice, field: .mintPrice, caution: $viewModel.mintPriceCautionState, keyboard: .numberPad) { SRC721Validation.validDecimalInput($0) }.id(SRC721DetailField.mintPrice)
-            NavigationLink {
-                if let allowListViewModel = SRC721Module.allowListViewModel(record: viewModel.record) {
-                    SRC721AllowListView(viewModel: allowListViewModel) {
-                        viewModel.refresh()
-                    }
-                }
-            } label: {
-                HStack {
-                    Text("safe_zone.src721.action.manage_allow_list".localized)
-                        .themeSubhead1(color: .themeLeah)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.themeGray)
-                }
-                .padding(.vertical, .margin12)
-            }
-            .disabled(!viewModel.canManage)
+//            NavigationLink {
+//                if let allowListViewModel = SRC721Module.allowListViewModel(record: viewModel.record) {
+//                    SRC721AllowListView(viewModel: allowListViewModel) {
+//                        viewModel.refresh()
+//                    }
+//                }
+//            } label: {
+//                HStack {
+//                    Text("safe_zone.src721.action.manage_allow_list".localized)
+//                        .themeSubhead1(color: .themeLeah)
+//                    Spacer()
+//                    Image(systemName: "chevron.right")
+//                        .foregroundColor(.themeGray)
+//                }
+//                .padding(.vertical, .margin12)
+//            }
+//            .disabled(!viewModel.canManage)
             managementInput(title: "safe_zone.src721.field.org_name".localized, prompt: "safe_zone.src721.placeholder.org_name", text: $orgName, field: .orgName, caution: $viewModel.orgNameCautionState)
             managementInput(title: "safe_zone.src721.field.description".localized, prompt: "safe_zone.src721.placeholder.description", text: $description, field: .description, caution: $viewModel.descriptionCautionState, axis: .vertical, minHeight: 96)
             managementInput(title: "safe_zone.src721.field.official_url".localized, prompt: "safe_zone.src721.placeholder.official_url", text: $officialURL, field: .officialURL, caution: $viewModel.officialURLCautionState, keyboard: .URL)
             managementInput(title: "safe_zone.src721.field.whitepaper_url".localized, prompt: "safe_zone.src721.placeholder.whitepaper_url", text: $whitePaperURL, field: .whitePaperURL, caution: $viewModel.whitePaperURLCautionState, keyboard: .URL)
-            PhotosPicker(selection: $selectedLogo, matching: .images) {
-                HStack(spacing: .margin12) {
-                    logoPreview
-                    Text(pendingLogoData == nil ? "safe_zone.src721.action.choose_logo".localized : "safe_zone.src721.action.logo_selected".localized)
-                        .themeSubhead1(color: .themeLeah)
-                        .multilineTextAlignment(.leading)
-                    Spacer(minLength: .margin8)
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.themeGray)
-                }
-                .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(!viewModel.canManage)
-            .padding(.horizontal, .margin16)
-            .padding(.vertical, .margin8)
-            .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
-            .modifier(CautionBorder(cautionState: $viewModel.logoCautionState))
-            .modifier(CautionPrompt(cautionState: $viewModel.logoCautionState))
-            .id(SRC721DetailField.logo)
             actionButton("safe_zone.src721.action.update_all".localized) {
                 viewModel.updateAll(
                     baseURI: baseURI,
@@ -1504,26 +1874,43 @@ struct SRC721ContractDetailView: View {
                     description: description,
                     officialURL: officialURL,
                     whitePaperURL: whitePaperURL,
-                    logo: pendingLogoData
+                    logo: nil
                 )
             }
-            .disabled(!viewModel.canManage || viewModel.operationState == .sending || !viewModel.hasUpdateChanges(baseURI: baseURI, maxSupply: maxSupply, mintPrice: mintPrice, orgName: orgName, description: description, officialURL: officialURL, whitePaperURL: whitePaperURL, logo: pendingLogoData))
+            .disabled(!viewModel.canManage || viewModel.operationState == .sending || !viewModel.hasUpdateChanges(baseURI: baseURI, maxSupply: maxSupply, mintPrice: mintPrice, orgName: orgName, description: description, officialURL: officialURL, whitePaperURL: whitePaperURL, logo: nil))
         }
         .disabled(!viewModel.isContractStateReady)
         .opacity(viewModel.isContractStateReady ? 1 : 0.65)
     }
 
-    private var withdrawSection: some View {
-        section(title: "safe_zone.src721.section.withdraw".localized) {
-            detailRow("safe_zone.src721.field.withdrawable_safe".localized, viewModel.contractState?.safeBalance.safe4Amount() ?? "-")
-            actionButton("safe_zone.src721.action.withdraw".localized) { isShowingWithdrawConfirmation = true }
-                .disabled(!viewModel.canManage || !viewModel.isContractStateReady || viewModel.operationState == .sending || (viewModel.contractState?.safeBalance ?? 0) == 0)
+    private var logoSection: some View {
+        section(title: "safe_zone.src721.section.logo".localized) {
+            NavigationLink {
+                if let state = viewModel.contractState,
+                   let logoViewModel = SRC721Module.logoViewModel(record: viewModel.record, currentLogo: state.logo) {
+                    SRC721LogoView(viewModel: logoViewModel) { viewModel.refresh() }
+                } else {
+                    Text("safe_zone.src721.error.signer".localized)
+                }
+            } label: {
+                HStack(spacing: .margin12) {
+                    logoPreview(data: viewModel.contractState?.logo)
+                    Text("safe_zone.src721.action.set_logo".localized)
+                        .themeSubhead1(color: viewModel.canManage ? .themeLeah : .themeGray)
+                    Spacer(minLength: .margin8)
+                    Image(systemName: "chevron.right").foregroundColor(.themeGray)
+                }
+                .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(!viewModel.canManage || !viewModel.isContractStateReady)
         }
     }
 
-    private var logoPreview: some View {
+    @ViewBuilder private func logoPreview(data: Data?) -> some View {
         Group {
-            if let pendingLogoData, let image = UIImage(data: pendingLogoData) {
+            if let data, !data.isEmpty, let image = UIImage(data: data) {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -1542,13 +1929,13 @@ struct SRC721ContractDetailView: View {
 
     private var tokenSection: some View {
         section(title: "safe_zone.src721.section.token".localized) {
-            input("safe_zone.src721.field.token_id".localized, text: $viewModel.tokenId, caution: $viewModel.tokenIdCautionState, keyboard: .numberPad) { SRC721Validation.validDecimalInput($0) }
+            input("safe_zone.src721.field.token_id".localized, prompt: "", text: $viewModel.tokenId, caution: $viewModel.tokenIdCautionState, keyboard: .numberPad) { SRC721Validation.validDecimalInput($0) }
                 .id(SRC721DetailField.tokenId)
             actionButton("safe_zone.src721.action.query_token".localized) { viewModel.loadToken() }
             if let token = viewModel.tokenState {
-                detailRow("safe_zone.src721.field.owner".localized, token.ownerAddress)
-                detailRow("safe_zone.src721.field.approved".localized, token.approvedAddress)
-                detailRow("safe_zone.src721.field.operator_status".localized, token.isApprovedForAll ? "safe_zone.src721.status.authorized".localized : "safe_zone.src721.status.not_authorized".localized)
+                detailRow("safe_zone.src721.field.owner".localized, token.ownerAddress, copyValue: token.ownerAddress)
+//                detailRow("safe_zone.src721.field.approved".localized, token.approvedAddress)
+//                detailRow("safe_zone.src721.field.operator_status".localized, token.isApprovedForAll ? "safe_zone.src721.status.authorized".localized : "safe_zone.src721.status.not_authorized".localized)
                 detailRow("safe_zone.src721.field.token_uri".localized, token.tokenURI ?? "safe_zone.src721.metadata.unavailable".localized)
                 Text(viewModel.canTransferLoadedToken ? "safe_zone.src721.status.token_operable".localized : "safe_zone.src721.status.token_read_only".localized)
                     .themeSubhead2(color: viewModel.canTransferLoadedToken ? .themeGreen : .themeGray)
@@ -1597,7 +1984,7 @@ struct SRC721ContractDetailView: View {
         .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
     }
 
-    private func input(_ title: String, text: Binding<String>, caution: Binding<CautionState> = .constant(.none), keyboard: UIKeyboardType = .default, axis: Axis = .horizontal, transform: @escaping (String) -> String? = { Optional($0) }) -> some View {
+    private func input(_ title: String, prompt: String, text: Binding<String>, caution: Binding<CautionState> = .constant(.none), keyboard: UIKeyboardType = .default, axis: Axis = .horizontal, transform: @escaping (String) -> String? = { Optional($0) }) -> some View {
         let limitedText = Binding<String>(
             get: { text.wrappedValue },
             set: { if let value = transform($0) { text.wrappedValue = value } }
@@ -1605,10 +1992,12 @@ struct SRC721ContractDetailView: View {
 
         return VStack(alignment: .leading, spacing: .margin8) {
             Text(title).themeSubhead2(color: .themeGray)
-            TextField("", text: limitedText, axis: axis)
+            TextField("", text: limitedText, prompt: Text(prompt.localized).foregroundColor(.themeGray), axis: axis)
                 .foregroundColor(.themeLeah)
-                .font(.themeHeadline1)
+                .font(.themeBody)
                 .keyboardType(keyboard)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
                 .padding(.horizontal, .margin12)
                 .padding(.vertical, .margin8)
                 .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
@@ -1652,11 +2041,24 @@ struct SRC721ContractDetailView: View {
         }
     }
 
-    private func detailRow(_ title: String, _ value: String) -> some View {
+    private func detailRow(_ title: String, _ value: String, copyValue: String? = nil) -> some View {
         HStack(alignment: .top, spacing: .margin8) {
             Text(title).themeSubhead2(color: .themeGray)
             Spacer()
-            Text(value).themeSubhead2(color: .themeLeah, alignment: .trailing).lineLimit(3).truncationMode(.middle)
+            if let copyValue {
+                Button {
+                    CopyHelper.copyAndNotify(value: copyValue)
+                } label: {
+                    HStack(spacing: .margin4) {
+                        Text(value).themeSubhead2(color: .themeLeah, alignment: .trailing).lineLimit(1).truncationMode(.middle)
+                        Image("copy_20").renderingMode(.template).foregroundColor(.themeGray)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("button.copy".localized)
+            } else {
+                Text(value).themeSubhead2(color: .themeLeah, alignment: .trailing).lineLimit(3).truncationMode(.middle)
+            }
         }
     }
 

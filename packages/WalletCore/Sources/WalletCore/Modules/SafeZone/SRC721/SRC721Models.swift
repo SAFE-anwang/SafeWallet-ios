@@ -102,7 +102,7 @@ struct SRC721ContractRecord: Codable, Hashable, Identifiable {
                 predictedContractAddress: nil,
                 creatorAddress: creatorAddress,
                 currentOwnerAddress: nil,
-                contractType: .generic,
+                contractType: token.src721ContractType,
                 name: token.name,
                 symbol: token.symbol,
                 baseURI: "",
@@ -159,12 +159,9 @@ struct SRC721ContractState: Equatable {
     let baseURI: String
     let maxSupply: BigUInt
     let totalSupply: BigUInt
+    let burnedCount: BigUInt?
     let remainSupply: BigUInt
     let mintPrice: BigUInt
-    let walletBalance: BigUInt
-    let publicMintAllowance: BigUInt
-    let canPublicMint: Bool
-    let safeBalance: BigUInt
     let orgName: String
     let description: String
     let officialURL: String
@@ -172,9 +169,16 @@ struct SRC721ContractState: Equatable {
     let logo: Data
 
     var isSoldOut: Bool { remainSupply == 0 }
-    var publicMintAvailableAmount: BigUInt {
-        canPublicMint ? min(publicMintAllowance, remainSupply) : 0
+    static func burnedCount(mintedTotal: BigUInt?, totalSupply: BigUInt) -> BigUInt? {
+        guard let mintedTotal, mintedTotal >= totalSupply else { return nil }
+        return mintedTotal - totalSupply
     }
+}
+
+struct SRC721ContractSupplyState: Equatable {
+    let totalSupply: BigUInt
+    let burnedCount: BigUInt?
+    let remainSupply: BigUInt
 }
 
 struct SRC721TokenState: Equatable {
@@ -426,6 +430,7 @@ enum SRC721ValidationError: LocalizedError {
     case publicMintUnavailable
     case publicMintAllowanceInsufficient
     case supplyInsufficient
+    case insufficientLogoBalance
     case transactionTimeout
     case missingSigner
 
@@ -451,6 +456,7 @@ enum SRC721ValidationError: LocalizedError {
         case .publicMintUnavailable: return "safe_zone.src721.error.public_mint_unavailable".localized
         case .publicMintAllowanceInsufficient: return "safe_zone.src721.error.public_mint_allowance".localized
         case .supplyInsufficient: return "safe_zone.src721.error.supply_insufficient".localized
+        case .insufficientLogoBalance: return "safe_zone.src721.error.insufficient_logo_balance".localized
         case .transactionTimeout: return "safe_zone.src721.error.timeout".localized
         case .missingSigner: return "safe_zone.src721.error.signer".localized
         }
@@ -463,6 +469,17 @@ enum SRC721Validation {
     static let symbolMaxUTF8Length = 16
     static let baseURIMaxUTF8Length = 512
     static let uint256Max = (BigUInt(1) << 256) - 1
+
+    static func validateLogoBalance(balance: BigUInt, required: BigUInt) throws {
+        guard balance >= required else { throw SRC721ValidationError.insufficientLogoBalance }
+    }
+
+    static func isInsufficientFundsError(_ message: String) -> Bool {
+        let description = message.lowercased()
+        return description.contains("insufficient funds") ||
+            description.contains("insufficient balance") ||
+            description.contains("gas required exceeds allowance")
+    }
 
     static func required(_ value: String, field: String, maxLength: Int) throws -> String {
         let result = value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -484,10 +501,8 @@ enum SRC721Validation {
         return amount
     }
 
-    static func validatePublicMint(state: SRC721ContractState, amount: BigUInt) throws {
-        guard state.canPublicMint else { throw SRC721ValidationError.publicMintUnavailable }
-        guard state.publicMintAllowance >= amount else { throw SRC721ValidationError.publicMintAllowanceInsufficient }
-        guard state.remainSupply >= amount else { throw SRC721ValidationError.supplyInsufficient }
+    static func validateMintSupply(remainSupply: BigUInt, amount: BigUInt) throws {
+        guard remainSupply >= amount else { throw SRC721ValidationError.supplyInsufficient }
     }
 
     static func address(_ value: String, field: String, allowZero: Bool = false) throws -> Web3Core.EthereumAddress {
@@ -501,7 +516,7 @@ enum SRC721Validation {
     static func baseURI(_ value: String) throws -> String {
         let result = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !result.isEmpty, result.utf8.count <= baseURIMaxUTF8Length else { throw SRC721ValidationError.invalidURL }
-        guard let url = URL(string: result), let scheme = url.scheme?.lowercased(), ["https", "ipfs"].contains(scheme) else {
+        guard let url = URL(string: result), let scheme = url.scheme?.lowercased(), ["http", "https", "ipfs"].contains(scheme) else {
             throw SRC721ValidationError.invalidURL
         }
         return result

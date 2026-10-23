@@ -3,6 +3,13 @@ import XCTest
 @testable import WalletCore
 
 final class SRC721ValidationTests: XCTestCase {
+    func testBurnedCountUsesMintedTotalMinusCurrentSupply() {
+        XCTAssertEqual(SRC721ContractState.burnedCount(mintedTotal: 12, totalSupply: 9), 3)
+        XCTAssertEqual(SRC721ContractState.burnedCount(mintedTotal: 9, totalSupply: 9), 0)
+        XCTAssertNil(SRC721ContractState.burnedCount(mintedTotal: nil, totalSupply: 9))
+        XCTAssertNil(SRC721ContractState.burnedCount(mintedTotal: 8, totalSupply: 9))
+    }
+
     func testReceiptStatusTreatsNullResultAsPending() throws {
         let data = Data(#"{"jsonrpc":"2.0","id":1,"result":null}"#.utf8)
 
@@ -61,6 +68,25 @@ final class SRC721ValidationTests: XCTestCase {
         XCTAssertEqual(try SRC721Validation.amount("0", field: "amount", allowZero: true), BigUInt.zero)
     }
 
+    func testLogoPaymentBalanceRequiresPromotionFeeAndEstimatedGas() {
+        XCTAssertNoThrow(SRC721Validation.validateLogoBalance(balance: 150, required: 150))
+        XCTAssertThrowsError(SRC721Validation.validateLogoBalance(balance: 149, required: 150))
+    }
+
+    func testLogoPaymentRecognizesInsufficientFundsRpcError() {
+        XCTAssertTrue(SRC721Validation.isInsufficientFundsError("Server error. Error code: -32000. insufficient funds for transfer"))
+        XCTAssertFalse(SRC721Validation.isInsufficientFundsError("execution reverted: invalid logo"))
+    }
+
+    func testMintAmountCannotExceedRemainingSupply() {
+        XCTAssertNoThrow(SRC721Validation.validateMintSupply(remainSupply: 5, amount: 5))
+        XCTAssertThrowsError(SRC721Validation.validateMintSupply(remainSupply: 4, amount: 5)) { error in
+            guard case SRC721ValidationError.supplyInsufficient = error else {
+                return XCTFail("Expected remaining supply validation error")
+            }
+        }
+    }
+
     func testAmountRejectsNonDecimalAndUint256Overflow() {
         XCTAssertThrowsError(try SRC721Validation.amount("1e3", field: "amount"))
         XCTAssertThrowsError(try SRC721Validation.amount("01", field: "amount"))
@@ -112,10 +138,10 @@ final class SRC721ValidationTests: XCTestCase {
         XCTAssertNoThrow(try SRC721Validation.address("0x0000000000000000000000000000000000000001", field: "address"))
     }
 
-    func testBaseURIAllowsHTTPSAndIPFSButRejectsOtherSchemes() {
+    func testBaseURIAllowsHTTPHTTPSAndIPFSButRejectsOtherSchemes() {
         XCTAssertNoThrow(try SRC721Validation.baseURI("https://example.com/nft/"))
+        XCTAssertNoThrow(try SRC721Validation.baseURI("http://example.com/nft/"))
         XCTAssertNoThrow(try SRC721Validation.baseURI("ipfs://bafybeigdyrzt/"))
-        XCTAssertThrowsError(try SRC721Validation.baseURI("http://example.com/nft/"))
         XCTAssertThrowsError(try SRC721Validation.baseURI("ftp://example.com/nft/"))
     }
 
@@ -225,35 +251,6 @@ final class SRC721ValidationTests: XCTestCase {
 
         XCTAssertEqual(collections.map(\.displayName), ["Alpha", "Beta"])
         XCTAssertEqual(collections[1].assets.map(\.token.tokenId), [BigUInt(1), BigUInt(5)])
-    }
-
-    func testPublicMintValidationChecksEligibilityAllowanceAndSupply() throws {
-        var state = testContractState(canPublicMint: true, allowance: 3, remainSupply: 5)
-        XCTAssertEqual(state.publicMintAvailableAmount, 3)
-        XCTAssertNoThrow(try SRC721Validation.validatePublicMint(state: state, amount: 3))
-
-        state = testContractState(canPublicMint: false, allowance: 3, remainSupply: 5)
-        XCTAssertEqual(state.publicMintAvailableAmount, 0)
-        XCTAssertThrowsError(try SRC721Validation.validatePublicMint(state: state, amount: 1)) { error in
-            guard case SRC721ValidationError.publicMintUnavailable = error else {
-                return XCTFail("Expected public mint eligibility error")
-            }
-        }
-
-        state = testContractState(canPublicMint: true, allowance: 2, remainSupply: 5)
-        XCTAssertThrowsError(try SRC721Validation.validatePublicMint(state: state, amount: 3)) { error in
-            guard case SRC721ValidationError.publicMintAllowanceInsufficient = error else {
-                return XCTFail("Expected public mint allowance error")
-            }
-        }
-
-        state = testContractState(canPublicMint: true, allowance: 5, remainSupply: 2)
-        XCTAssertEqual(state.publicMintAvailableAmount, 2)
-        XCTAssertThrowsError(try SRC721Validation.validatePublicMint(state: state, amount: 3)) { error in
-            guard case SRC721ValidationError.supplyInsufficient = error else {
-                return XCTFail("Expected remaining supply error")
-            }
-        }
     }
 
     func testAllowListEntryStorageUpsertsAndFiltersByContract() {
@@ -388,6 +385,48 @@ final class SRC721ValidationTests: XCTestCase {
         XCTAssertEqual(records.first?.name, "First")
     }
 
+    func testInsightTokenDecodesAndClassifiesSRC721Templates() throws {
+        let standardJSON = Data(#"{"address":"0x0000000000000000000000000000000000000010","name":"Standard","symbol":"STD","type":"erc721","logoURI":null,"template":true,"creator":"0x00000000000000000000000000000000000000ab","burnable":false,"version":"SRC721-0.0.3"}"#.utf8)
+        let burnableJSON = Data(#"{"address":"0x0000000000000000000000000000000000000020","name":"Burnable","symbol":"BRN","type":"erc721","logoURI":null,"template":true,"creator":"0x00000000000000000000000000000000000000ab","burnable":true,"version":"SRC721-burnable-0.0.4"}"#.utf8)
+        let genericJSON = Data(#"{"address":"0x0000000000000000000000000000000000000030","name":"Other","symbol":"OTH","type":"erc721","logoURI":null,"template":false,"creator":"0x00000000000000000000000000000000000000ab","burnable":false,"version":null}"#.utf8)
+
+        XCTAssertEqual(try JSONDecoder().decode(SRC721InsightToken.self, from: standardJSON).src721ContractType, .standard)
+        XCTAssertEqual(try JSONDecoder().decode(SRC721InsightToken.self, from: burnableJSON).src721ContractType, .burnable)
+        XCTAssertEqual(try JSONDecoder().decode(SRC721InsightToken.self, from: genericJSON).src721ContractType, .generic)
+    }
+
+    func testInsightContractDiscoveryUsesDetectedTemplateType() {
+        let wallet = "0x00000000000000000000000000000000000000ab"
+        let tokens = [
+            SRC721InsightToken(
+                address: "0x0000000000000000000000000000000000000010", name: "Standard", symbol: "STD",
+                type: "erc721", logoURI: nil, template: true, creator: wallet,
+                burnable: false, version: "SRC721-0.0.3"
+            ),
+            SRC721InsightToken(
+                address: "0x0000000000000000000000000000000000000020", name: "Burnable", symbol: "BRN",
+                type: "erc721", logoURI: nil, template: true, creator: wallet,
+                burnable: true, version: "SRC721-burnable-0.0.4"
+            )
+        ]
+
+        let records = SRC721ContractRecord.insightDiscoveredRecords(
+            from: tokens, accountId: "account-a", chainId: 100, walletAddress: wallet
+        )
+        let recordsByAddress = Dictionary(uniqueKeysWithValues: records.map { ($0.contractAddress, $0) })
+
+        XCTAssertEqual(recordsByAddress["0x0000000000000000000000000000000000000010"]?.contractType, .standard)
+        XCTAssertEqual(recordsByAddress["0x0000000000000000000000000000000000000020"]?.contractType, .burnable)
+    }
+
+    func testInsightTokenTypeFallsBackToGenericForMissingOrConflictingMetadata() throws {
+        let missingMetadataJSON = Data(#"{"address":"0x0000000000000000000000000000000000000010","name":"Legacy","symbol":"LEG","type":"erc721","logoURI":null,"template":true,"creator":"0x00000000000000000000000000000000000000ab"}"#.utf8)
+        let conflictingMetadataJSON = Data(#"{"address":"0x0000000000000000000000000000000000000020","name":"Conflict","symbol":"CNF","type":"erc721","logoURI":null,"template":true,"creator":"0x00000000000000000000000000000000000000ab","burnable":false,"version":"SRC721-burnable-0.0.4"}"#.utf8)
+
+        XCTAssertEqual(try JSONDecoder().decode(SRC721InsightToken.self, from: missingMetadataJSON).src721ContractType, .generic)
+        XCTAssertEqual(try JSONDecoder().decode(SRC721InsightToken.self, from: conflictingMetadataJSON).src721ContractType, .generic)
+    }
+
     func testLocalContractTakesPrecedenceOverInsightDiscovery() {
         let local = testContract(name: "Local", address: "0x00000000000000000000000000000000000000cd")
         var discovered = local
@@ -438,12 +477,4 @@ final class SRC721ValidationTests: XCTestCase {
         )
     }
 
-    private func testContractState(canPublicMint: Bool, allowance: BigUInt, remainSupply: BigUInt) -> SRC721ContractState {
-        SRC721ContractState(
-            name: "Collection", symbol: "NFT", ownerAddress: "0x0000000000000000000000000000000000000001",
-            baseURI: "https://example.com/", maxSupply: 10, totalSupply: 5, remainSupply: remainSupply,
-            mintPrice: 0, walletBalance: 0, publicMintAllowance: allowance, canPublicMint: canPublicMint,
-            safeBalance: 0, orgName: "", description: "", officialURL: "", whitePaperURL: "", logo: Data()
-        )
-    }
 }

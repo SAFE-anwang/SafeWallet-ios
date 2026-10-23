@@ -12,8 +12,14 @@ final class SRC721Service: SRC721OwnedAssetProvider {
     private static let erc165ABI = """
     [{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
     """
+    private static let mintedTotalABI = """
+    [{"inputs":[],"name":"mintedTotal","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]
+    """
     private static let approvalABI = """
     [{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
+    """
+    private static let logoABI = """
+    [{"inputs":[{"internalType":"bytes","name":"logo_","type":"bytes"}],"name":"setLogo","outputs":[],"stateMutability":"payable","type":"function"}]
     """
 
     enum ReceiptStatus: Equatable {
@@ -100,6 +106,21 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         return description.contains("execution reverted") || description.contains("-32000")
     }
 
+    private func isInsufficientFunds(_ error: Error) -> Bool {
+        SRC721Validation.isInsufficientFundsError("\(error) \(error.localizedDescription)")
+    }
+
+    private func submitLogo(using submit: () async throws -> String) async throws -> String {
+        do {
+            return try await submit()
+        } catch {
+            if isInsufficientFunds(error) {
+                throw SRC721ValidationError.insufficientLogoBalance
+            }
+            throw error
+        }
+    }
+
     private func standard() async throws -> SRC721 {
         try await SRC721(web3: web3(), contractAddr: contractAddressValue())
     }
@@ -121,12 +142,65 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         try await contractOwner(type: type).address
     }
 
+    func logoPayAmount(type: SRC721ContractType) async throws -> BigUInt {
+        switch type {
+        case .standard: return try await standard().getLogoPayAmount()
+        case .burnable: return try await burnable().getLogoPayAmount()
+        case .generic: return try await standard().getLogoPayAmount()
+        case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
+        }
+    }
+
     private func ensureContractOwner(type: SRC721ContractType) async throws {
         try ensureSigner()
         let owner = try await contractOwner(type: type)
         guard owner.address.lowercased() == userAddress.lowercased() else {
             throw SRC721ValidationError.ownerRequired
         }
+    }
+
+    private func ensureLogoPaymentAvailable(type: SRC721ContractType, logo: Data) async throws {
+        let logoPayment: BigUInt
+        switch type {
+        case .standard: logoPayment = try await standard().getLogoPayAmount()
+        case .burnable: logoPayment = try await burnable().getLogoPayAmount()
+        case .generic: logoPayment = try await standard().getLogoPayAmount()
+        case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
+        }
+
+        let web3 = try await web3()
+        guard let contract = web3.contract(Self.logoABI, at: try validatedContractAddress()),
+              let operation = contract.createWriteOperation("setLogo", parameters: [logo]) else {
+            throw SRC721ValidationError.invalidContract
+        }
+
+        let from = try address()
+        var transaction = operation.transaction
+        transaction.from = from
+        transaction.nonce = try await web3.eth.getTransactionCount(for: from, onBlock: .pending)
+        transaction.value = logoPayment
+
+        // Some Safe4 RPC nodes reject estimateGas before returning an estimate when
+        // the account cannot cover the payable amount. Check that amount first so
+        // the user receives the module's actionable balance error.
+        let walletBalance = try await web3.eth.getBalance(for: from)
+        try SRC721Validation.validateLogoBalance(balance: walletBalance, required: logoPayment)
+
+        let gasPrice = try await web3.eth.gasPrice()
+        transaction.gasPrice = gasPrice
+        let gasLimit: BigUInt
+        do {
+            gasLimit = try await web3.eth.estimateGas(for: transaction, onBlock: .pending) * 6 / 5
+        } catch {
+            if isInsufficientFunds(error) {
+                throw SRC721ValidationError.insufficientLogoBalance
+            }
+            throw error
+        }
+        transaction.gasLimit = gasLimit
+
+        let requiredBalance = logoPayment + gasPrice * gasLimit
+        try SRC721Validation.validateLogoBalance(balance: walletBalance, required: requiredBalance)
     }
 
     private func validateAmount(_ amount: BigUInt, field: String, allowZero: Bool = false) throws {
@@ -446,61 +520,83 @@ final class SRC721Service: SRC721OwnedAssetProvider {
     }
 
     func state(type: SRC721ContractType) async throws -> SRC721ContractState {
-        let account = try address()
         let contractAddress = try SRC721Validation.address(contractAddressValue(), field: "safe_zone.src721.field.contract".localized)
         let web3 = try await web3()
-        let safeBalance = try await web3.eth.getBalance(for: contractAddress)
+        let mintedTotal = await readMintedTotal(web3: web3, contractAddress: contractAddress)
         switch type {
         case .standard:
             let contract = SRC721(web3: web3, contractAddr: contractAddress.address)
-            return try await readState(contract: contract, account: account, safeBalance: safeBalance)
+            return try await readState(contract: contract, mintedTotal: mintedTotal)
         case .burnable:
             let contract = SRC721Burnable(web3: web3, contractAddr: contractAddress.address)
-            return try await readState(contract: contract, account: account, safeBalance: safeBalance)
+            return try await readState(contract: contract, mintedTotal: mintedTotal)
         case .generic:
             let contract = SRC721(web3: web3, contractAddr: contractAddress.address)
-            return try await readState(contract: contract, account: account, safeBalance: safeBalance)
+            return try await readState(contract: contract, mintedTotal: mintedTotal)
         case .unknown:
             throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
 
+    func supplyState(type: SRC721ContractType) async throws -> SRC721ContractSupplyState {
+        let contractAddress = try SRC721Validation.address(contractAddressValue(), field: "safe_zone.src721.field.contract".localized)
+        let web3 = try await web3()
+        async let mintedTotal = readMintedTotal(web3: web3, contractAddress: contractAddress)
+
+        let supply: (totalSupply: BigUInt, remainSupply: BigUInt)
+        switch type {
+        case .standard, .generic:
+            supply = try await readSupplyState(contract: SRC721(web3: web3, contractAddr: contractAddress.address))
+        case .burnable:
+            supply = try await readSupplyState(contract: SRC721Burnable(web3: web3, contractAddr: contractAddress.address))
+        case .unknown:
+            throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
+        }
+
+        return SRC721ContractSupplyState(
+            totalSupply: supply.totalSupply,
+            burnedCount: SRC721ContractState.burnedCount(mintedTotal: await mintedTotal, totalSupply: supply.totalSupply),
+            remainSupply: supply.remainSupply
+        )
+    }
+
     private func makeContractState(
         name: String, symbol: String, owner: Web3Core.EthereumAddress, baseURI: String, maxSupply: BigUInt,
-        totalSupply: BigUInt, remainSupply: BigUInt, mintPrice: BigUInt, walletBalance: BigUInt,
-        publicMintAllowance: BigUInt, canPublicMint: Bool, safeBalance: BigUInt,
+        totalSupply: BigUInt, mintedTotal: BigUInt?, remainSupply: BigUInt, mintPrice: BigUInt,
         orgName: String, description: String, officialURL: String, whitePaperURL: String, logo: Data
     ) -> SRC721ContractState {
         SRC721ContractState(
             name: name, symbol: symbol, ownerAddress: owner.address, baseURI: baseURI,
-            maxSupply: maxSupply, totalSupply: totalSupply, remainSupply: remainSupply,
-            mintPrice: mintPrice, walletBalance: walletBalance, publicMintAllowance: publicMintAllowance,
-            canPublicMint: canPublicMint, safeBalance: safeBalance, orgName: orgName,
+            maxSupply: maxSupply, totalSupply: totalSupply,
+            burnedCount: SRC721ContractState.burnedCount(mintedTotal: mintedTotal, totalSupply: totalSupply),
+            remainSupply: remainSupply,
+            mintPrice: mintPrice, orgName: orgName,
             description: description, officialURL: officialURL, whitePaperURL: whitePaperURL, logo: logo
         )
     }
 
-    private func readState(contract: SRC721, account: Web3Core.EthereumAddress, safeBalance: BigUInt) async throws -> SRC721ContractState {
-        let name = try await contract.name()
-        let symbol = try await contract.symbol()
-        let owner = try await contract.owner()
-        let baseURI = try await contract.baseURI()
-        let maxSupply = try await contract.maxSupply()
-        let totalSupply = try await contract.totalSupply()
-        let remainSupply = try await contract.remainSupply()
-        let mintPrice = try await contract.mintPrice()
-        let walletBalance = try await contract.balanceOf(addr: account)
-        let publicMintAllowance = (try? await contract.amountAllowToMint(addr: account)) ?? 0
-        let canPublicMint = (try? await contract.canMint(addr: account)) ?? false
-        let orgName = try await contract.orgName()
-        let description = try await contract.description()
-        let officialURL = try await contract.officialUrl()
-        let whitePaperURL = try await contract.whitePaperUrl()
-        let logo = try await contract.logo()
-        return makeContractState(name: name, symbol: symbol, owner: owner, baseURI: baseURI, maxSupply: maxSupply, totalSupply: totalSupply, remainSupply: remainSupply, mintPrice: mintPrice, walletBalance: walletBalance, publicMintAllowance: publicMintAllowance, canPublicMint: canPublicMint, safeBalance: safeBalance, orgName: orgName, description: description, officialURL: officialURL, whitePaperURL: whitePaperURL, logo: logo)
+    private func readMintedTotal(web3: Web3, contractAddress: Web3Core.EthereumAddress) async -> BigUInt? {
+        guard let contract = web3.contract(Self.mintedTotalABI, at: contractAddress),
+              let operation = contract.createReadOperation("mintedTotal", parameters: []) else {
+            return nil
+        }
+        guard let response = try? await operation.callContractMethod() else { return nil }
+        return response["0"] as? BigUInt
     }
 
-    private func readState(contract: SRC721Burnable, account: Web3Core.EthereumAddress, safeBalance: BigUInt) async throws -> SRC721ContractState {
+    private func readSupplyState(contract: SRC721) async throws -> (totalSupply: BigUInt, remainSupply: BigUInt) {
+        async let totalSupply = contract.totalSupply()
+        async let remainSupply = contract.remainSupply()
+        return try await (totalSupply, remainSupply)
+    }
+
+    private func readSupplyState(contract: SRC721Burnable) async throws -> (totalSupply: BigUInt, remainSupply: BigUInt) {
+        async let totalSupply = contract.totalSupply()
+        async let remainSupply = contract.remainSupply()
+        return try await (totalSupply, remainSupply)
+    }
+
+    private func readState(contract: SRC721, mintedTotal: BigUInt?) async throws -> SRC721ContractState {
         let name = try await contract.name()
         let symbol = try await contract.symbol()
         let owner = try await contract.owner()
@@ -509,15 +605,29 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         let totalSupply = try await contract.totalSupply()
         let remainSupply = try await contract.remainSupply()
         let mintPrice = try await contract.mintPrice()
-        let walletBalance = try await contract.balanceOf(addr: account)
-        let publicMintAllowance = (try? await contract.amountAllowToMint(addr: account)) ?? 0
-        let canPublicMint = (try? await contract.canMint(addr: account)) ?? false
         let orgName = try await contract.orgName()
         let description = try await contract.description()
         let officialURL = try await contract.officialUrl()
         let whitePaperURL = try await contract.whitePaperUrl()
         let logo = try await contract.logo()
-        return makeContractState(name: name, symbol: symbol, owner: owner, baseURI: baseURI, maxSupply: maxSupply, totalSupply: totalSupply, remainSupply: remainSupply, mintPrice: mintPrice, walletBalance: walletBalance, publicMintAllowance: publicMintAllowance, canPublicMint: canPublicMint, safeBalance: safeBalance, orgName: orgName, description: description, officialURL: officialURL, whitePaperURL: whitePaperURL, logo: logo)
+        return makeContractState(name: name, symbol: symbol, owner: owner, baseURI: baseURI, maxSupply: maxSupply, totalSupply: totalSupply, mintedTotal: mintedTotal, remainSupply: remainSupply, mintPrice: mintPrice, orgName: orgName, description: description, officialURL: officialURL, whitePaperURL: whitePaperURL, logo: logo)
+    }
+
+    private func readState(contract: SRC721Burnable, mintedTotal: BigUInt?) async throws -> SRC721ContractState {
+        let name = try await contract.name()
+        let symbol = try await contract.symbol()
+        let owner = try await contract.owner()
+        let baseURI = try await contract.baseURI()
+        let maxSupply = try await contract.maxSupply()
+        let totalSupply = try await contract.totalSupply()
+        let remainSupply = try await contract.remainSupply()
+        let mintPrice = try await contract.mintPrice()
+        let orgName = try await contract.orgName()
+        let description = try await contract.description()
+        let officialURL = try await contract.officialUrl()
+        let whitePaperURL = try await contract.whitePaperUrl()
+        let logo = try await contract.logo()
+        return makeContractState(name: name, symbol: symbol, owner: owner, baseURI: baseURI, maxSupply: maxSupply, totalSupply: totalSupply, mintedTotal: mintedTotal, remainSupply: remainSupply, mintPrice: mintPrice, orgName: orgName, description: description, officialURL: officialURL, whitePaperURL: whitePaperURL, logo: logo)
     }
 
     private func publicMintPrice(type: SRC721ContractType, amount: BigUInt) async throws -> BigUInt {
@@ -568,9 +678,21 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         let to = try validateAddress(to, field: "safe_zone.src721.field.recipient".localized)
         try validateAmount(amount, field: "safe_zone.src721.field.amount".localized)
         switch type {
-        case .standard: return try await standard().adminMint(privateKey: privateKey, to: to, amount: amount)
-        case .burnable: return try await burnable().adminMint(privateKey: privateKey, to: to, amount: amount)
-        case .generic: return try await standard().adminMint(privateKey: privateKey, to: to, amount: amount)
+        case .standard:
+            let contract = try await standard()
+            let remainSupply = try await contract.remainSupply()
+            try SRC721Validation.validateMintSupply(remainSupply: remainSupply, amount: amount)
+            return try await contract.adminMint(privateKey: privateKey, to: to, amount: amount)
+        case .burnable:
+            let contract = try await burnable()
+            let remainSupply = try await contract.remainSupply()
+            try SRC721Validation.validateMintSupply(remainSupply: remainSupply, amount: amount)
+            return try await contract.adminMint(privateKey: privateKey, to: to, amount: amount)
+        case .generic:
+            let contract = try await standard()
+            let remainSupply = try await contract.remainSupply()
+            try SRC721Validation.validateMintSupply(remainSupply: remainSupply, amount: amount)
+            return try await contract.adminMint(privateKey: privateKey, to: to, amount: amount)
         case .unknown: throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
     }
@@ -655,6 +777,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
     func updateMetadata(type: SRC721ContractType, orgName: String?, description: String?, officialURL: String?, whitePaperURL: String?, logo: Data?) async throws -> [String] {
         try await ensureContractOwner(type: type)
         if let logo { _ = try SRC721Validation.logo(logo) }
+        if let logo { try await ensureLogoPaymentAvailable(type: type, logo: logo) }
         var hashes: [String] = []
         do {
             switch type {
@@ -664,21 +787,21 @@ final class SRC721Service: SRC721OwnedAssetProvider {
                 if let description { hashes.append(try await contract.setDescription(privateKey: self.privateKey, description: description)) }
                 if let officialURL { hashes.append(try await contract.setOfficialUrl(privateKey: self.privateKey, officialUrl: officialURL)) }
                 if let whitePaperURL { hashes.append(try await contract.setWhitePaperUrl(privateKey: self.privateKey, whitePaperUrl: whitePaperURL)) }
-                if let logo { hashes.append(try await contract.setLogo(privateKey: self.privateKey, logo: logo)) }
+                if let logo { hashes.append(try await submitLogo { try await contract.setLogo(privateKey: self.privateKey, logo: logo) }) }
             case .burnable:
                 let contract = try await burnable()
                 if let orgName { hashes.append(try await contract.setOrgName(privateKey: self.privateKey, orgName: orgName)) }
                 if let description { hashes.append(try await contract.setDescription(privateKey: self.privateKey, description: description)) }
                 if let officialURL { hashes.append(try await contract.setOfficialUrl(privateKey: self.privateKey, officialUrl: officialURL)) }
                 if let whitePaperURL { hashes.append(try await contract.setWhitePaperUrl(privateKey: self.privateKey, whitePaperUrl: whitePaperURL)) }
-                if let logo { hashes.append(try await contract.setLogo(privateKey: self.privateKey, logo: logo)) }
+                if let logo { hashes.append(try await submitLogo { try await contract.setLogo(privateKey: self.privateKey, logo: logo) }) }
             case .generic:
                 let contract = try await standard()
                 if let orgName { hashes.append(try await contract.setOrgName(privateKey: self.privateKey, orgName: orgName)) }
                 if let description { hashes.append(try await contract.setDescription(privateKey: self.privateKey, description: description)) }
                 if let officialURL { hashes.append(try await contract.setOfficialUrl(privateKey: self.privateKey, officialUrl: officialURL)) }
                 if let whitePaperURL { hashes.append(try await contract.setWhitePaperUrl(privateKey: self.privateKey, whitePaperUrl: whitePaperURL)) }
-                if let logo { hashes.append(try await contract.setLogo(privateKey: self.privateKey, logo: logo)) }
+                if let logo { hashes.append(try await submitLogo { try await contract.setLogo(privateKey: self.privateKey, logo: logo) }) }
             case .unknown:
                 throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
             }
@@ -726,6 +849,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
             }
         }
         if let logo { _ = try SRC721Validation.logo(logo) }
+        if let logo { try await ensureLogoPaymentAvailable(type: type, logo: logo) }
         var hashes: [String] = []
 
         do {
@@ -910,7 +1034,14 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         try ensureSigner()
         guard type == .burnable else { throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.burnable".localized) }
         try validateTokenId(tokenId)
-        try ensureTokenPermission(try await tokenAuthorization(type: type, tokenId: tokenId))
-        return try await burnable().burn(privateKey: privateKey, tokenId: tokenId)
+        do {
+            try ensureTokenPermission(try await tokenAuthorization(type: type, tokenId: tokenId))
+            return try await burnable().burn(privateKey: privateKey, tokenId: tokenId)
+        } catch {
+            if isExecutionReverted(error) {
+                throw SRC721ValidationError.invalidTokenId
+            }
+            throw error
+        }
     }
 }

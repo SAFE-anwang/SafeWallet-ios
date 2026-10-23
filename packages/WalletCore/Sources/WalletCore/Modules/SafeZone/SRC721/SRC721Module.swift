@@ -105,4 +105,20 @@ enum SRC721Module {
         )
         return SRC721ContractDetailViewModel(record: record, service: service, storage: .shared)
     }
+
+    static func logoViewModel(record: SRC721ContractRecord, currentLogo: Data) -> SRC721LogoViewModel? {
+        guard let context = context(requireSigner: true), !context.privateKey.isEmpty else { return nil }
+        guard record.accountId == context.accountId,
+              record.chainId == context.evmKitWrapper.evmKit.chain.id,
+              record.walletAddress.lowercased() == context.evmKitWrapper.evmKit.receiveAddress.eip55.lowercased() else {
+            return nil
+        }
+        let service = SRC721Service(
+            privateKey: context.privateKey,
+            userAddress: context.evmKitWrapper.evmKit.receiveAddress.eip55,
+            chainId: record.chainId,
+            contractAddress: record.contractAddress
+        )
+        return SRC721LogoViewModel(record: record, currentLogo: currentLogo, service: service)
+    }
 }
