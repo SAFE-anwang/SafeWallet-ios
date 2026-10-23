@@ -13,7 +13,12 @@ class LanguageManager {
     }
 
     init() {
-        currentLanguage = LanguageManager.preferredLanguage ?? LanguageManager.fallbackLanguage
+        let availableLanguages = LanguageManager.availableLanguages
+        let storedLanguage = LanguageManager.storedCurrentLanguage.flatMap {
+            availableLanguages.contains($0) ? $0 : nil
+        }
+        let preferredLanguage = LanguageManager.preferredLanguage
+        currentLanguage = storedLanguage ?? preferredLanguage ?? LanguageManager.fallbackLanguage
     }
 
     var currentLanguageDisplayName: String? {
