@@ -12,11 +12,10 @@ class SRC20ManagerViewModel: ObservableObject {
     @Published var viewItems: [ManagerItem] = [ManagerItem]()
     @Published private(set) var dataState: DataStatus<[ManagerItem]> = .loading
 
-    init(tokensService: SyncSafe4TokensService) {
+    init(tokensService: SyncSafe4TokensService, requestInitialSync: Bool = true) {
         self.tokensService = tokensService
 
         dataState = .loading
-        tokensService.requestTokens()
 
         subscribe(disposeBag, tokensService.dataDriver) { [weak self] in
             let items = $0.map{ token in
@@ -29,6 +28,10 @@ class SRC20ManagerViewModel: ObservableObject {
                 self?.update(items: items)
             }
 
+        }
+
+        if requestInitialSync {
+            tokensService.requestTokens()
         }
     }
 

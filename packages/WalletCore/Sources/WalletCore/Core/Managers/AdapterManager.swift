@@ -39,8 +39,18 @@ public class AdapterManager {
     private let queue = DispatchQueue(label: "\(AppConfig.label).adapter_manager", qos: .userInitiated)
     private let initAdaptersQueue = DispatchQueue(label: "\(AppConfig.label).adapter_manager.init_adapters", qos: .userInitiated)
     private var _adapterData = AdapterData(adapterMap: [:], account: nil, childWalletId: nil)
-    private(set) var src20SyncManager: SRC20SyncManager?
+    private var src20SyncManager: SRC20SyncManager?
     private var subscribedEvmKitManagers = [BlockchainType: ObjectIdentifier]()
+
+    private func diagnosticLog(_ message: @autoclosure () -> String) {
+        let thread = Thread.isMainThread ? "main" : (Thread.current.name ?? "background")
+        print("[AdapterManager] [\(thread)] \(Date()) \(message())")
+    }
+
+    private func diagnosticObjectID(_ object: AnyObject?) -> String {
+        guard let object else { return "nil" }
+        return String(describing: ObjectIdentifier(object))
+    }
 
     init(adapterFactory: AdapterFactory, walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager,
          tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager, zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager,
@@ -95,22 +105,39 @@ public class AdapterManager {
     }
 
     private func initAdapters(wallets: [Wallet], account: Account?, childWalletId: String?, completion: (() -> Void)? = nil) {
+        let requestId = String(UUID().uuidString.prefix(8))
+        diagnosticLog("init schedule id=\(requestId) wallets=\(wallets.count) account=\(account?.id ?? "nil") child=\(childWalletId ?? "nil")")
         initAdaptersQueue.async {
+            self.diagnosticLog("init begin id=\(requestId) wallets=\(wallets.count) account=\(account?.id ?? "nil") child=\(childWalletId ?? "nil")")
             self._initAdapters(wallets: wallets, account: account, childWalletId: childWalletId, completion: completion)
+            self.diagnosticLog("init end id=\(requestId)")
         }
     }
 
     private func _initAdapters(wallets: [Wallet], account: Account?, childWalletId: String?, completion: (() -> Void)? = nil) {
+        guard isCurrentWalletContext(account: account, childWalletId: childWalletId, wallets: wallets) else {
+            walletManager.preloadWallets()
+            completion?()
+            return
+        }
+
         var newAdapterMap = queue.sync { _adapterData.adapterMap }
+        var createdAdapters = [IAdapter]()
+        var createdSafe4SyncManager = false
         let previousContext = queue.sync { (accountId: _adapterData.account?.id, childWalletId: _adapterData.childWalletId) }
         let nextContext = (accountId: account?.id, childWalletId: childWalletId)
 
+        diagnosticLog("init state existing=\(newAdapterMap.count) previousAccount=\(previousContext.accountId ?? "nil") previousChild=\(previousContext.childWalletId ?? "nil") nextAccount=\(nextContext.accountId ?? "nil") nextChild=\(nextContext.childWalletId ?? "nil")")
+
         if previousContext.accountId != nextContext.accountId || previousContext.childWalletId != nextContext.childWalletId {
+            diagnosticLog("context changed; stopping \(newAdapterMap.count) existing adapter(s)")
             for adapter in newAdapterMap.values {
+                diagnosticLog("adapter stop begin id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter)) reason=context-change")
                 adapter.stop()
+                diagnosticLog("adapter stop end id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter)) reason=context-change")
             }
             newAdapterMap = [:]
-            cancelSafe4SyncManager()
+            cancelSafe4SyncManagerOnInitQueue()
         }
 
         for wallet in wallets {
@@ -118,12 +145,21 @@ public class AdapterManager {
                 continue
             }
             if let adapter = adapterFactory.adapter(wallet: wallet) {
+                diagnosticLog("adapter create wallet=\(wallet.token.blockchainType.uid)/\(wallet.token.type.id) account=\(wallet.account.id) id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter))")
                 if wallet.token.blockchain.type == .safe4, wallet.token.type == .native {
+                    diagnosticLog("src20 replace old=\(diagnosticObjectID(src20SyncManager))")
                     src20SyncManager?.cancel()
                     src20SyncManager = SRC20SyncManager(wallet: wallet, adapter: adapter)
+                    createdSafe4SyncManager = true
+                    diagnosticLog("src20 replace new=\(diagnosticObjectID(src20SyncManager))")
                 }
                 newAdapterMap[wallet] = adapter
+                createdAdapters.append(adapter)
+                diagnosticLog("adapter start begin id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter))")
                 adapter.start()
+                diagnosticLog("adapter start end id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter))")
+            } else {
+                diagnosticLog("adapter create failed wallet=\(wallet.token.blockchainType.uid)/\(wallet.token.type.id) account=\(wallet.account.id)")
             }
         }
 
@@ -135,18 +171,57 @@ public class AdapterManager {
             }
 
             removedAdapters.append(adapter)
+            diagnosticLog("adapter marked removed id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter))")
         }
 
-        queue.async {
-            let newAdapterData = AdapterData(adapterMap: newAdapterMap, account: account, childWalletId: childWalletId)
-            self._adapterData = newAdapterData
-            self.adapterDataReadyRelay.accept(newAdapterData)
+        // A context switch may happen while kit managers synchronously create adapters.
+        // Do not publish adapters created for a context that is no longer active.
+        guard isCurrentWalletContext(account: account, childWalletId: childWalletId, wallets: wallets) else {
+            for adapter in createdAdapters {
+                adapter.stop()
+            }
+            if createdSafe4SyncManager {
+                cancelSafe4SyncManagerOnInitQueue()
+            }
+            walletManager.preloadWallets()
             completion?()
+            return
         }
 
-        for adapter in removedAdapters {
-            adapter.stop()
+        let newAdapterData = AdapterData(adapterMap: newAdapterMap, account: account, childWalletId: childWalletId)
+        diagnosticLog("adapter data commit begin count=\(newAdapterMap.count) account=\(account?.id ?? "nil") child=\(childWalletId ?? "nil")")
+        queue.sync {
+            self._adapterData = newAdapterData
         }
+        for adapter in removedAdapters {
+            diagnosticLog("adapter stop begin id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter)) reason=removed")
+            adapter.stop()
+            diagnosticLog("adapter stop end id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter)) reason=removed")
+        }
+
+        adapterDataReadyRelay.accept(newAdapterData)
+        completion?()
+        diagnosticLog("adapter data commit end count=\(newAdapterMap.count) account=\(account?.id ?? "nil") child=\(childWalletId ?? "nil")")
+    }
+
+    private func isCurrentWalletContext(account: Account?, childWalletId: String?, wallets: [Wallet]) -> Bool {
+        let activeWalletData = walletManager.activeWalletData
+        guard activeWalletData.account?.id == account?.id,
+              activeWalletData.childWalletId == childWalletId,
+              Set(activeWalletData.wallets) == Set(wallets)
+        else {
+            return false
+        }
+
+        guard let activeAccount = Core.shared.accountManager.activeAccount else {
+            return account == nil && childWalletId == nil
+        }
+
+        guard activeAccount.id == account?.id else {
+            return false
+        }
+
+        return ChildWalletBridge.shared.activeChildWalletId(account: activeAccount) == childWalletId
     }
 
     private func handleUpdatedEvmKit(blockchainType: BlockchainType) {
@@ -216,24 +291,37 @@ public class AdapterManager {
     }
 
     private func refreshAdapters(wallets: [Wallet], completion: (() -> Void)? = nil) {
+        diagnosticLog("refresh requested wallets=\(wallets.count) chains=\(Set(wallets.map { $0.token.blockchainType.uid }).sorted())")
+        initAdaptersQueue.async {
+            self.refreshAdaptersOnInitQueue(wallets: wallets, completion: completion)
+        }
+    }
+
+    private func refreshAdaptersOnInitQueue(wallets: [Wallet], completion: (() -> Void)?) {
         guard !wallets.isEmpty else {
             completion?()
             return
         }
 
         if wallets.contains(where: { $0.token.blockchain.type == .safe4 }) {
-            cancelSafe4SyncManager()
+            cancelSafe4SyncManagerOnInitQueue()
         }
 
-        queue.sync {
-            for wallet in wallets {
-                _adapterData.adapterMap[wallet]?.stop()
-                _adapterData.adapterMap[wallet] = nil
+        let adaptersToStop: [(Wallet, IAdapter)] = queue.sync {
+            wallets.compactMap { wallet in
+                guard let adapter = _adapterData.adapterMap.removeValue(forKey: wallet) else { return nil }
+                return (wallet, adapter)
             }
         }
 
+        for (_, adapter) in adaptersToStop {
+            diagnosticLog("adapter stop begin id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter)) reason=refresh")
+            adapter.stop()
+            diagnosticLog("adapter stop end id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter)) reason=refresh")
+        }
+
         let activeWalletData = walletManager.activeWalletData
-        initAdapters(
+        _initAdapters(
             wallets: activeWalletData.wallets,
             account: activeWalletData.account,
             childWalletId: activeWalletData.childWalletId,
@@ -293,6 +381,31 @@ extension AdapterManager {
         )
     }
 
+    func initMissingAdaptersAndWait() async {
+        let activeWalletData = walletManager.activeWalletData
+        diagnosticLog("init missing and wait wallets=\(activeWalletData.wallets.count) account=\(activeWalletData.account?.id ?? "nil") child=\(activeWalletData.childWalletId ?? "nil")")
+        await withCheckedContinuation { continuation in
+            initAdapters(
+                wallets: activeWalletData.wallets,
+                account: activeWalletData.account,
+                childWalletId: activeWalletData.childWalletId,
+                completion: { continuation.resume() }
+            )
+        }
+    }
+
+    func updateSRC20Tokens(forceRefresh: Bool = false) {
+        initAdaptersQueue.async {
+            self.src20SyncManager?.updateSRC20Tokens(forceRefresh: forceRefresh)
+        }
+    }
+
+    func safe4TokenSyncService(chainId: Int) -> SyncSafe4TokensService? {
+        initAdaptersQueue.sync {
+            src20SyncManager?.tokensService(chainId: chainId)
+        }
+    }
+
     func recreateAdapter(blockchainType: BlockchainType) {
         Task {
             await recreateAdapterAndWait(blockchainType: blockchainType)
@@ -300,6 +413,7 @@ extension AdapterManager {
     }
 
     func recreateAdapterAndWait(blockchainType: BlockchainType) async {
+        diagnosticLog("recreate begin chain=\(blockchainType.uid)")
         await withCheckedContinuation { continuation in
             if blockchainType == .zano {
                 self.zanoKitManager.recreateKit()
@@ -309,15 +423,28 @@ extension AdapterManager {
             refreshAdapters(wallets: wallets.filter {
                 $0.token.blockchain.type == blockchainType
             }) { [weak self] in
+                self?.diagnosticLog("recreate completion chain=\(blockchainType.uid)")
                 self?.subscribeEvmKitManager(blockchainType: blockchainType)
+                continuation.resume()
+            }
+        }
+        diagnosticLog("recreate end chain=\(blockchainType.uid)")
+    }
+
+    func cancelSafe4SyncManager() async {
+        await withCheckedContinuation { continuation in
+            initAdaptersQueue.async {
+                self.cancelSafe4SyncManagerOnInitQueue()
                 continuation.resume()
             }
         }
     }
 
-    func cancelSafe4SyncManager() {
+    private func cancelSafe4SyncManagerOnInitQueue() {
+        diagnosticLog("src20 cancel begin id=\(diagnosticObjectID(src20SyncManager))")
         src20SyncManager?.cancel()
         src20SyncManager = nil
+        diagnosticLog("src20 cancel end id=\(diagnosticObjectID(src20SyncManager))")
     }
 
     func validateZcashEndpoint(_ url: URL) async throws {
@@ -347,13 +474,16 @@ extension AdapterManager {
     }
 
     func refresh() {
-        let adapters = queue.sync { Array(_adapterData.adapterMap.values) }
+        initAdaptersQueue.async {
+            let adapters = self.queue.sync { Array(self._adapterData.adapterMap.values) }
+            for adapter in adapters {
+                self.diagnosticLog("adapter refresh begin id=\(self.diagnosticObjectID(adapter)) type=\(type(of: adapter))")
+                adapter.refresh()
+                self.diagnosticLog("adapter refresh end id=\(self.diagnosticObjectID(adapter)) type=\(type(of: adapter))")
+            }
+        }
 
         DispatchQueue.global(qos: .background).async {
-            for adapter in adapters {
-                adapter.refresh()
-            }
-
             self.tonKitManager.tonKit?.sync()
             self.stellarKitManager.stellarKit?.sync()
             self.zanoKitManager.kit?.refresh()
@@ -362,19 +492,25 @@ extension AdapterManager {
     }
 
     func refresh(wallet: Wallet) {
-        let adapter = queue.sync { _adapterData.adapterMap[wallet] }
-
-        DispatchQueue.global(qos: .background).async {
+        initAdaptersQueue.async {
+            let adapter = self.queue.sync { self._adapterData.adapterMap[wallet] }
             if let adapter {
+                self.diagnosticLog("adapter refresh begin id=\(self.diagnosticObjectID(adapter)) type=\(type(of: adapter))")
                 adapter.refresh()
-            } else if wallet.token.blockchainType == .ton {
-                self.tonKitManager.tonKit?.sync()
-            } else if wallet.token.blockchainType == .stellar {
-                self.stellarKitManager.stellarKit?.sync()
-            } else if wallet.token.blockchainType == .solana {
-                self.solanaKitManager.solanaKit?.refresh()
-            } else if wallet.token.blockchainType == .zano {
-                self.zanoKitManager.kit?.restart()
+                self.diagnosticLog("adapter refresh end id=\(self.diagnosticObjectID(adapter)) type=\(type(of: adapter))")
+                return
+            }
+
+            DispatchQueue.global(qos: .background).async {
+                if wallet.token.blockchainType == .ton {
+                    self.tonKitManager.tonKit?.sync()
+                } else if wallet.token.blockchainType == .stellar {
+                    self.stellarKitManager.stellarKit?.sync()
+                } else if wallet.token.blockchainType == .solana {
+                    self.solanaKitManager.solanaKit?.refresh()
+                } else if wallet.token.blockchainType == .zano {
+                    self.zanoKitManager.kit?.restart()
+                }
             }
         }
     }

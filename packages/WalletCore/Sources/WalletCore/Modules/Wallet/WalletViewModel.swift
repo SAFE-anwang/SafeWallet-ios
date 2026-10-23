@@ -149,7 +149,7 @@ extension WalletViewModel {
     }
 
     func onAppear() {
-        adapterManager.src20SyncManager?.updateSRC20Tokens()
+        adapterManager.updateSRC20Tokens()
 
         rateAppManager.onBalancePageAppear()
         backupPromptManager.onBalancePageAppear()
@@ -207,7 +207,7 @@ extension WalletViewModel {
         walletService?.refresh()
         coinPriceService.refresh()
 
-        adapterManager.src20SyncManager?.updateSRC20Tokens()
+        adapterManager.updateSRC20Tokens(forceRefresh: true)
         try? await Task.sleep(seconds: 1)
     }
 

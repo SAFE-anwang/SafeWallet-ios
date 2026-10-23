@@ -53,6 +53,16 @@ class Safe4CustomTokenStorage {
             try db.drop(table: tableName)
             try db.execute(sql: "ALTER TABLE \(tempTableName) RENAME TO \(tableName)")
         }
+        migrator.registerMigration("safe4 custom token promotion state") { db in
+            let tableName = Safe4CustomTokenRecord.databaseTableName
+            try db.alter(table: tableName) { t in
+                t.add(column: Safe4CustomTokenRecord.Columns.isPromoted.name, .boolean).notNull().defaults(to: false)
+            }
+            try db.execute(sql: """
+                UPDATE \(tableName)
+                SET isPromoted = CASE WHEN logoURI IS NOT NULL AND TRIM(logoURI) <> '' THEN 1 ELSE 0 END
+                """)
+        }
         return migrator
     }
 }
@@ -73,6 +83,53 @@ extension Safe4CustomTokenStorage {
     func save(tokens: [Safe4CustomTokenRecord]) {
         for token in tokens {
             save(token: token)
+        }
+    }
+
+    func synchronize(tokens: [Safe4CustomTokenRecord], ownedBy ownerAddress: String, ownedAddresses: Set<String>, chainId: Int) throws {
+        let normalizedOwnerAddress = ownerAddress.lowercased()
+        let normalizedOwnedAddresses = Set(ownedAddresses.map { $0.lowercased() })
+
+        try dbPool.write { db in
+            let existingRecords = try Safe4CustomTokenRecord
+                .filter(Safe4CustomTokenRecord.Columns.chainId == chainId)
+                .fetchAll(db)
+            let existingByAddress = Dictionary(grouping: existingRecords) { $0.address.lowercased() }
+
+            try db.execute(
+                sql: "UPDATE \(Safe4CustomTokenRecord.databaseTableName) SET isPromoted = 0 WHERE chainId = ?",
+                arguments: [chainId]
+            )
+
+            for record in existingRecords
+            where record.creator.lowercased() == normalizedOwnerAddress
+                && !normalizedOwnedAddresses.contains(record.address.lowercased()) {
+                try record.delete(db)
+            }
+
+            for token in tokens {
+                let addressRecords = existingByAddress[token.address.lowercased()] ?? []
+                for existing in addressRecords where existing.address != token.address {
+                    // EVM addresses are case-insensitive, while the table's primary key is not.
+                    try existing.delete(db)
+                }
+
+                if token.version?.isEmpty != false,
+                   let existingVersion = addressRecords.compactMap(\.version).first(where: { !$0.isEmpty }),
+                   !existingVersion.isEmpty {
+                    token.version = existingVersion
+                }
+
+                if token.logoURI == nil {
+                    token.logoURI = addressRecords.compactMap(\.logoURI).first
+                }
+
+                if token.type == nil {
+                    token.type = addressRecords.compactMap(\.type).first
+                }
+
+                try token.save(db)
+            }
         }
     }
 
@@ -100,6 +157,29 @@ extension Safe4CustomTokenStorage {
             try token.update(db)
         }
    }
+
+    func update(tokens: [Safe4CustomTokenRecord]) throws {
+        guard !tokens.isEmpty else { return }
+
+        try dbPool.write { db in
+            for token in tokens {
+                try token.update(db)
+            }
+        }
+    }
+
+    func updateVersions(_ versions: [String: String], chainId: Int) throws {
+        guard !versions.isEmpty else { return }
+
+        try dbPool.write { db in
+            for (address, version) in versions {
+                try db.execute(
+                    sql: "UPDATE \(Safe4CustomTokenRecord.databaseTableName) SET version = ? WHERE lower(address) = lower(?) AND chainId = ?",
+                    arguments: [version, address, chainId]
+                )
+            }
+        }
+    }
 
     func update(logo: String, address: String) {
         update(logo: logo, address: address, chainId: currentChainId)

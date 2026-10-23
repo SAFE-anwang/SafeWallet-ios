@@ -63,6 +63,7 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
     var type: Int?
     var logoURI: String? = nil
     var version: String? = ""
+    var isPromoted = false
 
     init(address: String, symbol: String, creator: String, chainId: Int, decimals: Int, name: String, type: Int? = nil, logoURI: String? = nil, version: String? = nil) {
         self.address = address
@@ -86,6 +87,7 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
         name = try map.value("name")
         type = try? map.value("type") ?? 0
         logoURI = try? map.value("logoURI")
+        version = try? map.value("version")
         super.init()
     }
 
@@ -107,6 +109,10 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
         }
     }
 
+    func isEligible(forOwner ownerAddress: String?) -> Bool {
+        isPromoted || creator.lowercased() == ownerAddress?.lowercased()
+    }
+
     var canAdditionalIssuance: Bool {
         getTypeForVersion() == .SRC20Mintable || getTypeForVersion() == .SRC20Burnable
     }
@@ -120,7 +126,7 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
     }
 
     enum Columns: String, ColumnExpression {
-        case address, symbol, creator, chainId, decimals, name, type, logoURI, version
+        case address, symbol, creator, chainId, decimals, name, type, logoURI, version, isPromoted
     }
 
     required init(row: Row) throws {
@@ -133,6 +139,7 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
         type = row[Columns.type]
         logoURI = row[Columns.logoURI]
         version = row[Columns.version]
+        isPromoted = row[Columns.isPromoted]
         try super.init(row: row)
     }
 
@@ -146,6 +153,7 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
         container[Columns.type] = type
         container[Columns.logoURI] = logoURI
         container[Columns.version] = version
+        container[Columns.isPromoted] = isPromoted
     }
 
     public static func == (lhs: Safe4CustomTokenRecord, rhs: Safe4CustomTokenRecord) -> Bool {
@@ -157,7 +165,8 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
         lhs.name == rhs.name &&
         lhs.type == rhs.type &&
         lhs.logoURI == rhs.logoURI &&
-        lhs.version == rhs.version
+        lhs.version == rhs.version &&
+        lhs.isPromoted == rhs.isPromoted
     }
 
     func hash(into hasher: inout Hasher) {
@@ -170,5 +179,6 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
         hasher.combine(type)
         hasher.combine(logoURI)
         hasher.combine(version)
+        hasher.combine(isPromoted)
     }
 }

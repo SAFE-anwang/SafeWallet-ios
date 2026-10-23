@@ -15,9 +15,22 @@ class SRC20ManagerModule {
             return nil
         }
         let chainId = evmKitWrapper.evmKit.chain.id
-        let provider = SyncSafe4TokensProvider(networkManager: Core.shared.networkManager, chainId: chainId)
-        let tokensService = SyncSafe4TokensService(provider: provider, srC20Service: SRC20Service(privateKey: privateKey, lockAddress: evmKitWrapper.evmKit.receiveAddress.eip55, chainId: chainId), evmKit: evmKitWrapper.evmKit, storage: Core.shared.safe4CustomTokenStorage, marketKit: Core.shared.marketKit, chainId: chainId)
-        let viewModel = SRC20ManagerViewModel(tokensService: tokensService)
+        let sharedTokensService = Core.shared.adapterManager.safe4TokenSyncService(chainId: chainId)
+        let tokensService: SyncSafe4TokensService
+        if let sharedTokensService {
+            tokensService = sharedTokensService
+        } else {
+            let provider = SyncSafe4TokensProvider(networkManager: Core.shared.networkManager, chainId: chainId)
+            tokensService = SyncSafe4TokensService(
+                provider: provider,
+                srC20Service: SRC20Service(privateKey: privateKey, lockAddress: evmKitWrapper.evmKit.receiveAddress.eip55, chainId: chainId),
+                evmKit: evmKitWrapper.evmKit,
+                storage: Core.shared.safe4CustomTokenStorage,
+                marketKit: Core.shared.marketKit,
+                chainId: chainId
+            )
+        }
+        let viewModel = SRC20ManagerViewModel(tokensService: tokensService, requestInitialSync: sharedTokensService == nil)
         return viewModel
     }
 
