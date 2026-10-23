@@ -1994,6 +1994,7 @@
 "add_token.coin_name" = "Coin Name";
 "add_token.symbol" = "Symbol";
 "add_token.decimals" = "Decimals";
+"add_token.NFT.mint" = "NFT Mint";
 
 // Wallet Connect
 
@@ -3340,7 +3341,8 @@
 "safe_zone.src721.wallet_nfts.hint" = "NFTs held by this wallet on Safe4, grouped by collection.";
 "safe_zone.src721.wallet_nfts.truncated" = "Some NFTs may not be visible yet. Refresh later.";
 "safe_zone.src721.wallet_nfts.partial_error" = "Some collections could not be loaded. Showing the NFTs that were retrieved.";
-"safe_zone.src721.deploy.hint" = "The NFT information address is optional. It lets wallets load the NFT image and description.";
+"safe_zone.src721.deploy.hint.standard" = "Standard SRC721 contracts";
+"safe_zone.src721.deploy.hint.burnable" = "SRC721 contract supporting the burnable of NFTs";
 "safe_zone.src721.placeholder.name" = "e.g. Safe Art Collection";
 "safe_zone.src721.placeholder.symbol" = "e.g. SAC";
 "safe_zone.src721.placeholder.contract" = "Paste or scan the SRC721 contract address";
@@ -3390,9 +3392,10 @@
 "safe_zone.src721.error.token_status_unavailable" = "The NFT's on-chain operation status could not be verified. Operations are disabled.";
 "safe_zone.src721.error.allow_list_duplicate" = "This address is already recorded. Edit its amount instead.";
 "safe_zone.src721.error.logo" = "The logo file is too large. Choose a smaller image.";
+"safe_zone.src721.error.insufficient_logo_balance" = "Insufficient SAFE to cover the logo promotion fee and estimated network fee.";
 "safe_zone.src721.error.required" = "Enter %@.";
 "safe_zone.src721.error.too_long" = "%@ is too long. Shorten it and try again.";
-"safe_zone.src721.error.token_id" = "Enter a valid token ID.";
+"safe_zone.src721.error.token_id" = "Invalid NFT ID.";
 "safe_zone.src721.error.transaction" = "The transaction was rejected or failed on-chain.";
 "safe_zone.src721.error.url" = "Enter a valid NFT information address.";
 "safe_zone.src721.field.name" = "Name";
@@ -3403,12 +3406,13 @@
 "safe_zone.src721.field.address" = "Address";
 "safe_zone.src721.field.wallet" = "Wallet address";
 "safe_zone.src721.field.recipient" = "Recipient";
-"safe_zone.src721.field.base_uri" = "NFT information address";
+"safe_zone.src721.field.base_uri" = "Base URI";
 "safe_zone.src721.field.max_supply" = "Total supply";
 "safe_zone.src721.field.mint_price" = "Price per NFT";
 "safe_zone.src721.field.amount" = "Amount";
 "safe_zone.src721.field.owner" = "Owner";
 "safe_zone.src721.field.supply" = "Supply";
+"safe_zone.src721.field.burned_count" = "Burned";
 "safe_zone.src721.field.remain" = "Remaining";
 "safe_zone.src721.field.wallet_balance" = "Wallet balance";
 "safe_zone.src721.field.public_mint_allowance" = "Public mint allowance";
@@ -3431,6 +3435,7 @@
 "safe_zone.src721.field.token_uri" = "Token URI";
 "safe_zone.src721.section.mint" = "Mint";
 "safe_zone.src721.section.management" = "Contract management";
+"safe_zone.src721.section.logo" = "Logo";
 "safe_zone.src721.section.token" = "Known token operations";
 "safe_zone.src721.section.nft_details" = "NFT details";
 "safe_zone.src721.section.nft_actions" = "NFT actions";
@@ -3444,7 +3449,11 @@
 "safe_zone.src721.action.edit_allow_list" = "Edit allow-list amount";
 "safe_zone.src721.action.set_allow_list" = "Set amount";
 "safe_zone.src721.action.mint" = "Mint";
+"safe_zone.src721.action.mint_short" = "Mint";
+"safe_zone.src721.status.syncing" = "Syncing....";
 "safe_zone.src721.action.admin_mint" = "Admin mint";
+"safe_zone.src721.burn.dialog.description" = "Enter the NFT ID to burn. Find it in the NFT collection; the number after # is the ID.";
+"safe_zone.src721.burn.dialog.placeholder" = "NFT ID (starting from 0...)";
 "safe_zone.src721.action.query_token" = "Query token";
 "safe_zone.src721.action.refresh_nfts" = "Refresh my NFTs";
 "safe_zone.src721.action.retry_nfts" = "Retry";
@@ -3463,7 +3472,11 @@
 "safe_zone.src721.action.update_official_url" = "Update official URL";
 "safe_zone.src721.action.update_whitepaper_url" = "Update white paper URL";
 "safe_zone.src721.action.choose_logo" = "Choose logo (max 128 KB)";
-"safe_zone.src721.action.logo_selected" = "Logo selected (max 128 KB); tap Update to submit";
+"safe_zone.src721.action.set_logo" = "Set logo";
+"safe_zone.src721.logo_fee" = "Logo promotion fee: %@ SAFE";
+"safe_zone.src721.confirm.set_logo" = "Set the contract logo?";
+"safe_zone.src721.confirm.set_logo.details" = "The logo promotion fee and network fee will be charged when submitted.";
+"safe_zone.src721.error.logo_required" = "Select a logo image first.";
 "safe_zone.src721.action.update_all" = "Update all information";
 "safe_zone.src721.action.withdraw" = "Withdraw SAFE";
 "safe_zone.src721.section.withdraw" = "Withdraw SAFE";
@@ -3475,8 +3488,8 @@
 "safe_zone.src721.status.discovered" = "Found on-chain, view only";
 "safe_zone.src721.status.read_only" = "Current wallet is not the contract owner. Management is read-only.";
 "safe_zone.src721.status.manager" = "Current wallet is the contract owner.";
-"safe_zone.src721.type.standard" = "Standard SRC721";
-"safe_zone.src721.type.burnable" = "Burnable SRC721";
+"safe_zone.src721.type.standard" = "SRC721（Standard）";
+"safe_zone.src721.type.burnable" = "SRC721（Burnable）";
 "safe_zone.src721.type.generic" = "ERC721 NFT";
 "safe_zone.src721.type.unknown" = "Unknown SRC721 type";
 "safe_zone.src721.error.contract" = "This address is not a valid SRC721 contract.";
@@ -3485,10 +3498,10 @@
 "safe_zone.src721.error.owner_required" = "Only the contract owner can perform this action.";
 "safe_zone.src721.error.enumeration_unavailable" = "This contract does not support batch NFT reads.";
 "safe_zone.src721.error.token_operation_unavailable" = "The current wallet cannot operate this NFT.";
-"safe_zone.src721.error.contract_state_unavailable" = "Contract state is still loading. Try again shortly.";
+"safe_zone.src721.error.contract_state_unavailable" = "Contract state is loading...";
 "safe_zone.src721.error.public_mint_unavailable" = "This wallet is not currently eligible for public minting. Configure the allow-list or use admin minting.";
 "safe_zone.src721.error.public_mint_allowance" = "The public mint amount exceeds this wallet's available allowance.";
-"safe_zone.src721.error.supply_insufficient" = "The public mint amount exceeds the remaining supply.";
+"safe_zone.src721.error.supply_insufficient" = "The mint amount exceeds the remaining supply.";
 "safe_zone.src721.public_mint.hint" = "Public mint eligibility is checked for the signing wallet. NFTs can be sent to the recipient entered above.";
 "safe_zone.src721.confirm.mint" = "Confirm NFT mint?";
 "safe_zone.src721.allow_list.title" = "Allow-list management";
@@ -3502,3 +3515,11 @@
 "safe_zone.src721.confirm.burn.details" = "Burning is irreversible. Verify the token ID and contract before continuing.";
 "safe_zone.src721.confirm.withdraw" = "Confirm SAFE withdrawal?";
 "safe_zone.src721.confirm.withdraw.details" = "%@ SAFE will be withdrawn. The contract balance will be 0 afterward.";
+
+"safe4.network.switch.error.title" = "SAFE4 Network Switch Failed";
+"safe4.network.switch.error.generic" = "Unable to initialize the SAFE4 network. Check the RPC endpoint and try again.";
+"safe4.network.switch.error.adapter_unavailable" = "Unable to initialize %1$d SAFE4 wallet adapter(s) for chain ID %2$d. Check the RPC endpoint and try again.";
+"safe4.network.switch.error.stale_context" = "The SAFE4 network changed during switching. Expected chain ID %1$d, current chain ID %2$d.";
+"safe4.network.switch.error.unsupported_chain" = "Unsupported SAFE4 chain ID: %1$d.";
+"safe4.network.switch.retry" = "Retry";
+"safe4.network.switch.dismiss" = "OK";

@@ -68,11 +68,13 @@ enum Safe4Network {
 enum Safe4NetworkError: LocalizedError {
     case unsupportedChain(Int)
     case staleContext(expected: Int, current: Int)
+    case adapterUnavailable(chainId: Int, count: Int)
 
     var errorDescription: String? {
         switch self {
-        case let .unsupportedChain(chainId): return "Unsupported SAFE4 chainId: \(chainId)"
-        case let .staleContext(expected, current): return "SAFE4 network changed. Expected chainId \(expected), current chainId \(current)."
+        case let .unsupportedChain(chainId): return "safe4.network.switch.error.unsupported_chain".localized(chainId)
+        case let .staleContext(expected, current): return "safe4.network.switch.error.stale_context".localized(expected, current)
+        case let .adapterUnavailable(chainId, count): return "safe4.network.switch.error.adapter_unavailable".localized(count, chainId)
         }
     }
 }

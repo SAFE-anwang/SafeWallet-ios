@@ -362,7 +362,7 @@
 
 "balance.title" = "钱包";
 "balance.send" = "发送​​";
-"balance.swap" = "兑换交易";
+"balance.swap" = "互兑交易";
 "balance.receive" = "接收";
 "balance.chart" = "图表";
 "balance.scan" = "扫描";
@@ -698,7 +698,7 @@
 
 // Swap
 
-"swap.title" = "兑换交易";
+"swap.title" = "互兑交易";
 "swap.token_select.popular_tokens" = "热门代币";
 "swap.token_select.your_tokens" = "您的代币";
 "swap.token_select.top_tokens" = "顶级代币";
@@ -838,7 +838,7 @@
 
 // Swap Approving
 
-"swap.approve.subtitle" = "兑换交易";
+"swap.approve.subtitle" = "互兑交易";
 
 // Swap Confirmation
 
@@ -855,7 +855,7 @@
 "swap.confirmation.slide_to_swap" = "滑动切换";
 "swap.confirmation.swapping" = "交易";
 "swap.confirmation.refresh" = "刷新";
-"swap.confirmation.impact_high" = "在此次兑换交易中，您将损失您资金中的很大一部分（%@）。";
+"swap.confirmation.impact_high" = "在此次互兑交易中，您将损失您资金中的很大一部分（%@）。";
 "swap.confirmation.impact_too_high" = "%@ 已禁用此交易的兑换操作，因为您得到的价格极其不利。 这是由于流动性极低造成的。\n如果您仍想兑换，请使用 %@ 网站。";
 "swap.confirmation.impact_warning" = "重要提示！您正在以极其不利的价格进行交易。这是因为流动性非常低。";
 
@@ -1513,7 +1513,7 @@
 "transactions.types.all" = "所有";
 "transactions.types.incoming" = "接收";
 "transactions.types.outgoing" = "已发送";
-"transactions.types.swap" = "兑换交易";
+"transactions.types.swap" = "互兑交易";
 "transactions.types.approve" = "批准";
 
 "transactions.unknown_transaction.title" = "未知交易";
@@ -2054,7 +2054,7 @@
 "add_token.coin_name" = "代币图片";
 "add_token.symbol" = "标志";
 "add_token.decimals" = "小数";
-
+"add_token.NFT.mint" = "NFT 铸造";
 // Wallet Connect
 
 "wallet_connect.title" = "WalletConnect";
@@ -3342,7 +3342,8 @@
 "safe_zone.src721.wallet_nfts.hint" = "按合集展示当前钱包在 Safe4 链上持有的 NFT。";
 "safe_zone.src721.wallet_nfts.truncated" = "部分 NFT 可能暂未显示，请稍后刷新。";
 "safe_zone.src721.wallet_nfts.partial_error" = "部分合集读取失败，当前列表仅显示已成功读取的 NFT。";
-"safe_zone.src721.deploy.hint" = "NFT 信息地址可选，用于让钱包读取 NFT 的图片和介绍。";
+"safe_zone.src721.deploy.hint.standard" = "标准SRC721 NFT合约";
+"safe_zone.src721.deploy.hint.burnable" = "支持销毁NFT的SRC721合约";
 "safe_zone.src721.placeholder.name" = "例如：Safe Art Collection";
 "safe_zone.src721.placeholder.symbol" = "例如：SAC";
 "safe_zone.src721.placeholder.contract" = "粘贴或扫描 SRC721 合约地址";
@@ -3392,9 +3393,10 @@
 "safe_zone.src721.error.token_status_unavailable" = "暂时无法确认 NFT 的链上操作状态，操作已禁用。";
 "safe_zone.src721.error.allow_list_duplicate" = "该地址已在白名单记录中，请直接编辑额度。";
 "safe_zone.src721.error.logo" = "Logo 文件过大，请选择较小的图片。";
+"safe_zone.src721.error.insufficient_logo_balance" = "SAFE 余额不足，无法覆盖 Logo 推广费和预估网络手续费。";
 "safe_zone.src721.error.required" = "请填写%@。";
 "safe_zone.src721.error.too_long" = "%@ 内容过长，请适当缩短后再继续。";
-"safe_zone.src721.error.token_id" = "请输入有效的 Token ID。";
+"safe_zone.src721.error.token_id" = "无效的 NFT ID";
 "safe_zone.src721.error.transaction" = "交易被拒绝或在链上执行失败。";
 "safe_zone.src721.error.url" = "请输入有效的 NFT 信息地址。";
 "safe_zone.src721.field.name" = "名称";
@@ -3405,12 +3407,13 @@
 "safe_zone.src721.field.address" = "地址";
 "safe_zone.src721.field.wallet" = "钱包地址";
 "safe_zone.src721.field.recipient" = "接收地址";
-"safe_zone.src721.field.base_uri" = "NFT 信息地址";
+"safe_zone.src721.field.base_uri" = "基础URI";
 "safe_zone.src721.field.max_supply" = "发行总量";
-"safe_zone.src721.field.mint_price" = "每个 NFT 的价格";
+"safe_zone.src721.field.mint_price" = "铸造价格";
 "safe_zone.src721.field.amount" = "数量";
 "safe_zone.src721.field.owner" = "Owner";
 "safe_zone.src721.field.supply" = "供应量";
+"safe_zone.src721.field.burned_count" = "销毁数量";
 "safe_zone.src721.field.remain" = "剩余供应量";
 "safe_zone.src721.field.wallet_balance" = "钱包持有量";
 "safe_zone.src721.field.public_mint_allowance" = "公开铸造额度";
@@ -3433,6 +3436,7 @@
 "safe_zone.src721.field.token_uri" = "Token URI";
 "safe_zone.src721.section.mint" = "铸造";
 "safe_zone.src721.section.management" = "合约管理";
+"safe_zone.src721.section.logo" = "Logo 设置";
 "safe_zone.src721.section.token" = "已知 Token 操作";
 "safe_zone.src721.section.nft_details" = "NFT 信息";
 "safe_zone.src721.section.nft_actions" = "NFT 操作";
@@ -3446,7 +3450,17 @@
 "safe_zone.src721.action.edit_allow_list" = "编辑白名单额度";
 "safe_zone.src721.action.set_allow_list" = "设置额度";
 "safe_zone.src721.action.mint" = "公开铸造";
-"safe_zone.src721.action.admin_mint" = "管理员铸造";
+"safe_zone.src721.action.mint_short" = "铸造";
+"safe_zone.src721.action.admin_mint" = "铸造";
+"safe_zone.src721.burn.dialog.description" = "请输入要销毁的 NFT ID（在对应 NFT 合集中查看，# 后数字即为 ID 号）";
+"safe_zone.src721.burn.dialog.placeholder" = "NFT ID（从 0 开始...）";
+"safe_zone.src721.action.remove" = "删除";
+"safe_zone.src721.list.minted" = "已铸造：";
+"safe_zone.src721.list.remaining" = "剩余：";
+"safe_zone.src721.list.burned" = "已销毁：";
+"safe_zone.src721.status.syncing" = "同步中....";
+"safe_zone.src721.confirm.remove" = "从列表删除合约？";
+"safe_zone.src721.confirm.remove.details" = "仅从当前钱包的合约列表中移除，不会影响链上合约及 NFT。";
 "safe_zone.src721.action.query_token" = "查询 Token";
 "safe_zone.src721.action.refresh_nfts" = "刷新我持有的 NFT";
 "safe_zone.src721.action.retry_nfts" = "重新读取";
@@ -3464,8 +3478,12 @@
 "safe_zone.src721.action.update_description" = "更新描述";
 "safe_zone.src721.action.update_official_url" = "更新官网 URL";
 "safe_zone.src721.action.update_whitepaper_url" = "更新白皮书 URL";
-"safe_zone.src721.action.choose_logo" = "选择 Logo（不超过 128 KB）";
-"safe_zone.src721.action.logo_selected" = "Logo 已选择（不超过 128 KB），点击更新后提交";
+"safe_zone.src721.action.choose_logo" = "选择Logo(不超过128KB)";
+"safe_zone.src721.action.set_logo" = "设置 Logo";
+"safe_zone.src721.logo_fee" = "Logo 推广费用：%@ SAFE";
+"safe_zone.src721.confirm.set_logo" = "确认设置合约 Logo？";
+"safe_zone.src721.confirm.set_logo.details" = "提交后将支付 Logo 推广费用及网络手续费。";
+"safe_zone.src721.error.logo_required" = "请先选择 Logo 图片。";
 "safe_zone.src721.action.update_all" = "更新全部信息";
 "safe_zone.src721.action.withdraw" = "提取 SAFE";
 "safe_zone.src721.section.withdraw" = "提取 SAFE";
@@ -3477,8 +3495,8 @@
 "safe_zone.src721.status.discovered" = "链上发现，仅展示";
 "safe_zone.src721.status.read_only" = "当前钱包不是合约 Owner，管理功能为只读。";
 "safe_zone.src721.status.manager" = "当前钱包是合约 Owner。";
-"safe_zone.src721.type.standard" = "标准 SRC721";
-"safe_zone.src721.type.burnable" = "可销毁 SRC721";
+"safe_zone.src721.type.standard" = "SRC721（标准）";
+"safe_zone.src721.type.burnable" = "SRC721（可销毁）";
 "safe_zone.src721.type.generic" = "ERC721 NFT";
 "safe_zone.src721.type.unknown" = "未知 SRC721 类型";
 "safe_zone.src721.error.contract" = "该地址不是有效的 SRC721 合约。";
@@ -3487,10 +3505,10 @@
 "safe_zone.src721.error.owner_required" = "只有合约 Owner 才能执行此操作。";
 "safe_zone.src721.error.enumeration_unavailable" = "当前合约不支持批量读取 NFT。";
 "safe_zone.src721.error.token_operation_unavailable" = "当前钱包没有该 NFT 的操作权限。";
-"safe_zone.src721.error.contract_state_unavailable" = "合约状态尚未读取完成，请稍后再试。";
+"safe_zone.src721.error.contract_state_unavailable" = "合约信息同步中...";
 "safe_zone.src721.error.public_mint_unavailable" = "当前钱包暂不具备公开铸造资格，请先配置白名单或使用管理员铸造。";
 "safe_zone.src721.error.public_mint_allowance" = "公开铸造数量超过当前钱包的可用额度。";
-"safe_zone.src721.error.supply_insufficient" = "公开铸造数量超过当前剩余发行量。";
+"safe_zone.src721.error.supply_insufficient" = "铸造数量超过当前剩余发行量。";
 "safe_zone.src721.public_mint.hint" = "公开铸造资格按当前签名钱包校验，NFT 可发送至填写的接收地址。";
 "safe_zone.src721.confirm.mint" = "确认铸造 NFT？";
 "safe_zone.src721.allow_list.title" = "白名单管理";
@@ -3504,3 +3522,11 @@
 "safe_zone.src721.confirm.burn.details" = "销毁不可逆，请确认 Token ID 和合约后继续。";
 "safe_zone.src721.confirm.withdraw" = "确认提取 SAFE？";
 "safe_zone.src721.confirm.withdraw.details" = "将提取 %@ SAFE，提取后合约余额为 0。";
+
+"safe4.network.switch.error.title" = "SAFE4 网络切换失败";
+"safe4.network.switch.error.generic" = "无法初始化 SAFE4 网络，请检查 RPC 节点后重试。";
+"safe4.network.switch.error.adapter_unavailable" = "无法为链 ID %2$d 初始化 %1$d 个 SAFE4 钱包适配器，请检查 RPC 节点后重试。";
+"safe4.network.switch.error.stale_context" = "切换期间 SAFE4 网络发生变化。预期链 ID：%1$d，当前链 ID：%2$d。";
+"safe4.network.switch.error.unsupported_chain" = "不支持的 SAFE4 链 ID：%1$d。";
+"safe4.network.switch.retry" = "重试";
+"safe4.network.switch.dismiss" = "确定";
