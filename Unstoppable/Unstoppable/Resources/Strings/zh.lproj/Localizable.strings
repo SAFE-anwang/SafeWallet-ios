@@ -3169,6 +3169,7 @@
 "safe_zone.safe4.vote.fail" = "投票失败！";
 "safe_zone.safe4.proposal.vote.node.super.can" = "当前账户是排名前49且在线的超级节点，可以对提案进行投票!";
 "liquidity.title.add" = "添加流动性";
+"liquidity.collect_fees" = "接收";
 "safe_zone.safe4.amont.max.error" = "超出可用数量";
 "safe_zone.safe4.redeem.available" = "余额迁移";
 "safe_zone.safe4.node.desc.count.error" = "节点简介长度需要大于2且小于20";
@@ -3351,6 +3352,7 @@
 "safe_zone.src721.placeholder.base_uri" = "例如：https://example.com/nft/";
 "safe_zone.src721.placeholder.max_supply" = "请输入 NFT 总发行数量";
 "safe_zone.src721.placeholder.mint_price" = "请输入每个 NFT 的价格，0 表示免费铸造";
+"safe_zone.src721.placeholder.mint_amount" = "请输入铸造数量";
 "safe_zone.src721.placeholder.allow_list_addresses" = "输入地址，可用换行、逗号或空格分隔";
 "safe_zone.src721.placeholder.allow_list_amounts" = "输入对应额度，顺序要与地址一致";
 "safe_zone.src721.allow_list.status.empty" = "地址和额度将按照相同顺序一一对应";
@@ -3461,6 +3463,12 @@
 "safe_zone.src721.status.syncing" = "同步中....";
 "safe_zone.src721.confirm.remove" = "从列表删除合约？";
 "safe_zone.src721.confirm.remove.details" = "仅从当前钱包的合约列表中移除，不会影响链上合约及 NFT。";
+"safe_zone.src721.confirm.remove.with_nfts.details" = "该合约下仍有已铸造的 NFT，请先全部销毁后再删除合约";
+"safe_zone.src721.delete.blocked" = "无法删除合约";
+"safe_zone.src721.delete.mint_pending" = "铸造交易等待确认";
+"safe_zone.src721.delete.mint_pending.details" = "该合约仍有铸造交易等待区块确认，请确认后再删除合约。";
+"safe_zone.src721.delete.supply_unavailable" = "暂无法删除合约";
+"safe_zone.src721.delete.supply_unavailable.details" = "暂未获取到该合约的 NFT 供应量，请刷新列表同步数据后再删除。";
 "safe_zone.src721.action.query_token" = "查询 Token";
 "safe_zone.src721.action.refresh_nfts" = "刷新我持有的 NFT";
 "safe_zone.src721.action.retry_nfts" = "重新读取";
@@ -3485,6 +3493,7 @@
 "safe_zone.src721.confirm.set_logo.details" = "提交后将支付 Logo 推广费用及网络手续费。";
 "safe_zone.src721.error.logo_required" = "请先选择 Logo 图片。";
 "safe_zone.src721.action.update_all" = "更新全部信息";
+"safe_zone.src721.transaction.update_nft_info" = "NFT 信息更新";
 "safe_zone.src721.action.withdraw" = "提取 SAFE";
 "safe_zone.src721.section.withdraw" = "提取 SAFE";
 "safe_zone.src721.field.withdrawable_safe" = "可提取 SAFE";
@@ -3509,6 +3518,7 @@
 "safe_zone.src721.error.public_mint_unavailable" = "当前钱包暂不具备公开铸造资格，请先配置白名单或使用管理员铸造。";
 "safe_zone.src721.error.public_mint_allowance" = "公开铸造数量超过当前钱包的可用额度。";
 "safe_zone.src721.error.supply_insufficient" = "铸造数量超过当前剩余发行量。";
+"safe_zone.src721.error.unsupported_nft_recipient" = "接收地址不支持接收 NFT，请更换为普通钱包地址或支持 ERC721 的合约地址。";
 "safe_zone.src721.public_mint.hint" = "公开铸造资格按当前签名钱包校验，NFT 可发送至填写的接收地址。";
 "safe_zone.src721.confirm.mint" = "确认铸造 NFT？";
 "safe_zone.src721.allow_list.title" = "白名单管理";

@@ -133,7 +133,7 @@ struct SRC721DeployView: View {
                                     input(title: "safe_zone.src721.field.symbol".localized, text: $viewModel.symbol, prompt: "safe_zone.src721.placeholder.symbol", field: .symbol, caution: $viewModel.symbolCautionState, keyboard: .default) { SRC721Validation.textInput($0, maxUTF8Length: SRC721Validation.symbolMaxUTF8Length) }.id(SRC721DeployField.symbol)
                                     input(title: "safe_zone.src721.field.base_uri".localized, text: $viewModel.baseURI, prompt: "safe_zone.src721.placeholder.base_uri", field: .baseURI, caution: $viewModel.baseURICautionState, keyboard: .URL) { SRC721Validation.textInput($0, maxUTF8Length: SRC721Validation.baseURIMaxUTF8Length) }.id(SRC721DeployField.baseURI)
                                     input(title: "safe_zone.src721.field.max_supply".localized, text: $viewModel.maxSupply, prompt: "safe_zone.src721.placeholder.max_supply", field: .maxSupply, caution: $viewModel.maxSupplyCautionState, keyboard: .numberPad) { SRC721Validation.validDecimalInput($0) }.id(SRC721DeployField.maxSupply)
-                                    input(title: "safe_zone.src721.field.mint_price".localized, text: $viewModel.mintPrice, prompt: "safe_zone.src721.placeholder.mint_price", field: .mintPrice, caution: $viewModel.mintPriceCautionState, keyboard: .numberPad) { SRC721Validation.validDecimalInput($0) }.id(SRC721DeployField.mintPrice)
+                                    input(title: "safe_zone.src721.field.mint_price".localized, text: $viewModel.mintPrice, prompt: "safe_zone.src721.placeholder.mint_price", field: .mintPrice, caution: $viewModel.mintPriceCautionState, keyboard: .decimalPad) { SRC721Validation.validSafe4AmountInput($0) }.id(SRC721DeployField.mintPrice)
                                 }
                                 .padding(.init(top: .margin12, leading: .margin16, bottom: .margin16, trailing: .margin16))
                             }
@@ -198,7 +198,8 @@ struct SRC721DeployView: View {
                 }
             }
             .onChange(of: viewModel.submissionID) { _, _ in
-                HudHelper.instance.show(banner: .success(string: "safe_zone.src721.deploy.success".localized))
+                HudHelper.instance.show(banner: .success(string: "safe_zone.src721.operation.confirmed".localized))
+                isPresented = false
             }
         }
     }
@@ -236,32 +237,20 @@ struct SRC721DeployView: View {
     }
 
     private func input(title: String, text: Binding<String>, prompt: String, field: SRC721DeployField, caution: Binding<CautionState>, keyboard: UIKeyboardType, transform: @escaping (String) -> String?) -> some View {
-        let limitedText = Binding<String>(
-            get: { text.wrappedValue },
-            set: { if let value = transform($0) { text.wrappedValue = value } }
+        SRC721FormInput(
+            title: title,
+            prompt: prompt,
+            text: text,
+            field: field,
+            focusedField: $focusedField,
+            caution: caution,
+            keyboard: keyboard,
+            axis: .vertical,
+            topSpacing: .margin8,
+            horizontalPadding: .margin16,
+            showsBorder: false,
+            transform: transform
         )
-        return VStack(alignment: .leading, spacing: .margin8) {
-            SectionHeader(text: title)
-            HStack(alignment: .top, spacing: .margin8) {
-                TextField("", text: limitedText, prompt: Text(prompt.localized).foregroundColor(.themeGray), axis: .vertical)
-                    .foregroundColor(.themeLeah)
-                    .font(.themeBody)
-                    .keyboardType(keyboard)
-                    .lineLimit(1...)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($focusedField, equals: field)
-                if !limitedText.wrappedValue.isEmpty {
-                    Button { limitedText.wrappedValue = "" } label: { Image("trash_20").renderingMode(.template) }
-                        .buttonStyle(SecondaryCircleButtonStyle(style: .default))
-                }
-            }
-            .padding(.horizontal, .margin16)
-            .padding(.vertical, .margin8)
-            .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
-            .modifier(CautionBorder(cautionState: caution))
-            .modifier(CautionPrompt(cautionState: caution))
-        }
     }
 
     private struct SectionHeader: View {
@@ -371,8 +360,11 @@ private struct SRC721ContractsView: View {
                                 SRC721ContractRow(
                                     record: record,
                                     state: viewModel.contractStates[record.contractAddress.lowercased()],
+                                    remainingSupply: viewModel.contractStates[record.contractAddress.lowercased()].map { viewModel.remainingSupply(for: record, state: $0) },
+                                    hasPendingMint: viewModel.hasPendingMint(for: record),
                                     isLoadingState: viewModel.loadingContractAddresses.contains(record.contractAddress.lowercased()),
                                     hasPendingTokenOperation: viewModel.pendingTokenContractAddresses.contains(record.contractAddress.lowercased()),
+                                    onSubmitted: { viewModel.refreshContract(record) },
                                     onDelete: { viewModel.removeFromList(record) }
                                 )
                             }
@@ -447,7 +439,11 @@ private struct SRC721WalletAssetsView: View {
                             ListSection {
                                 ForEach(viewModel.collections) { collection in
                                     NavigationLink {
-                                        SRC721WalletCollectionView(collection: collection, onAssetsChanged: viewModel.refresh)
+                                        SRC721WalletCollectionView(
+                                            collection: collection,
+                                            onPending: viewModel.updateAsset,
+                                            onChanged: viewModel.removeAsset
+                                        )
                                     } label: {
                                         SRC721WalletCollectionRow(collection: collection)
                                     }
@@ -502,12 +498,18 @@ private struct SRC721WalletCollectionRow: View {
 
 private struct SRC721WalletCollectionView: View {
     let collection: SRC721WalletCollection
-    let onAssetsChanged: () -> Void
+    let onPending: (SRC721WalletAsset, SRC721TransactionOperation?) -> Void
+    let onChanged: (SRC721WalletAsset) -> Void
     @State private var assets: [SRC721WalletAsset]
 
-    init(collection: SRC721WalletCollection, onAssetsChanged: @escaping () -> Void) {
+    init(
+        collection: SRC721WalletCollection,
+        onPending: @escaping (SRC721WalletAsset, SRC721TransactionOperation?) -> Void,
+        onChanged: @escaping (SRC721WalletAsset) -> Void
+    ) {
         self.collection = collection
-        self.onAssetsChanged = onAssetsChanged
+        self.onPending = onPending
+        self.onChanged = onChanged
         _assets = State(initialValue: collection.assets)
     }
 
@@ -540,11 +542,11 @@ private struct SRC721WalletCollectionView: View {
                                                         ? SRC721WalletAsset(contract: $0.contract, token: $0.token, pendingOperation: operation)
                                                         : $0
                                                 }
-                                                onAssetsChanged()
+                                                onPending(pendingAsset, operation)
                                             },
                                             onChanged: { changedAsset in
-                                            assets.removeAll { $0.id == changedAsset.id }
-                                            onAssetsChanged()
+                                                assets.removeAll { $0.id == changedAsset.id }
+                                                onChanged(changedAsset)
                                             }
                                         )
                                     } label: {
@@ -595,16 +597,22 @@ private struct SRC721WalletCollectionTokenRow: View {
 private struct SRC721ContractRow: View {
     let record: SRC721ContractRecord
     let state: SRC721ContractSupplyState?
+    let remainingSupply: BigUInt?
+    let hasPendingMint: Bool
     let isLoadingState: Bool
     let hasPendingTokenOperation: Bool
+    let onSubmitted: () -> Void
     let onDelete: () -> Void
     @State private var isShowingDeleteConfirmation = false
 
-    init(record: SRC721ContractRecord, state: SRC721ContractSupplyState?, isLoadingState: Bool = false, hasPendingTokenOperation: Bool = false, onDelete: @escaping () -> Void) {
+    init(record: SRC721ContractRecord, state: SRC721ContractSupplyState?, remainingSupply: BigUInt?, hasPendingMint: Bool = false, isLoadingState: Bool = false, hasPendingTokenOperation: Bool = false, onSubmitted: @escaping () -> Void, onDelete: @escaping () -> Void) {
         self.record = record
         self.state = state
+        self.remainingSupply = remainingSupply
+        self.hasPendingMint = hasPendingMint
         self.isLoadingState = isLoadingState
         self.hasPendingTokenOperation = hasPendingTokenOperation
+        self.onSubmitted = onSubmitted
         self.onDelete = onDelete
     }
 
@@ -631,7 +639,7 @@ private struct SRC721ContractRow: View {
                 } else {
                     HStack(spacing: .margin16) {
                         contractMetric("safe_zone.src721.list.minted".localized, mintedCount?.description ?? "-")
-                        contractMetric("safe_zone.src721.list.remaining".localized, state?.remainSupply.description ?? "-")
+                        contractMetric("safe_zone.src721.list.remaining".localized, remainingSupply?.description ?? "-")
                         if record.contractType.canBurn {
                             contractMetric("safe_zone.src721.list.burned".localized, state?.burnedCount?.description ?? "-")
                         }
@@ -679,17 +687,21 @@ private struct SRC721ContractRow: View {
         .padding(.horizontal, .margin16)
         .padding(.vertical, .margin12)
         .background {
-            NavigationLink { SRC721ContractDetailRoute(record: record) } label: {
+            NavigationLink { SRC721ContractDetailRoute(record: record, onSubmitted: onSubmitted) } label: {
                 Color.clear.contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityHidden(true)
         }
-        .alert("safe_zone.src721.confirm.remove".localized, isPresented: $isShowingDeleteConfirmation) {
-            Button("button.cancel".localized, role: .cancel) {}
-            Button("safe_zone.src721.action.remove".localized, role: .destructive, action: onDelete)
+        .alert(removeConfirmationTitle, isPresented: $isShowingDeleteConfirmation) {
+            if canRemoveContract {
+                Button("button.cancel".localized, role: .cancel) {}
+                Button("safe_zone.src721.action.remove".localized, role: .destructive, action: onDelete)
+            } else {
+                Button("button.ok".localized, role: .cancel) {}
+            }
         } message: {
-            Text("safe_zone.src721.confirm.remove.details".localized)
+            Text(removeConfirmationMessage)
         }
     }
 
@@ -701,6 +713,35 @@ private struct SRC721ContractRow: View {
     private var contractDisplayName: String {
         let name = record.name.isEmpty ? "SRC721" : record.name
         return record.symbol.isEmpty ? name : "\(name) (\(record.symbol))"
+    }
+
+    private var requiresSupplyCheckBeforeRemoval: Bool {
+        record.transactionStatus == .confirmed
+    }
+
+    private var hasOutstandingNFTs: Bool {
+        (state?.totalSupply ?? 0) > 0
+    }
+
+    private var canRemoveContract: Bool {
+        guard requiresSupplyCheckBeforeRemoval else { return true }
+        guard !hasPendingMint else { return false }
+        guard let state else { return false }
+        return state.totalSupply == 0
+    }
+
+    private var removeConfirmationTitle: String {
+        if hasPendingMint { return "safe_zone.src721.delete.mint_pending".localized }
+        if hasOutstandingNFTs { return "safe_zone.src721.delete.blocked".localized }
+        if requiresSupplyCheckBeforeRemoval, state == nil { return "safe_zone.src721.delete.supply_unavailable".localized }
+        return "safe_zone.src721.confirm.remove".localized
+    }
+
+    private var removeConfirmationMessage: String {
+        if hasPendingMint { return "safe_zone.src721.delete.mint_pending.details".localized }
+        if hasOutstandingNFTs { return "safe_zone.src721.confirm.remove.with_nfts.details".localized }
+        if requiresSupplyCheckBeforeRemoval, state == nil { return "safe_zone.src721.delete.supply_unavailable.details".localized }
+        return "safe_zone.src721.confirm.remove.details".localized
     }
 
     private func contractMetric(_ title: String, _ value: String) -> some View {
@@ -733,7 +774,7 @@ private struct SRC721BurnTokenIDView: View {
     @ObservedObject var viewModel: SRC721ContractDetailViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var tokenId = ""
-    @FocusState private var isInputFocused: Bool
+    @FocusState private var focusedField: SRC721DetailField?
     @State private var initialSubmissionID: UUID?
 
     private var isSubmitting: Bool { viewModel.isSubmittingOperation }
@@ -762,29 +803,25 @@ private struct SRC721BurnTokenIDView: View {
                             .themeBody(color: .themeLeah)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        HStack(spacing: .margin8) {
-                            TextField("safe_zone.src721.burn.dialog.placeholder".localized, text: tokenIdBinding)
-                                .keyboardType(.numberPad)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .foregroundColor(.themeLeah)
-                                .tint(.themeLeah)
-                                .focused($isInputFocused)
-                            Button("button.paste".localized) {
+                        SRC721FormInput(
+                            title: "safe_zone.src721.field.token_id".localized,
+                            prompt: "safe_zone.src721.burn.dialog.placeholder",
+                            text: tokenIdBinding,
+                            field: .tokenId,
+                            focusedField: $focusedField,
+                            caution: .constant(.none),
+                            keyboard: .numberPad,
+                            axis: .horizontal,
+                            topSpacing: .margin8,
+                            horizontalPadding: .margin16,
+                            showsBorder: false,
+                            trailingActionTitle: "button.paste".localized,
+                            trailingAction: {
                                 guard let value = UIPasteboard.general.string else { return }
                                 tokenIdBinding.wrappedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                            }
-                            .foregroundColor(.themeLeah)
-                            .padding(.horizontal, .margin12)
-                            .padding(.vertical, .margin8)
-                            .background(Color.themeBlade)
-                            .clipShape(Capsule())
-                        }
-                        .padding(.horizontal, .margin16)
-                        .frame(height: 50)
-                        .background(Color.themeLawrence)
-                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Color.themeBlade, lineWidth: .heightOneDp))
+                            },
+                            transform: { SRC721Validation.validDecimalInput($0) }
+                        )
 
                         Button("button.confirm".localized) {
                             dismissSRC721Keyboard()
@@ -805,7 +842,7 @@ private struct SRC721BurnTokenIDView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             initialSubmissionID = viewModel.submissionID
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { isInputFocused = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focusedField = .tokenId }
         }
         .onChange(of: viewModel.submissionID) { _, newValue in
             guard let initialSubmissionID, newValue != initialSubmissionID else { return }
@@ -876,10 +913,12 @@ private struct SRC721ContractQuickActionView: View {
     let record: SRC721ContractRecord
     let action: SRC721ContractQuickAction
     @ObservedObject var viewModel: SRC721ContractDetailViewModel
+    @Environment(\.dismiss) private var dismiss
     @State private var recipient = ""
     @State private var amount = ""
     @State private var tokenId = ""
     @State private var isShowingConfirmation = false
+    @FocusState private var focusedField: SRC721DetailField?
 
     var body: some View {
         ThemeView {
@@ -892,9 +931,7 @@ private struct SRC721ContractQuickActionView: View {
                         if action == .mint {
                             mintSupplySummary
                             SRC721AddressInput(title: "safe_zone.src721.field.recipient".localized, prompt: "safe_zone.src721.placeholder.recipient", text: $recipient, caution: $viewModel.mintRecipientCautionState)
-                            TextField("safe_zone.src721.field.amount".localized, text: $amount)
-                                .keyboardType(.numberPad)
-                                .textFieldStyle(.roundedBorder)
+                            mintAmountInput
                             Button("safe_zone.src721.action.admin_mint".localized) {
                                 guard viewModel.validateMint(to: recipient, amount: amount, admin: true) else { return }
                                 isShowingConfirmation = true
@@ -902,9 +939,20 @@ private struct SRC721ContractQuickActionView: View {
                             .buttonStyle(PrimaryButtonStyle(style: .yellow))
                             .disabled(!viewModel.canManage || !viewModel.isContractStateReady || viewModel.isSubmittingOperation)
                         } else {
-                            TextField("safe_zone.src721.field.token_id".localized, text: $tokenId)
-                                .keyboardType(.numberPad)
-                                .textFieldStyle(.roundedBorder)
+                            SRC721FormInput(
+                                title: "safe_zone.src721.field.token_id".localized,
+                                prompt: "safe_zone.src721.burn.dialog.placeholder",
+                                text: $tokenId,
+                                field: .tokenId,
+                                focusedField: $focusedField,
+                                caution: .constant(.none),
+                                keyboard: .numberPad,
+                                axis: .horizontal,
+                                topSpacing: .margin8,
+                                horizontalPadding: .margin16,
+                                showsBorder: false,
+                                transform: { SRC721Validation.validDecimalInput($0) }
+                            )
                             Button("safe_zone.src721.action.burn".localized) {
                                 guard BigUInt(tokenId) != nil else { return }
                                 isShowingConfirmation = true
@@ -921,6 +969,10 @@ private struct SRC721ContractQuickActionView: View {
         }
         .navigationTitle(action == .mint ? "safe_zone.src721.action.admin_mint".localized : "safe_zone.src721.action.burn".localized)
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: viewModel.contractState) { _, _ in
+            guard action == .mint else { return }
+            viewModel.validateMintSupplyInput(amount)
+        }
         .alert(action == .mint ? "safe_zone.src721.confirm.mint".localized : "safe_zone.src721.confirm.burn".localized, isPresented: $isShowingConfirmation) {
             Button("button.confirm".localized, role: .destructive) {
                 if action == .mint {
@@ -936,6 +988,7 @@ private struct SRC721ContractQuickActionView: View {
         }
         .onChange(of: viewModel.submissionID) { _, _ in
             HudHelper.instance.show(banner: .success(string: "safe_zone.src721.operation.confirmed".localized))
+            dismiss()
         }
         .alert("safe_zone.src721.operation.failure".localized, isPresented: Binding(
             get: { viewModel.operationState == .failed && viewModel.operationMessage != nil },
@@ -947,13 +1000,34 @@ private struct SRC721ContractQuickActionView: View {
         }
     }
 
+    private var mintAmountInput: some View {
+        SRC721FormInput(
+            title: "safe_zone.src721.field.amount".localized,
+            prompt: "safe_zone.src721.placeholder.mint_amount",
+            text: $amount,
+            field: .mintAmount,
+            focusedField: $focusedField,
+            caution: $viewModel.mintAmountCautionState,
+            keyboard: .numberPad,
+            axis: .horizontal,
+            topSpacing: .margin8,
+            horizontalPadding: .margin16,
+            showsBorder: false,
+            transform: { value in
+                guard let normalized = SRC721Validation.validDecimalInput(value) else { return nil }
+                viewModel.validateMintSupplyInput(normalized)
+                return normalized
+            }
+        )
+    }
+
     @ViewBuilder private var mintSupplySummary: some View {
         if let state = viewModel.contractState {
             VStack(alignment: .leading, spacing: .margin8) {
                 supplyMetric("safe_zone.src721.list.minted".localized, (state.totalSupply + (state.burnedCount ?? 0)).description)
                 supplyMetric("safe_zone.src721.field.supply".localized, "\(state.totalSupply) / \(state.maxSupply)")
                 supplyMetric("safe_zone.src721.field.burned_count".localized, state.burnedCount?.description ?? "-")
-                supplyMetric("safe_zone.src721.field.remain".localized, state.remainSupply.description)
+                supplyMetric("safe_zone.src721.field.remain".localized, viewModel.remainingSupply.description)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, .margin16)
@@ -1002,17 +1076,19 @@ private struct SRC721BurnableBadge: View {
 private struct SRC721ContractDetailRoute: View {
     let record: SRC721ContractRecord
     let selectedTokenId: BigUInt?
+    let onSubmitted: () -> Void
     @State private var viewModel: SRC721ContractDetailViewModel?
 
-    init(record: SRC721ContractRecord, selectedTokenId: BigUInt? = nil) {
+    init(record: SRC721ContractRecord, selectedTokenId: BigUInt? = nil, onSubmitted: @escaping () -> Void = {}) {
         self.record = record
         self.selectedTokenId = selectedTokenId
+        self.onSubmitted = onSubmitted
     }
 
     var body: some View {
         Group {
             if let viewModel {
-                SRC721ContractDetailView(viewModel: viewModel)
+                SRC721ContractDetailView(viewModel: viewModel, onSubmitted: onSubmitted)
             } else {
                 ProgressView()
             }
@@ -1098,21 +1174,15 @@ private struct SRC721WalletAssetDetailView: View {
         .onTapGesture { dismissSRC721Keyboard() }
         .refreshable { viewModel.loadToken(tokenId: asset.token.tokenId, showError: false) }
         .overlay { if viewModel.isSubmittingOperation { ProgressView() } }
-        .onChange(of: viewModel.burnedTokenId) { _, tokenId in
-            guard tokenId == asset.token.tokenId else { return }
-            presentationMode.wrappedValue.dismiss()
-            DispatchQueue.main.async {
-                onChanged(asset)
-            }
-        }
         .onChange(of: viewModel.operationHashes) { _, _ in
             guard let operation = viewModel.pendingTokenOperation else { return }
             onPending(asset, operation)
         }
         .onChange(of: viewModel.submissionID) { _, _ in
-            HudHelper.instance.show(banner: .success(string: "已提交，等待区块确认"))
-            guard viewModel.pendingTokenOperation == .transfer else { return }
-            onPending(asset, .transfer)
+            HudHelper.instance.show(banner: .success(string: "safe_zone.src721.operation.confirmed".localized))
+            if let operation = viewModel.pendingTokenOperation {
+                onPending(asset, operation)
+            }
             presentationMode.wrappedValue.dismiss()
         }
         .alert(operationAlertTitle, isPresented: Binding(
@@ -1133,7 +1203,13 @@ private struct SRC721WalletAssetDetailView: View {
             Button("button.cancel".localized, role: .cancel) {}
             Button("safe_zone.src721.action.burn".localized, role: .destructive) {
                 dismissSRC721Keyboard()
-                viewModel.burn()
+                viewModel.burn { succeeded in
+                    if succeeded {
+                        onChanged(asset)
+                    } else {
+                        onPending(asset, nil)
+                    }
+                }
             }
         } message: {
             Text("safe_zone.src721.confirm.burn.details".localized)
@@ -1510,13 +1586,10 @@ private struct SRC721AllowListEditorView: View {
                 .padding(.horizontal, .margin16)
                 .padding(.vertical, .margin8)
             }
-            .onChange(of: viewModel.operationState) { _, state in
-                guard state == .completed else { return }
+            .onChange(of: viewModel.submissionID) { _, _ in
+                HudHelper.instance.show(banner: .success(string: "safe_zone.src721.operation.confirmed".localized))
                 onUpdated()
                 presentationMode.wrappedValue.dismiss()
-            }
-            .onChange(of: viewModel.submissionID) { _, _ in
-                HudHelper.instance.show(banner: .success(string: "已提交，等待区块确认"))
             }
             .alert("safe_zone.src721.error.title".localized, isPresented: Binding(
                 get: { viewModel.operationMessage != nil && viewModel.operationState == .failed },
@@ -1657,6 +1730,7 @@ struct SRC721ImportView: View {
 
 struct SRC721ContractDetailView: View {
     @StateObject private var viewModel: SRC721ContractDetailViewModel
+    private let onSubmitted: () -> Void
     @State private var baseURI = ""
     @State private var maxSupply = ""
     @State private var mintPrice = ""
@@ -1671,7 +1745,10 @@ struct SRC721ContractDetailView: View {
     @State private var isShowingBurnConfirmation = false
     @Environment(\.presentationMode) private var presentationMode
 
-    init(viewModel: SRC721ContractDetailViewModel) { _viewModel = StateObject(wrappedValue: viewModel) }
+    init(viewModel: SRC721ContractDetailViewModel, onSubmitted: @escaping () -> Void = {}) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+        self.onSubmitted = onSubmitted
+    }
 
     var body: some View {
         ThemeView {
@@ -1715,7 +1792,8 @@ struct SRC721ContractDetailView: View {
             syncFields()
         }
         .onChange(of: viewModel.submissionID) { _, _ in
-            HudHelper.instance.show(banner: .success(string: "已提交，等待区块确认"))
+            HudHelper.instance.show(banner: .success(string: "safe_zone.src721.operation.confirmed".localized))
+            onSubmitted()
             presentationMode.wrappedValue.dismiss()
         }
         .refreshable { viewModel.refresh() }
@@ -1929,7 +2007,7 @@ struct SRC721ContractDetailView: View {
 
     private var tokenSection: some View {
         section(title: "safe_zone.src721.section.token".localized) {
-            input("safe_zone.src721.field.token_id".localized, prompt: "", text: $viewModel.tokenId, caution: $viewModel.tokenIdCautionState, keyboard: .numberPad) { SRC721Validation.validDecimalInput($0) }
+            input("safe_zone.src721.field.token_id".localized, prompt: "", text: $viewModel.tokenId, field: .tokenId, caution: $viewModel.tokenIdCautionState, keyboard: .numberPad) { SRC721Validation.validDecimalInput($0) }
                 .id(SRC721DetailField.tokenId)
             actionButton("safe_zone.src721.action.query_token".localized) { viewModel.loadToken() }
             if let token = viewModel.tokenState {
@@ -1984,61 +2062,39 @@ struct SRC721ContractDetailView: View {
         .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
     }
 
-    private func input(_ title: String, prompt: String, text: Binding<String>, caution: Binding<CautionState> = .constant(.none), keyboard: UIKeyboardType = .default, axis: Axis = .horizontal, transform: @escaping (String) -> String? = { Optional($0) }) -> some View {
-        let limitedText = Binding<String>(
-            get: { text.wrappedValue },
-            set: { if let value = transform($0) { text.wrappedValue = value } }
+    private func input(_ title: String, prompt: String, text: Binding<String>, field: SRC721DetailField, caution: Binding<CautionState>, keyboard: UIKeyboardType = .default, axis: Axis = .horizontal, transform: @escaping (String) -> String? = { Optional($0) }) -> some View {
+        SRC721FormInput(
+            title: title,
+            prompt: prompt,
+            text: text,
+            field: field,
+            focusedField: $focusedField,
+            caution: caution,
+            keyboard: keyboard,
+            axis: axis,
+            topSpacing: .margin8,
+            horizontalPadding: .margin16,
+            showsBorder: false,
+            transform: transform
         )
-
-        return VStack(alignment: .leading, spacing: .margin8) {
-            Text(title).themeSubhead2(color: .themeGray)
-            TextField("", text: limitedText, prompt: Text(prompt.localized).foregroundColor(.themeGray), axis: axis)
-                .foregroundColor(.themeLeah)
-                .font(.themeBody)
-                .keyboardType(keyboard)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .padding(.horizontal, .margin12)
-                .padding(.vertical, .margin8)
-                .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
-                .overlay(RoundedRectangle(cornerRadius: .cornerRadius8, style: .continuous).stroke(Color.themeBlade, lineWidth: .heightOneDp))
-                .modifier(CautionBorder(cautionState: caution))
-                .modifier(CautionPrompt(cautionState: caution))
-        }
     }
 
     private func managementInput(title: String, prompt: String, text: Binding<String>, field: SRC721DetailField, caution: Binding<CautionState>, keyboard: UIKeyboardType = .default, axis: Axis = .vertical, minHeight: CGFloat = 0, transform: @escaping (String) -> String? = { $0 }) -> some View {
-        let limitedText = Binding<String>(
-            get: { text.wrappedValue },
-            set: { if let value = transform($0) { text.wrappedValue = value } }
+        SRC721FormInput(
+            title: title,
+            prompt: prompt,
+            text: text,
+            field: field,
+            focusedField: $focusedField,
+            caution: caution,
+            keyboard: keyboard,
+            axis: axis,
+            minHeight: minHeight,
+            topSpacing: .margin8,
+            horizontalPadding: .margin16,
+            showsBorder: false,
+            transform: transform
         )
-
-        return VStack(alignment: .leading, spacing: .margin8) {
-            Text(title.uppercased())
-                .themeSubhead1(color: .themeLeah)
-                .padding(.top, .margin16)
-            HStack(alignment: .top, spacing: .margin8) {
-                TextField("", text: limitedText, prompt: Text(prompt.localized).foregroundColor(.themeGray), axis: axis)
-                    .lineLimit(1...)
-                    .frame(minHeight: minHeight, alignment: .top)
-                    .foregroundColor(.themeLeah)
-                    .font(.themeBody)
-                    .keyboardType(keyboard)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($focusedField, equals: field)
-                if !limitedText.wrappedValue.isEmpty {
-                    Button { limitedText.wrappedValue = "" } label: { Image("trash_20").renderingMode(.template) }
-                        .buttonStyle(SecondaryCircleButtonStyle(style: .default))
-                }
-            }
-            .padding(.horizontal, .margin16)
-            .padding(.vertical, .margin8)
-            .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
-            .overlay(RoundedRectangle(cornerRadius: .cornerRadius8, style: .continuous).stroke(Color.themeBlade, lineWidth: .heightOneDp))
-            .modifier(CautionBorder(cautionState: caution))
-            .modifier(CautionPrompt(cautionState: caution))
-        }
     }
 
     private func detailRow(_ title: String, _ value: String, copyValue: String? = nil) -> some View {
@@ -2075,6 +2131,107 @@ struct SRC721ContractDetailView: View {
 
 private func dismissSRC721Keyboard() {
     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+}
+
+private struct SRC721FormInput<Field: Hashable>: View {
+    let title: String
+    let prompt: String
+    @Binding var text: String
+    let field: Field
+    let focusedField: FocusState<Field?>.Binding
+    @Binding var caution: CautionState
+    let keyboard: UIKeyboardType
+    let axis: Axis
+    let minHeight: CGFloat
+    let topSpacing: CGFloat
+    let horizontalPadding: CGFloat
+    let showsBorder: Bool
+    let trailingActionTitle: String?
+    let trailingAction: (() -> Void)?
+    let transform: (String) -> String?
+
+    init(
+        title: String,
+        prompt: String,
+        text: Binding<String>,
+        field: Field,
+        focusedField: FocusState<Field?>.Binding,
+        caution: Binding<CautionState>,
+        keyboard: UIKeyboardType,
+        axis: Axis,
+        minHeight: CGFloat = 0,
+        topSpacing: CGFloat,
+        horizontalPadding: CGFloat,
+        showsBorder: Bool,
+        trailingActionTitle: String? = nil,
+        trailingAction: (() -> Void)? = nil,
+        transform: @escaping (String) -> String?
+    ) {
+        self.title = title
+        self.prompt = prompt
+        _text = text
+        self.field = field
+        self.focusedField = focusedField
+        _caution = caution
+        self.keyboard = keyboard
+        self.axis = axis
+        self.minHeight = minHeight
+        self.topSpacing = topSpacing
+        self.horizontalPadding = horizontalPadding
+        self.showsBorder = showsBorder
+        self.trailingActionTitle = trailingActionTitle
+        self.trailingAction = trailingAction
+        self.transform = transform
+    }
+
+    var body: some View {
+        let limitedText = Binding<String>(
+            get: { text },
+            set: { if let value = transform($0) { text = value } }
+        )
+
+        VStack(alignment: .leading, spacing: .margin8) {
+            Text(title.uppercased())
+                .themeSubhead1(color: .themeLeah)
+                .padding(.top, topSpacing)
+            HStack(alignment: .top, spacing: .margin8) {
+                TextField("", text: limitedText, prompt: Text(prompt.localized).foregroundColor(.themeGray), axis: axis)
+                    .lineLimit(1...)
+                    .frame(minHeight: minHeight, alignment: .top)
+                    .foregroundColor(.themeLeah)
+                    .font(.themeBody)
+                    .keyboardType(keyboard)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .focused(focusedField, equals: field)
+                if !limitedText.wrappedValue.isEmpty {
+                    Button { limitedText.wrappedValue = "" } label: {
+                        Image("trash_20").renderingMode(.template)
+                    }
+                    .buttonStyle(SecondaryCircleButtonStyle(style: .default))
+                }
+                if let trailingActionTitle, let trailingAction {
+                    Button(trailingActionTitle, action: trailingAction)
+                        .foregroundColor(.themeLeah)
+                        .padding(.horizontal, .margin12)
+                        .padding(.vertical, .margin8)
+                        .background(Color.themeBlade)
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, .margin8)
+            .modifier(ThemeListStyleModifier(cornerRadius: .cornerRadius8))
+            .overlay {
+                if showsBorder {
+                    RoundedRectangle(cornerRadius: .cornerRadius8, style: .continuous)
+                        .stroke(Color.themeBlade, lineWidth: .heightOneDp)
+                }
+            }
+            .modifier(CautionBorder(cautionState: $caution))
+            .modifier(CautionPrompt(cautionState: $caution))
+        }
+    }
 }
 
 private struct SRC721AddressInput: View {

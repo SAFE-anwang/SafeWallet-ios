@@ -94,6 +94,45 @@ final class SRC721ValidationTests: XCTestCase {
         XCTAssertNoThrow(try SRC721Validation.amount(SRC721Validation.uint256Max.description, field: "amount"))
     }
 
+    func testSafe4MintPriceConvertsDecimalToBaseUnits() throws {
+        XCTAssertEqual(
+            try SRC721Validation.safe4Amount("1.25", field: "price"),
+            BigUInt(1_250_000_000_000_000_000)
+        )
+        XCTAssertEqual(
+            try SRC721Validation.safe4Amount("0.0001", field: "price"),
+            BigUInt(100_000_000_000_000)
+        )
+        XCTAssertEqual(
+            try SRC721Validation.safe4Amount("0", field: "price", allowZero: true),
+            BigUInt.zero
+        )
+    }
+
+    func testSafe4MintPriceRejectsExcessPrecisionAndOverflow() {
+        XCTAssertThrowsError(try SRC721Validation.safe4Amount("0.00001", field: "price"))
+        XCTAssertThrowsError(try SRC721Validation.safe4Amount("01.5", field: "price"))
+        XCTAssertThrowsError(try SRC721Validation.safe4Amount(SRC721Validation.uint256Max.description, field: "price"))
+        XCTAssertThrowsError(try SRC721Validation.safe4Amount("", field: "price")) { error in
+            guard case SRC721ValidationError.emptyField("price") = error else {
+                return XCTFail("An empty mint price should use the required-field error")
+            }
+        }
+    }
+
+    func testSafe4MintPriceInputPreservesDecimalAndEnforcesPrecision() {
+        XCTAssertEqual(SRC721Validation.validSafe4AmountInput(".25"), "0.25")
+        XCTAssertEqual(SRC721Validation.validSafe4AmountInput("0001.2500"), "1.2500")
+        XCTAssertEqual(SRC721Validation.validSafe4AmountInput("1."), "1.")
+        let localizedDecimal = Locale.current.decimalSeparator ?? "."
+        XCTAssertEqual(SRC721Validation.validSafe4AmountInput("1\(localizedDecimal)25"), "1.25")
+        XCTAssertEqual(SRC721Validation.validSafe4AmountInput("1.2345"), "1.2345")
+        XCTAssertNil(SRC721Validation.validSafe4AmountInput("1.23456"))
+        XCTAssertNil(SRC721Validation.validSafe4AmountInput("1.2.3"))
+        XCTAssertNil(SRC721Validation.validSafe4AmountInput("-1.5"))
+        XCTAssertNil(SRC721Validation.validSafe4AmountInput("1 SAFE"))
+    }
+
     func testRequiredUsesUTF8ByteLength() {
         XCTAssertNoThrow(try SRC721Validation.required(String(repeating: "中", count: 21), field: "name", maxLength: 64))
         XCTAssertThrowsError(try SRC721Validation.required(String(repeating: "中", count: 22), field: "name", maxLength: 64))

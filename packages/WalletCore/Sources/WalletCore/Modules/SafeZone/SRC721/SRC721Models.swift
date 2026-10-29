@@ -29,6 +29,7 @@ enum SRC721TransactionStatus: String, Codable, Hashable {
 }
 
 enum SRC721TransactionOperation: String, Codable, Hashable {
+    case mint
     case transfer
     case burn
 }
@@ -341,13 +342,14 @@ struct SRC721TransactionRecord: Codable, Hashable, Identifiable {
     let operation: String
     let operationKind: SRC721TransactionOperation?
     let tokenId: String?
+    let amount: String?
     let transactionHash: String
     var status: SRC721TransactionStatus
     var errorMessage: String?
     let createdAt: Date
 
     private enum CodingKeys: String, CodingKey {
-        case id, accountId, chainId, walletAddress, contractAddress, operation, operationKind, tokenId
+        case id, accountId, chainId, walletAddress, contractAddress, operation, operationKind, tokenId, amount
         case transactionHash, status, errorMessage, createdAt
     }
 
@@ -360,6 +362,7 @@ struct SRC721TransactionRecord: Codable, Hashable, Identifiable {
         operation: String,
         operationKind: SRC721TransactionOperation? = nil,
         tokenId: String?,
+        amount: String? = nil,
         transactionHash: String,
         status: SRC721TransactionStatus,
         errorMessage: String?,
@@ -373,6 +376,7 @@ struct SRC721TransactionRecord: Codable, Hashable, Identifiable {
         self.operation = operation
         self.operationKind = operationKind
         self.tokenId = tokenId
+        self.amount = amount
         self.transactionHash = transactionHash
         self.status = status
         self.errorMessage = errorMessage
@@ -389,6 +393,7 @@ struct SRC721TransactionRecord: Codable, Hashable, Identifiable {
         operation = try container.decode(String.self, forKey: .operation)
         operationKind = try container.decodeIfPresent(SRC721TransactionOperation.self, forKey: .operationKind)
         tokenId = try container.decodeIfPresent(String.self, forKey: .tokenId)
+        amount = try container.decodeIfPresent(String.self, forKey: .amount)
         transactionHash = try container.decode(String.self, forKey: .transactionHash)
         status = try container.decode(SRC721TransactionStatus.self, forKey: .status)
         errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage)
@@ -396,7 +401,7 @@ struct SRC721TransactionRecord: Codable, Hashable, Identifiable {
     }
 
     var tokenOperation: SRC721TransactionOperation? {
-        if let operationKind {
+        if operationKind == .transfer || operationKind == .burn {
             return operationKind
         }
         if operation == "safe_zone.src721.action.transfer".localized {
@@ -468,7 +473,9 @@ enum SRC721Validation {
     static let nameMaxUTF8Length = 64
     static let symbolMaxUTF8Length = 16
     static let baseURIMaxUTF8Length = 512
+    static let mintPriceMaxFractionDigits = 4
     static let uint256Max = (BigUInt(1) << 256) - 1
+    private static let safe4AmountScale = BigUInt(1_000_000_000_000_000_000)
 
     static func validateLogoBalance(balance: BigUInt, required: BigUInt) throws {
         guard balance >= required else { throw SRC721ValidationError.insufficientLogoBalance }
@@ -501,6 +508,40 @@ enum SRC721Validation {
         return amount
     }
 
+    static func safe4Amount(_ value: String, field: String, allowZero: Bool = false) throws -> BigUInt {
+        let result = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !result.isEmpty else {
+            throw SRC721ValidationError.emptyField(field)
+        }
+
+        let components = result.split(separator: ".", omittingEmptySubsequences: false)
+        guard components.count <= 2,
+              let integerPart = components.first,
+              !integerPart.isEmpty,
+              integerPart.allSatisfy({ $0.isASCII && $0.isNumber }),
+              integerPart.first != "0" || integerPart.count == 1
+        else {
+            throw SRC721ValidationError.invalidAmount(field)
+        }
+
+        let fractionalPart = components.count == 2 ? String(components[1]) : ""
+        guard fractionalPart.count <= mintPriceMaxFractionDigits,
+              fractionalPart.allSatisfy({ $0.isASCII && $0.isNumber }),
+              let wholeAmount = BigUInt(String(integerPart))
+        else {
+            throw SRC721ValidationError.invalidAmount(field)
+        }
+
+        let paddedFraction = fractionalPart + String(repeating: "0", count: safe4Decimals - fractionalPart.count)
+        let canonicalFraction = String(paddedFraction.drop(while: { $0 == "0" }))
+        let fractionalAmount = BigUInt(canonicalFraction) ?? 0
+        let amount = wholeAmount * safe4AmountScale + fractionalAmount
+        guard amount <= uint256Max, allowZero || amount > 0 else {
+            throw SRC721ValidationError.invalidAmount(field)
+        }
+        return amount
+    }
+
     static func validateMintSupply(remainSupply: BigUInt, amount: BigUInt) throws {
         guard remainSupply >= amount else { throw SRC721ValidationError.supplyInsufficient }
     }
@@ -516,9 +557,6 @@ enum SRC721Validation {
     static func baseURI(_ value: String) throws -> String {
         let result = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !result.isEmpty, result.utf8.count <= baseURIMaxUTF8Length else { throw SRC721ValidationError.invalidURL }
-        guard let url = URL(string: result), let scheme = url.scheme?.lowercased(), ["http", "https", "ipfs"].contains(scheme) else {
-            throw SRC721ValidationError.invalidURL
-        }
         return result
     }
 
@@ -550,6 +588,50 @@ enum SRC721Validation {
         let canonical = normalized.isEmpty ? "0" : normalized
         guard BigUInt(canonical).map({ $0 <= maximum }) == true else { return nil }
         return canonical
+    }
+
+    static func validSafe4AmountInput(_ value: String) -> String? {
+        var normalized = ""
+        var hasDecimalSeparator = false
+        let localizedSeparator = Locale.current.decimalSeparator?.unicodeScalars.first?.value
+        let input = value.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        for scalar in input.unicodeScalars {
+            if scalar.value >= 48 && scalar.value <= 57 {
+                normalized.unicodeScalars.append(scalar)
+            } else if scalar.value == 46 || localizedSeparator.map({ scalar.value == $0 }) == true {
+                guard !hasDecimalSeparator else { return nil }
+                hasDecimalSeparator = true
+                normalized.append(".")
+            } else {
+                return nil
+            }
+        }
+
+        guard !normalized.isEmpty else { return "" }
+        if normalized.first == "." {
+            normalized.insert("0", at: normalized.startIndex)
+        }
+
+        let components = normalized.split(separator: ".", omittingEmptySubsequences: false)
+        guard let integerPart = components.first,
+              components.count <= 2,
+              components.count == 1 || components[1].count <= mintPriceMaxFractionDigits
+        else {
+            return nil
+        }
+
+        let canonicalInteger = String(integerPart.drop(while: { $0 == "0" }))
+        let normalizedInteger = canonicalInteger.isEmpty ? "0" : canonicalInteger
+        let fractionalPart = components.count == 2 ? String(components[1]) : nil
+        let candidate = normalizedInteger + (fractionalPart.map { "." + $0 } ?? "")
+
+        do {
+            _ = try safe4Amount(candidate, field: "", allowZero: true)
+            return candidate
+        } catch {
+            return nil
+        }
     }
 
     static func allowListAddressesInput(_ value: String) -> String {

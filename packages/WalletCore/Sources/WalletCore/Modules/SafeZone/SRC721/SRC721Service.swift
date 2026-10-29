@@ -103,7 +103,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
 
     private func isExecutionReverted(_ error: Error) -> Bool {
         let description = "\(error) \(error.localizedDescription)".lowercased()
-        return description.contains("execution reverted") || description.contains("-32000")
+        return description.contains("execution reverted") || description.contains("-32000") || description.contains("invalid token id")
     }
 
     private func isInsufficientFunds(_ error: Error) -> Bool {
