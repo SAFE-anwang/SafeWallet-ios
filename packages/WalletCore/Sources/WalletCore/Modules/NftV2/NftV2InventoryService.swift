@@ -209,9 +209,9 @@ final class NftV2InventoryService {
     func pendingTransferReconcileData(
         chain: NftV2Chain,
         accountId: String,
-        transactionHashes: Set<String>
+        pendingTransfers: [NftV2PendingTransferItem]
     ) async -> (records: [TransactionRecord], lastBlockHeight: Int?)? {
-        guard !transactionHashes.isEmpty,
+        guard !pendingTransfers.isEmpty,
               let account = accountManager.activeAccount,
               contextAccountId(account: account) == accountId,
               let adapter = transactionAdapter(chain: chain, account: account)
@@ -219,8 +219,10 @@ final class NftV2InventoryService {
             return nil
         }
 
-        let normalizedHashes = Set(transactionHashes.map { $0.lowercased() })
+        let normalizedHashes = Set(pendingTransfers.map { $0.transactionHash.lowercased() })
+        let nftUids = Set(pendingTransfers.map { $0.asset.nftUid })
         var recordsByHash = [String: TransactionRecord]()
+        var scannedRecords = [TransactionRecord]()
         var paginationData: String?
 
         while recordsByHash.count < normalizedHashes.count {
@@ -239,6 +241,9 @@ final class NftV2InventoryService {
                 if normalizedHashes.contains(hash) {
                     recordsByHash[hash] = record
                 }
+                if normalizedHashes.contains(hash) || !record.nftUids.isDisjoint(with: nftUids) {
+                    scannedRecords.append(record)
+                }
             }
 
             guard page.count >= Self.pendingTransferReconcilePageSize,
@@ -256,34 +261,48 @@ final class NftV2InventoryService {
             return nil
         }
 
-        let filteredRecords = transactionHashes.compactMap { recordsByHash[$0.lowercased()] }
-        return (records: filteredRecords, lastBlockHeight: adapter.lastBlockInfo?.height)
+        return (
+            records: relevantPendingTransferRecords(scannedRecords, pendingTransfers: pendingTransfers),
+            lastBlockHeight: adapter.lastBlockInfo?.height
+        )
     }
 
-    func pendingTransferImmediateReconcileData(
-        chain: NftV2Chain,
-        accountId: String,
-        transactionHashes: Set<String>
-    ) async -> (records: [TransactionRecord], lastBlockHeight: Int?)? {
-        guard !transactionHashes.isEmpty,
-              let account = accountManager.activeAccount,
-              contextAccountId(account: account) == accountId,
-              let adapter = transactionAdapter(chain: chain, account: account)
-        else {
-            return nil
+    private func relevantPendingTransferRecords(
+        _ records: [TransactionRecord],
+        pendingTransfers: [NftV2PendingTransferItem]
+    ) -> [TransactionRecord] {
+        let hashes = Set(pendingTransfers.map { $0.transactionHash.lowercased() })
+        let recordsByHash = Dictionary(
+            records.map { ($0.transactionHash.lowercased(), $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        var sentRecordsByNftUid = [NftUid: [TransactionRecord]]()
+        for pending in pendingTransfers {
+            guard let record = recordsByHash[pending.transactionHash.lowercased()] else { continue }
+            sentRecordsByNftUid[pending.asset.nftUid, default: []].append(record)
         }
 
-        let normalizedHashes = Set(transactionHashes.map { $0.lowercased() })
-        let records = await allTransactionRecords(adapter: adapter)
+        return records.filter { record in
+            if hashes.contains(record.transactionHash.lowercased()) {
+                return true
+            }
 
-        guard let currentAccount = accountManager.activeAccount,
-              contextAccountId(account: currentAccount) == accountId
-        else {
-            return nil
+            return record.nftUids.contains { nftUid in
+                guard let sentRecords = sentRecordsByNftUid[nftUid] else { return false }
+                return sentRecords.contains { sentRecord in
+                    guard record.transactionHash.caseInsensitiveCompare(sentRecord.transactionHash) != .orderedSame else {
+                        return false
+                    }
+                    if let blockHeight = record.blockHeight, let sentBlockHeight = sentRecord.blockHeight {
+                        if blockHeight != sentBlockHeight {
+                            return blockHeight > sentBlockHeight
+                        }
+                        return record.transactionIndex > sentRecord.transactionIndex
+                    }
+                    return record.date > sentRecord.date
+                }
+            }
         }
-
-        let filteredRecords = records.filter { normalizedHashes.contains($0.transactionHash.lowercased()) }
-        return (records: filteredRecords, lastBlockHeight: adapter.lastBlockInfo?.height)
     }
 
     private func transactionRecordsPage(
@@ -302,22 +321,6 @@ final class NftV2InventoryService {
 
             var disposable: Disposable?
             disposable = single.subscribe(
-                onSuccess: { records in
-                    disposable?.dispose()
-                    continuation.resume(returning: records)
-                },
-                onError: { _ in
-                    disposable?.dispose()
-                    continuation.resume(returning: [])
-                }
-            )
-        }
-    }
-
-    private func allTransactionRecords(adapter: ITransactionsAdapter) async -> [TransactionRecord] {
-        await withCheckedContinuation { continuation in
-            var disposable: Disposable?
-            disposable = adapter.allTransactionsAfter(paginationData: nil).subscribe(
                 onSuccess: { records in
                     disposable?.dispose()
                     continuation.resume(returning: records)
@@ -948,6 +951,10 @@ final class NftV2InventoryService {
     }
 
     func refreshSendCapability(asset: NftV2Asset) async -> NftV2SendCapability {
+        guard !Task.isCancelled else {
+            return .blocked(reason: .unavailable)
+        }
+
         let fastCapability = initialSendCapability(asset: asset)
         if fastCapability != .checking {
             return fastCapability
@@ -962,8 +969,16 @@ final class NftV2InventoryService {
             return .blocked(reason: .unavailable)
         }
 
+        guard !Task.isCancelled else {
+            return .blocked(reason: .unavailable)
+        }
+
         adapter.sync()
         for _ in 0 ..< Self.sendCapabilityProbeAttempts {
+            guard !Task.isCancelled else {
+                return .blocked(reason: .unavailable)
+            }
+
             let refreshed = initialSendCapability(asset: asset)
             if refreshed != .checking {
                 return refreshed

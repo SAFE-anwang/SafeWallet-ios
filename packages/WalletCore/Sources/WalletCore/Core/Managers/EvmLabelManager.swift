@@ -130,6 +130,10 @@ extension EvmLabelManager {
         case swapExIn
         case nftMint
         case nftSend
+        case collect
+        case approve
+        case setDescription
+        case setBaseURI
 
         var id: String {
             switch self {
@@ -155,6 +159,10 @@ extension EvmLabelManager {
             case .swapExIn: "0xedad400c"
             case .nftMint: "0xe58306f9"
             case .nftSend: "0x42842e0e"
+            case .collect: "0xfc6f7865"
+            case .approve: "0x87517c45"
+            case .setDescription: "0x90c3f38f"
+            case .setBaseURI: "0x55f804b3"
             }
         }
 
@@ -174,6 +182,9 @@ extension EvmLabelManager {
             case .swapExIn: "transactions.types.swap".localized
             case .nftMint: "add_token.NFT.mint".localized
             case .nftSend: "alert.sent".localized
+            case .collect: "liquidity.collect_fees".localized
+            case .approve: "button.approve".localized
+            case .setDescription, .setBaseURI: "safe_zone.src721.transaction.update_nft_info".localized
             }
         }
     }

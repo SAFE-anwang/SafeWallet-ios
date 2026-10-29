@@ -16,7 +16,6 @@ final class NftV2ViewModel: ObservableObject {
 
     struct ChainSection: Identifiable {
         let chainState: NftV2ChainState
-        let pendingTransfers: [NftV2PendingTransferItem]
         let collections: [NftV2Collection]
 
         var id: String {
@@ -51,8 +50,9 @@ final class NftV2ViewModel: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published private(set) var collections = [NftV2Collection]()
     @Published private(set) var chainStates = [NftV2ChainState]()
-    @Published private(set) var pendingTransfers = [NftV2PendingTransferItem]()
-    @Published private(set) var displayedPendingTransfers = [NftV2PendingTransferItem]()
+    @Published private(set) var collectionRevision = 0
+    private var pendingTransfers = [NftV2PendingTransferItem]()
+    @Published private(set) var confirmedPendingTransferIds = Set<String>()
     @Published private(set) var sendCapabilityByAssetKey = [String: NftV2SendCapability]()
     @Published private(set) var sendingAssetKeys = Set<String>()
 
@@ -97,28 +97,17 @@ final class NftV2ViewModel: ObservableObject {
 
     var chainSections: [ChainSection] {
         let groupedCollections = Dictionary(grouping: visibleCollections, by: \.chain)
-        let groupedPendingTransfers = Dictionary(grouping: visiblePendingTransfers, by: \.chain)
 
         return chainStates.map { chainState in
             ChainSection(
                 chainState: chainState,
-                pendingTransfers: groupedPendingTransfers[chainState.chain] ?? [],
                 collections: groupedCollections[chainState.chain] ?? []
             )
         }
     }
 
     var hasVisibleContent: Bool {
-        !visiblePendingTransfers.isEmpty || !visibleCollections.isEmpty
-    }
-
-    private var visiblePendingTransfers: [NftV2PendingTransferItem] {
-        switch filter {
-        case .all:
-            return displayedPendingTransfers
-        case .favorites:
-            return displayedPendingTransfers.filter { inventoryService.isFavorite(collectionId: $0.collectionId) }
-        }
+        !visibleCollections.isEmpty
     }
 
     func collection(id: String) -> NftV2Collection? {
@@ -160,13 +149,8 @@ final class NftV2ViewModel: ObservableObject {
 
     func reload() {
         handleAccountChangedIfNeeded()
-
-        if !collections.isEmpty || !chainStates.isEmpty {
-            state = .loaded
-        } else {
-            state = .loading
-        }
-
+        // Inventory sync is reflected per chain; do not block the whole screen on network results.
+        state = .loaded
         inventoryService.refresh()
     }
 
@@ -201,16 +185,6 @@ final class NftV2ViewModel: ObservableObject {
             })
     }
 
-    private func resolvedState(for snapshot: NftV2Snapshot) -> State {
-        if snapshot.collections.isEmpty,
-           snapshot.chainStates.contains(where: { $0.isRefreshing && $0.address != nil })
-        {
-            return .loading
-        }
-
-        return .loaded
-    }
-
     func toggleFavorite(collection: NftV2Collection) {
         inventoryService.toggleFavorite(collectionId: collection.id)
         collections = collections.sorted { lhs, rhs in
@@ -224,6 +198,7 @@ final class NftV2ViewModel: ObservableObject {
 
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
+        collectionRevision &+= 1
     }
 
     func isFavorite(collection: NftV2Collection) -> Bool {
@@ -350,7 +325,9 @@ final class NftV2ViewModel: ObservableObject {
     }
 
     func isSending(asset: NftV2Asset) -> Bool {
-        sendingAssetKeys.contains(capabilityKey(asset: asset)) || effectivePendingTransfers.contains(where: { $0.asset.id == asset.id })
+        sendingAssetKeys.contains(capabilityKey(asset: asset)) || effectivePendingTransfers.contains {
+            $0.asset.id == asset.id && !confirmedPendingTransferIds.contains($0.id)
+        }
     }
 
     func markSending(asset: NftV2Asset, sending: Bool) {
@@ -380,7 +357,7 @@ final class NftV2ViewModel: ObservableObject {
             pendingTransfers.removeAll { $0.id == pendingItem.id }
             pendingTransfers.insert(pendingItem, at: 0)
             resolvedPendingTransferIds.remove(pendingItem.id)
-            syncDisplayedPendingTransfers()
+            confirmedPendingTransferIds.remove(pendingItem.id)
             refreshPresentation()
         }
 
@@ -468,9 +445,9 @@ final class NftV2ViewModel: ObservableObject {
         sendCapabilityByAssetKey.removeAll()
         sendingAssetKeys.removeAll()
         resolvedPendingTransferIds.removeAll()
+        confirmedPendingTransferIds.removeAll()
         pendingTransfersReloadGeneration += 1
         pendingTransfers = []
-        displayedPendingTransfers = []
         state = .idle
         inventoryService.syncFavorites()
         reloadPendingTransfers()
@@ -511,7 +488,6 @@ final class NftV2ViewModel: ObservableObject {
             pendingTransfersReloadGeneration += 1
             pendingTransfers = []
             resolvedPendingTransferIds.removeAll()
-            syncDisplayedPendingTransfers()
             return
         }
 
@@ -526,8 +502,6 @@ final class NftV2ViewModel: ObservableObject {
             var items = await inventoryService.pendingTransfers(accountId: accountId)
                 .sorted { $0.submittedAt > $1.submittedAt }
 
-            let resolvedIds = await resolvePendingTransferIds(items: items, accountId: accountId)
-
             await MainActor.run {
                 guard generation == self.pendingTransfersReloadGeneration,
                       accountId == self.inventoryService.activeAccountId
@@ -536,10 +510,8 @@ final class NftV2ViewModel: ObservableObject {
                 }
 
                 self.pendingTransfers = items
-                self.resolvedPendingTransferIds = self.resolvedPendingTransferIds
-                    .union(resolvedIds)
-                    .intersection(Set(items.map(\.id)))
-                self.syncDisplayedPendingTransfers()
+                self.resolvedPendingTransferIds.formIntersection(Set(items.map(\.id)))
+                self.confirmedPendingTransferIds.formIntersection(Set(items.map(\.id)))
                 self.reconcilePendingTransfersIfNeeded(items: items, accountId: accountId)
             }
         }
@@ -555,29 +527,34 @@ final class NftV2ViewModel: ObservableObject {
             transactionByHash[record.transactionHash.lowercased()] = record
         }
 
-        let matched = pendingTransfers.filter { pending in
-            guard pending.chain == chain,
-                  let record = transactionByHash[pending.transactionHash.lowercased()]
-            else {
-                return false
+        var matched = [NftV2PendingTransferItem]()
+        for pending in pendingTransfers where pending.chain == chain {
+            guard let record = transactionByHash[pending.transactionHash.lowercased()] else {
+                continue
             }
 
             if record.failed {
-                return true
+                resolvedPendingTransferIds.insert(pending.id)
+                matched.append(pending)
+                continue
             }
 
             guard case .completed = record.status(lastBlockHeight: lastBlockHeight) else {
-                return false
+                continue
             }
 
-            return pendingTransferIsApplied(pending) || pendingTransferReturnedToCurrentAccount(pending, record: record)
+            confirmedPendingTransferIds.insert(pending.id)
+            if pendingTransferIsApplied(pending) ||
+                pendingTransferReturnedToCurrentAccount(pending, record: record) ||
+                pendingTransferReturnedAfterSubmission(pending, sentRecord: record, records: records, lastBlockHeight: lastBlockHeight) {
+                resolvedPendingTransferIds.insert(pending.id)
+                matched.append(pending)
+            }
         }
 
         guard !matched.isEmpty else {
             return
         }
-
-        resolvedPendingTransferIds.formUnion(matched.map(\.id))
         refreshPresentation()
 
         Task { [weak self] in
@@ -607,8 +584,7 @@ final class NftV2ViewModel: ObservableObject {
 
     private func refreshPresentation() {
         collections = applyPendingTransfers(to: rawCollections)
-        syncDisplayedPendingTransfers()
-        refreshCapabilitiesForVisibleAssets()
+        collectionRevision &+= 1
     }
 
     private func reconcilePendingTransfersIfNeeded(items: [NftV2PendingTransferItem], accountId: String) {
@@ -625,7 +601,11 @@ final class NftV2ViewModel: ObservableObject {
                     return
                 }
 
-                let result = await inventoryService.pendingTransferReconcileData(chain: chain, accountId: accountId, transactionHashes: Set(chainItems.map(\.transactionHash)))
+                let result = await inventoryService.pendingTransferReconcileData(
+                    chain: chain,
+                    accountId: accountId,
+                    pendingTransfers: chainItems
+                )
 
                 await MainActor.run {
                     guard accountId == self.inventoryService.activeAccountId else {
@@ -645,82 +625,11 @@ final class NftV2ViewModel: ObservableObject {
         }
     }
 
-    private func resolvePendingTransferIds(items: [NftV2PendingTransferItem], accountId: String) async -> Set<String> {
-        guard !items.isEmpty else {
-            return []
-        }
-
-        let groupedItems = Dictionary(grouping: items, by: \.chain)
-        var resolvedIds = Set<String>()
-
-        for (chain, chainItems) in groupedItems {
-            guard let result = await inventoryService.pendingTransferImmediateReconcileData(
-                chain: chain,
-                accountId: accountId,
-                transactionHashes: Set(chainItems.map(\.transactionHash))
-            ) else {
-                continue
-            }
-
-            let transactionByHash = Dictionary(uniqueKeysWithValues: result.records.map {
-                ($0.transactionHash.lowercased(), $0)
-            })
-
-            for pending in chainItems {
-                guard let record = transactionByHash[pending.transactionHash.lowercased()] else {
-                    continue
-                }
-
-                if record.failed {
-                    resolvedIds.insert(pending.id)
-                    continue
-                }
-
-                guard case .completed = record.status(lastBlockHeight: result.lastBlockHeight) else {
-                    continue
-                }
-
-                if pendingTransferReturnedToCurrentAccount(pending, record: record) || pendingTransferIsApplied(pending) {
-                    resolvedIds.insert(pending.id)
-                }
-            }
-        }
-
-        return resolvedIds
-    }
-
     private func sync(snapshot: NftV2Snapshot) {
         rawCollections = snapshot.collections
         chainStates = snapshot.chainStates
         refreshPresentation()
-        state = resolvedState(for: snapshot)
-    }
-
-    private func refreshCapabilitiesForVisibleAssets() {
-        let visibleAssets = Set(visibleCollections.flatMap(\.items).map(capabilityKey(asset:)))
-
-        for (key, task) in sendCapabilityTasks where !visibleAssets.contains(key) {
-            task.cancel()
-            sendCapabilityTasks[key] = nil
-        }
-
-        let assetsByChain = Dictionary(grouping: visibleCollections.flatMap(\.items), by: \.chain)
-        for (chain, assets) in assetsByChain {
-            guard !assets.isEmpty else {
-                continue
-            }
-
-            if isChainRefreshing(chain: chain) {
-                for asset in assets where sendCapability(asset: asset) != .ready && !isSending(asset: asset) {
-                    sendCapabilityByAssetKey[capabilityKey(asset: asset)] = .checking
-                }
-                continue
-            }
-
-            for asset in assets where !isSending(asset: asset) {
-                refreshSendCapabilityIfNeeded(asset: asset)
-            }
-        }
+        state = .loaded
     }
 
     private func pendingTransferIsApplied(_ pending: NftV2PendingTransferItem) -> Bool {
@@ -769,6 +678,42 @@ final class NftV2ViewModel: ObservableObject {
         }
     }
 
+    private func pendingTransferReturnedAfterSubmission(
+        _ pending: NftV2PendingTransferItem,
+        sentRecord: TransactionRecord,
+        records: [TransactionRecord],
+        lastBlockHeight: Int?
+    ) -> Bool {
+        records.contains { record in
+            guard record.transactionHash.caseInsensitiveCompare(sentRecord.transactionHash) != .orderedSame,
+                  isLater(record, than: sentRecord),
+                  case .completed = record.status(lastBlockHeight: lastBlockHeight),
+                  record.nftUids.contains(pending.asset.nftUid)
+            else {
+                return false
+            }
+
+            switch record {
+            case let contractCall as ContractCallTransactionRecord:
+                return contractCall.incomingEvents.contains { $0.value.nftUid == pending.asset.nftUid }
+            case let externalCall as ExternalContractCallTransactionRecord:
+                return externalCall.incomingEvents.contains { $0.value.nftUid == pending.asset.nftUid }
+            default:
+                return false
+            }
+        }
+    }
+
+    private func isLater(_ record: TransactionRecord, than other: TransactionRecord) -> Bool {
+        if let blockHeight = record.blockHeight, let otherBlockHeight = other.blockHeight {
+            if blockHeight != otherBlockHeight {
+                return blockHeight > otherBlockHeight
+            }
+            return record.transactionIndex > other.transactionIndex
+        }
+        return record.date > other.date
+    }
+
     private func evmPendingTransferReturnedToCurrentAccount(_ pending: NftV2PendingTransferItem, record: EvmTransactionRecord) -> Bool {
         guard let account = Core.shared.accountManager.activeAccount,
               let currentAddress = inventoryService.addressContext(account: account, chain: pending.chain)?.address.lowercased(),
@@ -789,10 +734,6 @@ final class NftV2ViewModel: ObservableObject {
         default:
             return false
         }
-    }
-
-    private func syncDisplayedPendingTransfers() {
-        displayedPendingTransfers = pendingTransfers.filter(pendingTransferAffectsPresentation)
     }
 
     private func applyPendingTransfers(to collections: [NftV2Collection]) -> [NftV2Collection] {

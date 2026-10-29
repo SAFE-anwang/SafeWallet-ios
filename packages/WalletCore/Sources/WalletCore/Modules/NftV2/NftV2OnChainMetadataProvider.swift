@@ -14,6 +14,8 @@ struct NftV2OnChainAssetMetadata: Equatable {
 }
 
 final class NftV2OnChainMetadataProvider {
+    private static let maxConcurrentAssetRequests = 4
+
     private let evmBlockchainManager: EvmBlockchainManager
     private let networkManager: NetworkManager
 
@@ -36,19 +38,25 @@ final class NftV2OnChainMetadataProvider {
             return .just([:])
         }
 
-        let singles = evmRecords.map { record in
-            assetMetadataSingle(record: record, evmKit: evmKitWrapper.evmKit)
-                .catchErrorJustReturn(nil)
+        let batches = stride(from: 0, to: evmRecords.count, by: Self.maxConcurrentAssetRequests).map { startIndex in
+            Array(evmRecords[startIndex ..< min(startIndex + Self.maxConcurrentAssetRequests, evmRecords.count)])
         }
 
-        return Single.zip(singles)
+        return Observable.from(batches)
+            .concatMap { batch in
+                Single.zip(batch.map { record in
+                    self.assetMetadataSingle(record: record, evmKit: evmKitWrapper.evmKit)
+                        .catchErrorJustReturn(nil)
+                })
+                .asObservable()
+            }
+            .toArray()
             .map { entries in
-                entries.reduce(into: [NftUid: NftV2OnChainAssetMetadata]()) { result, entry in
-                    guard let entry else {
-                        return
+                entries.reduce(into: [NftUid: NftV2OnChainAssetMetadata]()) { result, batch in
+                    for entry in batch {
+                        guard let entry else { continue }
+                        result[entry.nftUid] = entry
                     }
-
-                    result[entry.nftUid] = entry
                 }
             }
     }

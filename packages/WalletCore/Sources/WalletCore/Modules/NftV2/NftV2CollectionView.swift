@@ -18,6 +18,7 @@ private struct NftV2RemoteImage: View {
 struct NftV2CollectionView: View {
     let collection: NftV2Collection
     let currentCollection: () -> NftV2Collection?
+    let collectionRevision: () -> Int
     let isFavorite: () -> Bool
     let sendCapability: (NftV2Asset) -> NftV2SendCapability
     let onRequestSendCapabilityRefresh: (NftV2Asset) -> Void
@@ -80,7 +81,7 @@ struct NftV2CollectionView: View {
 
             favoriteState = isFavorite()
         }
-        .onChange(of: effectiveCollection) { _ in
+        .onChange(of: collectionRevision()) { _ in
             syncDisplayedItems()
         }
         .background(Color.themeLawrence.ignoresSafeArea())

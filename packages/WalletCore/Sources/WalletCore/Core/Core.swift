@@ -459,7 +459,7 @@ public class Core {
             .optimism: NftV2WalletInventoryProvider(chain: .optimism, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager),
             .base: NftV2WalletInventoryProvider(chain: .base, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager),
             .binanceSmartChain: NftV2WalletInventoryProvider(chain: .binanceSmartChain, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager),
-            .safe4: NftV2WalletInventoryProvider(chain: .safe4, nftAdapterManager: nftAdapterManager, nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider, onChainMetadataProvider: nftV2OnChainMetadataProvider, evmBlockchainManager: evmBlockchainManager, evmSyncSourceManager: evmSyncSourceManager)
+            .safe4: NftV2Safe4InventoryProvider(nftMetadataManager: nftMetadataManager, marketProvider: nftV2MarketProvider)
         ]
         nftV2InventoryService = NftV2InventoryService(
             accountManager: accountManager,

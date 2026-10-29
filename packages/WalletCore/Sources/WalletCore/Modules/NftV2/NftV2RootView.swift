@@ -15,7 +15,6 @@ private struct NftV2RootRemoteImage: View {
 }
 
 struct NftV2RootView: View {
-    @Environment(\.openURL) private var openURL
     @StateObject var viewModel: NftV2ViewModel
     @State private var path = NavigationPath()
     @State private var presentedSendController: NftV2PresentedController?
@@ -51,6 +50,7 @@ struct NftV2RootView: View {
                 NftV2CollectionView(
                     collection: collection,
                     currentCollection: { viewModel.collection(id: collection.id) },
+                    collectionRevision: { viewModel.collectionRevision },
                     isFavorite: { viewModel.isFavorite(collection: collection) },
                     sendCapability: { asset in
                         viewModel.sendCapability(asset: asset)
@@ -175,10 +175,6 @@ struct NftV2RootView: View {
             ForEach(viewModel.chainSections) { section in
                 Section {
                     if !isCollapsed(section.chainState.chain) {
-                        ForEach(section.pendingTransfers) { pending in
-                            pendingRow(pending)
-                        }
-
                         ForEach(section.collections) { collection in
                             Button {
                                 path.append(collection)
@@ -196,7 +192,7 @@ struct NftV2RootView: View {
                             }
                         }
 
-                        if section.collections.isEmpty && (viewModel.filter != .favorites || section.pendingTransfers.isEmpty) {
+                        if section.collections.isEmpty && viewModel.hasVisibleContent {
                             emptyCollectionsRow
                         }
                     }
@@ -255,48 +251,6 @@ struct NftV2RootView: View {
             )
         }
         .padding(16)
-    }
-
-    @ViewBuilder
-    private func pendingRow(_ pending: NftV2PendingTransferItem) -> some View {
-        Button {
-            if let urlString = pending.explorerUrl, let url = URL(string: urlString) {
-                openURL(url)
-            }
-        } label: {
-            HStack(spacing: 12) {
-                NftV2RootRemoteImage(
-                    url: pending.asset.imageUrl,
-                    placeholder: "placeholder_nft_32",
-                    size: CGSize(width: 44, height: 44)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(alignment: .topTrailing) {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: Color.white))
-                        .padding(4)
-                        .background(Color.black.opacity(0.55))
-                        .clipShape(Circle())
-                        .offset(x: 4, y: -4)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    ThemeText(pending.asset.name, style: .subheadSB)
-                        .lineLimit(1)
-
-                    ThemeText("nft_v2.pending.subtitle".localized(pending.amount), style: .captionSB, colorStyle: .secondary)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                ThemeText("nft_v2.pending.title".localized, style: .captionSB, colorStyle: .secondary)
-            }
-            .padding(16)
-            .background(Color.themeTyler)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .buttonStyle(.plain)
     }
 
     private func sectionHeader(_ title: String, chainState: NftV2ChainState?, chain: NftV2Chain? = nil) -> some View {

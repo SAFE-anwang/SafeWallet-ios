@@ -269,6 +269,10 @@ struct WalletView: View {
                 }
             }
 
+            IconButton(icon: "manage", style: .secondary, size: .small) {
+                onTapManage()
+            }
+
             Spacer()
 
             IconButton(icon: "NFT", style: .secondary, size: .small) {
@@ -287,10 +291,6 @@ struct WalletView: View {
 
             IconButton(icon: "transaction_filled", style: .secondary, size: .small) {
                 transactionsPresented = true
-            }
-
-            IconButton(icon: "manage", style: .secondary, size: .small) {
-                onTapManage()
             }
 
             if !viewModel.isReachable {
