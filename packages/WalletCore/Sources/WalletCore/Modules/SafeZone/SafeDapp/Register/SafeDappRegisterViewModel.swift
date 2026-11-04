@@ -192,6 +192,12 @@ class SafeDappRegisterViewModel: ObservableObject {
                     sendState = .completed
                     onComplete(sendState)
                 }
+            } catch let error as SafeDappPostRegistrationError {
+                await MainActor.run {
+                    removeDraft()
+                    sendState = .submittedWithWarning(error.localizedDescription)
+                    onComplete(sendState)
+                }
             } catch {
                 await MainActor.run {
                     sendState = .failed(error.localizedDescription)

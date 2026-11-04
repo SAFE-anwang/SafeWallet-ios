@@ -68,6 +68,9 @@ struct SafeDappRegisterView: View {
                         case .completed:
                             HudHelper.instance.show(banner: .success(string: "alert.sent".localized))
                             isPresented = false
+                        case let .submittedWithWarning(message):
+                            HudHelper.instance.show(banner: .error(string: message))
+                            isPresented = false
                         case let .failed(message):
                             HudHelper.instance.show(banner: .error(string: message))
                         default: ()

@@ -125,6 +125,7 @@ enum SafeDappAsyncState: Equatable {
     case ready
     case sending
     case completed
+    case submittedWithWarning(String)
     case failed(String)
 }
 
@@ -132,6 +133,16 @@ struct SafeDappValidationError: Error, LocalizedError {
     let message: String
 
     var errorDescription: String? { message }
+}
+
+struct SafeDappPostRegistrationError: Error, LocalizedError {
+    let isTransactionConfirmed: Bool
+
+    var errorDescription: String? {
+        isTransactionConfirmed
+            ? "safe_dapp.error.post_register_confirmed".localized
+            : "safe_dapp.error.post_register_unconfirmed".localized
+    }
 }
 
 enum SafeDappValidation {

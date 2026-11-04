@@ -3327,6 +3327,8 @@
 "safe_dapp.error.contract_exists" = "Contract address already exists.";
 "safe_dapp.error.run_url_exists" = "Run URL already exists.";
 "safe_dapp.error.register_failed" = "The SAFE DAPP registration transaction failed.";
+"safe_dapp.error.post_register_confirmed" = "Registration was confirmed on-chain, but the follow-up read or keyword update did not complete. Refresh DApp Management before trying again.";
+"safe_dapp.error.post_register_unconfirmed" = "Registration was submitted, but its status could not be verified. Refresh DApp Management before trying again.";
 "safe_dapp.error.value_exists" = "Value already exists.";
 "safe_dapp.error.unchanged" = "Value has not changed.";
 "safe_zone.src721.title" = "SAFE NFT";
@@ -3392,6 +3394,7 @@
 "safe_zone.src721.error.allow_list_read_failed" = "Failed to read the on-chain allowlist: %@";
 "safe_zone.src721.error.owner_read_failed" = "The contract owner could not be verified. The on-chain data is shown as read-only.";
 "safe_zone.src721.error.token_status_unavailable" = "The NFT's on-chain operation status could not be verified. Operations are disabled.";
+"safe_zone.src721.error.token_no_longer_exists" = "This NFT was burned or does not exist on-chain. It cannot be operated.";
 "safe_zone.src721.error.allow_list_duplicate" = "This address is already recorded. Edit its amount instead.";
 "safe_zone.src721.error.logo" = "The logo file is too large. Choose a smaller image.";
 "safe_zone.src721.error.insufficient_logo_balance" = "Insufficient SAFE to cover the logo promotion fee and estimated network fee.";
@@ -3481,6 +3484,13 @@
 "safe_zone.src721.error.logo_required" = "Select a logo image first.";
 "safe_zone.src721.action.update_all" = "Update all information";
 "safe_zone.src721.transaction.update_nft_info" = "NFT information update";
+"safe_zone.src721.transaction.promotion" = "NFT Promotion";
+"safe_zone.src721.transaction.creation" = "NFT Creation";
+"safe_zone.src721.transaction.burn" = "NFT Burn";
+"safe_zone.src721.transaction.dapp.promotion" = "DApp Promotion";
+"safe_zone.src721.transaction.dapp.destroy" = "DApp Destruction";
+"safe_zone.src721.transaction.dapp.creation" = "DApp Creation";
+"safe_zone.src721.transaction.dapp.update_info" = "DApp Information Update";
 "safe_zone.src721.action.withdraw" = "Withdraw SAFE";
 "safe_zone.src721.section.withdraw" = "Withdraw SAFE";
 "safe_zone.src721.field.withdrawable_safe" = "Withdrawable SAFE";

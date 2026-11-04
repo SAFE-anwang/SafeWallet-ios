@@ -168,9 +168,10 @@ class SafeDappManagerViewModel: ObservableObject {
             do {
                 _ = try await service.remove(id: item.info.id)
                 await MainActor.run {
+                    allItems.removeAll { $0.info.id == item.info.id }
+                    applyFilter()
                     operationState = .completed
                     onComplete(operationState)
-                    load()
                 }
             } catch {
                 await MainActor.run {

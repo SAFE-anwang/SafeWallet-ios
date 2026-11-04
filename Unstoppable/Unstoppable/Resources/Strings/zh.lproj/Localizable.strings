@@ -56,6 +56,8 @@
 "safe_dapp.error.contract_exists" = "合约地址已存在。";
 "safe_dapp.error.run_url_exists" = "运行入口 URL 已存在。";
 "safe_dapp.error.register_failed" = "SAFE DAPP 注册交易失败。";
+"safe_dapp.error.post_register_confirmed" = "注册交易已确认上链，但后续读取或关键词更新未完成。请先到 DApp 管理刷新确认，不要重复提交。";
+"safe_dapp.error.post_register_unconfirmed" = "注册交易已提交，但暂时无法核实状态。请先到 DApp 管理刷新确认，不要重复提交。";
 "safe_dapp.error.value_exists" = "该值已存在。";
 "safe_dapp.error.unchanged" = "内容未变化。";
 "button.ok" = "确定";
@@ -3393,6 +3395,7 @@
 "safe_zone.src721.error.allow_list_read_failed" = "读取链上白名单失败：%@";
 "safe_zone.src721.error.owner_read_failed" = "暂时无法确认合约 Owner，当前页面仅展示链上数据。";
 "safe_zone.src721.error.token_status_unavailable" = "暂时无法确认 NFT 的链上操作状态，操作已禁用。";
+"safe_zone.src721.error.token_no_longer_exists" = "该 NFT 已销毁或链上不存在，无法进行操作。";
 "safe_zone.src721.error.allow_list_duplicate" = "该地址已在白名单记录中，请直接编辑额度。";
 "safe_zone.src721.error.logo" = "Logo 文件过大，请选择较小的图片。";
 "safe_zone.src721.error.insufficient_logo_balance" = "SAFE 余额不足，无法覆盖 Logo 推广费和预估网络手续费。";
@@ -3494,6 +3497,13 @@
 "safe_zone.src721.error.logo_required" = "请先选择 Logo 图片。";
 "safe_zone.src721.action.update_all" = "更新全部信息";
 "safe_zone.src721.transaction.update_nft_info" = "NFT 信息更新";
+"safe_zone.src721.transaction.promotion" = "NFT 推广";
+"safe_zone.src721.transaction.creation" = "NFT创建";
+"safe_zone.src721.transaction.burn" = "NFT 销毁";
+"safe_zone.src721.transaction.dapp.promotion" = "DApp 推广";
+"safe_zone.src721.transaction.dapp.destroy" = "DApp 销毁";
+"safe_zone.src721.transaction.dapp.creation" = "DApp 创建";
+"safe_zone.src721.transaction.dapp.update_info" = "DApp 信息更新";
 "safe_zone.src721.action.withdraw" = "提取 SAFE";
 "safe_zone.src721.section.withdraw" = "提取 SAFE";
 "safe_zone.src721.field.withdrawable_safe" = "可提取 SAFE";
