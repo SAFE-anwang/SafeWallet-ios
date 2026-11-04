@@ -1,3 +1,4 @@
+import Foundation
 import RxSwift
 import RxRelay
 import MarketKit
@@ -22,7 +23,7 @@ class MarketDappService {
     private func handle(datas: [MarktDapp], tab: MarketDappModule.Tab) {
         var grouped: [String: [MarktDapp]] = [:]
         for dapp in datas where Self.isDisplayable(dapp) {
-            let group = dapp.type.caseInsensitiveCompare("SAFE") == .orderedSame ? "SAFE DAPP" : "DEX"
+            let group = MarketDappProvider.isSafeDapp(dapp) ? "SAFE DAPP" : "DEX"
             grouped[group, default: []].append(dapp)
         }
         let tempArr = ["DEX", "SAFE DAPP"].compactMap { group -> MarketDappListViewModel.ViewItem? in
@@ -38,22 +39,35 @@ class MarketDappService {
             state = .loading
         }
 
-        let single: Single<[MarktDapp]>
+        let updates: Observable<AllDappsUpdate>
         switch tab {
         case .ALL:
-            single = allDappsSingle()
+            updates = allDappsUpdates()
         case .ETH:
-            single = dappProvider.dappTypeRequestSingle(type: "ETH")
+            updates = dappProvider.dappTypeRequestSingle(type: "ETH").asObservable().map(AllDappsUpdate.api)
         case .BSC:
-            single = dappProvider.dappTypeRequestSingle(type: "BSC")
+            updates = dappProvider.dappTypeRequestSingle(type: "BSC").asObservable().map(AllDappsUpdate.api)
         case .SAFE:
-            single = safeDappsSingle()
+            updates = safeDappsUpdates().map(AllDappsUpdate.safe)
         }
 
-        single
+        var apiDapps: [MarktDapp]? = tab == .SAFE ? [] : nil
+        var safeDapps: [MarktDapp] = []
+
+        updates
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
-            .subscribe(onSuccess: { [weak self] datas in
-                self?.handle(datas: datas, tab: tab)
+            .observeOn(SerialDispatchQueueScheduler(qos: .userInitiated))
+            .subscribe(onNext: { [weak self] update in
+                switch update {
+                case .api(let dapps):
+                    apiDapps = dapps
+                case .safe(let dapps):
+                    safeDapps = dapps
+                }
+
+                guard let apiDapps else { return }
+                let dapps = tab == .SAFE ? safeDapps : Self.merge(apiDapps: apiDapps, safeDapps: safeDapps)
+                self?.handle(datas: dapps, tab: tab)
             }, onError: { [weak self] error in
                 self?.state = .failed(error: error)
             })
@@ -78,45 +92,27 @@ extension MarketDappService {
 }
 
 private extension MarketDappService {
-    func allDappsSingle() -> Single<[MarktDapp]> {
-        Single.zip(
-            dappProvider.dappAllRequestSingle(),
-            safeDappsSingle().catchErrorJustReturn([])
-        ) { apiDapps, safeDapps in
-            let existingKeys = Set(apiDapps.map(Self.dappKey))
-            let additionalSafeDapps = safeDapps.filter { !existingKeys.contains(Self.dappKey($0)) }
-            return apiDapps + additionalSafeDapps
-        }
+    func allDappsUpdates() -> Observable<AllDappsUpdate> {
+        let apiUpdates = dappProvider.dappAllRequestSingle()
+            .asObservable()
+            .map(AllDappsUpdate.api)
+        let safeUpdates = safeDappsUpdates()
+            .map(AllDappsUpdate.safe)
+            .catchError { _ in Observable<AllDappsUpdate>.empty() }
+
+        return Observable.merge(apiUpdates, safeUpdates)
     }
 
-    func safeDappsSingle() -> Single<[MarktDapp]> {
-        Single.create { single in
+    func safeDappsUpdates() -> Observable<[MarktDapp]> {
+        Observable.create { observer in
             let task = Task {
                 do {
-                    let items = try await SafeDappService.publishedDappItems()
-                    let dapps = items.map {
-                        MarktDapp(
-                            type: "SAFE",
-                            subType: "SAFE DAPP",
-                            name: $0.info.name,
-                            desc: $0.info.description,
-                            descEN: $0.info.description,
-                            icon: "",
-                            dlink: $0.info.runUrl,
-                            md5Code: $0.info.id.description,
-                            keywords: $0.info.keyword,
-                            chainId: $0.info.id.description,
-                            safeDappId: $0.info.id,
-                            safeDappContractAddr: $0.info.contractAddr.address,
-                            safeDappKeyword: $0.info.keyword,
-                            safeDappFraudNum: $0.info.fraudNum,
-                            safeDappIsFrozen: $0.info.isFrozen,
-                            safeDappLogoData: $0.logoData
-                        )
-                    }
-                    single(.success(dapps))
+                    _ = try await SafeDappService.publishedDappItems(onItemsUpdated: { items in
+                        observer.onNext(Self.marketDapps(from: items))
+                    })
+                    observer.onCompleted()
                 } catch {
-                    single(.error(error))
+                    observer.onError(error)
                 }
             }
             return Disposables.create {
@@ -125,15 +121,61 @@ private extension MarketDappService {
         }
     }
 
-    static func dappKey(_ dapp: MarktDapp) -> String {
-        "\(dapp.name)|\(dapp.dlink)"
+    static func marketDapps(from items: [SafeDappPublishedItem]) -> [MarktDapp] {
+        items.map {
+            MarktDapp(
+                type: "SAFE",
+                subType: "SAFE DAPP",
+                name: $0.info.name,
+                desc: $0.info.description,
+                descEN: $0.info.description,
+                icon: "",
+                dlink: $0.info.runUrl,
+                md5Code: $0.info.id.description,
+                keywords: $0.info.keyword,
+                chainId: $0.info.id.description,
+                safeDappId: $0.info.id,
+                safeDappContractAddr: $0.info.contractAddr.address,
+                safeDappKeyword: $0.info.keyword,
+                safeDappFraudNum: $0.info.fraudNum,
+                safeDappIsFrozen: $0.info.isFrozen,
+                safeDappLogoData: $0.logoData
+            )
+        }
+    }
+
+}
+
+extension MarketDappService {
+    static func merge(apiDapps: [MarktDapp], safeDapps: [MarktDapp]) -> [MarktDapp] {
+        let existingKeys = Set(apiDapps.map { "\($0.name)|\($0.dlink)" })
+        let additionalSafeDapps = safeDapps.filter { !existingKeys.contains("\($0.name)|\($0.dlink)") }
+        return apiDapps + additionalSafeDapps
     }
 
     static func isDisplayable(_ dapp: MarktDapp) -> Bool {
-        !dapp.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && MarketDappModule.normalizedUrl(from: dapp.dlink) != nil
+        // SAFE DApps come from the chain registry; do not discard their published data here.
+        if MarketDappProvider.isSafeDapp(dapp) {
+            return true
+        }
+
+        guard
+            !dapp.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            MarketDappModule.normalizedUrl(from: dapp.dlink) != nil
+        else {
+            return false
+        }
+
+        return true
     }
+
 }
+
+private enum AllDappsUpdate {
+    case api([MarktDapp])
+    case safe([MarktDapp])
+}
+
 extension MarketDappService {
 
     enum State {

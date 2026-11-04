@@ -21,7 +21,7 @@ class MarketDappProvider {
     func dappAllRequestSingle() -> Single<[MarktDapp]> {
         let ur = URL(string: "\(baseUrl)/walletcontent/getAll")!
         let request = networkManager.session.request(ur, headers: headers)
-        return networkManager.single(request: request)
+        return networkManager.single(request: request).map(Self.filterGetAllDapps)
     }
 
     func dappRecommendsRequestSingle() -> Single<[MarktDapp]> {
@@ -54,7 +54,28 @@ class MarketDappProvider {
         ]
         return networkManager
                 .single(url: "\(baseUrl)/walletcontent/byName", method: .get, parameters: parameters, headers: headers)
+    }
 
+    static func filterGetAllDapps(_ dapps: [MarktDapp]) -> [MarktDapp] {
+        dapps.filter { isSafeDapp($0) || !isSuspiciousDappName($0.name) }
+    }
+
+    static func isSafeDapp(_ dapp: MarktDapp) -> Bool {
+        dapp.type.caseInsensitiveCompare("SAFE") == .orderedSame
+    }
+
+    static func isSuspiciousDappName(_ name: String) -> Bool {
+        let normalizedName = String(name.lowercased().filter { $0.isLetter || $0.isNumber })
+        let patterns = [
+            #"^i\d+probe\d*$"#,
+            #"^i\d+fbase$"#,
+            #"(?:and|or)sleep\d*"#,
+        ]
+        let range = NSRange(normalizedName.startIndex..., in: normalizedName)
+        return patterns.contains { pattern in
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
+            return regex.firstMatch(in: normalizedName, range: range) != nil
+        }
     }
 
 }
