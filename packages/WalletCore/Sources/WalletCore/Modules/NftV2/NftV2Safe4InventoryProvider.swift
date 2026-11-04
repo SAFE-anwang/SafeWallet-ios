@@ -5,7 +5,11 @@ import RxRelay
 import RxSwift
 import Web3Core
 
-final class NftV2Safe4InventoryProvider: INftV2InventoryProvider {
+protocol INftV2Safe4InventoryProvider: INftV2InventoryProvider {
+    func load(address: String, account: Account, safe4ChainId: Int) -> Single<NftV2InventoryPayload>
+}
+
+final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
     static let maxConcurrentContractRequests = 4
     private static let maxCachedInventories = 12
 
@@ -20,6 +24,10 @@ final class NftV2Safe4InventoryProvider: INftV2InventoryProvider {
     struct AssetFetchResult {
         let assetsByContract: [String: [SRC721InsightAsset]]
         let failedContractKeys: Set<String>
+
+        var isComplete: Bool {
+            failedContractKeys.isEmpty
+        }
     }
 
     let chain: NftV2Chain = .safe4
@@ -49,7 +57,10 @@ final class NftV2Safe4InventoryProvider: INftV2InventoryProvider {
     }
 
     func load(address: String, account: Account) -> Single<NftV2InventoryPayload> {
-        let chainId = Safe4Network.currentChainId
+        load(address: address, account: account, safe4ChainId: Safe4Network.currentChainId)
+    }
+
+    func load(address: String, account: Account, safe4ChainId chainId: Int) -> Single<NftV2InventoryPayload> {
         let insight = insightProviderFactory(chainId)
 
         return Single.create { [weak self] observer in
@@ -69,20 +80,13 @@ final class NftV2Safe4InventoryProvider: INftV2InventoryProvider {
                     }
 
                     let cacheKey = self.inventoryCacheKey(chainId: chainId, address: address, account: account)
-                    let previousAssets = self.stateQueue.sync {
-                        self.cachedInventoryByContext[cacheKey]?.assetsByContract ?? [:]
-                    }
-                    var assetsByContract = fetchedAssets.assetsByContract
-                    for key in fetchedAssets.failedContractKeys {
-                        if let previous = previousAssets[key] {
-                            assetsByContract[key] = previous
-                        }
-                    }
-
-                    if !contractRequests.isEmpty,
-                       fetchedAssets.failedContractKeys.count == contractRequests.count {
+                    guard fetchedAssets.isComplete else {
+                        // Do not publish or cache partial inventories. A later refresh can retry
+                        // failed contracts, while the previous complete snapshot remains visible.
                         throw SRC721InsightError.invalidResponse
                     }
+
+                    let assetsByContract = fetchedAssets.assetsByContract
 
                     guard Safe4Network.isCurrent(chainId: chainId) else {
                         throw Safe4NetworkError.staleContext(expected: chainId, current: Safe4Network.currentChainId)
@@ -221,30 +225,26 @@ final class NftV2Safe4InventoryProvider: INftV2InventoryProvider {
         let collections = holdings.compactMap { holding -> NftV2Collection? in
             guard holding.owner.lowercased() == normalizedOwner,
                   let contractAddress = Self.normalizedAddress(holding.token),
-                  let holdingCount = BigUInt(holding.count), holdingCount > 0,
                   let assets = assetsByContract[contractAddress.lowercased()],
                   emittedContractAddresses.insert(contractAddress.lowercased()).inserted
             else { return nil }
 
             let token = tokensByAddress[contractAddress.lowercased()]
             let contractAssets = assets.compactMap { insightAsset -> NftV2Asset? in
-                guard let assetContract = Self.normalizedAddress(insightAsset.token) else { return nil }
-                guard insightAsset.isERC721,
-                      insightAsset.owner.lowercased() == normalizedOwner,
-                      assetContract.caseInsensitiveCompare(contractAddress) == .orderedSame,
-                      let tokenValue = BigUInt(insightAsset.tokenValue), tokenValue > 0,
-                      BigUInt(insightAsset.tokenId) != nil
+                guard let tokenId = Self.ownedTokenId(
+                    for: insightAsset,
+                    owner: normalizedOwner,
+                    contractAddress: contractAddress
+                )
                 else { return nil }
 
                 let nftUid = NftUid.evm(
                     blockchainType: chain.blockchainType,
                     contractAddress: contractAddress,
-                    tokenId: insightAsset.tokenId
+                    tokenId: tokenId
                 )
                 let metadata = assetMetadataByUid[nftUid]
                 let collectionMetadata = metadata.flatMap { collectionMetadataById[$0.providerCollectionUid] }
-                let tokenId = insightAsset.tokenId
-
                 return NftV2Asset(
                     id: nftUid.uid,
                     nftUid: nftUid,
@@ -292,13 +292,32 @@ final class NftV2Safe4InventoryProvider: INftV2InventoryProvider {
         var seen = Set<String>()
         return holdings.compactMap { holding in
             guard holding.owner.caseInsensitiveCompare(owner) == .orderedSame,
-                  let count = BigUInt(holding.count), count > 0,
                   let address = normalizedAddress(holding.token)
             else { return nil }
             let key = address.lowercased()
             guard seen.insert(key).inserted else { return nil }
             return (key, address)
         }
+    }
+
+    static func ownedTokenId(
+        for asset: SRC721InsightAsset,
+        owner: String,
+        contractAddress: String
+    ) -> String? {
+        guard asset.isERC721,
+              let assetOwner = normalizedAddress(asset.owner),
+              let normalizedOwner = normalizedAddress(owner),
+              assetOwner.caseInsensitiveCompare(normalizedOwner) == .orderedSame,
+              let assetContract = normalizedAddress(asset.token),
+              let normalizedContract = normalizedAddress(contractAddress),
+              assetContract.caseInsensitiveCompare(normalizedContract) == .orderedSame,
+              let tokenId = BigUInt(asset.tokenId)
+        else { return nil }
+
+        // SafeZone treats the indexer's ERC-721 asset list as authoritative and does not
+        // exclude entries based on tokenValue. Keep the portfolio view consistent with it.
+        return tokenId.description
     }
 
     static func fetchAssets(

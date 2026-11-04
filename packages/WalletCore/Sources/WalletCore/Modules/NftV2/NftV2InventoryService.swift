@@ -516,7 +516,10 @@ final class NftV2InventoryService {
     }
 
     private func enqueueInitialDiscoverySyncs(account: Account) {
-        let cachedPayloads = cacheStore.load(accountId: contextAccountId(account: account))
+        let cachedPayloads = cacheStore.load(
+            accountId: contextAccountId(account: account),
+            safe4ChainId: Safe4Network.currentChainId
+        )
         let undiscoveredChains = NftV2Chain.allCases.filter { chain in
             guard let provider = providers[chain] else {
                 return false
@@ -569,7 +572,10 @@ final class NftV2InventoryService {
         }
 
         let contexts = addressResolver.addressContexts(account: account)
-        let cachedPayloads = cacheStore.load(accountId: contextAccountId(account: account))
+        let cachedPayloads = cacheStore.load(
+            accountId: contextAccountId(account: account),
+            safe4ChainId: Safe4Network.currentChainId
+        )
         let chainStates = NftV2Chain.allCases.map { chain in
             initialChainState(account: account, chain: chain, context: contexts[chain], cachedPayload: cachedPayloads[chain])
         }
@@ -680,7 +686,8 @@ final class NftV2InventoryService {
         syncingChains.insert(chain)
         emitRefreshingState(chain: chain, context: context)
 
-        let cachedPayloads = cacheStore.load(accountId: contextId)
+        let safe4ChainId = Safe4Network.currentChainId
+        let cachedPayloads = cacheStore.load(accountId: contextId, safe4ChainId: safe4ChainId)
         let generation = syncGeneration
 
         chainSyncDisposableMap[chain]?.dispose()
@@ -688,7 +695,8 @@ final class NftV2InventoryService {
             account: account,
             chain: chain,
             context: context,
-            cachedPayload: cachedPayloads[chain]
+            cachedPayload: cachedPayloads[chain],
+            safe4ChainId: safe4ChainId
         )
         .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
         .subscribe(onSuccess: { [weak self] state in
@@ -1051,7 +1059,8 @@ final class NftV2InventoryService {
         account: Account,
         chain: NftV2Chain,
         context: NftV2AddressContext?,
-        cachedPayload: NftV2SnapshotCacheStore.CachedPayload?
+        cachedPayload: NftV2SnapshotCacheStore.CachedPayload?,
+        safe4ChainId: Int
     ) -> Single<NftV2ChainState> {
         let market = marketProvider.primaryMarket(chain: chain)
 
@@ -1082,7 +1091,18 @@ final class NftV2InventoryService {
 
         switch provider.availability {
         case .available:
-            return provider.load(address: context.address, account: account)
+            let inventorySingle: Single<NftV2InventoryPayload>
+            if let safe4Provider = provider as? INftV2Safe4InventoryProvider {
+                inventorySingle = safe4Provider.load(
+                    address: context.address,
+                    account: account,
+                    safe4ChainId: safe4ChainId
+                )
+            } else {
+                inventorySingle = provider.load(address: context.address, account: account)
+            }
+
+            return inventorySingle
                 .map { payload in
                     let effectivePayload = self.mergedPayload(preferred: payload, fallback: cachedPayload?.payload)
                     self.cacheStore.save(
@@ -1090,7 +1110,8 @@ final class NftV2InventoryService {
                         accountId: self.contextAccountId(account: account),
                         chain: chain,
                         address: context.address,
-                        market: market
+                        market: market,
+                        safe4ChainId: safe4ChainId
                     )
 
                     return NftV2ChainState(
@@ -1326,6 +1347,7 @@ final class NftV2SnapshotCacheStore {
 
     private struct ChainCacheItem: Codable {
         let chain: String
+        let safe4ChainId: Int?
         let address: String?
         let market: String?
         let hasDiscoveredInventory: Bool
@@ -1364,7 +1386,13 @@ final class NftV2SnapshotCacheStore {
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "\(AppConfig.label).nft_v2_snapshot_cache_store")
 
-    func load(accountId: String) -> [NftV2Chain: CachedPayload] {
+    private let cacheDirectoryURL: URL?
+
+    init(cacheDirectoryURL: URL? = nil) {
+        self.cacheDirectoryURL = cacheDirectoryURL
+    }
+
+    func load(accountId: String, safe4ChainId: Int = Safe4Network.currentChainId) -> [NftV2Chain: CachedPayload] {
         queue.sync {
             guard let cache = readCache(accountId: accountId) else {
                 return [:]
@@ -1373,6 +1401,10 @@ final class NftV2SnapshotCacheStore {
             var payloadByChain = [NftV2Chain: CachedPayload]()
             for item in cache.items {
                 guard let chain = NftV2Chain(rawValue: item.chain) else {
+                    continue
+                }
+                if chain == .safe4, item.safe4ChainId != safe4ChainId {
+                    // Legacy Safe4 snapshots have no network identity and must be rediscovered.
                     continue
                 }
 
@@ -1388,12 +1420,20 @@ final class NftV2SnapshotCacheStore {
         }
     }
 
-    func save(payload: NftV2InventoryPayload, accountId: String, chain: NftV2Chain, address: String?, market: NftV2Market?) {
+    func save(
+        payload: NftV2InventoryPayload,
+        accountId: String,
+        chain: NftV2Chain,
+        address: String?,
+        market: NftV2Market?,
+        safe4ChainId: Int = Safe4Network.currentChainId
+    ) {
         queue.sync {
             var cache = readCache(accountId: accountId) ?? Cache(items: [])
 
             let chainItem = ChainCacheItem(
                 chain: chain.rawValue,
+                safe4ChainId: chain == .safe4 ? safe4ChainId : nil,
                 address: address,
                 market: market?.rawValue,
                 hasDiscoveredInventory: true,
@@ -1401,7 +1441,9 @@ final class NftV2SnapshotCacheStore {
                 updatedAt: Date().timeIntervalSince1970
             )
 
-            if let index = cache.items.firstIndex(where: { $0.chain == chain.rawValue }) {
+            if let index = cache.items.firstIndex(where: {
+                $0.chain == chain.rawValue && $0.safe4ChainId == chainItem.safe4ChainId
+            }) {
                 cache.items[index] = chainItem
             } else {
                 cache.items.append(chainItem)
@@ -1412,11 +1454,15 @@ final class NftV2SnapshotCacheStore {
     }
 
     private func fileUrl(accountId: String) -> URL? {
-        guard let base = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
-            return nil
+        let dir: URL
+        if let cacheDirectoryURL {
+            dir = cacheDirectoryURL
+        } else {
+            guard let base = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+                return nil
+            }
+            dir = base.appendingPathComponent("nft_v2_cache", isDirectory: true)
         }
-
-        let dir = base.appendingPathComponent("nft_v2_cache", isDirectory: true)
         if !fileManager.fileExists(atPath: dir.path) {
             try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         }

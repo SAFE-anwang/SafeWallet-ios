@@ -12,7 +12,7 @@ struct Safe4NftV2ChainTests {
         #expect(NftV2MarketProvider().primaryMarket(chain: .safe4) == nil)
     }
 
-    @Test func safe4InsightDiscoveryDeduplicatesContractsAndSkipsEmptyHoldings() throws {
+    @Test func safe4InsightDiscoveryDeduplicatesContractsIncludingZeroCountHoldings() throws {
         let owner = "0x4c207825db1c46dd836123e58ecae85de7025879"
         let holdingData = """
         [
@@ -26,9 +26,22 @@ struct Safe4NftV2ChainTests {
 
         let requests = NftV2Safe4InventoryProvider.contractRequests(holdings: holdings, owner: owner)
 
-        #expect(requests.count == 1)
+        #expect(requests.count == 2)
         #expect(requests.first?.key == "0x0000000000000000000000000000000000000001")
+        #expect(requests.last?.key == "0x0000000000000000000000000000000000000002")
         #expect(NftV2Safe4InventoryProvider.maxConcurrentContractRequests == 4)
+    }
+
+    @Test func safe4AssetValidationMatchesSafeZoneAndNormalizesTokenIds() throws {
+        let owner = "0x4c207825db1c46dd836123e58ecae85de7025879"
+        let contract = "0x0000000000000000000000000000000000000001"
+        let data = """
+        {"owner":"\(owner)","token":"\(contract)","tokenType":"erc721","tokenId":"0007","tokenValue":"0","tokenURI":null,"tokenImage":null}
+        """.data(using: .utf8)!
+        let asset = try JSONDecoder().decode(SRC721InsightAsset.self, from: data)
+
+        #expect(NftV2Safe4InventoryProvider.ownedTokenId(for: asset, owner: owner, contractAddress: contract) == "7")
+        #expect(NftV2Safe4InventoryProvider.ownedTokenId(for: asset, owner: contract, contractAddress: contract) == nil)
     }
 
     @Test func safe4AssetLookupKeepsSuccessfulContractsWhenAnotherContractFails() async throws {
@@ -49,6 +62,75 @@ struct Safe4NftV2ChainTests {
 
         #expect(result.assetsByContract[firstContract]?.count == 1)
         #expect(result.failedContractKeys == [secondContract])
+        #expect(!result.isComplete)
+    }
+
+    @Test func safe4SnapshotCacheKeepsMainnetAndTestnetInventoriesSeparate() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("safe4-nft-cache-test-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = NftV2SnapshotCacheStore(cacheDirectoryURL: directory)
+        let accountId = UUID().uuidString
+        let mainnetChainId = Safe4Network.chainId(testNet: false)
+        let testnetChainId = Safe4Network.chainId(testNet: true)
+        store.save(
+            payload: snapshotPayload(collectionName: "Mainnet collection"),
+            accountId: accountId,
+            chain: .safe4,
+            address: nil,
+            market: nil,
+            safe4ChainId: mainnetChainId
+        )
+        store.save(
+            payload: snapshotPayload(collectionName: "Testnet collection"),
+            accountId: accountId,
+            chain: .safe4,
+            address: nil,
+            market: nil,
+            safe4ChainId: testnetChainId
+        )
+
+        #expect(store.load(accountId: accountId, safe4ChainId: mainnetChainId)[.safe4]?.payload.collections.first?.name == "Mainnet collection")
+        #expect(store.load(accountId: accountId, safe4ChainId: testnetChainId)[.safe4]?.payload.collections.first?.name == "Testnet collection")
+    }
+
+    @Test func safe4SnapshotCacheIgnoresLegacyNetworklessSafe4EntryWithoutDroppingOtherChains() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("safe4-nft-legacy-cache-test-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let accountId = UUID().uuidString
+        let legacyData = Data("""
+        {"items":[
+          {"chain":"safe4","address":null,"market":null,"hasDiscoveredInventory":true,"collections":[],"updatedAt":1},
+          {"chain":"ethereum","address":null,"market":null,"hasDiscoveredInventory":true,"collections":[],"updatedAt":1}
+        ]}
+        """.utf8)
+        try legacyData.write(to: directory.appendingPathComponent("snapshot_\(accountId).json"))
+
+        let cached = NftV2SnapshotCacheStore(cacheDirectoryURL: directory)
+            .load(accountId: accountId, safe4ChainId: Safe4Network.chainId(testNet: false))
+
+        #expect(cached[.safe4] == nil)
+        #expect(cached[.ethereum] != nil)
+    }
+
+    private func snapshotPayload(collectionName: String) -> NftV2InventoryPayload {
+        NftV2InventoryPayload(collections: [
+            NftV2Collection(
+                id: collectionName,
+                chain: .safe4,
+                contractAddress: "0x0000000000000000000000000000000000000001",
+                name: collectionName,
+                imageUrl: nil,
+                market: nil,
+                marketUrl: nil,
+                items: []
+            )
+        ])
     }
 }
 
