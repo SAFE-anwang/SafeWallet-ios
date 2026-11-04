@@ -7,12 +7,12 @@ class UniswapLiquidityAddQuote: EvmLiquidityAddQuote {
     let tradeOptions: TradeOptions
     let providerName: String
 
-    init(trade: Trade, tradeOptions: TradeOptions, providerName: String, allowanceState0: LiquidityAddAllowanceHelper.AllowanceState, allowanceState1: LiquidityAddAllowanceHelper.AllowanceState) {
+    init(trade: Trade, tradeOptions: TradeOptions, providerName: String, requiredAmount1: Decimal, allowanceState0: LiquidityAddAllowanceHelper.AllowanceState, allowanceState1: LiquidityAddAllowanceHelper.AllowanceState) {
         self.trade = trade
         self.tradeOptions = tradeOptions
         self.providerName = providerName
 
-        super.init(expectedBuyAmount: trade.amountOut ?? 0, allowanceState0: allowanceState0, allowanceState1: allowanceState1)
+        super.init(expectedBuyAmount: trade.amountOut ?? 0, requiredAmount1: requiredAmount1, allowanceState0: allowanceState0, allowanceState1: allowanceState1)
     }
 }
 

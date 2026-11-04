@@ -126,6 +126,7 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
             trade: trade,
             tradeOptions: tradeOptions,
             providerName: name,
+            requiredAmount1: amount1,
             allowanceState0: allowanceState0,
             allowanceState1: allowanceState1
         )

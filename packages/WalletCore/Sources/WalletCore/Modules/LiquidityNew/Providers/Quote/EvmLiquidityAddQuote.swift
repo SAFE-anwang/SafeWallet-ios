@@ -3,7 +3,10 @@ import Foundation
 class EvmLiquidityAddQuote: LiquidityAddQuote {
     let allowanceState0: LiquidityAddAllowanceHelper.AllowanceState
     let allowanceState1: LiquidityAddAllowanceHelper.AllowanceState
-    init(expectedBuyAmount: Decimal, allowanceState0: LiquidityAddAllowanceHelper.AllowanceState, allowanceState1: LiquidityAddAllowanceHelper.AllowanceState) {
+    let requiredAmount1: Decimal
+
+    init(expectedBuyAmount: Decimal, requiredAmount1: Decimal, allowanceState0: LiquidityAddAllowanceHelper.AllowanceState, allowanceState1: LiquidityAddAllowanceHelper.AllowanceState) {
+        self.requiredAmount1 = requiredAmount1
         self.allowanceState0 = allowanceState0
         self.allowanceState1 = allowanceState1
         super.init(expectedBuyAmount: expectedBuyAmount)

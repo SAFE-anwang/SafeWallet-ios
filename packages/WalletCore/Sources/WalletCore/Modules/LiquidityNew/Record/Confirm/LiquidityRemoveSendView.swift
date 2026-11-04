@@ -254,8 +254,6 @@ private struct LiquidityRemoveSendContent: View {
     private let allowsContinuousRatio: Bool
     @Binding private var isPresented: Bool
     private let onSuccess: () -> Void
-    @State private var showConfirmation = false
-    @State private var confirmed = false
 
     init(sendData: SendData, displayData: LiquidityRemoveDisplayData, selectedRatio: Binding<BigUInt>, ratioValue: Binding<Double>, allowsContinuousRatio: Bool, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) {
         _viewModel = .init(wrappedValue: SendViewModel(sendData: sendData))
@@ -283,10 +281,6 @@ private struct LiquidityRemoveSendContent: View {
                 SlideButton(
                     styling: .text(start: "liquidity.remove".localized, end: "", success: ""),
                     action: {
-                        guard confirmed else {
-                            showConfirmation = true
-                            throw ConfirmationRequiredError()
-                        }
                         try await viewModel.send()
                     },
                     completion: {
@@ -306,22 +300,6 @@ private struct LiquidityRemoveSendContent: View {
                     viewModel.sync()
                 }
             }
-        }
-        .alert("liquidity.remove".localized, isPresented: $showConfirmation) {
-            Button("button.cancel".localized, role: .cancel) {}
-            Button("button.confirm".localized) {
-                confirmed = true
-                Task {
-                    do {
-                        try await viewModel.send()
-                        complete()
-                    } catch {
-                        // SendViewModel publishes the actionable error to SendView.
-                    }
-                }
-            }
-        } message: {
-            Text("liquidity.remove.description".localized)
         }
     }
 
@@ -349,6 +327,4 @@ private struct LiquidityRemoveSendContent: View {
         isPresented = false
         onSuccess()
     }
-
-    private struct ConfirmationRequiredError: Error {}
 }

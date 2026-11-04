@@ -647,25 +647,27 @@ class LiquidityAddViewModel: ObservableObject {
 
         do {
             let sortsBefore = try provider.tokensSortBefore(token0: tokenIn, token1: tokenOut)
+            let isMinTick = provider.isMinimumTick(tickInfo.tickLower, tickSpacing: tickInfo.tickSpacing)
+            let isMaxTick = provider.isMaximumTick(tickInfo.tickUpper, tickSpacing: tickInfo.tickSpacing)
 
             if sortsBefore {
-                v3LowestPrice = tickInfo.isMinTick ? "0" : tickInfo.tickLowerPrice?.description
-                v3HighestPrice = tickInfo.isMaxTick ? "∞" : tickInfo.tickUpperPrice?.description
+                v3LowestPrice = isMinTick ? "0" : tickInfo.tickLowerPrice?.description
+                v3HighestPrice = isMaxTick ? "∞" : tickInfo.tickUpperPrice?.description
             } else {
-                v3LowestPrice = tickInfo.isMaxTick ? "0" : tickInfo.tickUpperPrice?.description
-                v3HighestPrice = tickInfo.isMinTick ? "∞" : tickInfo.tickLowerPrice?.description
+                v3LowestPrice = isMaxTick ? "0" : tickInfo.tickUpperPrice?.description
+                v3HighestPrice = isMinTick ? "∞" : tickInfo.tickLowerPrice?.description
             }
             v3CurrentPrice = tickInfo.tickcurrentPrice?.description
         } catch {
-            v3LowestPrice = tickInfo.isMinTick ? "0" : tickInfo.tickLowerPrice?.description
-            v3HighestPrice = tickInfo.isMaxTick ? "∞" : tickInfo.tickUpperPrice?.description
+            v3LowestPrice = provider.isMinimumTick(tickInfo.tickLower, tickSpacing: tickInfo.tickSpacing) ? "0" : tickInfo.tickLowerPrice?.description
+            v3HighestPrice = provider.isMaximumTick(tickInfo.tickUpper, tickSpacing: tickInfo.tickSpacing) ? "∞" : tickInfo.tickUpperPrice?.description
             v3CurrentPrice = tickInfo.tickcurrentPrice?.description
         }
 
         let lower = tickInfo.tickLower
         let upper = tickInfo.tickUpper
 
-        if lower == provider.minTickValue, upper == provider.maxTickValue {
+        if provider.isFullRange(tickInfo: tickInfo) {
             v3TickType = .full
         } else {
             v3TickType = .range(lower: lower, upper: upper)
@@ -892,7 +894,11 @@ extension LiquidityAddViewModel {
             return
         }
 
-        if let lower = v3TickLower, let upper = v3TickUpper, lower == provider.minTickValue, upper == provider.maxTickValue {
+        if let lower = v3TickLower,
+           let upper = v3TickUpper,
+           let tickSpacing = v3TickSpacing,
+           provider.isFullRange(lower: lower, upper: upper, tickSpacing: tickSpacing)
+        {
             v3TickType = .full
         } else {
             v3TickType = .range(lower: v3TickLower, upper: v3TickUpper)
@@ -931,9 +937,9 @@ extension LiquidityAddViewModel {
         }
 
         if let currentQuote, let quote = currentQuote.quote as? UniswapLiquidityAddQuote {
-            let amountOut = quote.expectedBuyAmount
+            let requiredAmount1 = quote.requiredAmount1
 
-            guard let availableBalanceOut, amountOut <= availableBalanceOut else {
+            guard let availableBalanceOut, requiredAmount1 <= availableBalanceOut else {
                 return []
             }
 
@@ -958,7 +964,7 @@ extension LiquidityAddViewModel {
                         state: state1,
                         token: tokenOut,
                         otherToken: tokenIn,
-                        amount: amountOut,
+                        amount: requiredAmount1,
                         provider: currentQuote.provider
                     )
                 )

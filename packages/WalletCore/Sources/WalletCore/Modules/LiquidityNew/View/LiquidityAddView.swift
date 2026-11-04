@@ -412,17 +412,13 @@ struct LiquidityAddView: View {
                 viewModel.stopAutoQuoting()
 
                 if let preSwapStep {
-                    if let currentQuote = viewModel.currentQuote,
-                       let tokenIn = viewModel.tokenIn,
-                       let tokenOut = viewModel.tokenOut,
-                       let amount = viewModel.amountIn
-                    {
+                    if let currentQuote = viewModel.currentQuote {
                         Coordinator.shared.present { isPresented in
                             currentQuote.provider.preSwapView(
-                                step: preSwapStep.0,
-                                token0: tokenIn,
-                                token1: tokenOut,
-                                amount: amount,
+                                step: preSwapStep.step,
+                                tokenToApprove: preSwapStep.token,
+                                otherToken: preSwapStep.otherToken,
+                                amount: preSwapStep.amount,
                                 isPresented: isPresented
                             ) {
                                 viewModel.syncQuotes()
@@ -571,12 +567,12 @@ struct LiquidityAddView: View {
         return AppValue(token: tokenOut, value: availableBalance).formattedFull()
     }
 
-    private func buttonState() -> (String, ThemeButton.Style, Bool, Bool, (step: MultiSwapPreSwapStep, token: Token, amount: Decimal, provider: ILiquidityAddProvider)?) {
+    private func buttonState() -> (String, ThemeButton.Style, Bool, Bool, (step: MultiSwapPreSwapStep, token: Token, otherToken: Token, amount: Decimal, provider: ILiquidityAddProvider)?) {
         let title: String
         var style: ThemeButton.Style = .primary
         var disabled = true
         var showProgress = false
-        var preSwap: (step: MultiSwapPreSwapStep, token: Token, amount: Decimal, provider: ILiquidityAddProvider)?
+        var preSwap: (step: MultiSwapPreSwapStep, token: Token, otherToken: Token, amount: Decimal, provider: ILiquidityAddProvider)?
 
         if viewModel.quoting {
             title = "swap.quoting".localized
@@ -607,24 +603,35 @@ struct LiquidityAddView: View {
             title = "swap.token_not_synced".localized
         } else if let availableBalance = viewModel.availableBalance, let amountIn = viewModel.amountIn, amountIn > availableBalance {
             title = "swap.insufficient_balance".localized
-        } else if let amountOut = viewModel.proceedAmountOut,
+        } else if let amountOut = (viewModel.currentQuote?.quote as? UniswapLiquidityAddQuote)?.requiredAmount1 ?? viewModel.proceedAmountOut,
                   let availableBalanceOut = viewModel.availableBalanceOut,
                   amountOut > availableBalanceOut
         {
             title = "swap.insufficient_balance".localized
         } else if let currentQuote = viewModel.currentQuote {
             let token: Token
+            let otherToken: Token
             let amount: Decimal
             let state: MultiSwapButtonState
 
-            if let state0 = currentQuote.quote.customButtonState0, let tokenIn = viewModel.tokenIn, let amountIn = viewModel.amountIn {
+            if let state0 = currentQuote.quote.customButtonState0,
+               let tokenIn = viewModel.tokenIn,
+               let tokenOut = viewModel.tokenOut,
+               let amountIn = viewModel.amountIn
+            {
                 state = state0
                 token = tokenIn
+                otherToken = tokenOut
                 amount = amountIn
-            } else if let state1 = currentQuote.quote.customButtonState1, let tokenOut = viewModel.tokenOut, let amountOut = viewModel.currentQuote?.quote.expectedBuyAmount {
+            } else if let state1 = currentQuote.quote.customButtonState1,
+                      let tokenOut = viewModel.tokenOut,
+                      let tokenIn = viewModel.tokenIn,
+                      let amountOut = viewModel.currentQuote?.quote.expectedBuyAmount
+            {
                 state = state1
                 token = tokenOut
-                amount = amountOut
+                otherToken = tokenIn
+                amount = (currentQuote.quote as? UniswapLiquidityAddQuote)?.requiredAmount1 ?? amountOut
             } else {
                 title = "swap.proceed_button".localized
                 disabled = false
@@ -637,7 +644,7 @@ struct LiquidityAddView: View {
             showProgress = state.showProgress
 
             if let step = state.preSwapStep {
-                preSwap = (step, token, amount, currentQuote.provider)
+                preSwap = (step, token, otherToken, amount, currentQuote.provider)
             }
         } else if viewModel.isSafeSwapManualAmountOutMode {
             title = "swap.proceed_button".localized
