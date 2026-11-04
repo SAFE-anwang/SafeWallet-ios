@@ -4,6 +4,16 @@ import MarketKit
 
 class CreateAccountViewModel: ObservableObject {
     private static let defaultWordCount: Mnemonic.WordCount = .twelve
+    static let defaultTokenQueries = [
+        TokenQuery(blockchainType: .bitcoin, tokenType: .derived(derivation: .bip84)), // TODO: make derivation supports accountType
+        TokenQuery(blockchainType: .ethereum, tokenType: .native),
+        TokenQuery(blockchainType: .monero, tokenType: .native),
+        TokenQuery(blockchainType: .tron, tokenType: .native),
+        TokenQuery(blockchainType: .safe4, tokenType: .native),
+        TokenQuery(blockchainType: .binanceSmartChain, tokenType: .native),
+        TokenQuery(blockchainType: .ethereum, tokenType: .eip20(address: "0xdac17f958d2ee523a2206206994597c13d831ec7")), // USDT
+        TokenQuery(blockchainType: .tron, tokenType: .eip20(address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")), // USDT
+    ]
 
     private let accountFactory = Core.shared.accountFactory
     private let accountManager = Core.shared.accountManager
@@ -37,19 +47,9 @@ class CreateAccountViewModel: ObservableObject {
     }
 
     private func activateDefaultWallets(account: Account) throws {
-        let tokenQueries = [
-            TokenQuery(blockchainType: .bitcoin, tokenType: .derived(derivation: .bip84)), // TODO: make derivation supports accountType
-            TokenQuery(blockchainType: .ethereum, tokenType: .native),
-            TokenQuery(blockchainType: .monero, tokenType: .native),
-            TokenQuery(blockchainType: .tron, tokenType: .native),
-            TokenQuery(blockchainType: .binanceSmartChain, tokenType: .native),
-            TokenQuery(blockchainType: .ethereum, tokenType: .eip20(address: "0xdac17f958d2ee523a2206206994597c13d831ec7")), // USDT
-            TokenQuery(blockchainType: .tron, tokenType: .eip20(address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")), // USDT
-        ]
-
         var wallets = [Wallet]()
 
-        for token in try marketKit.tokens(queries: tokenQueries) {
+        for token in try marketKit.tokens(queries: Self.defaultTokenQueries) {
             predefinedBlockchainService.prepareNew(account: account, blockchainType: token.blockchainType)
             wallets.append(Wallet(token: token, account: account))
         }
