@@ -11,11 +11,17 @@ public class EvmLabelManager {
     private let syncerStateStorage: SyncerStateStorage
     private let disposeBag = DisposeBag()
     private let methodLabelsUpdatedSubject = PublishSubject<Void>()
+    private let src721RecognitionScheduler = SRC721ContractRecognitionScheduler.shared
 
     public init(provider: HsLabelProvider, storage: EvmLabelStorage, syncerStateStorage: SyncerStateStorage) {
         self.provider = provider
         self.storage = storage
         self.syncerStateStorage = syncerStateStorage
+
+        NotificationCenter.default.rx.notification(.src721ContractRecognitionUpdated)
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in self?.methodLabelsUpdatedSubject.onNext(()) })
+            .disposed(by: disposeBag)
     }
 
     private func syncMethodLabels(timestamp: Int) {
@@ -63,7 +69,7 @@ public class EvmLabelManager {
 
 extension EvmLabelManager {
     var methodLabelsUpdatedObservable: Observable<Void> {
-        methodLabelsUpdatedSubject.asObservable()
+        methodLabelsUpdatedSubject.asObservable().observeOn(MainScheduler.instance)
     }
 
     func sync() {
@@ -80,7 +86,82 @@ extension EvmLabelManager {
 
     func methodLabel(input: Data) -> String? {
         let methodId = Data(input.prefix(4)).hs.hexString
-        let label = EvmKit.Safe4Methods.allCases.filter{$0.id.lowercased() == methodId.lowercased()}.first?.title ?? EvmLabelManager.ExSafe4Methods.allCases.filter{$0.id.lowercased() == methodId.lowercased()}.first?.title
+        return methodLabel(methodId: methodId)
+    }
+
+    func methodLabel(input: Data, contractAddress: String?, chainId: Int?, walletAddress: String?) -> String? {
+        let methodId = Data(input.prefix(4)).hs.hexString
+        if let customLabel = src721MethodLabel(
+            input: input,
+            contractAddress: contractAddress,
+            chainId: chainId,
+            walletAddress: walletAddress
+        ) { return customLabel }
+
+        return methodLabel(methodId: methodId)
+    }
+
+    func src721MethodLabel(input: Data, contractAddress: String?, chainId: Int?, walletAddress: String? = nil) -> String? {
+        let methodId = Data(input.prefix(4)).hs.hexString
+        guard let label = SRC721TransactionLabel.method(methodId: methodId),
+              let chainId,
+              let contractAddress else {
+            return nil
+        }
+
+        let storage = SRC721Storage.shared
+        if storage.containsContract(chainId: chainId, contractAddress: contractAddress) ||
+            (walletAddress.map { storage.containsContract(chainId: chainId, walletAddress: $0, contractAddress: contractAddress) } ?? false) {
+            return label.title
+        }
+
+        if let isSRC721 = storage.recognizedSRC721Contract(chainId: chainId, contractAddress: contractAddress) {
+            return isSRC721 ? label.title : nil
+        }
+
+        return nil
+    }
+
+    func scheduleSRC721MethodRecognition(input: Data?, contractAddress: String?, chainId: Int?, walletAddress: String?) {
+        guard let input else { return }
+        guard SRC721TransactionLabel.method(methodId: Data(input.prefix(4)).hs.hexString) != nil,
+              let chainId,
+              let contractAddress else {
+            return
+        }
+
+        let storage = SRC721Storage.shared
+        if storage.containsContract(chainId: chainId, contractAddress: contractAddress) ||
+            (walletAddress.map { storage.containsContract(chainId: chainId, walletAddress: $0, contractAddress: contractAddress) } ?? false) ||
+            storage.recognizedSRC721Contract(chainId: chainId, contractAddress: contractAddress) != nil {
+            return
+        }
+
+        let candidate = SRC721ContractRecognitionScheduler.Candidate.contract(
+            chainId: chainId,
+            address: contractAddress.lowercased()
+        )
+        Task(priority: .utility) { [src721RecognitionScheduler] in
+            await src721RecognitionScheduler.schedule(candidate)
+        }
+    }
+
+    func contractCreationLabel(chainId: Int?, walletAddress: String, transactionHash: String) -> String? {
+        guard let chainId else {
+            return nil
+        }
+
+        let storage = SRC721Storage.shared
+        if storage.containsDeployment(chainId: chainId, walletAddress: walletAddress, transactionHash: transactionHash) {
+            return SRC721TransactionLabel.creation.title
+        }
+
+        return nil
+    }
+
+    private func methodLabel(methodId: String) -> String? {
+        let label = EvmKit.Safe4Methods.allCases.first { $0.id.lowercased() == methodId.lowercased() }?.title
+            ?? EvmLabelManager.ExSafe4Methods.allCases.first { $0.id.lowercased() == methodId.lowercased() }?.title
         return label ?? (try? storage.evmMethodLabel(methodId: methodId))?.label
     }
 
@@ -134,6 +215,12 @@ extension EvmLabelManager {
         case approve
         case setDescription
         case setBaseURI
+        case dappPromotion
+        case dappDestroy
+        case dappCreation
+        case dappUpdateInfo
+        case dappUpdateInfoAlternate
+        case dappUpdateInfoLegacy
 
         var id: String {
             switch self {
@@ -163,6 +250,12 @@ extension EvmLabelManager {
             case .approve: "0x87517c45"
             case .setDescription: "0x90c3f38f"
             case .setBaseURI: "0x55f804b3"
+            case .dappPromotion: "0x6b29297f"
+            case .dappDestroy: "0x4cc82215"
+            case .dappCreation: "0x45a36e76"
+            case .dappUpdateInfo: "0x2a6446ca"
+            case .dappUpdateInfoAlternate: "0x4c78529e"
+            case .dappUpdateInfoLegacy: "0xd62d311f"
             }
         }
 
@@ -185,6 +278,12 @@ extension EvmLabelManager {
             case .collect: "liquidity.collect_fees".localized
             case .approve: "button.approve".localized
             case .setDescription, .setBaseURI: "safe_zone.src721.transaction.update_nft_info".localized
+            case .dappPromotion: "safe_zone.src721.transaction.dapp.promotion".localized
+            case .dappDestroy: "safe_zone.src721.transaction.dapp.destroy".localized
+            case .dappCreation: "safe_zone.src721.transaction.dapp.creation".localized
+            case .dappUpdateInfo: "safe_zone.src721.transaction.dapp.update_info".localized
+            case .dappUpdateInfoAlternate: "safe_zone.src721.transaction.dapp.update_info".localized
+            case .dappUpdateInfoLegacy: "safe_zone.src721.transaction.dapp.update_info".localized
             }
         }
     }

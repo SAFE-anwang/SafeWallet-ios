@@ -20,6 +20,20 @@ class TransactionInfoViewItemFactory {
         self.extraProviderFactory = extraProviderFactory
     }
 
+    private func src721MethodLabel(record: EvmTransactionRecord) -> String? {
+        guard record.source.blockchainType == .safe4,
+              let input = record.transaction.input,
+              let contractAddress = record.transaction.to else {
+            return nil
+        }
+
+        return evmLabelManager.src721MethodLabel(
+            input: input,
+            contractAddress: contractAddress.eip55,
+            chainId: Safe4Network.currentChainId
+        )
+    }
+
     var updatedPublisher: AnyPublisher<Void, Never> {
         extraProviderFactory.updatedPublisher
     }
@@ -362,7 +376,7 @@ class TransactionInfoViewItemFactory {
         switch record {
         case let record as ContractCreationTransactionRecord:
             sections.append(.init([
-                .actionTitle(iconName: record.source.blockchainType.iconPlain32, iconDimmed: false, title: "transactions.contract_creation".localized, subTitle: nil),
+                .actionTitle(iconName: record.source.blockchainType.iconPlain32, iconDimmed: false, title: record.title ?? "transactions.contract_creation".localized, subTitle: nil),
             ]))
 
         case let record as EvmOutgoingTransactionRecord:
@@ -472,7 +486,7 @@ class TransactionInfoViewItemFactory {
 
         case let record as ContractCallTransactionRecord:
             sections.append(.init([
-                .actionTitle(iconName: record.source.blockchainType.iconPlain32, iconDimmed: false, title: record.method ?? "transactions.contract_call".localized, subTitle: evmLabelManager.mapped(address: record.contractAddress)),
+                .actionTitle(iconName: record.source.blockchainType.iconPlain32, iconDimmed: false, title: src721MethodLabel(record: record) ?? record.method ?? "transactions.contract_call".localized, subTitle: evmLabelManager.mapped(address: record.contractAddress)),
             ]))
 
             for event in deduplicated(transferEvents: record.outgoingEvents) {

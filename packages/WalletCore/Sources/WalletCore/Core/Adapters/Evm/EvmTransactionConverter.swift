@@ -12,6 +12,7 @@ public class EvmTransactionConverter {
     public let userAddress: EvmKit.Address
     public let evmLabelManager: EvmLabelManager
     public let baseToken: MarketKit.Token
+    private let safe4ChainId: Int?
 
     public var source: TransactionSource {
         TransactionSource(blockchainType: baseToken.blockchainType, meta: nil)
@@ -22,6 +23,18 @@ public class EvmTransactionConverter {
         self.userAddress = userAddress
         self.evmLabelManager = evmLabelManager
         self.baseToken = baseToken
+        safe4ChainId = baseToken.blockchainType == .safe4 ? Safe4Network.currentChainId : nil
+    }
+
+    private func methodLabel(input: Data?, contractAddress: EvmKit.Address?) -> String? {
+        input.flatMap {
+            evmLabelManager.methodLabel(
+                input: $0,
+                contractAddress: contractAddress?.eip55,
+                chainId: safe4ChainId,
+                walletAddress: userAddress.eip55
+            )
+        }
     }
 
     public static func convertAmount(amount: BigUInt, decimals: Int, sign: FloatingPointSign) -> Decimal {
@@ -222,12 +235,25 @@ public extension EvmTransactionConverter {
         let transaction = fullTransaction.transaction
         let protected = MerkleTransactionAdapter.isProtected(transaction: fullTransaction)
 
+        evmLabelManager.scheduleSRC721MethodRecognition(
+            input: transaction.input,
+            contractAddress: transaction.to?.eip55,
+            chainId: safe4ChainId,
+            walletAddress: userAddress.eip55
+        )
+
         switch fullTransaction.decoration {
         case is ContractCreationDecoration:
+            let transactionHash = transaction.hash.hs.hexString
             return ContractCreationTransactionRecord(
                 source: source,
                 transaction: transaction,
                 baseToken: baseToken,
+                title: evmLabelManager.contractCreationLabel(
+                    chainId: safe4ChainId,
+                    walletAddress: userAddress.eip55,
+                    transactionHash: transactionHash
+                ),
                 protected: protected
             )
 
@@ -410,7 +436,7 @@ public extension EvmTransactionConverter {
 
         case let decoration as Safe4NodeRegisterDecoration:
             let value = safe4AppValue(transaction: transaction, fallback: decoration.value, sign: .minus)
-            let method = transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) }
+            let method = methodLabel(input: transaction.input, contractAddress: transaction.to)
             return Safe4NodeRegisterTransactionRecoard(
                 source: source,
                 transaction: transaction,
@@ -429,7 +455,7 @@ public extension EvmTransactionConverter {
                 transaction: transaction,
                 baseToken: baseToken,
                 contractAddress: decoration.contract?.eip55 ?? decoration.to?.eip55 ?? "",
-                method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                method: methodLabel(input: transaction.input, contractAddress: transaction.to),
                 incomingEvents: [],
                 outgoingEvents: [],
                 protected: protected
@@ -441,7 +467,7 @@ public extension EvmTransactionConverter {
                 transaction: transaction,
                 baseToken: baseToken,
                 contractAddress: decoration.to?.eip55 ?? "",
-                method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                method: methodLabel(input: transaction.input, contractAddress: transaction.to),
                 incomingEvents: [],
                 outgoingEvents: [],
                 protected: protected
@@ -493,7 +519,7 @@ public extension EvmTransactionConverter {
                     transaction: transaction,
                     baseToken: baseToken,
                     contractAddress: contractAddress.eip55,
-                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                    method: methodLabel(input: transaction.input, contractAddress: transaction.to),
                     incomingEvents: [
                         TransferEvent(address: address.eip55, value: amountA.value),
                         TransferEvent(address: address.eip55, value: amountB.value)
@@ -520,7 +546,7 @@ public extension EvmTransactionConverter {
                     transaction: transaction,
                     baseToken: baseToken,
                     contractAddress: contractAddress.eip55,
-                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                    method: methodLabel(input: transaction.input, contractAddress: transaction.to),
                     incomingEvents: incomingEvents,
                     outgoingEvents: outgoingEvents,
                     protected: protected
@@ -533,7 +559,7 @@ public extension EvmTransactionConverter {
                 transaction: transaction,
                 baseToken: baseToken,
                 contractAddress: decoration.contractAddress.eip55,
-                method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                method: methodLabel(input: transaction.input, contractAddress: transaction.to),
                 incomingEvents: [],
                 outgoingEvents: [],
                 protected: protected
@@ -586,7 +612,7 @@ public extension EvmTransactionConverter {
                     transaction: transaction,
                     baseToken: baseToken,
                     contractAddress: contractAddress.eip55,
-                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                    method: methodLabel(input: transaction.input, contractAddress: transaction.to),
                     incomingEvents: incomingEvents,
                     outgoingEvents: transferEvents(contractAddress: contractAddress, value: value) + outgoingEvents, protected: protected
                 )
@@ -595,7 +621,7 @@ public extension EvmTransactionConverter {
                     source: source,
                     transaction: transaction,
                     baseToken: baseToken,
-                    method: transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) },
+                    method: methodLabel(input: transaction.input, contractAddress: transaction.to),
                     incomingEvents: incomingEvents,
                     outgoingEvents: outgoingEvents,
                     protected: protected

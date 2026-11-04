@@ -4,10 +4,21 @@ final class SRC721Storage {
     static let shared = SRC721Storage()
 
     private let defaults: UserDefaults
+    private let cacheLock = NSLock()
     private let contractsKey = "safe_zone.src721.contracts"
     private let transactionsKey = "safe_zone.src721.transactions"
     private let allowListEntriesKey = "safe_zone.src721.allow_list_entries"
     private let hiddenContractsKey = "safe_zone.src721.hidden_contracts"
+    private let recognizedContractsKey = "safe_zone.src721.recognized_contracts"
+    private let maxRecognitionCacheEntries = 512
+    private var cachedContractLookupIndex: ContractLookupIndex?
+    private var cachedRecognizedContracts: [String: Bool]?
+
+    private struct ContractLookupIndex {
+        let contractKeys: Set<String>
+        let walletContractKeys: Set<String>
+        let deploymentKeys: Set<String>
+    }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -21,6 +32,45 @@ final class SRC721Storage {
                 $0.walletAddress.lowercased() == walletAddress.lowercased()
             }
             .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func containsContract(chainId: Int, walletAddress: String, contractAddress: String) -> Bool {
+        contractLookupIndex().walletContractKeys.contains(
+            walletContractKey(chainId: chainId, walletAddress: walletAddress, contractAddress: contractAddress)
+        )
+    }
+
+    func containsContract(chainId: Int, contractAddress: String) -> Bool {
+        contractLookupIndex().contractKeys.contains(contractKey(chainId: chainId, address: contractAddress))
+    }
+
+    func recognizedSRC721Contract(chainId: Int, contractAddress: String) -> Bool? {
+        recognizedContractResults()[contractRecognitionKey(chainId: chainId, address: contractAddress)]
+    }
+
+    func saveSRC721ContractRecognition(chainId: Int, contractAddress: String, isSRC721: Bool) {
+        var recognized = recognizedContractResults()
+        recognized[contractRecognitionKey(chainId: chainId, address: contractAddress)] = isSRC721
+        recognized = trimmedRecognitionCache(recognized)
+        save(recognized, key: recognizedContractsKey)
+        cacheLock.lock()
+        cachedRecognizedContracts = recognized
+        cacheLock.unlock()
+    }
+
+    private func contractRecognitionKey(chainId: Int, address: String) -> String {
+        "\(chainId):\(address.lowercased())"
+    }
+
+    func containsDeployment(chainId: Int, walletAddress: String, transactionHash: String) -> Bool {
+        contractLookupIndex().deploymentKeys.contains(
+            deploymentKey(chainId: chainId, walletAddress: walletAddress, transactionHash: transactionHash)
+        )
+    }
+
+    private func normalizedTransactionHash(_ hash: String) -> String {
+        let normalized = hash.lowercased()
+        return normalized.hasPrefix("0x") ? String(normalized.dropFirst(2)) : normalized
     }
 
     func save(contract: SRC721ContractRecord) {
@@ -38,6 +88,9 @@ final class SRC721Storage {
         }
         records.append(contract)
         save(records, key: contractsKey)
+        cacheLock.lock()
+        cachedContractLookupIndex = nil
+        cacheLock.unlock()
     }
 
     func update(contract: SRC721ContractRecord) {
@@ -53,6 +106,9 @@ final class SRC721Storage {
             $0.contractAddress.lowercased() == contract.contractAddress.lowercased()
         }
         save(records, key: contractsKey)
+        cacheLock.lock()
+        cachedContractLookupIndex = nil
+        cacheLock.unlock()
     }
 
     func hide(contract: SRC721ContractRecord) {
@@ -77,6 +133,70 @@ final class SRC721Storage {
 
     private func hiddenContractKey(_ contract: SRC721ContractRecord) -> String {
         "\(contract.accountId):\(contract.chainId):\(contract.walletAddress.lowercased()):\(contract.contractAddress.lowercased())"
+    }
+
+    private func contractLookupIndex() -> ContractLookupIndex {
+        cacheLock.lock()
+        let cached = cachedContractLookupIndex
+        cacheLock.unlock()
+        if let cached { return cached }
+
+        let records = load([SRC721ContractRecord].self, key: contractsKey) ?? []
+        let loaded = ContractLookupIndex(
+            contractKeys: Set(records.map { contractKey(chainId: $0.chainId, address: $0.contractAddress) }),
+            walletContractKeys: Set(records.map {
+                walletContractKey(chainId: $0.chainId, walletAddress: $0.walletAddress, contractAddress: $0.contractAddress)
+            }),
+            deploymentKeys: Set(records.compactMap { record in
+                guard let transactionHash = record.deployTransactionHash else { return nil }
+                return deploymentKey(chainId: record.chainId, walletAddress: record.walletAddress, transactionHash: transactionHash)
+            })
+        )
+
+        cacheLock.lock()
+        if cachedContractLookupIndex == nil {
+            cachedContractLookupIndex = loaded
+        }
+        let result = cachedContractLookupIndex ?? loaded
+        cacheLock.unlock()
+        return result
+    }
+
+    private func recognizedContractResults() -> [String: Bool] {
+        cacheLock.lock()
+        let cached = cachedRecognizedContracts
+        cacheLock.unlock()
+        if let cached { return cached }
+
+        let loaded = load([String: Bool].self, key: recognizedContractsKey) ?? [:]
+        cacheLock.lock()
+        if cachedRecognizedContracts == nil {
+            cachedRecognizedContracts = loaded
+        }
+        let result = cachedRecognizedContracts ?? loaded
+        cacheLock.unlock()
+        return result
+    }
+
+    private func contractKey(chainId: Int, address: String) -> String {
+        "\(chainId):\(address.lowercased())"
+    }
+
+    private func walletContractKey(chainId: Int, walletAddress: String, contractAddress: String) -> String {
+        "\(chainId):\(walletAddress.lowercased()):\(contractAddress.lowercased())"
+    }
+
+    private func deploymentKey(chainId: Int, walletAddress: String, transactionHash: String) -> String {
+        "\(chainId):\(walletAddress.lowercased()):\(normalizedTransactionHash(transactionHash))"
+    }
+
+    private func trimmedRecognitionCache(_ cache: [String: Bool]) -> [String: Bool] {
+        guard cache.count > maxRecognitionCacheEntries else { return cache }
+        var trimmed = cache
+        for key in trimmed.keys.sorted().prefix(trimmed.count - maxRecognitionCacheEntries) {
+            trimmed.removeValue(forKey: key)
+        }
+        return trimmed
     }
 
     func save(transaction: SRC721TransactionRecord) {

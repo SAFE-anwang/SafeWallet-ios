@@ -20,6 +20,17 @@ enum SRC721ContractType: String, CaseIterable, Codable, Hashable, Identifiable {
     }
 
     var canBurn: Bool { self == .burnable }
+
+    static func recognized(version: String) -> SRC721ContractType? {
+        let normalizedVersion = version.lowercased()
+        if normalizedVersion.hasPrefix("src721-burnable-") {
+            return .burnable
+        }
+        if normalizedVersion.hasPrefix("src721-") {
+            return .standard
+        }
+        return nil
+    }
 }
 
 enum SRC721TransactionStatus: String, Codable, Hashable {
@@ -32,6 +43,29 @@ enum SRC721TransactionOperation: String, Codable, Hashable {
     case mint
     case transfer
     case burn
+}
+
+enum SRC721TransactionLabel {
+    case promotion
+    case creation
+    case burn
+
+    var title: String {
+        switch self {
+        case .promotion: return "safe_zone.src721.transaction.promotion".localized
+        case .creation: return "safe_zone.src721.transaction.creation".localized
+        case .burn: return "safe_zone.src721.transaction.burn".localized
+        }
+    }
+
+    static func method(methodId: String) -> SRC721TransactionLabel? {
+        switch methodId.lowercased() {
+        case "0x198581a5": .promotion
+        case "0xe58306f9": .creation
+        case "0x42966c68": .burn
+        default: nil
+        }
+    }
 }
 
 struct SRC721BatchOperationError: LocalizedError {
@@ -195,6 +229,12 @@ struct SRC721TokenAuthorization: Equatable {
     let ownerAddress: String
     let approvedAddress: String
     let isApprovedForAll: Bool
+
+    func isAuthorized(for address: String) -> Bool {
+        ownerAddress.caseInsensitiveCompare(address) == .orderedSame ||
+            approvedAddress.caseInsensitiveCompare(address) == .orderedSame ||
+            isApprovedForAll
+    }
 }
 
 enum SRC721AssetSource: String, Equatable {
@@ -424,6 +464,7 @@ enum SRC721ValidationError: LocalizedError {
     case allowListReadFailed(String)
     case duplicateAllowListAddress
     case invalidTokenId
+    case tokenNoLongerExists
     case invalidLogo
     case emptyField(String)
     case textTooLong(String)
@@ -450,6 +491,7 @@ enum SRC721ValidationError: LocalizedError {
         case let .allowListReadFailed(message): return "safe_zone.src721.error.allow_list_read_failed".localized(message)
         case .duplicateAllowListAddress: return "safe_zone.src721.error.allow_list_duplicate".localized
         case .invalidTokenId: return "safe_zone.src721.error.token_id".localized
+        case .tokenNoLongerExists: return "safe_zone.src721.error.token_no_longer_exists".localized
         case .invalidLogo: return "safe_zone.src721.error.logo".localized
         case let .emptyField(field): return "safe_zone.src721.error.required".localized(field)
         case let .textTooLong(field): return "safe_zone.src721.error.too_long".localized(field)
@@ -465,6 +507,11 @@ enum SRC721ValidationError: LocalizedError {
         case .transactionTimeout: return "safe_zone.src721.error.timeout".localized
         case .missingSigner: return "safe_zone.src721.error.signer".localized
         }
+    }
+
+    var isTokenNoLongerExists: Bool {
+        if case .tokenNoLongerExists = self { return true }
+        return false
     }
 }
 

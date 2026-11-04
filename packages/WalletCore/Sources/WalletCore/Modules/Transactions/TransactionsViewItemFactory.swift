@@ -26,6 +26,20 @@ class TransactionsViewItemFactory {
         contactLabelService.contactData(for: address, blockchainType: blockchainType).name ?? evmLabelManager.mapped(address: address)
     }
 
+    private func src721MethodLabel(record: EvmTransactionRecord) -> String? {
+        guard record.source.blockchainType == .safe4,
+              let input = record.transaction.input,
+              let contractAddress = record.transaction.to else {
+            return nil
+        }
+
+        return evmLabelManager.src721MethodLabel(
+            input: input,
+            contractAddress: contractAddress.eip55,
+            chainId: Safe4Network.currentChainId
+        )
+    }
+
     private func coinString(from appValue: AppValue, signType: ValueFormatter.SignType = .always) -> String {
         guard let value = appValue.formattedWith(rounding: amountRoundingManager.useAmountRounding, signType: signType) else {
             return "n/a".localized
@@ -258,7 +272,7 @@ class TransactionsViewItemFactory {
             let (incomingValues, outgoingValues) = record.combinedValues
 
             iconType = self.iconType(source: record.source, incomingValues: incomingValues, outgoingValues: outgoingValues, nftMetadata: item.nftMetadata)
-            title = record.method ?? "transactions.contract_call".localized
+            title = src721MethodLabel(record: record) ?? record.method ?? "transactions.contract_call".localized
             subTitle = mapped(address: record.contractAddress, blockchainType: item.record.source.blockchainType)
 
             (primaryValue, secondaryValue) = values(incomingValues: incomingValues, outgoingValues: outgoingValues, currencyValue: item.currencyValue, nftMetadata: item.nftMetadata)
@@ -277,7 +291,7 @@ class TransactionsViewItemFactory {
                     subTitle = "transactions.multiple".localized
                 }
             } else {
-                title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? record.method ?? "transactions.external_call".localized
+                title = src721MethodLabel(record: record) ?? record.method ?? record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.external_call".localized
                 subTitle = "---"
             }
 
@@ -285,7 +299,7 @@ class TransactionsViewItemFactory {
 
         case let record as ContractCreationTransactionRecord:
             iconType = .localIcon(imageName: record.source.blockchainType.iconPlain32)
-            title = "transactions.contract_creation".localized
+            title = record.title ?? "transactions.contract_creation".localized
             subTitle = "---"
 
         case let record as BitcoinIncomingTransactionRecord:
@@ -676,7 +690,7 @@ class TransactionsViewItemFactory {
 
         case let record as Safe4RedeemTransactionRecoard:
             iconType = .icon(url: record.imageUrl, alternativeUrl: nil, placeholderImageName: "safe-anwang_trx_32", type: .circle)
-            title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
+            title = src721MethodLabel(record: record) ?? record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
                 primaryValue = TransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .neutral))
@@ -684,7 +698,7 @@ class TransactionsViewItemFactory {
 
         case let record as Safe4VoteTransactionRecoard:
             iconType = .icon(url: record.imageUrl, alternativeUrl: nil, placeholderImageName: "safe-anwang_trx_32", type: .circle)
-            title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
+            title = src721MethodLabel(record: record) ?? record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
                 primaryValue = TransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .outgoing))
@@ -694,7 +708,9 @@ class TransactionsViewItemFactory {
         case let record as Safe4NodeRegisterTransactionRecoard:
             iconType = .icon(url: record.imageUrl, alternativeUrl: nil, placeholderImageName: "safe-anwang_trx_32", type: .circle)
             title = "transactions.contract_call".localized
-            if let method = record.method {
+            if let customMethod = src721MethodLabel(record: record) {
+                title = customMethod
+            } else if let method = record.method {
                 if method == EvmKit.Safe4Methods.AppendRegister.title {
                     if record.contractAddress == web3swift.Safe4ContractAddress.MasterNodeLogicContractAddr {
                         title = "safe_zone.safe4.append.register.master".localized
@@ -718,7 +734,7 @@ class TransactionsViewItemFactory {
 
         case let record as Safe4CrossChainIncomingRecoard:
             iconType = .icon(url: record.imageUrl, alternativeUrl: nil, placeholderImageName: "safe-anwang_trx_32", type: .circle)
-            title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
+            title = src721MethodLabel(record: record) ?? record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
             subTitle = "transactions.from".localized(mapped(address: record.from, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
                 primaryValue = TransactionsViewModel.Value(text: coinString(from: record.value), type: type(value: record.value, .incoming))
@@ -726,7 +742,7 @@ class TransactionsViewItemFactory {
 
         case let record as Safe4CrossChainOutgoingRecoard:
             iconType = .icon(url: record.imageUrl, alternativeUrl: nil, placeholderImageName: "safe-anwang_trx_32", type: .circle)
-            title = record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
+            title = src721MethodLabel(record: record) ?? record.transaction.input.flatMap { evmLabelManager.methodLabel(input: $0) } ?? "transactions.contract_call".localized
             subTitle = "transactions.to".localized(mapped(address: record.to, blockchainType: item.record.source.blockchainType))
             if !record.value.zeroValue {
                 primaryValue = TransactionsViewModel.Value(text: coinString(from: record.value, signType: .always), type: type(value: record.value, condition: false, .outgoing, .outgoing))

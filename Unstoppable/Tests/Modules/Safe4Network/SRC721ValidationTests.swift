@@ -1,4 +1,5 @@
 import BigInt
+import Foundation
 import XCTest
 @testable import WalletCore
 
@@ -8,6 +9,135 @@ final class SRC721ValidationTests: XCTestCase {
         XCTAssertEqual(SRC721ContractState.burnedCount(mintedTotal: 9, totalSupply: 9), 0)
         XCTAssertNil(SRC721ContractState.burnedCount(mintedTotal: nil, totalSupply: 9))
         XCTAssertNil(SRC721ContractState.burnedCount(mintedTotal: 8, totalSupply: 9))
+    }
+
+    @MainActor
+    func testContractOwnerComparisonAcceptsDifferentAddressCasing() {
+        let wallet = "0x00000000000000000000000000000000000000ab"
+        let owner = "0x" + wallet.dropFirst(2).uppercased()
+
+        XCTAssertTrue(SRC721ContractDetailViewModel.isOwner(ownerAddress: owner, walletAddress: wallet))
+        XCTAssertFalse(SRC721ContractDetailViewModel.isOwner(ownerAddress: nil, walletAddress: wallet))
+        XCTAssertFalse(SRC721ContractDetailViewModel.isOwner(
+            ownerAddress: "0x00000000000000000000000000000000000000cd",
+            walletAddress: wallet
+        ))
+    }
+
+    func testCurrentNFTOwnerCanOperateWithoutPreviousOwnerApproval() {
+        let owner = "0x00000000000000000000000000000000000000ab"
+        let previousOwner = "0x00000000000000000000000000000000000000cd"
+        let authorization = SRC721TokenAuthorization(
+            tokenId: 0,
+            ownerAddress: owner,
+            approvedAddress: "0x0000000000000000000000000000000000000000",
+            isApprovedForAll: false
+        )
+
+        XCTAssertTrue(authorization.isAuthorized(for: owner.uppercased()))
+        XCTAssertFalse(authorization.isAuthorized(for: previousOwner))
+    }
+
+    func testAuthorizedAddressAndOperatorCanOperate() {
+        let wallet = "0x00000000000000000000000000000000000000ab"
+        let owner = "0x00000000000000000000000000000000000000cd"
+        let tokenApproved = SRC721TokenAuthorization(
+            tokenId: 0,
+            ownerAddress: owner,
+            approvedAddress: wallet,
+            isApprovedForAll: false
+        )
+        let operatorApproved = SRC721TokenAuthorization(
+            tokenId: 0,
+            ownerAddress: owner,
+            approvedAddress: "0x0000000000000000000000000000000000000000",
+            isApprovedForAll: true
+        )
+
+        XCTAssertTrue(tokenApproved.isAuthorized(for: wallet))
+        XCTAssertTrue(operatorApproved.isAuthorized(for: wallet))
+    }
+
+    func testContractVersionIdentifiesBurnableAndStandardSRC721() {
+        XCTAssertEqual(SRC721ContractType.recognized(version: "SRC721-burnable-0.0.4"), .burnable)
+        XCTAssertEqual(SRC721ContractType.recognized(version: "SRC721-0.0.3"), .standard)
+        XCTAssertNil(SRC721ContractType.recognized(version: "OTHER-1.0.0"))
+    }
+
+    func testSRC721TransactionSelectorsMapPromotionAndBurnWithoutAffectingOtherMethods() {
+        XCTAssertEqual(SRC721TransactionLabel.method(methodId: "0x198581a5")?.title, "safe_zone.src721.transaction.promotion".localized)
+        XCTAssertEqual(SRC721TransactionLabel.method(methodId: "0xe58306f9")?.title, "safe_zone.src721.transaction.creation".localized)
+        XCTAssertEqual(SRC721TransactionLabel.method(methodId: "0X42966C68")?.title, "safe_zone.src721.transaction.burn".localized)
+        XCTAssertEqual(SRC721TransactionLabel.creation.title, "safe_zone.src721.transaction.creation".localized)
+        XCTAssertNil(SRC721TransactionLabel.method(methodId: "0x6b29297f"))
+        XCTAssertNil(SRC721TransactionLabel.method(methodId: "0x"))
+    }
+
+    func testDappCreationSelectorHasCustomMethodLabel() {
+        let method = EvmLabelManager.ExSafe4Methods.allCases.first { $0.id == "0x45a36e76" }
+
+        XCTAssertEqual(method?.title, "safe_zone.src721.transaction.dapp.creation".localized)
+    }
+
+    func testDappDestroySelectorHasCustomMethodLabel() {
+        let method = EvmLabelManager.ExSafe4Methods.allCases.first { $0.id == "0x4cc82215" }
+
+        XCTAssertEqual(method?.title, "safe_zone.src721.transaction.dapp.destroy".localized)
+    }
+
+    func testDappInfoUpdateSelectorHasCustomMethodLabel() {
+        let method = EvmLabelManager.ExSafe4Methods.allCases.first { $0.id == "0x2a6446ca" }
+
+        XCTAssertEqual(method?.title, "safe_zone.src721.transaction.dapp.update_info".localized)
+    }
+
+    func testAlternateDappInfoUpdateSelectorHasCustomMethodLabel() {
+        let method = EvmLabelManager.ExSafe4Methods.allCases.first { $0.id == "0x4c78529e" }
+
+        XCTAssertEqual(method?.title, "safe_zone.src721.transaction.dapp.update_info".localized)
+    }
+
+    func testLegacyDappInfoUpdateSelectorHasCustomMethodLabel() {
+        let method = EvmLabelManager.ExSafe4Methods.allCases.first { $0.id == "0xd62d311f" }
+
+        XCTAssertEqual(method?.title, "safe_zone.src721.transaction.dapp.update_info".localized)
+    }
+
+    func testSRC721StorageScopesCustomLabelsByChainWalletContractAndDeploymentHash() throws {
+        let suiteName = "SRC721ValidationTests.transaction-labels.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let storage = SRC721Storage(defaults: defaults)
+        let wallet = "0x1111111111111111111111111111111111111111"
+        let contract = "0x2222222222222222222222222222222222222222"
+        let hash = "0x" + String(repeating: "a", count: 64)
+        storage.save(contract: SRC721ContractRecord(
+            accountId: "account",
+            chainId: 666,
+            walletAddress: wallet,
+            contractAddress: contract,
+            predictedContractAddress: nil,
+            creatorAddress: wallet,
+            currentOwnerAddress: wallet,
+            contractType: .burnable,
+            name: "Sample NFT",
+            symbol: "NFT",
+            baseURI: "",
+            maxSupply: "10",
+            mintPrice: "0",
+            deployTransactionHash: hash,
+            transactionStatus: .confirmed,
+            validationStatus: "deployed",
+            createdAt: Date()
+        ))
+
+        XCTAssertTrue(storage.containsContract(chainId: 666, walletAddress: wallet.uppercased(), contractAddress: contract.uppercased()))
+        XCTAssertFalse(storage.containsContract(chainId: 667, walletAddress: wallet, contractAddress: contract))
+        XCTAssertFalse(storage.containsContract(chainId: 666, walletAddress: "0x3333333333333333333333333333333333333333", contractAddress: contract))
+        XCTAssertTrue(storage.containsDeployment(chainId: 666, walletAddress: wallet, transactionHash: String(hash.dropFirst(2)).uppercased()))
+        XCTAssertFalse(storage.containsDeployment(chainId: 667, walletAddress: wallet, transactionHash: hash))
+        XCTAssertFalse(storage.containsDeployment(chainId: 666, walletAddress: "0x3333333333333333333333333333333333333333", transactionHash: hash))
+        XCTAssertFalse(storage.containsDeployment(chainId: 666, walletAddress: wallet, transactionHash: "0x" + String(repeating: "b", count: 64)))
     }
 
     func testReceiptStatusTreatsNullResultAsPending() throws {
@@ -49,6 +179,17 @@ final class SRC721ValidationTests: XCTestCase {
         }
     }
 
+    func testMissingTokenErrorsAreSeparatedFromOtherReverts() {
+        func error(_ description: String) -> NSError {
+            NSError(domain: "SRC721ValidationTests", code: 1, userInfo: [NSLocalizedDescriptionKey: description])
+        }
+
+        XCTAssertTrue(SRC721Service.isMissingTokenError(error("execution reverted: ERC721: invalid token ID")))
+        XCTAssertTrue(SRC721Service.isMissingTokenError(error("owner query for nonexistent token")))
+        XCTAssertFalse(SRC721Service.isMissingTokenError(error("execution reverted: transfer failed")))
+        XCTAssertFalse(SRC721Service.isMissingTokenError(error("-32000: temporary RPC failure")))
+    }
+
     func testAmountKeepsLargeIntegerPrecision() throws {
         let amount = try SRC721Validation.amount("100000000000000000000000000000000000", field: "amount")
         let expected = BigUInt("100000000000000000000000000000000000")
@@ -69,8 +210,8 @@ final class SRC721ValidationTests: XCTestCase {
     }
 
     func testLogoPaymentBalanceRequiresPromotionFeeAndEstimatedGas() {
-        XCTAssertNoThrow(SRC721Validation.validateLogoBalance(balance: 150, required: 150))
-        XCTAssertThrowsError(SRC721Validation.validateLogoBalance(balance: 149, required: 150))
+        XCTAssertNoThrow(try SRC721Validation.validateLogoBalance(balance: 150, required: 150))
+        XCTAssertThrowsError(try SRC721Validation.validateLogoBalance(balance: 149, required: 150))
     }
 
     func testLogoPaymentRecognizesInsufficientFundsRpcError() {
@@ -79,8 +220,8 @@ final class SRC721ValidationTests: XCTestCase {
     }
 
     func testMintAmountCannotExceedRemainingSupply() {
-        XCTAssertNoThrow(SRC721Validation.validateMintSupply(remainSupply: 5, amount: 5))
-        XCTAssertThrowsError(SRC721Validation.validateMintSupply(remainSupply: 4, amount: 5)) { error in
+        XCTAssertNoThrow(try SRC721Validation.validateMintSupply(remainSupply: 5, amount: 5))
+        XCTAssertThrowsError(try SRC721Validation.validateMintSupply(remainSupply: 4, amount: 5)) { error in
             guard case SRC721ValidationError.supplyInsufficient = error else {
                 return XCTFail("Expected remaining supply validation error")
             }

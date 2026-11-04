@@ -90,7 +90,11 @@ enum SRC721Module {
         return SRC721AllowListViewModel(record: record, service: service, storage: .shared)
     }
 
-    static func detailViewModel(record: SRC721ContractRecord) -> SRC721ContractDetailViewModel? {
+    static func detailViewModel(
+        record: SRC721ContractRecord,
+        loadsContractState: Bool = true,
+        loadsTokenURI: Bool = true
+    ) -> SRC721ContractDetailViewModel? {
         guard let context = context() else { return nil }
         guard record.accountId == context.accountId,
               record.chainId == context.evmKitWrapper.evmKit.chain.id,
@@ -103,10 +107,16 @@ enum SRC721Module {
             chainId: record.chainId,
             contractAddress: record.contractAddress
         )
-        return SRC721ContractDetailViewModel(record: record, service: service, storage: .shared)
+        return SRC721ContractDetailViewModel(
+            record: record,
+            service: service,
+            storage: .shared,
+            loadsContractState: loadsContractState,
+            loadsTokenURI: loadsTokenURI
+        )
     }
 
-    static func logoViewModel(record: SRC721ContractRecord, currentLogo: Data) -> SRC721LogoViewModel? {
+    static func logoViewModel(record: SRC721ContractRecord, type: SRC721ContractType, currentLogo: Data) -> SRC721LogoViewModel? {
         guard let context = context(requireSigner: true), !context.privateKey.isEmpty else { return nil }
         guard record.accountId == context.accountId,
               record.chainId == context.evmKitWrapper.evmKit.chain.id,
@@ -119,6 +129,6 @@ enum SRC721Module {
             chainId: record.chainId,
             contractAddress: record.contractAddress
         )
-        return SRC721LogoViewModel(record: record, currentLogo: currentLogo, service: service)
+        return SRC721LogoViewModel(record: record, type: type, currentLogo: currentLogo, service: service)
     }
 }

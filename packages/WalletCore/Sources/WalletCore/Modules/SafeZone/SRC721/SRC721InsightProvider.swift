@@ -106,15 +106,7 @@ struct SRC721InsightToken: Decodable, Equatable {
     var src721ContractType: SRC721ContractType {
         guard template else { return .generic }
 
-        let normalizedVersion = version?.lowercased()
-        let versionType: SRC721ContractType?
-        if normalizedVersion?.hasPrefix("src721-burnable-") == true {
-            versionType = .burnable
-        } else if normalizedVersion?.hasPrefix("src721-") == true {
-            versionType = .standard
-        } else {
-            versionType = nil
-        }
+        let versionType = version.flatMap(SRC721ContractType.recognized(version:))
 
         guard let versionType else {
             guard version == nil, let burnable else { return .generic }

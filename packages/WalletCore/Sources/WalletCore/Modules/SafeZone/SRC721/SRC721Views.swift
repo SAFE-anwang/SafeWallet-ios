@@ -377,7 +377,7 @@ private struct SRC721ContractsView: View {
         }
         .navigationTitle("safe_zone.src721.my_contracts".localized)
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { viewModel.refresh() }
+        .refreshable { await viewModel.refreshAndWait() }
     }
 }
 
@@ -1120,7 +1120,11 @@ private struct SRC721WalletAssetDetailRoute: View {
         }
         .task {
             guard viewModel == nil else { return }
-            let detailViewModel = SRC721Module.detailViewModel(record: asset.contract)
+            let detailViewModel = SRC721Module.detailViewModel(
+                record: asset.contract,
+                loadsContractState: false,
+                loadsTokenURI: false
+            )
             viewModel = detailViewModel
             detailViewModel?.loadToken(tokenId: asset.token.tokenId, showError: false)
         }
@@ -1185,6 +1189,12 @@ private struct SRC721WalletAssetDetailView: View {
             }
             presentationMode.wrappedValue.dismiss()
         }
+        .onDisappear {
+            // Remove stale indexer entries after the detail page has confirmed the token no longer exists on-chain.
+            if viewModel.tokenNoLongerExists {
+                onChanged(asset)
+            }
+        }
         .alert(operationAlertTitle, isPresented: Binding(
             get: { viewModel.operationMessage != nil && viewModel.operationState == .failed },
             set: { if !$0 { viewModel.operationMessage = nil } }
@@ -1246,20 +1256,23 @@ private struct SRC721WalletAssetDetailView: View {
                 }
 
                 section(title: "safe_zone.src721.section.nft_actions".localized) {
-                    if viewModel.tokenOperationPending {
-                        Text("safe_zone.src721.status.token_operation_pending".localized)
-                            .themeSubhead2(color: .themeAndy)
-                    }
-                    if viewModel.isLoadingToken {
+                    if viewModel.tokenNoLongerExists {
                         tokenStateStatus
-                    } else if viewModel.tokenState != nil {
-                        Text(viewModel.canTransferLoadedToken ? "safe_zone.src721.status.token_operable".localized : "safe_zone.src721.status.token_read_only".localized)
-                            .themeSubhead2(color: viewModel.canTransferLoadedToken ? .themeGreen : .themeGray)
                     } else {
-                        tokenStateStatus
-                    }
+                        if viewModel.tokenOperationPending {
+                            Text("safe_zone.src721.status.token_operation_pending".localized)
+                                .themeSubhead2(color: .themeAndy)
+                        }
+                        if viewModel.isLoadingToken {
+                            tokenStateStatus
+                        } else if viewModel.tokenState != nil {
+                            Text(viewModel.canTransferLoadedToken ? "safe_zone.src721.status.token_operable".localized : "safe_zone.src721.status.token_read_only".localized)
+                                .themeSubhead2(color: viewModel.canTransferLoadedToken ? .themeGreen : .themeGray)
+                        } else {
+                            tokenStateStatus
+                        }
 
-                    VStack(spacing: .margin8) {
+                        VStack(spacing: .margin8) {
 //                        SRC721AddressInput(
 //                            title: "safe_zone.src721.field.approved".localized,
 //                            prompt: "safe_zone.src721.placeholder.recipient",
@@ -1292,7 +1305,7 @@ private struct SRC721WalletAssetDetailView: View {
                             .frame(maxWidth: .infinity)
                             .disabled(!viewModel.canTransact || !viewModel.canTransferLoadedToken || viewModel.operationState == .sending || viewModel.tokenOperationPending)
 
-                            if asset.contract.contractType == .burnable {
+                            if viewModel.canBurnLoadedToken {
                                 actionButton("safe_zone.src721.action.burn".localized) {
                                     guard viewModel.validateTokenIdInput() else { return }
                                     isShowingBurnConfirmation = true
@@ -1301,9 +1314,10 @@ private struct SRC721WalletAssetDetailView: View {
                                 .disabled(!viewModel.canTransact || !viewModel.canBurnLoadedToken || viewModel.operationState == .sending || viewModel.tokenOperationPending)
                             }
                         }
+                        }
+                        .disabled(viewModel.tokenState == nil || viewModel.isLoadingToken)
+                        .opacity(viewModel.tokenState == nil || viewModel.isLoadingToken ? 0.65 : 1)
                     }
-                    .disabled(viewModel.tokenState == nil || viewModel.isLoadingToken)
-                    .opacity(viewModel.tokenState == nil || viewModel.isLoadingToken ? 0.65 : 1)
                 }
             }
             .padding(.init(top: .margin12, leading: .margin16, bottom: .margin32, trailing: .margin16))
@@ -1317,7 +1331,10 @@ private struct SRC721WalletAssetDetailView: View {
     }
 
     @ViewBuilder private var tokenStateStatus: some View {
-        if viewModel.isLoadingToken {
+        if viewModel.tokenNoLongerExists {
+            Text("safe_zone.src721.error.token_no_longer_exists".localized)
+                .themeSubhead2(color: .themeRed)
+        } else if viewModel.isLoadingToken {
             HStack(spacing: .margin8) {
                 ProgressView()
             }
@@ -1796,7 +1813,11 @@ struct SRC721ContractDetailView: View {
             onSubmitted()
             presentationMode.wrappedValue.dismiss()
         }
-        .refreshable { viewModel.refresh() }
+        .refreshable {
+            if let refreshTask = viewModel.refresh() {
+                await refreshTask.value
+            }
+        }
     }
 
     private func dismissDetailKeyboard() {
@@ -1845,7 +1866,7 @@ struct SRC721ContractDetailView: View {
     private var summary: some View {
         VStack(alignment: .leading, spacing: .margin8) {
             detailRow("safe_zone.src721.field.contract".localized, viewModel.record.contractAddress, copyValue: viewModel.record.contractAddress)
-            detailRow("safe_zone.src721.field.type".localized, viewModel.record.contractType.title)
+            detailRow("safe_zone.src721.field.type".localized, viewModel.contractType.title)
             if let state = viewModel.contractState {
                 detailRow("safe_zone.src721.field.owner".localized, state.ownerAddress, copyValue: state.ownerAddress)
                 detailRow("safe_zone.src721.field.supply".localized, "\(state.totalSupply) / \(state.maxSupply)")
@@ -1957,15 +1978,15 @@ struct SRC721ContractDetailView: View {
             }
             .disabled(!viewModel.canManage || viewModel.operationState == .sending || !viewModel.hasUpdateChanges(baseURI: baseURI, maxSupply: maxSupply, mintPrice: mintPrice, orgName: orgName, description: description, officialURL: officialURL, whitePaperURL: whitePaperURL, logo: nil))
         }
-        .disabled(!viewModel.isContractStateReady)
-        .opacity(viewModel.isContractStateReady ? 1 : 0.65)
+        .disabled(!viewModel.canManage || !viewModel.isContractStateReady)
+        .opacity(viewModel.canManage && viewModel.isContractStateReady ? 1 : 0.65)
     }
 
     private var logoSection: some View {
         section(title: "safe_zone.src721.section.logo".localized) {
             NavigationLink {
                 if let state = viewModel.contractState,
-                   let logoViewModel = SRC721Module.logoViewModel(record: viewModel.record, currentLogo: state.logo) {
+                   let logoViewModel = SRC721Module.logoViewModel(record: viewModel.record, type: viewModel.contractType, currentLogo: state.logo) {
                     SRC721LogoView(viewModel: logoViewModel) { viewModel.refresh() }
                 } else {
                     Text("safe_zone.src721.error.signer".localized)
@@ -2032,11 +2053,13 @@ struct SRC721ContractDetailView: View {
                     viewModel.transfer(to: recipient)
                 }
                     .disabled(!viewModel.canTransact || !viewModel.canTransferLoadedToken || viewModel.tokenOperationPending)
-                actionButton("safe_zone.src721.action.burn".localized) {
-                    guard viewModel.validateTokenIdInput() else { return }
-                    isShowingBurnConfirmation = true
+                if viewModel.canBurnLoadedToken {
+                    actionButton("safe_zone.src721.action.burn".localized) {
+                        guard viewModel.validateTokenIdInput() else { return }
+                        isShowingBurnConfirmation = true
+                    }
+                        .disabled(!viewModel.canTransact || !viewModel.canBurnLoadedToken || viewModel.tokenOperationPending)
                 }
-                    .disabled(!viewModel.canTransact || !viewModel.canBurnLoadedToken || viewModel.tokenOperationPending)
             }
         }
     }
@@ -2092,7 +2115,7 @@ struct SRC721ContractDetailView: View {
             minHeight: minHeight,
             topSpacing: .margin8,
             horizontalPadding: .margin16,
-            showsBorder: false,
+            showsBorder: true,
             transform: transform
         )
     }
