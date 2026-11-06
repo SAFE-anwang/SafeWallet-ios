@@ -70,7 +70,7 @@ class WalletTokenViewModel: ObservableObject {
 extension WalletTokenViewModel: IWalletServiceDelegate {
     func didUpdateWallets(walletService _: WalletService) {}
 
-    func didUpdate(wallets _: [Wallet], walletService _: WalletService) {
+    func didUpdate(wallets _: [Wallet], loadError _: String?, walletService _: WalletService) {
         // todo???
     }
 

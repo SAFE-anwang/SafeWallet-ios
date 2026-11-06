@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import HsToolKit
 import MarketKit
 import RxRelay
 import RxSwift
@@ -19,7 +20,7 @@ public class WalletManager {
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).wallet_manager", qos: .userInitiated)
 
-    private var cachedActiveWalletData = WalletData(wallets: [], account: nil, childWalletId: nil)
+    private var cachedActiveWalletData = WalletData(wallets: [], account: nil, childWalletId: nil, loadError: nil)
 
     var onWalletMutation: (([Wallet], [Wallet], WalletMutationSource) -> Void)?
     var onEnabledWalletMutation: (([EnabledWallet], [EnabledWallet], WalletMutationSource) -> Void)?
@@ -64,13 +65,17 @@ public class WalletManager {
             do {
                 let childWalletId = ChildWalletBridge.shared.activeChildWalletId(account: activeAccount)
                 let wallets = try childWalletId.map { try storage.wallets(childWalletId: $0, account: activeAccount) } ?? storage.wallets(account: activeAccount)
-                cachedActiveWalletData = WalletData(wallets: wallets, account: activeAccount, childWalletId: childWalletId)
+                cachedActiveWalletData = WalletData(wallets: wallets, account: activeAccount, childWalletId: childWalletId, loadError: nil)
             } catch {
-                // todo
-                cachedActiveWalletData = WalletData(wallets: [], account: activeAccount, childWalletId: ChildWalletBridge.shared.activeChildWalletId(account: activeAccount))
+                cachedActiveWalletData = WalletData(
+                    wallets: [],
+                    account: activeAccount,
+                    childWalletId: ChildWalletBridge.shared.activeChildWalletId(account: activeAccount),
+                    loadError: error.smartDescription
+                )
             }
         } else {
-            cachedActiveWalletData = WalletData(wallets: [], account: nil, childWalletId: nil)
+            cachedActiveWalletData = WalletData(wallets: [], account: nil, childWalletId: nil, loadError: nil)
         }
 
         activeWalletDataRelay.accept(cachedActiveWalletData)
@@ -218,5 +223,6 @@ public extension WalletManager {
         public let wallets: [Wallet]
         public let account: Account?
         public let childWalletId: String?
+        public let loadError: String?
     }
 }

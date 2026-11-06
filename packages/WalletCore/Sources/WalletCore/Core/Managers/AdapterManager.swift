@@ -131,12 +131,18 @@ public class AdapterManager {
 
         if previousContext.accountId != nextContext.accountId || previousContext.childWalletId != nextContext.childWalletId {
             diagnosticLog("context changed; stopping \(newAdapterMap.count) existing adapter(s)")
-            for adapter in newAdapterMap.values {
+            let staleAdapters = Array(newAdapterMap.values)
+            // Remove stopped instances from shared state before any new context can read them.
+            // If this build becomes stale, the next queued build must create fresh adapters.
+            queue.sync {
+                self._adapterData = AdapterData(adapterMap: [:], account: account, childWalletId: childWalletId)
+            }
+            newAdapterMap = [:]
+            for adapter in staleAdapters {
                 diagnosticLog("adapter stop begin id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter)) reason=context-change")
                 adapter.stop()
                 diagnosticLog("adapter stop end id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter)) reason=context-change")
             }
-            newAdapterMap = [:]
             cancelSafe4SyncManagerOnInitQueue()
         }
 
@@ -475,7 +481,18 @@ extension AdapterManager {
 
     func refresh() {
         initAdaptersQueue.async {
-            let adapters = self.queue.sync { Array(self._adapterData.adapterMap.values) }
+            let previouslyActiveAdapters = self.queue.sync {
+                Set(self._adapterData.adapterMap.values.map { ObjectIdentifier($0) })
+            }
+            let activeWalletData = self.walletManager.activeWalletData
+            self._initAdapters(
+                wallets: activeWalletData.wallets,
+                account: activeWalletData.account,
+                childWalletId: activeWalletData.childWalletId
+            )
+            let adapters = self.queue.sync {
+                self._adapterData.adapterMap.values.filter { previouslyActiveAdapters.contains(ObjectIdentifier($0)) }
+            }
             for adapter in adapters {
                 self.diagnosticLog("adapter refresh begin id=\(self.diagnosticObjectID(adapter)) type=\(type(of: adapter))")
                 adapter.refresh()

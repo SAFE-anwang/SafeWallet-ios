@@ -11,7 +11,19 @@ struct WalletView: View {
     var body: some View {
         Group {
             if let account = viewModel.account {
-                if viewModel.noTokens {
+                if viewModel.isLoadingWallets && viewModel.items.isEmpty {
+                    ThemeView {
+                        VStack { ProgressView() }.frame(maxHeight: .infinity)
+                    }
+                } else if let error = viewModel.walletLoadError {
+                    ThemeView {
+                        PlaceholderViewNew(icon: "warning_filled", subtitle: error) {
+                            ThemeButton(text: "button.retry".localized, mode: .transparent, size: .small) {
+                                Task { await viewModel.refresh() }
+                            }
+                        }
+                    }
+                } else if viewModel.noTokens {
                     emptyView(account: account)
                 } else {
                     listView(account: account)

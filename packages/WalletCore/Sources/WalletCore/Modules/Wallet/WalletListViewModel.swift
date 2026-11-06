@@ -36,6 +36,8 @@ public class WalletListViewModel: ObservableObject {
 
     @Published public private(set) var items: [Item] = []
     @Published public private(set) var noTokens: Bool = false
+    @Published public private(set) var walletLoadError: String?
+    @Published public private(set) var isLoadingWallets = false
     @Published private(set) var isReachable: Bool = true
 
     var walletService: WalletService?
@@ -50,7 +52,11 @@ public class WalletListViewModel: ObservableObject {
             sortType = .balance
         }
 
-        account = accountManager.activeAccount
+        let activeAccount = accountManager.activeAccount
+        account = activeAccount
+        let activeWalletData = walletManager.activeWalletData
+        walletLoadError = activeWalletData.account?.id == activeAccount?.id ? activeWalletData.loadError : nil
+        isLoadingWallets = activeAccount != nil && activeWalletData.account?.id != activeAccount?.id
         balancePrimaryValue = appSettingManager.balancePrimaryValue
         balanceHidden = balanceHiddenManager.balanceHidden
         amountRounding = amountRoundingManager.useAmountRounding
@@ -99,8 +105,12 @@ public class WalletListViewModel: ObservableObject {
 
     private func handleUpdated(activeAccount: Account?) {
         account = activeAccount
+        walletLoadError = nil
+        isLoadingWallets = activeAccount != nil
 
         queue.async {
+            self.__items = []
+            self._reportItems()
             self._syncWalletService()
         }
     }
@@ -131,7 +141,10 @@ public class WalletListViewModel: ObservableObject {
     }
 
     private func _syncNoTokens() {
-        let value = account.map { walletManager.activeWalletData.account?.id == $0.id && __items.isEmpty } ?? false
+        let walletData = walletManager.activeWalletData
+        let value = account.map {
+            walletData.account?.id == $0.id && walletData.loadError == nil && __items.isEmpty
+        } ?? false
 
         DispatchQueue.main.async {
             self.noTokens = value
@@ -241,8 +254,27 @@ extension WalletListViewModel: IWalletServiceDelegate {
         }
     }
 
-    func didUpdate(wallets: [Wallet], walletService: WalletService) {
+    func didUpdate(wallets: [Wallet], loadError: String?, walletService: WalletService) {
         queue.async {
+            guard walletService.accountId == self.account?.id else {
+                return
+            }
+
+            DispatchQueue.main.async {
+                guard walletService.accountId == self.account?.id else {
+                    return
+                }
+                self.walletLoadError = loadError
+                self.isLoadingWallets = false
+            }
+
+            guard loadError == nil else {
+                self.__items = []
+                self._reportItems()
+                self._syncTotalItem()
+                return
+            }
+
             self._sync(wallets: wallets, walletService: walletService)
         }
     }

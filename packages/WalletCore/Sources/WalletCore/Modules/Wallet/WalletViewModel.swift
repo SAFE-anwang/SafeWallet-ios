@@ -207,6 +207,7 @@ extension WalletViewModel {
     }
 
     func refresh() async {
+        Core.shared.walletManager.preloadWallets()
         walletService?.refresh()
         coinPriceService.refresh()
 

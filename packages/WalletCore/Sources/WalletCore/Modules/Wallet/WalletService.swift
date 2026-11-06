@@ -4,7 +4,7 @@ import RxSwift
 
 protocol IWalletServiceDelegate: AnyObject {
     func didUpdateWallets(walletService: WalletService)
-    func didUpdate(wallets: [Wallet], walletService: WalletService)
+    func didUpdate(wallets: [Wallet], loadError: String?, walletService: WalletService)
     func didUpdate(isMainNet: Bool, wallet: Wallet)
     func didUpdate(balanceData: BalanceData, wallet: Wallet)
     func didUpdate(state: AdapterState, wallet: Wallet)
@@ -33,7 +33,7 @@ class WalletService {
                 return
             }
 
-            self?.handleUpdated(wallets: walletData.wallets)
+            self?.handleUpdated(walletData: walletData)
         }
     }
 
@@ -51,8 +51,8 @@ class WalletService {
         return wallets
     }
 
-    private func handleUpdated(wallets: [Wallet]) {
-        delegate?.didUpdate(wallets: filtered(wallets), walletService: self)
+    private func handleUpdated(walletData: WalletManager.WalletData) {
+        delegate?.didUpdate(wallets: filtered(walletData.wallets), loadError: walletData.loadError, walletService: self)
     }
 }
 
@@ -62,7 +62,16 @@ extension WalletService {
     }
 
     var wallets: [Wallet] {
-        filtered(walletManager.activeWallets)
+        let activeWalletData = walletManager.activeWalletData
+        let childWalletId = ChildWalletBridge.shared.activeChildWalletId(account: account)
+
+        guard activeWalletData.account?.id == account.id,
+              activeWalletData.childWalletId == childWalletId
+        else {
+            return filtered(walletManager.wallets(account: account, childWalletId: childWalletId))
+        }
+
+        return filtered(activeWalletData.wallets)
     }
 
     func isMainNet(wallet: Wallet) -> Bool? {
