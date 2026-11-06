@@ -66,7 +66,7 @@ final class SRC721ValidationTests: XCTestCase {
 
     func testSRC721TransactionSelectorsMapPromotionAndBurnWithoutAffectingOtherMethods() {
         XCTAssertEqual(SRC721TransactionLabel.method(methodId: "0x198581a5")?.title, "safe_zone.src721.transaction.promotion".localized)
-        XCTAssertEqual(SRC721TransactionLabel.method(methodId: "0xe58306f9")?.title, "safe_zone.src721.transaction.creation".localized)
+        XCTAssertEqual(SRC721TransactionLabel.method(methodId: "0xe58306f9")?.title, "add_token.NFT.mint".localized)
         XCTAssertEqual(SRC721TransactionLabel.method(methodId: "0X42966C68")?.title, "safe_zone.src721.transaction.burn".localized)
         XCTAssertEqual(SRC721TransactionLabel.creation.title, "safe_zone.src721.transaction.creation".localized)
         XCTAssertNil(SRC721TransactionLabel.method(methodId: "0x6b29297f"))

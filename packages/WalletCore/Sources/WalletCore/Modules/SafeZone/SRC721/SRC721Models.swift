@@ -48,12 +48,14 @@ enum SRC721TransactionOperation: String, Codable, Hashable {
 enum SRC721TransactionLabel {
     case promotion
     case creation
+    case mint
     case burn
 
     var title: String {
         switch self {
         case .promotion: return "safe_zone.src721.transaction.promotion".localized
         case .creation: return "safe_zone.src721.transaction.creation".localized
+        case .mint: return "add_token.NFT.mint".localized
         case .burn: return "safe_zone.src721.transaction.burn".localized
         }
     }
@@ -61,7 +63,7 @@ enum SRC721TransactionLabel {
     static func method(methodId: String) -> SRC721TransactionLabel? {
         switch methodId.lowercased() {
         case "0x198581a5": .promotion
-        case "0xe58306f9": .creation
+        case "0xe58306f9": .mint
         case "0x42966c68": .burn
         default: nil
         }
