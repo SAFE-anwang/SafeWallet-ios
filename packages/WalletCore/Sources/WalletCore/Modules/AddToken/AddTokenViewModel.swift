@@ -1,4 +1,5 @@
 import Combine
+import EvmKit
 import Foundation
 import MarketKit
 
@@ -63,7 +64,16 @@ class AddTokenViewModel: ObservableObject {
         let tokenQuery = service.tokenQuery(reference: trimmed)
 
         if let existingToken = try? coinManager.token(query: tokenQuery) {
-            state = .alreadyExists(token: existingToken)
+            let childWalletId = ChildWalletBridge.shared.activeChildWalletId(account: account)
+            let isEnabled = walletManager.wallets(account: account, childWalletId: childWalletId).contains {
+                $0.token.tokenQuery.id.caseInsensitiveCompare(tokenQuery.id) == .orderedSame
+            }
+
+            if isEnabled || !canAddUnpromotedSafe4Token(tokenQuery: tokenQuery) {
+                state = .alreadyExists(token: existingToken)
+            } else {
+                state = .fetched(token: existingToken)
+            }
             return
         }
 
@@ -79,6 +89,53 @@ class AddTokenViewModel: ObservableObject {
                 }
             }
         }
+    }
+
+    private func canAddUnpromotedSafe4Token(tokenQuery: TokenQuery) -> Bool {
+        guard tokenQuery.blockchainType == .safe4,
+              case let .eip20(address) = tokenQuery.tokenType,
+              let record = try? Core.shared.safe4CustomTokenStorage.asset(address: address, chainId: Safe4Network.currentChainId),
+              let ownerAddress = safe4OwnerAddress(account: account)
+        else {
+            return false
+        }
+
+        return Safe4TokenAddPolicy.canAddUnpromotedToken(
+            isPromoted: record.isPromoted,
+            creator: record.creator,
+            ownerAddress: ownerAddress
+        )
+    }
+
+    private func safe4OwnerAddress(account: Account) -> String? {
+        guard let chain = Core.shared.evmBlockchainManager.chain(chainId: Safe4Network.currentChainId) else {
+            return nil
+        }
+
+        let bridge = ChildWalletBridge.shared
+        let identity = bridge.identity(account: account)
+        if identity.childWallet != nil {
+            do {
+                guard let address = try bridge.evmAddress(identity: identity, chain: chain) else {
+                    return nil
+                }
+                return address.eip55
+            } catch {
+                return nil
+            }
+        }
+
+        return try? AccountAddress.evmAddress(account: account, blockchainType: .safe4).eip55
+    }
+}
+
+enum Safe4TokenAddPolicy {
+    static func canAddUnpromotedToken(isPromoted: Bool, creator: String, ownerAddress: String?) -> Bool {
+        guard !isPromoted, let ownerAddress else {
+            return false
+        }
+
+        return creator.caseInsensitiveCompare(ownerAddress) != .orderedSame
     }
 }
 
