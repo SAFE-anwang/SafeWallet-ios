@@ -51,6 +51,8 @@ struct NftV2RootView: View {
                     collection: collection,
                     currentCollection: { viewModel.collection(id: collection.id) },
                     collectionRevision: { viewModel.collectionRevision },
+                    isLoadingItems: { viewModel.isLoadingItems(collectionId: collection.id) },
+                    onLoadItems: { viewModel.loadCollectionItems(collection) },
                     isFavorite: { viewModel.isFavorite(collection: collection) },
                     sendCapability: { asset in
                         viewModel.sendCapability(asset: asset)
@@ -175,6 +177,18 @@ struct NftV2RootView: View {
             ForEach(viewModel.chainSections) { section in
                 Section {
                     if !isCollapsed(section.chainState.chain) {
+                        if section.collections.isEmpty,
+                           viewModel.hasUnresolvedSafe4Names(chain: section.chainState.chain),
+                           viewModel.filter == .all {
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                ThemeText("nft_v2.state.loading_names".localized, style: .captionSB, colorStyle: .secondary)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+
                         ForEach(section.collections) { collection in
                             Button {
                                 path.append(collection)
@@ -192,7 +206,8 @@ struct NftV2RootView: View {
                             }
                         }
 
-                        if section.collections.isEmpty && viewModel.hasVisibleContent {
+                        if section.collections.isEmpty && viewModel.hasVisibleContent &&
+                            !viewModel.hasUnresolvedSafe4Names(chain: section.chainState.chain) {
                             emptyCollectionsRow
                         }
                     }
@@ -201,7 +216,7 @@ struct NftV2RootView: View {
                 }
             }
 
-            if !viewModel.hasVisibleContent {
+            if !viewModel.hasVisibleContent && !viewModel.hasUnresolvedSafe4Names {
                 Section {
                     emptyCollectionsRow
                 }

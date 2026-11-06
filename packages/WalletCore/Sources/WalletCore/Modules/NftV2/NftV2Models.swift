@@ -183,9 +183,11 @@ struct NftV2Collection: Identifiable, Hashable {
     let market: NftV2Market?
     let marketUrl: String?
     let items: [NftV2Asset]
+    var reportedItemCount: Int? = nil
+    var isNameResolved: Bool = true
 
     var count: Int {
-        items.reduce(0) { $0 + $1.balance }
+        items.isEmpty ? (reportedItemCount ?? 0) : items.reduce(0) { $0 + $1.balance }
     }
 }
 

@@ -55,6 +55,7 @@ final class NftV2ViewModel: ObservableObject {
     @Published private(set) var confirmedPendingTransferIds = Set<String>()
     @Published private(set) var sendCapabilityByAssetKey = [String: NftV2SendCapability]()
     @Published private(set) var sendingAssetKeys = Set<String>()
+    @Published private(set) var loadingCollectionIds = Set<String>()
 
     private let inventoryService: NftV2InventoryService
     private let disposeBag = DisposeBag()
@@ -77,11 +78,14 @@ final class NftV2ViewModel: ObservableObject {
     }
 
     var visibleCollections: [NftV2Collection] {
+        let nameReadyCollections = collections.filter { collection in
+            collection.chain != .safe4 || collection.isNameResolved
+        }
         switch filter {
         case .all:
-            return collections
+            return nameReadyCollections
         case .favorites:
-            return collections.filter { inventoryService.isFavorite(collectionId: $0.id) }
+            return nameReadyCollections.filter { inventoryService.isFavorite(collectionId: $0.id) }
         }
     }
 
@@ -110,8 +114,39 @@ final class NftV2ViewModel: ObservableObject {
         !visibleCollections.isEmpty
     }
 
+    var hasUnresolvedSafe4Names: Bool {
+        collections.contains { collection in
+            guard collection.chain == .safe4, !collection.isNameResolved else { return false }
+            return filter == .all || inventoryService.isFavorite(collectionId: collection.id)
+        }
+    }
+
+    func hasUnresolvedSafe4Names(chain: NftV2Chain) -> Bool {
+        chain == .safe4 && collections.contains { $0.chain == chain && !$0.isNameResolved }
+    }
+
     func collection(id: String) -> NftV2Collection? {
         collections.first { $0.id == id }
+    }
+
+    func loadCollectionItems(_ collection: NftV2Collection) {
+        guard collection.chain == .safe4,
+              !loadingCollectionIds.contains(collection.id),
+              collection.items.isEmpty else { return }
+
+        loadingCollectionIds.insert(collection.id)
+        inventoryService.loadCollectionItems(chain: collection.chain, contractAddress: collection.contractAddress)
+            .observeOn(MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] in
+                self?.loadingCollectionIds.remove(collection.id)
+            }, onError: { [weak self] _ in
+                self?.loadingCollectionIds.remove(collection.id)
+            })
+            .disposed(by: disposeBag)
+    }
+
+    func isLoadingItems(collectionId: String) -> Bool {
+        loadingCollectionIds.contains(collectionId)
     }
 
     func favoriteCount(chain: NftV2Chain) -> Int {

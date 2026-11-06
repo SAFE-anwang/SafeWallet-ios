@@ -2733,6 +2733,7 @@
 "safe_zone.invalid_input" = "请输入有效值";
 "safe_zone.my_master_node" = "我的主节点";
 "nft_v2.state.items_count" = "%d 个项目";
+"nft_v2.state.loading_names" = "加载中...";
 "cex_withdraw.fee_from_amount" = "费用金额";
 "nft_v2.pending.subtitle" = "待确认 %d 个";
 "safe_zone.safe4.redeem.locked" = "锁仓余额迁移";
@@ -3498,7 +3499,7 @@
 "safe_zone.src721.action.update_all" = "更新全部信息";
 "safe_zone.src721.transaction.update_nft_info" = "NFT 信息更新";
 "safe_zone.src721.transaction.promotion" = "NFT 推广";
-"safe_zone.src721.transaction.creation" = "NFT创建";
+"safe_zone.src721.transaction.creation" = "NFT 合约创建";
 "safe_zone.src721.transaction.burn" = "NFT 销毁";
 "safe_zone.src721.transaction.dapp.promotion" = "DApp 推广";
 "safe_zone.src721.transaction.dapp.destroy" = "DApp 销毁";

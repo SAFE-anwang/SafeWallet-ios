@@ -607,7 +607,7 @@ final class NftV2InventoryService {
                 preferred: localPayload,
                 fallback: currentSnapshot.chainStates.first(where: { $0.chain == chain })?.payload
             )
-            let count = payload.collections.reduce(0) { $0 + $1.items.count }
+            let count = payload.itemCount
             let refreshing = syncingChains.contains(chain)
             let status: NftV2ChainState.Status = refreshing ? .syncing(count: count) : .cached(count: count)
             let state = NftV2ChainState(
@@ -712,7 +712,7 @@ final class NftV2InventoryService {
 
     private func emitRefreshingState(chain: NftV2Chain, context: NftV2AddressContext) {
         let payload = chainStateMap[chain]?.payload
-        let count = payload?.collections.reduce(0) { $0 + $1.items.count } ?? 0
+        let count = payload?.itemCount ?? 0
         let state = NftV2ChainState(
             chain: chain,
             address: context.address,
@@ -1025,7 +1025,7 @@ final class NftV2InventoryService {
         switch provider.availability {
         case .available:
             if let cachedPayload {
-                let count = cachedPayload.payload.collections.reduce(0) { $0 + $1.items.count }
+                let count = cachedPayload.payload.itemCount
                 let hasLocalPayload = provider.localPayload(address: context.address, account: account) != nil
                 return NftV2ChainState(
                     chain: chain,
@@ -1118,7 +1118,7 @@ final class NftV2InventoryService {
                         chain: chain,
                         address: context.address,
                         market: market,
-                        status: .synced(count: effectivePayload.collections.reduce(0) { $0 + $1.items.count }),
+                        status: .synced(count: effectivePayload.itemCount),
                         isRefreshing: false,
                         payload: effectivePayload
                     )
@@ -1217,8 +1217,39 @@ final class NftV2InventoryService {
             imageUrl: preferred.imageUrl ?? fallback.imageUrl,
             market: preferred.market ?? fallback.market,
             marketUrl: preferred.marketUrl ?? fallback.marketUrl,
-            items: items.sorted(by: assetSort)
+            items: items.sorted(by: assetSort),
+            reportedItemCount: preferred.reportedItemCount ?? fallback.reportedItemCount,
+            isNameResolved: preferred.isNameResolved
         )
+    }
+
+    func loadCollectionItems(chain: NftV2Chain, contractAddress: String) -> Single<Void> {
+        guard chain == .safe4,
+              let account = accountManager.activeAccount,
+              let context = addressResolver.addressContexts(account: account)[chain],
+              let provider = providers[chain] as? INftV2Safe4InventoryProvider else {
+            return .just(())
+        }
+
+        let chainId = Safe4Network.currentChainId
+        guard provider.localPayload(address: context.address, account: account) == nil else {
+            return provider.loadCollectionItems(
+                address: context.address,
+                account: account,
+                contractAddress: contractAddress,
+                safe4ChainId: chainId
+            )
+        }
+
+        return provider.load(address: context.address, account: account, safe4ChainId: chainId)
+            .flatMap { _ in
+                provider.loadCollectionItems(
+                    address: context.address,
+                    account: account,
+                    contractAddress: contractAddress,
+                    safe4ChainId: chainId
+                )
+            }
     }
 
     private func mergedAsset(preferred: NftV2Asset, fallback: NftV2Asset) -> NftV2Asset {
@@ -1364,6 +1395,8 @@ final class NftV2SnapshotCacheStore {
         let market: String?
         let marketUrl: String?
         let items: [AssetCache]
+        let reportedItemCount: Int?
+        let isNameResolved: Bool?
     }
 
     private struct AssetCache: Codable {
@@ -1499,7 +1532,9 @@ final class NftV2SnapshotCacheStore {
             imageUrl: collection.imageUrl,
             market: collection.market?.rawValue,
             marketUrl: collection.marketUrl,
-            items: collection.items.map(assetCache(from:))
+            items: collection.items.map(assetCache(from:)),
+            reportedItemCount: collection.reportedItemCount,
+            isNameResolved: collection.isNameResolved
         )
     }
 
@@ -1537,7 +1572,9 @@ final class NftV2SnapshotCacheStore {
             imageUrl: cache.imageUrl,
             market: cache.market.flatMap(NftV2Market.init(rawValue:)),
             marketUrl: cache.marketUrl,
-            items: items
+            items: items,
+            reportedItemCount: cache.reportedItemCount,
+            isNameResolved: cache.isNameResolved ?? (chain != .safe4)
         )
     }
 

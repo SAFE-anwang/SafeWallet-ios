@@ -2672,6 +2672,7 @@
 "safe_zone.invalid_input" = "Invalid Input";
 "safe_zone.my_master_node" = "My Master Node";
 "nft_v2.state.items_count" = "%d items";
+"nft_v2.state.loading_names" = "Loading collection names...";
 "cex_withdraw.fee_from_amount" = "Fee from amount";
 "nft_v2.pending.subtitle" = "%d pending";
 "safe_zone.safe4.redeem.locked" = "Redeem Locked";
@@ -3485,7 +3486,7 @@
 "safe_zone.src721.action.update_all" = "Update all information";
 "safe_zone.src721.transaction.update_nft_info" = "NFT information update";
 "safe_zone.src721.transaction.promotion" = "NFT Promotion";
-"safe_zone.src721.transaction.creation" = "NFT Creation";
+"safe_zone.src721.transaction.creation" = "NFT Contract Creation";
 "safe_zone.src721.transaction.burn" = "NFT Burn";
 "safe_zone.src721.transaction.dapp.promotion" = "DApp Promotion";
 "safe_zone.src721.transaction.dapp.destroy" = "DApp Destruction";

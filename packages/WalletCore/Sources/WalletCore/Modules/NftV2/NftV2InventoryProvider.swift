@@ -36,6 +36,10 @@ enum NftV2ProviderAvailability {
 
 struct NftV2InventoryPayload {
     let collections: [NftV2Collection]
+
+    var itemCount: Int {
+        collections.reduce(0) { $0 + $1.count }
+    }
 }
 
 private struct NftV2WalletInventoryItem {

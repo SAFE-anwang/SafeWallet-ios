@@ -19,6 +19,8 @@ struct NftV2CollectionView: View {
     let collection: NftV2Collection
     let currentCollection: () -> NftV2Collection?
     let collectionRevision: () -> Int
+    let isLoadingItems: () -> Bool
+    let onLoadItems: () -> Void
     let isFavorite: () -> Bool
     let sendCapability: (NftV2Asset) -> NftV2SendCapability
     let onRequestSendCapabilityRefresh: (NftV2Asset) -> Void
@@ -75,6 +77,7 @@ struct NftV2CollectionView: View {
             syncDisplayedItems()
         }
         .onAppear {
+            onLoadItems()
             if displayedItems.isEmpty {
                 syncDisplayedItems()
             }
@@ -176,11 +179,17 @@ struct NftV2CollectionView: View {
             }
 
             if displayedItems.isEmpty {
-                ThemeText("nft_v2.empty.title".localized, style: .captionSB, colorStyle: .secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(Color.themeTyler)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                if isLoadingItems() {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(16)
+                } else {
+                    ThemeText("nft_v2.empty.title".localized, style: .captionSB, colorStyle: .secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .background(Color.themeTyler)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
             }
 
             if hasMore {
