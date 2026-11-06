@@ -129,6 +129,16 @@ struct MarketDappServiceTests {
         #expect(filtered.map(\.name) == ["AAVE", "Compound", "PancakeSwap"])
     }
 
+    @Test func parsesDappTransactionCountBlockParameters() {
+        #expect({ if case .some(.latest) = MarketDappWeb3Parser.blockParameter("latest") { true } else { false } }())
+        #expect({ if case .some(.pending) = MarketDappWeb3Parser.blockParameter("pending") { true } else { false } }())
+        #expect({ if case .some(.earliest) = MarketDappWeb3Parser.blockParameter("earliest") { true } else { false } }())
+        #expect({ if case .some(.blockNumber(value: 16)) = MarketDappWeb3Parser.blockParameter("0x10") { true } else { false } }())
+        #expect({ if case .none = MarketDappWeb3Parser.blockParameter("16") { true } else { false } }())
+        #expect({ if case .none = MarketDappWeb3Parser.blockParameter("0xzz") { true } else { false } }())
+        #expect({ if case .none = MarketDappWeb3Parser.blockParameter("safe") { true } else { false } }())
+    }
+
     private func makeDapp(
         type: String = "SAFE",
         subType: String = "SAFE DAPP",

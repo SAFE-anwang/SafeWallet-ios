@@ -378,7 +378,6 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
             print("[Dapp] INFO: Handling eth_call")
             handleEthCall(id: id, params: params)
         case "eth_getTransactionCount":
-            // ✅ 新增：获取 nonce（防止重复发送）
             print("[Dapp] INFO: Handling eth_getTransactionCount")
             handleGetTransactionCount(id: id, params: params)
         case "eth_gasPrice":
@@ -386,7 +385,6 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
             print("[Dapp] INFO: Handling eth_gasPrice")
             handleGasPrice(id: id)
         case "eth_estimateGas":
-            // ✅ 新增：估算 Gas（Swap 前计算费用）
             print("[Dapp] INFO: Handling eth_estimateGas")
             handleEstimateGas(id: id, params: params)
         case Web3Method.ethSendTransaction.name:
@@ -468,11 +466,49 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
         sendProviderResponse(id: id, resultJson: "\"0x\"", error: nil)
     }
 
-    /// 处理 eth_getTransactionCount - 获取 nonce
-    /// 策略：返回 "0x1"（nonce = 1），让 DApp 继续执行
+    /// Return the requested account's transaction count from the selected chain RPC.
     private func handleGetTransactionCount(id: Int, params: Any?) {
-        print("[Dapp] eth_getTransactionCount: returning default nonce 1")
-        sendProviderResponse(id: id, resultJson: "\"0x1\"", error: nil)
+        guard let evmKitWrapper = connectedEvmKitWrapper() else {
+            sendProviderResponse(id: id, resultJson: "null", error: "Wallet not available.")
+            return
+        }
+
+        guard let values = params as? [Any],
+              let addressString = values.first as? String,
+              let requestedAddress = try? EvmKit.Address(hex: addressString)
+        else {
+            sendProviderResponse(id: id, resultJson: "null", error: "Invalid address for eth_getTransactionCount.")
+            return
+        }
+
+        guard values.count > 1,
+              let blockParameter = MarketDappWeb3Parser.blockParameter(values[1])
+        else {
+            sendProviderResponse(id: id, resultJson: "null", error: "Invalid block parameter for eth_getTransactionCount.")
+            return
+        }
+
+        guard let syncSource = Core.shared.evmSyncSourceManager.httpSyncSource(blockchainType: evmKitWrapper.blockchainType),
+              case let .http(urls, auth) = syncSource.rpcSource
+        else {
+            sendProviderResponse(id: id, resultJson: "null", error: "No HTTP RPC endpoint available for eth_getTransactionCount.")
+            return
+        }
+
+        let provider = NodeApiProvider(networkManager: Core.shared.networkManager, urls: urls, auth: auth)
+        Task { [weak self] in
+            do {
+                let nonce = try await provider.fetch(rpc: GetTransactionCountJsonRpc(address: requestedAddress, defaultBlockParameter: blockParameter))
+                guard nonce >= 0 else {
+                    self?.sendProviderResponse(id: id, resultJson: "null", error: "RPC returned an invalid transaction count.")
+                    return
+                }
+                self?.sendProviderResponse(id: id, resultJson: "\"0x\(String(nonce, radix: 16))\"", error: nil)
+            } catch {
+                print("[Dapp] eth_getTransactionCount failed: \(error)")
+                self?.sendProviderResponse(id: id, resultJson: "null", error: error.localizedDescription)
+            }
+        }
     }
 
     /// 处理 eth_gasPrice - 获取 Gas 价格
@@ -482,11 +518,75 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
         sendProviderResponse(id: id, resultJson: "\"0xB2D05E00\"", error: nil)
     }
 
-    /// 处理 eth_estimateGas - 估算 Gas
-    /// 策略：返回 "0x5208"（21000 gas），DApp 会使用此值显示预估费用
+    /// Estimate the requested transaction against the selected chain RPC.
     private func handleEstimateGas(id: Int, params: Any?) {
-        print("[Dapp] eth_estimateGas: returning default 21000 gas")
-        sendProviderResponse(id: id, resultJson: "\"0x5208\"", error: nil)
+        guard let evmKitWrapper = connectedEvmKitWrapper() else {
+            sendProviderResponse(id: id, resultJson: "null", error: "Wallet not available.")
+            return
+        }
+
+        guard let transaction = (params as? [Any])?.first as? [String: Any] else {
+            sendProviderResponse(id: id, resultJson: "null", error: "Invalid transaction params for eth_estimateGas.")
+            return
+        }
+
+        if let fromString = transaction["from"] as? String {
+            guard let fromAddress = try? EvmKit.Address(hex: fromString),
+                  fromAddress == evmKitWrapper.evmKit.receiveAddress
+            else {
+                sendProviderResponse(id: id, resultJson: "null", error: "From address does not match wallet address.")
+                return
+            }
+        }
+
+        guard let toString = transaction["to"] as? String,
+              let to = try? EvmKit.Address(hex: toString)
+        else {
+            sendProviderResponse(id: id, resultJson: "null", error: "Invalid recipient for eth_estimateGas.")
+            return
+        }
+
+        let value: BigUInt
+        if let valueString = transaction["value"] as? String {
+            guard let parsedValue = MarketDappWeb3Parser.bigUInt(string: valueString) else {
+                sendProviderResponse(id: id, resultJson: "null", error: "Invalid value for eth_estimateGas.")
+                return
+            }
+            value = parsedValue
+        } else {
+            value = 0
+        }
+
+        let inputString = (transaction["data"] as? String) ?? (transaction["input"] as? String)
+        let input: Data
+        if let inputString {
+            if inputString.isEmpty || inputString.lowercased() == "0x" {
+                input = Data()
+            } else {
+                guard let parsedInput = MarketDappWeb3Parser.hexData(string: inputString) else {
+                    sendProviderResponse(id: id, resultJson: "null", error: "Invalid transaction data for eth_estimateGas.")
+                    return
+                }
+                input = parsedInput
+            }
+        } else {
+            input = Data()
+        }
+
+        let transactionData = TransactionData(to: to, value: value, input: input)
+        Task { [weak self, evmKit = evmKitWrapper.evmKit] in
+            do {
+                let gasLimit = try await evmKit.fetchEstimateGas(transactionData: transactionData)
+                guard gasLimit >= 0 else {
+                    self?.sendProviderResponse(id: id, resultJson: "null", error: "RPC returned an invalid gas estimate.")
+                    return
+                }
+                self?.sendProviderResponse(id: id, resultJson: "\"0x\(String(gasLimit, radix: 16))\"", error: nil)
+            } catch {
+                print("[Dapp] eth_estimateGas failed: \(error)")
+                self?.sendProviderResponse(id: id, resultJson: "null", error: error.localizedDescription)
+            }
+        }
     }
 
     /// 通知 DApp 连接事件（connect 和 accountsChanged）
@@ -842,6 +942,26 @@ final class MarketDappInjectedSignService: IWalletConnectSignService {
 }
 
 enum MarketDappWeb3Parser {
+    static func blockParameter(_ value: Any) -> DefaultBlockParameter? {
+        guard let value = value as? String else {
+            return nil
+        }
+
+        switch value.lowercased() {
+        case "latest": return .latest
+        case "pending": return .pending
+        case "earliest": return .earliest
+        default:
+            guard value.lowercased().hasPrefix("0x"),
+                  let blockNumber = bigUInt(string: value),
+                  let intValue = Int(exactly: blockNumber)
+            else {
+                return nil
+            }
+            return .blockNumber(value: intValue)
+        }
+    }
+
     static func hexData(string: String?) -> Data? {
         guard let string else {
             return nil
