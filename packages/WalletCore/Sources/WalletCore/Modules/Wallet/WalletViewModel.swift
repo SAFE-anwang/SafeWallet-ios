@@ -77,7 +77,10 @@ public class WalletViewModel: WalletListViewModel {
     }
 
     private func syncDisplayAccountName() {
-        displayAccountName = account.map { ChildWalletBridge.shared.displayName(account: $0) }
+        // `account` is a separately published cache maintained by WalletListViewModel.
+        // Read the account manager's source of truth here so the navigation title cannot
+        // lag behind an account switch while that cache is being updated.
+        displayAccountName = accountManager.activeAccount.map { ChildWalletBridge.shared.displayName(account: $0) }
     }
 
     override var conversionCoinUids: Set<String> {
