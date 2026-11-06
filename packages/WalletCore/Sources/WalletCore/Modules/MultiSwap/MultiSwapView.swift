@@ -23,9 +23,7 @@ struct MultiSwapView: View {
                             amountsView()
                                 .themeListTopView()
 
-                            if let currentQuote = viewModel.currentQuote {
-                                quoteList(quote: currentQuote)
-                            } else {
+                            if viewModel.currentQuote == nil {
                                 availableBalanceView(value: balanceValue())
                             }
                         }
