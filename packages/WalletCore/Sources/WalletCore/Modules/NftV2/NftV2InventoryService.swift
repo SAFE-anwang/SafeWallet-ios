@@ -620,6 +620,15 @@ final class NftV2InventoryService {
             )
 
             updateChainState(state)
+            if chain == .safe4 {
+                cacheStore.save(
+                    payload: payload,
+                    accountId: contextAccountId(account: account),
+                    chain: chain,
+                    address: context.address,
+                    market: state.market
+                )
+            }
         case let .degraded(reason):
             let state = NftV2ChainState(
                 chain: chain,
@@ -657,6 +666,8 @@ final class NftV2InventoryService {
             guard queuedFullSyncChains.contains(chain) else {
                 continue
             }
+            // Keep a refresh queued instead of cancelling a request already in flight.
+            guard !syncingChains.contains(chain) else { continue }
             guard let context = contexts[chain],
                   let provider = providers[chain],
                   provider.canLoad(address: context.address, account: account)
@@ -732,7 +743,21 @@ final class NftV2InventoryService {
 
         syncingChains.remove(chain)
         chainSyncDisposableMap[chain] = nil
-        updateChainState(state)
+        var effectiveState = state
+        if chain == .safe4, let payload = state.payload {
+            // Directory updates can arrive between the provider's result and this
+            // queued callback. Preserve any name that was resolved in that interval.
+            let merged = mergedPayload(preferred: payload, fallback: chainStateMap[chain]?.payload)
+            effectiveState.payload = merged
+            cacheStore.save(
+                payload: merged,
+                accountId: accountId,
+                chain: chain,
+                address: state.address,
+                market: state.market
+            )
+        }
+        updateChainState(effectiveState)
 
         if let account = accountManager.activeAccount, contextAccountId(account: account) == accountId {
             drainFullSyncQueue(account: account)
@@ -1199,6 +1224,13 @@ final class NftV2InventoryService {
         )
     }
 
+    static func mergedCollectionName(preferred: NftV2Collection, fallback: NftV2Collection) -> (name: String, isResolved: Bool) {
+        guard preferred.chain == .safe4 else { return (preferred.name, preferred.isNameResolved) }
+        let name = NftV2Collection.resolvedName(preferred.name, contractAddress: preferred.contractAddress)
+            ?? NftV2Collection.resolvedName(fallback.name, contractAddress: fallback.contractAddress)
+        return (name ?? preferred.name, name != nil)
+    }
+
     private func mergedCollection(preferred: NftV2Collection, fallback: NftV2Collection) -> NftV2Collection {
         let fallbackAssetMap = Dictionary(uniqueKeysWithValues: fallback.items.map { ($0.id, $0) })
         let items = preferred.items.map { asset in
@@ -1209,17 +1241,18 @@ final class NftV2InventoryService {
             return mergedAsset(preferred: asset, fallback: existing)
         }
 
+        let name = Self.mergedCollectionName(preferred: preferred, fallback: fallback)
         return NftV2Collection(
             id: preferred.id,
             chain: preferred.chain,
             contractAddress: preferred.contractAddress,
-            name: preferred.name,
+            name: name.name,
             imageUrl: preferred.imageUrl ?? fallback.imageUrl,
             market: preferred.market ?? fallback.market,
             marketUrl: preferred.marketUrl ?? fallback.marketUrl,
             items: items.sorted(by: assetSort),
             reportedItemCount: preferred.reportedItemCount ?? fallback.reportedItemCount,
-            isNameResolved: preferred.isNameResolved
+            isNameResolved: name.isResolved
         )
     }
 
@@ -1277,13 +1310,13 @@ final class NftV2InventoryService {
     }
 
     private static var syncPriorityChains: [NftV2Chain] {
-        let prioritized: [NftV2Chain] = [.ethereum, .binanceSmartChain]
+        let prioritized: [NftV2Chain] = [.safe4, .ethereum, .binanceSmartChain]
         let remaining = NftV2Chain.allCases.filter { !prioritized.contains($0) }
         return prioritized + remaining
     }
 
     private static var initialDiscoveryPriorityChains: [NftV2Chain] {
-        let prioritized: [NftV2Chain] = [.ethereum, .binanceSmartChain, .polygon]
+        let prioritized: [NftV2Chain] = [.safe4, .ethereum, .binanceSmartChain, .polygon]
         let remaining = NftV2Chain.allCases.filter { !prioritized.contains($0) }
         return prioritized + remaining
     }
@@ -1574,7 +1607,9 @@ final class NftV2SnapshotCacheStore {
             marketUrl: cache.marketUrl,
             items: items,
             reportedItemCount: cache.reportedItemCount,
-            isNameResolved: cache.isNameResolved ?? (chain != .safe4)
+            isNameResolved: chain == .safe4
+                ? NftV2Collection.resolvedName(cache.name, contractAddress: cache.contractAddress) != nil
+                : (cache.isNameResolved ?? true)
         )
     }
 

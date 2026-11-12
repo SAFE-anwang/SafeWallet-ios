@@ -14,6 +14,7 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
     private static let maxCachedInventories = 12
 
     private struct CachedInventory {
+        let chainId: Int
         let address: String
         let account: Account
         let holdings: [SRC721InsightHolding]
@@ -25,13 +26,13 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
     let chain: NftV2Chain = .safe4
     let availability: NftV2ProviderAvailability = .available
 
-    private let nftMetadataManager: NftMetadataManager
+    private let addressMetadata: (NftKey) -> NftAddressMetadata?
+    private let contractStorage: SRC721Storage
     private let marketProvider: NftV2MarketProvider
     private let insightProviderFactory: (Int) -> SRC721InsightAssetProvider
     private let stateQueue = DispatchQueue(label: "\(AppConfig.label).nft_v2_safe4_inventory_provider")
     private let updatesRelay = PublishRelay<NftV2ProviderUpdate>()
     private var cachedCatalogByChainId = [Int: [SRC721InsightToken]]()
-    private var completedCatalogRequestsByChainId = Set<Int>()
     private var cachedInventoryByContext = [String: CachedInventory]()
     private var catalogRequestsInFlight = Set<Int>()
 
@@ -39,12 +40,26 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
         updatesRelay.asObservable()
     }
 
-    init(
+    convenience init(
         nftMetadataManager: NftMetadataManager,
         marketProvider: NftV2MarketProvider,
         insightProviderFactory: @escaping (Int) -> SRC721InsightAssetProvider = { SRC721InsightProvider(chainId: $0) }
     ) {
-        self.nftMetadataManager = nftMetadataManager
+        self.init(
+            addressMetadata: { nftMetadataManager.addressMetadata(nftKey: $0) },
+            marketProvider: marketProvider,
+            insightProviderFactory: insightProviderFactory
+        )
+    }
+
+    init(
+        addressMetadata: @escaping (NftKey) -> NftAddressMetadata?,
+        marketProvider: NftV2MarketProvider,
+        contractStorage: SRC721Storage = .shared,
+        insightProviderFactory: @escaping (Int) -> SRC721InsightAssetProvider
+    ) {
+        self.addressMetadata = addressMetadata
+        self.contractStorage = contractStorage
         self.marketProvider = marketProvider
         self.insightProviderFactory = insightProviderFactory
     }
@@ -59,13 +74,11 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
         return Single.create { [weak self] observer in
             let task = Task {
                 do {
+                    // Refresh the directory alongside holdings, even after a successful
+                    // earlier request: newly minted collections may not have been indexed yet.
+                    self?.refreshCatalog(chainId: chainId, insight: insight)
                     let holdings = try await insight.holdings(owner: address)
-                    if !holdings.isEmpty {
-                        // Fetch names while per-contract assets are loading, rather than
-                        // waiting for the complete inventory before starting the catalog.
-                        // Catalog failure is independent and a later load can retry it.
-                        self?.fetchCatalogIfNeeded(chainId: chainId, address: address, account: account, insight: insight)
-                    }
+                    try Task.checkCancellation()
 
                     guard let self else {
                         observer(.success(NftV2InventoryPayload(collections: [])))
@@ -82,6 +95,7 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
 
                     self.stateQueue.sync {
                         self.cachedInventoryByContext[cacheKey] = CachedInventory(
+                            chainId: chainId,
                             address: address,
                             account: account,
                             holdings: holdings,
@@ -95,16 +109,16 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
                         }
                     }
 
-                    let (catalog, catalogResolved) = self.stateQueue.sync {
-                        (self.cachedCatalogByChainId[chainId] ?? [], self.completedCatalogRequestsByChainId.contains(chainId))
+                    let catalog = self.stateQueue.sync {
+                        self.cachedCatalogByChainId[chainId] ?? []
                     }
                     let payload = self.payload(
+                        chainId: chainId,
                         address: address,
                         account: account,
                         holdings: holdings,
                         catalog: catalog,
-                        assetsByContract: assetsByContract,
-                        catalogResolved: catalogResolved
+                        assetsByContract: assetsByContract
                     )
                     observer(.success(payload))
                 } catch {
@@ -172,58 +186,51 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
         guard let cached = stateQueue.sync(execute: { cachedInventoryByContext[cacheKey] }) else {
             return nil
         }
-        let (catalog, catalogResolved) = stateQueue.sync {
-            (cachedCatalogByChainId[chainId] ?? [], completedCatalogRequestsByChainId.contains(chainId))
+        let catalog = stateQueue.sync {
+            cachedCatalogByChainId[chainId] ?? []
         }
         return payload(
+            chainId: chainId,
             address: cached.address,
             account: cached.account,
             holdings: cached.holdings,
             catalog: catalog,
-            assetsByContract: cached.assetsByContract,
-            catalogResolved: catalogResolved
+            assetsByContract: cached.assetsByContract
         )
     }
 
-    private func fetchCatalogIfNeeded(
+    private func refreshCatalog(
         chainId: Int,
-        address: String,
-        account: Account,
         insight: SRC721InsightAssetProvider
     ) {
-        let shouldStart = stateQueue.sync { () -> Bool in
-            guard cachedCatalogByChainId[chainId] == nil,
-                  catalogRequestsInFlight.insert(chainId).inserted else {
-                return false
-            }
-            completedCatalogRequestsByChainId.remove(chainId)
-            return true
+        let shouldStart = stateQueue.sync {
+            catalogRequestsInFlight.insert(chainId).inserted
         }
         guard shouldStart else { return }
 
-        let accountId = ChildWalletBridge.shared.contextAccountId(account: account)
         Task { [weak self] in
             let catalog = try? await insight.tokens()
             guard let self else { return }
 
-            let shouldPublish = self.stateQueue.sync { () -> Bool in
+            let inventories = self.stateQueue.sync { () -> [CachedInventory] in
                 self.catalogRequestsInFlight.remove(chainId)
                 guard Safe4Network.isCurrent(chainId: chainId) else {
-                    return false
+                    return []
                 }
                 if let catalog {
                     self.cachedCatalogByChainId[chainId] = catalog
                 }
-                self.completedCatalogRequestsByChainId.insert(chainId)
-                return true
+                return self.cachedInventoryByContext.values.filter { $0.chainId == chainId }
             }
 
-            if shouldPublish {
+            // A directory request is shared by the chain. Notify every waiting wallet,
+            // including one selected while the request was in flight.
+            for inventory in inventories {
                 self.updatesRelay.accept(
                     NftV2ProviderUpdate(
                         chain: .safe4,
-                        accountId: accountId,
-                        address: address.lowercased()
+                        accountId: ChildWalletBridge.shared.contextAccountId(account: inventory.account),
+                        address: inventory.address.lowercased()
                     )
                 )
             }
@@ -235,15 +242,29 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
     }
 
     private func payload(
+        chainId: Int,
         address: String,
         account: Account,
         holdings: [SRC721InsightHolding],
         catalog: [SRC721InsightToken],
-        assetsByContract: [String: [SRC721InsightAsset]],
-        catalogResolved: Bool
+        assetsByContract: [String: [SRC721InsightAsset]]
     ) -> NftV2InventoryPayload {
         let nftKey = NftKey(account: account, blockchainType: chain.blockchainType)
-        let cachedMetadata = nftMetadataManager.addressMetadata(nftKey: nftKey)
+        let cachedMetadata = addressMetadata(nftKey)
+        let localNames = Dictionary(
+            contractStorage.contracts(
+                accountId: ChildWalletBridge.shared.contextAccountId(account: account),
+                chainId: chainId,
+                walletAddress: address
+            ).compactMap { record -> (String, String)? in
+                guard record.transactionStatus == .confirmed,
+                      record.contractType != .unknown,
+                      let name = NftV2Collection.resolvedName(record.name, contractAddress: record.contractAddress)
+                else { return nil }
+                return (record.contractAddress.lowercased(), name)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
         let assetMetadataByUid = Dictionary(
             (cachedMetadata?.assets ?? []).map { ($0.nftUid, $0) },
             uniquingKeysWith: { first, _ in first }
@@ -314,10 +335,9 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
 
             let collectionMetadata = uniqueAssets.first.flatMap { assetMetadataByUid[$0.nftUid] }
                 .flatMap { collectionMetadataById[$0.providerCollectionUid] }
-            let metadataName = collectionMetadata?.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            let tokenName = token?.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            let resolvedName = metadataName.flatMap { $0.isEmpty ? nil : $0 }
-                ?? tokenName.flatMap { $0.isEmpty ? nil : $0 }
+            let resolvedName = NftV2Collection.resolvedName(collectionMetadata?.name, contractAddress: contractAddress)
+                ?? NftV2Collection.resolvedName(token?.name, contractAddress: contractAddress)
+                ?? localNames[contractAddress.lowercased()]
             let name = resolvedName ?? contractAddress.shortened
             return NftV2Collection(
                 id: "\(chain.rawValue)-\(contractAddress.lowercased())",
@@ -329,7 +349,7 @@ final class NftV2Safe4InventoryProvider: INftV2Safe4InventoryProvider {
                 marketUrl: nil,
                 items: uniqueAssets,
                 reportedItemCount: reportedItemCount,
-                isNameResolved: resolvedName != nil || catalogResolved
+                isNameResolved: resolvedName != nil
             )
         }
         .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }

@@ -186,6 +186,16 @@ struct NftV2Collection: Identifiable, Hashable {
     var reportedItemCount: Int? = nil
     var isNameResolved: Bool = true
 
+    // Older SAFE snapshots marked an address fallback as resolved when the
+    // directory request finished. Do not treat those placeholders as names.
+    static func resolvedName(_ name: String?, contractAddress: String) -> String? {
+        guard let name = name?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty,
+              name.caseInsensitiveCompare(contractAddress) != .orderedSame,
+              name.caseInsensitiveCompare(contractAddress.shortened) != .orderedSame else { return nil }
+        return name
+    }
+
     var count: Int {
         items.isEmpty ? (reportedItemCount ?? 0) : items.reduce(0) { $0 + $1.balance }
     }

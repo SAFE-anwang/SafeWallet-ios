@@ -167,9 +167,9 @@ final class NftV2ViewModel: ObservableObject {
         isVisible = true
         startAutoRefresh()
 
-        if case .idle = state {
-            reload()
-        }
+        // The service/snapshot can outlive this screen, including while minting
+        // in Safe Zone. Always refresh when it becomes visible again.
+        reload()
     }
 
     func onDisappear() {
