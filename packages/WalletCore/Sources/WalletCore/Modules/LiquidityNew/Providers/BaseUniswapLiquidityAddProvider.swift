@@ -110,14 +110,7 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
         print("[SafeSwap Liquidity] Fetching trade data...")
         let trade = try await trade(rpcSource: rpcSource, chain: chain, token0: kitToken0, token1: kitToken1, amountIn: amount0, tradeOptions: tradeOptions)
 
-        let amount1: Decimal
-        if let calculatedAmount = quotedAmountOut(trade: trade) {
-            amount1 = calculatedAmount
-            print("[SafeSwap Liquidity] Using calculated amount1 from quotedAmountOut: \(amount1)")
-        } else {
-            amount1 = trade.amountOut ?? 0
-            print("[SafeSwap Liquidity] Using trade amountOut: \(amount1)")
-        }
+        let amount1 = try requiredAmountOut(trade: trade, chain: chain, tokenOut: token1)
 
         async let allowanceState0 = allowanceState(token: token0, amount: amount0)
         async let allowanceState1 = allowanceState(token: token1, amount: amount1)
@@ -135,17 +128,8 @@ class BaseUniswapLiquidityAddProvider: BaseEvmLiquidityAddProvider {
         return quote
     }
 
-    private func quotedAmountOut(trade: UniswapLiquidityAddQuote.Trade) -> Decimal? {
-        switch trade {
-        case let .v2(tradeData):
-            if let amountIn = tradeData.amountIn, let midPrice = tradeData.midPrice {
-                return amountIn * midPrice
-            }
-        case .v3:
-            ()
-        }
-
-        return nil
+    func requiredAmountOut(trade: UniswapLiquidityAddQuote.Trade, chain _: Chain, tokenOut: MarketKit.Token) throws -> Decimal {
+        LiquidityAddAllowanceHelper.requiredAmount(token: tokenOut, amount: trade.amountOut ?? 0)
     }
 }
 

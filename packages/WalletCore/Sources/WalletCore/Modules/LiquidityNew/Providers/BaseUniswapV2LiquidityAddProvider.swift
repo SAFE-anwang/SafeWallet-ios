@@ -38,6 +38,13 @@ class BaseUniswapV2LiquidityAddProvider: BaseUniswapLiquidityAddProvider {
         return try kit.transactionLiquidityData(tradeData: tradeData, type: .add, chain: chain, recipient: receiveAddress)
     }
 
+    override func requiredAmountOut(trade: UniswapLiquidityAddQuote.Trade, chain: Chain, tokenOut: MarketKit.Token) throws -> Decimal {
+        guard case let .v2(tradeData) = trade else {
+            throw SwapError.invalidTrade
+        }
+        return try LiquidityV2ApprovalAmount.requiredAmount(kit: kit, tradeData: tradeData, chain: chain, tokenOut: tokenOut)
+    }
+
     override func confirmationQuote(token0: MarketKit.Token, token1: MarketKit.Token, amount0: Decimal, amount1: Decimal?, transactionSettings: TransactionSettings?) async throws -> LiquidityAddFinalQuote {
         guard kit.isSafeSwap,
               let amount1,

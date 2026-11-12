@@ -6,7 +6,7 @@ import MarketKit
 import RxSwift
 
 class LiquidityAddViewModel: ObservableObject {
-    let autoRefreshDuration: Double = 20
+    let autoRefreshDuration: Double
     private let quoteTimeoutNanoseconds: UInt64 = 15_000_000_000
     private static let defaultV3RangePercent = 20
 
@@ -15,6 +15,7 @@ class LiquidityAddViewModel: ObservableObject {
     private var quotesTask: AnyTask?
     private var swapTask: AnyTask?
     private var manualAllowanceTask: AnyTask?
+    private var manualAllowanceRequest: ManualAllowanceRequest?
     private var rateInCancellable: AnyCancellable?
     private var rateOutCancellable: AnyCancellable?
     private var timer: Timer?
@@ -22,6 +23,7 @@ class LiquidityAddViewModel: ObservableObject {
     // 只有在发起审批交易后才启用，审批完成后或视图关闭后停止
     private var pendingAllowanceTimer: Timer?
     private var isPendingAllowanceRefreshEnabled = false
+    @Published private var submittedAllowanceStates: [SubmittedAllowanceKey: MultiSwapButtonState] = [:]
 
     private var balanceDisposeBag = DisposeBag()
     private var balanceOutDisposeBag = DisposeBag()
@@ -411,8 +413,9 @@ class LiquidityAddViewModel: ObservableObject {
 
     @Published var priceImpact: Decimal?
 
-    init(providers: [ILiquidityAddProvider], token: Token? = nil) {
+    init(providers: [ILiquidityAddProvider], token: Token? = nil, autoRefreshDuration: Double = 20) {
         self.providers = providers
+        self.autoRefreshDuration = autoRefreshDuration
         currency = currencyManager.baseCurrency
 
         defer {
@@ -421,6 +424,13 @@ class LiquidityAddViewModel: ObservableObject {
         }
 
         currencyManager.$baseCurrency.sink { [weak self] in self?.currency = $0 }.store(in: &cancellables)
+    }
+
+    deinit {
+        timer?.invalidate()
+        pendingAllowanceTimer?.invalidate()
+        quotesTask?.cancel()
+        manualAllowanceTask?.cancel()
     }
 
     func subscribeToProviders() {
@@ -506,6 +516,12 @@ class LiquidityAddViewModel: ObservableObject {
     }
 
     func syncQuotes(silent: Bool = false) {
+        // New blocks and the approval timer may arrive before RPC calls finish.
+        // Let a background refresh complete instead of repeatedly cancelling it.
+        guard !silent || quotesTask == nil else {
+            return
+        }
+
         quotesTask?.cancel()
         quotesTask = nil
 
@@ -580,18 +596,27 @@ class LiquidityAddViewModel: ObservableObject {
 
             if !Task.isCancelled {
                 await MainActor.run { [weak self] in
-                    guard let self else {
+                    guard let self, !Task.isCancelled else {
                         return
                     }
 
+                    self.quotesTask = nil
                     self.quoting = false
+
+                    for quote in quotes {
+                        guard let evmQuote = quote.quote as? EvmLiquidityAddQuote else { continue }
+                        self.updateSubmittedAllowance(token: internalTokenIn, providerId: quote.provider.id, state: evmQuote.allowanceState0)
+                        self.updateSubmittedAllowance(token: internalTokenOut, providerId: quote.provider.id, state: evmQuote.allowanceState1)
+                    }
 
                     // 无论是否为空，都更新quotes以反映最新的授权状态
                     self.quotes = quotes
                     self.syncManualAllowanceStates()
+                    self.stopPendingAllowanceRefreshIfCompleted()
 
-                    // 如果quotes为空且不是静默刷新，设置定时器重试
-                    if quotes.isEmpty && !silent {
+                    // Failed background quotes also need a retry: there may be
+                    // no pending approval timer (e.g. the approval was cancelled).
+                    if quotes.isEmpty {
                         self.timer?.invalidate()
                         self.nextQuoteTime = Date().timeIntervalSince1970 + self.autoRefreshDuration
                         self.timer = Timer.scheduledTimer(withTimeInterval: self.autoRefreshDuration, repeats: false) { [weak self] _ in
@@ -914,6 +939,11 @@ extension LiquidityAddViewModel {
 }
 
 extension LiquidityAddViewModel {
+    private struct SubmittedAllowanceKey: Hashable {
+        let token: Token
+        let providerId: String
+    }
+
     struct ApprovalButton {
         let title: String
         let state: MultiSwapButtonState
@@ -936,7 +966,7 @@ extension LiquidityAddViewModel {
             return []
         }
 
-        if let currentQuote, let quote = currentQuote.quote as? UniswapLiquidityAddQuote {
+        if let currentQuote, let quote = currentQuote.quote as? EvmLiquidityAddQuote {
             let requiredAmount1 = quote.requiredAmount1
 
             guard let availableBalanceOut, requiredAmount1 <= availableBalanceOut else {
@@ -944,7 +974,7 @@ extension LiquidityAddViewModel {
             }
 
             var buttons = [ApprovalButton]()
-            if let state0 = quote.allowanceState0.customButtonState {
+            if let state0 = approvalButtonState(token: tokenIn, providerId: currentQuote.provider.id, fallback: quote.allowanceState0.customButtonState) {
                 buttons.append(
                     ApprovalButton(
                         title: "\(state0.title) 1",
@@ -957,7 +987,7 @@ extension LiquidityAddViewModel {
                 )
             }
 
-            if let state1 = quote.allowanceState1.customButtonState {
+            if let state1 = approvalButtonState(token: tokenOut, providerId: currentQuote.provider.id, fallback: quote.allowanceState1.customButtonState) {
                 buttons.append(
                     ApprovalButton(
                         title: "\(state1.title) 2",
@@ -986,7 +1016,7 @@ extension LiquidityAddViewModel {
             }
 
             var buttons = [ApprovalButton]()
-            if let state0 = manualAllowanceState0.customButtonState {
+            if let state0 = approvalButtonState(token: tokenIn, providerId: provider.id, fallback: manualAllowanceState0.customButtonState) {
                 buttons.append(
                     ApprovalButton(
                         title: "\(state0.title) 1",
@@ -999,7 +1029,7 @@ extension LiquidityAddViewModel {
                 )
             }
 
-            if let state1 = manualAllowanceState1.customButtonState {
+            if let state1 = approvalButtonState(token: tokenOut, providerId: provider.id, fallback: manualAllowanceState1.customButtonState) {
                 buttons.append(
                     ApprovalButton(
                         title: "\(state1.title) 2",
@@ -1018,8 +1048,45 @@ extension LiquidityAddViewModel {
         return []
     }
 
+    func approvalButtonState(token: Token, providerId: String, fallback: MultiSwapButtonState?) -> MultiSwapButtonState? {
+        submittedAllowanceStates[SubmittedAllowanceKey(token: token, providerId: providerId)] ?? fallback
+    }
+
+    func onAllowanceSubmitted(token: Token, providerId: String, step: MultiSwapPreSwapStep) {
+        if let unlockStep = step as? LiquidityAddAllowanceHelper.UnlockStep {
+            submittedAllowanceStates[SubmittedAllowanceKey(token: token, providerId: providerId)] = .init(
+                title: (unlockStep.isRevoke ? "swap.revoking_button" : "swap.approving_button").localized,
+                disabled: true,
+                showProgress: true
+            )
+        }
+
+        // A request started before submission must not replace this immediate
+        // state with the old allowance. Start a fresh read for both tokens.
+        quotesTask?.cancel()
+        quotesTask = nil
+        manualAllowanceTask?.cancel()
+        manualAllowanceTask = nil
+        startPendingAllowanceRefresh()
+    }
+
+    private func updateSubmittedAllowance(token: Token, providerId: String, state: LiquidityAddAllowanceHelper.AllowanceState) {
+        let key = SubmittedAllowanceKey(token: token, providerId: providerId)
+        guard submittedAllowanceStates[key] != nil else { return }
+
+        switch state {
+        case .unknown:
+            // Keep the last submitted/pending state while the next poll retries.
+            return
+        case .pendingAllowance, .pendingRevoke:
+            submittedAllowanceStates[key] = state.customButtonState
+        case .allowed, .notRequired, .notEnough:
+            submittedAllowanceStates.removeValue(forKey: key)
+        }
+    }
+
     func refreshAfterPreSwap() {
-        syncQuotes()
+        syncQuotes(silent: true)
         syncManualAllowanceStates()
     }
 }
@@ -1084,12 +1151,15 @@ extension LiquidityAddViewModel {
     }
 
     func reset() {
+        stopPendingAllowanceRefresh()
+        submittedAllowanceStates = [:]
         amountIn = nil
         internalTokenIn = nil
         internalTokenOut = nil
         manualAmountOutString = ""
         manualAllowanceTask?.cancel()
         manualAllowanceTask = nil
+        manualAllowanceRequest = nil
         manualAllowanceState0 = .unknown
         manualAllowanceState1 = .unknown
     }
@@ -1120,15 +1190,35 @@ extension LiquidityAddViewModel {
         pendingAllowanceTimer?.invalidate()
         pendingAllowanceTimer = nil
     }
+
+    private func stopPendingAllowanceRefreshIfCompleted() {
+        guard isPendingAllowanceRefreshEnabled else {
+            return
+        }
+
+        if let quote = currentQuote?.quote as? EvmLiquidityAddQuote {
+            if quote.customButtonState0 == nil, quote.customButtonState1 == nil {
+                stopPendingAllowanceRefresh()
+            }
+        } else if isSafeSwapManualAmountOutMode,
+                  manualAllowanceState0.customButtonState == nil,
+                  manualAllowanceState1.customButtonState == nil
+        {
+            stopPendingAllowanceRefresh()
+        }
+    }
 }
 
 extension LiquidityAddViewModel {
-    private func syncManualAllowanceStates() {
-        manualAllowanceTask?.cancel()
-        manualAllowanceTask = nil
-        manualAllowanceState0 = .unknown
-        manualAllowanceState1 = .unknown
+    private struct ManualAllowanceRequest: Equatable {
+        let tokenIn: Token
+        let tokenOut: Token
+        let amountIn: Decimal
+        let amountOut: Decimal
+        let providerId: String
+    }
 
+    private func syncManualAllowanceStates() {
         guard isSafeSwapManualAmountOutMode,
               let tokenIn,
               let tokenOut,
@@ -1138,7 +1228,28 @@ extension LiquidityAddViewModel {
               amountOut > 0,
               let provider = proceedProvider as? BaseEvmLiquidityAddProvider
         else {
+            manualAllowanceTask?.cancel()
+            manualAllowanceTask = nil
+            manualAllowanceRequest = nil
+            manualAllowanceState0 = .unknown
+            manualAllowanceState1 = .unknown
             return
+        }
+
+        let request = ManualAllowanceRequest(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, amountOut: amountOut, providerId: provider.id)
+        let sameRequest = manualAllowanceRequest == request
+        guard !sameRequest || manualAllowanceTask == nil else {
+            return
+        }
+
+        manualAllowanceTask?.cancel()
+        manualAllowanceTask = nil
+        manualAllowanceRequest = request
+        // Only input changes invalidate the displayed result. Background polls
+        // preserve it and let an in-flight request for those inputs finish.
+        if !sameRequest {
+            manualAllowanceState0 = .unknown
+            manualAllowanceState1 = .unknown
         }
 
         manualAllowanceTask = Task { [weak self] in
@@ -1148,8 +1259,15 @@ extension LiquidityAddViewModel {
 
             if !Task.isCancelled {
                 await MainActor.run { [weak self] in
-                    self?.manualAllowanceState0 = state0
-                    self?.manualAllowanceState1 = state1
+                    guard let self, !Task.isCancelled, self.manualAllowanceRequest == request else {
+                        return
+                    }
+                    self.manualAllowanceTask = nil
+                    self.updateSubmittedAllowance(token: tokenIn, providerId: provider.id, state: state0)
+                    self.updateSubmittedAllowance(token: tokenOut, providerId: provider.id, state: state1)
+                    self.manualAllowanceState0 = state0
+                    self.manualAllowanceState1 = state1
+                    self.stopPendingAllowanceRefreshIfCompleted()
                 }
             }
         }

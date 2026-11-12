@@ -4,11 +4,21 @@ import MarketKit
 import SwiftUI
 
 class LiquidityAddAllowanceHelper {
-    private let adapterManager = Core.shared.adapterManager
+    private let allowanceAdapter: (Token) -> IAllowanceAdapter?
     private let addressesForRevoke: [BlockchainType: String] = [
         .ethereum: "0xdac17f958d2ee523a2206206994597c13d831ec7",
         .tron: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
     ]
+
+    init(allowanceAdapter: @escaping (Token) -> IAllowanceAdapter? = { Core.shared.adapterManager.adapter(for: $0) as? IAllowanceAdapter }) {
+        self.allowanceAdapter = allowanceAdapter
+    }
+
+    static func requiredAmount(token: Token, amount: Decimal) -> Decimal {
+        // Match the integer amount encoded by MultiSwapApproveViewModel. Pool
+        // ratios can produce more fractional digits than the token supports.
+        token.decimalValue(value: token.fractionalMonetaryValue(value: amount))
+    }
 
     func preSwapView(step: MultiSwapPreSwapStep, token: Token, amount: Decimal, isPresented: Binding<Bool>, onSuccess: @escaping () -> Void) -> AnyView {
         switch step {
@@ -30,9 +40,11 @@ class LiquidityAddAllowanceHelper {
             return .notRequired
         }
 
-        guard let adapter = adapterManager.adapter(for: token) as? IAllowanceAdapter else {
+        guard let adapter = allowanceAdapter(token) else {
             return .unknown
         }
+
+        let amount = Self.requiredAmount(token: token, amount: amount)
 
         do {
             // 首先获取链上最新的授权额度
@@ -78,11 +90,9 @@ class LiquidityAddAllowanceHelper {
                 revokeRequired: allowance > 0 && mustBeRevoked(token: token)
             )
         } catch {
-            return .notEnough(
-                appValue: AppValue(token: token, value: 0),
-                spenderAddress: spenderAddress,
-                revokeRequired: false
-            )
+            // A failed read says nothing about the allowance or a submitted
+            // transaction. Keep it distinct from a confirmed insufficient amount.
+            return .unknown
         }
     }
 
@@ -119,8 +129,8 @@ extension LiquidityAddAllowanceHelper {
         var customButtonState: MultiSwapButtonState? {
             switch self {
             case let .notEnough(_, spenderAddress, revokeRequired): return .init(title: revokeRequired ? "swap.revoke".localized : "swap.approve".localized, preSwapStep: UnlockStep(spenderAddress: spenderAddress, isRevoke: revokeRequired))
-            case .pendingAllowance: return .init(title: "swap.approving".localized, disabled: true, showProgress: true)
-            case .pendingRevoke: return .init(title: "swap.revoking".localized, disabled: true, showProgress: true)
+            case .pendingAllowance: return .init(title: "swap.approving_button".localized, disabled: true, showProgress: true)
+            case .pendingRevoke: return .init(title: "swap.revoking_button".localized, disabled: true, showProgress: true)
             case .unknown: return .init(title: "swap.allowance_error".localized, disabled: true)
             default: return nil
             }

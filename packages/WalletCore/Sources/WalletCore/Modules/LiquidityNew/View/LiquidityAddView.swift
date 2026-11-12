@@ -78,6 +78,7 @@ struct LiquidityAddView: View {
         }
         .onDisappear {
             viewModel.stopAutoQuoting()
+            viewModel.stopPendingAllowanceRefresh()
         }
         .navigationDestination(isPresented: $sendPresented) {
             if let tokenIn = viewModel.tokenIn,
@@ -421,10 +422,11 @@ struct LiquidityAddView: View {
                                 amount: preSwapStep.amount,
                                 isPresented: isPresented
                             ) {
-                                viewModel.syncQuotes()
+                                viewModel.onAllowanceSubmitted(token: preSwapStep.token, providerId: currentQuote.provider.id, step: preSwapStep.step)
                             }
 
                         } onDismiss: {
+                            viewModel.refreshAfterPreSwap()
                             viewModel.autoQuoteIfRequired()
                         }
                     }
@@ -461,14 +463,11 @@ struct LiquidityAddView: View {
                         amount: item.amount,
                         isPresented: isPresented
                     ) {
-                        // 审批交易发送成功后，立即刷新并启动区块高度监听刷新模式
-                        viewModel.refreshAfterPreSwap()
-                        viewModel.startPendingAllowanceRefresh()
+                        viewModel.onAllowanceSubmitted(token: item.token, providerId: item.provider.id, step: step)
                     }
                 } onDismiss: {
                     viewModel.refreshAfterPreSwap()
                     viewModel.autoQuoteIfRequired()
-                    viewModel.stopPendingAllowanceRefresh()
                 }
             }
         }
@@ -614,19 +613,19 @@ struct LiquidityAddView: View {
             let amount: Decimal
             let state: MultiSwapButtonState
 
-            if let state0 = currentQuote.quote.customButtonState0,
-               let tokenIn = viewModel.tokenIn,
+            if let tokenIn = viewModel.tokenIn,
                let tokenOut = viewModel.tokenOut,
-               let amountIn = viewModel.amountIn
+               let amountIn = viewModel.amountIn,
+               let state0 = viewModel.approvalButtonState(token: tokenIn, providerId: currentQuote.provider.id, fallback: currentQuote.quote.customButtonState0)
             {
                 state = state0
                 token = tokenIn
                 otherToken = tokenOut
                 amount = amountIn
-            } else if let state1 = currentQuote.quote.customButtonState1,
-                      let tokenOut = viewModel.tokenOut,
+            } else if let tokenOut = viewModel.tokenOut,
                       let tokenIn = viewModel.tokenIn,
-                      let amountOut = viewModel.currentQuote?.quote.expectedBuyAmount
+                      let amountOut = viewModel.currentQuote?.quote.expectedBuyAmount,
+                      let state1 = viewModel.approvalButtonState(token: tokenOut, providerId: currentQuote.provider.id, fallback: currentQuote.quote.customButtonState1)
             {
                 state = state1
                 token = tokenOut
