@@ -76,6 +76,7 @@ struct MarketDappView: View {
             ZStack {
                 ForEach(MarketDappModule.Tab.allCases, id: \.id) { tab in
                     MarketDappListView(tab: tab, safeSearchText: viewModel.safeSearchText)
+                        .id(viewModel.listContextID)
                         .tag(tab.id)
                         .ignoresSafeArea()
                         .opacity(viewModel.currentTab == tab ? 1 : 0)

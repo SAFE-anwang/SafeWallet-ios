@@ -5,9 +5,10 @@ import Web3Core
 import web3swift
 
 class SafeDappService {
+    let networkSession = Safe4NetworkSession()
     private let privateKey: Data
     private let userAddress: SafeDappEthereumAddress
-    private let chainId: Int
+    let chainId: Int
 
     init(privateKey: Data, userAddress: String, chainId: Int = Safe4Network.currentChainId) {
         self.privateKey = privateKey
@@ -29,7 +30,12 @@ class SafeDappService {
     }
 
     private func dapp() async throws -> DAppManager {
-        try await Self.dapp(chainId: chainId)
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        let manager = try await Self.dapp(chainId: chainId)
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        return manager
     }
 }
 
@@ -42,6 +48,8 @@ extension SafeDappService {
     }
 
     func register(data: SafeDappFormData) async throws -> String {
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
         let name = data.name.trimmingCharacters(in: .whitespacesAndNewlines)
         if let error = SafeDappValidation.validateRequired(name, min: 5, max: 50, title: SafeDappField.name.title) {
             throw SafeDappValidationError(message: error)
@@ -59,6 +67,8 @@ extension SafeDappService {
 
         let web3 = try await Self.web3(chainId: chainId)
         let manager = web3.safe4.dapp
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
         let transactionHash = try await manager.register(
             privateKey: privateKey,
             name: name,
@@ -97,6 +107,8 @@ extension SafeDappService {
         }
 
         do {
+            try networkSession.check()
+            _ = try Safe4Network.activeContext(chainId: chainId)
             let keywordTransactionHash = try await manager.setKeyword(privateKey: privateKey, id: info.id, keyword: keyword)
             guard let keywordHashData = Data.fromHex(keywordTransactionHash), !keywordHashData.isEmpty else {
                 throw SafeDappPostRegistrationError(isTransactionConfirmed: true)
@@ -233,6 +245,23 @@ extension SafeDappService {
     static func publishedDapps(chainId: Int = Safe4Network.currentChainId) async throws -> [DAppInfo] {
         let items = try await publishedDappItems(chainId: chainId)
         return items.map(\.info)
+    }
+
+    /// Registry ownership is recorded by getMineIDs, not by officialAccount.
+    static func mineDappIDs(address: String, chainId: Int) async throws -> Set<BigUInt> {
+        let account = try SafeDappValidation.ethereumAddress(address, title: "").get()
+        let manager = try await dapp(chainId: chainId)
+        let total = try await manager.getMineNum(account)
+        var ids = Set<BigUInt>()
+        var start = BigUInt.zero
+        while start < total {
+            try Task.checkCancellation()
+            let page = try await manager.getMineIDs(account, start, min(100, total - start))
+            guard !page.isEmpty else { break }
+            ids.formUnion(page)
+            start += BigUInt(page.count)
+        }
+        return ids
     }
 
     static func isFrozen(id: BigUInt, chainId: Int = Safe4Network.currentChainId) async throws -> Bool {

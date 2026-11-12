@@ -1,4 +1,5 @@
 import Foundation
+import BigInt
 import RxSwift
 import RxRelay
 import MarketKit
@@ -107,8 +108,18 @@ private extension MarketDappService {
         Observable.create { observer in
             let task = Task {
                 do {
-                    _ = try await SafeDappService.publishedDappItems(onItemsUpdated: { items in
-                        observer.onNext(Self.marketDapps(from: items))
+                    let (chainId, address) = await MainActor.run {
+                        (Safe4Network.currentChainId, ChildWalletBridge.shared.activeSafe4EvmKitWrapper()?.evmKit.receiveAddress.hex)
+                    }
+                    var mineIDs = Set<BigUInt>()
+                    if let address {
+                        // If ownership cannot be verified, only promoted entries are public.
+                        mineIDs = (try? await SafeDappService.mineDappIDs(address: address, chainId: chainId)) ?? []
+                    }
+                    try Task.checkCancellation()
+                    let visibleMineIDs = mineIDs
+                    _ = try await SafeDappService.publishedDappItems(chainId: chainId, onItemsUpdated: { items in
+                        observer.onNext(Self.marketDapps(from: items, mineIDs: visibleMineIDs))
                     })
                     observer.onCompleted()
                 } catch {
@@ -121,8 +132,13 @@ private extension MarketDappService {
         }
     }
 
-    static func marketDapps(from items: [SafeDappPublishedItem]) -> [MarktDapp] {
-        items.map {
+}
+
+extension MarketDappService {
+    static func marketDapps(from items: [SafeDappPublishedItem], mineIDs: Set<BigUInt>) -> [MarktDapp] {
+        // Match Android: an uploaded logo means promoted; unpublished logos
+        // (including an in-flight logo read) are visible only to the issuer.
+        items.filter { mineIDs.contains($0.info.id) || !($0.logoData?.isEmpty ?? true) }.map {
             MarktDapp(
                 type: "SAFE",
                 subType: "SAFE DAPP",

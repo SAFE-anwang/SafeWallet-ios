@@ -19,7 +19,7 @@ class SafeDappRegisterViewModel: ObservableObject {
 
     init(service: SafeDappService) {
         self.service = service
-        form = Self.loadDraft(for: service.account.address) ?? SafeDappFormData()
+        form = Self.loadDraft(for: service.account.address, chainId: service.chainId) ?? SafeDappFormData()
         $form
             .sink { [weak self] form in
                 guard let self else { return }
@@ -30,26 +30,26 @@ class SafeDappRegisterViewModel: ObservableObject {
     }
 
     private func saveDraft(_ form: SafeDappFormData) {
-        let key = Self.draftKey(for: service.account.address)
+        let key = Self.draftKey(for: service.account.address, chainId: service.chainId)
         if let data = try? JSONEncoder().encode(form) {
             UserDefaults.standard.set(data, forKey: key)
             UserDefaults.standard.synchronize()
         }
     }
 
-    private static func draftKey(for address: String) -> String {
-        "\(draftKeyPrefix)\(address.lowercased())"
+    private static func draftKey(for address: String, chainId: Int) -> String {
+        Safe4CacheScope(chainId: chainId, owner: address).key(draftKeyPrefix)
     }
 
-    private static func loadDraft(for address: String) -> SafeDappFormData? {
-        guard let data = UserDefaults.standard.data(forKey: draftKey(for: address)) else {
+    private static func loadDraft(for address: String, chainId: Int) -> SafeDappFormData? {
+        guard let data = UserDefaults.standard.data(forKey: draftKey(for: address, chainId: chainId)) else {
             return nil
         }
         return try? JSONDecoder().decode(SafeDappFormData.self, from: data)
     }
 
     private func removeDraft() {
-        UserDefaults.standard.removeObject(forKey: Self.draftKey(for: service.account.address))
+        UserDefaults.standard.removeObject(forKey: Self.draftKey(for: service.account.address, chainId: service.chainId))
         UserDefaults.standard.synchronize()
     }
 
@@ -163,6 +163,7 @@ class SafeDappRegisterViewModel: ObservableObject {
             do {
                 if try await service.exists(field: .name, value: form.name) {
                     await MainActor.run {
+                        guard self.service.networkSession.isValid else { return }
                         setCaution("safe_dapp.error.name_exists".localized, for: .name)
                         sendState = .ready
                         onComplete(sendState)
@@ -171,6 +172,7 @@ class SafeDappRegisterViewModel: ObservableObject {
                 }
                 if try await service.exists(field: .contractAddr, value: form.contractAddr) {
                     await MainActor.run {
+                        guard self.service.networkSession.isValid else { return }
                         setCaution("safe_dapp.error.contract_exists".localized, for: .contractAddr)
                         sendState = .ready
                         onComplete(sendState)
@@ -179,6 +181,7 @@ class SafeDappRegisterViewModel: ObservableObject {
                 }
                 if try await service.exists(field: .runUrl, value: form.runUrl) {
                     await MainActor.run {
+                        guard self.service.networkSession.isValid else { return }
                         setCaution("safe_dapp.error.run_url_exists".localized, for: .runUrl)
                         sendState = .ready
                         onComplete(sendState)
@@ -188,18 +191,21 @@ class SafeDappRegisterViewModel: ObservableObject {
 
                 _ = try await service.register(data: form)
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     removeDraft()
                     sendState = .completed
                     onComplete(sendState)
                 }
             } catch let error as SafeDappPostRegistrationError {
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     removeDraft()
                     sendState = .submittedWithWarning(error.localizedDescription)
                     onComplete(sendState)
                 }
             } catch {
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     sendState = .failed(error.localizedDescription)
                     onComplete(sendState)
                 }

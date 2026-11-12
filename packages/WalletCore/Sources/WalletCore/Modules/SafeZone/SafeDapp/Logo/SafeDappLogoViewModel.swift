@@ -26,6 +26,7 @@ class SafeDappLogoViewModel: ObservableObject {
         Task {
             let fee = try? await service.getLogoPayAmount().safe4ToDecimal()
             await MainActor.run {
+                guard self.service.networkSession.isValid else { return }
                 self.fee = fee
             }
         }
@@ -62,6 +63,7 @@ class SafeDappLogoViewModel: ObservableObject {
                 let availableBalance = try await service.availableBalance()
                 guard availableBalance > logoPayAmount else {
                     await MainActor.run {
+                        guard self.service.networkSession.isValid else { return }
                         sendState = .ready
                         onComplete(.failed("safe_dapp.insufficient_safe_balance".localized))
                     }
@@ -69,11 +71,13 @@ class SafeDappLogoViewModel: ObservableObject {
                 }
                 _ = try await service.setLogo(id: info.id, logo: logoData)
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     sendState = .completed
                     onComplete(sendState)
                 }
             } catch {
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     sendState = .failed(error.localizedDescription)
                     onComplete(sendState)
                 }

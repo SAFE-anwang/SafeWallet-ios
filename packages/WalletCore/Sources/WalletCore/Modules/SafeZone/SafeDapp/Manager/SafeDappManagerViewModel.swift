@@ -52,6 +52,7 @@ class SafeDappManagerViewModel: ObservableObject {
 
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     guard self.activeLoadID == loadID else { return }
                     self.allItems = loaded
                     self.applyFilter()
@@ -62,6 +63,7 @@ class SafeDappManagerViewModel: ObservableObject {
                 }
             } catch {
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     guard self.activeLoadID == loadID, !Task.isCancelled else { return }
                     self.dataState = .failed(error)
                 }
@@ -75,10 +77,12 @@ class SafeDappManagerViewModel: ObservableObject {
                 let data = try await service.getLogo(id: id)
                 let image = UIImage(data: data)
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     updateLogo(id: id, logo: image, loadID: loadID)
                 }
             } catch {
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     updateLogo(id: id, logo: nil, loadID: loadID)
                 }
             }
@@ -119,6 +123,7 @@ class SafeDappManagerViewModel: ObservableObject {
             do {
                 if try await service.isFrozen(id: item.info.id) {
                     await MainActor.run {
+                        guard self.service.networkSession.isValid else { return }
                         openAlert = .blocked(title: "safe_dapp.frozen".localized, message: "safe_dapp.frozen_message".localized)
                     }
                     return
@@ -130,10 +135,12 @@ class SafeDappManagerViewModel: ObservableObject {
                     }
                     checkedItem.logoLoaded = true
                     await MainActor.run {
+                        guard self.service.networkSession.isValid else { return }
                         updateLogo(id: checkedItem.info.id, logo: checkedItem.logo)
                     }
                 }
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     if checkedItem.info.fraudNum > 0 {
                         openAlert = .confirm(
                             title: "safe_dapp.fraud_warning".localized,
@@ -152,6 +159,7 @@ class SafeDappManagerViewModel: ObservableObject {
                 }
             } catch {
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     openAlert = .blocked(title: "alert.error".localized, message: error.localizedDescription)
                 }
             }
@@ -168,6 +176,7 @@ class SafeDappManagerViewModel: ObservableObject {
             do {
                 _ = try await service.remove(id: item.info.id)
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     allItems.removeAll { $0.info.id == item.info.id }
                     applyFilter()
                     operationState = .completed
@@ -175,6 +184,7 @@ class SafeDappManagerViewModel: ObservableObject {
                 }
             } catch {
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     operationState = .failed(error.localizedDescription)
                     onComplete(operationState)
                 }
