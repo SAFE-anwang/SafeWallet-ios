@@ -287,8 +287,11 @@ extension L1FeeProvider {
 extension LegacyGasPriceProvider {
     struct DisposedError: Error {}
 
-    public func gasPriceSingle() -> Single<GasPrice> {
-        Single<GasPrice>.create { [weak self] observer in
+    public func gasPriceSingle(chainId: Int? = nil) -> Single<GasPrice> {
+        if let chainId, let price = EvmFeeModule.defaultGasPrice(chainId: chainId) {
+            return .just(.legacy(gasPrice: price))
+        }
+        return Single<GasPrice>.create { [weak self] observer in
             guard let strongSelf = self else {
                 observer(.error(DisposedError()))
                 return Disposables.create()

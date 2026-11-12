@@ -694,7 +694,7 @@ extension LiquidityRecordService {
 
     private func syncgasPrice(evmKitWrapper: EvmKitWrapper) {
         let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKitWrapper.evmKit)
-        gasPriceProvider.gasPriceSingle()
+        gasPriceProvider.gasPriceSingle(chainId: evmKitWrapper.evmKit.chain.id)
             .subscribe(
                 onSuccess: { [weak self] gasPrice in
                     self?.legacyGasPrice =  gasPrice

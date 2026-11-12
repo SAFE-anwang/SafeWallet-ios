@@ -6,6 +6,21 @@ import RxSwift
 import UIKit
 
 enum EvmFeeModule {
+    // 0.1 Gwei, expressed in Wei. Includes the supported test networks.
+    static func defaultGasPrice(chainId: Int) -> Int? {
+        if chainId == 56 || chainId == 97 || Safe4Network.context(chainId: chainId) != nil {
+            return 100_000_000
+        }
+        return nil
+    }
+
+    static func legacyGasPrice(evmKit: EvmKit.Kit) async throws -> GasPrice {
+        if let price = defaultGasPrice(chainId: evmKit.chain.id) {
+            return .legacy(gasPrice: price)
+        }
+        return try await LegacyGasPriceProvider(evmKit: evmKit).gasPrice()
+    }
+
     private static let surchargePercent: Double = 10
 
     static func surcharged(gasLimit: Int) -> Int {

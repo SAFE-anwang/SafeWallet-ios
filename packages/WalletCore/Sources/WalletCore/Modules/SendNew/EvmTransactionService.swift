@@ -109,7 +109,9 @@ extension EvmTransactionService: ITransactionService {
     }
 
     func sync() async throws {
-        if isEIP1559Supported {
+        if let price = EvmFeeModule.defaultGasPrice(chainId: chain.id) {
+            recommendedGasPrice = .legacy(gasPrice: price)
+        } else if isEIP1559Supported {
             recommendedGasPrice = try await EIP1559GasPriceProvider.gasPrice(networkManager: networkManager, rpcSource: rpcSource)
         } else {
             recommendedGasPrice = try await LegacyGasPriceProvider.gasPrice(networkManager: networkManager, rpcSource: rpcSource)

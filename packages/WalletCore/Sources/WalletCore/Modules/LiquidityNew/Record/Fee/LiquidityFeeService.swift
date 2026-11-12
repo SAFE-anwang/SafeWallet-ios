@@ -49,8 +49,7 @@ class LiquidityFeeService {
         Task {
             let single: Single<EvmFeeModule.Transaction>
             let transactionData = transactionData
-            let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKit)
-            let gasPrice = try await gasPriceProvider.gasPrice()
+            let gasPrice = try await EvmFeeModule.legacyGasPrice(evmKit: evmKit)
 
             do {
                 let gasLimit: Int

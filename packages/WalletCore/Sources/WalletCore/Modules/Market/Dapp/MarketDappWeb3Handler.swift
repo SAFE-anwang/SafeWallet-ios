@@ -512,10 +512,11 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
     }
 
     /// 处理 eth_gasPrice - 获取 Gas 价格
-    /// 策略：返回 "0xB2D05E00"（30 Gwei），DApp 会使用此值估算费用
+    /// SAFE and BNB use 0.1 Gwei; other chains retain the 3 Gwei default.
     private func handleGasPrice(id: Int) {
-        print("[Dapp] eth_gasPrice: returning default 30 gwei")
-        sendProviderResponse(id: id, resultJson: "\"0xB2D05E00\"", error: nil)
+        let gasPrice = EvmFeeModule.defaultGasPrice(chainId: chainId) ?? 3_000_000_000
+        let hexGasPrice = "0x" + String(gasPrice, radix: 16)
+        sendProviderResponse(id: id, resultJson: "\"\(hexGasPrice)\"", error: nil)
     }
 
     /// Estimate the requested transaction against the selected chain RPC.

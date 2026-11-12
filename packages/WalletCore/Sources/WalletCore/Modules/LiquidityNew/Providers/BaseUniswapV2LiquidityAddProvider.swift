@@ -126,7 +126,9 @@ class BaseUniswapV2LiquidityAddProvider: BaseUniswapLiquidityAddProvider {
         }
 
         let recommendedGasPrice: GasPrice
-        if chain.isEIP1559Supported {
+        if let price = EvmFeeModule.defaultGasPrice(chainId: chain.id) {
+            recommendedGasPrice = .legacy(gasPrice: price)
+        } else if chain.isEIP1559Supported {
             recommendedGasPrice = try await EIP1559GasPriceProvider.gasPrice(networkManager: Core.shared.networkManager, rpcSource: rpcSource)
         } else {
             recommendedGasPrice = try await LegacyGasPriceProvider.gasPrice(networkManager: Core.shared.networkManager, rpcSource: rpcSource)

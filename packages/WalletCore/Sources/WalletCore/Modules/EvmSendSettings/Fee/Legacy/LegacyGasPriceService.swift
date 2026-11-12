@@ -97,7 +97,7 @@ extension LegacyGasPriceService {
 
         status = .loading
 
-        gasPriceProvider.gasPriceSingle()
+        gasPriceProvider.gasPriceSingle(chainId: evmKit.chain.id)
             .subscribe(
                 onSuccess: { [weak self] gasPrice in
                     self?.handleRecommendedGasPrice(gasPrice: gasPrice, initialGasPrice: initialGasPrice)

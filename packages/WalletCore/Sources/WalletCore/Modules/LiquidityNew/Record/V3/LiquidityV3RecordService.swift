@@ -377,7 +377,7 @@ private extension LiquidityV3RecordService {
 
 
     func syncgasPrice() {
-        gasPriceProvider.gasPriceSingle()
+        gasPriceProvider.gasPriceSingle(chainId: evmKitWrapper.evmKit.chain.id)
             .subscribe(
                 onSuccess: { [weak self] gasPrice in
                     self?.legacyGasPrice =  gasPrice
