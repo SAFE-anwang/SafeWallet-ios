@@ -19,15 +19,15 @@ struct ProposalModule {
     }
 
     @MainActor
-    static func viewModel(type: ProposalType) -> ProposalViewModel {
-        let service = ProposalService(type: type)
+    static func viewModel(type: ProposalType, chainId: Int = Safe4Network.currentChainId) -> ProposalViewModel {
+        let service = ProposalService(type: type, chainId: chainId)
         let viewModel = ProposalViewModel(service: service)
         return viewModel
     }
 
     @MainActor
-    static func subViewController(type: ProposalType) -> ProposalViewController {
-        let service = ProposalService(type: type)
+    static func subViewController(type: ProposalType, chainId: Int = Safe4Network.currentChainId) -> ProposalViewController {
+        let service = ProposalService(type: type, chainId: chainId)
         let viewModel = ProposalViewModel(service: service)
         return ProposalViewController(viewModel: viewModel)
     }

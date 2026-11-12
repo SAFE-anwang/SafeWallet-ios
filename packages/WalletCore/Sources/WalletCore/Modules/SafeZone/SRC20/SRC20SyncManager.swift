@@ -30,7 +30,7 @@ class SRC20SyncManager {
     }
 
     static func logo(coinUid: String) -> String? {
-        Core.shared.userDefaultsStorage.value(for: Safe4Network.logoKey(coinUid: coinUid, chainId: Safe4Network.currentChainId)) ?? Core.shared.userDefaultsStorage.value(for: coinUid.lowercased())
+        Core.shared.userDefaultsStorage.value(for: Safe4Network.logoKey(coinUid: coinUid, chainId: Safe4Network.currentChainId))
     }
 
     func updateSRC20Tokens(forceRefresh: Bool = false) {

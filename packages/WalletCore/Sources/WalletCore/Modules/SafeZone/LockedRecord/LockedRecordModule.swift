@@ -15,7 +15,7 @@ class LockedRecordModule {
 //
 //        let service = LockedRecordService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
 //        let viewModel = LockedRecordViewModel(service: service,
-//                                              lockedStorage: Core.shared.safe4StorageManager.lockedRecoardStorage
+//                                              lockedStorage: storage.lockedRecoardStorage
 //        )
 //
 //        let viewController = LockedRecordView(viewModel: viewModel, uiNavController: nav)
@@ -33,8 +33,12 @@ class LockedRecordModule {
         }
 
         let service = LockedRecordService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
+        guard let storage = try? Core.shared.safe4StorageManager.scoped(service.cacheScope) else {
+            HudHelper.instance.show(banner: .error(string: "error".localized))
+            return nil
+        }
         let viewModel = LockedRecordViewModel(service: service,
-                                              lockedStorage: Core.shared.safe4StorageManager.lockedRecoardStorage
+                                              lockedStorage: storage.lockedRecoardStorage
         )
         return viewModel
     }

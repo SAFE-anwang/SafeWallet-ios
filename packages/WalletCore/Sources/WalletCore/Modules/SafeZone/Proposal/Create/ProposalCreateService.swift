@@ -8,11 +8,13 @@ import RxCocoa
 import HsExtensions
 
 class ProposalCreateService {
+    let networkSession = Safe4NetworkSession()
     private let titleCountLimit = 8 ... 80
     private let descCountLimit = 8 ... 600
     private let payTimesLimit = 2 ... 100
 
     private let privateKey: Data
+    private let chainId: Int
 
     var balance: Decimal? {
         didSet {
@@ -92,8 +94,9 @@ class ProposalCreateService {
     private let startPayTimeCautionRelay = BehaviorRelay<Caution?>(value:nil)
     private let payTimesCautionRelay = BehaviorRelay<Caution?>(value: nil)
 
-    init(privateKey: Data) {
+    init(privateKey: Data, chainId: Int) {
         self.privateKey = privateKey
+        self.chainId = chainId
         Task {
             do{
                 _ = try await pollBalance()
@@ -104,8 +107,14 @@ class ProposalCreateService {
     }
 
     private func web3() async throws -> Web3 {
-        let context = Safe4Network.currentContext
-        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        let context = try Safe4Network.activeContext(chainId: chainId)
+        try networkSession.check()
+        try Task.checkCancellation()
+        let web3 = try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        _ = try Safe4Network.activeContext(chainId: context.chainId)
+        return web3
     }
 }
 extension ProposalCreateService {

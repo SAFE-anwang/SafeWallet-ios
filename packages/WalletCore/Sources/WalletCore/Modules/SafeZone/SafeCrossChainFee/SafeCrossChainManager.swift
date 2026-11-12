@@ -25,17 +25,18 @@ class SafeCrossChainManager {
     }
 
     func getConfig() {
-        safeProvider.getCrossChainConfigForSafe4Native()
+        let chainId = Safe4Network.currentChainId
+        safeProvider.getCrossChainConfigForSafe4Native(chainId: chainId)
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
             .subscribe(onSuccess: { [weak self] safeInfo in
-                self?.save(safe4NativeConfig: safeInfo)
+                self?.save(safe4NativeConfig: safeInfo, chainId: chainId)
             })
             .disposed(by: disposeBag)
 
-        safeProvider.getCrossChainConfigForSafe4USDT()
+        safeProvider.getCrossChainConfigForSafe4USDT(chainId: chainId)
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
             .subscribe(onSuccess: { [weak self] safeInfo in
-                self?.save(safe4USDTConfig: safeInfo)
+                self?.save(safe4USDTConfig: safeInfo, chainId: chainId)
             })
             .disposed(by: disposeBag)
     }
@@ -44,14 +45,14 @@ class SafeCrossChainManager {
 
 // SAFE4
 extension SafeCrossChainManager {
-    private func save(safe4NativeConfig: CrossChainSafe4NativeConfig) {
+    private func save(safe4NativeConfig: CrossChainSafe4NativeConfig, chainId: Int) {
         if let jsonStr = safe4NativeConfig.toJSONString() {
-            userDefaultsStorage.set(value: jsonStr, for: crossChainSafe4_Native_Storage_key)
+            userDefaultsStorage.set(value: jsonStr, for: Safe4CacheScope(chainId: chainId).key(crossChainSafe4_Native_Storage_key))
         }
     }
 
-    func getSafe4Native() -> CrossChainSafe4NativeConfig? {
-        if let jsonStr: String = userDefaultsStorage.value(for: crossChainSafe4_Native_Storage_key),  let model = try? CrossChainSafe4NativeConfig(JSONString: jsonStr) {
+    func getSafe4Native(chainId: Int = Safe4Network.currentChainId) -> CrossChainSafe4NativeConfig? {
+        if let jsonStr: String = userDefaultsStorage.value(for: Safe4CacheScope(chainId: chainId).key(crossChainSafe4_Native_Storage_key)),  let model = try? CrossChainSafe4NativeConfig(JSONString: jsonStr) {
             return model
         }
         return nil
@@ -60,14 +61,14 @@ extension SafeCrossChainManager {
 
 // USDT
 extension SafeCrossChainManager {
-    private func save(safe4USDTConfig: CrossChainSafe4USDTConfig) {
+    private func save(safe4USDTConfig: CrossChainSafe4USDTConfig, chainId: Int) {
         if let jsonStr = safe4USDTConfig.toJSONString() {
-            userDefaultsStorage.set(value: jsonStr, for: crossChainSafe4_USDT_Storage_key)
+            userDefaultsStorage.set(value: jsonStr, for: Safe4CacheScope(chainId: chainId).key(crossChainSafe4_USDT_Storage_key))
         }
     }
 
-    func getSafe4USDT() -> CrossChainSafe4USDTConfig? {
-        if let jsonStr: String = userDefaultsStorage.value(for: crossChainSafe4_USDT_Storage_key),  let model = try? CrossChainSafe4USDTConfig(JSONString: jsonStr) {
+    func getSafe4USDT(chainId: Int = Safe4Network.currentChainId) -> CrossChainSafe4USDTConfig? {
+        if let jsonStr: String = userDefaultsStorage.value(for: Safe4CacheScope(chainId: chainId).key(crossChainSafe4_USDT_Storage_key)),  let model = try? CrossChainSafe4USDTConfig(JSONString: jsonStr) {
             return model
         }
         return nil

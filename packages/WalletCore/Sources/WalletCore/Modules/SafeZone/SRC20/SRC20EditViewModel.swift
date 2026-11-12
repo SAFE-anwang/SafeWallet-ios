@@ -48,6 +48,7 @@ class SRC20EditViewModel: ObservableObject {
                 descriptionTemp = description
 
                 await MainActor.run { [weak self] in
+                    guard self?.service.networkSession.isValid == true else { return }
                     self?.whitePaperUrl = whitePaperUrl
                     self?.orgName = orgName
                     self?.officialUrl = officialUrl
@@ -56,6 +57,7 @@ class SRC20EditViewModel: ObservableObject {
                 }
             }catch{
                 await MainActor.run { [weak self] in
+                    guard self?.service.networkSession.isValid == true else { return }
                     self?.dataState = .failed
                 }
             }
@@ -83,11 +85,13 @@ class SRC20EditViewModel: ObservableObject {
                 }
 
                 await MainActor.run {[weak self] in
+                    guard self?.service.networkSession.isValid == true else { return }
                     self?.sendState = .completed
                     onComplete(.completed)
                 }
             }catch{
                 await MainActor.run {[weak self] in
+                    guard self?.service.networkSession.isValid == true else { return }
                     self?.sendState = .failed
                     onComplete(.failed)
                 }

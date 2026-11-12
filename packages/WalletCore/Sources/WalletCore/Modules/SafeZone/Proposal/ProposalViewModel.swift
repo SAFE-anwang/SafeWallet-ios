@@ -12,6 +12,7 @@ import HsExtensions
 
 @MainActor
 class ProposalViewModel {
+    private var networkObservation: Safe4NetworkSession?
     private static let pageSize = 20
     private static let cacheMaxAge: TimeInterval = 120
     let service: ProposalService
@@ -31,19 +32,29 @@ class ProposalViewModel {
 
     private(set) var state: ProposalViewModel.State = .loading {
         didSet {
+            guard service.networkSession.isValid else { return }
             stateRelay.accept(state)
         }
     }
 
     init(service: ProposalService) {
         self.service = service
-        self.proposalStorageManager = ProposalStorageManager()
+        self.proposalStorageManager = service.proposalStorageManager
+
+        networkObservation = Safe4NetworkSession { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.allRequestTask?.cancel()
+                self.catchUpTask?.cancel()
+                self.recoveryTask?.cancel()
+            }
+        }
     }
 }
 
 extension ProposalViewModel {
     private func isActive(requestId: UUID) -> Bool {
-        requestContextId == requestId && !Task.isCancelled
+        requestContextId == requestId && service.networkSession.isValid && !Task.isCancelled && Safe4Network.isCurrent(chainId: service.chainId)
     }
 
     private func requestInfos(loadMore: Bool, completed: (()-> Void)?) {
@@ -460,21 +471,22 @@ extension ProposalViewModel {
 // load new Proposal
 extension ProposalViewModel {
     func loadNewProposals() {
-        self.hasNewProposal = ProposalStorageManager.getNeedShowTips()
+        self.hasNewProposal = ProposalStorageManager.getNeedShowTips(scope: service.reminderScope)
         if case .All = service.type {
             Task { @MainActor in
                 let totalNum = (try? await service.getTotalNum()) ?? 0
+                guard Safe4Network.isCurrent(chainId: service.chainId) else { return }
                 if let pageControl = proposalStorageManager.getPageControl(), pageControl.totalNum < totalNum {
                     reconcileTotal(latestTotalNum: totalNum)
                     requestInfos(loadMore: false) {
                         self.hasNewProposal = true
                         self.proposalStorageManager.savePageControl(self.safe4Page)
-                        ProposalStorageManager.saveNeedShowTips(self.hasNewProposal)
+                        ProposalStorageManager.saveNeedShowTips(self.hasNewProposal, scope: self.service.reminderScope)
                     }
                 }else {
                     requestInfos(loadMore: true) {
                         self.hasNewProposal = self.viewItems.count > 0
-                        ProposalStorageManager.saveNeedShowTips(self.hasNewProposal)
+                        ProposalStorageManager.saveNeedShowTips(self.hasNewProposal, scope: self.service.reminderScope)
                     }
                 }
             }

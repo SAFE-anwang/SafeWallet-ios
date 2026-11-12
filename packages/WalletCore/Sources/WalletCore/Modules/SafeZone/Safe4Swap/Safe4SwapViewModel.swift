@@ -9,6 +9,7 @@ import web3swift
 import EvmKit
 
 class Safe4SwapViewModel: ObservableObject {
+    let chainId = Safe4Network.currentChainId
     let autoRefreshDuration: Double = 20
 
     private var cancellables = Set<AnyCancellable>()

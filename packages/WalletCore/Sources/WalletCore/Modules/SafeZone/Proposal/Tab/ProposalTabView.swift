@@ -11,8 +11,8 @@ struct ProposalTabView: View {
     init(viewModel: ProposalTabViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
         _isPresented = isPresented
-        allViewModel = ProposalModule.viewModel(type: .All)
-        mineViewModel = ProposalModule.viewModel(type: .Mine(address: viewModel.evmKit.receiveAddress.hex))
+        allViewModel = ProposalModule.viewModel(type: .All, chainId: viewModel.evmKit.chain.id)
+        mineViewModel = ProposalModule.viewModel(type: .Mine(address: viewModel.evmKit.receiveAddress.hex), chainId: viewModel.evmKit.chain.id)
     }
 
     var body: some View {
@@ -77,7 +77,7 @@ struct ProposalTabView: View {
                     HudHelper.instance.show(banner: .error(string: "safe_zone.proposal.create_height_error".localized))
                     return
                 }
-                let viewModel = ProposalCreateModule.viewModel(privateKey: viewModel.privateKey)
+                let viewModel = ProposalCreateModule.viewModel(privateKey: viewModel.privateKey, chainId: viewModel.evmKit.chain.id)
                 Coordinator.shared.present { _ in
                     ProposalCreateView(viewModel: viewModel)
                         .ignoresSafeArea()

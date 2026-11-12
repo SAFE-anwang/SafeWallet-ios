@@ -2,8 +2,8 @@ import UIKit
 import SwiftUI
 
 struct ProposalCreateModule {
-    static func viewModel(privateKey: Data) -> ProposalCreateViewModel {
-        let service = ProposalCreateService(privateKey: privateKey)
+    static func viewModel(privateKey: Data, chainId: Int) -> ProposalCreateViewModel {
+        let service = ProposalCreateService(privateKey: privateKey, chainId: chainId)
         let viewModel = ProposalCreateViewModel(service: service)
         return viewModel
     }

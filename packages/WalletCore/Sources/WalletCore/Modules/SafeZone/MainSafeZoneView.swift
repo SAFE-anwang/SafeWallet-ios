@@ -30,6 +30,9 @@ struct MainSafeZoneView: View {
         .onAppear(perform: {
             viewModel.getConfig()
         })
+        .onReceive(NotificationCenter.default.publisher(for: .safe4NetworkDidSwitch)) { _ in
+            viewModel.getConfig()
+        }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("safe_zone.nav.title".localized)
     }
@@ -39,7 +42,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 guard let vm = SafeLineLockModule.viewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     SafeLineLockView(viewModel: vm, isPresented: isPresented)
                 }
             }) {
@@ -47,7 +50,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let vm = SafeLineLockRecoardModule.viewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     SafeLineLockRecoardView(viewModel: vm, isPresented: isPresented)
                 }
             }) {
@@ -85,7 +88,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 guard let viewModel = SuperNodeModule.tabViewModel() else{ return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     SuperNodeTabView(viewModel: viewModel, isPresented: isPresented)
                         .ignoresSafeArea()
                 }
@@ -94,7 +97,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let viewModel = MasterNodeModule.tabViewModel() else{ return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     MasterNodeTabView(viewModel: viewModel, isPresented: isPresented)
                         .ignoresSafeArea()
                 }
@@ -103,7 +106,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let viewModel = ProposalModule.tabViewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     ProposalTabView(viewModel: viewModel, isPresented: isPresented)
                         .ignoresSafeArea()
                 }
@@ -112,7 +115,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let vm = LockedRecordModule.viewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     LockedRecordView(viewModel: vm, isPresented: isPresented)
                         .ignoresSafeArea()
                 }
@@ -121,7 +124,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let viewModel = RedeemSafe3Module.tabViewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     RedeemSafe3TabView(viewModel: viewModel, isPresented: isPresented).ignoresSafeArea()
                 }
             }) {
@@ -129,7 +132,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let viewModel = DrawSafe4Module.viewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     DrawSafe4View(viewModel: viewModel, isPresented: isPresented)
                         .ignoresSafeArea()
                 }
@@ -147,8 +150,8 @@ struct MainSafeZoneView: View {
                     HudHelper.instance.show(banner: .error(string: "safe_zone.feature_unavailable".localized))
                     return
                 }
-                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .POL, direction: .SAFE_CrossChain_to_other)) {
-                    Coordinator.shared.present { isPresented in
+                if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .ETH, direction: .SAFE_CrossChain_to_other)) {
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -162,7 +165,7 @@ struct MainSafeZoneView: View {
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .ETH, direction: .other_CrossChain_to_SAFE)) {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -193,7 +196,7 @@ struct MainSafeZoneView: View {
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .BSC, direction: .SAFE_CrossChain_to_other)) {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -206,7 +209,7 @@ struct MainSafeZoneView: View {
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .BSC, direction: .other_CrossChain_to_SAFE)) {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -237,7 +240,7 @@ struct MainSafeZoneView: View {
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .POL, direction: .SAFE_CrossChain_to_other)) {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -250,7 +253,7 @@ struct MainSafeZoneView: View {
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .SAFE(chain: .POL, direction: .other_CrossChain_to_SAFE)) {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -276,7 +279,7 @@ struct MainSafeZoneView: View {
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .ETH, direction: .SAFE_CrossChain_to_other)) {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -290,7 +293,7 @@ struct MainSafeZoneView: View {
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .ETH, direction: .other_CrossChain_to_SAFE)) {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -298,7 +301,7 @@ struct MainSafeZoneView: View {
                 TagItemView(fromCoin: "USDT", fromChain: "ETH", toCoin: "USDT", toChain: "SAFE")
             }
             ClickableRow(action: {
-                let linkUrl = URL(string: "https://safe4.anwang.com/address/0x9C1246a4BB3c57303587e594a82632c3171662C9")
+                let linkUrl = URL(string: "\(Safe4Network.currentContext.apiBaseUrl)/address/0x9C1246a4BB3c57303587e594a82632c3171662C9")
                 Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.contract".localized)
@@ -315,7 +318,7 @@ struct MainSafeZoneView: View {
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .BSC, direction: .SAFE_CrossChain_to_other)) {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -328,7 +331,7 @@ struct MainSafeZoneView: View {
                     return
                 }
                 if let viewModel = CrossChainModule.crossChainViewModel(token: .USDT(chain: .BSC, direction: .other_CrossChain_to_SAFE)) {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         CrossPreSendView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -336,7 +339,7 @@ struct MainSafeZoneView: View {
                 TagItemView(fromCoin: "USDT", fromChain: "BSC", toCoin: "USDT", toChain: "SAFE")
             }
             ClickableRow(action: {
-                let linkUrl = URL(string: "https://safe4.anwang.com/address/0x9C1246a4BB3c57303587e594a82632c3171662C9")
+                let linkUrl = URL(string: "\(Safe4Network.currentContext.apiBaseUrl)/address/0x9C1246a4BB3c57303587e594a82632c3171662C9")
                 Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.contract".localized)
@@ -359,7 +362,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 if let viewModel = Safe4SwapModule.viewModel() {
-                    Coordinator.shared.present { isPresented in
+                    Coordinator.shared.presentSafe4 { isPresented in
                         Safe4SwapView(viewModel: viewModel, isPresented: isPresented)
                     }
                 }
@@ -374,7 +377,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 guard let vm = WithdrawModule.viewModel(type: .masterNode) else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     WithdrawView(viewModel: vm, isPresented: isPresented)
                 }
             }) {
@@ -382,7 +385,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let vm = WithdrawModule.viewModel(type: .superNode) else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     WithdrawView(viewModel: vm, isPresented: isPresented)
                 }
             }) {
@@ -390,7 +393,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let vm = WithdrawModule.viewModel(type: .proposal) else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     WithdrawView(viewModel: vm, isPresented: isPresented)
                 }
             }) {
@@ -398,7 +401,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let viewModel = RewardsModule.viewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     RewardsView(viewModel: viewModel, isPresented: isPresented).ignoresSafeArea()
                 }
             }) {
@@ -406,7 +409,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let vm = WithdrawModule.viewModel(type: .voteLocked) else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     WithdrawView(viewModel: vm, isPresented: isPresented)
                 }
             }) {
@@ -420,7 +423,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 guard let viewModel = DeployModule.viewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     DeployView(viewModel: viewModel, isPresented: isPresented)
                 }
             }) {
@@ -428,7 +431,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let viewModel = SRC20ManagerModule.viewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     SRC20ManagerView(viewModel: viewModel, isPresented: isPresented)
                 }
             }) {
@@ -442,16 +445,16 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 guard let viewModel = SRC721Module.deployViewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     SRC721DeployView(viewModel: viewModel, isPresented: isPresented)
                 }
             }) {
                 ItemView(title: "safe_zone.src721.action.deploy".localized)
             }
             ClickableRow(action: {
-                guard let viewModel = SRC721Module.managerViewModel() else { return }
-                Coordinator.shared.present { isPresented in
-                    SRC721ManagerView(viewModel: viewModel, isPresented: isPresented)
+                guard SRC721Module.canOpenManager() else { return }
+                Coordinator.shared.presentSafe4 { isPresented in
+                    SRC721ManagerView(isPresented: isPresented)
                 }
             }) {
                 ItemView(title: "safe_zone.src721.action.manage".localized)
@@ -464,7 +467,7 @@ struct MainSafeZoneView: View {
         ListSection {
             ClickableRow(action: {
                 guard let viewModel = SafeDappModule.registerViewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     SafeDappRegisterView(viewModel: viewModel, isPresented: isPresented)
                 }
             }) {
@@ -472,7 +475,7 @@ struct MainSafeZoneView: View {
             }
             ClickableRow(action: {
                 guard let viewModel = SafeDappModule.managerViewModel() else { return }
-                Coordinator.shared.present { isPresented in
+                Coordinator.shared.presentSafe4 { isPresented in
                     SafeDappManagerView(viewModel: viewModel, isPresented: isPresented)
                 }
             }) {
@@ -503,13 +506,13 @@ struct MainSafeZoneView: View {
                 TagItemView(fromCoin: "SAFE", fromChain: "SAFE3", separator: "", toCoin: "safe_zone.row.acrossExplorer".localized(""), toChain: nil)
             }
             ClickableRow(action: {
-                let linkUrl = URL(string: "https://safe4.anwang.com")
+                let linkUrl = URL(string: Safe4Network.currentContext.apiBaseUrl)
                 Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.blockExplorer".localized("SAFE"))
             }
             ClickableRow(action: {
-                let linkUrl = URL(string: "https://safe4.anwang.com/crosschains")
+                let linkUrl = URL(string: "\(Safe4Network.currentContext.apiBaseUrl)/crosschains")
                 Coordinator.shared.present(url: linkUrl)
             }) {
                 ItemView(title: "safe_zone.row.acrossExplorer".localized("SAFE"))

@@ -57,10 +57,11 @@ extension AppViewModel {
         proposalTask = Task { [weak self] in
             guard let self = self else { return }
             do {
-                let hasNew = try await ProposalService(type: .All).hasNewProposals()
-                if Task.isCancelled { return }
+                let service = ProposalService(type: .All)
+                let hasNew = try await service.hasNewProposals()
+                if Task.isCancelled || !Safe4Network.isCurrent(chainId: service.chainId) { return }
                 if hasNew {
-                    ProposalStorageManager.saveNeedShowTips(true)
+                    ProposalStorageManager.saveNeedShowTips(true, scope: service.reminderScope)
                     guard ProposalStorageManager.shouldShowProposalPopupReminder() else { return }
                     await MainActor.run {
                         self.showAlerView()

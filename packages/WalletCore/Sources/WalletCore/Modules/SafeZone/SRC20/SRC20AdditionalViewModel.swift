@@ -42,6 +42,7 @@ class SRC20AdditionalViewModel: ObservableObject {
             do {
                 let totalSupply = try await service.totalSupply(type: token.deployType)
                 DispatchQueue.main.async { [weak self] in
+                    guard self?.service.networkSession.isValid == true else { return }
                     self?.totalSupply = totalSupply
                 }
             }catch{

@@ -398,7 +398,7 @@ class SyncSafe4TokensService {
     }
 
     func logo(coinUid: String) -> String? {
-        userDefaultsStorage.value(for: Safe4Network.logoKey(coinUid: coinUid, chainId: chainId)) ?? userDefaultsStorage.value(for: coinUid.lowercased())
+        userDefaultsStorage.value(for: Safe4Network.logoKey(coinUid: coinUid, chainId: chainId))
     }
 
     func cancel() {

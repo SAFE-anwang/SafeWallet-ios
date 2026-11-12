@@ -8,6 +8,12 @@ import EvmKit
 class DrawSafe4Service {
 
     private var disposeBag = DisposeBag()
+    private var networkObserver: NSObjectProtocol?
+    private var invalidated = false
+
+    var isCurrentNetwork: Bool {
+        !invalidated && Safe4Network.isCurrent(chainId: evmKit.chain.id)
+    }
     private let evmKit: EvmKit.Kit
     private let provider: DrawSafe4Provider
     private let stateRelay = PublishRelay<State>()
@@ -33,16 +39,50 @@ class DrawSafe4Service {
         self.provider = provider
         self.evmKit = evmKit
         self.address = evmKit.address.hex
+        networkObserver = NotificationCenter.default.addObserver(
+            forName: .safe4NetworkWillSwitch, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.invalidate()
+        }
+    }
+
+    deinit {
+        if let networkObserver {
+            NotificationCenter.default.removeObserver(networkObserver)
+        }
+    }
+
+    private func invalidate() {
+        guard !invalidated else { return }
+        invalidated = true
+        disposeBag = DisposeBag()
+        state = .networkChanged
     }
 
     private func drawSafe4(_ address: String) {
+        guard isCurrentNetwork else {
+            invalidate()
+            return
+        }
+        disposeBag = DisposeBag()
         state = .loading
         provider.drawSafe4RequestSingle(address: address)
             .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+            .observeOn(MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] data in
-                self?.state = data.issuccess ? .success(info: data.data) : .failed(error: data.message)
+                guard let self else { return }
+                guard self.isCurrentNetwork else {
+                    self.invalidate()
+                    return
+                }
+                self.state = data.issuccess ? .success(info: data.data) : .failed(error: data.message)
             }, onError: { [weak self] error in
-                self?.state = .failed(error: error.localizedDescription)
+                guard let self else { return }
+                guard self.isCurrentNetwork else {
+                    self.invalidate()
+                    return
+                }
+                self.state = .failed(error: error.localizedDescription)
             })
             .disposed(by: disposeBag)
     }
@@ -82,6 +122,7 @@ extension DrawSafe4Service {
 
     enum State {
         case loading
+        case networkChanged
         case success(info: DrawSafe4Info?)
         case failed(error: String?)
     }

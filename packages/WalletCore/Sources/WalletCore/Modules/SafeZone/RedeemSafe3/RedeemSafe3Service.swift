@@ -8,12 +8,21 @@ import RxCocoa
 import HsExtensions
 
 class RedeemSafe3Service {
+    let networkSession = Safe4NetworkSession()
 
-    init() {}
+    let chainId: Int
+
+    init(chainId: Int) { self.chainId = chainId }
 
     private func web3() async throws -> Web3 {
-        let context = Safe4Network.currentContext
-        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        let context = try Safe4Network.activeContext(chainId: chainId)
+        try networkSession.check()
+        try Task.checkCancellation()
+        let web3 = try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        _ = try Safe4Network.activeContext(chainId: context.chainId)
+        return web3
     }
 }
 extension RedeemSafe3Service {

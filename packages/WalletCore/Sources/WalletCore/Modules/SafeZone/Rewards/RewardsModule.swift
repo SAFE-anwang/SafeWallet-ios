@@ -10,7 +10,7 @@ struct RewardsModule {
         }
         guard let privateKey = evmKitWrapper.signer?.privateKey else { return nil }
         let address = evmKitWrapper.evmKit.address.hex
-        let provider = Safe4Provider(networkManager: NetworkManager(logger: Logger(minLogLevel: .debug)))
+        let provider = Safe4Provider(networkManager: NetworkManager(logger: Logger(minLogLevel: .debug)), chainId: evmKitWrapper.evmKit.chain.id)
         let service = RewardsService(provider: provider, address: address, privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
         let viewModel = RewardsViewModel(service: service)
         return viewModel

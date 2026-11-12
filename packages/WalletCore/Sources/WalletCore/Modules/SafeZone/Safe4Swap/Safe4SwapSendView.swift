@@ -9,8 +9,8 @@ struct Safe4SwapSendView: View {
 
     @State private var feeSettingsPresented = false
 
-    init(transactionData: TransactionData, tokenIn: Token, tokenOut: Token, amountIn: Decimal, swapPresentationMode: Binding<PresentationMode>) {
-        _viewModel = .init(wrappedValue: Safe4SwapSendViewModel(transactionData: transactionData, tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn))
+    init(chainId: Int, transactionData: TransactionData, tokenIn: Token, tokenOut: Token, amountIn: Decimal, swapPresentationMode: Binding<PresentationMode>) {
+        _viewModel = .init(wrappedValue: Safe4SwapSendViewModel(chainId: chainId, transactionData: transactionData, tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn))
         _swapPresentationMode = swapPresentationMode
     }
 

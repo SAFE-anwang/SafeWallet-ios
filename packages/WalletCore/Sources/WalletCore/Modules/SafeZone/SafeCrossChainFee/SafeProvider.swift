@@ -19,13 +19,19 @@ class SafeProvider {
 }
 
 extension SafeProvider {
-    func getCrossChainConfigForSafe4Native() -> Single<CrossChainSafe4NativeConfig> {
-        let netType = Safe4Network.currentContext.isTestNet ? "testnet4" : "mainnet4"
+    func getCrossChainConfigForSafe4Native(chainId: Int) -> Single<CrossChainSafe4NativeConfig> {
+        guard let context = Safe4Network.context(chainId: chainId) else {
+            return .error(Safe4NetworkError.unsupportedChain(chainId))
+        }
+        let netType = context.isTestNet ? "testnet4" : "mainnet4"
         return networkManager.single(url: "\(baseUrl)/v1/gate/\(netType)", method: .get, parameters: [:], headers: nil)
     }
 
-    func getCrossChainConfigForSafe4USDT() -> Single<CrossChainSafe4USDTConfig> {
-        let netType = Safe4Network.currentContext.isTestNet ? "testnet4" : "mainnet4"
+    func getCrossChainConfigForSafe4USDT(chainId: Int) -> Single<CrossChainSafe4USDTConfig> {
+        guard let context = Safe4Network.context(chainId: chainId) else {
+            return .error(Safe4NetworkError.unsupportedChain(chainId))
+        }
+        let netType = context.isTestNet ? "testnet4" : "mainnet4"
         return networkManager.single(url: "\(baseUrl)/v1/gate/\(netType)/usdt", method: .get, parameters: [:], headers: nil)
     }
 }

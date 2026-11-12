@@ -87,6 +87,7 @@ final class Safe4NetworkSwitchService: ObservableObject {
 
     private func apply(testNet enabled: Bool) async throws {
         let previousChainId = Safe4Network.currentChainId
+        NotificationCenter.default.post(name: .safe4NetworkWillSwitch, object: nil)
         await adapterManager.cancelSafe4SyncManager()
         src20ProjectionCoordinator.prepareSwitch(from: previousChainId)
         localStorage.isSafe4TestNet = enabled

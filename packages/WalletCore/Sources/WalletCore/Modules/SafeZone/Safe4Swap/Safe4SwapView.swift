@@ -46,6 +46,7 @@ struct Safe4SwapView: View {
                    let transactionData = viewModel.transactionData()
                 {
                     Safe4SwapSendView(
+                        chainId: viewModel.chainId,
                         transactionData: transactionData,
                         tokenIn: tokenIn,
                         tokenOut: tokenOut,

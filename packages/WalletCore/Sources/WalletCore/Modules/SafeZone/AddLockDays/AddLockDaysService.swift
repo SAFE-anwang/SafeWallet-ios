@@ -8,6 +8,7 @@ import Foundation
 import HsExtensions
 
 class AddLockDaysService {
+    let networkSession = Safe4NetworkSession()
     private let evmKit: EvmKit.Kit
     private let privateKey: Data
 
@@ -27,7 +28,13 @@ class AddLockDaysService {
 
     private func web3() async throws -> Web3 {
         let context = try Safe4Network.activeContext(chainId: evmKit.chain.id)
-        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        let web3 = try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        _ = try Safe4Network.activeContext(chainId: context.chainId)
+        return web3
     }
 
     func addLock(id: BigUInt, day: BigUInt) async throws -> String {

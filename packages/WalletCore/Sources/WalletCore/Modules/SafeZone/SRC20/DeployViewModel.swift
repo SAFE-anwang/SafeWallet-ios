@@ -78,11 +78,13 @@ class DeployViewModel: ObservableObject {
             do{
                 _ = try await service.deploy(type: mode, name: name, symbol: symbol, totalSupply: value)
                 DispatchQueue.main.async {
+                    guard self.service.networkSession.isValid else { return }
                     self.sendState = .completed
                     onComplete(self.sendState)
                 }
             }catch{
                 DispatchQueue.main.async {
+                    guard self.service.networkSession.isValid else { return }
                     self.sendState = .ready
                     onComplete(self.sendState)
                 }

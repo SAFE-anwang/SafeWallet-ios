@@ -9,6 +9,7 @@ class ProposalCreateViewModel {
 
     private(set) var state: ProposalCreateViewModel.State = .loading {
         didSet {
+            guard service.networkSession.isValid else { return }
             stateRelay.accept(state)
         }
     }

@@ -102,7 +102,7 @@ extension ProposalDetailViewModel {
 private extension ProposalDetailViewModel {
 
     private var catchKey: String {
-        "\(infoItem.info.id)_proposal_Key"
+        servie.cacheScope.key("\(infoItem.info.id)_proposal_vote")
     }
 
     private func catchVoted(id: String) {

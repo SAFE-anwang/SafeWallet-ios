@@ -5,6 +5,7 @@ import BigInt
 import EvmKit
 
 class SRC20Service {
+    let networkSession = Safe4NetworkSession()
 
     let contract: String
     private let privateKey: Data
@@ -40,7 +41,9 @@ class SRC20Service {
     }
 
     func deploy(type: DeployType, name: String, symbol: String, totalSupply: BigUInt) async throws -> [String] {
-        switch type {
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        return switch type {
         case .SRC20:
             try await src20().deploy(privateKey: privateKey, name: name, symbol: symbol, totalSupply: totalSupply)
         case .SRC20Mintable:
@@ -51,7 +54,9 @@ class SRC20Service {
     }
 
     func mint(type: DeployType, to: Web3Core.EthereumAddress, amount: BigUInt) async throws -> String {
-        switch type {
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        return switch type {
         case .SRC20Mintable:
             try await src20Mintble().mint(privateKey: privateKey, to: to, amount: amount)
         case .SRC20Burnable:
@@ -62,7 +67,9 @@ class SRC20Service {
     }
 
     func burn(amount: BigUInt) async throws -> String {
-        try await src20Burnable().burn(privateKey: privateKey, amount: amount)
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        return try await src20Burnable().burn(privateKey: privateKey, amount: amount)
     }
 
     func getLogoPayAmount(type: DeployType) async throws -> BigUInt {
@@ -77,7 +84,9 @@ class SRC20Service {
     }
 
     func setLogoPayAmount(type: DeployType, logo: Data) async throws -> String {
-        switch type {
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        return switch type {
         case .SRC20:
             try await src20().setLogo(privateKey: privateKey, logo: logo)
         case .SRC20Mintable:
@@ -99,7 +108,9 @@ class SRC20Service {
     }
 
     func setOrgName(type: DeployType, orgName: String) async throws -> String {
-        switch type {
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        return switch type {
         case .SRC20:
             try await src20().setOrgName(privateKey: privateKey, orgName: orgName)
         case .SRC20Mintable:
@@ -121,7 +132,9 @@ class SRC20Service {
     }
 
     func setDescription(type: DeployType, description: String) async throws -> String {
-        switch type {
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        return switch type {
         case .SRC20:
             try await src20().setDescription(privateKey: privateKey, description: description)
         case .SRC20Mintable:
@@ -143,7 +156,9 @@ class SRC20Service {
     }
 
     func setOfficialUrl(type: DeployType, officialUrl: String) async throws -> String {
-        switch type {
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        return switch type {
         case .SRC20:
             try await src20().setOfficialUrl(privateKey: privateKey, officialUrl: officialUrl)
         case .SRC20Mintable:
@@ -165,7 +180,9 @@ class SRC20Service {
     }
 
     func setWhitePaperUrl(type: DeployType, whitePaperUrl: String) async throws -> String {
-        switch type {
+        try networkSession.check()
+        _ = try Safe4Network.activeContext(chainId: chainId)
+        return switch type {
         case .SRC20:
             try await src20().setWhitePaperUrl(privateKey: privateKey, whitePaperUrl: whitePaperUrl)
         case .SRC20Mintable:

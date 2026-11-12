@@ -13,8 +13,12 @@ class WithdrawModule {
             return nil
         }
         let service = WithdrawViewService(type: type, privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
+        guard let storage = try? Core.shared.safe4StorageManager.scoped(service.cacheScope) else {
+            HudHelper.instance.show(banner: .error(string: "error".localized))
+            return nil
+        }
         let viewModel = WithdrawViewModel(service: service,
-                                          withdrawLockedStorage: Core.shared.safe4StorageManager.withdrawLockedStorage
+                                          withdrawLockedStorage: storage.withdrawLockedStorage
         )
         return viewModel
     }

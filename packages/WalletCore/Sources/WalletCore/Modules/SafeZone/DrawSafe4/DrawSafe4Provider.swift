@@ -6,22 +6,26 @@ import Alamofire
 
 class DrawSafe4Provider {
 
-    private var baseUrl: String { Safe4Network.currentContext.apiBaseUrl }
+    private let chainId: Int
     private let networkManager: NetworkManager
 
-    init(networkManager: NetworkManager) {
+    init(networkManager: NetworkManager, chainId: Int) {
         self.networkManager = networkManager
+        self.chainId = chainId
     }
 
     func drawSafe4RequestSingle(address: String) -> Single<DrawSafe4Response> {
 
+        let context: Safe4NetworkContext
+        do { context = try Safe4Network.activeContext(chainId: chainId) }
+        catch { return .error(error) }
         let rawString = """
         {
             "address": "\(address)"
         }
         """
         let rawData = Data(rawString.utf8)
-        var request = URLRequest(url: URL(string: "\(baseUrl)/5005/get_test_coin")!)
+        var request = URLRequest(url: URL(string: "\(context.apiBaseUrl)/5005/get_test_coin")!)
         request.httpMethod = HTTPMethod.post.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = rawData

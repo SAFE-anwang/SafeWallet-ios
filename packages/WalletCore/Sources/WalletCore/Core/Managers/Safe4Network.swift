@@ -120,3 +120,41 @@ extension Safe4NetworkContext {
         )
     }
 }
+
+/// Invalidates work at the start of a switch, even if the user later returns to the same chain.
+final class Safe4NetworkSession {
+    private let lock = NSLock()
+    private var valid = true
+    private var observer: NSObjectProtocol?
+    private let notificationCenter: NotificationCenter
+
+    init(notificationCenter: NotificationCenter = .default, onInvalidate: (() -> Void)? = nil) {
+        self.notificationCenter = notificationCenter
+        observer = notificationCenter.addObserver(forName: .safe4NetworkWillSwitch, object: nil, queue: nil) { [weak self] _ in
+            guard let self else { return }
+            self.lock.lock()
+            let wasValid = self.valid
+            self.valid = false
+            self.lock.unlock()
+            if wasValid { onInvalidate?() }
+        }
+    }
+
+    var isValid: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return valid
+    }
+
+    func check() throws {
+        guard isValid else { throw CancellationError() }
+    }
+
+    deinit {
+        if let observer { notificationCenter.removeObserver(observer) }
+    }
+}
+
+extension Notification.Name {
+    static let safe4NetworkWillSwitch = Notification.Name("Safe4NetworkWillSwitch")
+}

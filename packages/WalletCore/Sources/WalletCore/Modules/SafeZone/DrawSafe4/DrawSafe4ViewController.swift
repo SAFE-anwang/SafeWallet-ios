@@ -77,21 +77,30 @@ class DrawSafe4ViewController: ThemeViewController {
 
     private func sync(state: DrawSafe4Service.State) {
         DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            guard self.viewModel.isCurrentNetwork else {
+                self.drawSafe4Info = nil
+                self.onDismiss?()
+                return
+            }
             switch state {
+            case .networkChanged:
+                self.drawSafe4Info = nil
+                self.onDismiss?()
             case .loading:
-                self?.drawSafe4Info = nil
-                self?.tableView.reload()
+                self.drawSafe4Info = nil
+                self.tableView.reload()
 
             case let .success(info):
-                self?.drawSafe4Info = info
-                self?.tableView.reload()
-                self?.buttonCell.title = "safe_zone.claim_success".localized
-                self?.buttonCell.isEnabled = false
+                self.drawSafe4Info = info
+                self.tableView.reload()
+                self.buttonCell.title = "safe_zone.claim_success".localized
+                self.buttonCell.isEnabled = false
                 HudHelper.instance.show(banner: .success(string: "safe_zone.claim_success".localized))
 
             case let .failed(error):
-                self?.drawSafe4Info = nil
-                self?.tableView.reload()
+                self.drawSafe4Info = nil
+                self.tableView.reload()
                 HudHelper.instance.show(banner: .error(string: error ?? ""))
             }
         }

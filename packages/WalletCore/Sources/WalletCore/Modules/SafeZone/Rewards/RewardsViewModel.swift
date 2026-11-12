@@ -14,6 +14,8 @@ class RewardsViewModel: ObservableObject {
 
     private let service: RewardsService
     private let disposeBag = DisposeBag()
+    private var withdrawTask: Task<Void, Never>?
+    private var networkObservation: Safe4NetworkSession?
     private var userDefaultsStorage = UserDefaultsStorage()
 
     @Published private(set) var state: DataStatus<[ViewItem]> = .loading
@@ -37,12 +39,15 @@ class RewardsViewModel: ObservableObject {
 
     init(service: RewardsService) {
         self.service = service
+        networkObservation = Safe4NetworkSession { [weak self] in
+            self?.withdrawTask?.cancel()
+        }
         refresh()
         subscribe(disposeBag, service.stateObservable) { [weak self] in self?.sync(dataState: $0) }
     }
 
     private var last_Rewards_Timestamp_KEY: String {
-        "last_Rewards_Timestamp_key_\(service.address)"
+        service.cacheScope.key("last_rewards_timestamp")
     }
 
     var lastTimestamp: TimeInterval? {
@@ -57,6 +62,7 @@ class RewardsViewModel: ObservableObject {
         switch dataState {
         case .loading:
             DispatchQueue.main.async { [weak self] in
+                guard self?.service.networkSession.isValid == true else { return }
                 self?.state = .loading
             }
 
@@ -82,12 +88,14 @@ class RewardsViewModel: ObservableObject {
                 }
 
                 DispatchQueue.main.async { [weak self] in
+                    guard self?.service.networkSession.isValid == true else { return }
                     self?.state = .completed(tempArr)
                 }
             }
 
         case .failed:
             DispatchQueue.main.async { [weak self] in
+                guard self?.service.networkSession.isValid == true else { return }
                 self?.state = .completed([])
             }
         }
@@ -100,19 +108,25 @@ extension RewardsViewModel {
     }
 
     func withdraw() {
+        guard service.networkSession.isValid, withdrawTask == nil else { return }
         sendState = .loading
-        Task {
+        withdrawTask = Task { @MainActor in
+            defer { withdrawTask = nil }
             do{
                 try await service.withdrawByID()
+                try service.networkSession.check()
+                try Task.checkCancellation()
                 let dateFormatter = DateFormatter.cachedFormatter(format: "yyyy-MM-dd")
                 let date = dateFormatter.string(from: Date())
                 lastTimestamp = dateFormatter.date(from: date)?.timeIntervalSince1970
                 DispatchQueue.main.async { [self] in
+                    guard service.networkSession.isValid else { return }
                     sendState = .completed
                     onSuccess?(sendState)
                 }
             }catch{
                 DispatchQueue.main.async { [weak self] in
+                    guard self?.service.networkSession.isValid == true else { return }
                     self?.sendState = .failed(RequestError.withdrawError)
                     self?.onSuccess?(self?.sendState ?? .failed(RequestError.withdrawError))
                 }

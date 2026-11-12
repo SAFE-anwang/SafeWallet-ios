@@ -7,7 +7,12 @@ import RxSwift
 import RxCocoa
 
 class LockedRecordService {
+    let networkSession = Safe4NetworkSession()
     private let privateKey: Data
+    var cacheScope: Safe4CacheScope {
+        Safe4CacheScope(chainId: evmKit.chain.id, owner: evmKit.receiveAddress.hex)
+    }
+
     private let evmKit: EvmKit.Kit
     private static let retryAttempts = 2
     private static let retryDelayNanoseconds: UInt64 = 200_000_000
@@ -27,7 +32,13 @@ class LockedRecordService {
 
     private func web3() async throws -> Web3 {
         let context = try Safe4Network.activeContext(chainId: evmKit.chain.id)
-        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        let web3 = try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        _ = try Safe4Network.activeContext(chainId: context.chainId)
+        return web3
     }
 
     private func withRetry<T>(
@@ -42,7 +53,9 @@ class LockedRecordService {
             } catch {
                 lastError = error
                 guard attempt < maxAttempts else { break }
-                try? await Task.sleep(nanoseconds: retryDelayNanoseconds)
+                try networkSession.check()
+                try Task.checkCancellation()
+                try await Task.sleep(nanoseconds: retryDelayNanoseconds)
             }
         }
         throw lastError ?? NSError(domain: "LockedRecordService", code: -1)

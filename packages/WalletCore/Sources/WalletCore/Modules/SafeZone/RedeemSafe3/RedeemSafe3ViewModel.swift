@@ -60,6 +60,7 @@ class RedeemSafe3ViewModel {
 
     private(set) var state: SendState = .loading {
         didSet {
+            guard service.networkSession.isValid else { return }
             stateRelay.accept(state)
         }
     }
@@ -175,7 +176,7 @@ class RedeemSafe3ViewModel {
     private func syncIsEnabledSend() {
         guard safe3BalanceInfo != nil else {return isEnabledSendRelay.accept(false)}
         var isRedeem = false
-        if let privateKeyData, let redeem: Bool = userDefaultsStorage.value(for: "\(keyRedeemAddress)\(privateKeyData.hs.hex)") {
+        if let privateKeyData, let redeem: Bool = userDefaultsStorage.value(for: Safe4CacheScope(chainId: service.chainId, owner: privateKeyToSafe4Address(privateKey: privateKeyData)).key(keyRedeemAddress)) {
             isRedeem = redeem
         }
         let isEnabled = (existAvailable || existLocked || existPettyLocked) && !isRedeem
@@ -251,7 +252,7 @@ extension RedeemSafe3ViewModel {
                         return state = .failed(error: "safe_zone.safe4.redeem.master.fail".localized)
                     }
                 }
-                userDefaultsStorage.set(value: true, for: keyRedeemAddress + "\(privateKey.hs.hex)")
+                userDefaultsStorage.set(value: true, for: Safe4CacheScope(chainId: service.chainId, owner: privateKeyToSafe4Address(privateKey: privateKey)).key(keyRedeemAddress))
                 step = .sent
                 state = .sent
             }catch{

@@ -36,7 +36,7 @@ struct RedeemSafe3Module {
     }
 
     static func viewModel(account: Account, safe4EvmKitWrapper: EvmKitWrapper, type: RedeemWalletType) -> RedeemSafe3ViewModel {
-        let service = RedeemSafe3Service()
+        let service = RedeemSafe3Service(chainId: safe4EvmKitWrapper.evmKit.chain.id)
         let addressService = AddressService(mode: .blockchainType, marketKit: Core.shared.marketKit, contactBookManager: nil, blockchainType: .safe)
         let viewModel = RedeemSafe3ViewModel(service: service, addressService: addressService, safe4EvmKitWrapper: safe4EvmKitWrapper, redeemWalletType: type)
         return viewModel

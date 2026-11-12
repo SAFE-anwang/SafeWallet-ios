@@ -60,6 +60,10 @@ struct CrossPreSendView: View {
             .toolbarRole(.editor)
             .accentColor(.themeJacob)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .safe4NetworkDidSwitch)) { _ in
+            confirmPresented = false
+            isPresented = false
+        }
     }
 
     @ViewBuilder private func balanceView() -> some View {

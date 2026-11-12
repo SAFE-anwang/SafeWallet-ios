@@ -7,6 +7,7 @@ import Web3Core
 import BigInt
 
 class LockedRecordViewModel: ObservableObject {
+    private var networkObservation: Safe4NetworkSession?
     private static let cacheMaxAge: TimeInterval = 120
     private static let withdrawBatchSize = 30
     private static let pageSize = 20
@@ -43,6 +44,14 @@ class LockedRecordViewModel: ObservableObject {
         self.sourceStatesByType = Self.makeInitialSourceStates()
         restoreCache()
         initialLoad()
+
+        networkObservation = Safe4NetworkSession { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.listTask?.cancel()
+                self.withdrawTask?.cancel()
+            }
+        }
     }
 }
 
@@ -196,17 +205,17 @@ private extension LockedRecordViewModel {
                     )
                 }
 
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, self.service.networkSession.isValid else { return }
 
                 await MainActor.run {
-                    guard self.requestContextId == requestId else { return }
+                    guard self.requestContextId == requestId, self.service.networkSession.isValid else { return }
                     self.apply(states: nextStates)
                 }
             } catch {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, self.service.networkSession.isValid else { return }
 
                 await MainActor.run {
-                    guard self.requestContextId == requestId else { return }
+                    guard self.requestContextId == requestId, self.service.networkSession.isValid else { return }
                     if self.viewItems.isEmpty {
                         self.dataState = .error(RequestError.getInfo as NSError)
                     } else {
@@ -512,6 +521,7 @@ private extension LockedRecordViewModel {
                 grouping: try lockedRecoardStorage.allRecords().map { item in
                     let lastBlockHeight = BigUInt(service.lastBlockHeight ?? 0)
                     return WithdrawItemRecord(
+                        scope: service.cacheScope,
                         lastBlockHeight: lastBlockHeight,
                         sourceType: item.sourceType,
                         record: item.record,
@@ -690,12 +700,14 @@ private extension LockedRecordViewModel {
                 }
 
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     applyLocalWithdrawSuccess(items: snapshotItems)
-                    LockedRecordViewModel.saveDidWithdrawIds(snapshotItems.map { $0.id.description })
+                    LockedRecordViewModel.saveDidWithdrawIds(snapshotItems.map { $0.id.description }, scope: service.cacheScope)
                     sendState = .success(message: "safe_zone.safe4.withdraw".localized + "transactions.types.outgoing".localized)
                 }
             } catch {
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     sendState = .failed(error: "settings.personal_support.failed".localized)
                 }
             }
@@ -738,6 +750,7 @@ private extension LockedRecordViewModel {
                 let info = userInfo.map { Safe4RecordUseInfo(info: $0) }
 
                 return WithdrawItemRecord(
+                    scope: service.cacheScope,
                     lastBlockHeight: lastBlockHeight,
                     sourceType: sourceType,
                     record: record,
@@ -782,11 +795,11 @@ private extension LockedRecordViewModel {
     }
 
     var cacheTimestampKey: String {
-        "\(LockedRecordCacheTimestampKey)_\(service.userAddress.address.lowercased())"
+        service.cacheScope.key(LockedRecordCacheTimestampKey)
     }
 
     var cacheSnapshotKey: String {
-        "\(LockedRecordCacheSnapshotKey)_\(service.userAddress.address.lowercased())"
+        service.cacheScope.key(LockedRecordCacheSnapshotKey)
     }
 
     func persistCacheTimestamp(_ timestamp: TimeInterval = Date().timeIntervalSince1970) {
@@ -837,19 +850,19 @@ extension LockedRecordViewModel {
         }
     }
 
-    static func getDidWithdrawIds() -> [String] {
-        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: LockedRecordWithdrawIdsKey) else {
+    static func getDidWithdrawIds(scope: Safe4CacheScope) -> [String] {
+        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: scope.key(LockedRecordWithdrawIdsKey)) else {
             return []
         }
 
         return ids
     }
 
-    static func saveDidWithdrawIds(_ ids: [String]) {
-        var oldIds = LockedRecordViewModel.getDidWithdrawIds()
+    static func saveDidWithdrawIds(_ ids: [String], scope: Safe4CacheScope) {
+        var oldIds = LockedRecordViewModel.getDidWithdrawIds(scope: scope)
         oldIds.append(contentsOf: ids)
         oldIds = Array(Set(oldIds))
-        Core.shared.userDefaultsStorage.set(value: oldIds, for: LockedRecordWithdrawIdsKey)
+        Core.shared.userDefaultsStorage.set(value: oldIds, for: scope.key(LockedRecordWithdrawIdsKey))
     }
 }
 
@@ -910,7 +923,7 @@ class WithdrawItemRecord: Identifiable, Hashable {
         }
     }
 
-    init(lastBlockHeight: BigUInt, sourceType: LockedRecordSourceType, record: Safe4AccountRecord, info: Safe4RecordUseInfo?) {
+    init(scope: Safe4CacheScope, lastBlockHeight: BigUInt, sourceType: LockedRecordSourceType, record: Safe4AccountRecord, info: Safe4RecordUseInfo?) {
         let releaseHeight = BigUInt(info?.releaseHeight ?? "0") ?? .zero
         let unlockHeight = BigUInt(record.unlockHeight) ?? .zero
         let votedAddress = info?.votedAddr ?? nullAddress
@@ -920,7 +933,7 @@ class WithdrawItemRecord: Identifiable, Hashable {
         let addLockDayEnable = (record.type != 0 || votedAddress == nullAddress) ? false : unlockHeight > 0
         let amount = (BigUInt(record.amount) ?? .zero).safe4FomattedAmount + " SAFE"
 
-        let didWithdrawIds = LockedRecordViewModel.getDidWithdrawIds()
+        let didWithdrawIds = LockedRecordViewModel.getDidWithdrawIds(scope: scope)
         let isWithdraw = didWithdrawIds.contains(record.id.description)
 
         self.id = record.id

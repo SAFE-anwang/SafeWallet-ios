@@ -78,7 +78,7 @@ class ProposalViewController: ThemeViewController {
             self?.reloadTable()
         }
 
-        ProposalStorageManager.saveNeedShowTips(false)
+        ProposalStorageManager.saveNeedShowTips(false, scope: viewModel.service.reminderScope)
     }
 
     private func sync(state: ProposalViewModel.State) {

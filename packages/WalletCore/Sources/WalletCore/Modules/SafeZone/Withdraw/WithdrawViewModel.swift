@@ -11,6 +11,7 @@ private let WithdrawCacheTimestampKey = "safe4_withdraw_cache_timestamp_key"
 private let WithdrawCacheSnapshotKey = "safe4_withdraw_cache_snapshot_key"
 
 class WithdrawViewModel: ObservableObject {
+    private var networkObservation: Safe4NetworkSession?
     private static let pageSize = 20
     private static let cacheMaxAge: TimeInterval = 120
     private static let withdrawBatchSize = 30
@@ -49,6 +50,14 @@ class WithdrawViewModel: ObservableObject {
         self.withdrawLockedStorage = withdrawLockedStorage
         restoreCache()
         initialLoad()
+
+        networkObservation = Safe4NetworkSession { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.listTask?.cancel()
+                self.withdrawTask?.cancel()
+            }
+        }
     }
 }
 
@@ -102,7 +111,7 @@ extension WithdrawViewModel {
                         for chunk in removeVoteIds.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
                             _ = try await service.removeVoteOrApproval(recordIDs: chunk)
                         }
-                        WithdrawViewModel.saveRemoveVoteIds(removeVoteIds.map(\.description))
+                        WithdrawViewModel.saveRemoveVoteIds(removeVoteIds.map(\.description), scope: service.cacheScope)
                     }
 
                     let withdrawIds = snapshot.filter(\.isWithdrawEnable).map(\.id)
@@ -110,17 +119,18 @@ extension WithdrawViewModel {
                         for chunk in withdrawIds.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
                             _ = try await service.withdrawByID(type: .native, ids: chunk)
                         }
-                        WithdrawViewModel.saveDidWithdrawIds(withdrawIds.map(\.description))
+                        WithdrawViewModel.saveDidWithdrawIds(withdrawIds.map(\.description), scope: service.cacheScope)
                     }
                 } else {
                     let ids = snapshot.map(\.id)
                     for chunk in ids.chunked(into: Self.withdrawBatchSize) where !chunk.isEmpty {
                         _ = try await service.withdrawByID(type: .native, ids: chunk)
                     }
-                    WithdrawViewModel.saveDidWithdrawIds(ids.map(\.description))
+                    WithdrawViewModel.saveDidWithdrawIds(ids.map(\.description), scope: service.cacheScope)
                 }
 
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     applyLocalWithdrawSuccess(items: snapshot)
                     selectedItems.removeAll()
                     sendState = .completed
@@ -129,6 +139,7 @@ extension WithdrawViewModel {
                 }
             } catch {
                 await MainActor.run {
+                    guard self.service.networkSession.isValid else { return }
                     withdrawEnabled = true
                     sendState = .failed(RequestError.withdrawError)
                     onSuccess?(sendState)
@@ -252,10 +263,10 @@ private extension WithdrawViewModel {
                     }
                 }
 
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, self.service.networkSession.isValid else { return }
 
                 await MainActor.run {
-                    guard self.requestContextId == requestId else { return }
+                    guard self.requestContextId == requestId, self.service.networkSession.isValid else { return }
                     self.apply(
                         items: nextState.items,
                         total: nextState.total,
@@ -263,10 +274,10 @@ private extension WithdrawViewModel {
                     )
                 }
             } catch {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, self.service.networkSession.isValid else { return }
 
                 await MainActor.run {
-                    guard self.requestContextId == requestId else { return }
+                    guard self.requestContextId == requestId, self.service.networkSession.isValid else { return }
                     if self.viewItems.isEmpty {
                         self.dataState = .error(RequestError.getInfo as NSError)
                     } else {
@@ -386,6 +397,7 @@ private extension WithdrawViewModel {
         let records = try await records(from: infos)
         let pageItems = records.map {
             WithdrawItem(
+                scope: service.cacheScope,
                 type: service.type,
                 lastBlockHeight: BigUInt(service.lastBlockHeight ?? 0),
                 record: $0.record,
@@ -510,6 +522,7 @@ private extension WithdrawViewModel {
             let records = try withdrawLockedStorage.allRecords(by: service.type.lockedRecordType)
             let items = records.map {
                 WithdrawItem(
+                    scope: service.cacheScope,
                     type: service.type,
                     lastBlockHeight: BigUInt(service.lastBlockHeight ?? 0),
                     record: $0.record,
@@ -633,11 +646,11 @@ private extension WithdrawViewModel {
     }
 
     var cacheTimestampKey: String {
-        "\(WithdrawCacheTimestampKey)_\(service.type.rawValue)"
+        service.cacheScope.key("\(WithdrawCacheTimestampKey)_\(service.type.rawValue)")
     }
 
     var cacheSnapshotKey: String {
-        "\(WithdrawCacheSnapshotKey)_\(service.type.rawValue)"
+        service.cacheScope.key("\(WithdrawCacheSnapshotKey)_\(service.type.rawValue)")
     }
 }
 
@@ -655,27 +668,27 @@ extension WithdrawViewModel {
         case completed
     }
 
-    static func getDidWithdrawIds() -> [String] {
-        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: WithdrawIdsKey) else { return [] }
+    static func getDidWithdrawIds(scope: Safe4CacheScope) -> [String] {
+        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: scope.key(WithdrawIdsKey)) else { return [] }
         return ids
     }
 
-    static func saveDidWithdrawIds(_ ids: [String]) {
-        var oldIds = WithdrawViewModel.getDidWithdrawIds()
+    static func saveDidWithdrawIds(_ ids: [String], scope: Safe4CacheScope) {
+        var oldIds = WithdrawViewModel.getDidWithdrawIds(scope: scope)
         oldIds.append(contentsOf: ids)
         oldIds = Array(Set(oldIds))
-        Core.shared.userDefaultsStorage.set(value: oldIds, for: WithdrawIdsKey)
+        Core.shared.userDefaultsStorage.set(value: oldIds, for: scope.key(WithdrawIdsKey))
     }
 
-    static func saveRemoveVoteIds(_ ids: [String]) {
-        var oldIds = WithdrawViewModel.getRemoveVoteIds()
+    static func saveRemoveVoteIds(_ ids: [String], scope: Safe4CacheScope) {
+        var oldIds = WithdrawViewModel.getRemoveVoteIds(scope: scope)
         oldIds.append(contentsOf: ids)
         oldIds = Array(Set(oldIds))
-        Core.shared.userDefaultsStorage.set(value: oldIds, for: RemoveVoteIdsKey)
+        Core.shared.userDefaultsStorage.set(value: oldIds, for: scope.key(RemoveVoteIdsKey))
     }
 
-    static func getRemoveVoteIds() -> [String] {
-        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: RemoveVoteIdsKey) else { return [] }
+    static func getRemoveVoteIds(scope: Safe4CacheScope) -> [String] {
+        guard let ids: [String] = Core.shared.userDefaultsStorage.value(for: scope.key(RemoveVoteIdsKey)) else { return [] }
         return ids
     }
 }
@@ -708,7 +721,7 @@ struct WithdrawItem: Equatable, Hashable, Identifiable {
         hasher.combine(id)
     }
 
-    init(type: SafeWithdrawType, lastBlockHeight: BigUInt, record: Safe4AccountRecord, info: Safe4RecordUseInfo?) {
+    init(scope: Safe4CacheScope, type: SafeWithdrawType, lastBlockHeight: BigUInt, record: Safe4AccountRecord, info: Safe4RecordUseInfo?) {
         let releaseHeight = BigUInt(info?.releaseHeight ?? "0") ?? .zero
         let unlockHeight = BigUInt(record.unlockHeight) ?? .zero
         let address = info?.votedAddr ?? ""
@@ -718,10 +731,10 @@ struct WithdrawItem: Equatable, Hashable, Identifiable {
         let removeVoteEnable = type == .voteLocked ? (!releaseHeight.isZero && releaseHeight < lastBlockHeight) : false
         let amount = (BigUInt(record.amount) ?? .zero).safe4FomattedAmount + " SAFE"
 
-        let didWithdrawIds = WithdrawViewModel.getDidWithdrawIds()
+        let didWithdrawIds = WithdrawViewModel.getDidWithdrawIds(scope: scope)
         let isWithdraw = didWithdrawIds.contains(record.id.description)
 
-        let didRemoveVoteIds = WithdrawViewModel.getRemoveVoteIds()
+        let didRemoveVoteIds = WithdrawViewModel.getRemoveVoteIds(scope: scope)
         let isRemoveVote = didRemoveVoteIds.contains(record.id.description)
 
         self.id = BigUInt(record.id)

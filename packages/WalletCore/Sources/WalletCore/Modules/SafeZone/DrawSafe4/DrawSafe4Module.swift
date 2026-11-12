@@ -9,7 +9,7 @@ struct DrawSafe4Module {
             return nil
         }
 
-        let provider = DrawSafe4Provider(networkManager: Core.shared.networkManager)
+        let provider = DrawSafe4Provider(networkManager: Core.shared.networkManager, chainId: evmKitWrapper.evmKit.chain.id)
         let service = DrawSafe4Service(provider: provider, evmKit: evmKitWrapper.evmKit)
         let viewModel = DrawSafe4ViewModel(service: service)
         return viewModel

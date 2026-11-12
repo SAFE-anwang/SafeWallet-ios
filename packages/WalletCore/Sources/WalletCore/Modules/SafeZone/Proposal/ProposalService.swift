@@ -5,16 +5,33 @@ import BigInt
 import Foundation
 
 class ProposalService {
+    let networkSession = Safe4NetworkSession()
     let type: ProposalModule.ProposalType
-    private let proposalStorageManager = ProposalStorageManager()
+    let chainId: Int
+    let proposalStorageManager: ProposalStorageManager
+    let reminderScope: Safe4CacheScope
 
-    init(type: ProposalModule.ProposalType) {
+    init(type: ProposalModule.ProposalType, chainId: Int = Safe4Network.currentChainId) {
         self.type = type
+        self.chainId = chainId
+        let owner: String
+        switch type {
+        case .All: owner = "public"
+        case let .Mine(address): owner = address
+        }
+        proposalStorageManager = ProposalStorageManager(scope: Safe4CacheScope(chainId: chainId, owner: owner))
+        reminderScope = Safe4CacheScope(chainId: chainId, owner: Core.shared.accountManager.activeAccount?.id ?? "")
     }
 
     private func web3() async throws -> Web3 {
-        let context = Safe4Network.currentContext
-        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        let context = try Safe4Network.activeContext(chainId: chainId)
+        try networkSession.check()
+        try Task.checkCancellation()
+        let web3 = try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        _ = try Safe4Network.activeContext(chainId: context.chainId)
+        return web3
     }
 
     private func withRetry<T>(

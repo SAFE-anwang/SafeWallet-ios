@@ -20,6 +20,10 @@ class DrawSafe4ViewModel {
         service.drawSafe4()
     }
 
+    var isCurrentNetwork: Bool {
+        service.isCurrentNetwork
+    }
+
     var address: String? {
         service.address
     }

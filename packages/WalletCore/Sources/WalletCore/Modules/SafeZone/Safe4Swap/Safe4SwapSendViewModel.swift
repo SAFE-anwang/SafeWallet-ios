@@ -10,6 +10,7 @@ import SwiftUI
 import Kingfisher
 
 class Safe4SwapSendViewModel: ObservableObject {
+    private let chainId: Int
     let quoteExpirationDuration: Int = 10
     let evmBlockchainManager = Core.shared.evmBlockchainManager
     private let currencyManager = Core.shared.currencyManager
@@ -57,7 +58,8 @@ class Safe4SwapSendViewModel: ObservableObject {
 
     let errorSubject = PassthroughSubject<String, Never>()
 
-    init(transactionData: TransactionData, tokenIn: Token, tokenOut: Token, amountIn: Decimal) {
+    init(chainId: Int, transactionData: TransactionData, tokenIn: Token, tokenOut: Token, amountIn: Decimal) {
+        self.chainId = chainId
         self.transactionData = transactionData
         self.tokenIn = tokenIn
         self.tokenOut = tokenOut
@@ -91,18 +93,21 @@ extension Safe4SwapSendViewModel {
         if !state.isQuoting {
             state = .quoting
         }
-        quoteTask = Task { [weak self, transactionData, tokenIn] in
+        quoteTask = Task { [weak self, transactionData, tokenIn, chainId] in
             var state: State
             do {
+                _ = try Safe4Network.activeContext(chainId: chainId)
                 let gasLimit = Safe4SwapModule.gasLimit
 
                 guard let evmKit = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: tokenIn.blockchainType)?.evmKit else { throw SwapError.noEvmKitWrapper }
-                let gasPriceProvider = LegacyGasPriceProvider(evmKit: evmKit)
-                async let gasPrice = try gasPriceProvider.gasPrice()
+                guard evmKit.chain.id == chainId else {
+                    throw Safe4NetworkError.staleContext(expected: chainId, current: evmKit.chain.id)
+                }
+                async let gasPrice = try EvmFeeModule.legacyGasPrice(evmKit: evmKit)
                 async let nonce = try evmKit.nonce(defaultBlockParameter: .pending)
 
                 let data = try await SendData(transactionData: transactionData, evmFeeData: EvmFeeData(gasLimit: gasLimit, surchargedGasLimit: gasLimit), gasPrice: gasPrice, gasLimit: gasLimit, nonce: nonce)
-                self?.syncAmountData(data: data)
+                _ = try Safe4Network.activeContext(chainId: chainId)
                 state = .success(data)
 
             } catch {
@@ -111,6 +116,8 @@ extension Safe4SwapSendViewModel {
 
             if !Task.isCancelled {
                 await MainActor.run { [weak self, state] in
+                    guard Safe4Network.isCurrent(chainId: chainId) else { return }
+                    if let quote = state.quote { self?.syncAmountData(data: quote) }
                     self?.state = state
                 }
             }
@@ -129,6 +136,7 @@ extension Safe4SwapSendViewModel {
 
     func swap() async throws {
         do {
+            _ = try Safe4Network.activeContext(chainId: chainId)
             guard let quote = state.quote else {
                 throw SwapError.noQuote
             }
@@ -139,6 +147,9 @@ extension Safe4SwapSendViewModel {
                 throw SwapError.noEvmKitWrapper
             }
 
+            guard evmKitWrapper.evmKit.chain.id == chainId else {
+                throw Safe4NetworkError.staleContext(expected: chainId, current: evmKitWrapper.evmKit.chain.id)
+            }
             _ = try await evmKitWrapper.send(
                 transactionData: quote.transactionData,
                 gasPrice: quote.gasPrice,
