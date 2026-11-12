@@ -9,6 +9,7 @@ class MasterNodeRegisterViewModel {
 
     private(set) var state: MasterNodeRegisterViewModel.State = .loading {
         didSet {
+            guard service.networkSession.isValid else { return }
             stateRelay.accept(state)
         }
     }

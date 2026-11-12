@@ -12,6 +12,7 @@ import HsExtensions
 
 @MainActor
 class SuperNodeViewModel: ObservableObject {
+    private var networkObservation: Safe4NetworkSession?
     private static let cacheMaxAge: TimeInterval = 120
     private static let pageSize = 10
     private static let pageFetchConcurrency = 10
@@ -41,6 +42,7 @@ class SuperNodeViewModel: ObservableObject {
 
     private(set) var state: SuperNodeViewModel.State = .loading {
         didSet {
+            guard service.networkSession.isValid else { return }
             stateRelay.accept(state)
         }
     }
@@ -56,9 +58,18 @@ class SuperNodeViewModel: ObservableObject {
         let initialSafe4Page = Safe4PageControl(pageSize: Self.pageSize)
         self.safe4Page = initialSafe4Page
         self.partnerSafe4Page = Safe4PageControl(pageSize: Self.pageSize)
-        self.nodeStorageManager = NodeStorageManager(nodeType: .superNode, pageControl: initialSafe4Page, scopeKey: type.cacheScopeKey(address: service.receiveAddress))
+        self.nodeStorageManager = NodeStorageManager(nodeType: .superNode, chainId: service.evmKit.chain.id, pageControl: initialSafe4Page, scopeKey: type.cacheScopeKey(address: service.receiveAddress))
 
         subscribe(disposeBag, service.syncRefreshObservable) { [weak self] _ in self?.refresh() }
+
+        networkObservation = Safe4NetworkSession { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.allRequestTask?.cancel()
+                self.mineRequestTask?.cancel()
+                self.catchUpTask?.cancel()
+            }
+        }
     }
 }
 
@@ -89,11 +100,11 @@ extension SuperNodeViewModel {
                 var partnerAddrs = [Web3Core.EthereumAddress]()
                 if !loadMore {
                     let totalNum = try await service.getAddrNum4Creator()
-                    guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                    guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                     safe4Page.set(totalNum: Int(totalNum))
                     partnerAddrs = try await allPartnerAddrs()
                 }
-                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 guard safe4Page.totalNum > 0 || partnerAddressArray.count > 0 else {
                     state = .completed(datas: [])
                     return
@@ -106,11 +117,11 @@ extension SuperNodeViewModel {
                 if safe4Page.totalNum > 0 {
                     creatorAddrs = try await service.getAddrs4Creator(page: safe4Page)
                 }
-                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 if creatorAddrs.count > 0 { safe4Page.plusPage() }
                 let addrs = partnerAddrs + creatorAddrs
                 let sortedResults = await fetchNodeItems(addresses: addrs, isEnabledEdit: true)
-                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 if !loadMore {
                     viewItems.removeAll()
                 }
@@ -118,7 +129,7 @@ extension SuperNodeViewModel {
                 saveCurrentCache(pageControl: safe4Page)
                 state = .completed(datas: viewItems)
             }catch{
-                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 if !viewItems.isEmpty {
                     state = .completed(datas: viewItems)
                 } else if !cacheItems.isEmpty {
@@ -209,9 +220,9 @@ extension SuperNodeViewModel {
             }
             do{
                 if !loadMore { let _ = try await allPartnerAddrs() }
-                guard self.allRequestId == requestId, !Task.isCancelled else { return }
+                guard self.allRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 let latestTotalNum = try await Int(service.getTotalNum())
-                guard self.allRequestId == requestId, !Task.isCancelled else { return }
+                guard self.allRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 reconcileTotal(latestTotalNum: latestTotalNum)
 
                 guard safe4Page.totalNum > 0 else {
@@ -221,11 +232,11 @@ extension SuperNodeViewModel {
 
                 if refreshHeadIfNeeded, !loadMore, !viewItems.isEmpty {
                     try await refreshLoadedWindow(totalNum: latestTotalNum, forcePersistCache: forcePersistRefreshedCache)
-                    guard self.allRequestId == requestId, !Task.isCancelled else { return }
+                    guard self.allRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                     state = .completed(datas: viewItems)
                     return
                 }
-                guard self.allRequestId == requestId, !Task.isCancelled else { return }
+                guard self.allRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
 
                 guard viewItems.count < safe4Page.totalNum else {
                     state = .completed(datas: viewItems)
@@ -233,15 +244,15 @@ extension SuperNodeViewModel {
                 }
                 let pageStart = safe4Page.start
                 let addrs = try await service.superNodeAddressArray(page: safe4Page)
-                guard self.allRequestId == requestId, !Task.isCancelled else { return }
+                guard self.allRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 if addrs.count > 0 { safe4Page.plusPage() }
                 let sortedResults = await fetchNodeItems(addresses: addrs, isEnabledEdit: false)
-                guard self.allRequestId == requestId, !Task.isCancelled else { return }
+                guard self.allRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 mergeInOrder(items: sortedResults, startIndex: pageStart)
                 saveCurrentCache(pageControl: safe4Page)
                 state = .completed(datas: viewItems)
             }catch{
-                guard self.allRequestId == requestId, !Task.isCancelled else { return }
+                guard self.allRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 if viewItems.isEmpty {
                     state = .failed(error: "")
                 } else {
@@ -516,40 +527,11 @@ extension SuperNodeViewModel {
     }
 
     private func cacheSnapshot() -> (pageControl: Safe4PageControl, caches: [Safe4NodeInfo])? {
-        if let snapshot = cacheSnapshot(storageManager: nodeStorageManager) {
-            return snapshot
-        }
-
-        for fallbackStorageManager in fallbackStorageManagers() {
-            if let snapshot = cacheSnapshot(storageManager: fallbackStorageManager) {
-                let orderedKeys = orderedCacheKeys(from: snapshot.caches)
-                saveCache(pageControl: snapshot.pageControl, infos: snapshot.caches, orderedKeys: orderedKeys)
-                return snapshot
-            }
-        }
-
-        return nil
-    }
-
-    private func cacheSnapshot(storageManager: NodeStorageManager) -> (pageControl: Safe4PageControl, caches: [Safe4NodeInfo])? {
-        guard let caches = storageManager.load(), !caches.isEmpty else {
+        guard let caches = nodeStorageManager.load(), !caches.isEmpty else {
             return nil
         }
-        let pageControl = storageManager.getPageControl() ?? buildFallbackPageControl(loadedCount: caches.count)
+        let pageControl = nodeStorageManager.getPageControl() ?? buildFallbackPageControl(loadedCount: caches.count)
         return (pageControl, caches)
-    }
-
-    private func fallbackStorageManagers() -> [NodeStorageManager] {
-        switch type {
-        case .All:
-            return [
-                NodeStorageManager(nodeType: .superNode, pageControl: Safe4PageControl(pageSize: Self.pageSize), scopeKey: "all")
-            ]
-        case .Mine:
-            return [
-                NodeStorageManager(nodeType: .superNode, pageControl: Safe4PageControl(pageSize: Self.pageSize), scopeKey: nil)
-            ]
-        }
     }
 
     private func ownerType(info: SuperNodeInfo) -> NodeOwnerType {
@@ -966,12 +948,12 @@ extension SuperNodeViewModel {
     }
 
     private var partnerAddressesStorageKey: String {
-        "\(Self.partnerAddressesKeyPrefix)_\(service.receiveAddress.lowercased())"
+        Safe4CacheScope(chainId: service.evmKit.chain.id, owner: service.receiveAddress).key(Self.partnerAddressesKeyPrefix)
     }
 
     private var cacheOrderStorageKey: String {
         let scope = type == .All ? "all" : "mine_\(service.receiveAddress.lowercased())"
-        return "\(Self.cacheOrderKeyPrefix)_\(scope)"
+        return Safe4CacheScope(chainId: service.evmKit.chain.id).key("\(Self.cacheOrderKeyPrefix)_\(scope)")
     }
 }
 

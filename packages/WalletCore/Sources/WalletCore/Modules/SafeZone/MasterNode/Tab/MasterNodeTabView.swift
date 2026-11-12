@@ -3,6 +3,7 @@ import SwiftUI
 struct MasterNodeTabView: View {
     @StateObject var viewModel: MasterNodeTabViewModel
     var allViewController: MasterNodeViewController
+    var crowdfundingViewController: MasterNodeViewController
     var mineViewController: MasterNodeViewController
     @State private var loadedTabs = [MasterNodeModule.Tab]()
     @Binding private var isPresented: Bool
@@ -10,10 +11,9 @@ struct MasterNodeTabView: View {
     init(viewModel: MasterNodeTabViewModel, isPresented: Binding<Bool>) {
         _viewModel = StateObject(wrappedValue: viewModel)
         _isPresented = isPresented
-        let allViewModel = MasterNodeModule.viewModel(type: .All, evmKit: viewModel.evmKit)
-        let mineViewModel = MasterNodeModule.viewModel(type: .Mine, evmKit: viewModel.evmKit)
-        allViewController = MasterNodeViewController(viewModel: allViewModel)
-        mineViewController = MasterNodeViewController(viewModel: mineViewModel)
+        allViewController = MasterNodeViewController(viewModel: viewModel.allNodesViewModel)
+        crowdfundingViewController = MasterNodeViewController(viewModel: viewModel.allNodesViewModel, crowdfundingOnly: true)
+        mineViewController = MasterNodeViewController(viewModel: viewModel.mineNodesViewModel)
     }
 
     var body: some View {
@@ -35,6 +35,10 @@ struct MasterNodeTabView: View {
                             switch tab {
                             case .all:
                                 MasterNodeView(viewController: allViewController)//viewModel: allViewModel)
+                                    .ignoresSafeArea()
+                                    .tag(tab.rawValue)
+                            case .crowdfunding:
+                                MasterNodeView(viewController: crowdfundingViewController)
                                     .ignoresSafeArea()
                                     .tag(tab.rawValue)
                             case .mine:

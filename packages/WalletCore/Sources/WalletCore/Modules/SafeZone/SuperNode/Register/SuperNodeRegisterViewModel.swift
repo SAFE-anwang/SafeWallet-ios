@@ -9,6 +9,7 @@ class SuperNodeRegisterViewModel {
 
     private(set) var state: SuperNodeRegisterViewModel.State = .loading {
         didSet {
+            guard service.networkSession.isValid else { return }
             stateRelay.accept(state)
         }
     }

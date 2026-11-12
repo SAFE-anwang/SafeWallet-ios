@@ -18,6 +18,7 @@ class MasterNodeDetailViewModel {
     private var stateRelay = PublishRelay<MasterNodeDetailViewModel.State>()
     private(set) var state: MasterNodeDetailViewModel.State = .loading {
         didSet {
+            guard service.networkSession.isValid else { return }
             stateRelay.accept(state)
         }
     }

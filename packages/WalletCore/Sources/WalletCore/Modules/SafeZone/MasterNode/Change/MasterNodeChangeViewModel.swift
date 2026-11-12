@@ -19,7 +19,8 @@ class MasterNodeChangeViewModel {
     private(set) var state: MasterNodeChangeViewModel.State = .unchanged(type: .address) {
         didSet {
             if state != oldValue {
-                stateRelay.accept(state)
+                guard service.networkSession.isValid else { return }
+            stateRelay.accept(state)
             }
         }
     }

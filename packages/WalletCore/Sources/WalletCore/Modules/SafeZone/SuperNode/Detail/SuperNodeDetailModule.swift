@@ -9,7 +9,12 @@ struct SuperNodeDetailModule {
         guard let privateKey = evmKitWrapper.signer?.privateKey else {
             return nil
         }
-        let viewModel = SuperNodeDetailViewModel(nodeViewItem: viewItem, service: SuperNodeDetailService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit), superNodeLockRecordStorage: Core.shared.safe4StorageManager.superNodeLockRecordStorage)
+        let service = SuperNodeDetailService(privateKey: privateKey, evmKit: evmKitWrapper.evmKit)
+        guard let storage = try? Core.shared.safe4StorageManager.scoped(service.cacheScope) else {
+            HudHelper.instance.show(banner: .error(string: "error".localized))
+            return nil
+        }
+        let viewModel = SuperNodeDetailViewModel(nodeViewItem: viewItem, service: service, superNodeLockRecordStorage: storage.superNodeLockRecordStorage)
         return viewModel
     }
 }

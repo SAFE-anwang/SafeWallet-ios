@@ -5,6 +5,9 @@ import Combine
 
 class MasterNodeTabViewModel: ObservableObject {
     private let service: MasterNodeService
+    @MainActor lazy var allNodesViewModel = MasterNodeViewModel(service: service, type: .All)
+    @MainActor lazy var mineNodesViewModel = MasterNodeViewModel(service: service, type: .Mine)
+
     @Published var currentTab: MasterNodeModule.Tab = .all
 
     var currentTabIndex: Binding<Int> {

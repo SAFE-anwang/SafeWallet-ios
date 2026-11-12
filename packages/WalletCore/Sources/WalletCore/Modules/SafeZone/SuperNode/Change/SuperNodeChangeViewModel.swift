@@ -19,7 +19,8 @@ class SuperNodeChangeViewModel {
     private(set) var state: SuperNodeChangeViewModel.State = .unchanged(type: .name) {
         didSet {
             if state != oldValue {
-                stateRelay.accept(state)
+                guard service.networkSession.isValid else { return }
+            stateRelay.accept(state)
             }
         }
     }

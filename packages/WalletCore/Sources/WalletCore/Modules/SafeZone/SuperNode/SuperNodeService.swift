@@ -10,6 +10,7 @@ import RxRelay
 import HsExtensions
 
 class SuperNodeService {
+    let networkSession = Safe4NetworkSession()
 
     private static let timerFramePerSecond: Int = 30
 
@@ -48,7 +49,13 @@ class SuperNodeService {
 
     private func web3() async throws -> Web3 {
         let context = try Safe4Network.activeContext(chainId: evmKit.chain.id)
-        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        let web3 = try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        _ = try Safe4Network.activeContext(chainId: context.chainId)
+        return web3
     }
 }
 

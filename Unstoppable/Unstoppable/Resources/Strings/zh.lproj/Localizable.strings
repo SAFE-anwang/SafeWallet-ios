@@ -2865,6 +2865,8 @@
 "SRC20_Select_Image" = "选择PNG图片";
 "SRC20_Info_Promotion" = "推广";
 "safe_zone.safe4.mining.plan" = "挖矿奖励分配方案";
+"safe_zone.master_node.crowdfunding.empty" = "暂无众筹中的主节点";
+"safe_zone.master_node.crowdfunding" = "众筹主节点";
 "safe_zone.master_node.list" = "主节点列表";
 "safe_zone.local_wallet_address" = "本地钱包地址";
 "safe_zone.safe4.MasterNodeRegister" = "创建主节点";

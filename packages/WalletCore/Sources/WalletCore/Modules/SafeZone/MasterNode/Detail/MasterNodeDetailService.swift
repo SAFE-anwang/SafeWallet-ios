@@ -9,6 +9,7 @@ import RxCocoa
 import HsExtensions
 
 class MasterNodeDetailService {
+    let networkSession = Safe4NetworkSession()
     private let privateKey: Data
     private let evmKit: EvmKit.Kit
 
@@ -38,7 +39,13 @@ class MasterNodeDetailService {
 
     private func web3() async throws -> Web3 {
         let context = try Safe4Network.activeContext(chainId: evmKit.chain.id)
-        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        let web3 = try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        _ = try Safe4Network.activeContext(chainId: context.chainId)
+        return web3
     }
 }
 

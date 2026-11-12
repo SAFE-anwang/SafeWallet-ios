@@ -9,6 +9,7 @@ class MasterNodeViewController: ThemeViewController {
 
     private let disposeBag = DisposeBag()
     private let viewModel: MasterNodeViewModel
+    private let crowdfundingOnly: Bool
     private let tableView = SectionsTableView(style: .grouped)
     private let spinner = HUDActivityView.create(with: .medium24)
     private let loadMoreContainer = UIView()
@@ -27,8 +28,9 @@ class MasterNodeViewController: ThemeViewController {
 
     weak var parentNavigationController: UINavigationController?
 
-    init(viewModel: MasterNodeViewModel) {
+    init(viewModel: MasterNodeViewModel, crowdfundingOnly: Bool = false) {
         self.viewModel = viewModel
+        self.crowdfundingOnly = crowdfundingOnly
         super.init()
         hidesBottomBarWhenPushed = true
     }
@@ -57,7 +59,7 @@ class MasterNodeViewController: ThemeViewController {
 
         emptyView.frame = CGRect(x: 0, y: 0, width: view.width, height: 250)
         emptyView.image = UIImage(named: "safe4_empty")
-        emptyView.text = "safe_zone.safe4.empty.description".localized
+        emptyView.text = (crowdfundingOnly ? "safe_zone.master_node.crowdfunding.empty" : "safe_zone.safe4.empty.description").localized
 
         view.addSubview(spinner)
         spinner.snp.makeConstraints { maker in
@@ -88,6 +90,12 @@ class MasterNodeViewController: ThemeViewController {
         nodeSearchCell.onChangeHeight = { [weak self] in self?.reloadTable()}
         nodeSearchCautionCell.onChangeHeight = { [weak self] in self?.reloadTable() }
 
+        // Sync submitted queries between tabs without overwriting drafts on list updates.
+        subscribe(disposeBag, viewModel.searchTextDriver) { [weak self] text in
+            self?.isSearch = !(text ?? "").isEmpty
+            self?.nodeSearchCell.inputText = text
+        }
+
         nodeSearchCell.onSearch = { [weak self] text in
             self?.isSearch = (text?.count ?? 0) > 0
             self?.view.endEditing(true)
@@ -99,18 +107,20 @@ class MasterNodeViewController: ThemeViewController {
             self?.reloadTable()
         }
 
-        sync(state: viewModel.state)
-        viewModel.refresh()
+        sync(state: viewModel.displayState)
+        viewModel.loadIfNeeded()
     }
 
     private func sync(state: MasterNodeViewModel.State) {
         DispatchQueue.main.async { [weak self] in
+            guard self != nil else { return }
             switch state {
             case .loading:
                 self?.spinner.isHidden = (self?.viewItems.count)! > 0 ? true : false
                 self?.hiddenEmptyView(isHidden: true)
 
             case let .completed(datas):
+                let datas = MasterNodeViewModel.displayItems(datas, crowdfundingOnly: self?.crowdfundingOnly ?? false)
                 guard self?.isSearch == false else {
                     self?.refreshControl.endRefreshing()
                     self?.didLoad()
@@ -122,6 +132,7 @@ class MasterNodeViewController: ThemeViewController {
                 self?.tableView.reload()
 
             case let .searchResults(datas):
+                let datas = MasterNodeViewModel.displayItems(datas, crowdfundingOnly: self?.crowdfundingOnly ?? false)
                 self?.spinner.isHidden = true
                 self?.hiddenEmptyView(isHidden: datas.count > 0)
                 self?.viewItems = datas
@@ -298,6 +309,7 @@ extension MasterNodeViewController: SectionsDataSource {
     }
 
     func onBottomReached() {
+        guard !isSearch else { return }
         viewModel.loadMore()
     }
 }

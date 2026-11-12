@@ -2804,6 +2804,8 @@
 "SRC20_Select_Image" = "Select PNG image";
 "SRC20_Info_Promotion" = "Promotion";
 "safe_zone.safe4.mining.plan" = "Mining reward distribution plan";
+"safe_zone.master_node.crowdfunding.empty" = "No master node is crowdfunding";
+"safe_zone.master_node.crowdfunding" = "Crowdfunding";
 "safe_zone.master_node.list" = "Master Node List";
 "safe_zone.local_wallet_address" = "Local Wallet Address";
 "safe_zone.safe4.MasterNodeRegister" = "MasterNode Register";

@@ -24,11 +24,13 @@ struct MasterNodeModule {
 
     enum Tab: Int, CaseIterable {
         case all
+        case crowdfunding
         case mine
 
         var title: String {
             switch self {
             case .all: return "safe_zone.master_node.list".localized
+            case .crowdfunding: return "safe_zone.master_node.crowdfunding".localized
             case .mine: return "safe_zone.my_master_node".localized
             }
         }

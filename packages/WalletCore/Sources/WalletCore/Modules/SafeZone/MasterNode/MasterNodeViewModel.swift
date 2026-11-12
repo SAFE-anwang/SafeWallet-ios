@@ -12,6 +12,7 @@ import HsExtensions
 
 @MainActor
 class MasterNodeViewModel {
+    private var networkObservation: Safe4NetworkSession?
     private let service: MasterNodeService
     private static let cacheMaxAge: TimeInterval = 120
     private static let pageSize = 10
@@ -20,6 +21,9 @@ class MasterNodeViewModel {
     private var nodeStorageManager: NodeStorageManager
     private var cachedInfoByAddress = [String: Safe4NodeInfo]()
     private var allRequestTask: Task<Void, Never>?
+    private var hasStarted = false
+    private var searchTask: Task<Void, Never>?
+    private var searchState: State?
     private var mineRequestTask: Task<Void, Never>?
     private var mineRequestId: UUID?
     private var recoveryTask: Task<Void, Never>?
@@ -27,6 +31,7 @@ class MasterNodeViewModel {
     private var pendingRecoveryAddresses = Set<String>()
 
     private let stateRelay = BehaviorRelay<MasterNodeViewModel.State>(value: .loading)
+    private let searchTextRelay = BehaviorRelay<String?>(value: nil)
     private let isLoadingMoreRelay = BehaviorRelay<Bool>(value: false)
     private var viewItems = [MasterNodeViewModel.ViewItem]()
     private var cacheItems = [MasterNodeViewModel.ViewItem]()
@@ -36,8 +41,22 @@ class MasterNodeViewModel {
 
     private(set) var state: MasterNodeViewModel.State = .loading {
         didSet {
-            stateRelay.accept(state)
+            guard service.networkSession.isValid else { return }
+            if case .searchResults = state { searchState = state }
+            stateRelay.accept(displayState)
         }
+    }
+
+    var searchText: String? {
+        searchTextRelay.value
+    }
+
+    var displayState: State {
+        // A page finishing in the background must not replace the shared search results.
+        if !(searchText ?? "").isEmpty, case .completed = state {
+            return searchState ?? .loading
+        }
+        return state
     }
 
     private let searchCautionRelay = BehaviorRelay<Caution?>(value:nil)
@@ -51,9 +70,21 @@ class MasterNodeViewModel {
         self.type = type
         self.nodeStorageManager = NodeStorageManager(
             nodeType: .masterNode,
+            chainId: service.evmKit.chain.id,
             pageControl: safe4Page,
             scopeKey: type.cacheScopeKey(address: service.receiveAddress)
         )
+
+        networkObservation = Safe4NetworkSession { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.allRequestTask?.cancel()
+                self.mineRequestTask?.cancel()
+                self.searchTask?.cancel()
+                self.recoveryTask?.cancel()
+                self.catchUpTask?.cancel()
+            }
+        }
     }
 }
 
@@ -84,11 +115,11 @@ extension MasterNodeViewModel {
                 var partnerAddrs = [Web3Core.EthereumAddress]()
                 if !loadMore {
                     let totalNum = try await service.getAddrNum4Creator()
-                    guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                    guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                     safe4Page.set(totalNum: Int(totalNum))
                     partnerAddrs = try await allPartnerAddrs()
                 }
-                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 guard safe4Page.totalNum > 0 || partnerAddressArray.count > 0 else {
                     state = .completed(datas: [])
                     return
@@ -102,7 +133,7 @@ extension MasterNodeViewModel {
                 if safe4Page.totalNum > 0 {
                     creatorAddrs = try await service.getAddrs4Creator(page: safe4Page)
                 }
-                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 let addrs = partnerAddrs + creatorAddrs
                 var results: [ViewItem] = []
                 var errors: [Error] = []
@@ -127,7 +158,7 @@ extension MasterNodeViewModel {
                     }
                 }
                 results.sort{ Int($0.info.id) > Int($1.info.id) }
-                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 if results.count > 0 { safe4Page.plusPage() }
                 if !loadMore {
                     viewItems.removeAll()
@@ -139,7 +170,7 @@ extension MasterNodeViewModel {
                 )
                 state = .completed(datas: viewItems)
             }catch{
-                guard self.mineRequestId == requestId, !Task.isCancelled else { return }
+                guard self.mineRequestId == requestId, !Task.isCancelled, self.service.networkSession.isValid else { return }
                 state = .failed(error: "")
             }
         }
@@ -211,6 +242,8 @@ extension MasterNodeViewModel {
             do{
                 async let _ = try allPartnerAddrs()
                 let latestTotalNum = try await Int(service.getTotalNum())
+                try service.networkSession.check()
+                try Task.checkCancellation()
                 try await reconcileTotalAndCache(latestTotalNum: latestTotalNum, loadMore: loadMore)
 
                 guard safe4Page.totalNum > 0 else {
@@ -228,6 +261,8 @@ extension MasterNodeViewModel {
                 }
 
                 let results = try await fetchPageItems(pageControl: safe4Page)
+                try service.networkSession.check()
+                try Task.checkCancellation()
 
                 if results.count > 0 {
                     safe4Page.plusPage()
@@ -257,13 +292,16 @@ extension MasterNodeViewModel {
 // search
 extension MasterNodeViewModel {
     func search(text: String?) {
+        searchTask?.cancel()
+        searchTextRelay.accept(text)
+        searchState = nil
         searchCautionRelay.accept(nil)
         guard let text, text.count > 0 else {
             state = .completed(datas: viewItems)
             return
         }
         state = .loading
-        Task {
+        searchTask = Task {
             do {
                 if text.contains("0x") {
                     guard service.isValidAddress(text) else {
@@ -274,6 +312,7 @@ extension MasterNodeViewModel {
                     }
                     let address = Web3Core.EthereumAddress(text)!
                     let isExist = try await service.exist(address)
+                    guard !Task.isCancelled, self.service.networkSession.isValid else { return }
                     guard isExist else {
                         let caution = Caution(text: "safe_zone.safe4.node.address.notexist".localized, type: .error)
                         searchCautionRelay.accept(caution)
@@ -281,10 +320,12 @@ extension MasterNodeViewModel {
                         return
                     }
                     let viewItem = try await nodeInfoBy(address: address, isEnabledEdit: false)
+                    guard !Task.isCancelled, self.service.networkSession.isValid else { return }
                     state = .searchResults(datas: [viewItem])
 
                 }else if let id = BigUInt(text) {
                     let isExist = try await service.existID(id)
+                    guard !Task.isCancelled, self.service.networkSession.isValid else { return }
                     guard isExist else {
                         let caution = Caution(text: "safe_zone.safe4.node.id.notexist".localized, type: .error)
                         searchCautionRelay.accept(caution)
@@ -292,6 +333,7 @@ extension MasterNodeViewModel {
                         return
                     }
                     let viewItem = try await nodeInfoBy(id: id)
+                    guard !Task.isCancelled, self.service.networkSession.isValid else { return }
                     state = .searchResults(datas: [viewItem])
                 }else {
                     let caution = Caution(text: "safe_zone.safe4.node.id.address.input.tips".localized, type: .error)
@@ -299,7 +341,7 @@ extension MasterNodeViewModel {
                     state = .searchResults(datas: [])
                 }
             }catch{
-
+                guard !Task.isCancelled, self.service.networkSession.isValid else { return }
                 state = .searchResults(datas: [])
             }
         }
@@ -319,7 +361,7 @@ extension MasterNodeViewModel {
         var ownerType: NodeOwnerType = .None
         if info.creator.address.lowercased() == service.address.address.lowercased() {
             ownerType = .Creator
-        }else if partnerAddressArray.contains(info.addr) {
+        }else if partnerAddressArray.contains(info.addr) || (info.founders.contains { $0.addr.address.lowercased() == service.address.address.lowercased() }) {
             ownerType = .Partner
         }else if info.addr.address.lowercased() == service.address.address.lowercased() {
             ownerType = .Owner
@@ -329,6 +371,13 @@ extension MasterNodeViewModel {
 }
 
 extension MasterNodeViewModel {
+    /// Both public tabs attach to this model; only the first attachment starts loading.
+    func loadIfNeeded() {
+        guard !hasStarted else { return }
+        hasStarted = true
+        refresh()
+    }
+
     func refresh() {
         allRequestTask?.cancel()
         allRequestTask = nil
@@ -452,42 +501,11 @@ extension MasterNodeViewModel {
     }
 
     private func cacheSnapshot() -> (pageControl: Safe4PageControl, caches: [Safe4NodeInfo])? {
-        if let snapshot = cacheSnapshot(storageManager: nodeStorageManager) {
-            print("[MasterNodeVM] cacheSnapshot primary hit type=\(type) count=\(snapshot.caches.count)")
-            return snapshot
-        }
-
-        for fallbackStorageManager in fallbackStorageManagers() {
-            if let snapshot = cacheSnapshot(storageManager: fallbackStorageManager) {
-                print("[MasterNodeVM] cacheSnapshot fallback hit type=\(type) count=\(snapshot.caches.count)")
-                nodeStorageManager.save(pageControl: snapshot.pageControl, infos: snapshot.caches)
-                return snapshot
-            }
-        }
-
-        print("[MasterNodeVM] cacheSnapshot miss type=\(type)")
-        return nil
-    }
-
-    private func cacheSnapshot(storageManager: NodeStorageManager) -> (pageControl: Safe4PageControl, caches: [Safe4NodeInfo])? {
-        guard let caches = storageManager.load(), !caches.isEmpty else {
+        guard let caches = nodeStorageManager.load(), !caches.isEmpty else {
             return nil
         }
-        let pageControl = storageManager.getPageControl() ?? buildPageControl(totalNum: caches.count, loadedCount: caches.count)
+        let pageControl = nodeStorageManager.getPageControl() ?? buildPageControl(totalNum: caches.count, loadedCount: caches.count)
         return (pageControl, caches)
-    }
-
-    private func fallbackStorageManagers() -> [NodeStorageManager] {
-        switch type {
-        case .All:
-            return [
-                NodeStorageManager(nodeType: .masterNode, pageControl: Safe4PageControl(pageSize: Self.pageSize, isReverse: true), scopeKey: "all")
-            ]
-        case .Mine:
-            return [
-                NodeStorageManager(nodeType: .masterNode, pageControl: Safe4PageControl(pageSize: Self.pageSize, isReverse: true), scopeKey: nil)
-            ]
-        }
     }
 
     private func reconcileTotalAndCache(latestTotalNum: Int, loadMore: Bool) async throws {
@@ -635,7 +653,7 @@ extension MasterNodeViewModel {
             defer {
                 Task { @MainActor in
                     self.recoveryTask = nil
-                    if !self.pendingRecoveryAddresses.isEmpty {
+                    if self.service.networkSession.isValid, !self.pendingRecoveryAddresses.isEmpty {
                         let retryAddresses = self.pendingRecoveryAddresses
                         self.pendingRecoveryAddresses.removeAll()
                         self.scheduleRecovery(for: retryAddresses.compactMap { Web3Core.EthereumAddress($0) })
@@ -654,6 +672,8 @@ extension MasterNodeViewModel {
                 if Task.isCancelled { break }
                 do {
                     let info = try await service.getInfo(address: address)
+                    try service.networkSession.check()
+                    try Task.checkCancellation()
                     let record = Safe4NodeInfo(recordId: NodeStorageType.masterNode.cacheId, info)
                     cachedInfoByAddress[address.address.lowercased()] = record
 
@@ -704,6 +724,14 @@ private extension MasterNodeModule.MasterNodeType {
 }
 
 extension MasterNodeViewModel {
+    static func displayItems(_ items: [ViewItem], crowdfundingOnly: Bool) -> [ViewItem] {
+        var ids = Set<String>()
+        let uniqueItems = items.filter { ids.insert($0.id).inserted }
+        guard crowdfundingOnly else { return uniqueItems }
+        return uniqueItems.filter { MasterNodeService.isCrowdfunding($0.info) }
+            .sorted { MasterNodeService.pledgedAmount($0.info) > MasterNodeService.pledgedAmount($1.info) }
+    }
+
     var nodeType: Safe4NodeType {
         service.nodeType
     }
@@ -718,6 +746,10 @@ extension MasterNodeViewModel {
 
     var searchCautionDriver: Driver<Caution?> {
         searchCautionRelay.asDriver()
+    }
+
+    var searchTextDriver: Driver<String?> {
+        searchTextRelay.asDriver()
     }
 }
 

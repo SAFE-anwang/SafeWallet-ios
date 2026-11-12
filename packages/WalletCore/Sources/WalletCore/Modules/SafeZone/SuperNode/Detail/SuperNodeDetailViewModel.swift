@@ -31,6 +31,7 @@ class SuperNodeDetailViewModel {
     private var stateRelay = PublishRelay<SuperNodeDetailViewModel.State>()
     private(set) var state: SuperNodeDetailViewModel.State = .loading {
         didSet {
+            guard service.networkSession.isValid else { return }
             stateRelay.accept(state)
         }
     }
@@ -305,7 +306,7 @@ extension SuperNodeDetailViewModel {
     }
 
     private var catchKey: String {
-        "\(nodeViewItem.info.addr.address)_votedIds_Key"
+        service.cacheScope.key("\(nodeViewItem.info.addr.address.lowercased())_votedIds")
     }
 
     private func catchVotedLockRecordIds(ids: [BigUInt]) {

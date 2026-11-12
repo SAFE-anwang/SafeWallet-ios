@@ -7,6 +7,7 @@ import RxSwift
 import RxCocoa
 
 class MasterNodeService {
+    let networkSession = Safe4NetworkSession()
     var nodeType: Safe4NodeType = .normal {
         didSet {
             if nodeType != oldValue {
@@ -33,7 +34,13 @@ class MasterNodeService {
 
     private func web3() async throws -> Web3 {
         let context = try Safe4Network.activeContext(chainId: evmKit.chain.id)
-        return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        let web3 = try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
+        try networkSession.check()
+        try Task.checkCancellation()
+        _ = try Safe4Network.activeContext(chainId: context.chainId)
+        return web3
     }
 }
 
@@ -65,6 +72,15 @@ extension MasterNodeService {
 
     func masteNodeAddressArray(page: Safe4PageControl) async throws -> [Web3Core.EthereumAddress] {
         try await web3().safe4.masternode.getAll(BigUInt(page.start), BigUInt(page.currentPageCount))
+    }
+
+    static func pledgedAmount(_ info: MasterNodeInfo) -> BigUInt {
+        info.founders.reduce(BigUInt(0)) { $0 + $1.amount }
+    }
+
+    static func isCrowdfunding(_ info: MasterNodeInfo) -> Bool {
+        // Match Android: funding is ongoing until founders have pledged 1000 SAFE.
+        pledgedAmount(info) < BigUInt(1000) * BigUInt(10).power(safe4Decimals)
     }
 
     func getInfoByID(_ id: BigUInt) async throws -> MasterNodeInfo {

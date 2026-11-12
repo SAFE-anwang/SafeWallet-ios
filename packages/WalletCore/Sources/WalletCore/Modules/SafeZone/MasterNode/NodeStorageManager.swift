@@ -26,11 +26,13 @@ class NodeStorageManager: NSObject {
     private(set) var totalCacheNum: Int = 0
     private(set) var pageControl: Safe4PageControl? = nil
 
-    init(nodeType: NodeStorageType, pageControl: Safe4PageControl, scopeKey: String? = nil) {
+    init(nodeType: NodeStorageType, chainId: Int, pageControl: Safe4PageControl, scopeKey: String? = nil) {
         self.nodeType = nodeType
         self.defaultPageControl = pageControl
-        let normalizedScopeKey = scopeKey?.lowercased()
-        let cacheKeySuffix = normalizedScopeKey.map { "_\($0)" } ?? ""
+        // Capture the requesting kit's chain at initialization, not the mutable active network.
+        // Legacy keys have no network identity and must not be reused or migrated.
+        let normalizedScopeKey = "chain_\(chainId)_\(scopeKey?.lowercased() ?? "default")"
+        let cacheKeySuffix = "_\(normalizedScopeKey)"
         self.recordId = Self.scopedRecordId(base: nodeType.cacheId, scopeKey: normalizedScopeKey)
         self.cacheNodePagekey = "safe4Node_page_\(nodeType.cacheId)\(cacheKeySuffix)_key"
         self.cacheNodeTimestampKey = "safe4Node_timestamp_\(nodeType.cacheId)\(cacheKeySuffix)_key"
