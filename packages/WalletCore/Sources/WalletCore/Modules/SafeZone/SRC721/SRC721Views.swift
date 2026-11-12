@@ -262,7 +262,7 @@ struct SRC721DeployView: View {
 struct SRC721ManagerView: View {
     @Binding private var isPresented: Bool
 
-    init(viewModel _: SRC721ManagerViewModel, isPresented: Binding<Bool>) {
+    init(isPresented: Binding<Bool>) {
         _isPresented = isPresented
     }
 
@@ -333,11 +333,10 @@ private struct SRC721ContractsView: View {
                     Spacer()
                     ProgressView()
                     Spacer()
-                } else if viewModel.records.isEmpty, let loadError = viewModel.loadError {
+                } else if viewModel.records.isEmpty, viewModel.loadError != nil {
                     Spacer()
                     VStack(spacing: .margin12) {
-                        Text(loadError)
-                            .themeSubhead2(color: .themeRed, alignment: .center)
+                        PlaceholderViewNew(icon: "no_data_48", title: "safe_zone.src721.empty".localized)
                         Button("safe_zone.src721.action.retry_nfts".localized) { viewModel.refresh() }
                             .buttonStyle(SecondaryButtonStyle())
                     }
@@ -348,12 +347,6 @@ private struct SRC721ContractsView: View {
                     PlaceholderViewNew(icon: "no_data_48", title: "safe_zone.src721.empty".localized)
                     Spacer()
                 } else {
-                    if let loadError = viewModel.loadError {
-                        Text(loadError)
-                            .themeSubhead2(color: .themeAndy)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, .margin16)
-                    }
                     ScrollableThemeView {
                         ListSection {
                             ForEach(viewModel.records) { record in
@@ -377,6 +370,7 @@ private struct SRC721ContractsView: View {
         }
         .navigationTitle("safe_zone.src721.my_contracts".localized)
         .navigationBarTitleDisplayMode(.inline)
+        .task { await viewModel.refreshAndWait() }
         .refreshable { await viewModel.refreshAndWait() }
     }
 }

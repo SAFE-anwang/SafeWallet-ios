@@ -5,6 +5,7 @@ import Web3Core
 import web3swift
 
 final class SRC721Service: SRC721OwnedAssetProvider {
+    let networkSession: Safe4NetworkSession
     private static let erc721InterfaceId = "0x80ac58cd"
     private static let erc721EnumerableInterfaceId = "0x780e9d63"
     private static let receiptPollInterval: UInt64 = 1_000_000_000
@@ -32,23 +33,37 @@ final class SRC721Service: SRC721OwnedAssetProvider {
     private let privateKey: Data
     private let contractAddress: String?
     private let insightProvider: SRC721InsightAssetProvider
+    // A factory must return a fresh client: Web3's read caches are mutable.
+    private let web3Factory: (() async throws -> Web3)?
 
-    init(privateKey: Data, userAddress: String, chainId: Int, contractAddress: String? = nil, insightProvider: SRC721InsightAssetProvider? = nil) {
+    init(
+        privateKey: Data,
+        userAddress: String,
+        chainId: Int,
+        contractAddress: String? = nil,
+        insightProvider: SRC721InsightAssetProvider? = nil,
+        web3Factory: (() async throws -> Web3)? = nil,
+        networkSession: Safe4NetworkSession = Safe4NetworkSession()
+    ) {
+        self.networkSession = networkSession
         self.privateKey = privateKey
         self.userAddress = userAddress
         self.chainId = chainId
         self.contractAddress = contractAddress
         self.insightProvider = insightProvider ?? SRC721InsightProvider(chainId: chainId)
+        self.web3Factory = web3Factory
     }
 
     var canSign: Bool { !privateKey.isEmpty }
 
     private func ensureSigner() throws {
+        try networkSession.check()
         guard canSign else { throw SRC721ValidationError.missingSigner }
+        _ = try Safe4Network.activeContext(chainId: chainId)
     }
 
     func binding(contractAddress: String) -> SRC721Service {
-        SRC721Service(privateKey: privateKey, userAddress: userAddress, chainId: chainId, contractAddress: contractAddress, insightProvider: insightProvider)
+        SRC721Service(privateKey: privateKey, userAddress: userAddress, chainId: chainId, contractAddress: contractAddress, insightProvider: insightProvider, web3Factory: web3Factory, networkSession: networkSession)
     }
 
     func insightTokens() async throws -> [SRC721InsightToken] {
@@ -71,6 +86,7 @@ final class SRC721Service: SRC721OwnedAssetProvider {
     }
 
     private func web3() async throws -> Web3 {
+        if let web3Factory { return try await web3Factory() }
         let context = try Safe4Network.supportedContext(chainId: chainId)
         return try await Web3.new(context.rpcUrl, network: Networks.Custom(networkID: BigUInt(context.chainId)))
     }
@@ -550,7 +566,6 @@ final class SRC721Service: SRC721OwnedAssetProvider {
     func supplyState(type: SRC721ContractType) async throws -> SRC721ContractSupplyState {
         let contractAddress = try SRC721Validation.address(contractAddressValue(), field: "safe_zone.src721.field.contract".localized)
         let web3 = try await web3()
-        async let mintedTotal = readMintedTotal(web3: web3, contractAddress: contractAddress)
 
         let supply: (totalSupply: BigUInt, remainSupply: BigUInt)
         switch type {
@@ -562,9 +577,10 @@ final class SRC721Service: SRC721OwnedAssetProvider {
             throw SRC721ValidationError.invalidAddress("safe_zone.src721.type.unknown".localized)
         }
 
+        let mintedTotal = await readMintedTotal(web3: web3, contractAddress: contractAddress)
         return SRC721ContractSupplyState(
             totalSupply: supply.totalSupply,
-            burnedCount: SRC721ContractState.burnedCount(mintedTotal: await mintedTotal, totalSupply: supply.totalSupply),
+            burnedCount: SRC721ContractState.burnedCount(mintedTotal: mintedTotal, totalSupply: supply.totalSupply),
             remainSupply: supply.remainSupply
         )
     }
@@ -593,81 +609,83 @@ final class SRC721Service: SRC721OwnedAssetProvider {
         return response["0"] as? BigUInt
     }
 
+    // web3swift reads mutate the contract transaction and the Web3.eth cache.
+    // Keep all reads sharing these instances sequential, including mintedTotal.
     private func readSupplyState(contract: SRC721) async throws -> (totalSupply: BigUInt, remainSupply: BigUInt) {
-        async let totalSupply = contract.totalSupply()
-        async let remainSupply = contract.remainSupply()
-        return try await (totalSupply, remainSupply)
+        let totalSupply = try await contract.totalSupply()
+        let remainSupply = try await contract.remainSupply()
+        return (totalSupply, remainSupply)
     }
 
     private func readSupplyState(contract: SRC721Burnable) async throws -> (totalSupply: BigUInt, remainSupply: BigUInt) {
-        async let totalSupply = contract.totalSupply()
-        async let remainSupply = contract.remainSupply()
-        return try await (totalSupply, remainSupply)
+        let totalSupply = try await contract.totalSupply()
+        let remainSupply = try await contract.remainSupply()
+        return (totalSupply, remainSupply)
     }
 
     private func readState(contract: SRC721, web3: Web3, contractAddress: Web3Core.EthereumAddress) async throws -> SRC721ContractState {
-        async let mintedTotal = readMintedTotal(web3: web3, contractAddress: contractAddress)
-        async let name = contract.name()
-        async let symbol = contract.symbol()
-        async let owner = contract.owner()
-        async let baseURI = contract.baseURI()
-        async let maxSupply = contract.maxSupply()
-        async let totalSupply = contract.totalSupply()
-        async let remainSupply = contract.remainSupply()
-        async let mintPrice = contract.mintPrice()
-        async let orgName = contract.orgName()
-        async let description = contract.description()
-        async let officialURL = contract.officialUrl()
-        async let whitePaperURL = contract.whitePaperUrl()
-        async let logo = contract.logo()
+        let name = try await contract.name()
+        let symbol = try await contract.symbol()
+        let owner = try await contract.owner()
+        let baseURI = try await contract.baseURI()
+        let maxSupply = try await contract.maxSupply()
+        let totalSupply = try await contract.totalSupply()
+        let remainSupply = try await contract.remainSupply()
+        let mintPrice = try await contract.mintPrice()
+        let orgName = try await contract.orgName()
+        let description = try await contract.description()
+        let officialURL = try await contract.officialUrl()
+        let whitePaperURL = try await contract.whitePaperUrl()
+        let logo = try await contract.logo()
+        let mintedTotal = await readMintedTotal(web3: web3, contractAddress: contractAddress)
         return makeContractState(
-            name: try await name,
-            symbol: try await symbol,
-            owner: try await owner,
-            baseURI: try await baseURI,
-            maxSupply: try await maxSupply,
-            totalSupply: try await totalSupply,
-            mintedTotal: await mintedTotal,
-            remainSupply: try await remainSupply,
-            mintPrice: try await mintPrice,
-            orgName: try await orgName,
-            description: try await description,
-            officialURL: try await officialURL,
-            whitePaperURL: try await whitePaperURL,
-            logo: try await logo
+            name: name,
+            symbol: symbol,
+            owner: owner,
+            baseURI: baseURI,
+            maxSupply: maxSupply,
+            totalSupply: totalSupply,
+            mintedTotal: mintedTotal,
+            remainSupply: remainSupply,
+            mintPrice: mintPrice,
+            orgName: orgName,
+            description: description,
+            officialURL: officialURL,
+            whitePaperURL: whitePaperURL,
+            logo: logo
         )
     }
 
     private func readState(contract: SRC721Burnable, web3: Web3, contractAddress: Web3Core.EthereumAddress) async throws -> SRC721ContractState {
-        async let mintedTotal = readMintedTotal(web3: web3, contractAddress: contractAddress)
-        async let name = contract.name()
-        async let symbol = contract.symbol()
-        async let owner = contract.owner()
-        async let baseURI = contract.baseURI()
-        async let maxSupply = contract.maxSupply()
-        async let totalSupply = contract.totalSupply()
-        async let remainSupply = contract.remainSupply()
-        async let mintPrice = contract.mintPrice()
-        async let orgName = contract.orgName()
-        async let description = contract.description()
-        async let officialURL = contract.officialUrl()
-        async let whitePaperURL = contract.whitePaperUrl()
-        async let logo = contract.logo()
+        let name = try await contract.name()
+        let symbol = try await contract.symbol()
+        let owner = try await contract.owner()
+        let baseURI = try await contract.baseURI()
+        let maxSupply = try await contract.maxSupply()
+        let totalSupply = try await contract.totalSupply()
+        let remainSupply = try await contract.remainSupply()
+        let mintPrice = try await contract.mintPrice()
+        let orgName = try await contract.orgName()
+        let description = try await contract.description()
+        let officialURL = try await contract.officialUrl()
+        let whitePaperURL = try await contract.whitePaperUrl()
+        let logo = try await contract.logo()
+        let mintedTotal = await readMintedTotal(web3: web3, contractAddress: contractAddress)
         return makeContractState(
-            name: try await name,
-            symbol: try await symbol,
-            owner: try await owner,
-            baseURI: try await baseURI,
-            maxSupply: try await maxSupply,
-            totalSupply: try await totalSupply,
-            mintedTotal: await mintedTotal,
-            remainSupply: try await remainSupply,
-            mintPrice: try await mintPrice,
-            orgName: try await orgName,
-            description: try await description,
-            officialURL: try await officialURL,
-            whitePaperURL: try await whitePaperURL,
-            logo: try await logo
+            name: name,
+            symbol: symbol,
+            owner: owner,
+            baseURI: baseURI,
+            maxSupply: maxSupply,
+            totalSupply: totalSupply,
+            mintedTotal: mintedTotal,
+            remainSupply: remainSupply,
+            mintPrice: mintPrice,
+            orgName: orgName,
+            description: description,
+            officialURL: officialURL,
+            whitePaperURL: whitePaperURL,
+            logo: logo
         )
     }
 

@@ -24,6 +24,24 @@ final class SRC721Storage {
         self.defaults = defaults
     }
 
+    // Keep indexer discoveries separate from locally deployed/imported contracts.
+    // A successful catalog response replaces only this wallet's snapshot.
+    func discoveredContracts(accountId: String, chainId: Int, walletAddress: String) -> [SRC721ContractRecord] {
+        load([SRC721ContractRecord].self, key: discoveredContractsKey(accountId: accountId, chainId: chainId, walletAddress: walletAddress)) ?? []
+    }
+
+    func saveDiscoveredContracts(_ contracts: [SRC721ContractRecord], accountId: String, chainId: Int, walletAddress: String) {
+        let scopedContracts = contracts.filter {
+            $0.accountId == accountId && $0.chainId == chainId &&
+                $0.walletAddress.caseInsensitiveCompare(walletAddress) == .orderedSame && $0.isInsightDiscovered
+        }
+        save(scopedContracts, key: discoveredContractsKey(accountId: accountId, chainId: chainId, walletAddress: walletAddress))
+    }
+
+    private func discoveredContractsKey(accountId: String, chainId: Int, walletAddress: String) -> String {
+        "safe_zone.src721.discovered_contracts:\(accountId):\(chainId):\(walletAddress.lowercased())"
+    }
+
     func contracts(accountId: String, chainId: Int, walletAddress: String) -> [SRC721ContractRecord] {
         (load([SRC721ContractRecord].self, key: contractsKey) ?? [])
             .filter {

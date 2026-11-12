@@ -234,7 +234,6 @@ final class SRC721ManagerViewModel: ObservableObject {
     @Published private(set) var pendingTokenContractAddresses = Set<String>()
     @Published private(set) var contractStates: [String: SRC721ContractSupplyState] = [:]
     @Published private(set) var loadingContractAddresses = Set<String>()
-    private var discoveredRecords: [SRC721ContractRecord] = []
     private var transactionSnapshot: [SRC721TransactionRecord] = []
     private var pendingMintContractAddresses = Set<String>()
     private var pendingMintAmountsByContract: [String: BigUInt] = [:]
@@ -242,19 +241,21 @@ final class SRC721ManagerViewModel: ObservableObject {
     private var contractStateRequests: [String: (id: UUID, task: Task<SRC721ContractStateResponse, Never>)] = [:]
     private var isResolvingPendingTransactions = false
     private var refreshTask: Task<Void, Never>?
+    private let refreshTimeoutNanoseconds: UInt64
     private let contractStateRequestLimiter = SRC721AsyncRequestLimiter(maximumConcurrentRequests: maximumConcurrentContractStateRequests)
 
-    init(service: SRC721Service, storage: SRC721Storage, accountId: String, walletAddress: String) {
+    init(service: SRC721Service, storage: SRC721Storage, accountId: String, walletAddress: String, refreshTimeoutNanoseconds: UInt64 = 30_000_000_000) {
         self.service = service
         self.storage = storage
         self.accountId = accountId
         self.walletAddress = walletAddress
+        self.refreshTimeoutNanoseconds = refreshTimeoutNanoseconds
         reload()
-        Task { await refreshAndWait() }
     }
 
     func reload() {
         let localRecords = storage.contracts(accountId: accountId, chainId: service.chainId, walletAddress: walletAddress)
+        let discoveredRecords = storage.discoveredContracts(accountId: accountId, chainId: service.chainId, walletAddress: walletAddress)
         records = SRC721ContractRecord.merging(localRecords: localRecords, discoveredRecords: discoveredRecords)
             .filter { !storage.isHidden(contract: $0) }
         transactionSnapshot = storage.transactions(accountId: accountId, chainId: service.chainId, walletAddress: walletAddress)
@@ -288,18 +289,39 @@ final class SRC721ManagerViewModel: ObservableObject {
         isRefreshing = true
         loadError = nil
         let task: Task<Void, Never> = Task { [weak self] in
-            await self?.performRefresh()
+            await self?.performBoundedRefresh()
         }
         refreshTask = task
         await task.value
-        refreshTask = nil
+    }
+
+    private func performBoundedRefresh() async {
+        defer {
+            isRefreshing = false
+            refreshTask = nil
+        }
+
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask { await self.performRefresh(); return true }
+            let timeout = refreshTimeoutNanoseconds
+            group.addTask {
+                do {
+                    try await Task.sleep(nanoseconds: timeout)
+                    return false
+                } catch {
+                    return true
+                }
+            }
+            if await group.next() == false {
+                loadError = URLError(.timedOut).localizedDescription
+            }
+            // Also wait for cancelled work to unwind so the next refresh can retry.
+            group.cancelAll()
+        }
     }
 
     private func performRefresh() async {
-        defer { isRefreshing = false }
-
         schedulePendingTransactionResolution()
-        let tokenRequest = Task { try await service.insightTokens() }
 
         // Known contracts can load immediately while the Insight catalog is fetched.
         let initialRecords = records
@@ -307,35 +329,29 @@ final class SRC721ManagerViewModel: ObservableObject {
             guard record.transactionStatus == .confirmed, record.contractType != .unknown else { return nil }
             return record.contractAddress.lowercased()
         })
-        let initialStateRequest = Task { [weak self] in
-            guard let self else { return }
-            await self.loadContractStates(for: initialRecords)
-        }
+        async let initialStateRequest: Void = loadContractStates(for: initialRecords)
 
-        var discoveredStateRequest: Task<Void, Never>?
         do {
-            let tokens = try await tokenRequest.value
-            discoveredRecords = SRC721ContractRecord.insightDiscoveredRecords(
+            let tokens = try await service.insightTokens()
+            try Task.checkCancellation()
+            let discoveredRecords = SRC721ContractRecord.insightDiscoveredRecords(
                 from: tokens,
                 accountId: accountId,
                 chainId: service.chainId,
                 walletAddress: walletAddress
             )
+            storage.saveDiscoveredContracts(discoveredRecords, accountId: accountId, chainId: service.chainId, walletAddress: walletAddress)
             reload()
             let discoveredContracts = records.filter {
                 $0.transactionStatus == .confirmed && $0.contractType != .unknown &&
                     !initiallyLoadedAddresses.contains($0.contractAddress.lowercased())
             }
-            discoveredStateRequest = Task { [weak self] in
-                guard let self else { return }
-                await self.loadContractStates(for: discoveredContracts)
-            }
+            await loadContractStates(for: discoveredContracts)
         } catch {
-            loadError = error.localizedDescription
+            if !Task.isCancelled { loadError = error.localizedDescription }
         }
 
-        await initialStateRequest.value
-        await discoveredStateRequest?.value
+        await initialStateRequest
     }
 
     func refreshContract(_ record: SRC721ContractRecord) {
@@ -472,6 +488,7 @@ final class SRC721ManagerViewModel: ObservableObject {
     }
 
     private func loadContractStates(for contracts: [SRC721ContractRecord]) async {
+        guard !Task.isCancelled else { return }
         let contractsToLoad = Dictionary(
             contracts.filter { $0.transactionStatus == .confirmed && $0.contractType != .unknown }
                 .map { ($0.contractAddress.lowercased(), $0) },
@@ -489,14 +506,21 @@ final class SRC721ManagerViewModel: ObservableObject {
             let stateService = service
             let requestLimiter = contractStateRequestLimiter
             let task = Task {
-                await requestLimiter.acquire()
                 do {
+                    try await requestLimiter.acquire()
+                } catch {
+                    return SRC721ContractStateResponse(record: record, requestID: requestID, result: .failure(error))
+                }
+                do {
+                    // Cancelled queued requests must release their slot without starting I/O.
+                    try Task.checkCancellation()
                     let state = try await stateService.binding(contractAddress: record.contractAddress).supplyState(type: record.contractType)
+                    try Task.checkCancellation()
                     await requestLimiter.release()
                     return SRC721ContractStateResponse(record: record, requestID: requestID, result: .success(state))
                 } catch {
                     await requestLimiter.release()
-                    return SRC721ContractStateResponse(record: record, requestID: requestID, result: .failure(error))
+                    return SRC721ContractStateResponse(record: record, requestID: requestID, result: .failure(Task.isCancelled ? CancellationError() : error))
                 }
             }
             contractStateRequestIDs[address] = requestID
@@ -513,7 +537,15 @@ final class SRC721ManagerViewModel: ObservableObject {
 
         await withTaskGroup(of: SRC721ContractStateResponse.self) { group in
             for request in requests {
-                group.addTask { await request.task.value }
+                group.addTask {
+                    // These tasks are shared with receipt/row refreshes; task.value alone
+                    // does not propagate cancellation to the underlying network work.
+                    await withTaskCancellationHandler {
+                        await request.task.value
+                    } onCancel: {
+                        request.task.cancel()
+                    }
+                }
             }
 
             while let response = await group.next() {
@@ -521,8 +553,12 @@ final class SRC721ManagerViewModel: ObservableObject {
                 if contractStateRequestIDs[address] == response.requestID {
                     loadingContractAddresses.remove(address)
                     contractStateRequests.removeValue(forKey: address)
-                    if case let .success(state) = response.result {
-                        contractStates[address] = state
+                    if !Task.isCancelled {
+                        switch response.result {
+                        case let .success(state): contractStates[address] = state
+                        case let .failure(error):
+                            if !(error is CancellationError) { loadError = error.localizedDescription }
+                        }
                     }
                 }
             }
@@ -1006,30 +1042,41 @@ private struct SRC721PendingReceiptResponse {
     let deployedContractAddress: String?
 }
 
-private actor SRC721AsyncRequestLimiter {
+actor SRC721AsyncRequestLimiter {
     private let maximumConcurrentRequests: Int
     private var activeRequests = 0
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    private var waiters: [(id: UUID, continuation: CheckedContinuation<Void, Error>)] = []
 
     init(maximumConcurrentRequests: Int) {
         self.maximumConcurrentRequests = maximumConcurrentRequests
     }
 
-    func acquire() async {
+    func acquire() async throws {
+        try Task.checkCancellation()
         if activeRequests < maximumConcurrentRequests {
             activeRequests += 1
             return
         }
-        await withCheckedContinuation { continuation in
-            waiters.append(continuation)
+        let id = UUID()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                waiters.append((id, continuation))
+            }
+        } onCancel: {
+            Task { await self.cancelWaiter(id) }
         }
+    }
+
+    private func cancelWaiter(_ id: UUID) {
+        guard let index = waiters.firstIndex(where: { $0.id == id }) else { return }
+        waiters.remove(at: index).continuation.resume(throwing: CancellationError())
     }
 
     func release() {
         if waiters.isEmpty {
             activeRequests -= 1
         } else {
-            waiters.removeFirst().resume()
+            waiters.removeFirst().continuation.resume()
         }
     }
 }

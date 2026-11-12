@@ -29,6 +29,10 @@ enum SRC721Module {
         )
     }
 
+    static func canOpenManager() -> Bool {
+        context() != nil
+    }
+
     static func managerViewModel() -> SRC721ManagerViewModel? {
         guard let context = context() else { return nil }
         let service = SRC721Service(
