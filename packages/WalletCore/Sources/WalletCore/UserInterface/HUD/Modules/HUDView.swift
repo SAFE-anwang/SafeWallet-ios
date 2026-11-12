@@ -161,6 +161,10 @@ extension HUDView {
 }
 
 extension HUDView {
+    private var statusBarManager: UIStatusBarManager? {
+        (window?.windowScene ?? backgroundWindow.windowScene)?.statusBarManager
+    }
+
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         if let rootViewController = UIApplication.shared.delegate?.window??.rootViewController {
             return rootViewController.supportedInterfaceOrientations
@@ -177,14 +181,14 @@ extension HUDView {
         if let rootViewController = UIApplication.shared.delegate?.window??.rootViewController {
             return rootViewController.preferredStatusBarStyle
         }
-        return presentingViewController?.preferredStatusBarStyle ?? UIApplication.shared.statusBarStyle
+        return presentingViewController?.preferredStatusBarStyle ?? statusBarManager?.statusBarStyle ?? .default
     }
 
     override var prefersStatusBarHidden: Bool {
         if let rootViewController = UIApplication.shared.delegate?.window??.rootViewController {
             return rootViewController.prefersStatusBarHidden
         }
-        return presentingViewController?.prefersStatusBarHidden ?? UIApplication.shared.isStatusBarHidden
+        return presentingViewController?.prefersStatusBarHidden ?? statusBarManager?.isStatusBarHidden ?? false
     }
 
     override var preferredStatusBarUpdateAnimation: UIStatusBarAnimation {
