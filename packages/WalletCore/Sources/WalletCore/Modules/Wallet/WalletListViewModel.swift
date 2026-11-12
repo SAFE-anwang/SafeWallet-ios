@@ -162,6 +162,7 @@ public class WalletListViewModel: ObservableObject {
             let walletService = walletServiceFactory.walletService(account: account)
             walletService.delegate = self
             self.walletService = walletService
+            walletService.syncActiveWalletData()
 
             _sync(wallets: walletService.wallets, walletService: walletService)
         } else {

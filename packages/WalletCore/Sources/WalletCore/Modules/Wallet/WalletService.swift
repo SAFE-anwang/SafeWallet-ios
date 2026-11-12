@@ -54,6 +54,19 @@ class WalletService {
     private func handleUpdated(walletData: WalletManager.WalletData) {
         delegate?.didUpdate(wallets: filtered(walletData.wallets), loadError: walletData.loadError, walletService: self)
     }
+
+    func syncActiveWalletData() {
+        let walletData = walletManager.activeWalletData
+        let activeChildWalletId = ChildWalletBridge.shared.activeChildWalletId(account: account)
+
+        guard walletData.account?.id == account.id,
+              walletData.childWalletId == activeChildWalletId
+        else {
+            return
+        }
+
+        handleUpdated(walletData: walletData)
+    }
 }
 
 extension WalletService {
