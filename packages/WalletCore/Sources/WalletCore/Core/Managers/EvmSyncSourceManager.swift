@@ -8,6 +8,7 @@ public class EvmSyncSourceManager {
     private let testNetManager: TestNetManager
     private let blockchainSettingsStorage: BlockchainSettingsStorage
     private let evmSyncSourceStorage: EvmSyncSourceStorage
+    private let disposeBag = DisposeBag()
 
     private let syncSourceRelay = PublishRelay<BlockchainType>()
     private let syncSourcesUpdatedRelay = PublishRelay<BlockchainType>()
@@ -16,6 +17,55 @@ public class EvmSyncSourceManager {
         self.testNetManager = testNetManager
         self.blockchainSettingsStorage = blockchainSettingsStorage
         self.evmSyncSourceStorage = evmSyncSourceStorage
+
+        ApiKeyManager.rpcEndpointsUpdatedObservable
+            .subscribe(onNext: { [weak self] networks in
+                self?.handleUpdatedRpcEndpoints(networks)
+            })
+            .disposed(by: disposeBag)
+    }
+
+    private func handleUpdatedRpcEndpoints(_ networks: Set<RpcNetworkName>) {
+        for blockchainType in Self.blockchainTypes(
+            for: networks,
+            testNetEnabled: testNetManager.testNetEnabled,
+            safe4IsTestNet: Safe4Network.currentContext.isTestNet
+        ) {
+            syncSourceRelay.accept(blockchainType)
+        }
+    }
+
+    static func blockchainTypes(
+        for networks: Set<RpcNetworkName>,
+        testNetEnabled: Bool,
+        safe4IsTestNet: Bool
+    ) -> Set<BlockchainType> {
+        Set(networks.compactMap { network in
+            switch network {
+            case .eth:
+                return testNetEnabled ? nil : .ethereum
+            case .bsc, .p2pify:
+                return testNetEnabled ? nil : .binanceSmartChain
+            case .polygon:
+                return .polygon
+            case .avax:
+                return .avalanche
+            case .optimism:
+                return .optimism
+            case .arbitrum:
+                return .arbitrumOne
+            case .gnosis:
+                return .gnosis
+            case .fantom:
+                return .fantom
+            case .safe4:
+                return safe4IsTestNet ? nil : .safe4
+            case .safe4_testnet:
+                return safe4IsTestNet ? .safe4 : nil
+            case .sol:
+                return nil
+            }
+        })
     }
 
     private func defaultTransactionSource(blockchainType: BlockchainType) -> EvmKit.TransactionSource {
@@ -44,7 +94,7 @@ extension RpcSource {
     }
 
     static func safeSolanaRpcHttp() -> RpcSource {
-        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .sol) ?? "https://solana-mainnet.core.chainstack.com/254981cd2d169be592ee9604c7d47446")!], auth: nil)
+        .http(urls: [URL(string: ApiKeyManager.rpcEndpoint(network: .sol) ?? "https://solana-mainnet.core.chainstack.com/35d90e70a574359e50b11e10b5460414")!], auth: nil)
     }
 
     static func safeBscRpcHttp() -> RpcSource {

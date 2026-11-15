@@ -1,4 +1,5 @@
 import HsToolKit
+import RxSwift
 
 class ApiKeyManager {
 
@@ -14,6 +15,14 @@ class ApiKeyManager {
     }
 
     static func rpcEndpoint(network: RpcNetworkName) -> String? {
-        ApiKeyService.getCacheRpcEndpoints().filter{$0.network == network.rawValue}.first?.endpoint
+        rpcEndpointConfig(network: network)?.endpoint
+    }
+
+    static func rpcEndpointConfig(network: RpcNetworkName) -> RpcEndpoint? {
+        ApiKeyService.getCacheRpcEndpoints().first { $0.network == network.rawValue }
+    }
+
+    static var rpcEndpointsUpdatedObservable: Observable<Set<RpcNetworkName>> {
+        ApiKeyService.rpcEndpointsUpdatedObservable
     }
 }

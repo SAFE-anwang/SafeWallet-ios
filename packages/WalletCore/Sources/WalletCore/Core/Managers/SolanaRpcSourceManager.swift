@@ -7,16 +7,30 @@ import SolanaKit
 public class SolanaRpcSourceManager {
     private let blockchainSettingsStorage: BlockchainSettingsStorage
     private let marketKit: MarketKit.Kit
+    private let disposeBag = DisposeBag()
 
     private let rpcSourceRelay = PublishRelay<Void>()
 
     public init(blockchainSettingsStorage: BlockchainSettingsStorage, marketKit: MarketKit.Kit) {
         self.blockchainSettingsStorage = blockchainSettingsStorage
         self.marketKit = marketKit
+
+        ApiKeyManager.rpcEndpointsUpdatedObservable
+            .filter { $0.contains(.sol) }
+            .subscribe(onNext: { [weak self] _ in
+                self?.rpcSourceRelay.accept(())
+            })
+            .disposed(by: disposeBag)
     }
 
     var allRpcSources: [SolanaKit.RpcSource] {
         var sources = [SolanaKit.RpcSource]()
+        if let endpoint = ApiKeyManager.rpcEndpointConfig(network: .sol),
+           let remoteSource = Self.remoteRpcSource(network: endpoint.network, endpoint: endpoint.endpoint)
+        {
+            sources.append(remoteSource)
+        }
+
         let apiKeys = AppConfig.solanaAlchemyApiKeys
         if !apiKeys.isEmpty {
             sources.append(.alchemy(apiKeys: apiKeys))
@@ -41,5 +55,20 @@ public class SolanaRpcSourceManager {
 
     var blockchain: Blockchain? {
         try? marketKit.blockchain(uid: BlockchainType.solana.uid)
+    }
+
+    static func remoteRpcSource(network: String, endpoint: String) -> SolanaKit.RpcSource? {
+        let value = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard network == RpcNetworkName.sol.rawValue,
+              let components = URLComponents(string: value),
+              components.scheme?.lowercased() == "https",
+              let host = components.host, !host.isEmpty,
+              components.user == nil, components.password == nil,
+              let url = components.url
+        else {
+            return nil
+        }
+
+        return SolanaKit.RpcSource(name: "Remote Solana RPC", url: url, network: .mainnetBeta)
     }
 }

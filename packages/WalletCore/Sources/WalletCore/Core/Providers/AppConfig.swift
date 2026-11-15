@@ -153,7 +153,14 @@ enum AppConfig {
     }
 
     static var solanaAlchemyApiKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "SolanaAlchemyApiKeys") as? String) ?? "").components(separatedBy: ",")
+        solanaAlchemyApiKeys(from: Bundle.main.object(forInfoDictionaryKey: "SolanaAlchemyApiKeys") as? String)
+    }
+
+    static func solanaAlchemyApiKeys(from value: String?) -> [String] {
+        (value ?? "")
+            .components(separatedBy: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
     }
 
     static var walletConnectV2ProjectKey: String? {

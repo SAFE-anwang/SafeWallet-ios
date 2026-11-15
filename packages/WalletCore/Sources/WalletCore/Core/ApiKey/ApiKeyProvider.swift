@@ -30,13 +30,21 @@ class ApiKeyProvider {
     }
 }
 
-struct RpcEndpoint: ImmutableMappable, Codable {
+struct RpcEndpoint: ImmutableMappable, Codable, Equatable {
 
     let id: String
     let endpoint: String
     let network: String
     let networkId: String
     let type: String
+
+    init(id: String, endpoint: String, network: String, networkId: String, type: String) {
+        self.id = id
+        self.endpoint = endpoint
+        self.network = network
+        self.networkId = networkId
+        self.type = type
+    }
 
     init(map: Map) throws {
         id = try map.value("id", default: "")
@@ -61,7 +69,7 @@ enum ApiKeyName: String {
     case walletConnectV2, solscan, polygonscan, arbiscan, etherscan, bscscan, twitterBearerToken, infura, gnosisscan, oneInch, optimisticEtherscan, ftmscan
 }
 
-enum RpcNetworkName: String {
+enum RpcNetworkName: String, CaseIterable, Hashable {
     case eth, bsc, p2pify, polygon, optimism, arbitrum, avax, gnosis, fantom, safe4, sol
     case safe4_testnet = "safe4-testnet"
 }
