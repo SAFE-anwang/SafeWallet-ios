@@ -16,7 +16,7 @@ public class SolanaRpcSourceManager {
         self.marketKit = marketKit
 
         ApiKeyManager.rpcEndpointsUpdatedObservable
-            .filter { $0.contains(.sol) }
+            .filter { changes in changes.contains { $0.network == .sol } }
             .subscribe(onNext: { [weak self] _ in
                 self?.rpcSourceRelay.accept(())
             })

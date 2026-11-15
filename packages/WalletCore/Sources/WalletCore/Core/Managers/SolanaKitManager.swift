@@ -38,10 +38,11 @@ public class SolanaKitManager {
     private func handleRpcSourceUpdate() {
         queue.async { [weak self] in
             guard let self else { return }
-            _solanaKit = nil
-            currentAccount = nil
             tokenAccountCancellable?.cancel()
             tokenAccountCancellable = nil
+            _solanaKit?.stop()
+            _solanaKit = nil
+            currentAccount = nil
             kitStoppedRelay.accept(())
         }
     }

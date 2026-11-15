@@ -73,3 +73,9 @@ enum RpcNetworkName: String, CaseIterable, Hashable {
     case eth, bsc, p2pify, polygon, optimism, arbitrum, avax, gnosis, fantom, safe4, sol
     case safe4_testnet = "safe4-testnet"
 }
+
+struct RpcEndpointChange: Equatable {
+    let network: RpcNetworkName
+    let previousEndpoint: String?
+    let endpoint: String?
+}

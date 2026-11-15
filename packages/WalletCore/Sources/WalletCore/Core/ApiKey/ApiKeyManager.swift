@@ -22,7 +22,7 @@ class ApiKeyManager {
         ApiKeyService.getCacheRpcEndpoints().first { $0.network == network.rawValue }
     }
 
-    static var rpcEndpointsUpdatedObservable: Observable<Set<RpcNetworkName>> {
+    static var rpcEndpointsUpdatedObservable: Observable<[RpcEndpointChange]> {
         ApiKeyService.rpcEndpointsUpdatedObservable
     }
 }

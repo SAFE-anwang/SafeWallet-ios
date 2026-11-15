@@ -48,23 +48,23 @@ final class SolanaRpcConfigurationTests: XCTestCase {
             id: "bsc-mainnet", endpoint: "https://bsc.example.com", network: "bsc", networkId: "56", type: "http"
         )
 
-        XCTAssertEqual(
-            ApiKeyService.updatedRpcNetworks(
-                from: [oldSolEndpoint, ethEndpoint],
-                to: [oldSolEndpoint, updatedEthEndpoint, bscEndpoint]
-            ),
-            [.eth, .bsc]
+        let changes = ApiKeyService.updatedRpcEndpoints(
+            from: [oldSolEndpoint, ethEndpoint],
+            to: [oldSolEndpoint, updatedEthEndpoint, bscEndpoint]
         )
-        XCTAssertTrue(ApiKeyService.updatedRpcNetworks(from: [oldSolEndpoint], to: [oldSolEndpoint]).isEmpty)
+        XCTAssertEqual(changes.map(\.network), [.eth, .bsc])
+        XCTAssertEqual(changes.map(\.previousEndpoint), [ethEndpoint.endpoint, nil])
+        XCTAssertEqual(changes.map(\.endpoint), [updatedEthEndpoint.endpoint, bscEndpoint.endpoint])
+        XCTAssertTrue(ApiKeyService.updatedRpcEndpoints(from: [oldSolEndpoint], to: [oldSolEndpoint]).isEmpty)
         let sameUrlWithNewId = RpcEndpoint(
             id: "rotated-id", endpoint: oldSolEndpoint.endpoint, network: "sol", networkId: "101", type: "http"
         )
-        XCTAssertTrue(ApiKeyService.updatedRpcNetworks(from: [oldSolEndpoint], to: [sameUrlWithNewId]).isEmpty)
+        XCTAssertTrue(ApiKeyService.updatedRpcEndpoints(from: [oldSolEndpoint], to: [sameUrlWithNewId]).isEmpty)
     }
 
-    func testRemoteRpcUpdatesRouteToTheirActiveBlockchains() {
+    func testRemoteRpcUpdatesRefreshOnlyActiveBlockchainsAndDeduplicate() {
         XCTAssertEqual(
-            EvmSyncSourceManager.blockchainTypes(
+            EvmSyncSourceManager.blockchainTypesToRefresh(
                 for: [.eth, .bsc, .p2pify, .polygon, .avax, .optimism, .arbitrum, .gnosis, .fantom],
                 testNetEnabled: false,
                 safe4IsTestNet: false
@@ -72,7 +72,7 @@ final class SolanaRpcConfigurationTests: XCTestCase {
             [.ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne, .gnosis, .fantom]
         )
         XCTAssertEqual(
-            EvmSyncSourceManager.blockchainTypes(
+            EvmSyncSourceManager.blockchainTypesToRefresh(
                 for: [.safe4, .safe4_testnet, .sol],
                 testNetEnabled: false,
                 safe4IsTestNet: false
@@ -80,12 +80,44 @@ final class SolanaRpcConfigurationTests: XCTestCase {
             [.safe4]
         )
         XCTAssertEqual(
-            EvmSyncSourceManager.blockchainTypes(
+            EvmSyncSourceManager.blockchainTypesToRefresh(
                 for: [.eth, .bsc, .p2pify, .safe4, .safe4_testnet],
                 testNetEnabled: true,
                 safe4IsTestNet: true
             ),
             [.safe4]
         )
+        XCTAssertEqual(EvmSyncSourceManager.blockchainType(for: .eth), .ethereum)
+        XCTAssertEqual(EvmSyncSourceManager.blockchainType(for: .bsc), .binanceSmartChain)
+        XCTAssertEqual(EvmSyncSourceManager.blockchainType(for: .p2pify), .binanceSmartChain)
+        XCTAssertEqual(EvmSyncSourceManager.blockchainType(for: .safe4), .safe4)
+        XCTAssertEqual(EvmSyncSourceManager.blockchainType(for: .safe4_testnet), .safe4)
+        XCTAssertNil(EvmSyncSourceManager.blockchainType(for: .sol))
+    }
+
+    func testEndpointRotationMigratesOnlyTheCurrentlySelectedRemoteEndpoint() {
+        XCTAssertEqual(
+            EvmSyncSourceManager.migratedSelectedEndpoint(
+                current: "https://p2pify-old.example.com/rpc",
+                previous: "https://p2pify-old.example.com/rpc",
+                updated: "https://p2pify-new.example.com/rpc"
+            ),
+            "https://p2pify-new.example.com/rpc"
+        )
+        XCTAssertNil(EvmSyncSourceManager.migratedSelectedEndpoint(
+            current: "https://blocksdecoded.example.com/rpc",
+            previous: "https://eth-old.example.com/rpc",
+            updated: "https://eth-new.example.com/rpc"
+        ))
+        XCTAssertNil(EvmSyncSourceManager.migratedSelectedEndpoint(
+            current: "https://custom.example.com/rpc",
+            previous: "https://p2pify-old.example.com/rpc",
+            updated: "https://p2pify-new.example.com/rpc"
+        ))
+        XCTAssertNil(EvmSyncSourceManager.migratedSelectedEndpoint(
+            current: "https://p2pify-old.example.com/rpc",
+            previous: "https://p2pify-old.example.com/rpc",
+            updated: nil
+        ))
     }
 }

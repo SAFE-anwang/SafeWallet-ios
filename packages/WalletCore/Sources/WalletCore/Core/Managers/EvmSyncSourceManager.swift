@@ -19,53 +19,93 @@ public class EvmSyncSourceManager {
         self.evmSyncSourceStorage = evmSyncSourceStorage
 
         ApiKeyManager.rpcEndpointsUpdatedObservable
-            .subscribe(onNext: { [weak self] networks in
-                self?.handleUpdatedRpcEndpoints(networks)
+            .subscribe(onNext: { [weak self] changes in
+                self?.handleUpdatedRpcEndpoints(changes)
             })
             .disposed(by: disposeBag)
     }
 
-    private func handleUpdatedRpcEndpoints(_ networks: Set<RpcNetworkName>) {
-        for blockchainType in Self.blockchainTypes(
-            for: networks,
+    private func handleUpdatedRpcEndpoints(_ changes: [RpcEndpointChange]) {
+        for change in changes {
+            guard let blockchainType = Self.blockchainType(for: change.network) else { continue }
+
+            if let selectedEndpoint = Self.migratedSelectedEndpoint(
+                current: blockchainSettingsStorage.evmSyncSourceUrl(blockchainType: blockchainType),
+                previous: change.previousEndpoint,
+                updated: change.endpoint
+            ) {
+                blockchainSettingsStorage.save(evmSyncSourceUrl: selectedEndpoint, blockchainType: blockchainType)
+            }
+        }
+
+        let updatedBlockchains = Self.blockchainTypesToRefresh(
+            for: Set(changes.map(\.network)),
             testNetEnabled: testNetManager.testNetEnabled,
             safe4IsTestNet: Safe4Network.currentContext.isTestNet
-        ) {
+        )
+        for blockchainType in updatedBlockchains {
             syncSourceRelay.accept(blockchainType)
         }
     }
 
-    static func blockchainTypes(
+    static func migratedSelectedEndpoint(current: String?, previous: String?, updated: String?) -> String? {
+        guard let current, let previous, let updated,
+              URL(string: previous)?.absoluteString == current,
+              let updatedUrl = URL(string: updated)
+        else {
+            return nil
+        }
+
+        return updatedUrl.absoluteString
+    }
+
+    static func blockchainTypesToRefresh(
         for networks: Set<RpcNetworkName>,
         testNetEnabled: Bool,
         safe4IsTestNet: Bool
     ) -> Set<BlockchainType> {
         Set(networks.compactMap { network in
-            switch network {
-            case .eth:
-                return testNetEnabled ? nil : .ethereum
-            case .bsc, .p2pify:
-                return testNetEnabled ? nil : .binanceSmartChain
-            case .polygon:
-                return .polygon
-            case .avax:
-                return .avalanche
-            case .optimism:
-                return .optimism
-            case .arbitrum:
-                return .arbitrumOne
-            case .gnosis:
-                return .gnosis
-            case .fantom:
-                return .fantom
-            case .safe4:
-                return safe4IsTestNet ? nil : .safe4
-            case .safe4_testnet:
-                return safe4IsTestNet ? .safe4 : nil
-            case .sol:
-                return nil
-            }
+            guard Self.shouldRefresh(
+                network: network,
+                testNetEnabled: testNetEnabled,
+                safe4IsTestNet: safe4IsTestNet
+            ) else { return nil }
+            return blockchainType(for: network)
         })
+    }
+
+    static func blockchainType(for network: RpcNetworkName) -> BlockchainType? {
+        switch network {
+        case .eth: return .ethereum
+        case .bsc, .p2pify: return .binanceSmartChain
+        case .polygon: return .polygon
+        case .avax: return .avalanche
+        case .optimism: return .optimism
+        case .arbitrum: return .arbitrumOne
+        case .gnosis: return .gnosis
+        case .fantom: return .fantom
+        case .safe4, .safe4_testnet: return .safe4
+        case .sol: return nil
+        }
+    }
+
+    private static func shouldRefresh(
+        network: RpcNetworkName,
+        testNetEnabled: Bool,
+        safe4IsTestNet: Bool
+    ) -> Bool {
+        switch network {
+        case .eth, .bsc, .p2pify:
+            return !testNetEnabled
+        case .safe4:
+            return !safe4IsTestNet
+        case .safe4_testnet:
+            return safe4IsTestNet
+        case .polygon, .avax, .optimism, .arbitrum, .gnosis, .fantom:
+            return true
+        case .sol:
+            return false
+        }
     }
 
     private func defaultTransactionSource(blockchainType: BlockchainType) -> EvmKit.TransactionSource {
