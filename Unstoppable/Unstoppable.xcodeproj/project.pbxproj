@@ -566,7 +566,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1301;
+				CURRENT_PROJECT_VERSION = 1502;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
 				MARKETING_VERSION = 0.50.202611;
@@ -586,7 +586,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1301;
+				CURRENT_PROJECT_VERSION = 1502;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
 				MARKETING_VERSION = 0.50.202611;
@@ -606,7 +606,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1301;
+				CURRENT_PROJECT_VERSION = 1502;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
 				MARKETING_VERSION = 0.50.202611;
@@ -626,7 +626,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1301;
+				CURRENT_PROJECT_VERSION = 1502;
 				DEVELOPMENT_TEAM = 3B669F6LS9;
 				INFOPLIST_FILE = Unstoppable/Supporting/Info.plist;
 				MARKETING_VERSION = 0.50.202611;

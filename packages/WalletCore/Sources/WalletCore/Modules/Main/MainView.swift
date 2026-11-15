@@ -41,7 +41,7 @@ struct MainView: View {
                         .tag(MainViewModel.Tab.safe)
                         .tint(.themeLeah)
 
-                    MainSettingsView(walletConnectPresented: $walletConnectPresented)
+                    MainSettingsView(walletConnectPresented: $walletConnectPresented, selectedTab: $viewModel.selectedTab)
                         .tabItem { Label("", image: "settings_filled") }
                         .tag(MainViewModel.Tab.settings)
                         .badge(badgeViewModel.badge.map { _ in "1" })

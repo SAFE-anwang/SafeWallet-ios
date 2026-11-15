@@ -127,7 +127,7 @@ struct ManageWalletsTokenFetcher {
 
     private func filterPreferredTokens(_ tokens: [Token], filter: String, allowedBlockchainTypes: [BlockchainType]?) -> [Token] {
         let normalizedFilter = filter.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return tokens.filter { token in
+        return tokens.map(\.withCanonicalSafe4Metadata).filter { token in
             guard allowedBlockchainTypes?.contains(token.blockchainType) ?? true else {
                 return false
             }
@@ -213,7 +213,7 @@ extension ManageWalletsTokenFetcher {
                     .removeDuplicates()
             }
 
-            return tokens.filter {
+            return tokens.map(\.withCanonicalSafe4Metadata).filter {
                 safe4TokenIsEligible($0, ownerAddress: ownerAddress, enabledTokenIds: enabledTokenIds)
             }
         } catch {

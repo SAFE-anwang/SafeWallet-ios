@@ -1,3 +1,5 @@
+import Foundation
+
 public enum AppEnvironment: String {
     case dev
     case prod
@@ -13,6 +15,20 @@ public enum AppEnvironment: String {
         case .dev: return .dev
         case .prod: return .prod
         }
+    }
+
+    static func marketApiUrl(override: String?) -> String {
+        guard let value = override?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let url = URL(string: value),
+              let scheme = url.scheme?.lowercased(),
+              ["https", "http"].contains(scheme),
+              let host = url.host, !host.isEmpty,
+              !value.contains("$("), !value.contains("${")
+        else {
+            return config.marketApiUrl
+        }
+
+        return value
     }
 }
 

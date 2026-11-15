@@ -7,6 +7,7 @@ struct MainSettingsView: View {
     @Environment(\.openURL) var openURL
 
     @Binding var walletConnectPresented: Bool
+    @Binding var selectedTab: MainViewModel.Tab
 
     @State private var manageWalletsPresented = false
     @StateObject var walletConnectVerificationModel = WalletConnectVerificationModel(
@@ -24,8 +25,9 @@ struct MainSettingsView: View {
     @State private var currentSlideIndex: Int = 0
     @State private var isFirstAppear = true
 
-    init(walletConnectPresented: Binding<Bool>) {
+    init(walletConnectPresented: Binding<Bool>, selectedTab: Binding<MainViewModel.Tab>) {
         _walletConnectPresented = walletConnectPresented
+        _selectedTab = selectedTab
     }
 
     var body: some View {
@@ -40,7 +42,6 @@ struct MainSettingsView: View {
                         security()
                         addressChecker()
 //                        privacy()
-                        dAppConnection()
                         revokeCash()
                         // tonConnect()
                     }
@@ -60,7 +61,6 @@ struct MainSettingsView: View {
                         aboutApp()
                         rateUs()
                         tellFriend()
-                        faq()
 //                        academy()
                     }
 
@@ -207,7 +207,7 @@ struct MainSettingsView: View {
 
     @ViewBuilder private func security() -> some View {
         NavigationRow(spacing: .margin8, destination: {
-            SecuritySettingsView()
+            SecuritySettingsView(selectedTab: $selectedTab)
                 .onFirstAppear {
                     stat(page: .settings, event: .open(page: .security))
                 }

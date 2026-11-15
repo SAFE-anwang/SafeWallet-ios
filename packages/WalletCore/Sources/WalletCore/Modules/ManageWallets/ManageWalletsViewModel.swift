@@ -9,6 +9,7 @@ class ManageWalletsViewModel: ObservableObject {
     private let restoreSettingsService: RestoreSettingsService
 
     private let tokenFetcher = ManageWalletsTokenFetcher()
+    private let tokenLoader = ManageWalletsTokenLoader<[Token]>()
     private let tokenInfoProvider: ManageWalletsTokenInfoProvider
 
     private var tokens = [Token]()
@@ -19,7 +20,14 @@ class ManageWalletsViewModel: ObservableObject {
     @Published var items = [Item]()
     @Published var enabledTokens: [Int: Bool] = [:]
 
-    @Published var filter = ""
+    @Published var filter = "" {
+        didSet {
+            if filter != oldValue {
+                // Invalidate immediately, including the search debounce interval.
+                tokenLoader.invalidate()
+            }
+        }
+    }
     let canAddToken: Bool
 
     let blockchains: [Blockchain]
@@ -62,27 +70,34 @@ class ManageWalletsViewModel: ObservableObject {
             .filter { childWalletBlockchainTypes?.contains($0.type) ?? true }
             .sorted(by: { $0.type.order < $1.type.order })
         setupBindings()
-        reloadTokens(initial: true)
+        reloadTokens()
     }
 
     private func setupBindings() {
+        Core.shared.safe4CustomTokenStorage.tokensUpdatedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.reloadTokens()
+            }
+            .store(in: &cancellables)
+
         $filter
-            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.global(qos: .userInitiated))
             .removeDuplicates()
+            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.reloadTokens()
             }
             .store(in: &cancellables)
 
         walletManager.activeWalletDataUpdatedPublisher
-            .receive(on: DispatchQueue.global(qos: .userInitiated))
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] walletData in
                 self?.handleWalletsUpdated(walletData.wallets)
             }
             .store(in: &cancellables)
 
         restoreSettingsService.approveSettingsPublisher
-            .receive(on: DispatchQueue.global(qos: .userInitiated))
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] tokenWithSettings in
                 self?.handleApproveRestoreSettings(token: tokenWithSettings.token, settings: tokenWithSettings.settings)
             }
@@ -96,30 +111,37 @@ class ManageWalletsViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    private func reloadTokens(initial: Bool = false) {
-        let enabledTokens = wallets
-            .map(\.token)
+    private func reloadTokens() {
+        // Snapshot UI state before leaving the main queue. The worker never reads
+        // mutable view-model properties while searches or wallet updates arrive.
+        let filter = filter
+        let account = account
+        let enabledTokens = wallets.map(\.token)
+        let allowedBlockchainTypes = allowedBlockchainTypes
+        let tokenFetcher = tokenFetcher
 
-        let fetched = tokenFetcher.fetch(
-            filter: filter,
-            account: account,
-            preferredTokens: enabledTokens,
-            allowedBlockchainTypes: allowedBlockchainTypes
-        )
+        tokenLoader.load(work: {
+            let fetched = tokenFetcher.fetch(
+                filter: filter,
+                account: account,
+                preferredTokens: enabledTokens,
+                allowedBlockchainTypes: allowedBlockchainTypes
+            )
+            let context = TokenSortContext()
+            context.filter = filter
+            context.enabledTokens = Set(enabledTokens)
 
-        let context = TokenSortContext()
-        context.filter = filter
-        context.enabledTokens = Set(enabledTokens)
-
-        let criteria = filter.isEmpty
-            ? SortCriterion.tokenByBlockchain
-            : SortCriterion.tokenFilteredByBlockchain
-
-        tokens = fetched.sorted(by: criteria, context: context)
-        reloadItems(initial: initial)
+            let criteria = filter.isEmpty
+                ? SortCriterion.tokenByBlockchain
+                : SortCriterion.tokenFilteredByBlockchain
+            return fetched.sorted(by: criteria, context: context)
+        }, completion: { [weak self] tokens in
+            self?.tokens = tokens
+            self?.reloadItems()
+        })
     }
 
-    private func reloadItems(initial: Bool = false) {
+    private func reloadItems() {
         var enabled: [Int: Bool] = [:]
         let items = tokens.map { token in
             let (item, isEnabled) = item(token: token)
@@ -128,15 +150,8 @@ class ManageWalletsViewModel: ObservableObject {
             return item
         }
 
-        if initial {
-            self.items = items
-            enabledTokens = enabled
-        } else {
-            DispatchQueue.main.async {
-                self.items = items
-                self.enabledTokens = enabled
-            }
-        }
+        self.items = items
+        enabledTokens = enabled
     }
 
     private func item(token: Token) -> (Item, Bool) {
@@ -153,7 +168,7 @@ class ManageWalletsViewModel: ObservableObject {
 
     private func handleWalletsUpdated(_ newWallets: [Wallet]) {
         wallets = Set(newWallets)
-        reloadItems()
+        reloadTokens()
     }
 
     private func handleApproveRestoreSettings(token: Token, settings: RestoreSettings) {

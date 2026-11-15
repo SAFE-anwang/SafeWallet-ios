@@ -15,7 +15,6 @@ class WalletCoinPriceService {
     private var cancellables = Set<AnyCancellable>()
     private var coinPriceCancellables = Set<AnyCancellable>()
     private let priceQueue = DispatchQueue(label: "\(AppConfig.label).wallet-coin-price-service", qos: .userInitiated)
-    private var priceItems = [String: Item]()
 
     private var _currency: Currency
     private var coinUids = Set<String>()
@@ -41,7 +40,6 @@ class WalletCoinPriceService {
     private func onUpdate(baseCurrency: Currency) {
         priceQueue.async {
             self._currency = baseCurrency
-            self.priceItems.removeAll()
             self.subscribeToCoinPrices()
             self.delegate?.didUpdate(itemsMap: nil)
         }
@@ -75,16 +73,14 @@ class WalletCoinPriceService {
                 return
             }
 
-            for (coinUid, coinPrice) in coinPriceMap {
-                self.priceItems[coinUid] = self.item(coinPrice: coinPrice)
-            }
-
-            // MarketKit publishes updates per price source. Keep the accumulated
-            // snapshot here so consumers do not clear prices that arrived earlier
-            // from another source.
-            let activeCoinUids = self.coinUids
-            self.priceItems = self.priceItems.filter { activeCoinUids.contains($0.key) }
-            self.delegate?.didUpdate(itemsMap: self.priceItems)
+            // Updates contain only one price source. Read the complete persisted
+            // snapshot so a SAFE update preserves regular prices loaded before
+            // this subscription, including when their endpoint is unavailable.
+            var prices = self.marketKit.walletCoinPriceMap(
+                coinUids: Array(self.coinUids), currencyCode: currencyCode
+            )
+            prices.merge(coinPriceMap.filter { self.coinUids.contains($0.key) }) { _, updated in updated }
+            self.delegate?.didUpdate(itemsMap: prices.mapValues(self.item(coinPrice:)))
         }
     }
 
@@ -115,7 +111,6 @@ extension WalletCoinPriceService {
             self.coinUids = coinUids
             self.feeCoinUids = feeCoinUids
             self.conversionCoinUids = conversionCoinUids
-            self.priceItems = self.priceItems.filter { coinUids.contains($0.key) }
 
             self.subscribeToCoinPrices()
         }

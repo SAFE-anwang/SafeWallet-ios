@@ -3,9 +3,10 @@ import SwiftUI
 struct FallbackBlockView: View {
     @StateObject private var viewModel: FallbackBlockViewModel
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var mainViewModel: MainViewModel
+    private let onSelect: () -> Void
 
-    init() {
+    init(onSelect: @escaping () -> Void) {
+        self.onSelect = onSelect
         let viewModel = FallbackBlockViewModel(walletManager: Core.shared.walletManager,
                                                accountManager: Core.shared.accountManager,
                                                adapterManager: Core.shared.adapterManager
@@ -33,8 +34,8 @@ struct FallbackBlockView: View {
                             ForEach(viewModel.fallbackBlockViewItems) { item in
                                 ClickableRow {
                                     viewModel.fallbackBlock(item: item)
+                                    onSelect()
                                     dismiss()
-                                    mainViewModel.selectedTab = .wallet
                                 } content: {
                                     Text("\(item.item.title)").themeBody(color: .themeGray)
                                     if item.item.selected {

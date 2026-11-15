@@ -5,7 +5,7 @@ public struct Wallet {
     public let account: Account
 
     public init(token: Token, account: Account) {
-        self.token = token
+        self.token = token.withCanonicalSafe4Metadata
         self.account = account
     }
 

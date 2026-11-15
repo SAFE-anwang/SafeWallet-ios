@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import GRDB
 import EvmKit
@@ -68,6 +69,22 @@ class Safe4CustomTokenStorage {
 }
 
 extension Safe4CustomTokenStorage {
+    // Observe committed catalog changes, including the initial snapshot. Search
+    // and the unfiltered token list must see the same directory without reopening.
+    var tokensUpdatedPublisher: AnyPublisher<Void, Never> {
+        var observation = ValueObservation.tracking { db in
+            try Safe4CustomTokenRecord.fetchAll(db)
+        }
+        // Use GRDB's writer-based observation. The pool's concurrent observation
+        // crashed in sqlite3_snapshot_get on device when this screen subscribed.
+        // The fetch remains read-only; this flag avoids the WAL snapshot path.
+        observation.requiresWriteAccess = true
+        return observation.publisher(in: dbPool)
+        .map { _ in () }
+        .catch { _ in Empty<Void, Never>() }
+        .eraseToAnyPublisher()
+    }
+
     func allTokens() -> [Safe4CustomTokenRecord] {
         allTokens(chainId: currentChainId)
     }

@@ -1,11 +1,92 @@
 import Foundation
 import GRDB
 import Testing
+import XCTest
 @testable import WalletCore
 
 struct Safe4TokenSyncStorageTests {
     private let chainId = 666
     private let owner = "0x1111111111111111111111111111111111111111"
+
+    @Test @MainActor func catalogObservationDoesNotOpenSnapshotReader() async throws {
+        let databaseURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("safe4-writer-observation-\(UUID().uuidString).sqlite")
+        var configuration = Configuration()
+        configuration.prepareDatabase { db in
+            // DatabasePool snapshot observations open a read-only connection.
+            // Reject that path so this test fails without the device workaround.
+            if db.configuration.readonly {
+                throw NSError(domain: "UnexpectedSnapshotReader", code: 1)
+            }
+        }
+        let storage = try Safe4CustomTokenStorage(dbPool: DatabasePool(path: databaseURL.path, configuration: configuration))
+        let initial = XCTestExpectation(description: "Initial observation uses writer")
+        let updated = XCTestExpectation(description: "Committed update uses writer")
+        var count = 0
+        let subscription = storage.tokensUpdatedPublisher.sink {
+            count += 1
+            if count == 1 { initial.fulfill() }
+            if count == 2 { updated.fulfill() }
+        }
+        defer { subscription.cancel() }
+        let initialResult = await XCTWaiter.fulfillment(of: [initial], timeout: 5)
+        #expect(initialResult == .completed)
+        try storage.synchronize(
+            tokens: [token("0x0000000000000000000000000000000000001101", creator: "")],
+            ownedBy: owner, ownedAddresses: [], chainId: chainId
+        )
+        let updatedResult = await XCTWaiter.fulfillment(of: [updated], timeout: 5)
+        #expect(updatedResult == .completed)
+    }
+
+    @Test @MainActor func catalogObserverSeesWrappedSafeInsertedAfterOpeningList() async throws {
+        let databaseURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("safe4-catalog-observation-\(UUID().uuidString).sqlite")
+        let storage = try Safe4CustomTokenStorage(dbPool: DatabasePool(path: databaseURL.path))
+        let initialSnapshot = XCTestExpectation(description: "Initial empty catalog")
+        let updatedSnapshot = XCTestExpectation(description: "WSAFE appears without changing the search")
+        let wrappedSafe = token("0x0000000000000000000000000000000000001101", creator: "")
+        var snapshots = [[String]]()
+        let subscription = storage.tokensUpdatedPublisher.sink {
+            let addresses = storage.allTokens(chainId: chainId)
+                .filter { $0.isEligible(forOwner: owner) }
+                .map(\.address)
+            snapshots.append(addresses)
+            if snapshots.count == 1 {
+                initialSnapshot.fulfill()
+            } else if addresses.contains(wrappedSafe.address) {
+                updatedSnapshot.fulfill()
+            }
+        }
+        defer { subscription.cancel() }
+
+        let initialResult = await XCTWaiter.fulfillment(of: [initialSnapshot], timeout: 5)
+        #expect(initialResult == .completed)
+        #expect(snapshots.first == [])
+
+        try storage.synchronize(tokens: [wrappedSafe], ownedBy: owner, ownedAddresses: [], chainId: chainId)
+
+        let updateResult = await XCTWaiter.fulfillment(of: [updatedSnapshot], timeout: 5)
+        #expect(updateResult == .completed)
+        #expect(snapshots.last == [wrappedSafe.address])
+    }
+
+    @Test func wrappedSafeRemainsEligibleWithoutPromotionOrCreator() throws {
+        let databaseURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("safe4-wrapped-token-tests-\(UUID().uuidString).sqlite")
+        let storage = try Safe4CustomTokenStorage(dbPool: DatabasePool(path: databaseURL.path))
+        let wrappedSafe = token("0x0000000000000000000000000000000000001101", creator: "")
+
+        try storage.synchronize(tokens: [wrappedSafe], ownedBy: owner, ownedAddresses: [], chainId: chainId)
+
+        let stored = try #require(try storage.asset(address: wrappedSafe.address, chainId: chainId))
+        #expect(!stored.isPromoted)
+        #expect(stored.isEligible(forOwner: owner))
+        #expect(stored.isEligible(forOwner: nil))
+        #expect(token(wrappedSafe.address.uppercased(), creator: "").isEligible(forOwner: owner))
+        // Matching only the address suffix must not bypass normal eligibility.
+        #expect(!token("0x1111111111111111111111111111111111111101", creator: "").isEligible(forOwner: owner))
+    }
 
     @Test func synchronizationPreservesVersionAndOnlyRemovesStaleOwnedTokens() throws {
         let databaseURL = FileManager.default.temporaryDirectory

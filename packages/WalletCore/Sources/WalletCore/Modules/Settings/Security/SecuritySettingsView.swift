@@ -2,6 +2,9 @@ import SwiftUI
 
 struct SecuritySettingsView: View {
     @StateObject var viewModel = SecuritySettingsViewModel()
+    @Binding var selectedTab: MainViewModel.Tab
+    @Environment(\.dismiss) private var dismiss
+    @State private var returnToWalletAfterFallback = false
 
     var body: some View {
         ScrollableThemeView {
@@ -108,8 +111,16 @@ struct SecuritySettingsView: View {
 
                 ListSection {
                     ClickableRow(spacing: .margin8) {
-                        Coordinator.shared.present(type: .bottomSheet) { isPresented in
-                            FallbackBlockView()
+                        returnToWalletAfterFallback = false
+                        Coordinator.shared.present(type: .bottomSheet) { _ in
+                            FallbackBlockView {
+                                returnToWalletAfterFallback = true
+                            }
+                        } onDismiss: {
+                            guard returnToWalletAfterFallback else { return }
+                            returnToWalletAfterFallback = false
+                            dismiss()
+                            selectedTab = .wallet
                         }
                     } content: {
                         HStack(spacing: .margin16) {

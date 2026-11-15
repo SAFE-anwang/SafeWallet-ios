@@ -85,7 +85,7 @@ enum AppConfig {
     }
 
     static var marketApiUrl: String {
-        (Bundle.main.object(forInfoDictionaryKey: "MarketApiUrl") as? String) ?? ""
+        AppEnvironment.marketApiUrl(override: Bundle.main.object(forInfoDictionaryKey: "MarketApiUrl") as? String)
     }
 
     static var swapApiUrl: String {

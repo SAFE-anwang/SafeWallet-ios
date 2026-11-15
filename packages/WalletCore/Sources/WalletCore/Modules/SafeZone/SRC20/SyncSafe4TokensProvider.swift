@@ -110,7 +110,10 @@ class Safe4CustomTokenRecord: Record, ImmutableMappable, Decodable, Identifiable
     }
 
     func isEligible(forOwner ownerAddress: String?) -> Bool {
-        isPromoted || creator.lowercased() == ownerAddress?.lowercased()
+        // WSAFE is a system contract whose catalog entry has no creator or logo.
+        // It must remain available even though it has no promotion marker.
+        address.lowercased() == "0x0000000000000000000000000000000000001101"
+            || isPromoted || creator.lowercased() == ownerAddress?.lowercased()
     }
 
     var canAdditionalIssuance: Bool {
