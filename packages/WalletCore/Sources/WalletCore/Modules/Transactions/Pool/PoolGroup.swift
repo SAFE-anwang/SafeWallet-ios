@@ -54,12 +54,16 @@ public extension PoolGroup {
     }
 
     func itemsSingle(count: Int) -> Single<[TransactionItem]> {
-        pools.reduce(Single.just([[TransactionItem]]())) { partial, pool in
-            partial.flatMap { itemsArray in
-                pool.itemsSingle(count: count)
-                    .map { itemsArray + [$0] }
+        // Defer synchronous database reads until their turn. Concat advances through
+        // pools without growing the call stack for every synchronous result.
+        let sources = pools.map { pool in
+            Observable<[TransactionItem]>.deferred {
+                pool.itemsSingle(count: count).asObservable()
             }
         }
+
+        return Observable.concat(sources)
+            .toArray()
             .map { itemsArray in
                 let allItems = itemsArray.flatMap { $0 }
                 return Array(allItems.sorted().prefix(count))

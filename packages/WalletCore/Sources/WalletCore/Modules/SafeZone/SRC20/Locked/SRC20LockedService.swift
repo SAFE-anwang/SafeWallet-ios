@@ -4,29 +4,39 @@ import web3swift
 import Web3Core
 import BigInt
 import EvmKit
-import HsExtensions
+
+protocol SRC20LockedRecordProvider {
+    var contract: String { get }
+    func getLockedIDNum() async throws -> BigUInt
+    func getLockedIDs(start: BigUInt, count: BigUInt) async throws -> [BigUInt]
+    func getRecordByID(id: BigUInt) async throws -> LockRecord
+}
+
+extension SRC20Service: SRC20LockedRecordProvider {}
 
 class SRC20LockedService {
-    private(set) var state: SRC20LockedService.State
+    private let syncLock = NSLock()
+    private var syncState: State = .notSynced(error: AppError.unknownError.localizedDescription)
+    var state: State {
+        syncLock.lock()
+        defer { syncLock.unlock() }
+        return syncState
+    }
     private let pageSize = 20
     private let idsConcurrencyLimit = 4
     private let recordsConcurrencyLimit = 8
-    private lazy var pageControl = Safe4PageControl(pageSize: pageSize)
-    private let service: SRC20Service
+    private let service: SRC20LockedRecordProvider
     private let lockedRecordStorage: Src20AllTokenLockedRecordStorage
     private var lockedAmountSubject = PassthroughSubject<BigUInt, Never>()
-    private var tasks = Set<AnyTask>()
-    init(service: SRC20Service, lockedRecordStorage: Src20AllTokenLockedRecordStorage) {
+    private var syncTask: Task<Void, Never>?
+    init(service: SRC20LockedRecordProvider, lockedRecordStorage: Src20AllTokenLockedRecordStorage) {
         self.service = service
         self.lockedRecordStorage = lockedRecordStorage
-        state = .notSynced(error: AppError.unknownError.localizedDescription)
         sync()
     }
 
     func start() {
-        if .syncing != state {
-            sync()
-        }
+        sync()
     }
 
     var lockedAmountPublisher: AnyPublisher<BigUInt, Never> {
@@ -34,10 +44,15 @@ class SRC20LockedService {
     }
 
     private func sync() {
-        Task { [weak self] in
+        syncLock.lock()
+        defer { syncLock.unlock() }
+        guard syncState != .syncing else { return }
+        // Claim the run before scheduling it. init() is immediately followed by
+        // start() in Eip20Adapter, before an asynchronous task may have started.
+        syncState = .syncing
+        syncTask = Task { [weak self] in
             do {
                 guard let self = self else { return }
-                state = .syncing
                 let cachedRecords = (try? lockedRecordStorage.tokenRecords(tokenContract: service.contract)) ?? []
                 let totalNum = try await service.getLockedIDNum()
                 if totalNum == 0 {
@@ -45,26 +60,36 @@ class SRC20LockedService {
                         lockedRecordStorage.delete(tokenContract: service.contract)
                     }
                     lockedAmountSubject.send(.zero)
-                    state = .synced
+                    finishSync(state: .synced)
                     return
                 }
-                pageControl.set(totalNum: Int(totalNum))
                 let allIds = try await requestAllIds(totalNum: Int(totalNum))
                 let records = try await requestRecords(ids: allIds)
                 if records.isEmpty {
                     let totalAmount = totalAmount(from: records)
                     lockedAmountSubject.send(totalAmount)
-                    state = .synced
+                    finishSync(state: .synced)
                     return
                 }
                 updateCache(records: records, cachedRecords: cachedRecords)
                 let totalAmount = totalAmount(from: records)
                 lockedAmountSubject.send(totalAmount)
-                state = .synced
+                finishSync(state: .synced)
             }catch {
-                self?.state = .notSynced(error: "Service Error")
+                self?.finishSync(state: .notSynced(error: "Service Error"))
             }
-        }.store(in: &tasks)
+        }
+    }
+
+    private func finishSync(state: State) {
+        syncLock.lock()
+        defer { syncLock.unlock() }
+        syncTask = nil
+        syncState = state
+    }
+
+    deinit {
+        syncTask?.cancel()
     }
 
     private func requestAllIds(totalNum: Int) async throws -> [BigUInt] {
