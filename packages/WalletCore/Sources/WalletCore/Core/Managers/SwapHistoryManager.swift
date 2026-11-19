@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import MarketKit
 
 public class SwapHistoryManager {
     private let accountManager: AccountManager
@@ -133,9 +134,9 @@ public extension SwapHistoryManager {
         lastSwap(accountId: ChildWalletBridge.shared.contextAccountId(account: account))
     }
 
-    func swaps(accountId: String, from: Date? = nil, limit: Int) -> [Swap] {
+    func swaps(accountId: String, token: Token? = nil, from: Date? = nil, limit: Int) -> [Swap] {
         do {
-            return try storage.swaps(accountId: accountId, from: from, limit: limit)
+            return try storage.swaps(accountId: accountId, token: token, from: from, limit: limit)
         } catch {
             return []
         }
@@ -166,6 +167,40 @@ public extension SwapHistoryManager {
             sync()
         } catch {
             print(error)
+        }
+    }
+
+    // mechanism-agnostic hook: the broadcast succeeded but the mechanism can never yield a ref
+    // (e.g. TonKit's send returns Void). Clearing the handle releases the record from
+    // isAwaitingTxHash() so the provider tracks it by providerSwapId alone — without this the
+    // swap would sit "awaiting tx hash" forever.
+    func beginProviderTracking(trackingHandle: String) {
+        do {
+            guard try storage.clearTrackingHandle(trackingHandle) else {
+                return
+            }
+
+            sync()
+        } catch {
+            print(error)
+        }
+    }
+
+    // mechanism-agnostic hook: a retried broadcast reuses the row it failed on. Scoped to the
+    // failed status — never resurrects a settled swap; false = nothing to retry.
+    func retryFailed(trackingHandle: String) -> Bool {
+        do {
+            guard try storage.markNotStarted(trackingHandle: trackingHandle) else {
+                return false
+            }
+
+            if let swap = try storage.swap(trackingHandle: trackingHandle) {
+                swapUpdateSubject.send(swap)
+            }
+
+            return true
+        } catch {
+            return false
         }
     }
 

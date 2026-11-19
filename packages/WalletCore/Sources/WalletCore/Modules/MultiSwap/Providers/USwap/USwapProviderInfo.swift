@@ -2,21 +2,24 @@ public struct USwapProviderInfo: Equatable {
     public let id: String
     public let name: String
     public let icon: String
-    public let type: SwapProviderType
     public let preciseEstimateTime: Bool
     public let requireTerms: Bool
-    // Routes through a confidential rail. Such providers are excluded from the ordinary swap
-    // fan-out; availability itself is decided by ConfidentialProviderRegistry, not by this flag.
+    // Routes through a confidential rail. The private send flow offers a provider only when both the server
+    // (ConfidentialProviderRegistry) and this flag mark it confidential; the swap screen lists it like any other.
     public let confidential: Bool
+    // Takes a unified ZEC address as the refund target. Not published by /v3/providers, so declared here:
+    // transfer venues validate a ZEC refund as transparent (QuickEx and StealthEX reject `u1`), Maya refunds to
+    // the memo's address (Sapling receiver), 1Click to an Orchard one.
+    public let acceptsUnifiedZcashRefund: Bool
 
-    public init(id: String, name: String, icon: String, type: SwapProviderType, preciseEstimateTime: Bool = true, requireTerms: Bool, confidential: Bool = false) {
+    public init(id: String, name: String, icon: String, preciseEstimateTime: Bool = true, requireTerms: Bool, confidential: Bool = false, acceptsUnifiedZcashRefund: Bool = false) {
         self.id = id
         self.name = name
         self.icon = icon
-        self.type = type
         self.preciseEstimateTime = preciseEstimateTime
         self.requireTerms = requireTerms
         self.confidential = confidential
+        self.acceptsUnifiedZcashRefund = acceptsUnifiedZcashRefund
     }
 }
 
@@ -25,7 +28,6 @@ public extension USwapProviderInfo {
         id: "SafeSwap",
         name: "SafeSwap",
         icon: "safelog",
-        type: .excellent,
         requireTerms: false
     )
 
@@ -33,17 +35,16 @@ public extension USwapProviderInfo {
         id: "NEAR",
         name: "Near",
         icon: "swap_provider_near",
-        type: .fair,
-        requireTerms: true
+        requireTerms: true,
+        acceptsUnifiedZcashRefund: true
     )
 
-    // Registered so SwapProviderFactory.provider(id:) resolves the provider for tracking and
-    // history rendering. It is never offered on the ordinary swap screen.
+    // Quoted on the ordinary swap screen like the others and also used by the private send flow,
+    // which resolves it through ConfidentialProviderRegistry.
     static let nearConfidential = USwapProviderInfo(
         id: "NEAR_CONFIDENTIAL",
         name: "Near Confidential",
         icon: "swap_provider_near",
-        type: .fair,
         requireTerms: true,
         confidential: true
     )
@@ -52,7 +53,6 @@ public extension USwapProviderInfo {
         id: "QUICKEX",
         name: "QuickEx",
         icon: "swap_provider_quickex",
-        type: .good,
         preciseEstimateTime: false,
         requireTerms: true
     )
@@ -61,7 +61,6 @@ public extension USwapProviderInfo {
         id: "LETSEXCHANGE",
         name: "LetsExchange",
         icon: "swap_provider_letsexchange",
-        type: .good,
         preciseEstimateTime: false,
         requireTerms: true
     )
@@ -70,7 +69,6 @@ public extension USwapProviderInfo {
         id: "STEALTHEX",
         name: "StealthEX",
         icon: "swap_provider_stealthex",
-        type: .fair,
         preciseEstimateTime: false,
         requireTerms: true
     )
@@ -79,7 +77,6 @@ public extension USwapProviderInfo {
         id: "SWAPUZ",
         name: "Swapuz",
         icon: "swap_provider_swapuz",
-        type: .good,
         preciseEstimateTime: false,
         requireTerms: true
     )
@@ -88,7 +85,6 @@ public extension USwapProviderInfo {
         id: "EXOLIX",
         name: "Exolix",
         icon: "swap_provider_exolix",
-        type: .good,
         preciseEstimateTime: false,
         requireTerms: true
     )
@@ -97,7 +93,6 @@ public extension USwapProviderInfo {
         id: "CCE",
         name: "CCE Cash",
         icon: "swap_provider_cce",
-        type: .good,
         preciseEstimateTime: false,
         requireTerms: true
     )
@@ -106,7 +101,35 @@ public extension USwapProviderInfo {
         id: "BARTER",
         name: "Barter",
         icon: "swap_provider_barter",
-        type: .excellent,
+        requireTerms: true
+    )
+
+    static let soroswap = USwapProviderInfo(
+        id: "SOROSWAP",
+        name: "Soroswap",
+        icon: "stellar_stellar_32",
+        requireTerms: true
+    )
+
+    static let aquarius = USwapProviderInfo(
+        id: "AQUARIUS",
+        name: "Aquarius",
+        icon: "stellar_stellar_32",
+        requireTerms: true
+    )
+
+    static let stellarDex = USwapProviderInfo(
+        id: "STELLAR_DEX",
+        name: "Stellar DEX",
+        icon: "stellar_stellar_32",
+        requireTerms: true
+    )
+
+    // History only: records made through the former single Stellar card. Never quoted.
+    static let stellarBroker = USwapProviderInfo(
+        id: "STELLARBROKER",
+        name: "StellarBroker",
+        icon: "stellar_stellar_32",
         requireTerms: true
     )
 
@@ -114,7 +137,6 @@ public extension USwapProviderInfo {
         id: "PEGASUS",
         name: "PegasusSwap",
         icon: "swap_provider_pegasus",
-        type: .good,
         preciseEstimateTime: false,
         requireTerms: true
     )
@@ -123,7 +145,6 @@ public extension USwapProviderInfo {
         id: "CIRCLE",
         name: "Circle CCTP",
         icon: "swap_provider_circle",
-        type: .excellent,
         requireTerms: true
     )
 
@@ -131,7 +152,6 @@ public extension USwapProviderInfo {
         id: "JUPITER",
         name: "Jupiter",
         icon: "swap_provider_jupiter",
-        type: .excellent,
         requireTerms: true
     )
 
@@ -139,15 +159,42 @@ public extension USwapProviderInfo {
         id: "LIFI",
         name: "LI.FI",
         icon: "swap_provider_lifi",
-        type: .excellent,
         requireTerms: true
+    )
+
+    static let oneInch = USwapProviderInfo(
+        id: "ONEINCH",
+        name: "1inch",
+        icon: "swap_provider_1inch",
+        requireTerms: true
+    )
+
+    static let uniswap = USwapProviderInfo(
+        id: "UNISWAP",
+        name: "Uniswap",
+        icon: "swap_provider_uniswap",
+        requireTerms: true
+    )
+
+    static let thorChain = USwapProviderInfo(
+        id: "THORCHAIN",
+        name: "THORChain",
+        icon: "swap_provider_thorchain",
+        requireTerms: true
+    )
+
+    static let maya = USwapProviderInfo(
+        id: "MAYACHAIN",
+        name: "Maya Protocol",
+        icon: "swap_provider_maya",
+        requireTerms: true,
+        acceptsUnifiedZcashRefund: true
     )
 
     static let axelarIts = USwapProviderInfo(
         id: "AXELAR_ITS",
         name: "Axelar ITS",
         icon: "swap_provider_axelar",
-        type: .excellent,
         requireTerms: true
     )
 
@@ -155,7 +202,6 @@ public extension USwapProviderInfo {
         id: "LIZEX",
         name: "Lizex",
         icon: "swap_provider_lizex",
-        type: .good,
         preciseEstimateTime: false,
         requireTerms: true
     )
@@ -164,7 +210,14 @@ public extension USwapProviderInfo {
         id: "BITANIA",
         name: "Bitania",
         icon: "swap_provider_bitania",
-        type: .good,
+        preciseEstimateTime: false,
+        requireTerms: true
+    )
+
+    static let xswap = USwapProviderInfo(
+        id: "XSWAP",
+        name: "XSwap",
+        icon: "swap_provider_xswap",
         preciseEstimateTime: false,
         requireTerms: true
     )

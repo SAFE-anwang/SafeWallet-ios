@@ -1,12 +1,12 @@
 import Foundation
 
 enum AppError: Error {
+    case oneInch(reason: OneInchError)
     case noConnection
     case invalidResponse(reason: String)
     case binance(reason: BinanceError)
     case zcash(reason: ZcashError)
     case ethereum(reason: EthereumError)
-    case oneInch(reason: OneInchError)
     case invalidWords(count: Int)
     case wordsChecksum
     case addressInvalid
@@ -28,6 +28,8 @@ enum AppError: Error {
         case seedRequired
         case sendInProgress
         case migrationFailed
+        case syncStalled
+        case syncRequired
     }
 
     enum EthereumError: Error {
@@ -68,6 +70,8 @@ extension AppError: LocalizedError {
             case .seedRequired, .cantCreateKeys: return "Seed Required"
             case .sendInProgress: return "error.send.in_progress".localized
             case .migrationFailed: return "error.zcash.migration_failed".localized
+            case .syncStalled: return "error.zcash.sync_stalled".localized
+            case .syncRequired: return "error.zcash.sync_required".localized
             }
         case let .ethereum(reason):
             switch reason {

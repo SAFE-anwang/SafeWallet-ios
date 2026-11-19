@@ -27,9 +27,8 @@ public class SendViewModel: ObservableObject {
     @Published public var sendData: ISendData?
 
     // A live send owns the screen: the quote-expiry timer is stopped so it can't swap the
-    // send button for "Refresh" mid-send (for broadcast providers the window is 1-3 s, but a
-    // StellarBroker session runs for minutes — a mid-session "Refresh" would allow a second
-    // committed quote and a concurrent double-spending session). Any sync already in flight is
+    // send button for "Refresh" mid-send (a mid-send "Refresh" would allow a second committed
+    // quote and a concurrent second execution). Any sync already in flight is
     // cancelled with it: it would otherwise land and overwrite `sendData`/`state` mid-send,
     // re-quoting under the running execution. On failure the expiry clock resumes from the
     // ORIGINAL deadline, so an already-stale quote expires immediately; success dismisses
@@ -39,17 +38,19 @@ public class SendViewModel: ObservableObject {
             if sending {
                 stopAutoQuoting()
                 syncTask = nil
-            } else if oldValue {
+            } else if oldValue, !partiallyExecuted {
+                // A sync dropped under the send (below) left `state` at .syncing with nothing in flight.
+                if state.isSyncing, syncTask == nil {
+                    sync(silent: true)
+                }
                 autoQuoteIfRequired()
             }
         }
     }
 
-    // Set when a send threw AFTER value may already have moved on-chain (a broker session that
-    // signed and submitted, then failed mid-trade). The swap is already persisted and tracking
-    // owns the outcome from here, so the screen must NOT return to a retryable state — sliding
-    // again would run a second execution on top of a partially-filled one.
-    @Published private(set) var partiallyExecuted = false
+    // Once a transaction may have been submitted, tracking owns its outcome.
+    // This confirmation must never become retryable, even after a refresh.
+    @Published public private(set) var partiallyExecuted = false
 
     @Published var transactionSettingsModified = false
 
@@ -67,7 +68,7 @@ public class SendViewModel: ObservableObject {
             nextRefreshTime = nil
             expired = false
 
-            if case .success = state {
+            if case .success = state, !sending, !partiallyExecuted {
                 let duration = handler?.expirationDuration.map { Double($0) } ?? autoRefreshDuration
                 nextRefreshTime = Date().timeIntervalSince1970 + duration
 
@@ -128,10 +129,7 @@ public class SendViewModel: ObservableObject {
     }
 
     public var canSend: Bool {
-        // A partially-executed send is never retryable — see `partiallyExecuted`.
-        guard !partiallyExecuted else {
-            return false
-        }
+        guard !partiallyExecuted else { return false }
 
         guard let sendData, sendData.canSend else {
             return false
@@ -167,16 +165,8 @@ public class SendViewModel: ObservableObject {
             }
     }
 
-    @MainActor private func set(sending: Bool) {
-        self.sending = sending
-    }
-
-    @MainActor private func set(partiallyExecuted: Bool) {
-        self.partiallyExecuted = partiallyExecuted
-    }
-
     @MainActor private func report(error: Error) {
-        errorSubject.send(error.smartDescription)
+        errorSubject.send(error.convertedError.smartDescription)
     }
 }
 
@@ -212,7 +202,7 @@ public extension SendViewModel {
     internal func onExpiration() {
         // Never expire under a live send — an already-armed timer can still fire after
         // `sending` flipped true (the didSet only stops FUTURE firings).
-        guard !sending else {
+        guard !sending, !partiallyExecuted else {
             return
         }
 
@@ -224,7 +214,7 @@ public extension SendViewModel {
     }
 
     func sync(silent: Bool = false) {
-        guard let handler else {
+        guard !partiallyExecuted, let handler else {
             return
         }
 
@@ -253,15 +243,36 @@ public extension SendViewModel {
 
             if !Task.isCancelled {
                 await MainActor.run { [weak self, sendData, state] in
-                    self?.sendData = sendData
-                    self?.state = state
+                    guard let self, !Task.isCancelled else {
+                        return
+                    }
+                    // A send that started while this sync was in flight owns the screen: landing now
+                    // would swap the quote under it and re-arm the expiry timer. Mark the drop so the
+                    // send's end can re-sync instead of leaving `state` at .syncing with nothing in flight.
+                    guard !sending, !partiallyExecuted else {
+                        syncTask = nil
+                        return
+                    }
+
+                    self.sendData = sendData
+                    self.state = state
                 }
             }
         }
         .erased()
     }
 
-    func send() async throws {
+    // Main-actor isolated so the quote read and the `sending` flip happen in one turn: a silent
+    // re-preview landing in between would commit a quote other than the one on screen. The
+    // handler's send itself runs off the main actor as before.
+    @MainActor func send() async throws {
+        // A second slide while one is in flight is dropped here, for every handler: the quote read
+        // and the flag flip below are one main-actor turn, so this check cannot interleave with them.
+        // Throws (handled, so not reported) rather than returns: callers treat a normal return as a
+        // successful send. Kept outside the `do` so the in-flight send's `sending` flag is not reset.
+        guard !sending else { throw AlreadySendingError() }
+        guard !partiallyExecuted else { throw PartiallyExecutedError() }
+
         do {
             guard let handler else {
                 throw SendError.noHandler
@@ -271,7 +282,7 @@ public extension SendViewModel {
                 throw SendError.noSendData
             }
 
-            await set(sending: true)
+            sending = true
 
             _ = try await handler.send(data: sendData)
 
@@ -279,14 +290,16 @@ public extension SendViewModel {
                 try? recentAddressStorage.save(address: address, blockchainUid: handler.baseToken.blockchain.uid)
             }
         } catch {
-            // Order matters: mark the partial BEFORE clearing `sending`, whose didSet resumes
-            // auto-quoting — the flag is what stops it (and the send button) coming back.
+            // Set the terminal flag before clearing sending: its observer can resume quoting.
             if let partial = error as? IPartialExecutionError, partial.partialTxHash != nil {
-                await set(partiallyExecuted: true)
+                partiallyExecuted = true
+                stopAutoQuoting()
+                syncTask = nil
             }
-
-            await set(sending: false)
-            await report(error: error)
+            sending = false
+            if !(error is IHandledSendError) {
+                report(error: error)
+            }
             throw error
         }
     }
@@ -317,4 +330,7 @@ extension SendViewModel {
         case noHandler
         case noSendData
     }
+
+    struct AlreadySendingError: IHandledSendError {}
+    struct PartiallyExecutedError: IHandledSendError {}
 }

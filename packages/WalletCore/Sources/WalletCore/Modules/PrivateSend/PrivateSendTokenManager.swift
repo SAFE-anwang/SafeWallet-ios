@@ -17,7 +17,7 @@ public final class PrivateSendTokenManager {
 
     // The repository factory is injected so an app that already memoises repositories elsewhere
     // (the private send service uses the same ones) shares instances rather than duplicating the
-    // per-provider GET /v2/tokens traffic.
+    // per-provider GET /v3/tokens traffic.
     public init(registry: ConfidentialProviderRegistry, repository: @escaping (String) -> USwapAssetRepository) {
         self.registry = registry
         makeRepository = repository
@@ -35,6 +35,11 @@ public final class PrivateSendTokenManager {
         syncSubject.eraseToAnyPublisher()
     }
 
+    // Chains that are already privacy-native: routing them through a confidential intermediary adds
+    // cost without adding unlinkability, so private send is not offered even when a provider maps
+    // their tokens.
+    private static let excludedBlockchainTypes: Set<BlockchainType> = [.monero, .zcash, .zano]
+
     // Pure in-memory lookup over already-synced state. Called from the render path: it must never
     // trigger a fetch, block, or become async.
     public func supports(token: Token) -> Bool {
@@ -46,7 +51,11 @@ public final class PrivateSendTokenManager {
     }
 
     public func supportedProviderIds(token: Token) -> [String] {
-        registry.providerIds.filter { providerId in
+        guard !Self.excludedBlockchainTypes.contains(token.blockchainType) else {
+            return []
+        }
+
+        return registry.providerIds.filter { providerId in
             repository(providerId: providerId)?.asset(token: token) != nil
         }
     }

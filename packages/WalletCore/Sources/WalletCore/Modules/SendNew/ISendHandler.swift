@@ -6,8 +6,7 @@ public protocol ISendHandler {
     var syncingText: String? { get }
     var expirationDuration: Int? { get }
     // When false, a quote that reaches its `expirationDuration` is not silently re-requested;
-    // instead the screen marks it expired and waits for the user to refresh manually. Swaps
-    // opt out of auto-refresh so we don't keep hitting the provider's commit endpoint.
+    // instead the screen marks it expired and waits for the user to refresh manually.
     var autoRefreshEnabled: Bool { get }
     // Some SDK-backed sends cannot apply caller-provided gas or nonce values.
     var supportsFeeSettings: Bool { get }
@@ -18,6 +17,10 @@ public protocol ISendHandler {
     func sendData(transactionSettings: TransactionSettings?) async throws -> ISendData
     func send(data: ISendData) async throws
 }
+
+// An error the handler has already surfaced to the user itself (toast, re-quote); the send screen
+// must not present its generic error sheet for it.
+public protocol IHandledSendError: Error {}
 
 public extension ISendHandler {
     var syncingText: String? { nil }

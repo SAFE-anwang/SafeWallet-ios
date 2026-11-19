@@ -7,7 +7,14 @@ struct MultiSwapSendView: View {
     private let onFinish: () -> Void
 
     init(tokenIn: Token, tokenOut: Token, amountIn: Decimal, provider: IMultiSwapProvider, multiSwapQuote: MultiSwapQuote, recipientHolder: SwapExternalRecipientHolder, onFinish: @escaping () -> Void) {
-        _sendViewModel = .init(wrappedValue: SendViewModel(sendData: .swap(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, provider: provider, multiSwapQuote: multiSwapQuote, recipientHolder: recipientHolder)))
+        self.init(
+            sendData: .swap(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn, provider: provider, multiSwapQuote: multiSwapQuote, recipientHolder: recipientHolder),
+            onFinish: onFinish
+        )
+    }
+
+    init(sendData: SendData, onFinish: @escaping () -> Void) {
+        _sendViewModel = .init(wrappedValue: SendViewModel(sendData: sendData))
         self.onFinish = onFinish
     }
 
@@ -39,10 +46,13 @@ struct MultiSwapSendView: View {
                             ThemeButton(text: "swap.quoting".localized, spinner: true, style: .secondary) {}
                                 .disabled(true)
                         }
-                    case .success, .failed:
+                    case .failed:
                         ThemeButton(text: "send.confirmation.refresh".localized, style: .secondary) {
                             sendViewModel.sync()
                         }
+                    case .success:
+                        // not sendable: the cautions explain why and the next silent refresh re-previews
+                        EmptyView()
                     }
                 }
             }

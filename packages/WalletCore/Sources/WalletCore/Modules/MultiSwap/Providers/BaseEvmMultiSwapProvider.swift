@@ -12,7 +12,7 @@ public class BaseEvmMultiSwapProvider: IMultiSwapProvider {
 
     public var id: String { fatalError("Must be implemented in subclass") }
     public var name: String { fatalError("Must be implemented in subclass") }
-    public var type: SwapProviderType { fatalError("Must be implemented in subclass") }
+    public var type: SwapProviderType? { fatalError("Must be implemented in subclass") }
     public var icon: String { fatalError("Must be implemented in subclass") }
     public var requireTerms: Bool { false }
     public var syncPublisher: AnyPublisher<Void, Never>? { nil }

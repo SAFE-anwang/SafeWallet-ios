@@ -16,6 +16,8 @@ public class EvmBlockchainManager {
         .fantom,
         .base,
         .zkSync,
+        .robinhood,
+        .arc,
     ]
 
     private let syncSourceManager: EvmSyncSourceManager
@@ -118,6 +120,8 @@ extension EvmBlockchainManager {
         case .safe4: return Chain.safeFourChain()
         case .base: return .base
         case .zkSync: return .zkSync
+        case .robinhood: return .robinhood
+        case .arc: return .arc
         default: throw ChainError.unsupportedBlockchain
         }
     }

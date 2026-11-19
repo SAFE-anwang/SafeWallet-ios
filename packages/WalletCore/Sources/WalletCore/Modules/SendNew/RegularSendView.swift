@@ -5,17 +5,19 @@ import SwiftUI
 struct RegularSendView: View {
     @StateObject var sendViewModel: SendViewModel
 
+    private let title: String?
     private let onSuccess: () -> Void
 
-    init(sendData: SendData, address: String? = nil, onSuccess: @escaping () -> Void) {
+    init(sendData: SendData, address: String? = nil, title: String? = nil, onSuccess: @escaping () -> Void) {
         _sendViewModel = .init(wrappedValue: SendViewModel(sendData: sendData, address: address))
+        self.title = title
         self.onSuccess = onSuccess
     }
 
     private var showSlideButton: Bool {
         if sendViewModel.sending { return true }
         guard case .success = sendViewModel.state else { return false }
-        return sendViewModel.sendData != nil && sendViewModel.canSend
+        return sendViewModel.sendData != nil && sendViewModel.canSend && !sendViewModel.expired
     }
 
     var body: some View {
@@ -56,7 +58,7 @@ struct RegularSendView: View {
                 }
             }
         }
-        .navigationTitle("send.confirmation.title".localized)
+        .navigationTitle(title ?? "send.confirmation.title".localized)
         .navigationBarTitleDisplayMode(.inline)
     }
 }

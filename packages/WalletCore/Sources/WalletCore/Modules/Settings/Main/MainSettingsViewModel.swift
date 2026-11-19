@@ -15,7 +15,7 @@ class MainSettingsViewModel: ObservableObject {
     private let passcodeManager = Core.shared.passcodeManager
     private let termsManager = Core.shared.termsManager
     private let systemInfoManager = Core.shared.systemInfoManager
-    private let walletConnectSessionManager = Core.shared.walletConnectSessionManager
+    private let walletConnect = Core.shared.walletConnect
     private let rateAppManager = Core.shared.rateAppManager
     private let localStorage = Core.shared.localStorage
     private let testNetManager = Core.shared.testNetManager
@@ -39,12 +39,6 @@ class MainSettingsViewModel: ObservableObject {
         didSet {
             localStorage.forceEnableSwap = forceEnableSwap
             appStateManager.sync()
-        }
-    }
-
-    @Published var stellarBrokerEnabled: Bool {
-        didSet {
-            localStorage.stellarBrokerEnabled = stellarBrokerEnabled
         }
     }
 
@@ -74,12 +68,6 @@ class MainSettingsViewModel: ObservableObject {
         }
     }
 
-    @Published var mayaStagenetEnabled: Bool {
-        didSet {
-            testNetManager.set(mayaStagenetEnabled: mayaStagenetEnabled)
-        }
-    }
-
     @Published var emulateZcashMigration: Bool {
         didSet {
             localStorage.emulateZcashMigration = emulateZcashMigration
@@ -103,19 +91,17 @@ class MainSettingsViewModel: ObservableObject {
     init() {
         showDevTools = AppConfig.showDevTools
         forceEnableSwap = localStorage.forceEnableSwap
-        stellarBrokerEnabled = localStorage.stellarBrokerEnabled
         emulateEvmSwapSend = localStorage.emulateEvmSwapSend
         simulateFailSwap = localStorage.simulateFailSwap
         emulatePurchase = localStorage.emulatePurchase
         testNetEnabled = testNetManager.testNetEnabled
-        mayaStagenetEnabled = testNetManager.mayaStagenetEnabled
         emulateZcashMigration = localStorage.emulateZcashMigration
         debuggingAmlResult = localStorage.debuggingAmlCheckResult
 
         subscribe(MainScheduler.instance, disposeBag, backupManager.allBackedUpObservable) { [weak self] _ in self?.syncManageWalletsAlert() }
-        if let walletConnectSessionManager {
-            subscribe(MainScheduler.instance, disposeBag, walletConnectSessionManager.sessionsObservable) { [weak self] _ in self?.syncWalletConnectSessionCount() }
-            subscribe(MainScheduler.instance, disposeBag, walletConnectSessionManager.activePendingRequestsObservable) { [weak self] _ in self?.syncWalletConnectPendingRequestCount() }
+        if let walletConnect {
+            subscribe(&cancellables, walletConnect.sessionCountPublisher) { [weak self] _ in self?.syncWalletConnectSessionCount() }
+            subscribe(&cancellables, walletConnect.pendingRequestCountPublisher) { [weak self] _ in self?.syncWalletConnectPendingRequestCount() }
         }
         subscribe(MainScheduler.instance, disposeBag, contactManager.iCloudErrorObservable) { [weak self] error in
             if error != nil, self?.contactManager.remoteSync ?? false {
@@ -169,11 +155,11 @@ class MainSettingsViewModel: ObservableObject {
     }
 
     private func syncWalletConnectSessionCount() {
-        walletConnectSessionCount = walletConnectSessionManager?.sessions.count ?? 0
+        walletConnectSessionCount = walletConnect?.sessionCount ?? 0
     }
 
     private func syncWalletConnectPendingRequestCount() {
-        walletConnectPendingRequestCount = walletConnectSessionManager?.activePendingRequests.count ?? 0
+        walletConnectPendingRequestCount = walletConnect?.pendingRequestCount ?? 0
     }
 
     private func syncSecurityAlert() {

@@ -4,9 +4,9 @@ import MarketKit
 
 class SwapStorage {
     private let dbPool: DatabasePool
-    private let marketKit: MarketKit.Kit
+    private let marketKit: IMarketKit
 
-    init(dbPool: DatabasePool, marketKit: MarketKit.Kit) {
+    init(dbPool: DatabasePool, marketKit: IMarketKit) {
         self.dbPool = dbPool
         self.marketKit = marketKit
     }
@@ -35,6 +35,7 @@ class SwapStorage {
                 accountId: record.accountId,
                 providerId: record.providerId,
                 status: Swap.Status(rawValue: record.status) ?? .unknown,
+                operation: Swap.Operation(rawValue: record.operation) ?? .swap,
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
                 amountIn: amountIn,
@@ -49,14 +50,15 @@ class SwapStorage {
                 date: record.date,
                 fromAsset: record.fromAsset,
                 toAsset: record.toAsset,
-                legs: record.legs?.map { leg in
-                    Swap.Leg(
-                        status: Swap.Status(rawValue: leg.status) ?? .unknown,
-                        type: leg.type,
-                        chainId: leg.chainId,
-                        txHash: leg.txHash,
-                        fromAsset: leg.fromAsset,
-                        toAsset: leg.toAsset
+                legs: record.legs?.map { Self.leg(record: $0) },
+                outputs: record.outputs?.map { output in
+                    Swap.Output(
+                        index: output.index,
+                        status: Swap.Status(rawValue: output.status) ?? .unknown,
+                        toAddress: output.toAddress,
+                        fromAmount: output.fromAmount.flatMap { Decimal(string: $0) },
+                        toAmount: output.toAmount.flatMap { Decimal(string: $0) },
+                        legs: output.legs.map { Self.leg(record: $0) }
                     )
                 },
                 pauseReason: record.pauseReason
@@ -72,6 +74,7 @@ class SwapStorage {
             accountId: swap.accountId,
             providerId: swap.providerId,
             status: swap.status.rawValue,
+            operation: swap.operation.rawValue,
             tokenQueryIdIn: swap.tokenIn.tokenQuery.id,
             tokenQueryIdOut: swap.tokenOut.tokenQuery.id,
             amountIn: swap.amountIn.description,
@@ -86,17 +89,40 @@ class SwapStorage {
             date: swap.date,
             fromAsset: swap.fromAsset,
             toAsset: swap.toAsset,
-            legs: swap.legs?.map { leg in
-                SwapRecord.Leg(
-                    status: leg.status.rawValue,
-                    type: leg.type,
-                    chainId: leg.chainId,
-                    txHash: leg.txHash,
-                    fromAsset: leg.fromAsset,
-                    toAsset: leg.toAsset
+            legs: swap.legs?.map { Self.record(leg: $0) },
+            outputs: swap.outputs?.map { output in
+                SwapRecord.Output(
+                    index: output.index,
+                    status: output.status.rawValue,
+                    toAddress: output.toAddress,
+                    fromAmount: output.fromAmount?.description,
+                    toAmount: output.toAmount?.description,
+                    legs: output.legs.map { Self.record(leg: $0) }
                 )
             },
             pauseReason: swap.pauseReason
+        )
+    }
+
+    private static func leg(record leg: SwapRecord.Leg) -> Swap.Leg {
+        Swap.Leg(
+            status: Swap.Status(rawValue: leg.status) ?? .unknown,
+            type: leg.type,
+            chainId: leg.chainId,
+            txHash: leg.txHash,
+            fromAsset: leg.fromAsset,
+            toAsset: leg.toAsset
+        )
+    }
+
+    private static func record(leg: Swap.Leg) -> SwapRecord.Leg {
+        SwapRecord.Leg(
+            status: leg.status.rawValue,
+            type: leg.type,
+            chainId: leg.chainId,
+            txHash: leg.txHash,
+            fromAsset: leg.fromAsset,
+            toAsset: leg.toAsset
         )
     }
 }
@@ -117,12 +143,19 @@ extension SwapStorage {
         return try swaps(records: [record]).first
     }
 
-    func swaps(accountId: String, from: Date? = nil, limit: Int) throws -> [Swap] {
+    func swaps(accountId: String, token: Token? = nil, from: Date? = nil, limit: Int) throws -> [Swap] {
         let records = try dbPool.read { db in
             var request = SwapRecord
                 .filter(SwapRecord.Columns.accountId == accountId)
                 .order(SwapRecord.Columns.date.desc)
                 .limit(limit)
+
+            if let tokenQueryId = token?.tokenQuery.id {
+                request = request.filter(
+                    SwapRecord.Columns.tokenQueryIdIn == tokenQueryId
+                        || SwapRecord.Columns.tokenQueryIdOut == tokenQueryId
+                )
+            }
 
             if let from {
                 request = request.filter(SwapRecord.Columns.date < from)
@@ -162,6 +195,28 @@ extension SwapStorage {
             try SwapRecord
                 .filter(SwapRecord.Columns.trackingHandle == trackingHandle && SwapRecord.Columns.txHash == nil)
                 .updateAll(db, SwapRecord.Columns.txHash.set(to: txHash)) > 0
+        }
+    }
+
+    // releases a mechanism-pending swap whose mechanism broadcast successfully but can never yield
+    // a ref (e.g. TonKit's send returns Void): clearing the handle hands tracking to the provider
+    // by providerSwapId alone, the same way deposit-based swaps are tracked from the start.
+    // Scoped to a nil txHash so it never races a resolve() that already landed
+    func clearTrackingHandle(_ trackingHandle: String) throws -> Bool {
+        try dbPool.write { db in
+            try SwapRecord
+                .filter(SwapRecord.Columns.trackingHandle == trackingHandle && SwapRecord.Columns.txHash == nil)
+                .updateAll(db, SwapRecord.Columns.trackingHandle.set(to: nil)) > 0
+        }
+    }
+
+    // the inverse of markFailed for a broadcast retry: only a failed row goes back to notStarted,
+    // so a settled or in-flight swap can never be reset
+    func markNotStarted(trackingHandle: String) throws -> Bool {
+        try dbPool.write { db in
+            try SwapRecord
+                .filter(SwapRecord.Columns.trackingHandle == trackingHandle && SwapRecord.Columns.status == Swap.Status.failed.rawValue)
+                .updateAll(db, SwapRecord.Columns.status.set(to: Swap.Status.notStarted.rawValue)) > 0
         }
     }
 

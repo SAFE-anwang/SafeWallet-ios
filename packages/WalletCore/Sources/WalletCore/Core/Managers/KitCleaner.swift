@@ -27,6 +27,8 @@ public extension KitCleaner {
             try? TronAdapter.clear(except: kitWalletIds)
             try? MoneroAdapter.clear(except: kitWalletIds)
             try? ZanoAdapter.clear(except: kitWalletIds)
+            try? XrpAdapter.clear(except: kitWalletIds)
+            try? NearAdapter.clear(except: kitWalletIds)
         }
     }
 }

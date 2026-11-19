@@ -2,9 +2,12 @@ import Alamofire
 import Foundation
 import HsExtensions
 import HsToolKit
+import MarketKit
 import ObjectMapper
 
 class MultiSwapProviderManager {
+    private static let vaultExecutionType = "thorchain_deposit"
+
     private let expiration: TimeInterval = 60 * 60
     private let disabledProviderIds: [String] = [
         USwapProviderInfo.quickEx.id,
@@ -16,166 +19,177 @@ class MultiSwapProviderManager {
         USwapProviderInfo.pegasus.id,
     ]
 
-    private let localStorage: LocalStorage
+    private let storage: SwapProviderStorage
     private let networkManager: NetworkManager
 
-    private let baseUrl = "\(AppConfig.swapApiUrl)/v1"
+    private let baseUrl = "\(AppConfig.swapApiUrl)/v3"
     private var headers: HTTPHeaders?
 
     @PostPublished private(set) var providers: [String] = []
     /// Scoped asset/chain/pair suspensions, indexed by provider id. Applied by `MultiSwapViewModel`
     /// when it decides which providers can serve the current pair.
     @PostPublished private(set) var suspensions = SwapSuspensionIndex()
+    /// `executionType` per provider id, as published by `/v3/providers`. Route capabilities that
+    /// depend on how a provider settles (e.g. shielded ZEC delivery) are read from here, never
+    /// from a provider id. Written on the main actor but read from swap builders off it, so every
+    /// access goes through `executionTypesLock`.
+    private var _executionTypes = [String: String]()
+    private let executionTypesLock = NSLock()
+    /// `amlPolicy` per provider id, as published by `/v3/providers`. Read by the swap views through
+    /// `USwapMultiSwapProvider.type`; guarded like `_executionTypes` because reads are not confined to main.
+    private var _amlPolicies = [String: SwapProviderType]()
+    private let amlPoliciesLock = NSLock()
+    /// Ids of the providers flagged `split` by the backend: the only ones quoted on the Private
+    /// (split) swap tab. Assigned before `providers`, which is the signal subscribers react to.
+    @PostPublished private(set) var splitProviders: [String] = []
 
-    init(localStorage: LocalStorage, networkManager: NetworkManager, apiKey: String?) {
-        self.localStorage = localStorage
+    init(storage: SwapProviderStorage, networkManager: NetworkManager, apiKey: String?) {
+        self.storage = storage
         self.networkManager = networkManager
 
         if let apiKey {
             headers = HTTPHeaders([HTTPHeader(name: "x-api-key", value: apiKey)])
         }
 
-        if let cached = localStorage.uSwapProviders?.components(separatedBy: ",") {
-            syncProviders(uSwapProviders: cached)
-        } else {
-            syncProviders(uSwapProviders: Self.bootstrapProviders)
-        }
-
-        let hadSuspensions = restoreSuspensions()
-
-        // Force a fetch when suspensions have never been stored, even if the provider list is still
-        // within its TTL. Upgrading from a build that predates suspensions leaves a FRESH
-        // `swap-providers-last-sync-timestamp` beside an empty suspension cache, so the ordinary
-        // TTL check would skip the sync and leave the first hour after the update completely
-        // unenforced — precisely the window where a live suspension matters.
-        sync(force: !hadSuspensions)
+        // The last synced list, so a cold launch quotes straight away and keeps honouring the cached
+        // suspensions; `sync()` decides from the stored timestamp whether the hour is up. The table is
+        // created empty by migration, so an install upgrading from the UserDefaults cache fetches on its
+        // first launch rather than running without suspensions, and the same holds for any future column:
+        // a migration that adds one must empty the table so the stale rows are not trusted for an hour.
+        apply(records: (try? storage.providers()) ?? [])
+        sync()
     }
 
-    /// Used only until the first successful `/providers` response — a fresh install needs SOMETHING
-    /// to show. Everything here is a client-native provider, because those are the only ones that
-    /// can be quoted without the server having told us they exist.
-    ///
-    /// Note these are a starting point, NOT a floor: once the server answers, its list replaces
-    /// this wholesale. That is deliberate and load-bearing for suspension — the client-native ids
-    /// used to be unioned into every sync, which made them impossible to switch off from the
-    /// backend no matter what the server said.
-    private static let bootstrapProviders = [
-        SafeSwapMultiSwapProvider.id,
-        OneInchMultiSwapProvider.id,
-        UniswapV3MultiSwapProvider.id,
-        PancakeV3MultiSwapProvider.id,
-        ThorChainMultiSwapProvider.id,
-        MayaMultiSwapProvider.id,
-    ]
-
-    private func syncProviders(uSwapProviders: [String]) {
-        let filtered = uSwapProviders.filter { !disabledProviderIds.contains($0) }
-        // SafeSwap is a local product capability and remains available regardless of
-        // whether the server returns it. Server policy is applied separately by the
-        // suspension index when valid providers are calculated.
-        var orderedProviders = [SafeSwapMultiSwapProvider.id]
-
-        for provider in filtered where !orderedProviders.contains(provider) {
-            orderedProviders.append(provider)
-        }
-
-        providers = orderedProviders
+    /// The provider's AML policy as published by the backend; nil when the server has not rated it
+    /// (or no sync has ever succeeded). Safe to call off-main.
+    func amlPolicy(providerId: String) -> SwapProviderType? {
+        amlPoliciesLock.withLock { _amlPolicies[providerId] }
     }
 
-    private func syncSuspensions(responses: [ProviderResponse]) {
-        var byProvider = [String: [SwapSuspension]]()
-
-        for response in responses where !response.suspensions.isEmpty {
-            byProvider[response.provider] = response.suspensions
-        }
-
-        suspensions = SwapSuspensionIndex(byProvider: byProvider)
-        localStorage.uSwapSuspensions = Self.encode(byProvider: byProvider)
+    /// Whether a swap selling `tokenIn` through this provider can pay its ZEC output to a shielded /
+    /// unified receiver: the provider must settle through a vault, and the sell chain must carry the
+    /// route memo that names a unified address, which an OP_RETURN output cannot — the UTXO chains fall
+    /// back to the transparent address. Safe to call off-main.
+    func deliversShieldedZcash(providerId: String, tokenIn: Token) -> Bool {
+        isVaultSettled(providerId: providerId) && !tokenIn.blockchainType.memoRidesOpReturn
     }
 
-    /// Suspensions must survive a cold launch: the provider list is cached for an hour, so without
-    /// this a restart would quote a suspended provider until the next sync.
-    ///
-    /// Returns whether a stored cache was found at all — `false` means this install has never held
-    /// suspensions, which is what makes the caller override the sync TTL. Note an empty rule set
-    /// still round-trips as `{}`, so "no suspensions anywhere" reads as `true` and does not force a
-    /// fetch on every launch.
-    @discardableResult private func restoreSuspensions() -> Bool {
-        guard let raw = localStorage.uSwapSuspensions, let data = raw.data(using: .utf8) else { return false }
-
-        guard let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: [[String: Any]]] else {
-            return false
-        }
-
-        var byProvider = [String: [SwapSuspension]]()
-        for (providerId, rules) in json {
-            byProvider[providerId] = rules.compactMap { try? SwapSuspension(JSON: $0) }
-        }
-
-        suspensions = SwapSuspensionIndex(byProvider: byProvider)
-        return true
+    /// Whether a provider settles through a vault (thorchain_deposit) and so pays a ZEC output from its
+    /// own ZEC client, which addresses unified receivers; transfer venues reject shielded recipients at
+    /// order creation. Inferred from the executionType /v3/providers publishes, so the server decides per
+    /// provider. Known false for THORChain, which accepts only transparent ZEC and lists no ZEC today; a
+    /// per-provider flag is requested from the backend. Never the whole answer: the sell chain's memo
+    /// must fit a unified address too, see `deliversShieldedZcash(providerId:tokenIn:)`.
+    private func isVaultSettled(providerId: String) -> Bool {
+        executionTypesLock.withLock { _executionTypes[providerId] } == Self.vaultExecutionType
     }
 
-    private static func encode(byProvider: [String: [SwapSuspension]]) -> String? {
-        var json = [String: [[String: Any]]]()
+    func sync() {
+        if let lastSyncTimestamp = try? storage.lastSyncTimestamp(), Date().timeIntervalSince1970 - lastSyncTimestamp < expiration {
+            return
+        }
 
-        for (providerId, rules) in byProvider {
-            json[providerId] = rules.map { rule in
-                var dict: [String: Any] = ["kind": rule.kind.rawValue, "side": rule.side.rawValue]
-                if let asset = rule.asset { dict["asset"] = asset }
-                if let chain = rule.chain { dict["chain"] = chain }
-                if let sellAsset = rule.sellAsset { dict["sellAsset"] = sellAsset }
-                if let buyAsset = rule.buyAsset { dict["buyAsset"] = buyAsset }
-                if let expiresAt = rule.expiresAt { dict["expiresAt"] = ISO8601DateFormatter().string(from: expiresAt) }
-                return dict
+        Task { [weak self, networkManager, storage, baseUrl, headers] in
+            do {
+                let responses: [ProviderResponse] = try await networkManager.fetch(url: "\(baseUrl)/providers", headers: headers)
+                let timestamp = Date().timeIntervalSince1970
+
+                // SafeSwap is always registered locally; retain its scoped restrictions even
+                // when the server omits it from the active provider list (the existing fork policy).
+                let records = responses.filter { !$0.suspended || $0.provider == SafeSwapMultiSwapProvider.id }.enumerated().map { position, response in
+                    Self.record(response: response, position: position, timestamp: timestamp)
+                }
+
+                // Stored before it is published, with the timestamp on the rows themselves: a failed
+                // write, like a failed fetch, leaves the previous list and timestamp in place, so the
+                // next `sync()` — the swap screen calls it on appear — retries instead of waiting out
+                // the hour.
+                try storage.save(providers: records)
+
+                await MainActor.run { [weak self] in
+                    self?.apply(records: records)
+                }
+            } catch {
+                // Logged because an install that has never held a list stays without providers until
+                // that retry.
+                print("[MultiSwapProviderManager] provider sync failed: \(error)")
             }
+        }
+    }
+
+    /// Replaces every published value from one provider list — the stored table at launch or a fresh
+    /// sync — so the in-memory state never mixes two syncs.
+    ///
+    /// Runs on the main thread (`Core` builds the manager there, and `sync` hops to the main actor):
+    /// `@PostPublished` is a bare `PassthroughSubject` fired synchronously from `didSet`, with no
+    /// synchronisation of its own, and `MultiSwapViewModel` reads these properties from the main
+    /// thread. `providers` is assigned LAST — it is the signal the view model subscribes to, so
+    /// everything it will read must already be in place by the time that assignment publishes.
+    private func apply(records: [SwapProviderRecord]) {
+        var suspensionsByProvider = [String: [SwapSuspension]]()
+        var executionTypes = [String: String]()
+        var amlPolicies = [String: SwapProviderType]()
+
+        for record in records {
+            let rules = Self.decode(suspensions: record.suspensions)
+            if !rules.isEmpty {
+                suspensionsByProvider[record.providerId] = rules
+            }
+
+            if let executionType = record.executionType, !executionType.isEmpty {
+                executionTypes[record.providerId] = executionType
+            }
+
+            // An absent or unknown value (e.g. a future level) leaves the provider unrated; never defaulted.
+            if let amlPolicy = record.amlPolicy, let type = SwapProviderType(rawValue: amlPolicy.lowercased()) {
+                amlPolicies[record.providerId] = type
+            }
+        }
+
+        executionTypesLock.withLock { _executionTypes = executionTypes }
+        amlPoliciesLock.withLock { _amlPolicies = amlPolicies }
+        suspensions = SwapSuspensionIndex(byProvider: suspensionsByProvider)
+        splitProviders = records.filter { $0.split && !disabledProviderIds.contains($0.providerId) }.map(\.providerId)
+        providers = [SafeSwapMultiSwapProvider.id] + records.map(\.providerId).filter { $0 != SafeSwapMultiSwapProvider.id && !disabledProviderIds.contains($0) }
+    }
+
+    private static func record(response: ProviderResponse, position: Int, timestamp: TimeInterval) -> SwapProviderRecord {
+        SwapProviderRecord(
+            providerId: response.provider,
+            position: position,
+            executionType: response.executionType,
+            amlPolicy: response.amlPolicy,
+            split: response.split,
+            suspensions: encode(suspensions: response.suspensions),
+            lastSyncTimestamp: timestamp
+        )
+    }
+
+    private static func encode(suspensions: [SwapSuspension]) -> String? {
+        guard !suspensions.isEmpty else { return nil }
+
+        let json: [[String: Any]] = suspensions.map { rule in
+            var dict: [String: Any] = ["kind": rule.kind.rawValue, "side": rule.side.rawValue]
+            if let asset = rule.asset { dict["asset"] = asset }
+            if let chain = rule.chain { dict["chain"] = chain }
+            if let sellAsset = rule.sellAsset { dict["sellAsset"] = sellAsset }
+            if let buyAsset = rule.buyAsset { dict["buyAsset"] = buyAsset }
+            if let expiresAt = rule.expiresAt { dict["expiresAt"] = ISO8601DateFormatter().string(from: expiresAt) }
+            return dict
         }
 
         guard let data = try? JSONSerialization.data(withJSONObject: json) else { return nil }
         return String(data: data, encoding: .utf8)
     }
 
-    func sync(force: Bool = false) {
-        let lastSyncTimetamp = localStorage.swapProvidersLastSyncTimestamp
-
-        if !force, let lastSyncTimetamp, Date().timeIntervalSince1970 - lastSyncTimetamp < expiration {
-            return
+    private static func decode(suspensions: String?) -> [SwapSuspension] {
+        guard let suspensions, let data = suspensions.data(using: .utf8),
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]]
+        else {
+            return []
         }
 
-        Task { [weak self, networkManager, baseUrl, headers] in
-            do {
-                let responses: [ProviderResponse] = try await networkManager.fetch(url: "\(baseUrl)/providers", headers: headers)
-
-                await self?.apply(responses: responses)
-            } catch {
-                // The cached list stays in place and the sync timestamp is deliberately NOT
-                // stamped, so the next `sync()` — the swap screen calls it on appear — retries
-                // instead of waiting out the hour. Logged because a FORCED sync failing means an
-                // install that has never held suspensions stays unenforced until that retry.
-                print("[MultiSwapProviderManager] provider sync failed: \(error)")
-            }
-        }
-    }
-
-    /// Applies a fetched provider list on the main actor.
-    ///
-    /// `@PostPublished` is a bare `PassthroughSubject` fired synchronously from `didSet`, with no
-    /// synchronisation of its own, and `MultiSwapViewModel` reads both properties from the main
-    /// thread — so the writes have to happen there too.
-    @MainActor
-    private func apply(responses: [ProviderResponse]) {
-        // Keep scoped suspension rules for the policy index, while omitting whole-provider
-        // suspended ids from the server-driven list. SafeSwap is then re-added below by
-        // design because it is a local product capability that must always be present.
-        let ids = responses.filter { !$0.suspended }.map(\.provider)
-
-        // Suspensions FIRST. `providers` is the signal the view model subscribes to, so everything
-        // it will read must already be in place by the time that assignment publishes.
-        syncSuspensions(responses: responses)
-        syncProviders(uSwapProviders: ids)
-
-        localStorage.uSwapProviders = ids.joined(separator: ",")
-        localStorage.swapProvidersLastSyncTimestamp = Date().timeIntervalSince1970
+        return json.compactMap { try? SwapSuspension(JSON: $0) }
     }
 }
 
@@ -184,17 +198,22 @@ extension MultiSwapProviderManager {
         let provider: String
         /// Whole-provider kill switch.
         let suspended: Bool
-        /// Whether uswap-server can quote this provider. `false` for ids the app implements
-        /// natively (Uniswap / PancakeSwap / AllBridge) — they are listed purely so their policy,
-        /// including suspension, is managed in one place.
-        let quotes: Bool
         let suspensions: [SwapSuspension]
+        /// How the provider settles (`thorchain_deposit`, `signed_transaction`, ...).
+        let executionType: String?
+        /// `excellent` | `good` | `fair`; mapped to `SwapProviderType` when the stored list is applied.
+        let amlPolicy: String?
+        /// Whether the provider serves the `/v3/split/*` endpoints (one deposit delivered to several
+        /// addresses), i.e. can be quoted on the Private swap tab.
+        let split: Bool
 
         init(map: Map) throws {
             provider = try map.value("provider")
             suspended = (try? map.value("suspended")) ?? false
-            quotes = (try? map.value("quotes")) ?? true
             suspensions = (try? map.value("suspensions")) ?? []
+            executionType = try? map.value("executionType")
+            amlPolicy = try? map.value("amlPolicy")
+            split = (try? map.value("splitSwaps")) ?? false
         }
     }
 }

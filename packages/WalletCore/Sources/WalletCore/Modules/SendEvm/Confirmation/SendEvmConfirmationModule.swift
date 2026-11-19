@@ -253,11 +253,6 @@ extension SendEvmConfirmationModule {
     }
 }
 
-enum ResendTransactionType: String {
-    case speedUp = "speed_up"
-    case cancel
-}
-
 struct SendEvmConfirmationView: UIViewControllerRepresentable {
     typealias UIViewControllerType = UIViewController
     var viewController: UIViewController?

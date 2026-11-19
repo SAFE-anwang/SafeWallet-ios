@@ -2,8 +2,7 @@ import Foundation
 
 public struct PrivateSendQuote {
     public let providerId: String // tracking only — never shown in the UI
-    public let amountMode: PrivateSendAmountMode
-    // In exact-output mode this is the route's answer: the amount to deposit, and the affordability
+    // The route's answer to the exact-output request: the amount to deposit, and the affordability
     // ceiling the user is asked to authorize.
     public let sellAmount: Decimal
     public let minSellAmount: Decimal?
@@ -14,7 +13,6 @@ public struct PrivateSendQuote {
 
     public init(
         providerId: String,
-        amountMode: PrivateSendAmountMode,
         sellAmount: Decimal,
         minSellAmount: Decimal?,
         expectedBuyAmount: Decimal,
@@ -23,7 +21,6 @@ public struct PrivateSendQuote {
         quotedAt: Date
     ) {
         self.providerId = providerId
-        self.amountMode = amountMode
         self.sellAmount = sellAmount
         self.minSellAmount = minSellAmount
         self.expectedBuyAmount = expectedBuyAmount
@@ -49,15 +46,25 @@ public enum PrivateSendUnavailableReason: Error {
     case providerSuspended
     case networkError(Error)
     case tokenUnsupported
+    // /v3/preview named no account to estimate the deposit against: nothing can be shown or sent.
+    case noDepositEstimate
+    // /v3/commit refusals, by the server's discriminator. Only ever toasted by the handler (the
+    // screen re-previews), never rendered as the confirmation screen's error view.
+    case rateChanged
+    case previewExpired
+    case commitRejected
 }
 
 public enum PrivateSendError: Error {
     case notQuoted
+    case missingPreviewToken
     case missingUuid
     case unsupportedExecution
     case chainMismatch
     case missingDepositAmount
     case depositBelowMinimum
+    // The commit asked for more than the preview the user confirmed; never sent.
+    case depositAboveQuoted
     case invalidAmountOut
     case missingRefundAddress
     case attachmentUnsupported
@@ -94,6 +101,15 @@ extension PrivateSendUnavailableReason: UserFacingError {
             return "private_send.caution.network_error".localized
         case .tokenUnsupported:
             return "private_send.caution.token_unsupported".localized
+        case .noDepositEstimate:
+            // A route that cannot be estimated is, from the user's side, no route.
+            return "private_send.caution.no_route".localized
+        case .rateChanged:
+            return "swap.confirmation.commit.rate_changed".localized
+        case .previewExpired:
+            return "swap.confirmation.commit.refresh_required".localized
+        case .commitRejected:
+            return "swap.confirmation.commit.failed".localized
         }
     }
 
@@ -110,17 +126,9 @@ extension PrivateSendUnavailableReason: UserFacingError {
 
 extension PrivateSendError: UserFacingError {
     public var errorDescription: String? {
-        switch self {
-        case .attachmentUnsupported:
-            return "private_send.caution.attachment_unsupported".localized
-        case .notQuoted, .missingUuid, .unsupportedExecution, .chainMismatch,
-             .missingDepositAmount, .depositBelowMinimum, .invalidAmountOut, .missingRefundAddress,
-             .innerSendDataUnavailable, .noInnerHandler, .noBaseToken, .alreadySending, .invalidData:
-            // One message for every internal/protocol failure: each is a "we could not set this up"
-            // from the user's side, and naming the internals would leak route detail without
-            // helping them act.
-            return "private_send.commit_failed".localized
-        }
+        // One message for every case: each is a "we could not set this up" from the user's side,
+        // and naming the internals would leak route detail without helping them act.
+        "private_send.commit_failed".localized
     }
 
     public var failureReason: String? {

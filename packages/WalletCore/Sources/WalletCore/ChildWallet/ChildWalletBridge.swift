@@ -205,14 +205,17 @@ extension ChildWalletBridge {
             return supports(account: account, token: token0) && supports(account: account, token: token1)
         case let .liquidityRemove(request):
             return supports(account: account, blockchainType: request.blockchainType)
-        case let .walletConnect(request):
-            guard let chainId = Int(request.chain.id),
-                  let blockchain = Core.shared.evmBlockchainManager.blockchain(chainId: chainId)
-            else {
-                return false
-            }
-
+        case let .walletConnect(inner, request):
+            if let inner { return supports(account: account, sendData: inner) }
+            guard let chainId = Int(request.payload.chainId.reference),
+                  let blockchain = Core.shared.evmBlockchainManager.blockchain(chainId: chainId) else { return false }
             return supports(account: account, blockchainType: blockchain.type)
+        case let .evmResend(blockchainType, _, _):
+            return supports(account: account, blockchainType: blockchainType)
+        case let .splitSwap(tokenIn, _, _, _, _):
+            return supports(account: account, token: tokenIn)
+        case let .crossPay(request):
+            return supports(account: account, token: request.tokenIn)
         case let .openCryptoPay(_, _, inner):
             return supports(account: account, sendData: inner)
         case let .payment(_, inner):
@@ -223,7 +226,7 @@ extension ChildWalletBridge {
             return supports(account: account, blockchainType: blockchainType)
         case let .crossChain(baseWallet, _):
             return supports(account: account, token: baseWallet.token)
-        case .bitcoin, .zcash, .zcashResend, .zcashShield, .zcashMigration, .ton, .stellar, .solana, .monero, .zano, .zanoAsset, .thorChain, .tonConnect:
+        case .bitcoinResend, .xrp, .near, .bitcoin, .zcash, .zcashResend, .zcashShield, .zcashMigration, .ton, .stellar, .solana, .monero, .zano, .zanoAsset, .thorChain, .tonConnect:
             return false
         }
     }

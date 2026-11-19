@@ -92,6 +92,8 @@
 	<string>${ERA_ZKSYNC_API_KEYS}</string>
 	<key>EtherscanApiKeys</key>
 	<string>${ETHERSCAN_API_KEYS}</string>
+	<key>FastNearApiKey</key>
+	<string>${FAST_NEAR_API_KEY}</string>
 	<key>FtmscanApiKeys</key>
 	<string>${FTMSCAN_API_KEYS}</string>
 	<key>GasFreeApiKey</key>
@@ -119,22 +121,13 @@
 	<true/>
 	<key>MarketApiUrl</key>
 	<string>${MARKET_API_URL}</string>
-	<key>MayaAffiliate</key>
-	<string>${MAYA_AFFILIATE}</string>
-	<key>MayaAffiliateBps</key>
-	<string>${MAYA_AFFILIATE_BPS}</string>
 	<key>MerkleApiPath</key>
 	<string>${MERKLE_API_PATH}</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>monero.stackwallet.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-			<key>node.monerodevs.org</key>
+			<key>node.xmr.rocks</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
@@ -144,17 +137,22 @@
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 			</dict>
-			<key>node.xmr.rocks</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-			<key>nodes.hashvault.pro</key>
+			<key>node.monerodevs.org</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 			</dict>
 			<key>nodex.monerujo.io</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>monero.stackwallet.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>nodes.hashvault.pro</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
@@ -166,6 +164,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Bluetooth is used only to connect a Ledger hardware wallet.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to camera to scan QR codes.</string>
 	<key>NSFaceIDUsageDescription</key>
@@ -197,12 +197,6 @@
 			<string>Any</string>
 		</dict>
 	</dict>
-	<key>OneInchApiKey</key>
-	<string>${ONE_INCH_API_KEY}</string>
-	<key>OneInchCommission</key>
-	<string>${ONE_INCH_COMMISSION}</string>
-	<key>OneInchCommissionAddress</key>
-	<string>${ONE_INCH_COMMISSION_ADDRESS}</string>
 	<key>OpenSeaApiKey</key>
 	<string>${OPEN_SEA_API_KEY}</string>
 	<key>OptimismEtherscanApiKeys</key>
@@ -217,6 +211,8 @@
 	<string>${PRIVATE_CLOUD_CONTAINER_ID}</string>
 	<key>ReferralAppServerUrl</key>
 	<string>${REFERRAL_APP_SERVER_URL}</string>
+	<key>RobinhoodApiKeys</key>
+	<string>${ROBINHOOD_API_KEYS}</string>
 	<key>SharedCloudContainerId</key>
 	<string>${SHARED_CLOUD_CONTAINER_ID}</string>
 	<key>SnowtraceApiKeys</key>
@@ -225,10 +221,6 @@
 	<string>${SOLANA_ALCHEMY_API_KEYS}</string>
 	<key>SwapApiUrl</key>
 	<string>${SWAP_API_URL}</string>
-	<key>ThorchainAffiliate</key>
-	<string>${THORCHAIN_AFFILIATE}</string>
-	<key>ThorchainAffiliateBps</key>
-	<string>${THORCHAIN_AFFILIATE_BPS}</string>
 	<key>TronGridApiKeys</key>
 	<string>${TRONGRID_API_KEYS}</string>
 	<key>TwitterBearerToken</key>

@@ -1,6 +1,6 @@
 import HsToolKit
 import MarketKit
-import ZcashLightClientKit
+import ZODLSwiftWalletSDK
 
 final class USwapZcashFinalQuoteBuilder: USwapFinalQuoteBuilder {
     private let adapterManager: AdapterManager
@@ -17,14 +17,52 @@ final class USwapZcashFinalQuoteBuilder: USwapFinalQuoteBuilder {
         guard let adapter = adapterManager.adapter(for: input.tokenIn) as? ZcashAdapter else {
             throw USwapMultiSwapProvider.SwapError.noZcashAdapter
         }
-        guard let execution = input.response.execution else {
+        guard let deposit = input.deposit else {
             throw USwapMultiSwapProvider.SwapError.noTransactionData
-        }
-        guard let deposit = execution.depositInstruction() else {
-            throw USwapMultiSwapProvider.SwapError.invalidTransactionData
         }
         guard let adapterRecipient = adapter.recipient(from: deposit.address) else {
             throw SendTransactionError.invalidAddress
+        }
+
+        var transactionError: Error?
+        var proposal: Proposal?
+        var totalFeeRequired: Zatoshi?
+
+        // A vault deposit (thorchain_deposit) whose vault publishes a shielded memo address: the
+        // amount goes to the transparent inbound address and the memo rides a zero-value output to
+        // the shielded address, where the vault decrypts it. Without that address the memo cannot
+        // be delivered and the throw below applies.
+        if case let .thorchainDeposit(_, _, memo, delivery) = input.response.execution,
+           let shieldedMemoAddress = delivery.shieldedMemoAddress, !shieldedMemoAddress.isEmpty
+        {
+            // The amount output carries no memo and is matched by the vault on its transparent
+            // inbound address. A shielded inbound address would hide the amount from the vault, so
+            // the route is refused rather than sent.
+            guard adapterRecipient.isTransparent else {
+                throw USwapMultiSwapProvider.SwapError.invalidTransactionData
+            }
+            guard let memoRecipient = adapter.recipient(from: shieldedMemoAddress) else {
+                throw SendTransactionError.invalidAddress
+            }
+
+            do {
+                let amountOutput = ZcashAdapter.TransferOutput(
+                    amount: input.amountIn.rounded(decimal: 8),
+                    address: adapterRecipient,
+                    memo: nil
+                )
+                let memoOutput = try ZcashAdapter.TransferOutput(
+                    amount: 0,
+                    address: memoRecipient,
+                    memo: Memo(string: memo)
+                )
+                proposal = try await adapter.sendProposal(outputs: [amountOutput, memoOutput])
+                totalFeeRequired = proposal?.totalFeeRequired()
+            } catch {
+                transactionError = error
+            }
+
+            return finalQuote(input: input, proposal: proposal, totalFeeRequired: totalFeeRequired, transactionError: transactionError)
         }
 
         // Thrown, not folded into `transactionError`: the memo below rides a ZIP-321 payment URI, so
@@ -36,10 +74,6 @@ final class USwapZcashFinalQuoteBuilder: USwapFinalQuoteBuilder {
             deposit.attachment,
             memoType: input.tokenIn.blockchainType.memoType
         )
-
-        var transactionError: Error?
-        var proposal: Proposal?
-        var totalFeeRequired: Zatoshi?
 
         do {
             let memo = try memoText.map { try Memo(string: $0) }
@@ -54,7 +88,16 @@ final class USwapZcashFinalQuoteBuilder: USwapFinalQuoteBuilder {
             transactionError = error
         }
 
-        return ZcashSwapFinalQuote(
+        return finalQuote(input: input, proposal: proposal, totalFeeRequired: totalFeeRequired, transactionError: transactionError)
+    }
+
+    private func finalQuote(
+        input: USwapFinalQuoteFactory.Input,
+        proposal: Proposal?,
+        totalFeeRequired: Zatoshi?,
+        transactionError: Error?
+    ) -> SwapFinalQuote {
+        ZcashSwapFinalQuote(
             expectedBuyAmount: input.response.expectedBuyAmount,
             proposal: proposal,
             slippage: input.slippage,

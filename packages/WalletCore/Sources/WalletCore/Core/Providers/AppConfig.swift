@@ -163,6 +163,14 @@ enum AppConfig {
             .filter { !$0.isEmpty }
     }
 
+    static var robinhoodKeys: [String] {
+        ((Bundle.main.object(forInfoDictionaryKey: "RobinhoodApiKeys") as? String) ?? "").components(separatedBy: ",")
+    }
+
+    static var fastNearApiKey: String? {
+        (Bundle.main.object(forInfoDictionaryKey: "FastNearApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
     static var walletConnectV2ProjectKey: String? {
         apiKey(.walletConnectV2) ?? (Bundle.main.object(forInfoDictionaryKey: "WallectConnectV2ProjectKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }

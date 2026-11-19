@@ -81,6 +81,45 @@ public struct AmountField: SendFieldContent {
     }
 }
 
+// One output of a split swap: like AmountField, with the output's share next to the coin code
+public struct SplitOutputField: SendFieldContent {
+    public let token: Token
+    public let percent: Int
+    public let appValueType: SendField.AppValueType
+    public let currencyValue: CurrencyValue?
+
+    public init(token: Token, percent: Int, appValueType: SendField.AppValueType, currencyValue: CurrencyValue?) {
+        self.token = token
+        self.percent = percent
+        self.appValueType = appValueType
+        self.currencyValue = currencyValue
+    }
+
+    @ViewBuilder @MainActor public func listRow() -> some View {
+        Cell(
+            left: {
+                CoinIconView(token: token)
+            },
+            middle: {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 4) {
+                        ThemeText(token.coin.code, style: .subhead, colorStyle: .primary)
+                        ThemeText("\(percent)%", style: .subhead, colorStyle: .yellow)
+                    }
+
+                    MultiText(subtitle: token.fullBadge)
+                }
+            },
+            right: {
+                RightMultiText(
+                    eyebrow: appValueType.formattedFull(showCode: false).map { ComponentText(text: $0, colorStyle: .primary) },
+                    subtitle: currencyValue?.formattedFull
+                )
+            }
+        )
+    }
+}
+
 public struct ValueField: SendFieldContent {
     public let title: CustomStringConvertible
     public let appValue: AppValue?
@@ -199,11 +238,13 @@ public struct NoteField: SendFieldContent {
 }
 
 public struct SimpleValueField: SendFieldContent {
+    private let isPrimary: Bool
     public let icon: String?
     public let title: CustomStringConvertible
     public let value: CustomStringConvertible
 
-    public init(icon: String? = nil, title: CustomStringConvertible, value: CustomStringConvertible) {
+    public init(icon: String? = nil, title: CustomStringConvertible, value: CustomStringConvertible, isPrimary: Bool = false) {
+        self.isPrimary = isPrimary
         self.icon = icon
         self.title = title
         self.value = value
@@ -211,7 +252,7 @@ public struct SimpleValueField: SendFieldContent {
 
     @ViewBuilder @MainActor public func listRow() -> some View {
         Cell(
-            style: .secondary,
+            style: isPrimary ? .primary : .secondary,
             left: {
                 if let icon {
                     ThemeImage(icon, size: .iconSize20)
@@ -237,7 +278,9 @@ public struct AddressField: SendFieldContent {
     }
 
     @ViewBuilder @MainActor public func listRow() -> some View {
+        // the row's view model is built from the address once per identity, so a new address needs a new identity
         AddressRowsView(value: value, blockchainType: blockchainType)
+            .id([blockchainType.uid, value])
     }
 }
 
@@ -255,15 +298,19 @@ public struct RecipientField: SendFieldContent {
     }
 
     @ViewBuilder @MainActor public func listRow() -> some View {
+        // the row's view model is built from the address once per identity, so a new address needs a new identity
         RecipientRowsView(title: title, value: value, copyable: copyable, blockchainType: blockchainType)
+            .id([blockchainType.uid, value])
     }
 }
 
 public struct SelfAddressField: SendFieldContent {
     public let value: String
+    public let title: String?
 
-    public init(value: String) {
+    public init(value: String, title: String? = nil) {
         self.value = value
+        self.title = title
     }
 
     @ViewBuilder @MainActor public func listRow() -> some View {
@@ -272,7 +319,7 @@ public struct SelfAddressField: SendFieldContent {
                 ThemeImage("wallet_filled", size: .iconSize24)
             },
             middle: {
-                MultiText(subtitle: ComponentText(text: "send.confirmation.send_to_own".localized, colorStyle: .primary), description: value)
+                MultiText(subtitle: ComponentText(text: title ?? "send.confirmation.send_to_own".localized, colorStyle: .primary), description: value)
             }
         )
     }
@@ -300,17 +347,19 @@ public struct PriceField: SendFieldContent {
 }
 
 public struct FeeField: SendFieldContent {
+    public let initialFlipped: Bool
     public let title: CustomStringConvertible
     public let amountData: AmountData?
 
-    public init(title: CustomStringConvertible, amountData: AmountData?) {
+    public init(title: CustomStringConvertible, amountData: AmountData?, initialFlipped: Bool = false) {
+        self.initialFlipped = initialFlipped
         self.title = title
         self.amountData = amountData
     }
 
     @ViewBuilder @MainActor public func listRow() -> some View {
         let feeData = FlipRow.TokenFeeData(amountData: amountData)
-        FlipRow(title: title, flipData: feeData, initialFlipped: false)
+        FlipRow(title: title, flipData: feeData, initialFlipped: initialFlipped)
     }
 }
 
@@ -324,23 +373,17 @@ public struct HexField: SendFieldContent {
     }
 
     @ViewBuilder @MainActor public func listRow() -> some View {
-        ListRow {
-            Text(title).textSubhead2()
-
-            Spacer()
-
-            Text(value)
-                .textSubhead1(color: .themeLeah)
-                .lineLimit(3)
-                .truncationMode(.middle)
-
-            Button(action: {
-                CopyHelper.copyAndNotify(value: value)
-            }) {
-                Image("copy_20").renderingMode(.template)
+        Cell(
+            style: .secondary,
+            middle: {
+                MiddleTextIcon(text: title)
+            },
+            right: {
+                RightButtonText(text: ComponentText(text: value.shortened, colorStyle: .primary), textStyle: .subhead, icon: "copy_filled") {
+                    CopyHelper.copyAndNotify(value: value)
+                }
             }
-            .buttonStyle(SecondaryCircleButtonStyle(style: .default))
-        }
+        )
     }
 }
 
@@ -394,7 +437,7 @@ extension SendField {
         private func formatted(full: Bool, showCode: Bool = true) -> String? {
             switch self {
             case let .regular(appValue): return full ? appValue.formattedFull(showCode: showCode) : appValue.formattedShort()
-            case let .infinity(code): return "swap.unlock.unlimited".localized + (showCode ? "\(code)" : "")
+            case let .infinity(code): return "∞" + (showCode ? " \(code)" : "")
             case let .withoutAmount(code): return "\(code)"
             }
         }
@@ -434,6 +477,10 @@ public extension SendField {
         SendField(AmountField(token: token, appValueType: appValueType, currencyValue: currencyValue))
     }
 
+    static func splitOutput(token: Token, percent: Int, appValueType: AppValueType, currencyValue: CurrencyValue?) -> SendField {
+        SendField(SplitOutputField(token: token, percent: percent, appValueType: appValueType, currencyValue: currencyValue))
+    }
+
     static func value(title: CustomStringConvertible, appValue: AppValue?, currencyValue: CurrencyValue?, formatFull: Bool) -> SendField {
         SendField(ValueField(title: title, appValue: appValue, currencyValue: currencyValue, formatFull: formatFull))
     }
@@ -462,8 +509,8 @@ public extension SendField {
         SendField(RecipientField(title: title, value: value, copyable: copyable, blockchainType: blockchainType))
     }
 
-    static func selfAddress(value: String) -> SendField {
-        SendField(SelfAddressField(value: value))
+    static func selfAddress(value: String, title: String? = nil) -> SendField {
+        SendField(SelfAddressField(value: value, title: title))
     }
 
     static func price(title: String, tokenA: Token, tokenB: Token, amountA: Decimal, amountB: Decimal) -> SendField {

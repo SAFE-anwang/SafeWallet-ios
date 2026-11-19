@@ -13,6 +13,22 @@ import TronKit
 // build-argument equivalence oracle: executable(tokenIn:) must repackage
 // exactly the fields MultiSwapSendHandler.send reads from each quote today
 struct SwapExecutableTests {
+    private static func nearQuote(address: String) -> NearSwapFinalQuote {
+        NearSwapFinalQuote(
+            token: token(blockchainType: .near),
+            address: address,
+            amount: 3,
+            estimate: nil,
+            fee: 0.1,
+            previousTransactionPending: false,
+            expectedAmountOut: 2,
+            recipient: nil,
+            slippage: nil,
+            transactionError: nil,
+            toAddress: "to"
+        )
+    }
+
     private static func token(blockchainType: BlockchainType = .ethereum) -> Token {
         Token(
             coin: Coin(uid: "test-coin", name: "Test", code: "TST"),
@@ -155,8 +171,17 @@ struct SwapExecutableTests {
 
         let executable = try #require(quote.executable(tokenIn: Self.token(blockchainType: .ton)) as? TonExecutable)
 
-        #expect(executable.transactionParam.validUntil == 123)
-        #expect(executable.transactionParam.messages.isEmpty)
+        guard case let .param(transactionParam)? = executable.kind else {
+            Issue.record("Expected a server-built param executable")
+            return
+        }
+
+        #expect(transactionParam.validUntil == 123)
+        #expect(transactionParam.messages.isEmpty)
+
+        quote.isEstimateOnly = true
+        #expect(quote.canSwap)
+        #expect(quote.executable(tokenIn: Self.token(blockchainType: .ton)) is UnsupportedExecutable)
     }
 
     @Test func tronQuoteCarriesCreatedTransactionAndNilTransferIntent() throws {
@@ -185,7 +210,10 @@ struct SwapExecutableTests {
 
         let executable = try #require(quote.executable(tokenIn: Self.token(blockchainType: .tron)) as? TronExecutable)
 
-        let executableCreated = try #require(executable.created)
+        guard case let .created(executableCreated)? = executable.kind else {
+            Issue.record("Expected a server-built created executable")
+            return
+        }
 
         #expect(executableCreated.txID == created.txID)
         #expect(executableCreated.rawDataHex == created.rawDataHex)
@@ -230,7 +258,7 @@ struct SwapExecutableTests {
     }
 
     @Test func stellarQuoteCarriesTokenInAndTransactionData() throws {
-        // the switch passes the handler's tokenIn to StellarSendHelper.send, NOT the quote's stored token
+        // the broadcaster passes the handler's tokenIn to StellarSendHelper.send, NOT the quote's stored token
         let storedToken = Self.token(blockchainType: .stellar)
         let tokenIn = Token(
             coin: Coin(uid: "other-coin", name: "Other", code: "OTH"),
@@ -253,9 +281,7 @@ struct SwapExecutableTests {
         let executable = try #require(quote.executable(tokenIn: tokenIn) as? StellarExecutable)
 
         #expect(executable.token == tokenIn)
-        guard case let .signed(transactionData) = executable.kind,
-              case let .envelope(envelope) = transactionData
-        else {
+        guard case let .envelope(envelope) = executable.transactionData else {
             Issue.record("expected .envelope")
             return
         }
@@ -328,7 +354,36 @@ struct SwapExecutableTests {
         let executable = try #require(quote.executable(tokenIn: token) as? SolanaExecutable)
 
         #expect(executable.token == token)
-        #expect(executable.rawTransaction == rawTransaction)
+        guard case let .raw(executableRaw)? = executable.kind else {
+            Issue.record("Expected a server-built raw executable")
+            return
+        }
+        #expect(executableRaw == rawTransaction)
+
+        quote.isEstimateOnly = true
+        #expect(quote.canSwap)
+        #expect(quote.executable(tokenIn: token) is UnsupportedExecutable)
+    }
+
+    @Test func nearQuoteCarriesTokenInAddressAndAmount() throws {
+        let token = Self.token(blockchainType: .near)
+        let quote = Self.nearQuote(address: "deposit.near")
+
+        let executable = try #require(quote.executable(tokenIn: token) as? NearExecutable)
+
+        #expect(executable.token == token)
+        #expect(executable.address == "deposit.near")
+        #expect(executable.amount == 3)
+    }
+
+    // built against the preview's stand-in deposit (placeholder.near) for the fee row only: nothing to send
+    @Test func nearQuoteBuiltOnTheStubDepositIsNotExecutable() {
+        let quote = Self.nearQuote(address: "placeholder.near")
+        quote.isEstimateOnly = true
+
+        let executable = quote.executable(tokenIn: Self.token(blockchainType: .near))
+
+        #expect(executable is UnsupportedExecutable)
     }
 
     @Test func baseQuoteReturnsUnsupportedExecutable() {

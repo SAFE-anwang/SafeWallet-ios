@@ -58,7 +58,7 @@ enum NftV2SendModule {
                     overrideAssetShortMetadata: displayMetadata?.assetShortMetadata
                 )
 
-                let recipientAddressViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
+                let recipientAddressViewModel = RecipientAddressViewModel(service: addressService)
                 let viewModel = SendEip721ViewModel(service: service)
 
                 viewController = NftV2SendEip721ViewController(
@@ -85,7 +85,7 @@ enum NftV2SendModule {
                 let viewModel = SendEip1155ViewModel(service: service)
                 let availableBalanceViewModel = SendEip1155AvailableBalanceViewModel(service: service)
                 let amountViewModel = IntegerAmountInputViewModel(service: service)
-                let recipientAddressViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
+                let recipientAddressViewModel = RecipientAddressViewModel(service: addressService)
 
                 viewController = NftV2SendEip1155ViewController(
                     evmKitWrapper: evmKitWrapper,

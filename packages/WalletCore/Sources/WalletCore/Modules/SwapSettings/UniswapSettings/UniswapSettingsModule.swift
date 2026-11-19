@@ -32,7 +32,7 @@ enum UniswapSettingsModule {
         let service = UniswapSettingsService(tradeOptions: settingProvider.settings, addressService: addressService)
         let viewModel = UniswapSettingsViewModel(service: service, settingProvider: settingProvider)
 
-        let recipientViewModel = RecipientAddressViewModel(service: addressService, handlerDelegate: nil)
+        let recipientViewModel = RecipientAddressViewModel(service: addressService)
         let slippageViewModel = SwapSlippageViewModel(service: service)
 
         let deadlineViewModel: SwapDeadlineViewModel? = showDeadline ?

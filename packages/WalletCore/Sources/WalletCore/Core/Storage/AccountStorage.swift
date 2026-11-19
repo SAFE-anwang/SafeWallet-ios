@@ -81,12 +81,42 @@ public class AccountStorage {
             }
 
             type = .tonAddress(address: address)
+        case .solanaAddress:
+            guard let address = record.dataKey else {
+                return nil
+            }
+
+            type = .solanaAddress(address: address)
         case .stellarAccount:
             guard let accountId = record.dataKey else {
                 return nil
             }
 
             type = .stellarAccount(accountId: accountId)
+        case .xrpAddress:
+            guard let address = record.dataKey else {
+                return nil
+            }
+
+            type = .xrpAddress(address: address)
+        case .nearAddress:
+            guard let address = record.dataKey else {
+                return nil
+            }
+
+            type = .nearAddress(address: address)
+        case .thorChainAddress:
+            guard let address = record.dataKey else {
+                return nil
+            }
+
+            type = .thorChainAddress(address: address)
+        case .mayaChainAddress:
+            guard let address = record.dataKey else {
+                return nil
+            }
+
+            type = .mayaChainAddress(address: address)
         case .hdExtendedKey:
             guard let data = recoverData(id: id, typeName: typeName, keyName: .data) else {
                 return nil
@@ -187,9 +217,24 @@ public class AccountStorage {
         case let .tonAddress(address):
             typeName = .tonAddress
             dataKey = address
+        case let .solanaAddress(address):
+            typeName = .solanaAddress
+            dataKey = address
         case let .stellarAccount(accountId):
             typeName = .stellarAccount
             dataKey = accountId
+        case let .xrpAddress(address):
+            typeName = .xrpAddress
+            dataKey = address
+        case let .nearAddress(address):
+            typeName = .nearAddress
+            dataKey = address
+        case let .thorChainAddress(address):
+            typeName = .thorChainAddress
+            dataKey = address
+        case let .mayaChainAddress(address):
+            typeName = .mayaChainAddress
+            dataKey = address
         case let .hdExtendedKey(key):
             typeName = .hdExtendedKey
             dataKey = try store(data: key.serialized, id: id, typeName: typeName, keyName: .data)
@@ -345,7 +390,12 @@ extension AccountStorage {
         case evmAddress = "address"
         case tronAddress
         case tonAddress
+        case solanaAddress
         case stellarAccount
+        case xrpAddress
+        case nearAddress
+        case thorChainAddress
+        case mayaChainAddress
         case hdExtendedKey
         case btcAddress
         case btcPrivateKey

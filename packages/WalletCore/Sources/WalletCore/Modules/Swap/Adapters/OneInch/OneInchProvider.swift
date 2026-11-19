@@ -19,6 +19,23 @@ class OneInchProvider {
         self.rpcSource = rpcSource
     }
 
+    private static func requestSingle<T>(_ request: @escaping () async throws -> T) -> Single<T> {
+        Single.create { observer in
+            let task = Task {
+                do {
+                    try Task.checkCancellation()
+                    let result = try await request()
+                    try Task.checkCancellation()
+                    observer(.success(result))
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    observer(.error(error))
+                }
+            }
+            return Disposables.create { task.cancel() }
+        }
+    }
+
     private func units(amount: Decimal, token: MarketKit.Token) -> BigUInt? {
         let amountUnitString = (amount * pow(10, token.decimals)).hs.roundedString(decimal: 0)
         return BigUInt(amountUnitString)
@@ -47,20 +64,22 @@ extension OneInchProvider {
             let addressFrom = try address(token: tokenIn)
             let addressTo = try address(token: tokenOut)
 
-            return swapKit.quoteSingle(
-                networkManager: networkManager,
-                chain: evmKit.chain,
-                fromToken: addressFrom,
-                toToken: addressTo,
-                amount: amountUnits,
-                protocols: nil,
-                gasPrice: nil,
-                complexityLevel: nil,
-                connectorTokens: nil,
-                gasLimit: nil,
-                mainRouteParts: nil,
-                parts: nil
-            )
+            return Self.requestSingle { [swapKit, networkManager, evmKit] in
+                try await swapKit.quote(
+                    networkManager: networkManager,
+                    chain: evmKit.chain,
+                    fromToken: addressFrom,
+                    toToken: addressTo,
+                    amount: amountUnits,
+                    protocols: nil,
+                    gasPrice: nil,
+                    complexityLevel: nil,
+                    connectorTokens: nil,
+                    gasLimit: nil,
+                    mainRouteParts: nil,
+                    parts: nil
+                )
+            }
         } catch {
             return Single.error(error)
         }
@@ -75,25 +94,27 @@ extension OneInchProvider {
             let addressFrom = try address(token: tokenFrom)
             let addressTo = try address(token: tokenTo)
 
-            return swapKit.swapSingle(
-                networkManager: networkManager,
-                chain: evmKit.chain,
-                receiveAddress: evmKit.receiveAddress,
-                fromToken: addressFrom,
-                toToken: addressTo,
-                amount: amountUnits,
-                slippage: slippage,
-                protocols: nil,
-                recipient: recipient,
-                gasPrice: gasPrice,
-                burnChi: nil,
-                complexityLevel: nil,
-                connectorTokens: nil,
-                allowPartialFill: nil,
-                gasLimit: nil,
-                mainRouteParts: nil,
-                parts: nil
-            )
+            return Self.requestSingle { [swapKit, networkManager, evmKit] in
+                try await swapKit.swap(
+                    networkManager: networkManager,
+                    chain: evmKit.chain,
+                    receiveAddress: evmKit.receiveAddress,
+                    fromToken: addressFrom,
+                    toToken: addressTo,
+                    amount: amountUnits,
+                    slippage: slippage,
+                    protocols: nil,
+                    recipient: recipient,
+                    gasPrice: gasPrice,
+                    burnChi: nil,
+                    complexityLevel: nil,
+                    connectorTokens: nil,
+                    allowPartialFill: nil,
+                    gasLimit: nil,
+                    mainRouteParts: nil,
+                    parts: nil
+                )
+            }
         } catch {
             return Single.error(error)
         }

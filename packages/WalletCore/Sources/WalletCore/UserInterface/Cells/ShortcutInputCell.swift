@@ -54,10 +54,10 @@ class ShortcutInputCell: UITableViewCell {
     private func syncButtonStates() {
         if let text = inputStackView.text, !text.isEmpty {
             deleteView.isHidden = false
-            shortcutViews.forEach { view in view.isHidden = true }
+            shortcutViews.forEach { $0.isHidden = true }
         } else {
             deleteView.isHidden = true
-            shortcutViews.forEach { view in view.isHidden = false }
+            shortcutViews.forEach { $0.isHidden = false }
         }
     }
 }

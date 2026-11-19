@@ -6,13 +6,23 @@ public class SwapFinalQuote {
     private let slippage: Decimal?
     public let recipient: String?
     public let estimatedTime: TimeInterval?
-    private let transactionError: Error?
+    public private(set) var transactionError: Error?
 
     public let toAddress: String
-    public let depositAddress: String?
+    public private(set) var depositAddress: String?
+    public private(set) var depositMemo: String?
     public let providerSwapId: String?
     public var refundAddress: String?
     public var minAmountOut: Decimal?
+    // Set by the provider from the route: the send handler offers the MEV toggle only when true.
+    public let mevProtectionAllowed: Bool
+    // Provider-private state carried from the preview to `IMultiSwapProvider.commit(finalQuote:)`;
+    // cleared once the preview is committed so the same token can never be committed twice.
+    var providerContext: AnyObject?
+    // Built against a stand-in deposit (USwap's `stubDepositAddress`) purely for the fee row: the
+    // payload targets an address that must never receive funds, so `executable(tokenIn:)` refuses
+    // to hand it out. `canSwap` stays true — the slide button shows and commit rebuilds the quote.
+    var isEstimateOnly = false
     // Set by the send handler from the provider; a deposit-based exchanger's estimate
     // renders as a (X−25%)–(X+25%) range instead of ~X.
     public var preciseEstimateTime = true
@@ -27,7 +37,8 @@ public class SwapFinalQuote {
         depositAddress: String? = nil,
         providerSwapId: String? = nil,
         refundAddress: String? = nil,
-        minAmountOut: Decimal? = nil
+        minAmountOut: Decimal? = nil,
+        mevProtectionAllowed: Bool = false
     ) {
         self.expectedBuyAmount = expectedBuyAmount
         self.slippage = slippage
@@ -39,10 +50,17 @@ public class SwapFinalQuote {
         self.providerSwapId = providerSwapId
         self.refundAddress = refundAddress
         self.minAmountOut = minAmountOut
+        self.mevProtectionAllowed = mevProtectionAllowed
     }
 
     public var amountOut: Decimal {
         expectedBuyAmount
+    }
+
+    // Display metadata only; executable payloads retain their original address and memo.
+    func setDeposit(address: String?, memo: String?) {
+        depositAddress = address.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+        depositMemo = memo.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
     }
 
     // server-enforced floor when the provider reports one, slippage estimate otherwise
@@ -62,7 +80,11 @@ public class SwapFinalQuote {
         transactionError == nil
     }
 
-    public func executable(tokenIn _: Token) -> ISwapExecutable {
+    public final func executable(tokenIn: Token) -> ISwapExecutable {
+        isEstimateOnly ? UnsupportedExecutable() : buildExecutable(tokenIn: tokenIn)
+    }
+
+    func buildExecutable(tokenIn _: Token) -> ISwapExecutable {
         UnsupportedExecutable()
     }
 
@@ -84,7 +106,7 @@ public class SwapFinalQuote {
         nil
     }
 
-    public func fields(tokenIn _: Token, tokenOut: Token, baseToken _: Token, currency _: Currency, tokenInRate _: Decimal?, tokenOutRate _: Decimal?, baseTokenRate _: Decimal?) -> [SendField] {
+    public func fields(tokenIn: Token, tokenOut: Token, baseToken _: Token, currency _: Currency, tokenInRate _: Decimal?, tokenOutRate _: Decimal?, baseTokenRate _: Decimal?) -> [SendField] {
         var fields = [SendField]()
 
         if let slippage {
@@ -99,6 +121,13 @@ public class SwapFinalQuote {
 
         if let recipient {
             fields.append(.recipient(recipient, blockchainType: tokenOut.blockchainType))
+        }
+
+        if let depositAddress, !depositAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            fields.append(.recipient(title: "swap.deposit_address".localized, value: depositAddress, copyable: true, blockchainType: tokenIn.blockchainType))
+        }
+        if let depositMemo {
+            fields.append(.hex(title: "swap.deposit_memo".localized, value: depositMemo))
         }
 
         // Single route on the confirm screen: no baseline, absolute threshold only.

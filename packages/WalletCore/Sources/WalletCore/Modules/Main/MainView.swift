@@ -53,9 +53,7 @@ struct MainView: View {
                 WalletTokenModule.view(wallet: wallet)
             }
             .navigationDestination(isPresented: $walletConnectPresented) {
-                WalletConnectListView()
-                    .navigationTitle("wallet_connect_list.title".localized)
-                    .ignoresSafeArea()
+                WCSessionsView()
                     .onFirstAppear {
                         stat(page: .settings, event: .open(page: .walletConnect))
                     }
@@ -80,8 +78,9 @@ struct MainView: View {
                 }
             }
         case .wallet:
-            if walletViewModel.account != nil {
-                if walletViewModel.buttonHidden {
+            if let account = walletViewModel.account {
+                // a watch account has no scan button on the balance either — it cannot spend what it scans
+                if walletViewModel.buttonHidden, !account.watchAccount {
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button(action: onTapScan) {
                             Image("scan")

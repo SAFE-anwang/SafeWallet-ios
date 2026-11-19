@@ -29,16 +29,13 @@ public class LocalStorage {
     private let keyUseMevProtection = "use-mev-protection"
     private let keyScamProtection = "scam-protection"
     private let keySpamFilterEnabled = "spam-filter"
+    private let keyContactsSpamCleared = "contacts-spam-cleared"
     private let keySwapTermsAccepted = "swap-terms-accepted"
     private let keyLiquidityTermsAccepted = "liquidity-terms-accepted"
-    private let keySwapProvidersLastSyncTimestamp = "swap-providers-last-sync-timestamp"
     private let keySwapRecentTokenQueryIds = "swap-recent-token-query-ids"
-    private let keyUSwapProviders = "uswap-providers"
-    private let keyUSwapSuspensions = "uswap-suspensions"
     private let keySwapEnabled = "swap_enabled"
     private let keyAppStateLastSyncTimestamp = "app-state-last-sync-timestamp"
     private let keyForceEnableSwap = "force-enable-swap"
-    private let keyStellarBrokerEnabled = "stellar-broker-enabled"
     private let keyEmulateEvmSwapSend = "emulate-evm-swap-send"
     private let keyEmulateZcashMigration = "emulate-zcash-migration"
     private let keySimulateFailSwap = "simulate-fail-swap"
@@ -110,13 +107,14 @@ extension LocalStorage {
         set { userDefaultsStorage.set(value: newValue, for: keyZCashRewind) }
     }
 
-    func defaultProvider(blockchainType: BlockchainType) -> SwapModule.Dex.Provider {
+    // nil for a chain with no legacy swap providers at all, such as Arc
+    func defaultProvider(blockchainType: BlockchainType) -> LegacySwapProvider? {
         let key = [keyDefaultProvider, blockchainType.uid].joined(separator: "|")
         let raw: String? = userDefaultsStorage.value(for: key)
-        return (raw.flatMap { SwapModule.Dex.Provider(rawValue: $0) }) ?? blockchainType.allowedProviders[0]
+        return (raw.flatMap { LegacySwapProvider(rawValue: $0) }) ?? blockchainType.legacySwapProviders.first
     }
 
-    func setDefaultProvider(blockchainType: BlockchainType, provider: SwapModule.Dex.Provider) {
+    func setDefaultProvider(blockchainType: BlockchainType, provider: LegacySwapProvider) {
         let key = [keyDefaultProvider, blockchainType.uid].joined(separator: "|")
         userDefaultsStorage.set(value: provider.rawValue, for: key)
     }
@@ -129,6 +127,11 @@ extension LocalStorage {
     var indicatorsShown: Bool {
         get { userDefaultsStorage.value(for: keyIndicatorsShown) ?? true }
         set { userDefaultsStorage.set(value: newValue, for: keyIndicatorsShown) }
+    }
+
+    var contactsSpamCleared: Bool {
+        get { userDefaultsStorage.value(for: keyContactsSpamCleared) ?? false }
+        set { userDefaultsStorage.set(value: newValue, for: keyContactsSpamCleared) }
     }
 
     var telegramSupportRequested: Bool {
@@ -210,26 +213,9 @@ extension LocalStorage {
         }
     }
 
-    var swapProvidersLastSyncTimestamp: TimeInterval? {
-        get { userDefaultsStorage.value(for: keySwapProvidersLastSyncTimestamp) }
-        set { userDefaultsStorage.set(value: newValue, for: keySwapProvidersLastSyncTimestamp) }
-    }
-
     var swapRecentTokenQueryIds: [String] {
         get { userDefaultsStorage.value(for: keySwapRecentTokenQueryIds) ?? [] }
         set { userDefaultsStorage.set(value: newValue, for: keySwapRecentTokenQueryIds) }
-    }
-
-    var uSwapProviders: String? {
-        get { userDefaultsStorage.value(for: keyUSwapProviders) }
-        set { userDefaultsStorage.set(value: newValue, for: keyUSwapProviders) }
-    }
-
-    // Scoped provider suspensions (JSON, provider id -> rules). Cached alongside the provider list
-    // so a cold launch keeps honouring them until the next sync.
-    var uSwapSuspensions: String? {
-        get { userDefaultsStorage.value(for: keyUSwapSuspensions) }
-        set { userDefaultsStorage.set(value: newValue, for: keyUSwapSuspensions) }
     }
 
     var swapEnabled: Bool {
@@ -245,11 +231,6 @@ extension LocalStorage {
     var forceEnableSwap: Bool {
         get { userDefaultsStorage.value(for: keyForceEnableSwap) ?? false }
         set { userDefaultsStorage.set(value: newValue, for: keyForceEnableSwap) }
-    }
-
-    var stellarBrokerEnabled: Bool {
-        get { userDefaultsStorage.value(for: keyStellarBrokerEnabled) ?? false }
-        set { userDefaultsStorage.set(value: newValue, for: keyStellarBrokerEnabled) }
     }
 
     var emulateEvmSwapSend: Bool {
@@ -314,7 +295,7 @@ extension LocalStorage {
         indicatorsShown = backup.indicatorsShown
         backup.swapProviders.forEach { provider in
             let blockchainType = BlockchainType(uid: provider.blockchainTypeId)
-            if let dexProvider = SwapModule.Dex.Provider(rawValue: provider.provider) {
+            if let dexProvider = LegacySwapProvider(rawValue: provider.provider) {
                 return setDefaultProvider(blockchainType: blockchainType, provider: dexProvider)
             }
         }

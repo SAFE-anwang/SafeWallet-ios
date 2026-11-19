@@ -1,6 +1,7 @@
 import Foundation
 import HsToolKit
 import UniswapKit
+import MarketKit
 
 public protocol ISwapProviderResolver {
     static func providerInfo(id: String) -> USwapProviderInfo?
@@ -58,41 +59,33 @@ public class SwapProviderFactory {
         return nil
     }
 
-    /// Providers no longer offered for swapping. They stay resolvable through `provider(id:)` so
-    /// swaps already made with them keep resolving their type and stage layout in history, but no
-    /// quote card is built for them — the server may still list the id purely to carry policy.
-    private static let retiredProviderIds: Set<String> = [AllBridgeMultiSwapProvider.id]
+    /// Covers only the Stellar history-only entry (STELLARBROKER). It stays registered and resolves
+    /// through `provider(id:)` for tracking, but is never quoted; the server may still list the id.
+    private static let retiredProviderIds: Set<String> = [USwapProviderInfo.stellarBroker.id]
 
-    // The ordinary swap screen must never offer a confidential or retired provider. Not automatic:
-    // a registered entry resolves through `provider(id:)` (which tracking needs) and
-    // DefaultUSwapSubProvider.rate sends an explicit `providers` list, which overrides the
-    // server-side privacy filter.
+    /// History only: swaps made through the former client-quoted providers. These ids resolve to no
+    /// provider, so they are never quoted and never tracked; the name keeps old records readable.
+    private static let retiredProviderNames: [String: String] = [
+        "UNISWAP_V3": "Uniswap",
+        "PANCAKESWAP": "PancakeSwap",
+        "ALLBRIDGE": "AllBridge",
+        "uniswap": "Uniswap",
+        "pancake": "PancakeSwap",
+        "quickswap": "QuickSwap",
+    ]
+
+    // The ordinary swap screen must never offer a retired provider. Not automatic: a registered
+    // entry resolves through `provider(id:)` (which tracking needs). Confidential providers are
+    // offered alongside the others while the Private swap tab is hidden; `confidential` stays on
+    // the info so the exclusion can be restored here.
     public static func swappableProviders(ids: [String]) -> [IMultiSwapProvider] {
         ids
-            .filter { !retiredProviderIds.contains($0) && providerInfo(id: $0)?.confidential != true }
+            .filter { !retiredProviderIds.contains($0) }
             .compactMap { provider(id: $0) }
     }
 
     public static func providerName(id: String) -> String? {
-        if let info = providerInfo(id: id) {
-            return info.name
-        }
-
-        let names: [String: String] = [
-            OneInchMultiSwapProvider.id: OneInchMultiSwapProvider.name,
-            ThorChainMultiSwapProvider.id: ThorChainMultiSwapProvider.name,
-            MayaMultiSwapProvider.id: MayaMultiSwapProvider.name,
-            AllBridgeMultiSwapProvider.id: AllBridgeMultiSwapProvider.name,
-            UniswapV2MultiSwapProvider.id: "Uniswap v.2",
-            UniswapV3MultiSwapProvider.id: "Uniswap v.3",
-            PancakeV2MultiSwapProvider.id: "PancakeSwap v.2",
-            PancakeV3MultiSwapProvider.id: "PancakeSwap v.3",
-            QuickSwapMultiSwapProvider.id: "QuickSwap",
-            StellarSwapMultiSwapProvider.id: "StellarBroker",
-            SafeSwapMultiSwapProvider.id: "SafeSwap",
-        ]
-
-        return names[id]
+        providerInfo(id: id)?.name ?? retiredProviderNames[id]
     }
 
     // test seam: registry is global mutable state
@@ -115,10 +108,8 @@ public enum SwapProviderResolver: ISwapProviderResolver {
     private static let entries: [String: Entry] = Dictionary(
         uniqueKeysWithValues: [
             defaultUSwapEntry(info: .near),
-            // Registered so SwapProviderFactory.provider(id:) resolves it for tracking — without
-            // this, SwapHistoryManager._sync() skips the row and a private send never leaves
-            // pending. It is kept off the ordinary swap screen by the confidential filter in
-            // swappableProviders(ids:) above, which MultiSwapViewModel is the only caller of.
+            // Also resolves private send rows for tracking — without this entry
+            // SwapHistoryManager._sync() skips the row and a private send never leaves pending.
             defaultUSwapEntry(info: .nearConfidential),
             quickExUSwapEntry(info: .quickEx),
             defaultUSwapEntry(info: .letsExchange),
@@ -127,6 +118,14 @@ public enum SwapProviderResolver: ISwapProviderResolver {
             exolixUSwapEntry(info: .exolix),
             defaultUSwapEntry(info: .cce),
             barterUSwapEntry(info: .barter),
+            stellarUSwapEntry(info: .soroswap),
+            stellarUSwapEntry(info: .aquarius),
+            stellarUSwapEntry(info: .stellarDex),
+            historyUSwapEntry(info: .stellarBroker),
+            oneInchUSwapEntry(info: .oneInch),
+            uniswapUSwapEntry(info: .uniswap),
+            thorChainUSwapEntry(info: .thorChain),
+            thorChainUSwapEntry(info: .maya),
             defaultUSwapEntry(info: .pegasus),
             defaultUSwapEntry(info: .circle),
             jupiterUSwapEntry(info: .jupiter),
@@ -134,6 +133,7 @@ public enum SwapProviderResolver: ISwapProviderResolver {
             axelarUSwapEntry(info: .axelarIts),
             defaultUSwapEntry(info: .lizex),
             defaultUSwapEntry(info: .bitania),
+            defaultUSwapEntry(info: .xswap),
         ].map { entry in
             (entry.info.id, entry)
         }
@@ -142,7 +142,7 @@ public enum SwapProviderResolver: ISwapProviderResolver {
     // Accessible so the app can build the same USwap API instance for the private send stack
     // instead of duplicating the base URL / api key construction.
     public static func uSwapApi(networkManager: NetworkManager) -> USwapMultiSwapApi {
-        guard let baseURL = URL(string: "\(AppConfig.swapApiUrl)/v2") else {
+        guard let baseURL = URL(string: "\(AppConfig.swapApiUrl)/v3") else {
             preconditionFailure("Invalid USwap API URL: \(AppConfig.swapApiUrl)")
         }
 
@@ -169,6 +169,22 @@ public enum SwapProviderResolver: ISwapProviderResolver {
         Entry(info: info, makeProvider: { barterUSwapProvider(info: info) })
     }
 
+    private static func stellarUSwapEntry(info: USwapProviderInfo) -> Entry {
+        Entry(info: info, makeProvider: { stellarUSwapProvider(info: info) })
+    }
+
+    private static func historyUSwapEntry(info: USwapProviderInfo) -> Entry {
+        Entry(info: info, makeProvider: { historyUSwapProvider(info: info) })
+    }
+
+    private static func oneInchUSwapEntry(info: USwapProviderInfo) -> Entry {
+        Entry(info: info, makeProvider: { oneInchUSwapProvider(info: info) })
+    }
+
+    private static func uniswapUSwapEntry(info: USwapProviderInfo) -> Entry {
+        Entry(info: info, makeProvider: { uniswapUSwapProvider(info: info) })
+    }
+
     private static func lifiUSwapEntry(info: USwapProviderInfo) -> Entry {
         Entry(info: info, makeProvider: { lifiUSwapProvider(info: info) })
     }
@@ -179,6 +195,10 @@ public enum SwapProviderResolver: ISwapProviderResolver {
 
     private static func axelarUSwapEntry(info: USwapProviderInfo) -> Entry {
         Entry(info: info, makeProvider: { axelarUSwapProvider(info: info) })
+    }
+
+    private static func thorChainUSwapEntry(info: USwapProviderInfo) -> Entry {
+        Entry(info: info, makeProvider: { thorChainUSwapProvider(info: info) })
     }
 
     private static func defaultUSwapProvider(info: USwapProviderInfo) -> IMultiSwapProvider {
@@ -221,6 +241,60 @@ public enum SwapProviderResolver: ISwapProviderResolver {
     private static func barterUSwapProvider(info: USwapProviderInfo) -> IMultiSwapProvider {
         let api = uSwapApi(networkManager: NetworkManager(logger: nil))
         let subProvider = BarterUSwapSubProvider(
+            info: info,
+            api: api,
+            assetRepository: nil,
+            commitRequestBuilder: USwapCommitRequestBuilder(providerId: info.id),
+            tracker: uSwapTracker(api: api)
+        )
+
+        return uSwapProvider(subProvider: subProvider)
+    }
+
+    private static func stellarUSwapProvider(info: USwapProviderInfo) -> IMultiSwapProvider {
+        let api = uSwapApi(networkManager: NetworkManager(logger: nil))
+        let subProvider = StellarUSwapSubProvider(
+            info: info,
+            api: api,
+            assetRepository: nil,
+            commitRequestBuilder: USwapCommitRequestBuilder(providerId: info.id),
+            tracker: uSwapTracker(api: api)
+        )
+
+        return uSwapProvider(subProvider: subProvider)
+    }
+
+    // Resolves a retired provider for history and tracking only: with no asset repository it
+    // supports no pair, so it can never be quoted.
+    private static func historyUSwapProvider(info: USwapProviderInfo) -> IMultiSwapProvider {
+        let api = uSwapApi(networkManager: NetworkManager(logger: nil))
+        let subProvider = DefaultUSwapSubProvider(
+            info: info,
+            api: api,
+            assetRepository: nil,
+            commitRequestBuilder: USwapCommitRequestBuilder(providerId: info.id),
+            tracker: uSwapTracker(api: api)
+        )
+
+        return uSwapProvider(subProvider: subProvider)
+    }
+
+    private static func oneInchUSwapProvider(info: USwapProviderInfo) -> IMultiSwapProvider {
+        let api = uSwapApi(networkManager: NetworkManager(logger: nil))
+        let subProvider = OneInchUSwapSubProvider(
+            info: info,
+            api: api,
+            assetRepository: nil,
+            commitRequestBuilder: USwapCommitRequestBuilder(providerId: info.id),
+            tracker: uSwapTracker(api: api)
+        )
+
+        return uSwapProvider(subProvider: subProvider)
+    }
+
+    private static func uniswapUSwapProvider(info: USwapProviderInfo) -> IMultiSwapProvider {
+        let api = uSwapApi(networkManager: NetworkManager(logger: nil))
+        let subProvider = UniswapUSwapSubProvider(
             info: info,
             api: api,
             assetRepository: nil,
@@ -292,13 +366,34 @@ public enum SwapProviderResolver: ISwapProviderResolver {
         return uSwapProvider(subProvider: subProvider)
     }
 
-    private static func stellarSwapProvider() -> IMultiSwapProvider {
+    // Shared by every vault-deposit (thorchain_deposit) provider: the token list served for the
+    // provider id, not the code, tells them apart.
+    private static func thorChainUSwapProvider(info: USwapProviderInfo) -> IMultiSwapProvider {
         let api = uSwapApi(networkManager: NetworkManager(logger: nil))
-
-        return StellarSwapMultiSwapProvider(
+        let subProvider = DefaultUSwapSubProvider(
+            info: info,
             api: api,
-            tracker: uSwapTracker(api: api)
+            assetRepository: USwapAssetRepository(
+                providerId: info.id,
+                api: api,
+                storage: Core.shared.swapAssetStorage
+            ),
+            commitRequestBuilder: USwapCommitRequestBuilder(providerId: info.id),
+            tracker: uSwapTracker(api: api),
+            supportsSourceToken: supportsThorChainDeposit
         )
+
+        return uSwapProvider(subProvider: subProvider)
+    }
+
+    // A vault deposit needs the swap memo to reach the vault. The app can carry it on chains
+    // whose memo is public on-chain (UTXO OP_RETURN, THORChain/Maya memo), inside a server-built
+    // EVM transaction (calldata / router call), or through a vault's shielded memo address on
+    // Zcash. Solana, Tron and XRP deposits built here carry no text memo, so they are not offered
+    // as a sell side even though the server lists them.
+    private static func supportsThorChainDeposit(token: MarketKit.Token) -> Bool {
+        let blockchainType = token.blockchainType
+        return blockchainType.isEvm || blockchainType == .zcash || blockchainType.memoType == .onChainPublic
     }
 
     private static func defaultUSwapSubProvider(info: USwapProviderInfo, api: USwapMultiSwapApi) -> DefaultUSwapSubProvider {
@@ -339,18 +434,23 @@ public enum SwapProviderResolver: ISwapProviderResolver {
             builders: [
                 USwapEvmFinalQuoteBuilder(
                     evmBlockchainManager: Core.shared.evmBlockchainManager,
-                    evmFeeEstimator: EvmFeeEstimator()
+                    evmFeeEstimator: EvmFeeEstimator(),
+                    adapterManager: adapterManager
                 ),
                 USwapUtxoFinalQuoteBuilder(adapterManager: adapterManager),
                 USwapTronFinalQuoteBuilder(
-                    tronKitManager: Core.shared.tronAccountManager.tronKitManager
+                    tronKitManager: Core.shared.tronAccountManager.tronKitManager,
+                    adapterManager: adapterManager
                 ),
                 USwapZcashFinalQuoteBuilder(adapterManager: adapterManager),
-                USwapTonFinalQuoteBuilder(accountManager: Core.shared.accountManager),
+                USwapTonFinalQuoteBuilder(accountManager: Core.shared.accountManager, adapterManager: adapterManager),
                 USwapStellarFinalQuoteBuilder(adapterManager: adapterManager),
                 USwapMoneroFinalQuoteBuilder(adapterManager: adapterManager),
                 USwapZanoFinalQuoteBuilder(adapterManager: adapterManager),
-                USwapSolanaFinalQuoteBuilder(adapterManager: adapterManager),
+                USwapSolanaFinalQuoteBuilder(adapterManager: adapterManager, solanaKitManager: Core.shared.solanaKitManager),
+                USwapXrpFinalQuoteBuilder(adapterManager: adapterManager),
+                USwapThorChainFinalQuoteBuilder(adapterManager: adapterManager),
+                USwapNearFinalQuoteBuilder(adapterManager: adapterManager),
             ]
         )
     }
@@ -364,91 +464,24 @@ public enum SwapProviderResolver: ISwapProviderResolver {
         )
     }
 
-    private static func uSwapTracker(networkManager: NetworkManager) -> USwapTracker {
-        uSwapTracker(api: uSwapApi(networkManager: networkManager))
-    }
-
     public static func providerInfo(id: String) -> USwapProviderInfo? {
         entries[id]?.info
     }
 
     public static func provider(id: String) -> IMultiSwapProvider? {
-        if id == OneInchMultiSwapProvider.id, let apiKey = AppConfig.oneInchApiKey {
-            return OneInchMultiSwapProvider(
-                apiKey: apiKey,
-                tracker: uSwapTracker(networkManager: Core.shared.networkManager)
-            )
-        }
-
-        if id == ThorChainMultiSwapProvider.id {
-            return ThorChainMultiSwapProvider(
-                tracker: uSwapTracker(networkManager: Core.shared.networkManager)
-            )
-        }
-
-        if id == MayaMultiSwapProvider.id {
-            return MayaMultiSwapProvider(
-                tracker: uSwapTracker(networkManager: Core.shared.networkManager)
-            )
-        }
-
-        if id == AllBridgeMultiSwapProvider.id {
-            return AllBridgeMultiSwapProvider()
-        }
-
-        // Native V2 providers were resolvable in 0.50 and remain part of the local
-        // provider set. Keep these branches outside the USwap entries because they
-        // quote directly through UniswapKit.
-        if id == UniswapV2MultiSwapProvider.id,
-           let kit = try? UniswapKit.Kit.instance()
-        {
-            return UniswapV2MultiSwapProvider(kit: kit)
-        }
-
-        if id == PancakeV2MultiSwapProvider.id,
-           let kit = try? UniswapKit.Kit.instance()
-        {
-            return PancakeV2MultiSwapProvider(kit: kit)
-        }
-
-        if id == QuickSwapMultiSwapProvider.id,
-           let kit = try? UniswapKit.Kit.instance()
-        {
-            return QuickSwapMultiSwapProvider(kit: kit)
-        }
-
         if id == SafeSwapMultiSwapProvider.id,
-           let kit = try? UniswapKit.Kit.instance(isSafeSwap: true)
-        {
+           let kit = try? UniswapKit.Kit.instance(isSafeSwap: true) {
             return SafeSwapMultiSwapProvider(kit: kit)
         }
-
-        if id == UniswapV3MultiSwapProvider.id,
-           let provider = try? UniswapV3MultiSwapProvider(
-               tracker: uSwapTracker(networkManager: Core.shared.networkManager)
-           )
-        {
-            return provider
+        if id == UniswapV2MultiSwapProvider.id, let kit = try? UniswapKit.Kit.instance() {
+            return UniswapV2MultiSwapProvider(kit: kit)
         }
-
-        if id == PancakeV3MultiSwapProvider.id,
-           let provider = try? PancakeV3MultiSwapProvider(
-               tracker: uSwapTracker(networkManager: Core.shared.networkManager)
-           )
-        {
-            return provider
+        if id == PancakeV2MultiSwapProvider.id, let kit = try? UniswapKit.Kit.instance() {
+            return PancakeV2MultiSwapProvider(kit: kit)
         }
-
-        // Stellar-native swaps are exposed as one provider. The fallback route ids stay
-        // internal to StellarSwapMultiSwapProvider and intentionally do not resolve here.
-        if id == StellarSwapMultiSwapProvider.id {
-            return stellarSwapProvider()
+        if id == QuickSwapMultiSwapProvider.id, let kit = try? UniswapKit.Kit.instance() {
+            return QuickSwapMultiSwapProvider(kit: kit)
         }
-
-        if let entry = entries[id] {
-            return entry.makeProvider()
-        }
-
-        return nil
+        return entries[id]?.makeProvider()
     }
 }

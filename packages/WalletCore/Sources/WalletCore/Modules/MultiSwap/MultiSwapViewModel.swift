@@ -19,34 +19,44 @@ public class MultiSwapViewModel: ObservableObject {
     private var rateInCancellable: AnyCancellable?
     private var rateOutCancellable: AnyCancellable?
     private var timer: Timer?
+    private var autoQuotingEnabled = true
+    private var quotesInterrupted = false
 
     private var balanceDisposeBag = DisposeBag()
     private var transactionsDisposeBag = DisposeBag()
 
-    private var providers: [IMultiSwapProvider]
-    private let swapProviderManager = Core.shared.swapProviderManager
+    // the sell wallet's step before spending, such as shielding transparent ZEC: per wallet, like the balance adapter
+    private(set) var spendStepHandler: ISpendStepHandler?
+    private var spendStepCancellable: AnyCancellable?
+
+    private var providers: [IMultiSwapProvider] = []
+    let swapProviderManager = Core.shared.swapProviderManager
     private let currencyManager = Core.shared.currencyManager
     private let marketKit = Core.shared.marketKit
     private let accountManager = Core.shared.accountManager
     private let walletManager = Core.shared.walletManager
     private let adapterManager = Core.shared.adapterManager
     private let localStorage = Core.shared.localStorage
+    private let pathFinder = SwapPathFinder.make()
+    private let restoreSettingsService: RestoreSettingsService
+    private let restoreSettingsView: RestoreSettingsView
 
     @Published var currency: Currency
-    private let customDecimals: Int?
 
     private let hasExplicitToken: Bool
     private let autoResolveTokenOut: Bool
+    private let customDecimals: Int?
     private var tokensManuallySet = false
     private var currentAccountId: String?
-    private var defaultTokensDisposeBag = DisposeBag()
+    private var defaultTokensCancellable: AnyCancellable?
 
     private var enteringFiat = false
 
     // External delivery address entered before confirmation for a tokenOut the account
     // can't hold. Shared with the confirmation handler, which writes back into it when the
     // user edits the recipient there. Cleared whenever tokenOut changes or the account
-    // switches, so it can only ever hold an address meant for the current pair.
+    // switches, and when tokenIn changes while the address is optional, so it can only ever
+    // hold an address meant for the current pair.
     let externalRecipientHolder = SwapExternalRecipientHolder()
 
     var externalRecipient: String? {
@@ -77,10 +87,26 @@ public class MultiSwapViewModel: ObservableObject {
 
     var USDT_src20: Token?
 
+    // A 1-hop route offered when the pair can't be served directly: no provider supports it, or
+    // the ones that do came back with no quotes. It is never quoted itself.
+    @Published public private(set) var suggestedPath: SwapPath?
+
+    // The (pair, valid providers) of the last quote round that finished with zero quotes
+    private var emptyRoundKey: QuoteRoundKey?
+
     private var internalTokenIn: Token? {
         didSet {
             guard internalTokenIn != oldValue else {
                 return
+            }
+
+            // An optional recipient set on the confirmation screen may not suit the new sell
+            // chain (a unified ZEC address does not fit a UTXO route memo), and would otherwise
+            // be picked up as the next confirmation's initial recipient. A required one stays:
+            // an account that cannot hold ZEC sells from one chain family only, so its sell
+            // chain never moves between a UTXO route and a memo-capable one.
+            if !externalRecipientRequired {
+                externalRecipientHolder.address = nil
             }
 
             syncValidProviders()
@@ -195,6 +221,11 @@ public class MultiSwapViewModel: ObservableObject {
     @Published public var adapterState: AdapterState?
     @Published public var availableBalance: Decimal?
 
+    // the sell token has an active wallet; its adapter is created asynchronously after the wallet is saved
+    @Published private var tokenInWalletActive = false
+
+    @Published var spendStep: SpendStep?
+
     var spendMode: BalanceAdapterSpendMode
 
     @Published var coinPriceIn: CoinPrice? {
@@ -209,12 +240,18 @@ public class MultiSwapViewModel: ObservableObject {
         }
     }
 
+    // The fraction-digit limit of the "You pay" amount input.
+    var amountInDecimals: Int {
+        tokenIn?.decimals ?? AmountInputValidator.defaultMaxDecimals
+    }
+
     public var amountIn: Decimal? {
         didSet {
             internalUserSelectedProviderId = nil
 
             syncQuotes()
             syncFiatAmountIn()
+            syncSpendStep()
 
             let amount = AmountDecimalParser.parseAnyDecimal(from: amountString)
 
@@ -266,7 +303,10 @@ public class MultiSwapViewModel: ObservableObject {
 
     @Published public var currentQuote: Quote? {
         didSet {
-            amountOut = currentQuote?.quote.expectedBuyAmount
+            // Quotes can be more precise than tokenOut allows; never show more than will be received
+            amountOut = currentQuote.map { quote in
+                internalTokenOut.map { quote.quote.expectedBuyAmount.roundedDown(decimal: $0.decimals) } ?? quote.quote.expectedBuyAmount
+            }
             syncFiatAmountOut()
             syncPrice()
         }
@@ -310,10 +350,14 @@ public class MultiSwapViewModel: ObservableObject {
                 lastSuccessfulQuotesTimestamp = Date().timeIntervalSince1970
                 nextQuoteTime = Date().timeIntervalSince1970 + autoRefreshDuration
 
-                timer = Timer.scheduledTimer(withTimeInterval: autoRefreshDuration, repeats: false) { [weak self] _ in
-                    self?.syncQuotes(silent: true)
+                if autoQuotingEnabled {
+                    timer = Timer.scheduledTimer(withTimeInterval: autoRefreshDuration, repeats: false) { [weak self] _ in
+                        self?.syncQuotes(silent: true)
+                    }
                 }
             }
+
+            didUpdateQuotes()
         }
     }
 
@@ -345,13 +389,14 @@ public class MultiSwapViewModel: ObservableObject {
 
 
     public init(token: Token? = nil, tokenOut: Token? = nil, autoResolveTokenOut: Bool = true, customDecimals: Int? = nil) {
-        providers = SwapProviderFactory.swappableProviders(ids: swapProviderManager.providers)
         currency = currencyManager.baseCurrency
         spendMode = .fromBalanceState
-        self.customDecimals = customDecimals
         hasExplicitToken = token != nil || tokenOut != nil
         self.autoResolveTokenOut = autoResolveTokenOut
+        self.customDecimals = customDecimals
         currentAccountId = accountManager.activeAccount?.id
+        (restoreSettingsService, restoreSettingsView) = RestoreSettingsModule.module(statPage: .swap)
+        providers = resolveProviders()
 
         defer {
             if token != nil || tokenOut != nil {
@@ -377,11 +422,15 @@ public class MultiSwapViewModel: ObservableObject {
         // round of provider requests.
         swapProviderManager.$providers
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.providers = SwapProviderFactory.swappableProviders(ids: $0)
-                self?.syncValidProviders()
-                self?.syncQuotes(silent: true)
-                self?.subscribeToProviders()
+            .sink { [weak self] _ in
+                guard let self else {
+                    return
+                }
+
+                providers = resolveProviders()
+                syncValidProviders()
+                syncQuotesOnProvidersChange()
+                subscribeToProviders()
             }
             .store(in: &cancellables)
 
@@ -403,7 +452,21 @@ public class MultiSwapViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        subscribe(disposeBag, adapterManager.adapterDataReadyObservable) { [weak self] _ in self?.syncAdapter() }
+        adapterManager.adapterDataReadyPublisher
+            // off the sender's serial queue: syncAdapter re-enters adapterManager.queue.sync
+            // (the Rx subscribe helper hopped via observeOn(Concurrent...) — keep that semantic)
+            .receive(on: DispatchQueue.global(qos: .userInitiated))
+            .sink { [weak self] _ in
+                self?.syncAdapter()
+            }
+            .store(in: &cancellables)
+
+        restoreSettingsService.approveSettingsPublisher
+            .receive(on: DispatchQueue.global(qos: .userInitiated))
+            .sink { [weak self] tokenWithSettings in
+                self?.handleApproveRestoreSettings(token: tokenWithSettings.token, settings: tokenWithSettings.settings)
+            }
+            .store(in: &cancellables)
 
         subscribeToProviders()
 
@@ -417,6 +480,8 @@ public class MultiSwapViewModel: ObservableObject {
     private func handle(walletData: WalletManager.WalletData) {
         let accountChanged = walletData.account?.id != currentAccountId
         currentAccountId = walletData.account?.id
+
+        tokenInWalletActive = internalTokenIn.map { token in walletData.wallets.contains { $0.token == token } } ?? false
 
         if accountChanged {
             // an external recipient entered for the previous account must not silently
@@ -442,7 +507,7 @@ public class MultiSwapViewModel: ObservableObject {
 
     // one-shot: resolve now if adapters are ready or there is nothing to wait for, otherwise once on ready
     private func scheduleDefaultTokensSync() {
-        defaultTokensDisposeBag = DisposeBag()
+        defaultTokensCancellable = nil
 
         let wallets = walletManager.activeWallets
         let resolvesImmediately = wallets.isEmpty || wallets.contains { adapterManager.balanceAdapter(for: $0) != nil }
@@ -452,11 +517,12 @@ public class MultiSwapViewModel: ObservableObject {
             return
         }
 
-        subscribe(defaultTokensDisposeBag, adapterManager.adapterDataReadyObservable.take(1)) { [weak self] _ in
-            DispatchQueue.main.async {
+        defaultTokensCancellable = adapterManager.adapterDataReadyPublisher
+            .prefix(1)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
                 self?.syncDefaultTokens()
             }
-        }
     }
 
     private func syncDefaultTokens() {
@@ -526,7 +592,15 @@ public class MultiSwapViewModel: ObservableObject {
             }
 
             if internalTokenIn == nil, let tokenIn {
-                internalTokenIn = activeWalletToken(for: tokenIn)
+                let token = activeWalletToken(for: tokenIn)
+
+                // An amount typed while there was no sell token may be more precise than the token allows.
+                // Rounded before the token is set, so the quote triggered by the token uses the rounded amount.
+                if let amountIn, amountIn.roundedDown(decimal: token.decimals) != amountIn {
+                    self.amountIn = amountIn.roundedDown(decimal: token.decimals)
+                }
+
+                internalTokenIn = token
             }
 
             return
@@ -563,6 +637,8 @@ public class MultiSwapViewModel: ObservableObject {
     private func syncAdapter() {
         balanceDisposeBag = .init()
 
+        let walletActive = internalTokenIn.map { token in walletManager.activeWallets.contains { $0.token == token } } ?? false
+
         if let internalTokenIn,
            let wallet = walletManager.activeWallets.first(where: { $0.token == internalTokenIn }),
            let adapter = adapterManager.balanceAdapter(for: wallet)
@@ -570,11 +646,14 @@ public class MultiSwapViewModel: ObservableObject {
             let balanceState = adapter.balanceState
             let balance = adapter.balanceData.available
             let mode = adapter.spendMode
+            let spendStepHandler = SpendStepHandlerFactory.handler(wallet: wallet, purpose: .swap)
 
             DispatchQueue.main.async { [weak self] in
+                self?.tokenInWalletActive = walletActive
                 self?.adapterState = balanceState
                 self?.availableBalance = balance
                 self?.spendMode = mode
+                self?.set(spendStepHandler: spendStepHandler)
             }
 
             adapter.balanceStateUpdatedObservable
@@ -606,10 +685,28 @@ public class MultiSwapViewModel: ObservableObject {
                     .disposed(by: transactionsDisposeBag)
             }
         } else {
-            adapterState = nil
-            availableBalance = nil
-            spendMode = .fromBalanceState
+            DispatchQueue.main.async { [weak self] in
+                self?.tokenInWalletActive = walletActive
+                self?.adapterState = nil
+                self?.availableBalance = nil
+                self?.spendMode = .fromBalanceState
+                self?.set(spendStepHandler: nil)
+            }
         }
+    }
+
+    private func set(spendStepHandler: ISpendStepHandler?) {
+        self.spendStepHandler = spendStepHandler
+
+        spendStepCancellable = spendStepHandler?.updatedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.syncSpendStep() }
+
+        syncSpendStep()
+    }
+
+    func syncSpendStep() {
+        spendStep = amountIn.flatMap { spendStepHandler?.step(amount: $0) }
     }
 
     func subscribeToProviders() {
@@ -621,11 +718,28 @@ public class MultiSwapViewModel: ObservableObject {
                     .receive(on: DispatchQueue.main)
                     .sink { [weak self] in
                         self?.syncValidProviders()
-                        self?.syncQuotes(silent: true)
+                        self?.syncQuotesOnProvidersChange()
                     }
                     .store(in: &providerCancellables)
             }
         }
+    }
+
+    // While auto quoting is stopped (hidden tab, presented sheet) a provider change must not start a
+    // round: it is deferred to `autoQuoteIfRequired`, which requotes an interrupted round on resume
+    private func syncQuotesOnProvidersChange() {
+        guard autoQuotingEnabled else {
+            quotesTask = nil
+            quotesInterrupted = true
+
+            if quoting {
+                quoting = false
+            }
+
+            return
+        }
+
+        syncQuotes(silent: true)
     }
 
     private func syncValidProviders() {
@@ -633,10 +747,9 @@ public class MultiSwapViewModel: ObservableObject {
             let suspensions = swapProviderManager.suspensions
 
             validProviders = providers.filter { provider in
-                // Scoped suspension from uswap-server (asset / chain / directed pair). Checked
-                // HERE, in the one place every provider passes through, rather than inside each
-                // `supports` implementation — and it is the only enforcement that exists for the
-                // providers this app quotes natively, since those never reach the server.
+                // Scoped suspension from uswap-server (asset / chain / directed pair), checked here,
+                // in the one place every provider passes through, so a card the server would refuse
+                // is never shown.
                 guard !suspensions.isSuspended(providerId: provider.id, tokenIn: internalTokenIn, tokenOut: internalTokenOut) else {
                     return false
                 }
@@ -645,6 +758,40 @@ public class MultiSwapViewModel: ObservableObject {
             }
         } else {
             validProviders = []
+        }
+
+        syncSuggestedPath()
+    }
+
+    private var currentRoundKey: QuoteRoundKey? {
+        guard let internalTokenIn, let internalTokenOut, !validProviders.isEmpty else {
+            return nil
+        }
+
+        return QuoteRoundKey(tokenIn: internalTokenIn, tokenOut: internalTokenOut, providerIds: Set(validProviders.map(\.id)))
+    }
+
+    // Scoped to the pair and its valid providers: a changed pair or an untried set of providers
+    // has not failed at anything yet. The amount is deliberately not part of it, so the
+    // suggestion stays put while the user edits the amount and leaves only once quotes arrive.
+    private var quotesUnavailable: Bool {
+        emptyRoundKey != nil && emptyRoundKey == currentRoundKey
+    }
+
+    private func syncSuggestedPath() {
+        var path: SwapPath?
+
+        if suggestedPathEnabled, let internalTokenIn, let internalTokenOut, validProviders.isEmpty || quotesUnavailable {
+            path = pathFinder.find(
+                tokenIn: internalTokenIn,
+                tokenOut: internalTokenOut,
+                providers: providers,
+                suspensions: swapProviderManager.suspensions
+            )
+        }
+
+        if suggestedPath != path {
+            suggestedPath = path
         }
     }
 
@@ -683,12 +830,12 @@ public class MultiSwapViewModel: ObservableObject {
     }
 
     private func syncFiatAmountOut() {
-        guard let rateOut, let currentQuote else {
+        guard let rateOut, let amountOut else {
             fiatAmountOut = nil
             return
         }
 
-        fiatAmountOut = (currentQuote.quote.expectedBuyAmount * rateOut).rounded(decimal: 2)
+        fiatAmountOut = (amountOut * rateOut).rounded(decimal: 2)
     }
 
     func syncPriceImpact() {
@@ -703,6 +850,7 @@ public class MultiSwapViewModel: ObservableObject {
     func syncQuotes(silent: Bool = false) {
         quotesTask?.cancel()
         quotesTask = nil
+        quotesInterrupted = false
 
         if !silent {
             quotes = []
@@ -728,13 +876,16 @@ public class MultiSwapViewModel: ObservableObject {
             quoting = true
         }
 
+        let roundKey = currentRoundKey
+        let fetchQuote = quoteFetcher()
+
         quotesTask = Task { [weak self, validProviders] in
             let optionalQuotes: [Quote?] = await withTaskGroup(of: Quote?.self) { group in
                 for provider in validProviders {
                     group.addTask {
                         do {
                             let quoteTask = Task {
-                                try await provider.quote(tokenIn: internalTokenIn, tokenOut: internalTokenOut, amountIn: amountIn)
+                                try await fetchQuote(provider, internalTokenIn, internalTokenOut, amountIn)
                             }
 
                             // Per-provider quote timeout. Must exceed uswap-server's own budget
@@ -776,13 +927,13 @@ public class MultiSwapViewModel: ObservableObject {
             let decorated = Self.decorated(quotes: quotes)
 
             if !Task.isCancelled {
-                await MainActor.run { [weak self, quotes, decorated] in
-                    guard let self else {
+                await MainActor.run { [weak self, decorated] in
+                    guard let self, !Task.isCancelled else {
                         return
                     }
 
-                    self.quoting = false
-
+                    quotesTask = nil
+                    quoting = false
                     if silent, quotes.isEmpty, !self.quotes.isEmpty {
                         let quoteAge = self.lastSuccessfulQuotesTimestamp.map { Date().timeIntervalSince1970 - $0 } ?? .infinity
                         guard quoteAge < self.autoRefreshDuration else {
@@ -799,10 +950,47 @@ public class MultiSwapViewModel: ObservableObject {
                     }
 
                     self.quotes = decorated
+
+                    let wasUnavailable = quotesUnavailable
+                    emptyRoundKey = decorated.isEmpty ? roundKey : nil
+
+                    if quotesUnavailable != wasUnavailable {
+                        syncSuggestedPath()
+                    }
                 }
             }
         }
         .erased()
+    }
+
+    // MARK: Subclass hooks (SplitSwapViewModel)
+
+    typealias QuoteFetcher = (IMultiSwapProvider, Token, Token, Decimal) async throws -> MultiSwapQuote
+
+    // Called at the end of every `quotes` assignment, after the dependent state is synced
+    func didUpdateQuotes() {}
+
+    // Providers this view model quotes. Called from init and on every provider list sync, so an
+    // override must not rely on state set after `super.init`.
+    func resolveProviders() -> [IMultiSwapProvider] {
+        SwapProviderFactory.swappableProviders(ids: swapProviderManager.providers)
+    }
+
+    // The per-provider quote call of a quote round. Built once per round on the main thread, so an
+    // override can snapshot its own inputs; the closure runs off the main thread and must not
+    // capture the view model.
+    func quoteFetcher() -> QuoteFetcher {
+        { provider, tokenIn, tokenOut, amountIn in
+            try await provider.quote(tokenIn: tokenIn, tokenOut: tokenOut, amountIn: amountIn)
+        }
+    }
+
+    var suggestedPathEnabled: Bool {
+        true
+    }
+
+    public func reset() {
+        amountIn = nil
     }
 
     private func syncPrice() {
@@ -818,7 +1006,7 @@ public class MultiSwapViewModel: ObservableObject {
             let amountA = showAsIn ? amountIn : amountOut
             let amountB = showAsIn ? amountOut : amountIn
 
-            let formattedValue = ValueFormatter.instance.formatFull(value: amountB / amountA, decimalCount: tokenB.decimals)
+            let formattedValue = ValueFormatter.instance.formatShort(value: amountB / amountA, decimalCount: tokenB.decimals)
             price = formattedValue.map { "1 \(tokenA.coin.code) = \($0) \(tokenB.coin.code)" }
         } else {
             price = nil
@@ -857,6 +1045,9 @@ public extension MultiSwapViewModel {
 
         if enteringFiat {
             fiatAmountIn = currentFiatAmountOut
+        } else if let currentAmountOut, let tokenIn = self.internalTokenIn {
+            // The buy amount can be more precise than the new sell token allows
+            amountIn = currentAmountOut.roundedDown(decimal: tokenIn.decimals)
         } else {
             amountIn = currentAmountOut
         }
@@ -867,8 +1058,15 @@ public extension MultiSwapViewModel {
         syncPrice()
     }
 
+    var percentAllAvailable: Bool {
+        switch tokenIn?.type {
+        case nil, .native, .derived, .addressType, .unsupported: false
+        default: true
+        }
+    }
+
     func setAmountIn(percent: Int) {
-        guard let tokenIn, let availableBalance else {
+        guard tokenInWalletState == .ready, let tokenIn, let availableBalance else {
             return
         }
 
@@ -883,10 +1081,24 @@ public extension MultiSwapViewModel {
     }
 
     func stopAutoQuoting() {
+        autoQuotingEnabled = false
         timer?.invalidate()
+
+        if quotesTask != nil {
+            quotesTask = nil
+            quotesInterrupted = true
+            quoting = false
+        }
     }
 
     func autoQuoteIfRequired() {
+        autoQuotingEnabled = true
+
+        if quotesInterrupted {
+            syncQuotes(silent: !quotes.isEmpty)
+            return
+        }
+
         guard !quoting, let nextQuoteTime else {
             return
         }
@@ -917,10 +1129,6 @@ public extension MultiSwapViewModel {
         isPendingAllowanceRefreshEnabled = false
         pendingAllowanceTimer?.invalidate()
         pendingAllowanceTimer = nil
-    }
-
-    func reset() {
-        amountIn = nil
     }
 
     internal func validateAndProceed(onSuccess: @escaping () -> Void, onRiskDetected: @escaping (AmlRiskResult) -> Void) {
@@ -988,6 +1196,76 @@ public extension MultiSwapViewModel {
 }
 
 extension MultiSwapViewModel {
+    var tokenInWalletState: TokenInWalletState {
+        guard let internalTokenIn else {
+            return .ready
+        }
+
+        if let adapterState {
+            return adapterState.syncing && !spendMode.spendAllowed(state: adapterState) ? .syncing : .ready
+        }
+
+        if tokenInWalletActive {
+            return .syncing
+        }
+
+        // a token the account can't hold keeps "Token Not Enabled"
+        guard let account = accountManager.activeAccount, account.type.supports(token: internalTokenIn) else {
+            return .ready
+        }
+
+        return .notEnabled
+    }
+
+    /// Enables the sell token. A chain not running yet asks its restore settings first, as Manage Wallets
+    /// does: a restored account synced from scratch takes too long, and one synced from today misses its funds.
+    func enableTokenIn() {
+        guard let tokenIn = internalTokenIn, let account = accountManager.activeAccount,
+              !walletManager.activeWallets.contains(where: { $0.token == tokenIn })
+        else {
+            return
+        }
+
+        let chainEnabled = walletManager.activeWallets.contains { $0.token.blockchainType == tokenIn.blockchainType }
+
+        if !tokenIn.blockchainType.restoreSettingTypes.isEmpty, !chainEnabled {
+            restoreSettingsService.approveSettings(token: tokenIn, account: account)
+        } else {
+            saveWallet(token: tokenIn, account: account)
+        }
+    }
+
+    private func handleApproveRestoreSettings(token: Token, settings: RestoreSettings) {
+        guard let account = accountManager.activeAccount else {
+            return
+        }
+
+        if !settings.isEmpty {
+            restoreSettingsService.save(settings: settings, account: account, blockchainType: token.blockchainType)
+        }
+
+        saveWallet(token: token, account: account)
+    }
+
+    private func saveWallet(token: Token, account: Account) {
+        walletManager.save(wallets: [Wallet(token: token, account: account)])
+        stat(page: .swap, event: .enableToken(token: token))
+    }
+}
+
+extension MultiSwapViewModel {
+    enum TokenInWalletState {
+        case ready
+        case notEnabled
+        case syncing
+    }
+
+    private struct QuoteRoundKey: Equatable {
+        let tokenIn: Token
+        let tokenOut: Token
+        let providerIds: Set<String>
+    }
+
     public struct Quote {
         public let provider: IMultiSwapProvider
         public let quote: MultiSwapQuote

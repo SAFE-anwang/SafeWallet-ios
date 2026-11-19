@@ -10,10 +10,6 @@ struct MainSettingsView: View {
     @Binding var selectedTab: MainViewModel.Tab
 
     @State private var manageWalletsPresented = false
-    @StateObject var walletConnectVerificationModel = WalletConnectVerificationModel(
-        accountManager: Core.shared.accountManager,
-        cloudBackupManager: Core.shared.cloudBackupManager
-    )
 
     private lazy var fallbackBlockViewModel: FallbackBlockViewModel = {
         let viewModel = FallbackBlockViewModel(walletManager: Core.shared.walletManager,
@@ -242,9 +238,7 @@ struct MainSettingsView: View {
 
     @ViewBuilder private func dAppConnection() -> some View {
         ClickableRow(spacing: .margin8) {
-            walletConnectVerificationModel.handle {
-                walletConnectPresented = true
-            }
+            walletConnectPresented = true
         } content: {
             HStack(spacing: .margin16) {
                 ThemeImage("link", size: .iconSize24)
@@ -254,7 +248,7 @@ struct MainSettingsView: View {
             Spacer()
 
             if viewModel.walletConnectPendingRequestCount > 0 {
-                BadgeViewNew("\(viewModel.walletConnectPendingRequestCount)") // TODO: use different badge
+                BadgeViewNew("\(viewModel.walletConnectPendingRequestCount)", mode: .solidWith(colorStyle: .red), colorStyle: .bright)
             } else if viewModel.walletConnectSessionCount > 0 {
                 Text("\(viewModel.walletConnectSessionCount)").textSubhead1()
             }

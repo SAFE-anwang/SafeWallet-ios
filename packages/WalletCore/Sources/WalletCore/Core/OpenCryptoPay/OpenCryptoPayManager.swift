@@ -17,6 +17,11 @@ class OpenCryptoPayManager {
     }
 
     func startPayment(url: URL) async throws -> OpenCryptoPayPayment {
+        // the invoice is fetched from the provider before any send screen appears, so a watch account is stopped here
+        guard accountManager.activeAccount?.watchAccount != true else {
+            throw Error.accountChanged
+        }
+
         currentTask?.cancel()
 
         let task = Task { [weak self] () -> OpenCryptoPayPayment in
@@ -41,6 +46,7 @@ class OpenCryptoPayManager {
     func resolve(wallet: Wallet, against payment: OpenCryptoPayPayment) async throws -> SendData {
         guard let activeAccount = accountManager.activeAccount,
               activeAccount.id == payment.capturedAccountId,
+              !wallet.account.watchAccount,
               ChildWalletBridge.shared.contextAccountId(account: activeAccount) == payment.capturedContextAccountId
         else {
             throw OpenCryptoPayManager.Error.accountChanged

@@ -171,7 +171,8 @@ final class NftV2InventoryService {
     }
 
     func transactionRecordsObservable() -> Observable<(NftV2Chain, [TransactionRecord], Int?)> {
-        let updates = transactionAdapterManager.adaptersReadyObservable
+        let updates = transactionAdapterManager.adaptersReadyPublisher
+            .asObservable()
             .startWith(())
             .map { [weak self] _ -> Observable<(NftV2Chain, [TransactionRecord], Int?)> in
                 guard let self, let account = self.accountManager.activeAccount else {

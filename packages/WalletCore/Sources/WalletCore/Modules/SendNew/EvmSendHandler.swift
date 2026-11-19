@@ -1,3 +1,4 @@
+import Eip20Kit
 import EvmKit
 import Foundation
 import MarketKit
@@ -7,20 +8,24 @@ class EvmSendHandler: SendHandler {
     let baseToken: Token
     private let transactionData: TransactionData
     private let evmKitWrapper: EvmKitWrapper
+    private let sendToken: Token
+    private let balanceAdapter: IBalanceAdapter?
     private let decorator = EvmDecorator()
     private let evmFeeEstimator = EvmFeeEstimator()
     private let timeLock: TimeLock?
 
-    init(baseToken: Token, transactionData: TransactionData, evmKitWrapper: EvmKitWrapper, timeLock: TimeLock? = nil) {
+    init(baseToken: Token, transactionData: TransactionData, evmKitWrapper: EvmKitWrapper, sendToken: Token, balanceAdapter: IBalanceAdapter?, timeLock: TimeLock? = nil) {
         self.baseToken = baseToken
         self.transactionData = transactionData
         self.evmKitWrapper = evmKitWrapper
         self.timeLock = timeLock
+        self.sendToken = sendToken
+        self.balanceAdapter = balanceAdapter
     }
 
     override class func instance(sendData: SendData) -> ISendHandler? {
-        guard case let .evm(blockchainType, transactionData, _) = sendData else { return nil }
-        return instance(blockchainType: blockchainType, transactionData: transactionData)
+        guard case let .evm(blockchainType, transactionData, token) = sendData else { return nil }
+        return instance(blockchainType: blockchainType, transactionData: transactionData, sendToken: token)
     }
 }
 
@@ -47,7 +52,22 @@ extension EvmSendHandler: ISendHandler {
             let evmBalance = evmKitWrapper.evmKit.accountState?.balance ?? 0
 
             do {
-                if transactionData.input.isEmpty, transactionData.value == evmBalance {
+                // A token shortfall is answered locally: the node's revert for it has no stable
+                // shape (a revert string on some RPCs, a bare -32003 on others), so the standard
+                // insufficient caution is produced before estimation instead.
+                if let balanceAdapter, case .synced = balanceAdapter.balanceState,
+                   Self.isInsufficientEip20Balance(
+                       decoration: evmKitWrapper.evmKit.decorate(transactionData: transactionData),
+                       sendToken: sendToken,
+                       availableBalance: balanceAdapter.balanceData.available
+                   )
+                {
+                    throw AppError.ethereum(reason: .insufficientBalanceWithFee)
+                }
+
+                if transactionData.value > evmBalance {
+                    throw AppError.ethereum(reason: .insufficientBalanceWithFee)
+                } else if transactionData.input.isEmpty, transactionData.value == evmBalance {
                     let stubTransactionData = TransactionData(to: transactionData.to, value: 1, input: transactionData.input)
                     let stubFeeData = try await evmFeeEstimator.estimateFee(evmKitWrapper: evmKitWrapper, transactionData: stubTransactionData, gasPriceData: gasPriceData)
                     let totalFee = stubFeeData.totalFee(gasPrice: gasPriceData.userDefined)
@@ -168,7 +188,7 @@ extension EvmSendHandler {
 }
 
 extension EvmSendHandler {
-    static func instance(blockchainType: BlockchainType, transactionData: TransactionData, timeLock: TimeLock? = nil) -> EvmSendHandler? {
+    static func instance(blockchainType: BlockchainType, transactionData: TransactionData, sendToken: Token? = nil, timeLock: TimeLock? = nil) -> EvmSendHandler? {
         guard let baseToken = try? Core.shared.coinManager.token(query: .init(blockchainType: blockchainType, tokenType: .native)) else {
             return nil
         }
@@ -177,11 +197,37 @@ extension EvmSendHandler {
             return nil
         }
 
+        let resolvedToken: Token
+        if let sendToken {
+            resolvedToken = sendToken
+        } else if case let .src20(contract)? = timeLock?.token {
+            guard let token = try? Core.shared.coinManager.token(query: .init(blockchainType: blockchainType, tokenType: .eip20(address: contract.hex))) else { return nil }
+            resolvedToken = token
+        } else {
+            resolvedToken = baseToken
+        }
+
         return EvmSendHandler(
             baseToken: baseToken,
             transactionData: transactionData,
             evmKitWrapper: evmKitWrapper,
+            sendToken: resolvedToken,
+            balanceAdapter: Core.shared.adapterManager.adapter(for: resolvedToken) as? IBalanceAdapter,
             timeLock: timeLock
         )
+    }
+
+    static func isInsufficientEip20Balance(decoration: TransactionDecoration?, sendToken: Token, availableBalance: Decimal?) -> Bool {
+        guard case let .eip20(address) = sendToken.type,
+              let tokenAddress = try? EvmKit.Address(hex: address),
+              let transfer = decoration as? OutgoingEip20Decoration,
+              transfer.contractAddress == tokenAddress,
+              let availableBalance,
+              let amount = Decimal(bigUInt: transfer.value, decimals: sendToken.decimals)
+        else {
+            return false
+        }
+
+        return amount > availableBalance
     }
 }

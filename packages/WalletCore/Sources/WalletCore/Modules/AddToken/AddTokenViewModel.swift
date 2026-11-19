@@ -140,10 +140,6 @@ enum Safe4TokenAddPolicy {
 }
 
 extension AddTokenViewModel {
-    var canAddToken: Bool {
-        account.type.canAddTokens
-    }
-
     var blockchains: [Blockchain] {
         items.map(\.blockchain)
     }

@@ -38,6 +38,14 @@ struct UnstoppableApp: App {
 
         try Core.initApp(config: Core.Config())
 
+        let api = SwapProviderResolver.uSwapApi(networkManager: Core.shared.networkManager)
+        let repositoryCache = USwapAssetRepositoryCache(api: api, storage: Core.shared.swapAssetStorage)
+        Core.crossPayService = CrossPayService(
+            api: api,
+            assetRepository: repositoryCache.repository(providerId:),
+            commitRequestBuilder: USwapCommitRequestBuilder(providerId: CrossPayService.providerId, shouldIncludeSourceAddress: { _ in false })
+        )
+
         Core.shared.appManager.didFinishLaunching()
     }
 }

@@ -308,19 +308,29 @@ extension BitcoinBaseAdapter: BitcoinCoreDelegate {
             }
 
             balanceState = .notSynced(error: converted.localizedDescription)
-        case let .syncing(progress):
-            let newProgress = min(Int(progress * 100), 99)
+        case .syncingStarted:
+            if case let .syncing(progress, remaining, date) = balanceState,
+               progress == nil, remaining == nil, date == nil
+            {
+                return
+            }
+            balanceState = .syncing(progress: nil, remaining: nil, lastBlockDate: nil)
+        case let .syncing(all, downloaded):
+            let newProgress = min(Int(Double(downloaded) / Double(all) * 100), 99)
+            let newRemaining = max(1, all - downloaded)
             let newDate = showSyncedUntil
                 ? abstractKit.lastBlockInfo?.timestamp.map { Date(timeIntervalSince1970: Double($0)) }
                 : nil
 
-            if case let .syncing(currentProgress, _, currentDate) = balanceState, newProgress == currentProgress {
+            if case let .syncing(currentProgress, currentRemaining, currentDate) = balanceState,
+               newProgress == currentProgress, newRemaining == currentRemaining
+            {
                 if let currentDate, let newDate, currentDate.isSameDay(as: newDate) {
                     return
                 }
             }
 
-            balanceState = .syncing(progress: newProgress, remaining: nil, lastBlockDate: newDate)
+            balanceState = .syncing(progress: newProgress, remaining: newRemaining, lastBlockDate: newDate)
         case let .apiSyncing(newCount):
             let newCountDescription = "balance.searching.count".localized("\(newCount)")
             if case let .customSyncing(_, secondary, _) = balanceState, newCountDescription == secondary {
@@ -402,8 +412,8 @@ extension BitcoinBaseAdapter {
         try abstractKit.send(params: params)
     }
 
-    func rawTransaction(params: SendParameters) throws -> Data {
-        try abstractKit.createRawTransaction(params: params)
+    func signedTransaction(params: SendParameters) throws -> FullTransaction {
+        try abstractKit.signedTransaction(params: params)
     }
 
     func convertToSatoshi(value: Decimal) -> Int {

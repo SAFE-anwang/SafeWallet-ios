@@ -4,24 +4,24 @@ import MarketKit
 // `open`, not `final`: every veto below is identical on both platforms and is written once here,
 // while `sections(...)` is the seam each app re-authors in its own SendField idiom.
 open class PrivateSendData: ISendData {
-    // A committed quote is only honoured for this long. Past it the screen dead-ends rather than
-    // pretending to be current — the sellAmount ceiling is what the slide-to-send authorizes.
-    public static let quoteLifetime: TimeInterval = 60
+    // How long a preview is shown before it is silently re-requested. The preview has no side
+    // effects, so a refresh costs nothing; the order is created only when the user slides.
+    public static let quoteLifetime: TimeInterval = 15
 
-    public let order: PrivateSendOrder
+    public let preview: PrivateSendPreview
+    // The inner send estimated against the preview's stub deposit address: it supplies the network
+    // fee rows and the balance vetoes. The one that is broadcast is rebuilt at send time against the
+    // committed deposit address, with the same `transactionSettings`.
     public let inner: ISendData
-    // The handler that produced `inner`, carried here deliberately rather than read back off
-    // PrivateSendHandler at send time: two overlapping sendData(...) calls each prepare their own
-    // handler/data pair, and broadcasting through the wrong one would send a transaction built
-    // against different TransactionSettings than the user confirmed. Never rendered.
-    public let innerHandler: ISendHandler
-    public let attachmentUnsupported: Bool
+    // The settings the inner send was estimated with, captured so the send-time rebuild against the
+    // real deposit address is priced exactly as the user confirmed it. The handler that produced
+    // `inner` is not carried: the one that broadcasts is resolved afresh at send time.
+    public let transactionSettings: TransactionSettings?
 
-    public init(order: PrivateSendOrder, inner: ISendData, innerHandler: ISendHandler, attachmentUnsupported: Bool) {
-        self.order = order
+    public init(preview: PrivateSendPreview, inner: ISendData, transactionSettings: TransactionSettings?) {
+        self.preview = preview
         self.inner = inner
-        self.innerHandler = innerHandler
-        self.attachmentUnsupported = attachmentUnsupported
+        self.transactionSettings = transactionSettings
     }
 
     public var feeData: FeeData? {
@@ -29,137 +29,88 @@ open class PrivateSendData: ISendData {
     }
 
     public var rateCoins: [Coin] {
-        inner.rateCoins + [order.request.token.coin]
+        inner.rateCoins + [preview.request.token.coin]
     }
 
     public var amountAdjusted: Bool {
         inner.amountAdjusted
     }
 
-    public var quoteExpired: Bool {
-        Date().timeIntervalSince(order.committedAt) > Self.quoteLifetime
-    }
-
     public var canSend: Bool {
-        inner.canSend && !inner.amountAdjusted && !attachmentUnsupported && !quoteExpired
+        // No caution accompanies the amountAdjusted veto: the handler forbids adjustment before
+        // estimation, so it cannot legitimately be true. It stays only as a structural guard,
+        // because the failure mode is the recipient receiving nothing.
+        inner.canSend && !inner.amountAdjusted
     }
 
     public var customSendButtonTitle: String? {
-        quoteExpired ? "private_send.quote_expired".localized : inner.customSendButtonTitle
-    }
-
-    // Overridden by a platform subclass that can recognise its own inner data type. The base returns
-    // false because WalletCore's inners report a shortfall as an opaque transactionError caution,
-    // which cannot be identified — let alone replaced — from here.
-    open var innerInsufficientBalance: Bool {
-        false
+        inner.customSendButtonTitle
     }
 
     open func cautions(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [CautionNew] {
-        var cautions: [CautionNew]
-
-        if innerInsufficientBalance {
-            // Replaces the inner's message instead of adding to it: the inner names no amount, and
-            // under exact output the figure the user needs is the DEPOSIT, not what they entered.
-            // This is the only signal that makes an otherwise baffling rejection intelligible —
-            // MAX always fails here by design.
-            cautions = [insufficientBalanceCaution()]
-        } else {
-            cautions = inner.cautions(baseToken: baseToken, currency: currency, rates: rates)
-        }
-
-        if attachmentUnsupported {
-            cautions.append(CautionNew(
-                title: "private_send.caution.title".localized,
-                text: "private_send.caution.attachment_unsupported".localized,
-                type: .error
-            ))
-        }
-
-        // Redundant by design: the handler already forbade adjustment on the inner handler. Kept
-        // because the failure mode is the recipient receiving nothing while the user believes the
-        // send succeeded.
-        if inner.amountAdjusted {
-            cautions.append(CautionNew(
-                title: "private_send.caution.title".localized,
-                text: "private_send.caution.amount_adjusted".localized,
-                type: .error
-            ))
-        }
-
-        if quoteExpired {
-            cautions.append(CautionNew(
-                title: "private_send.caution.title".localized,
-                text: "private_send.caution.quote_expired".localized,
-                type: .warning
-            ))
-        }
-
-        // The fee shown falls back to the deposit ceiling, so it is an upper bound.
-        if order.minSellAmount == nil {
-            cautions.append(CautionNew(
-                title: "private_send.caution.title".localized,
-                text: "private_send.caution.buffer_unknown".localized,
-                type: .warning
-            ))
-        }
-
-        return cautions
+        inner.cautions(baseToken: baseToken, currency: currency, rates: rates)
     }
 
     open func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection] {
-        let token = order.request.token
+        let token = preview.request.token
         let rate = rates[token.coin.uid]
 
-        var fields: [SendField] = [
-            // The real recipient. The deposit address is never shown: it would confuse and it leaks
-            // the rail.
-            .recipient(order.request.recipient, copyable: true, blockchainType: token.blockchainType),
-        ]
+        let amount = SendField.amount(
+            token: token,
+            appValueType: .regular(appValue: AppValue(token: token, value: preview.amountOut)),
+            currencyValue: rate.map { CurrencyValue(currency: currency, value: $0 * preview.amountOut) }
+        )
 
-        // The inner handler's own rows, in the FEE token — never summed with the rows below.
-        fields.append(contentsOf: inner.feeFields(baseToken: baseToken, currency: currency, rates: rates))
+        let to = SendField.address(
+            value: preview.request.recipient,
+            blockchainType: token.blockchainType
+        )
 
-        fields.append(valueField(title: "private_send.fee".localized, value: order.privateFee, token: token, currency: currency, rate: rate))
-        fields.append(valueField(title: "private_send.max_deposit".localized, value: order.depositAmount, token: token, currency: currency, rate: rate))
+        var fields: [SendField] = inner.fields(baseToken: baseToken, currency: currency, rates: rates)
 
-        if let buffer = order.refundableBuffer, buffer > 0 {
-            fields.append(valueField(title: "private_send.refundable".localized, value: buffer, token: token, currency: currency, rate: rate))
-        }
-
-        if let estimatedTime = order.estimatedTime {
+        if let estimatedTime = preview.estimatedTime {
             fields.append(.simpleValue(
                 title: "private_send.estimated_time".localized,
                 value: Duration.seconds(estimatedTime).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .narrow))
             ))
         }
 
-        // What the recipient receives — the value the user entered, and contractual.
-        fields.append(.amount(
+        if let buffer = preview.refundableBuffer, buffer > 0 {
+            fields.append(feeField(
+                title: "private_send.reserved_amount".localized,
+                info: InfoDescription(title: "private_send.reserved_amount".localized, description: "private_send.reserved_amount.info".localized),
+                value: buffer,
+                token: token,
+                currency: currency,
+                rate: rate,
+                isAmount: true
+            ))
+        }
+
+        fields.append(feeField(
+            title: "private_send.fee".localized,
+            info: InfoDescription(title: "private_send.fee".localized, description: "private_send.fee.info".localized),
+            value: preview.privateFee,
             token: token,
-            appValueType: .regular(appValue: AppValue(token: token, value: order.amountOut)),
-            currencyValue: rate.map { CurrencyValue(currency: currency, value: $0 * order.amountOut) }
+            currency: currency,
+            rate: rate
         ))
 
-        return [.init(fields)]
+        // The inner handler's own rows, in the FEE token — never summed with the rows below.
+        fields.append(contentsOf: inner.feeFields(baseToken: baseToken, currency: currency, rates: rates))
+
+        return [.init([amount, to], isFlow: true), .init(fields, isMain: false)]
     }
 
-    private func insufficientBalanceCaution() -> CautionNew {
-        let formatted = AppValue(token: order.request.token, value: order.depositAmount).formattedFull() ?? ""
-
-        return CautionNew(
-            title: "private_send.caution.title".localized,
-            text: "private_send.caution.insufficient_balance %@".localized(formatted),
-            type: .error
-        )
-    }
-
-    private func valueField(title: String, value: Decimal, token: Token, currency: Currency, rate: Decimal?) -> SendField {
-        .value(
-            title: title,
-            appValue: AppValue(token: token, value: value),
-            currencyValue: rate.map { CurrencyValue(currency: currency, value: $0 * value) },
-            formatFull: true
-        )
+    // Amounts open in the coin, fees in fiat; a tap flips either
+    private func feeField(title: String, info: InfoDescription, value: Decimal, token: Token, currency: Currency, rate: Decimal?, isAmount: Bool = false) -> SendField {
+        SendField(FeeField(
+            title: ComponentInformedTitle(title, info: info),
+            amountData: .init(
+                appValue: AppValue(token: token, value: value),
+                currencyValue: rate.map { CurrencyValue(currency: currency, value: $0 * value) }
+            ),
+            initialFlipped: isAmount
+        ))
     }
 }

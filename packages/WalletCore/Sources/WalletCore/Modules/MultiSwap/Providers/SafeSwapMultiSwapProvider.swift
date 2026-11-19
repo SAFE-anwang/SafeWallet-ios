@@ -8,7 +8,7 @@ class SafeSwapMultiSwapProvider: BaseUniswapV2MultiSwapProvider {
     static let name = "SafeSwap"
     override var id: String { Self.id }
     override var name: String { Self.name }
-    override var type: SwapProviderType { .excellent }
+    override var type: SwapProviderType? { .excellent }
     override var icon: String { "safelog" }
 
     override func spenderAddress(chain: Chain) throws -> EvmKit.Address {

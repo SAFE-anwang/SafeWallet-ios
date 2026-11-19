@@ -2,14 +2,10 @@ import Foundation
 import MarketKit
 import ObjectMapper
 
-/// A scoped restriction published by uswap-server on `GET /v2/providers`.
+/// A scoped restriction published by uswap-server on `GET /v3/providers`.
 ///
-/// Two kinds of provider need this and for different reasons:
-///  - Providers uswap-server quotes: it already refuses a suspended request, so honouring the rule
-///    here is purely so the user never sees a card that is going to fail.
-///  - Providers the APP quotes itself (Uniswap, PancakeSwap, and 1inch/THORChain/Maya,
-///    which have native implementations here): no server call happens at all, so this filter is the
-///    ONLY enforcement that exists. Dropping it would make those providers unsuspendable.
+/// uswap-server already refuses a suspended request; the client honours the rule too so the user
+/// never sees a card that is going to fail.
 public struct SwapSuspension: ImmutableMappable {
     public enum Kind: String {
         case asset
@@ -117,6 +113,8 @@ enum CanonicalAssetId {
         .stellar: "XLM",
         .thorChain: "THOR",
         .mayaChain: "MAYA",
+        .xrp: "XRP",
+        .near: "NEAR",
     ]
 
     /// The gas asset's ticker per chain — NOT always the chain code (`BASE.ETH`, `BSC.BNB`,
@@ -144,6 +142,8 @@ enum CanonicalAssetId {
         .stellar: "XLM",
         .thorChain: "RUNE",
         .mayaChain: "CACAO",
+        .xrp: "XRP",
+        .near: "NEAR",
     ]
 
     private static let wrappedSolMint = "So11111111111111111111111111111111111111112"
@@ -184,6 +184,13 @@ enum CanonicalAssetId {
 
         case .zanoAsset, .unsupported:
             return nil
+
+        case .xrpAsset:
+            // No swap provider lists XRPL issued tokens yet.
+            return nil
+
+        case let .nep141(contractId):
+            return "\(chain).\(contractId.uppercased())"
         }
     }
 

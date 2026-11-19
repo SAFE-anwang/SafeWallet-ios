@@ -1,10 +1,11 @@
 import Combine
 import Foundation
 import MarketKit
-import ZcashLightClientKit
+import ZODLSwiftWalletSDK
 
 class ZcashTransactionService: TransactionService {
     override class func instance(sendData: SendData, baseToken: Token, initialTransactionSettings: InitialTransactionSettings?) -> ITransactionService? {
+        guard ZcashSendService.customFeeEnabled else { return nil }
         guard baseToken.blockchainType == .zcash else { return nil }
         switch sendData {
         case let .zcash(amount, recipient, memo), let .zcashResend(amount, recipient, memo, _):

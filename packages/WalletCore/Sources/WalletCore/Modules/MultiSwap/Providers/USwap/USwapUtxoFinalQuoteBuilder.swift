@@ -20,11 +20,8 @@ final class USwapUtxoFinalQuoteBuilder: USwapFinalQuoteBuilder {
         var sendInfo: SendInfo?
         var params: SendParameters?
 
-        guard let execution = input.response.execution else {
+        guard let deposit = input.deposit else {
             throw USwapMultiSwapProvider.SwapError.noTransactionData
-        }
-        guard let deposit = execution.depositInstruction() else {
-            throw USwapMultiSwapProvider.SwapError.invalidTransactionData
         }
 
         // A text memo IS deliverable here and must keep working: it reaches BitcoinCore's
@@ -41,7 +38,8 @@ final class USwapUtxoFinalQuoteBuilder: USwapFinalQuoteBuilder {
         {
             do {
                 let value = adapter.convertToSatoshi(value: input.amountIn)
-                let sendParameters = SendParameters(
+                let sendParameters = Self.sendParameters(
+                    execution: input.response.execution,
                     address: deposit.address,
                     value: value,
                     feeRate: satoshiPerByte,
@@ -64,8 +62,32 @@ final class USwapUtxoFinalQuoteBuilder: USwapFinalQuoteBuilder {
             transactionError: transactionError,
             fee: sendInfo?.fee,
             toAddress: input.destinationAddress,
-            depositAddress: deposit.address,
+            depositAddress: input.response.execution?.depositAddress,
             providerSwapId: input.providerSwapId
+        )
+    }
+
+    // A vault deposit (thorchain_deposit) refunds to the transaction's first input and cannot pay
+    // a taproot address, so it spends only non-taproot UTXOs and returns change to the first input.
+    // Every other route is a plain transfer.
+    private static func sendParameters(
+        execution: USwapMultiSwapApi.Execution?,
+        address: String,
+        value: Int,
+        feeRate: Int,
+        memo: String?
+    ) -> SendParameters {
+        guard case .thorchainDeposit = execution else {
+            return SendParameters(address: address, value: value, feeRate: feeRate, memo: memo)
+        }
+
+        return SendParameters(
+            address: address,
+            value: value,
+            feeRate: feeRate,
+            memo: memo,
+            utxoFilters: UtxoFilters(scriptTypes: [.p2pkh, .p2wpkhSh, .p2wpkh]),
+            changeToFirstInput: true
         )
     }
 }

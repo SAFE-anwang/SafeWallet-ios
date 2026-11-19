@@ -59,7 +59,7 @@ private struct StubProvider: IMultiSwapProvider {
     let id: String
 
     var name: String { id }
-    var type: SwapProviderType { .good }
+    var type: SwapProviderType? { .good }
     var icon: String { "stub" }
 
     func supports(tokenIn _: Token, tokenOut _: Token) -> Bool {
@@ -86,7 +86,7 @@ private struct StubProvider: IMultiSwapProvider {
 private enum MatchingResolver: ISwapProviderResolver {
     static func providerInfo(id: String) -> USwapProviderInfo? {
         id == "matching"
-            ? USwapProviderInfo(id: "matching", name: "Matching", icon: "matching", type: .good, requireTerms: false)
+            ? USwapProviderInfo(id: "matching", name: "Matching", icon: "matching", requireTerms: false)
             : nil
     }
 

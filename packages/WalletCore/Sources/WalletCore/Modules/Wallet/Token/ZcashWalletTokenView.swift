@@ -15,13 +15,17 @@ struct ZcashWalletTokenView: View {
                     VStack(spacing: 0) {
                         WalletTokenTopView(viewModel: walletTokenViewModel)
 
-                        if let birthdayHeight = viewModel.birthdayHeight {
-                            view(birthdayHeight: birthdayHeight)
+                        view(birthdayHeight: viewModel.birthdayHeight)
+                        HorizontalDivider()
+
+                        // spend actions stay hidden while the SDK is not willing to state a spendable value (mask, recovery)
+                        if viewModel.fundsSpendable, viewModel.zCashBalanceData.transparent > ZcashAdapter.minimalThreshold {
+                            view(transparent: viewModel.zCashBalanceData.transparent)
                             HorizontalDivider()
                         }
 
-                        if viewModel.zCashBalanceData.transparent > ZcashAdapter.minimalThreshold {
-                            view(transparent: viewModel.zCashBalanceData.transparent)
+                        if viewModel.fundsSpendable, ZcashMigrator.migrationEnabled, viewModel.ironwoodActive, viewModel.zCashBalanceData.orchard > ZcashAdapter.minimalThreshold {
+                            view(orchard: viewModel.zCashBalanceData.orchard)
                             HorizontalDivider()
                         }
 

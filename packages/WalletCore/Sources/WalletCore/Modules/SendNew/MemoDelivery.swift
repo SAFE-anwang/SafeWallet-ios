@@ -51,11 +51,63 @@ public extension BlockchainType {
         // Nothing on these paths carries a memo: EvmPreSendHandler ignores `memo` entirely, the Tron
         // and Solana handlers drop it before it reaches the transaction.
         case .ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne,
-             .gnosis, .fantom, .base, .zkSync, .safe4, .tron, .solana: .none
+             .gnosis, .fantom, .base, .zkSync, .robinhood, .arc, .safe4, .tron, .solana: .none
         // Public payloads: a TON comment, a Stellar text memo and a THORChain memo are all plainly
         // readable on-chain.
         case .ton, .stellar, .thorChain, .mayaChain: .onChainPublic
+        // The XRP send form offers no memo (Android XrpChainPlugin): the recipient-facing field on
+        // XRP is the Payment's DestinationTag, which has its own input. Deposits carry the
+        // provider's tag there: USwapXrpFinalQuoteBuilder, XrpPreSendHandler's attachment
+        // overload, and Attachment.validate below.
+        case .xrp: .none
+        // only a NEP-141 ft_transfer carries a memo; a NEAR transfer and a deposit have no field for it (Android memoDelivery = None)
+        case .near: .none
         case .unsupported: .none
+        }
+    }
+
+    // The send form's memo limit in UTF-8 bytes, as on Android (ChainPlugin SendMemoSupport.maxBytes):
+    // OP_RETURN relays 80 bytes of data on Bitcoin, Litecoin and Dash and 220 on Bitcoin Cash and eCash,
+    // a Zcash memo field holds 512. TON stays within one comment cell; Monero's 120 is a local note.
+    var memoMaxBytes: Int? {
+        switch self {
+        case .bitcoin, .litecoin, .dash: 80
+        // Conservative app policy for the fork's BitcoinCore OP_RETURN paths, not a verified
+        // network maximum. Keep the same form budget as Bitcoin/Dash.
+        case .dogecoin, .safe: 80
+        case .bitcoinCash, .ecash: 220
+        case .stellar: 28
+        case .zcash: 512
+        case .ton, .monero, .zano: 120
+        case .thorChain, .mayaChain: 250
+        case .near: 256
+        case .ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne,
+             .gnosis, .fantom, .base, .zkSync, .robinhood, .arc, .safe4, .tron, .solana, .xrp, .unsupported: nil
+        }
+    }
+
+    // Chains whose transfer memo rides an OP_RETURN output (80 bytes on Bitcoin, Litecoin and Dash, 220 on
+    // Bitcoin Cash and eCash), as on Android (MemoDelivery.kt memoRidesOpReturn): a swap route memo there
+    // cannot name a unified Zcash address. TON and Stellar memos are short too, but no vault route sells
+    // them into ZEC.
+    var memoRidesOpReturn: Bool {
+        switch self {
+        case .bitcoin, .bitcoinCash, .ecash, .litecoin, .dogecoin, .dash, .safe: true
+        case .zcash, .monero, .zano, .ton, .stellar, .thorChain, .mayaChain, .near, .xrp,
+             .ethereum, .binanceSmartChain, .polygon, .avalanche, .optimism, .arbitrumOne,
+             .gnosis, .fantom, .base, .zkSync, .robinhood, .arc, .safe4, .tron, .solana, .unsupported: false
+        }
+    }
+}
+
+public extension USwapMultiSwapApi.Attachment {
+    // Whether a deposit on this chain can carry the attachment at all, before anything is built:
+    // XRP by its DestinationTag, every other chain by a memo the chain delivers.
+    static func validate(_ attachment: USwapMultiSwapApi.Attachment?, blockchainType: BlockchainType) throws {
+        if blockchainType == .xrp {
+            _ = try destinationTag(attachment)
+        } else {
+            _ = try memo(attachment, memoType: blockchainType.memoType)
         }
     }
 }

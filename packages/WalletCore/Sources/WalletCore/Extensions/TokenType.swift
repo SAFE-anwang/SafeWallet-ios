@@ -8,21 +8,6 @@ extension TokenType {
         }
     }
 
-    var tokenProtocol: TokenProtocol {
-        switch self {
-        case .native: return .native
-        case .derived: return .native
-        case .addressType: return .native
-        case .eip20: return .eip20
-        case .spl: return .spl
-        case .jetton: return .jetton
-        case .stellar: return .stellar
-        case .zanoAsset: return .zanoAsset
-        case .thorChainAsset: return .thorChainAsset
-        case .unsupported: return .unsupported
-        }
-    }
-
     var order: Int {
         switch self {
         case .native: return 0
@@ -76,6 +61,7 @@ extension TokenType {
         case let .addressType(type): return type.rawValue
         case let .zanoAsset(id): return id
         case let .thorChainAsset(denom): return denom
+        case let .xrpAsset(currency, issuer): return [currency, issuer].joined(separator: "-")
         default: return nil
         }
     }

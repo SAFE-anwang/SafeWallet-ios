@@ -35,14 +35,6 @@ class AddressService {
 
     private var text: String = ""
 
-    let publishAmountRelay = BehaviorRelay<Decimal>(value: 0)
-
-    weak var amountPublishService: IAmountPublishService? {
-        didSet {
-            amountPublishService?.publishAmountRelay = publishAmountRelay
-        }
-    }
-
     weak var customErrorService: IErrorService? {
         didSet {
             register(customErrorService: customErrorService)
@@ -171,9 +163,6 @@ extension AddressService {
     func handleFetched(text: String) -> String {
         do {
             let result = try addressUriParser.parse(url: text.trimmingCharacters(in: .whitespaces))
-            if let amount = result.amount {
-                publishAmountRelay.accept(amount.humanReadable(decimals: EvmAdapter.decimals))
-            }
             set(text: result.address)
             return result.address
         } catch {
@@ -235,5 +224,16 @@ extension AddressService {
     enum Mode {
         case blockchainType
         case parsers(AddressUriParser, AddressParserChain)
+    }
+}
+
+extension AddressService.AddressError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case let .invalidAddress(blockchainName):
+            return ["send.error.invalid".localized, blockchainName, "send.error.address".localized]
+                .compactMap { $0 }
+                .joined(separator: " ")
+        }
     }
 }

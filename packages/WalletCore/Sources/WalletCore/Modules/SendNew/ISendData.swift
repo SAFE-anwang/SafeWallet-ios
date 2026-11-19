@@ -7,12 +7,9 @@ public protocol ISendData {
     var canSend: Bool { get }
     var rateCoins: [Coin] { get }
     var customSendButtonTitle: String? { get }
-    // The fee rows alone, so a decorator can splice them into a section of its own instead of
-    // reusing `sections(...)` wholesale — those render the whole transfer, which a decorated send
-    // must present differently.
-    func feeFields(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendField]
-    // True when the handler silently reduced the transfer amount to fit the balance.
     var amountAdjusted: Bool { get }
+    func fields(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendField]
+    func feeFields(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendField]
     func cautions(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [CautionNew]
     func sections(baseToken: Token, currency: Currency, rates: [String: Decimal]) -> [SendDataSection]
 }
@@ -20,6 +17,10 @@ public protocol ISendData {
 public extension ISendData {
     var customSendButtonTitle: String? {
         nil
+    }
+
+    func fields(baseToken _: Token, currency _: Currency, rates _: [String: Decimal]) -> [SendField] {
+        []
     }
 
     func feeFields(baseToken _: Token, currency _: Currency, rates _: [String: Decimal]) -> [SendField] {
@@ -40,21 +41,36 @@ public struct SendDataSection {
     public let isMain: Bool
     public let isFlow: Bool
     public let isList: Bool
+    // Divider after each field of a flow section except the last; nil puts an arrow between every two fields
+    public let flowDividers: [FlowDivider]?
 
-    public init(_ fields: [SendField], isMain: Bool = true, isFlow: Bool = false, isList: Bool = true) {
+    public init(_ fields: [SendField], isMain: Bool = true, isFlow: Bool = false, isList: Bool = true, flowDividers: [FlowDivider]? = nil) {
         self.fields = fields
         self.isMain = isMain
         self.isFlow = isFlow
         self.isList = isList
+        self.flowDividers = flowDividers
     }
 
     @MainActor @ViewBuilder var fieldList: some View {
         ForEach(fields.indices, id: \.self) { index in
             fields[index].listRow()
             if isFlow, index < (fields.count - 1) {
-                flowDivider
+                switch flowDivider(after: index) {
+                case .arrow: flowDivider
+                case .line: HorizontalDivider()
+                case .hidden: EmptyView()
+                }
             }
         }
+    }
+
+    private func flowDivider(after index: Int) -> FlowDivider {
+        guard let flowDividers else {
+            return .arrow
+        }
+
+        return flowDividers.indices.contains(index) ? flowDividers[index] : .hidden
     }
 
     @MainActor @ViewBuilder private var flowDivider: some View {
@@ -67,6 +83,14 @@ public struct SendDataSection {
                         ThemeImage("arrow_m_down", size: .iconSize20)
                     )
             )
+    }
+}
+
+public extension SendDataSection {
+    enum FlowDivider {
+        case arrow
+        case line
+        case hidden
     }
 }
 

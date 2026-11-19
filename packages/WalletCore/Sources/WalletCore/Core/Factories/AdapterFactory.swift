@@ -20,6 +20,8 @@ public class AdapterFactory {
     private let stellarKitManager: StellarKitManager
     private let zanoKitManager: ZanoKitManager
     private let solanaKitManager: SolanaKitManager
+    private let xrpKitManager: XrpKitManager
+    private let nearKitManager: NearKitManager
     private let restoreSettingsManager: RestoreSettingsManager
     private let coinManager: CoinManager
     private let spamWrapper: SpamWrapper
@@ -27,7 +29,7 @@ public class AdapterFactory {
 
     public convenience init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, moneroNodeManager: MoneroNodeManager, zcashNodeManager: ZcashNodeManager,
                             btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager,
-                            zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager,
+                            zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager, xrpKitManager: XrpKitManager, nearKitManager: NearKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager,
                             spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager)
     {
         self.init(
@@ -48,6 +50,8 @@ public class AdapterFactory {
             stellarKitManager: stellarKitManager,
             zanoKitManager: zanoKitManager,
             solanaKitManager: solanaKitManager,
+            xrpKitManager: xrpKitManager,
+            nearKitManager: nearKitManager,
             restoreSettingsManager: restoreSettingsManager,
             coinManager: coinManager,
             spamWrapper: spamWrapper,
@@ -57,7 +61,7 @@ public class AdapterFactory {
 
     init(evmBlockchainManager: EvmBlockchainManager, evmSyncSourceManager: EvmSyncSourceManager, moneroNodeManager: MoneroNodeManager, zcashNodeManager: ZcashNodeManager,
          btcBlockchainManager: BtcBlockchainManager, tronKitManager: TronKitManager, thorChainKitManager: ThorChainKitManager, mayaChainKitManager: ThorChainKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager,
-         zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager,
+         zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager, xrpKitManager: XrpKitManager, nearKitManager: NearKitManager, restoreSettingsManager: RestoreSettingsManager, coinManager: CoinManager,
          spamWrapper: SpamWrapper, evmLabelManager: EvmLabelManager)
     {
         self.evmBlockchainManager = evmBlockchainManager
@@ -72,6 +76,8 @@ public class AdapterFactory {
         self.stellarKitManager = stellarKitManager
         self.zanoKitManager = zanoKitManager
         self.solanaKitManager = solanaKitManager
+        self.xrpKitManager = xrpKitManager
+        self.nearKitManager = nearKitManager
         self.restoreSettingsManager = restoreSettingsManager
         self.coinManager = coinManager
         self.spamWrapper = spamWrapper
@@ -235,11 +241,31 @@ extension AdapterFactory {
         return nil
     }
 
+    func xrpTransactionAdapter(transactionSource: TransactionSource) -> ITransactionsAdapter? {
+        let query = TokenQuery(blockchainType: .xrp, tokenType: .native)
+
+        if let xrpKit = xrpKitManager.xrpKit, let baseToken = try? coinManager.token(query: query) {
+            return XrpTransactionAdapter(xrpKit: xrpKit, source: transactionSource, baseToken: baseToken, coinManager: coinManager, spamWrapper: spamWrapper)
+        }
+
+        return nil
+    }
+
+    func nearTransactionAdapter(transactionSource: TransactionSource) -> ITransactionsAdapter? {
+        let query = TokenQuery(blockchainType: .near, tokenType: .native)
+
+        if let nearKit = nearKitManager.nearKit, let baseToken = try? coinManager.token(query: query) {
+            return NearTransactionAdapter(nearKit: nearKit, source: transactionSource, baseToken: baseToken, coinManager: coinManager, spamWrapper: spamWrapper)
+        }
+
+        return nil
+    }
+
     func solanaTransactionsAdapter(transactionSource: TransactionSource) -> ITransactionsAdapter? {
         let query = TokenQuery(blockchainType: .solana, tokenType: .native)
 
         if let solanaKit = solanaKitManager.solanaKit, let baseToken = try? coinManager.token(query: query) {
-            return SolanaTransactionsAdapter(solanaKit: solanaKit, source: transactionSource, baseToken: baseToken, coinManager: coinManager)
+            return SolanaTransactionsAdapter(solanaKit: solanaKit, source: transactionSource, baseToken: baseToken, coinManager: coinManager, spamWrapper: spamWrapper)
         }
 
         return nil
@@ -304,10 +330,10 @@ extension AdapterFactory {
                 )
             }
 
-        case (.native, .ethereum), (.native, .binanceSmartChain), (.native, .polygon), (.native, .avalanche), (.native, .optimism), (.native, .arbitrumOne), (.native, .gnosis), (.native, .fantom), (.native, .base), (.native, .zkSync):
+        case (.native, .ethereum), (.native, .binanceSmartChain), (.native, .polygon), (.native, .avalanche), (.native, .optimism), (.native, .arbitrumOne), (.native, .gnosis), (.native, .fantom), (.native, .base), (.native, .zkSync), (.native, .robinhood), (.native, .arc):
             return evmAdapter(wallet: wallet)
 
-        case let (.eip20(address), .ethereum), let (.eip20(address), .binanceSmartChain), let (.eip20(address), .polygon), let (.eip20(address), .avalanche), let (.eip20(address), .optimism), let (.eip20(address), .arbitrumOne), let (.eip20(address), .gnosis), let (.eip20(address), .fantom), let (.eip20(address), .base), let (.eip20(address), .zkSync):
+        case let (.eip20(address), .ethereum), let (.eip20(address), .binanceSmartChain), let (.eip20(address), .polygon), let (.eip20(address), .avalanche), let (.eip20(address), .optimism), let (.eip20(address), .arbitrumOne), let (.eip20(address), .gnosis), let (.eip20(address), .fantom), let (.eip20(address), .base), let (.eip20(address), .zkSync), let (.eip20(address), .robinhood), let (.eip20(address), .arc):
             return eip20Adapter(address: address, wallet: wallet)
 
         case let (.eip20(address), .safe4):
@@ -359,6 +385,26 @@ extension AdapterFactory {
         case let (.spl(mintAddress), .solana):
             if let solanaKit = try? solanaKitManager.solanaKit(account: wallet.account) {
                 return SplAdapter(solanaKit: solanaKit, mintAddress: mintAddress)
+            }
+
+        case (.native, .xrp):
+            if let xrpKit = try? xrpKitManager.xrpKit(account: wallet.account) {
+                return XrpAdapter(xrpKit: xrpKit)
+            }
+
+        case let (.xrpAsset(currency, issuer), .xrp):
+            if let xrpKit = try? xrpKitManager.xrpKit(account: wallet.account) {
+                return XrpTokenAdapter(xrpKit: xrpKit, token: wallet.token, currency: currency, issuer: issuer)
+            }
+
+        case (.native, .near):
+            if let nearKit = try? nearKitManager.nearKit(account: wallet.account) {
+                return NearAdapter(nearKit: nearKit)
+            }
+
+        case let (.nep141(contractId), .near):
+            if let nearKit = try? nearKitManager.nearKit(account: wallet.account) {
+                return NearTokenAdapter(nearKit: nearKit, nearKitManager: nearKitManager, token: wallet.token, contractId: contractId)
             }
 
         default: ()

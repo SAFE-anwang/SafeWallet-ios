@@ -69,7 +69,8 @@ public final class ExolixUSwapSubProvider: DefaultUSwapSubProvider {
         // transparent route, which needs none at the dry stage.
         guard let destinations = try? await resolveDestinations(
             recipient: nil,
-            token: input.tokenOut,
+            tokenIn: input.tokenIn,
+            tokenOut: input.tokenOut,
             includeUnified: true
         ) else {
             return try await super.rate(input: input)
@@ -164,9 +165,9 @@ public final class ExolixUSwapSubProvider: DefaultUSwapSubProvider {
         )
     }
 
-    override public func commit(input: USwapCommitInput) async throws -> USwapCommitResult {
+    override public func preview(input: USwapPreviewInput) async throws -> USwapPreviewResult {
         guard supportsAlternateRouteSelection(tokenIn: input.tokenIn, tokenOut: input.tokenOut) else {
-            return try await super.commit(input: input)
+            return try await super.preview(input: input)
         }
 
         guard let assetIn = asset(token: input.tokenIn) else {
@@ -179,7 +180,8 @@ public final class ExolixUSwapSubProvider: DefaultUSwapSubProvider {
 
         let destination = try await resolveDestinations(
             recipient: input.recipient,
-            token: input.tokenOut,
+            tokenIn: input.tokenIn,
+            tokenOut: input.tokenOut,
             includeUnified: false
         ).primary
 
@@ -203,11 +205,12 @@ public final class ExolixUSwapSubProvider: DefaultUSwapSubProvider {
             variant: variant,
             amountIn: input.amountIn,
             slippage: input.slippage,
-            tokenIn: input.tokenIn
+            tokenIn: input.tokenIn,
+            transactionSettings: input.transactionSettings
         )
-        let response = try await api.swap(request)
+        let response = try await api.preview(request)
 
-        return USwapCommitResult(
+        return USwapPreviewResult(
             response: response,
             refundAddress: request.refundAddress,
             destinationAddress: request.destinationAddress
@@ -245,7 +248,8 @@ public final class ExolixUSwapSubProvider: DefaultUSwapSubProvider {
         variant: RouteVariant,
         amountIn: Decimal,
         slippage: Decimal,
-        tokenIn: Token
+        tokenIn: Token,
+        transactionSettings: TransactionSettings?
     ) async throws -> USwapMultiSwapApi.SwapRequest {
         let sourceAddress = try await commitRequestBuilder.sourceAddress(token: tokenIn)
         let refundAddress: String?
@@ -265,28 +269,30 @@ public final class ExolixUSwapSubProvider: DefaultUSwapSubProvider {
             providerId: info.id,
             destinationAddress: variant.destination,
             sourceAddress: sourceAddress,
-            refundAddress: refundAddress
+            refundAddress: refundAddress,
+            networkFee: USwapCommitRequestBuilder.networkFee(tokenIn: tokenIn, transactionSettings: transactionSettings)
         )
     }
 
     private func resolveDestinations(
         recipient: String?,
-        token: Token,
+        tokenIn: Token,
+        tokenOut: Token,
         includeUnified: Bool
     ) async throws -> (primary: String, unified: String?) {
         let cacheKey = accountManager.activeAccount.map {
-            DestinationCacheKey(accountId: $0.id, blockchainType: token.blockchainType)
+            DestinationCacheKey(accountId: $0.id, blockchainType: tokenOut.blockchainType)
         }
-        let primary = try await commitRequestBuilder.destinationAddress(recipient: recipient, token: token)
+        let primary = try await commitRequestBuilder.destinationAddress(recipient: recipient, tokenIn: tokenIn, tokenOut: tokenOut)
 
-        guard includeUnified, token.blockchainType == .zcash, recipient == nil else {
+        guard includeUnified, tokenOut.blockchainType == .zcash, recipient == nil else {
             return (primary, nil)
         }
 
         let temporaryUnified = cacheKey.flatMap { temporaryUnifiedDestinationAddresses[$0] }
             .map { DestinationHelper.Destination(address: $0, type: .nonExisting) }
         let unified = try await DestinationHelper.resolveDestinationUnified(
-            token: token,
+            token: tokenOut,
             temporary: temporaryUnified
         )
 

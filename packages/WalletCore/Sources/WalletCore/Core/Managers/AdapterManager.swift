@@ -1,7 +1,8 @@
+import Combine
 import Foundation
 import MarketKit
-import RxRelay
 import RxSwift
+import ZODLSwiftWalletSDK
 
 private enum ZcashEndpointValidationError: LocalizedError {
     case noActiveAdapter
@@ -28,13 +29,16 @@ public class AdapterManager {
     private let stellarKitManager: StellarKitManager
     private let zanoKitManager: ZanoKitManager
     private let solanaKitManager: SolanaKitManager
+    private let xrpKitManager: XrpKitManager
+    private let nearKitManager: NearKitManager
     private let moneroNodeManager: MoneroNodeManager
     private let zanoNodeManager: ZanoNodeManager
     private let zcashNodeManager: ZcashNodeManager
     private let thorChainKitManager: ThorChainKitManager
     private let mayaChainKitManager: ThorChainKitManager
 
-    private let adapterDataReadyRelay = PublishRelay<AdapterData>()
+    private let adapterDataReadySubject = PassthroughSubject<AdapterData, Never>()
+    private var cancellables = Set<AnyCancellable>()
 
     private let queue = DispatchQueue(label: "\(AppConfig.label).adapter_manager", qos: .userInitiated)
     private let initAdaptersQueue = DispatchQueue(label: "\(AppConfig.label).adapter_manager.init_adapters", qos: .userInitiated)
@@ -53,7 +57,7 @@ public class AdapterManager {
     }
 
     init(adapterFactory: AdapterFactory, walletManager: WalletManager, evmBlockchainManager: EvmBlockchainManager,
-         tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager, zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager,
+         tronKitManager: TronKitManager, tonKitManager: TonKitManager, stellarKitManager: StellarKitManager, zanoKitManager: ZanoKitManager, solanaKitManager: SolanaKitManager, xrpKitManager: XrpKitManager, nearKitManager: NearKitManager,
          btcBlockchainManager: BtcBlockchainManager, moneroNodeManager: MoneroNodeManager, zanoNodeManager: ZanoNodeManager, zcashNodeManager: ZcashNodeManager, thorChainKitManager: ThorChainKitManager, mayaChainKitManager: ThorChainKitManager)
     {
         self.adapterFactory = adapterFactory
@@ -64,6 +68,8 @@ public class AdapterManager {
         self.stellarKitManager = stellarKitManager
         self.zanoKitManager = zanoKitManager
         self.solanaKitManager = solanaKitManager
+        self.xrpKitManager = xrpKitManager
+        self.nearKitManager = nearKitManager
         self.moneroNodeManager = moneroNodeManager
         self.zanoNodeManager = zanoNodeManager
         self.zcashNodeManager = zcashNodeManager
@@ -83,11 +89,18 @@ public class AdapterManager {
         subscribe(disposeBag, btcBlockchainManager.restoreModeUpdatedObservable) { [weak self] in self?.handleUpdatedRestoreMode(blockchainType: $0) }
         subscribe(disposeBag, moneroNodeManager.nodeObservable) { [weak self] in self?.recreateAdapter(blockchainType: $0) }
         subscribe(disposeBag, zanoNodeManager.nodeObservable) { [weak self] in self?.recreateAdapter(blockchainType: $0) }
-        subscribe(disposeBag, zcashNodeManager.nodeObservable) { [weak self] in self?.handleZcashEndpointChange(blockchainType: $0) }
+        zcashNodeManager.nodeUpdatedPublisher
+            .receive(on: DispatchQueue.global(qos: .userInitiated))
+            .sink { [weak self] in
+                self?.handleZcashEndpointChange(blockchainType: $0)
+            }
+            .store(in: &cancellables)
         subscribe(disposeBag, thorChainKitManager.kitUpdatedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .thorChain) }
         subscribe(disposeBag, mayaChainKitManager.kitUpdatedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .mayaChain) }
         subscribe(disposeBag, tronKitManager.tronKitUpdatedObservable) { [weak self] in self?.handleUpdatedEvmKit(blockchainType: .tron) }
         subscribe(disposeBag, solanaKitManager.kitStoppedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .solana) }
+        subscribe(disposeBag, xrpKitManager.kitStoppedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .xrp) }
+        subscribe(disposeBag, nearKitManager.kitStoppedObservable) { [weak self] in self?.recreateAdapter(blockchainType: .near) }
     }
 
     private func subscribeEvmKitManager(blockchainType: BlockchainType) {
@@ -205,7 +218,7 @@ public class AdapterManager {
             diagnosticLog("adapter stop end id=\(diagnosticObjectID(adapter)) type=\(type(of: adapter)) reason=removed")
         }
 
-        adapterDataReadyRelay.accept(newAdapterData)
+        adapterDataReadySubject.send(newAdapterData)
         completion?()
         diagnosticLog("adapter data commit end count=\(newAdapterMap.count) account=\(account?.id ?? "nil") child=\(childWalletId ?? "nil")")
     }
@@ -243,7 +256,7 @@ public class AdapterManager {
         })
     }
 
-    // Zcash changes the lightwalletd endpoint in place (synchronizer.switchTo), not by recreating the
+    // Zcash changes the lightwalletd endpoint in place (synchronizer.restartSync), not by recreating the
     // adapter over the same local DB (which would report synced from cache). switchTo validates the
     // server and throws on failure; on failure we revert the stored selection to the endpoint actually
     // applied so the UI stays in sync with reality.
@@ -341,8 +354,8 @@ extension AdapterManager {
         queue.sync { _adapterData }
     }
 
-    var adapterDataReadyObservable: Observable<AdapterData> {
-        adapterDataReadyRelay.asObservable()
+    var adapterDataReadyPublisher: AnyPublisher<AdapterData, Never> {
+        adapterDataReadySubject.eraseToAnyPublisher()
     }
 
     public func adapter(for wallet: Wallet) -> IAdapter? {
@@ -354,7 +367,7 @@ extension AdapterManager {
     // account switch, which requires no kit restart.
     func reloadAdapterData() {
         queue.async {
-            self.adapterDataReadyRelay.accept(self._adapterData)
+            self.adapterDataReadySubject.send(self._adapterData)
         }
     }
 
@@ -453,27 +466,26 @@ extension AdapterManager {
         diagnosticLog("src20 cancel end id=\(diagnosticObjectID(src20SyncManager))")
     }
 
+    private var zcashAdapter: ZcashAdapter? {
+        queue.sync {
+            _adapterData.adapterMap.first { wallet, _ in wallet.token.blockchainType == .zcash }?.value as? ZcashAdapter
+        }
+    }
+
     func validateZcashEndpoint(_ url: URL) async throws {
         let endpoint = ZcashAdapter.endpoint(url: url)
-
-        let adapter = queue.sync {
-            _adapterData.adapterMap.compactMap { wallet, adapter in
-                wallet.token.blockchainType == .zcash ? adapter as? ZcashAdapter : nil
-            }.first
-        }
+        let adapter = zcashAdapter
 
         guard let adapter else {
-            throw ZcashEndpointValidationError.noActiveAdapter
+            // no live wallet: nothing to switch — validate reachability with the standalone
+            // probe instead; the selection is persisted and the next adapter starts on it
+            guard await !SDKSynchronizer.pingEndpoints([endpoint]).isEmpty else {
+                throw ZcashEndpointValidationError.unavailable
+            }
+            return
         }
 
-        // switching reconfigures the synchronizer under a live broadcast; background-finishing
-        // work is bounded (local proving + 30s gRPC timeout per tx), so the refusal is short-lived.
-        // a migration is an ordinary send, so it holds the same "zcash-send" critical section.
-        let busy = await MainActor.run { Core.shared.backgroundTaskManager.isCriticalActive }
-        guard !busy else {
-            throw ZcashEndpointValidationError.sendInProgress
-        }
-
+        // a live send no longer refuses the switch: ZcashOperationGuard queues it behind the broadcast
         guard await adapter.isEndpointAvailable(endpoint) else {
             throw ZcashEndpointValidationError.unavailable
         }

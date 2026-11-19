@@ -12,6 +12,7 @@ public struct Swap: Hashable {
     let accountId: String
     public let providerId: String
     public var status: Status
+    public let operation: Operation
     public let tokenIn: Token
     public let tokenOut: Token
     public let amountIn: Decimal
@@ -27,6 +28,8 @@ public struct Swap: Hashable {
     public var fromAsset: String?
     public var toAsset: String?
     public var legs: [Leg]?
+    // split swaps only: one entry per recipient, as the split track reports them
+    public var outputs: [Output]?
     var pauseReason: String?
 
     var isPending: Bool {
@@ -34,16 +37,17 @@ public struct Swap: Hashable {
     }
 
     static var pendingStatuses: [Status] {
-        [.notStarted, .pending, .swapping]
+        [.notStarted, .signed, .pending, .swapping]
     }
 
-    public init(uid: String, txHash: String?, trackingHandle: String?, accountId: String, providerId: String, status: Status, tokenIn: Token, tokenOut: Token, amountIn: Decimal, amountOut: Decimal, recipient: String?, toAddress: String, depositAddress: String?, providerSwapId: String?, sourceAddress: String?, refundAddress: String?, estimatedTime: TimeInterval? = nil, date: Date, fromAsset: String? = nil, toAsset: String? = nil, legs: [Leg]? = nil, pauseReason: String? = nil) {
+    public init(uid: String, txHash: String?, trackingHandle: String?, accountId: String, providerId: String, status: Status, operation: Operation = .swap, tokenIn: Token, tokenOut: Token, amountIn: Decimal, amountOut: Decimal, recipient: String?, toAddress: String, depositAddress: String?, providerSwapId: String?, sourceAddress: String?, refundAddress: String?, estimatedTime: TimeInterval? = nil, date: Date, fromAsset: String? = nil, toAsset: String? = nil, legs: [Leg]? = nil, outputs: [Output]? = nil, pauseReason: String? = nil) {
         self.uid = uid
         self.txHash = txHash
         self.trackingHandle = trackingHandle
         self.accountId = accountId
         self.providerId = providerId
         self.status = status
+        self.operation = operation
         self.tokenIn = tokenIn
         self.tokenOut = tokenOut
         self.amountIn = amountIn
@@ -59,11 +63,14 @@ public struct Swap: Hashable {
         self.fromAsset = fromAsset
         self.toAsset = toAsset
         self.legs = legs
+        self.outputs = outputs
         self.pauseReason = pauseReason
     }
 
     public enum Status: String {
         case notStarted = "not_started"
+        // Inbound tx hash reported, deposit not yet observed (v3)
+        case signed
         case pending
         case swapping
         case completed
@@ -71,14 +78,24 @@ public struct Swap: Hashable {
         case unknown
         case failed
         case actionRequired = "action_required"
+        // Terminal: the deposit never arrived before the order's deadline (v3)
+        case expired
 
         var title: String {
             "swap_info.status.\(rawValue)".localized
         }
 
+        var historyTitle: String {
+            switch self {
+            case .notStarted, .signed: "swap_history.status.depositing".localized
+            case .pending, .swapping: "swap_history.status.swapping".localized
+            default: title
+            }
+        }
+
         public var isExpected: Bool {
             switch self {
-            case .notStarted, .pending, .swapping, .completed: true
+            case .notStarted, .signed, .pending, .swapping, .completed: true
             default: false
             }
         }
@@ -88,6 +105,7 @@ public struct Swap: Hashable {
             case .completed: ThemeImage("done_e_filled", size: 20, colorStyle: .green)
             case .failed, .actionRequired: ThemeImage("warning_filled", size: 20, colorStyle: .red)
             case .refunded: ThemeImage("arrow_return", size: 20, colorStyle: .secondary)
+            case .expired: ThemeImage("warning_filled", size: 20, colorStyle: .secondary)
             default: ProgressView(value: 0.55)
                 .progressViewStyle(DeterminiteSpinnerStyle())
                 .frame(width: 20, height: 20)
@@ -95,13 +113,21 @@ public struct Swap: Hashable {
             }
         }
     }
-}
 
-public extension Swap {
-    // A private send is recorded as a Swap so it inherits polling, statuses, legs and the refund UI
-    // for free — but it must not read as one.
-    var isPrivateSend: Bool {
-        tokenIn == tokenOut && (SwapProviderFactory.providerInfo(id: providerId)?.confidential ?? false)
+    public enum Operation: String {
+        case swap
+        case privateSend = "private_send"
+        case crossPay = "cross_pay"
+        // one deposit delivered to several addresses, recorded and tracked as one swap by its splitUuid
+        case splitSwap = "split_swap"
+
+        var title: String {
+            switch self {
+            case .swap, .splitSwap: "swap_info.title".localized
+            case .privateSend: "private_send.tab.caution.title".localized
+            case .crossPay: "cross_pay.info.title".localized
+            }
+        }
     }
 }
 
@@ -114,6 +140,15 @@ public extension Swap {
         public let fromAsset: String
         public let toAsset: String
     }
+
+    struct Output: Hashable {
+        public let index: Int
+        public let status: Status
+        public let toAddress: String?
+        public let fromAmount: Decimal?
+        public let toAmount: Decimal?
+        public let legs: [Leg]
+    }
 }
 
 struct SwapRecord: Codable {
@@ -123,6 +158,7 @@ struct SwapRecord: Codable {
     let accountId: String
     let providerId: String
     let status: String
+    let operation: String
     let tokenQueryIdIn: String
     let tokenQueryIdOut: String
     let amountIn: String
@@ -138,6 +174,7 @@ struct SwapRecord: Codable {
     let fromAsset: String?
     let toAsset: String?
     let legs: [Leg]?
+    let outputs: [Output]?
     let pauseReason: String?
 }
 
@@ -149,6 +186,15 @@ extension SwapRecord {
         let txHash: String
         let fromAsset: String
         let toAsset: String
+    }
+
+    struct Output: Codable {
+        let index: Int
+        let status: String
+        let toAddress: String?
+        let fromAmount: String?
+        let toAmount: String?
+        let legs: [Leg]
     }
 }
 
@@ -164,6 +210,7 @@ extension SwapRecord: FetchableRecord, PersistableRecord {
         static let accountId = Column(CodingKeys.accountId)
         static let providerId = Column(CodingKeys.providerId)
         static let status = Column(CodingKeys.status)
+        static let operation = Column(CodingKeys.operation)
         static let tokenQueryIdIn = Column(CodingKeys.tokenQueryIdIn)
         static let tokenQueryIdOut = Column(CodingKeys.tokenQueryIdOut)
         static let amountIn = Column(CodingKeys.amountIn)
@@ -179,6 +226,7 @@ extension SwapRecord: FetchableRecord, PersistableRecord {
         static let fromAsset = Column(CodingKeys.fromAsset)
         static let toAsset = Column(CodingKeys.toAsset)
         static let legs = Column(CodingKeys.legs)
+        static let outputs = Column(CodingKeys.outputs)
         static let pauseReason = Column(CodingKeys.pauseReason)
     }
 }

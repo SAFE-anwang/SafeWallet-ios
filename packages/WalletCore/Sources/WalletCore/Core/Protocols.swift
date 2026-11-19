@@ -6,6 +6,7 @@ import EvmKit
 import GRDB
 import HsToolKit
 import MarketKit
+import NearKit
 import RxSwift
 import SolanaKit
 import TonKit
@@ -13,7 +14,8 @@ import TonSwift
 import TronKit
 import UIKit
 import UniswapKit
-import ZcashLightClientKit
+import XrpKit
+import ZODLSwiftWalletSDK
 
 public protocol IWidgetRefresher {
     func refreshAll()
@@ -159,6 +161,40 @@ public protocol ISendTronAdapter {
 
 protocol ISendTonAdapter {
     func transferData(recipient: FriendlyAddress, amount: TonAdapter.SendAmount, comment: String?) throws -> TransferData
+}
+
+protocol ISendXrpAdapter {
+    /// The wallet's own classic address; a payment to it is refused by the ledger.
+    var address: String { get }
+    /// Network fee in XRP, sampled at adapter start (default 0.000012); the kit re-reads it at send time.
+    var fee: Decimal { get }
+    var baseReserve: Decimal { get }
+    /// XRP locked by each owned object; a TrustSet locks one increment while the line exists.
+    var ownerReserve: Decimal { get }
+    var availableXrpBalance: Decimal { get }
+    func doesAccountExist(address: String) async throws -> Bool
+    func requiresDestinationTag(address: String) async throws -> Bool
+    /// Whether `address` can receive this adapter's token: always true for XRP, a trust line for an issued token.
+    func canReceive(address: String) async throws -> Bool
+    func send(amount: Decimal, address: String, destinationTag: UInt32?, signer: XrpKit.Signer) async throws -> String
+    func setTrustLine(currency: String, issuer: String, limit: Decimal, signer: XrpKit.Signer) async throws -> String
+}
+
+protocol ISendNearAdapter {
+    var address: String { get }
+    var fee: Decimal { get }
+    var availableNear: Decimal { get }
+    var pendingTransactionHashes: Set<String> { get }
+    func estimate(address: String, amount: Decimal, memo: String?) async throws -> NearSendEstimate
+    func send(amount: Decimal, address: String, memo: String?, estimate: NearSendEstimate, signer: NearKit.Signer) async throws -> String
+}
+
+// requiredNear: the NEAR balance the network needs to accept the send, well above the fee because gas is bought up front
+struct NearSendEstimate {
+    let fee: Decimal
+    let storageDeposit: Decimal?
+    let requiredNear: Decimal
+    let ftTransferEstimate: FtTransferEstimate?
 }
 
 protocol ISendSolanaAdapter {

@@ -12,7 +12,7 @@ struct SwapInfoView: View {
             // Temporarily disable the refund request entry while keeping the warning visible.
             content
         }
-        .navigationTitle("swap_info.title".localized)
+        .navigationTitle(viewModel.swap.operation.title)
     }
 
     private var content: some View {
@@ -55,7 +55,7 @@ struct SwapInfoView: View {
                                 legStatusIcon(leg: leg, index: index)
                                     .frame(width: 24, height: 40)
 
-                                ThemeText(leg.title, style: .subhead, colorStyle: leg.status == .notStarted ? .secondary : .primary)
+                                ThemeText(leg.title, style: .subhead, colorStyle: leg.status == .notStarted || leg.status == .signed ? .secondary : .primary)
                             }
 
                             Spacer()

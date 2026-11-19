@@ -88,8 +88,11 @@ extension SwapGuaranteedAmountTests {
             buyAsset: nil,
             estimatedTime: nil,
             execution: nil,
-            uuid: "uuid",
-            approvalSpender: nil
+            uuid: nil,
+            approvalSpender: nil,
+            previewToken: "preview-token",
+            // a transfer preview without a stub fails outright; the stub only feeds the fee estimate
+            stubDepositAddress: "stub-deposit"
         )
     }
 
@@ -119,15 +122,20 @@ extension SwapGuaranteedAmountTests {
 
         func slippageSupported(tokenIn _: Token, tokenOut _: Token) -> Bool { true }
         func supports(tokenIn _: Token, tokenOut _: Token) -> Bool { true }
-        func mevProtectionAllowed(tokenIn _: Token, tokenOut _: Token) -> Bool { false }
 
         func rate(input _: USwapRateInput) async throws -> USwapRateResult {
             throw USwapMultiSwapProvider.SwapError.noRoutes
         }
 
-        func commit(input _: USwapCommitInput) async throws -> USwapCommitResult {
-            USwapCommitResult(response: response, refundAddress: nil, destinationAddress: "destination")
+        func preview(input _: USwapPreviewInput) async throws -> USwapPreviewResult {
+            USwapPreviewResult(response: response, refundAddress: nil, destinationAddress: "destination")
         }
+
+        func commit(previewToken _: String) async throws -> USwapMultiSwapApi.CommitResponse {
+            USwapMultiSwapApi.CommitResponse(status: "ok", uuid: "uuid", sellAmount: nil, expectedBuyAmount: nil, minBuyAmount: nil, expiresAt: nil, replayed: false, execution: nil)
+        }
+
+        func reportSigned(uuid _: String, inboundTxHash _: String) async throws {}
 
         func validateTrustedProvider(tokenIn _: Token, amountIn _: Decimal) async throws -> Bool? { nil }
         func track(swap: Swap) async throws -> Swap { swap }

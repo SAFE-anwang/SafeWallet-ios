@@ -778,9 +778,9 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
         }
 
         let data = MarketDappWeb3Parser.messageData(string: messageString) ?? Data()
-        let payload = WCPersonalSignPayload(dAppName: dAppName, data: data)
-        let chain = WalletConnectRequest.Chain(id: "\(chainId)", chainName: nil, address: address)
-        let request = WalletConnectRequest(id: id, chain: chain, payload: payload)
+        let payload = DappPersonalSignPayload(dAppName: dAppName, data: data)
+        let chain = DappSignRequest.Chain(id: "\(chainId)", chainName: nil, address: address)
+        let request = DappSignRequest(id: id, chain: chain, payload: payload)
 
         let signService = MarketDappInjectedSignService(
             onApprove: { [weak self] id, result in
@@ -797,9 +797,9 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
             }
         )
 
-        let service = WCSignMessageRequestService(request: request, signService: signService, signer: signer)
-        let viewModel = WCSignMessageRequestViewModel(service: service)
-        let controller = WCSignMessageRequestViewController(viewModel: viewModel)
+        let service = DappSignMessageService(request: request, signService: signService, signer: signer)
+        let viewModel = DappSignMessageViewModel(service: service)
+        let controller = DappSignMessageViewController(viewModel: viewModel)
         present(id: id, viewController: controller)
     }
 
@@ -822,9 +822,9 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
             return
         }
 
-        let payload = WCSignTypedDataV4Payload(dAppName: dAppName, data: data)
-        let chain = WalletConnectRequest.Chain(id: "\(chainId)", chainName: nil, address: address)
-        let request = WalletConnectRequest(id: id, chain: chain, payload: payload)
+        let payload = DappSignTypedDataV4Payload(dAppName: dAppName, data: data)
+        let chain = DappSignRequest.Chain(id: "\(chainId)", chainName: nil, address: address)
+        let request = DappSignRequest(id: id, chain: chain, payload: payload)
 
         let signService = MarketDappInjectedSignService(
             onApprove: { [weak self] id, result in
@@ -841,9 +841,9 @@ extension MarketDappWeb3Handler: WKScriptMessageHandler {
             }
         )
 
-        let service = WCSignMessageRequestService(request: request, signService: signService, signer: signer)
-        let viewModel = WCSignMessageRequestViewModel(service: service)
-        let controller = WCSignMessageRequestViewController(viewModel: viewModel)
+        let service = DappSignMessageService(request: request, signService: signService, signer: signer)
+        let viewModel = DappSignMessageViewModel(service: service)
+        let controller = DappSignMessageViewController(viewModel: viewModel)
         present(id: id, viewController: controller)
     }
 
@@ -924,7 +924,7 @@ extension MarketDappWeb3Handler {
     }
 }
 
-final class MarketDappInjectedSignService: IWalletConnectSignService {
+final class MarketDappInjectedSignService: IDappSignService {
     private let onApprove: (Int, Any) -> Void
     private let onReject: (Int) -> Void
 

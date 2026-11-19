@@ -20,10 +20,17 @@ public enum SendHandlerFactory {
         preSendProviders.insert(provider, at: 0)
     }
 
+    // Backstop for every send screen: the entry points are gated in the UI, this catches the ones that are not.
+    // It must run before the providers: PrivateSendHandlerProvider/CrossPayHandlerProvider commit an order with the
+    // provider while building their handler, so a later nil would leave that order unpaid.
     static func handler(sendData: SendData) -> ISendHandler? {
         guard ChildWalletBridge.shared.supports(account: Core.shared.accountManager.activeAccount, sendData: sendData) else {
             return nil
         }
+        if Core.shared.accountManager.activeAccount?.watchAccount == true {
+            return nil
+        }
+
         for provider in providers {
             if let handler = provider.instance(sendData: sendData) {
                 return handler
@@ -31,8 +38,6 @@ public enum SendHandlerFactory {
         }
 
         switch sendData {
-        case let .walletConnect(request):
-            return WalletConnectSendHandler.instance(request: request)
         case let .openCryptoPay(payment, entry, inner):
             return OpenCryptoPaySendHandlerFactory.handler(payment: payment, entry: entry, inner: inner)
         case let .liquidityAdd(token0, token1, amount0, amount1, provider, v3TickType, manualAmountOutMode):
@@ -48,8 +53,12 @@ public enum SendHandlerFactory {
         }
     }
 
-    public static func preSendHandler(wallet: Wallet, address: ResolvedAddress) -> IPreSendHandler? {
-        guard ChildWalletBridge.shared.supports(account: Core.shared.accountManager.activeAccount, token: wallet.token) else {
+    public static func preSendHandler(wallet: Wallet, address: ResolvedAddress?) -> IPreSendHandler? {
+        if wallet.account.watchAccount {
+            return nil
+        }
+
+        guard ChildWalletBridge.shared.supports(account: wallet.account, token: wallet.token) else {
             return nil
         }
         for provider in preSendProviders {
@@ -65,7 +74,10 @@ public enum SendHandlerFactory {
 public extension SendHandlerFactory {
     static let unstoppableHandlers: [SendHandler.Type] = [
         PrivateSendHandlerProvider.self,
+        CrossPayHandlerProvider.self,
         EvmSendHandler.self,
+        EvmResendHandler.self,
+        BitcoinResendHandler.self,
         BitcoinSendHandler.self,
         ZcashSendHandler.self,
         ShieldSendHandler.self,
@@ -75,9 +87,12 @@ public extension SendHandlerFactory {
         TonSendHandler.self,
         StellarSendHandler.self,
         SolanaSendHandler.self,
+        XrpSendHandler.self,
+        NearSendHandler.self,
         MoneroSendHandler.self,
         ZanoSendHandler.self,
         MultiSwapSendHandler.self,
+        SplitSwapSendHandler.self,
         TonConnectSendHandler.self,
     ]
 
@@ -90,6 +105,8 @@ public extension SendHandlerFactory {
         TonPreSendHandler.self,
         SolanaPreSendHandler.self,
         StellarPreSendHandler.self,
+        XrpPreSendHandler.self,
+        NearPreSendHandler.self,
         MoneroPreSendHandler.self,
         ZanoPreSendHandler.self,
     ]

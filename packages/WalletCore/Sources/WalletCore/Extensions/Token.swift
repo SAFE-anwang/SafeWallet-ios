@@ -10,6 +10,8 @@ extension Token {
             case .safe: return "SAFE3"
             case .safe4: return nil
             case .optimism, .arbitrumOne, .base, .zkSync: return blockchain.name
+            case .robinhood: return "Robinhood"
+            case .arc: return "Arc"
             default: return nil
             }
         case .eip20:
@@ -18,6 +20,8 @@ extension Token {
             case .binanceSmartChain: return "BEP20"
             case .tron: return "TRC20"
             case .safe4: return isSafeUSDT() ? "SAFE" : "SRC20"
+            case .robinhood: return "Robinhood"
+            case .arc: return "Arc"
             default: return blockchain.name
             }
         case .jetton:
@@ -42,8 +46,8 @@ extension Token {
     var placeholderImageName: String {
         if [.safe, .safe4].contains(blockchainType) {
             return "safe-anwang_trx_32"
-        }else {
-            return "\(blockchainType.uid)_\(type.tokenProtocol)_32"
+        } else {
+            return "placeholder_circle_32"
         }
     }
 
@@ -67,6 +71,19 @@ extension Token {
         }
     }
 
+    var maskImageUrl: String? {
+        switch type {
+        case .native:
+            switch blockchainType {
+            case .optimism, .arbitrumOne, .base, .zkSync, .robinhood, .arc: return blockchainType.imageUrl
+            default: return nil
+            }
+        case .derived, .addressType: return nil
+        default:
+            return blockchainType.imageUrl
+        }
+    }
+
     var fullBadge: String {
         (badge ?? "coin_platforms.native".localized).uppercased()
     }
@@ -79,6 +96,10 @@ extension Token {
     var sendToSelfAllowed: Bool {
         if case .native = type, blockchainType == .zcash { return false }
         if blockchainType == .tron { return false }
+        // the ledger rejects a payment to the sending account itself (temREDUNDANT)
+        if blockchainType == .xrp { return false }
+        // Android NearAddressValidator refuses the account's own id as the receiver
+        if blockchainType == .near { return false }
 
         return true
     }
