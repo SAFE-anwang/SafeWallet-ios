@@ -7,7 +7,7 @@ import SwiftUI
 class EvmTransactionService: TransactionService {
     override class func instance(sendData: SendData, baseToken: Token, initialTransactionSettings: InitialTransactionSettings?) -> ITransactionService? {
         guard EvmBlockchainManager.blockchainTypes.contains(baseToken.blockchainType),
-              let evmKit = try? Core.shared.evmBlockchainManager.evmKitManager(blockchainType: baseToken.blockchainType).evmKitWrapper?.evmKit
+              let evmKit = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: baseToken.blockchainType)?.evmKit
         else { return nil }
 
         if case let .evmResend(blockchainType, transaction, _) = sendData {

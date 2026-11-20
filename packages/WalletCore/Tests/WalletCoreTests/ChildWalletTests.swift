@@ -587,7 +587,7 @@ final class ChildWalletTests: XCTestCase {
         XCTAssertEqual(activeStateStore.activeChildWalletId(parentAccountId: account.id), childWallet.id)
         XCTAssertEqual(
             try bridge.walletId(account: account, blockchainType: .safe4),
-            "cw-p706172656e74-i3-c7361666534"
+            "cw-p706172656e74-i3-c73616665342d616e77616e67" // Chain UID: safe4-anwang.
         )
     }
 

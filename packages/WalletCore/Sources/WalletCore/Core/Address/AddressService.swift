@@ -3,10 +3,6 @@ import MarketKit
 import RxCocoa
 import RxSwift
 
-protocol IAmountPublishService: AnyObject {
-    var publishAmountRelay: BehaviorRelay<Decimal>? { get set }
-}
-
 class AddressService {
     private let scheduler = SerialDispatchQueueScheduler(qos: .userInitiated, internalSerialQueueName: "\(AppConfig.label).address-service")
 

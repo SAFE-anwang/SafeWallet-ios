@@ -19,31 +19,9 @@ public enum TransactionServiceFactory {
             return nil
         }
 
-        if EvmBlockchainManager.blockchainTypes.contains(baseToken.blockchainType),
-           let evmKit = ChildWalletBridge.shared.activeEvmKitWrapper(blockchainType: baseToken.blockchainType)?.evmKit,
-           let transactionService = EvmTransactionService(blockchainType: baseToken.blockchainType, evmKit: evmKit, initialTransactionSettings: initialTransactionSettings)
-        {
-            return transactionService
-        }
-
-        if BtcBlockchainManager.blockchainTypes.contains(baseToken.blockchainType), let adapter = Core.shared.adapterManager.adapter(for: baseToken) as? BitcoinBaseAdapter {
-            return UtxoTransactionService(blockchainType: baseToken.blockchainType, adapter: adapter)
-        }
-
-        if baseToken.blockchainType == .monero, let adapter = Core.shared.adapterManager.adapter(for: baseToken) as? MoneroAdapter {
-            return MoneroTransactionService(adapter: adapter)
-        }
-
-        if baseToken.blockchainType == .zcash {
-            switch sendData {
-            case let .zcash(amount, recipient, memo),
-                 let .zcashResend(amount, recipient, memo, _):
-                return ZcashTransactionService(
-                    token: baseToken,
-                    proposalRequest: .transfer(amount: amount, recipient: recipient, memo: memo),
-                    initialTransactionSettings: initialTransactionSettings
-                )
-            default: ()
+        for provider in providers {
+            if let service = provider.instance(sendData: sendData, baseToken: baseToken, initialTransactionSettings: initialTransactionSettings) {
+                return service
             }
         }
 

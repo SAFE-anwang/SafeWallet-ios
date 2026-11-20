@@ -9,7 +9,8 @@ final class Safe4WrappedTokenMetadataTests: XCTestCase {
         let type = type ?? .eip20(address: address)
         return Token(
             coin: Coin(
-                uid: TokenQuery(blockchainType: blockchainType, tokenType: type).customCoinUid,
+                // Both imported modules define customCoinUid; keep the persisted UID format in this fixture.
+                uid: "custom-\(TokenQuery(blockchainType: blockchainType, tokenType: type).id)",
                 name: name,
                 code: code,
                 marketCapRank: 123,

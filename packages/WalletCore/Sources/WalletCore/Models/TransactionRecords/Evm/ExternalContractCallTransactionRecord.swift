@@ -7,7 +7,7 @@ public class ExternalContractCallTransactionRecord: EvmTransactionRecord, Transf
     public let incomingEvents: [TransferEvent]
     public let outgoingEvents: [TransferEvent]
 
-    init(source: TransactionSource, transaction: Transaction, baseToken: Token, method: String?, incomingEvents: [TransferEvent], outgoingEvents: [TransferEvent], spam: Bool = false, protected: Bool) {
+    init(source: TransactionSource, transaction: Transaction, baseToken: Token, method: String? = nil, incomingEvents: [TransferEvent], outgoingEvents: [TransferEvent], spam: Bool = false, protected: Bool) {
         self.method = method
         self.incomingEvents = incomingEvents
         self.outgoingEvents = outgoingEvents

@@ -115,9 +115,6 @@ let package = Package(
                 .product(name: "XrpKit", package: "XrpKit.Swift"),
                 .product(name: "ZODLSwiftWalletSDK", package: "zodl-swift-wallet-sdk"),
             ],
-            exclude: [
-                "Core/AppConfig.swift",
-            ],
             resources: [
                 .process("Resources/Localizable.xcstrings"),
                 .process("Modules/RestoreAccount/RestoreType/wallet.json"),

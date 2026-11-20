@@ -2,24 +2,67 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>node.xmr.rocks</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>node.sethforprivacy.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>node.monerodevs.org</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>nodex.monerujo.io</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>monero.stackwallet.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>nodes.hashvault.pro</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>opennode.xmr-tw.org</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>ArbiscanApiKeys</key>
 	<string>${ARBISCAN_API_KEYS}</string>
+	<key>SharedCloudContainerId</key>
+	<string>${SHARED_CLOUD_CONTAINER_ID}</string>
+	<key>PrivateCloudContainerId</key>
+	<string>${PRIVATE_CLOUD_CONTAINER_ID}</string>
 	<key>BasescanApiKeys</key>
 	<string>${BASESCAN_API_KEYS}</string>
-	<key>BlockchairApiKey</key>
-	<string>${BLOCKCHAIR_API_KEY}</string>
 	<key>BscscanApiKeys</key>
 	<string>${BSCSCAN_API_KEYS}</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>CFBundleDisplayName</key>
-	<string>$(APP_DISPLAY_NAME)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleDisplayName</key>
+	<string>$(APP_DISPLAY_NAME)</string>
 	<key>CFBundleName</key>
 	<string>$(APP_DISPLAY_NAME)</string>
 	<key>CFBundlePackageType</key>
@@ -78,6 +121,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ChainalysisApiKey</key>
 	<string>${CHAINALYSIS_API_KEY}</string>
+	<key>MerkleApiPath</key>
+	<string>${MERKLE_API_PATH}</string>
 	<key>DefaultPassphrase</key>
 	<string>${DEFAULT_PASSPHRASE}</string>
 	<key>DefaultWatchAddress</key>
@@ -86,10 +131,10 @@
 	<string>${DEFAULT_WORDS}</string>
 	<key>DefiYieldApiKey</key>
 	<string>$(DEFIYIELD_API_KEY)</string>
-	<key>DonateEnabled</key>
-	<string>${DONATE_ENABLED}</string>
 	<key>EraZkSyncApiKeys</key>
 	<string>${ERA_ZKSYNC_API_KEYS}</string>
+	<key>RobinhoodApiKeys</key>
+	<string>${ROBINHOOD_API_KEYS}</string>
 	<key>EtherscanApiKeys</key>
 	<string>${ETHERSCAN_API_KEYS}</string>
 	<key>FastNearApiKey</key>
@@ -108,8 +153,6 @@
 	<string>$(HS_PROVIDER_API_KEY)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>JupiterApiKey</key>
-	<string>${JUPITER_API_KEY}</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>googlechrome</string>
@@ -119,51 +162,6 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>MarketApiUrl</key>
-	<string>${MARKET_API_URL}</string>
-	<key>MerkleApiPath</key>
-	<string>${MERKLE_API_PATH}</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>node.xmr.rocks</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-			<key>node.sethforprivacy.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-			<key>node.monerodevs.org</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-			<key>nodex.monerujo.io</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-			<key>monero.stackwallet.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-			<key>nodes.hashvault.pro</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-			<key>opennode.xmr-tw.org</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-		</dict>
-	</dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Bluetooth is used only to connect a Ledger hardware wallet.</string>
 	<key>NSCameraUsageDescription</key>
@@ -174,8 +172,6 @@
 	<string>We need access to local network to discover blockchain nodes</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>We need access to photo library to save NFT images</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to photo library to select images</string>
 	<key>NSUbiquitousContainers</key>
 	<dict>
 		<key>iCloud.io.horizontalsystems.bank-wallet.shared</key>
@@ -207,20 +203,10 @@
 	<string>$(PIMLICO_SPONSORSHIP_POLICY_ID)</string>
 	<key>PolygonscanApiKeys</key>
 	<string>${POLYGONSCAN_API_KEYS}</string>
-	<key>PrivateCloudContainerId</key>
-	<string>${PRIVATE_CLOUD_CONTAINER_ID}</string>
-	<key>ReferralAppServerUrl</key>
-	<string>${REFERRAL_APP_SERVER_URL}</string>
-	<key>RobinhoodApiKeys</key>
-	<string>${ROBINHOOD_API_KEYS}</string>
-	<key>SharedCloudContainerId</key>
-	<string>${SHARED_CLOUD_CONTAINER_ID}</string>
 	<key>SnowtraceApiKeys</key>
 	<string>${SNOWTRACE_API_KEYS}</string>
 	<key>SolanaAlchemyApiKeys</key>
 	<string>${SOLANA_ALCHEMY_API_KEYS}</string>
-	<key>SwapApiUrl</key>
-	<string>${SWAP_API_URL}</string>
 	<key>TronGridApiKeys</key>
 	<string>${TRONGRID_API_KEYS}</string>
 	<key>TwitterBearerToken</key>
@@ -254,11 +240,25 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
-	<key>USwapApiKey</key>
-	<string>${USWAP_API_KEY}</string>
 	<key>UnstoppableDomainsApiKey</key>
 	<string>${UNSTOPPABLE_DOMAINS_API_KEY}</string>
 	<key>WallectConnectV2ProjectKey</key>
 	<string>${WALLET_CONNECT_V2_PROJECT_KEY}</string>
+	<key>USwapApiKey</key>
+	<string>${USWAP_API_KEY}</string>
+	<key>JupiterApiKey</key>
+	<string>${JUPITER_API_KEY}</string>
+	<key>BlockchairApiKey</key>
+	<string>${BLOCKCHAIR_API_KEY}</string>
+	<key>DonateEnabled</key>
+	<string>${DONATE_ENABLED}</string>
+	<key>MarketApiUrl</key>
+	<string>${MARKET_API_URL}</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to photo library to select images</string>
+	<key>ReferralAppServerUrl</key>
+	<string>${REFERRAL_APP_SERVER_URL}</string>
+	<key>SwapApiUrl</key>
+	<string>${SWAP_API_URL}</string>
 </dict>
 </plist>

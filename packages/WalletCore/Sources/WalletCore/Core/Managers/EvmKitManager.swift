@@ -213,7 +213,7 @@ public class EvmKitWrapper {
     let merkleTransactionAdapter: MerkleTransactionAdapter?
     let signer: Signer?
 
-    init(blockchainType: BlockchainType, evmKit: EvmKit.Kit, nftKit: NftKit.Kit?, merkleTransactionAdapter: MerkleTransactionAdapter?, signer: Signer?) {
+    init(blockchainType: BlockchainType, evmKit: EvmKit.Kit, nftKit: NftKit.Kit? = nil, merkleTransactionAdapter: MerkleTransactionAdapter?, signer: Signer?) {
         self.blockchainType = blockchainType
         self.evmKit = evmKit
         self.nftKit = nftKit

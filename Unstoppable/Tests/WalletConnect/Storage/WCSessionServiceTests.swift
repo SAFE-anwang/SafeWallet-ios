@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import GRDB
 import Testing
 import WalletConnectSign
 @testable import WalletCore
@@ -104,6 +105,36 @@ struct WCSessionServiceTests {
         let records = try storage.sessions()
         #expect(records.isEmpty)
         #expect(service.sessions.isEmpty)
+    }
+
+    @Test func startupDisconnectsOnlyLegacySessionsWithoutAnApproval() async throws {
+        let storage = try WCSessionFixtures.storage()
+        let approved = try WCSessionFixtures.session(topic: "approved")
+        let legacy = try WCSessionFixtures.session(topic: "legacy")
+        client.sessions = [approved, legacy]
+        let service = service(storage: storage)
+        try service.store(session: approved, accountId: "parent:child:1")
+
+        await service.disconnectOrphans()
+
+        #expect(client.disconnectedTopics == ["legacy"])
+        #expect(try storage.session(topic: "approved")?.accountId == "parent:child:1")
+    }
+
+    @Test func unreadableApprovalStoragePreservesLiveSessions() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let pool = try DatabasePool(path: url.path)
+        let storage = try WCSessionStorage(dbPool: pool)
+        let approved = try WCSessionFixtures.session(topic: "approved")
+        client.sessions = [approved]
+        let service = service(storage: storage)
+        try service.store(session: approved, accountId: "a1")
+        try pool.close()
+
+        await service.disconnectOrphans()
+
+        #expect(client.disconnectedTopics.isEmpty)
     }
 
     @Test func userDisconnectRemovesSessionEverywhere() async throws {

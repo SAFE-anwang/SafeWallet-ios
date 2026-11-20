@@ -46,8 +46,8 @@ class BitcoinTransactionRecord: TransactionRecord {
 }
 
 public struct TransactionLockState {
-    let locked: Bool
-    let date: Date
+    public let locked: Bool
+    public let date: Date
     let unlockedHeight: Int?
 }
 

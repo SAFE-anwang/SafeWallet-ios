@@ -19,6 +19,6 @@ class WCEvmSendHandlerFactory: IWCSendHandlerFactory {
             return nil
         }
 
-        return WCEvmSendHandler(payload: payload, request: request, evmKitWrapper: evmKitWrapper, responder: responder, accountName: account.name)
+        return WCEvmSendHandler(payload: payload, request: request, evmKitWrapper: evmKitWrapper, responder: responder, accountName: ChildWalletBridge.shared.displayName(account: account))
     }
 }

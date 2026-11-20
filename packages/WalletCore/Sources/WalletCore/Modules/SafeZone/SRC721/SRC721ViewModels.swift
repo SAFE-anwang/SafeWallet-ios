@@ -1549,12 +1549,12 @@ final class SRC721ContractDetailViewModel: ObservableObject {
         logo: Data?
     ) -> Bool {
         guard let current = contractState else { return false }
-        let trimmedBaseURI = baseURI.trimmingCharacters(in: .whitespacesAndNewlines)
+        let baseURIChanged = SRC721Validation.baseURIChange(baseURI, current: current.baseURI) != nil
         let trimmedOrgName = orgName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedOfficialURL = officialURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedWhitePaperURL = whitePaperURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedBaseURI != current.baseURI ||
+        return baseURIChanged ||
             BigUInt(maxSupply) != current.maxSupply ||
             BigUInt(mintPrice) != current.mintPrice ||
             trimmedOrgName != current.orgName ||
@@ -1832,8 +1832,10 @@ final class SRC721ContractDetailViewModel: ObservableObject {
         logo: Data?
     ) {
         guard canManage else { showOperationError("safe_zone.src721.error.owner_required".localized); return }
+        let current = contractState
+        let baseURIValue = SRC721Validation.baseURIChange(baseURI, current: current?.baseURI)
         guard validateUpdate(
-            baseURI: baseURI,
+            baseURI: baseURIValue,
             maxSupply: maxSupply,
             mintPrice: mintPrice,
             orgName: orgName,
@@ -1843,13 +1845,10 @@ final class SRC721ContractDetailViewModel: ObservableObject {
             logo: logo
         ) else { return }
 
-        let current = contractState
-        let normalizedBaseURI = baseURI.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedOrgName = orgName.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedOfficialURL = officialURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedWhitePaperURL = whitePaperURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        let baseURIValue = normalizedBaseURI == current?.baseURI ? nil : normalizedBaseURI
         let maxSupplyValue = BigUInt(maxSupply) == current?.maxSupply ? nil : BigUInt(maxSupply)
         let mintPriceValue = BigUInt(mintPrice) == current?.mintPrice ? nil : BigUInt(mintPrice)
         let metadata = (
@@ -2054,7 +2053,7 @@ final class SRC721ContractDetailViewModel: ObservableObject {
 
     @MainActor
     private func validateUpdate(
-        baseURI: String,
+        baseURI: String?,
         maxSupply: String,
         mintPrice: String,
         orgName: String,
@@ -2067,8 +2066,10 @@ final class SRC721ContractDetailViewModel: ObservableObject {
         clearUpdateCautions()
         var isValid = true
 
-        do { _ = try SRC721Validation.optionalBaseURI(baseURI) }
-        catch { setCaution(caution(for: error), for: .baseURI); isValid = false }
+        if let baseURI {
+            do { _ = try SRC721Validation.optionalBaseURI(baseURI) }
+            catch { setCaution(caution(for: error), for: .baseURI); isValid = false }
+        }
         do { _ = try SRC721Validation.amount(maxSupply, field: "safe_zone.src721.field.max_supply".localized) }
         catch { setCaution(caution(for: error), for: .maxSupply); isValid = false }
         if let maximum = BigUInt(maxSupply), let current = contractState, maximum < current.totalSupply {

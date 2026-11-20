@@ -57,11 +57,17 @@ extension LanguageManager {
     }
 
     func localize(string: String, bundle: Bundle?) -> String {
-        if let languageBundleUrl = bundle?.url(forResource: currentLanguage, withExtension: "lproj"), let languageBundle = Bundle(url: languageBundleUrl) {
-            return languageBundle.localizedString(forKey: string, value: nil, table: nil)
+        func translation(in language: String) -> String? {
+            guard let url = bundle?.url(forResource: language, withExtension: "lproj"),
+                  let languageBundle = Bundle(url: url) else { return nil }
+            // A valid translation may equal its key. Use a separate missing-value marker.
+            let missing = "\u{0}missing translation"
+            let value = languageBundle.localizedString(forKey: string, value: missing, table: nil)
+            return value == missing ? nil : value
         }
 
-        return string
+        if let value = translation(in: currentLanguage) { return value }
+        return currentLanguage == Self.fallbackLanguage ? string : translation(in: Self.fallbackLanguage) ?? string
     }
 
     func localize(string: String, bundle: Bundle?, arguments: [CVarArg]) -> String {

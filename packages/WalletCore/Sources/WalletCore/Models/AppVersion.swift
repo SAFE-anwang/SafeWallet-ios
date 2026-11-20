@@ -33,14 +33,6 @@ extension AppVersion: CustomStringConvertible {
 
         return version + " (\(build))"
     }
-
-    var desc: String {
-        guard let build else {
-            return version
-        }
-
-        return version + " (\(build))"
-    }
 }
 
 extension AppVersion {

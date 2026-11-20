@@ -1,3 +1,5 @@
+import MarketKit
+import SolanaKit
 import XCTest
 @testable import WalletCore
 
@@ -96,6 +98,15 @@ final class SolanaRpcConfigurationTests: XCTestCase {
     }
 
     func testEndpointRotationMigratesOnlyTheCurrentlySelectedRemoteEndpoint() {
+        for invalid in ["", "/relative", "https://", "https://["] {
+            XCTAssertNil(ApiKeyManager.validHttpEndpoint(invalid))
+            XCTAssertNil(EvmSyncSourceManager.migratedSelectedEndpoint(
+                current: "https://old.example", previous: "https://old.example", updated: invalid
+            ))
+        }
+        for valid in ["http://localhost:8545", "https://rpc.example/path?key=example"] {
+            XCTAssertEqual(ApiKeyManager.validHttpEndpoint(valid), valid)
+        }
         XCTAssertEqual(
             EvmSyncSourceManager.migratedSelectedEndpoint(
                 current: "https://p2pify-old.example.com/rpc",

@@ -318,11 +318,27 @@ final class SRC721ValidationTests: XCTestCase {
         XCTAssertNoThrow(try SRC721Validation.address("0x0000000000000000000000000000000000000001", field: "address"))
     }
 
-    func testBaseURIAllowsHTTPHTTPSAndIPFSButRejectsOtherSchemes() {
+    func testBaseURIAllowsHTTPHTTPSAndIPFSButRejectsFTP() {
         XCTAssertNoThrow(try SRC721Validation.baseURI("https://example.com/nft/"))
         XCTAssertNoThrow(try SRC721Validation.baseURI("http://example.com/nft/"))
         XCTAssertNoThrow(try SRC721Validation.baseURI("ipfs://bafybeigdyrzt/"))
+        XCTAssertNoThrow(try SRC721Validation.baseURI("data:application/json;utf8,{}"))
+        XCTAssertEqual(try SRC721Validation.optionalBaseURI("  "), "")
+        XCTAssertThrowsError(try SRC721Validation.baseURI(""))
+        XCTAssertThrowsError(try SRC721Validation.baseURI(String(repeating: "a", count: SRC721Validation.baseURIMaxUTF8Length + 1)))
         XCTAssertThrowsError(try SRC721Validation.baseURI("ftp://example.com/nft/"))
+        XCTAssertThrowsError(try SRC721Validation.optionalBaseURI("  FtP://example.com/nft/  "))
+    }
+
+    func testEditingContractWithLegacyFTPBaseURI() throws {
+        let legacy = "ftp://example.com/legacy/"
+        XCTAssertNil(SRC721Validation.baseURIChange(legacy, current: legacy))
+        let replacement = try XCTUnwrap(SRC721Validation.baseURIChange("ftp://new.example/", current: legacy))
+        XCTAssertThrowsError(try SRC721Validation.optionalBaseURI(replacement))
+        let cleared = try XCTUnwrap(SRC721Validation.baseURIChange("", current: legacy))
+        XCTAssertEqual(try SRC721Validation.optionalBaseURI(cleared), "")
+        let https = try XCTUnwrap(SRC721Validation.baseURIChange(" https://example.com/ ", current: legacy))
+        XCTAssertEqual(try SRC721Validation.optionalBaseURI(https), "https://example.com/")
     }
 
     func testAllowListRequiresParallelEntries() throws {

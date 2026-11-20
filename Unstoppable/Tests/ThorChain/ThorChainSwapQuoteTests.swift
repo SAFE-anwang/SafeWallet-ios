@@ -5,26 +5,31 @@ import Testing
 
 struct ThorChainSwapQuoteTests {
     @Test func nativeQuoteDecodesWithoutAnInboundAddress() throws {
-        // A THORChain-native swap has no vault to pay into, so THORNode omits the field.
-        // Decoding it strictly would reject exactly the quote the deposit path needs.
-        let quote = try BaseThorChainMultiSwapProvider.SwapQuote(JSONString: Self.json(inboundAddress: nil))
-
-        #expect(quote.inboundAddress == nil)
-        #expect(quote.memo == "=:BTC.BTC:bc1qexample")
-        #expect(quote.expectedAmountOut == Decimal(string: "0.12345678"))
+        try checkQuote(chain: "thorchain", kind: "cosmos_memo", inboundAddress: nil)
     }
 
     @Test func quoteFromAnotherChainKeepsItsInboundAddress() throws {
-        let quote = try BaseThorChainMultiSwapProvider.SwapQuote(JSONString: Self.json(inboundAddress: "bc1qvault"))
-
-        #expect(quote.inboundAddress == "bc1qvault")
+        try checkQuote(chain: "bitcoin", kind: "transfer", inboundAddress: "bc1qvault")
     }
 
-    private static func json(inboundAddress: String?) -> String {
-        let inbound = inboundAddress.map { "\"inbound_address\":\"\($0)\"," } ?? ""
-        return """
-        {\(inbound)"expected_amount_out":"12345678","memo":"=:BTC.BTC:bc1qexample",
-         "fees":{"affiliate":"1","outbound":"2","liquidity":"3","total":"6"}}
-        """
+    private func checkQuote(chain: String, kind: String, inboundAddress: String?) throws {
+        let memo = "=:BTC.BTC:bc1qexample"
+        var execution: [String: Any] = [
+            "method": "thorchain_deposit", "chain": chain, "memo": memo, "delivery": ["kind": kind],
+        ]
+        execution["inboundAddress"] = inboundAddress
+        let quote = try USwapMultiSwapApi.SwapResponseMapping(JSON: [
+            "expectedBuyAmount": "0.12345678", "execution": execution,
+        ]).response
+
+        #expect(quote.expectedBuyAmount == Decimal(string: "0.12345678"))
+        guard case let .thorchainDeposit(parsedChain, address, parsedMemo, delivery) = quote.execution else {
+            Issue.record("Expected a THORChain deposit")
+            return
+        }
+        #expect(parsedChain == chain)
+        #expect(address == (inboundAddress ?? ""))
+        #expect(parsedMemo == memo)
+        #expect(delivery.kind == kind)
     }
 }

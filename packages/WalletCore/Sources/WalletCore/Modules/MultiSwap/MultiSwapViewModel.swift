@@ -380,11 +380,11 @@ public class MultiSwapViewModel: ObservableObject {
 
     @Published var quoteSortType: QuoteSortType = .bestRate
 
-    var shouldShowKlineButton: Bool {
-        guard let tokenIn, let tokenOut else {
-            return false
+    var klinePair: (tokenIn: Token, tokenOut: Token)? {
+        guard let tokenIn, let tokenOut, tokenIn.blockchainType == .safe4, tokenOut.blockchainType == .safe4 else {
+            return nil
         }
-        return tokenIn.blockchainType == .safe4 && tokenOut.blockchainType == .safe4
+        return (tokenIn, tokenOut)
     }
 
 

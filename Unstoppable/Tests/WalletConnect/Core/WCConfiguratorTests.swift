@@ -12,16 +12,16 @@ struct WCConfiguratorTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         let sdk = SpyConfigurator(defaults: defaults)
 
-        try WCConfigurator(sdk: sdk, userDefaults: defaults).configure(info: info, bundleIdentifier: "io.horizontalsystems.bank-wallet")
+        try WCConfigurator(sdk: sdk, userDefaults: defaults).configure(info: info, groupIdentifier: AppConfig.appGroupIdentifier)
 
-        #expect(sdk.steps == ["networking(group.io.horizontalsystems.bank-wallet, pid)", "walletKit(Unstoppable)", "telemetry(false)"])
+        #expect(sdk.steps == ["networking(group.com.anwang4.safewallet, pid)", "walletKit(Unstoppable)", "telemetry(false)"])
         #expect(sdk.telemetryKeyAtNetworkingConfigure == false)
         #expect(defaults.object(forKey: WCConfigurator.telemetryKey) as? Bool == false)
     }
 
     @Test func metadataCarriesRedirectScheme() throws {
         let sdk = SpyConfigurator(defaults: .standard)
-        try WCConfigurator(sdk: sdk, userDefaults: .standard).configure(info: info, bundleIdentifier: "b")
+        try WCConfigurator(sdk: sdk, userDefaults: .standard).configure(info: info, groupIdentifier: "group.test.wallet")
         #expect(sdk.metadata?.redirect?.native == "unstoppable.money://")
         #expect(sdk.metadata?.url == "https://unstoppable.money")
     }

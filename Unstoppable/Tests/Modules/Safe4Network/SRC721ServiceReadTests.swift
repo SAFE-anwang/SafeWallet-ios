@@ -50,6 +50,47 @@ final class SRC721ServiceReadTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testLegacyFTPReadAndUnchangedURIEditValidation() async throws {
+        let legacy = "ftp://example.com/legacy/"
+        let rpc = SRC721ReadRPC(baseURI: legacy)
+        defer { rpc.close() }
+        let suite = "SRC721LegacyFTPTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let record = SRC721ContractRecord(
+            accountId: "test", chainId: 6666665, walletAddress: rpc.address,
+            contractAddress: rpc.address, predictedContractAddress: nil,
+            creatorAddress: rpc.address, currentOwnerAddress: rpc.address, contractType: .standard,
+            name: "Collection", symbol: "NFT", baseURI: legacy, maxSupply: "100", mintPrice: "3",
+            deployTransactionHash: nil, transactionStatus: .confirmed, validationStatus: "manual", createdAt: Date()
+        )
+        let model = SRC721ContractDetailViewModel(
+            record: record, service: rpc.service(), storage: SRC721Storage(defaults: defaults)
+        )
+        await model.refresh()?.value
+        XCTAssertTrue(model.canManage)
+        XCTAssertEqual(model.contractState?.baseURI, legacy)
+        let reads = rpc.requestCount
+
+        // An invalid supply prevents submission while exercising the real edit form.
+        // An unchanged legacy URI must not become the form's first error.
+        model.updateAll(
+            baseURI: legacy, maxSupply: "invalid", mintPrice: "3",
+            orgName: "Changed issuer", description: "Description", officialURL: "https://example.com",
+            whitePaperURL: "https://example.com/paper", logo: nil
+        )
+        XCTAssertEqual(model.invalidField, .maxSupply)
+
+        model.updateAll(
+            baseURI: "ftp://example.com/new/", maxSupply: "100", mintPrice: "3",
+            orgName: "Changed issuer", description: "Description", officialURL: "https://example.com",
+            whitePaperURL: "https://example.com/paper", logo: nil
+        )
+        XCTAssertEqual(model.invalidField, .baseURI)
+        XCTAssertEqual(rpc.requestCount, reads, "Validation must not submit or read any transaction")
+    }
+
     func testMissingMintedTotalRemainsOptional() async throws {
         for type in [SRC721ContractType.standard, .burnable] {
             let rpc = SRC721ReadRPC(failingMethod: "mintedTotal()")
@@ -340,7 +381,7 @@ private final class SRC721ReadRPC: Web3Provider {
     var maximumInFlight: Int { lock.withLock { peakInFlight } }
     var requestCount: Int { lock.withLock { requests } }
 
-    init(failingMethod: String? = nil) {
+    init(failingMethod: String? = nil, baseURI: String = "ipfs://collection/") {
         failingSelector = failingMethod.map(Self.selector)
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [SRC721ReadURLProtocol.self]
@@ -349,7 +390,7 @@ private final class SRC721ReadRPC: Web3Provider {
             "name()": Self.dynamic(Data("Collection".utf8)),
             "symbol()": Self.dynamic(Data("NFT".utf8)),
             "owner()": Self.word(1),
-            "baseURI()": Self.dynamic(Data("ipfs://collection/".utf8)),
+            "baseURI()": Self.dynamic(Data(baseURI.utf8)),
             "maxSupply()": Self.word(100),
             "totalSupply()": Self.word(7),
             "remainSupply()": Self.word(91),

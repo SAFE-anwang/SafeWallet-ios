@@ -20,6 +20,6 @@ struct SharedLocalStorage {
     }
 
     private var userDefaults: UserDefaults? {
-        UserDefaults(suiteName: WalletConnectKeychainCleaner.fixedAppGroupId)
+        UserDefaults(suiteName: AppConfig.appGroupIdentifier)
     }
 }

@@ -41,6 +41,20 @@ struct MultiSwapView: View {
                 }
             }
         }
+        .toolbar {
+            if let pair = activeViewModel.klinePair {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("swap.market".localized) {
+                        Coordinator.shared.present { _ in
+                            ThemeNavigationStack {
+                                KLineChartView(provider: Safe4Provider(networkManager: Core.shared.networkManager), token0: pair.tokenIn, token1: pair.tokenOut)
+                            }
+                        }
+                    }
+                    .foregroundColor(.themeYellow)
+                }
+            }
+        }
         .onChange(of: currentTab) { _, tab in
             onChange(tab: tab)
         }

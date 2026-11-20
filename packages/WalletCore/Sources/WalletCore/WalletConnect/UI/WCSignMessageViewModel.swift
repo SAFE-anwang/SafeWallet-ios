@@ -57,7 +57,8 @@ class WCSignMessageViewModel: ObservableObject {
         if let payload, let type = manager?.chainSupportRegistry.support(namespace: payload.chainId.namespace)?.blockchainType(chain: payload.chainId) {
             contextRows.append(Row(title: "wallet_connect.sign.network".localized, value: WCBlockchainsView.name(type: type), copyable: false))
         }
-        if let accountName = Core.shared.accountManager.activeAccount?.name {
+        if let account = Core.shared.accountManager.activeAccount {
+            let accountName = ChildWalletBridge.shared.displayName(account: account)
             contextRows.append(Row(title: "wallet_connect.connect.wallet".localized, value: accountName, copyable: false))
         }
         self.contextRows = contextRows

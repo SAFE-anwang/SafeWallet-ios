@@ -3,51 +3,46 @@ import MarketKit
 import UIKit
 
 enum AppConfig {
-    static let label = "io.horizontalsystems.unstoppable"
+    static let label = "io.SAFE-anwang.com"
 
-    static let companyName = "Horizontal Systems"
-    static let reportEmail = "support.unstoppable@protonmail.com"
-    static let companyWebPageLink = "https://horizontalsystems.io"
-    static let appWebPageLink = "https://unstoppable.money"
+    static let companyName = "anwang"
+    static let reportEmail = ""
+    static let companyWebPageLink = "https://www.anwang.com"
+    static let appWebPageLink = "https://www.anwang.com/#safewallet"
 
-    // Relying-party domain (WebAuthn RP ID) for passkey wallets in this app. Passed explicitly to every
-    // PasskeyManager — see Stable's AppConfig.passkeyDomain for the stable app's value.
-    static let passkeyDomain = "unstoppable.money"
-    static let privacyPolicyLink = "https://unstoppable.money/privacy-policy"
+    static let privacyPolicyLink = ""
     static let appleTermsOfServiceLink = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula"
     static let nymVpnLink = "https://nymtechnologies.pxf.io/N9vnr1"
-    static let appGitHubAccount = "horizontalsystems"
-    static let appGitHubRepository = "unstoppable-wallet-ios"
-    static let appTwitterAccount = "unstoppablebyhs"
-    static let appTelegramAccount = "unstoppable_announcements"
-    static let appTelegramSupportSlug = "-uTI4HwKZWNi"
-    static let appTokenTelegramAccount = "BeUnstoppable_bot"
+    static let appGitHubAccount = "SAFE-anwang"
+    static let appGitHubRepository = ""
+    static let appTwitterAccount = "safeanwang"
+    static let appTelegramAccount = ""
+    static let appTelegramSupportSlug = ""
+    static let appTokenTelegramAccount = ""
     static let mempoolSpaceUrl = "https://mempool.space"
     static let guidesIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/blockchain-crypto-guides/v1.2/index.json")!
-    static let faqIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/unstoppable.money/refs/heads/main/faq.json")!
-    static let eduIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/unstoppable.money/refs/heads/main/edu.json")!
-    static let donationAddresses: [BlockchainType: String] = [
-        .bitcoin: "bc1qxt5u5swx3sk6y2923whr4tvjreza43g37czv67",
-        .bitcoinCash: "bitcoincash:qz6sy9fq66yvfl5mvpfv3v2nqw5pervvkc425nj9g0\n",
-        .ecash: "ecash:qp6t4rqd4qdlq0vlucjhucjxygn5969j3cdan6ykzr\n",
-        .litecoin: "ltc1q05f90wt464h8dft9t7q9sp9n0qeprlv30070at\n",
-        .dash: "Xp24AqFUP9nF3ycLCmTDvgezxSt3RAKP2r",
-        .zcash: "zs1jpd8u7zghtq5eg48l384y6fpy7cr0xmqehnw5mujpm8v2u7jr9a3j7luftqpthf6a8f720vdfyn",
-        .ethereum: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .binanceSmartChain: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .polygon: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .avalanche: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .optimism: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .base: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .zkSync: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .robinhood: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .arc: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .arbitrumOne: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .gnosis: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .fantom: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
-        .ton: "UQAYLATDlfKgn3cKZAgznvowhXzpqgxrIicesxJfo9f6PN3k",
-        .tron: "TQzANCd363w5CjRWDtswm8Y5nFPAdnwekF",
-        .solana: "5gattKnvu5f1NDHBuZ6VfDXjRrJa9UcAArkZ3ys3e82F",
+    static let faqIndexUrl = URL(string: "https://raw.githubusercontent.com/horizontalsystems/unstoppable-wallet-website/master/src/faq.json")!
+    static let eduIndexUrl = URL(string: "")!
+    static let donationAddresses: [BlockchainType: String] = [:
+//        .bitcoin: "bc1qxt5u5swx3sk6y2923whr4tvjreza43g37czv67",
+//        .bitcoinCash: "bitcoincash:qz6sy9fq66yvfl5mvpfv3v2nqw5pervvkc425nj9g0\n",
+//        .ecash: "ecash:qp6t4rqd4qdlq0vlucjhucjxygn5969j3cdan6ykzr\n",
+//        .litecoin: "ltc1q05f90wt464h8dft9t7q9sp9n0qeprlv30070at\n",
+//        .dash: "Xp24AqFUP9nF3ycLCmTDvgezxSt3RAKP2r",
+//        .zcash: "zs1jpd8u7zghtq5eg48l384y6fpy7cr0xmqehnw5mujpm8v2u7jr9a3j7luftqpthf6a8f720vdfyn",
+//        .ethereum: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .binanceSmartChain: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .polygon: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .avalanche: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .optimism: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .base: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .zkSync: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .arbitrumOne: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .gnosis: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .fantom: "0xA24c159C7f1E4A04dab7c364C2A8b87b3dBa4cd1",
+//        .ton: "UQAYLATDlfKgn3cKZAgznvowhXzpqgxrIicesxJfo9f6PN3k",
+//        .tron: "TQzANCd363w5CjRWDtswm8Y5nFPAdnwekF",
+//        .solana: "5gattKnvu5f1NDHBuZ6VfDXjRrJa9UcAArkZ3ys3e82F",
     ]
 
     static var appVersion: String {
@@ -75,35 +70,35 @@ enum AppConfig {
     }
 
     static var marketApiUrl: String {
-        AppEnvironment.config.marketApiUrl
+        AppEnvironment.marketApiUrl(override: Bundle.main.object(forInfoDictionaryKey: "MarketApiUrl") as? String)
     }
 
     static var swapApiUrl: String {
-        AppEnvironment.config.swapApiUrl
+        (Bundle.main.object(forInfoDictionaryKey: "SwapApiUrl") as? String) ?? ""
     }
 
     static var etherscanKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+        apiKeys(.etherscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "EtherscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var arbiscanKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "ArbiscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+        apiKeys(.arbiscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "ArbiscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var gnosisscanKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "GnosisscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+        apiKeys(.gnosisscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "GnosisscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var ftmscanKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "FtmscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+        apiKeys(.ftmscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "FtmscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var optimismEtherscanKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "OptimismEtherscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+        apiKeys(.optimisticEtherscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "OptimismEtherscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var basescanKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "BasescanApiKeys") as? String) ?? "").components(separatedBy: ",")
+         ((Bundle.main.object(forInfoDictionaryKey: "BasescanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var eraZkSyncKeys: [String] {
@@ -115,11 +110,11 @@ enum AppConfig {
     }
 
     static var bscscanKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "BscscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+        apiKeys(.bscscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "BscscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var polygonscanKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "PolygonscanApiKeys") as? String) ?? "").components(separatedBy: ",")
+        apiKeys(.polygonscan) ?? ((Bundle.main.object(forInfoDictionaryKey: "PolygonscanApiKeys") as? String) ?? "").components(separatedBy: ",")
     }
 
     static var snowtraceKeys: [String] {
@@ -127,7 +122,7 @@ enum AppConfig {
     }
 
     static var twitterBearerToken: String? {
-        (Bundle.main.object(forInfoDictionaryKey: "TwitterBearerToken") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        apiKey(.twitterBearerToken) ?? (Bundle.main.object(forInfoDictionaryKey: "TwitterBearerToken") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 
     static var hsProviderApiKey: String? {
@@ -143,7 +138,7 @@ enum AppConfig {
     }
 
     static var solanaAlchemyApiKeys: [String] {
-        ((Bundle.main.object(forInfoDictionaryKey: "SolanaAlchemyApiKeys") as? String) ?? "").components(separatedBy: ",")
+        solanaAlchemyApiKeys(from: Bundle.main.object(forInfoDictionaryKey: "SolanaAlchemyApiKeys") as? String)
     }
 
     static var fastNearApiKey: String? {
@@ -151,7 +146,7 @@ enum AppConfig {
     }
 
     static var walletConnectV2ProjectKey: String? {
-        (Bundle.main.object(forInfoDictionaryKey: "WallectConnectV2ProjectKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        apiKey(.walletConnectV2) ?? (Bundle.main.object(forInfoDictionaryKey: "WallectConnectV2ProjectKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 
     static var unstoppableDomainsApiKey: String? {
@@ -175,7 +170,8 @@ enum AppConfig {
     }
 
     static var uswapApiKey: String? {
-        (Bundle.main.object(forInfoDictionaryKey: "USwapApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
+        "44fc76602e17e0c8259b6ce3bae3ca90804c6fd8f42ca00e6943a6b1ba7fe242"
+//        (Bundle.main.object(forInfoDictionaryKey: "USwapApiKey") as? String).flatMap { $0.isEmpty ? nil : $0 }
     }
 
     static var jupiterApiKey: String? {
@@ -183,7 +179,7 @@ enum AppConfig {
     }
 
     static var referralAppServerUrl: String {
-        AppEnvironment.config.referralAppServerUrl
+        (Bundle.main.object(forInfoDictionaryKey: "ReferralAppServerUrl") as? String) ?? ""
     }
 
     static var defaultWords: String {

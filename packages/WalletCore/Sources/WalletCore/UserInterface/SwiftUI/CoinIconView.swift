@@ -81,7 +81,7 @@ public struct CoinIconView: View {
 
     public init(token: Token?, size: CGFloat = 40, iconOpacity: Double = 1, iconOverlay: AnyView? = nil) {
         coin = token?.coin
-        placeholderImage = "placeholder_circle"
+        placeholderImage = token?.safePlaceholderImageName ?? "placeholder_circle"
         maskImageUrl = token?.maskImageUrl
         self.size = size
         self.iconOpacity = iconOpacity
@@ -95,6 +95,8 @@ public struct CoinIconView: View {
                 .scaledToFit()
                 .clipShape(Circle())
                 .frame(width: size, height: size)
+                .opacity(iconOpacity)
+                .overlay { iconOverlay }
         } else {
             IconView(url: coin?.imageUrl, alternativeUrl: coin?.image, placeholderImage: placeholderImage, maskImageUrl: maskImageUrl, type: .circle, size: size, iconOpacity: iconOpacity, iconOverlay: iconOverlay)
         }

@@ -50,8 +50,13 @@ struct SwapProviderFactoryTests {
         #expect(info.id == "SafeSwap")
         #expect(info.name == "SafeSwap")
         #expect(info.icon == "safelog")
-        #expect(info.type == .excellent)
         #expect(info.confidential == false)
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SAFEWALLET_UNIT_TEST_HOST"] != "1", "Requires the full app host"))
+    func safeSwapQuoteProviderExposesItsRating() throws {
+        let provider = try #require(SwapProviderFactory.provider(id: "SafeSwap"))
+        #expect(provider.type == .excellent)
     }
 }
 

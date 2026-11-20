@@ -13,10 +13,10 @@ class WCConfigurator {
         self.userDefaults = userDefaults
     }
 
-    func configure(info: WCClientInfo, bundleIdentifier: String) throws {
+    func configure(info: WCClientInfo, groupIdentifier: String) throws {
         userDefaults.set(false, forKey: Self.telemetryKey)
 
-        sdk.configureNetworking(groupIdentifier: "group.\(bundleIdentifier)", projectId: info.projectId)
+        sdk.configureNetworking(groupIdentifier: groupIdentifier, projectId: info.projectId)
 
         let metadata = try AppMetadata(
             name: info.name,

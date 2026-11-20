@@ -43,7 +43,7 @@ class WCConnectViewModel: ObservableObject {
         dAppName = proposer.name
         dAppHost = URLComponents(string: proposer.url)?.host ?? proposer.url
         iconUrl = proposer.icons.last
-        accountName = accountManager.activeAccount?.name
+        accountName = accountManager.activeAccount.map(ChildWalletBridge.shared.displayName(account:))
 
         let registry = manager?.chainSupportRegistry
         var types = [BlockchainType]()

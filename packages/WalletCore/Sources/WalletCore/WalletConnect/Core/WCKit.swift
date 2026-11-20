@@ -102,7 +102,7 @@ class WCKit {
         stateLock.unlock()
 
         // drop sessions left behind by the old module (live on the SDK, no approval record)
-        sessionService.disconnectOrphans()
+        Task { [sessionService] in await sessionService.disconnectOrphans() }
     }
 
     var requestPublisher: AnyPublisher<WCRequestItem, Never> { requestSubject.eraseToAnyPublisher() }

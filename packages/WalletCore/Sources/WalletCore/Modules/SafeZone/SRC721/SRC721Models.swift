@@ -605,13 +605,21 @@ enum SRC721Validation {
 
     static func baseURI(_ value: String) throws -> String {
         let result = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !result.isEmpty, result.utf8.count <= baseURIMaxUTF8Length else { throw SRC721ValidationError.invalidURL }
+        guard !result.isEmpty, result.utf8.count <= baseURIMaxUTF8Length,
+              !result.lowercased().hasPrefix("ftp:") else { throw SRC721ValidationError.invalidURL }
         return result
     }
 
     static func optionalBaseURI(_ value: String) throws -> String {
         let result = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return result.isEmpty ? "" : try baseURI(result)
+    }
+
+    /// Nil leaves the stored URI unchanged; an empty string explicitly clears it.
+    static func baseURIChange(_ input: String, current: String?) -> String? {
+        let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard value != current else { return nil }
+        return value
     }
 
     static func textInput(_ value: String, maxUTF8Length: Int) -> String {

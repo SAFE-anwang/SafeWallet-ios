@@ -28,11 +28,6 @@ struct ZcashWalletTokenView: View {
                             view(orchard: viewModel.zCashBalanceData.orchard)
                             HorizontalDivider()
                         }
-
-                        if ZcashMigrator.migrationEnabled, viewModel.ironwoodActive, viewModel.zCashBalanceData.orchard > ZcashAdapter.minimalThreshold {
-                            view(orchard: viewModel.zCashBalanceData.orchard)
-                            HorizontalDivider()
-                        }
                     }
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())

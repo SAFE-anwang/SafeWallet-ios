@@ -1,3 +1,4 @@
+import Foundation
 import HsToolKit
 import RxSwift
 
@@ -15,7 +16,14 @@ class ApiKeyManager {
     }
 
     static func rpcEndpoint(network: RpcNetworkName) -> String? {
-        rpcEndpointConfig(network: network)?.endpoint
+        validHttpEndpoint(rpcEndpointConfig(network: network)?.endpoint)
+    }
+
+    static func validHttpEndpoint(_ value: String?) -> String? {
+        guard let value, let url = URL(string: value),
+              let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme),
+              let host = url.host, !host.isEmpty else { return nil }
+        return value
     }
 
     static func rpcEndpointConfig(network: RpcNetworkName) -> RpcEndpoint? {

@@ -1,4 +1,5 @@
 import BigInt
+import EvmKit
 import Testing
 @testable import WalletCore
 
